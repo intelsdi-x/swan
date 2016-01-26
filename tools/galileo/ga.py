@@ -42,7 +42,10 @@ class Experiment:
 
 				log.info("started phase '" + name + "' iteration " + str(iteration))
 				result = phase(None)
-				results.append(result)
+
+				if result is not None:
+					results.append(result)
+
 				log.info("ended phase '" + name + "' iteration " + str(iteration) + " in " + str(time.time() - start_iteration) + " seconds")
 
 				# Change back to root directory
