@@ -19,16 +19,12 @@ class CgroupExperiment(ga.Experiment):
 
             cg.destroy()
 
-            return {
-                # "99.9 latency": 1.0 + random.uniform(0.0, 2.0)
-            }
+            return None
 
         def experiment(configuration):
             Shell([Perf(Taskset(["0"], "sleep 1"))])
 
-            return {
-                # "99.9 latency": 2.0 + random.uniform(0.0, 4.0)
-            }
+            return None
 
         self.add_phase("baseline", baseline)
         self.add_phase("experiment", experiment)

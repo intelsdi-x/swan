@@ -4,7 +4,11 @@ import time
 
 
 class Shell:
-    def __init__(self, commands, output="output"):
+    def __init__(self, commands, output="output.txt"):
+        """
+        :param commands: List of commands to run
+        :param output: File to save command output in.
+        """
         processes = {}
 
         for command in commands:
@@ -21,7 +25,7 @@ class Shell:
                 status = process.poll()
                 if status is not None:
                     log.info("ended command: '" + str(command) + "' with status code " + str(status))
-                    outpuf_file = process_obj['output_file']
+                    output_file = process_obj['output_file']
                     output_file.flush()
                     exited_pids.append(pid)
 
