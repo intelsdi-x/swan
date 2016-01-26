@@ -11,7 +11,7 @@ class Experiment:
         self.phases = collections.OrderedDict()
 
     def add_phase(self, name, phase, matrix=None):
-        self.phases[name] = phase
+        self.phases[name] = {'phase': phase, 'matrix': matrix}
 
     def run(self):
         run_id = str(uuid.uuid4())
@@ -24,47 +24,74 @@ class Experiment:
 
         # TODO: Write system info and time to root of experiment run directory.
 
-        for name, phase in self.phases.iteritems():
-            # Create sandbox for phase
-            os.mkdir('/'.join(['data', run_id, name]))
+        for name, phase_tuple in self.phases.iteritems():
+            # Generate permutations of phase.
+            permutations = []
+            matrix = phase_tuple["matrix"]
 
-            start_phase = time.time()
+            # O(n^2): watch out for large matrices
+            if matrix is not None:
+                def perm(m, permutation_fragment):
+                    if len(m) <= 0:
+                        permutations.append(permutation_fragment)
+                    else:
+                        for item in m[0]:
+                            perm(m[1:], permutation_fragment + [item])
+                perm(matrix, [])
+            else:
+                permutations = [None]
 
-            results = []
-            log.info("started phase '" + name + "'")
-            for iteration in range(0, 3):
-                root = os.getcwd()
-                work_dir = '/'.join(['data', run_id, name, "run_" + str(iteration)])
-                # Change directory to sandbox
-                os.mkdir(work_dir)
-                os.chdir(work_dir)
+            phase = phase_tuple["phase"]
 
-                start_iteration = time.time()
+            for permutation in permutations:
+                # Create sandbox for phase
+                phase_dir = ""
+                if permutation is None:
+                    phase_dir = '/'.join(['data', run_id, name])
+                else:
+                    mangle_permutation = "_".join((map(str, permutation)))
+                    phase_dir = '/'.join(['data', run_id, name + mangle_permutation])
 
-                log.info("started phase '" + name + "' iteration " + str(iteration))
-                result = phase(None)
+                os.mkdir(phase_dir)
 
-                if result is not None:
-                    results.append(result)
+                start_phase = time.time()
 
-                log.info("ended phase '" + name + "' iteration " + str(iteration) + " in " + str(
-                    time.time() - start_iteration) + " seconds")
+                results = []
+                log.info("started phase '" + name + "' configuration %s" % permutation)
+                for iteration in range(0, 3):
+                    root = os.getcwd()
 
-                # Change back to root directory
-                os.chdir(root)
+                    work_dir = '/'.join([phase_dir, "run_" + str(iteration)])
+                    # Change directory to sandbox
+                    os.mkdir(work_dir)
+                    os.chdir(work_dir)
 
-            metrics = {}
-            log.info("ended phase '" + name + "' in " + str(time.time() - start_phase) + " seconds")
+                    start_iteration = time.time()
 
-            for result in results:
-                for metric_name, metric in result.iteritems():
-                    if metric_name not in metrics:
-                        metrics[metric_name] = []
+                    log.info("started phase '" + name + "' configuration %s" % permutation + " iteration " + str(iteration))
+                    result = phase(permutation)
 
-                    metrics[metric_name].append(metric)
+                    if result is not None:
+                        results.append(result)
 
-            for metric_name, metrics in metrics.iteritems():
-                log.info('phase \'' + name + '\' result: ' + metric_name + '(mean of ' + str(
-                    len(metrics)) + ' runs): ' + str(np.mean(metrics)))
+                    log.info("ended phase '" + name + "' configuration %s" % permutation + " iteration " + str(iteration) + " in " + str(
+                        time.time() - start_iteration) + " seconds")
+
+                    # Change back to root directory
+                    os.chdir(root)
+
+                metrics = {}
+                log.info("ended phase '" + name + "' configuration %s" % permutation + " in " + str(time.time() - start_phase) + " seconds")
+
+                for result in results:
+                    for metric_name, metric in result.iteritems():
+                        if metric_name not in metrics:
+                            metrics[metric_name] = []
+
+                        metrics[metric_name].append(metric)
+
+                for metric_name, metrics in metrics.iteritems():
+                    log.info('phase \'' + name + '\' result: ' + metric_name + '(mean of ' + str(
+                        len(metrics)) + ' runs): ' + str(np.mean(metrics)))
 
         log.info("ended experiment run '" + run_id + "' in " + str(time.time() - start_experiment) + " seconds")

@@ -1,6 +1,4 @@
 import ga
-import glog as log
-import random
 from perf import Perf
 from shell import Shell
 from taskset import Taskset

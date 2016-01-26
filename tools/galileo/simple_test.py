@@ -1,5 +1,4 @@
 import ga
-import glog as log
 import random
 
 
@@ -21,7 +20,7 @@ class SimpleExperiment(ga.Experiment):
             }
 
         self.add_phase("baseline", baseline)
-        self.add_phase("experiment", experiment, [range(0, 8), range(100, 1000, 100)])
+        self.add_phase("experiment", experiment)
 
 
 def main():
