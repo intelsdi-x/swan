@@ -19,8 +19,8 @@ class SimpleExperiment(ga.Experiment):
 				"99.9 latency": 2.0 + random.uniform(0.0, 4.0)
 			}
 
-		self.add_phase("Baseline", baseline)
-		self.add_phase("Experiment", experiment, [range(0, 8), range(100, 1000, 100)])
+		self.add_phase("baseline", baseline)
+		self.add_phase("experiment", experiment, [range(0, 8), range(100, 1000, 100)])
 
 def main():
 	s = SimpleExperiment()
