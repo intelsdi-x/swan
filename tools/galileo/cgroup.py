@@ -43,10 +43,6 @@ class Cgroup:
 				if path_component is hierarchy[-1]:
 					root[cgroup_type] = state_value
 
-			print("hierarchy: " + "/".join(hierarchy) + " cgroup_type: " + cgroup_type)
-
-		print hierarchy_tree
-
 		# Create cgroups
 		# Depth first pre-order traversal of tree
 		def dfs(root, location):
@@ -69,9 +65,23 @@ class Cgroup:
 					dfs(element, "/".join([location, key]))
 
 		dfs(hierarchy_tree, '')
+		self.hierarchy_tree = hierarchy_tree
 
 	def execute(self, location, command):
 		return " ".join(["cgexec", "-g", ",".join(self.cgroup_types) + ":" + location, str(command)])
 
 	def destroy(self):
-		pass
+		# Depth first post-order traversal of tree
+		def dfs(root, location):
+			for key, element in root.iteritems():
+				if '.' not in key:
+					dfs(element, "/".join([location, key]))
+
+
+			if location is not '':
+				if subprocess.call(['cgdelete', ",".join(self.cgroup_types) + ":" + location]) is not 0:
+					log.fatal('could not delete cgroup: ' + location)
+					sys.exit(1)
+			
+
+		dfs(self.hierarchy_tree, '')
