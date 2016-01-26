@@ -10,4 +10,4 @@ class Perf:
         if self.events is not None:
             events_string = (" -e %s" % ",".join(self.events))
 
-        return "perf stat --append -I %d -o %s %s" % (self.interval, self.output_file, self.command)
+        return "perf stat --append %s -I %d -o %s %s" % (events_string, self.interval, self.output_file, self.command)
