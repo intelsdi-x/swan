@@ -24,9 +24,9 @@ class Shell:
 					output_file.flush()
 					exited_pids.append(pid)
 
+					# TODO: Write post mortem to log
+
 			for pid in exited_pids:
 				del running[pid]
 
 			time.sleep(0.1)
-
-		return processes
