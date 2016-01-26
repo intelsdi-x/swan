@@ -1,42 +1,43 @@
 import ga
-import glog as log
-import random
 from perf import Perf
 from shell import Shell
 from taskset import Taskset
 from cgroup import Cgroup
 
+
 class CgroupExperiment(ga.Experiment):
-	def __init__(self):
-		ga.Experiment.__init__(self)
+    def __init__(self):
+        ga.Experiment.__init__(self)
 
-		def baseline(configuration):
-			cg = Cgroup(["/A/hp/cpu.shares=1024", "/A/be/cpu.shares=2"])
+        def baseline(configuration):
+            cg = Cgroup(["/A/hp/cpu.shares=1024", "/A/be/cpu.shares=2"])
 
-			Shell([
-				cg.execute("/A/hp", Perf(Taskset(["0"],  "echo foobar"))),
-				cg.execute("/A/be", Perf(Taskset(["0"],  "echo foobar")))
-			])
+            Shell([
+                cg.execute("/A/hp", Perf(Taskset(["0"], "echo foobar"))),
+                cg.execute("/A/be", Perf(Taskset(["0"], "echo foobar")))
+            ])
 
-			cg.destroy()
+            cg.destroy()
 
-			return {
-				# "99.9 latency": 1.0 + random.uniform(0.0, 2.0)
-			}
+            return {
+                # "99.9 latency": 1.0 + random.uniform(0.0, 2.0)
+            }
 
-		def experiment(configuration):
-			Shell([Perf(Taskset(["0"],  "sleep 1"))])
+        def experiment(configuration):
+            Shell([Perf(Taskset(["0"], "sleep 1"))])
 
-			return {
-				# "99.9 latency": 2.0 + random.uniform(0.0, 4.0)
-			}
+            return {
+                # "99.9 latency": 2.0 + random.uniform(0.0, 4.0)
+            }
 
-		self.add_phase("baseline", baseline)
-		self.add_phase("experiment", experiment)
+        self.add_phase("baseline", baseline)
+        self.add_phase("experiment", experiment)
+
 
 def main():
-	s = CgroupExperiment()
-	s.run()
+    s = CgroupExperiment()
+    s.run()
+
 
 if __name__ == "__main__":
-	main()
+    main()
