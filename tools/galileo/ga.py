@@ -13,7 +13,7 @@ class Experiment:
     def add_phase(self, name, phase, matrix=None):
         self.phases[name] = {'phase': phase, 'matrix': matrix}
 
-    def run(self):
+    def run(self, repetitions=3):
         run_id = str(uuid.uuid4())
         log.info("started experiment run '" + run_id + "'")
 
@@ -58,7 +58,7 @@ class Experiment:
 
                 results = []
                 log.info("started phase '" + name + "' configuration %s" % permutation)
-                for iteration in range(0, 3):
+                for iteration in range(0, repetitions):
                     root = os.getcwd()
 
                     work_dir = '/'.join([phase_dir, "run_" + str(iteration)])
