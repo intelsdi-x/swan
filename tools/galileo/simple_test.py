@@ -25,7 +25,9 @@ class SimpleExperiment(ga.Experiment):
 
 def main():
     s = SimpleExperiment()
-    s.run()
+
+    # Run 4 repetitions instead of default 3.
+    s.run(4)
 
 
 if __name__ == "__main__":
