@@ -12,7 +12,7 @@ The end goal is to be able to produce:
 While no `setup.py` is shipped with galileo yet, you can install the dependencies by running:
 
 ```
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ## Usage
@@ -20,6 +20,6 @@ pip install -r requirements.txt
 While galileo is a library to be imported and extended by the user, you can run the bundled example experiments:
 
 ```
-$ python simple_test.py
-$ python simple_cgroup.py
+$ python test_simple.py
+$ python test_cgroup.py
 ```

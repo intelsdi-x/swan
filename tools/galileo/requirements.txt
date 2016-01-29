@@ -1,2 +1,3 @@
 glog
 numpy
+matplotlib
