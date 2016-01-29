@@ -43,7 +43,7 @@ class Delay:
         self.command = command
 
     def __str__(self):
-        return "sleep %d %s" % (self.seconds, self.command)
+        return "sleep %d && %s" % (self.seconds, self.command)
 
 
 class RunFor:

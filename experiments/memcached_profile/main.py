@@ -14,11 +14,17 @@ class MemcachedSensitivityProfile(ga.Experiment):
         memcached_exec = "%s/../../workloads/data_caching/memcached/memcached-1.4.25/build/memcached" % experiment_root
         mutilate_exec = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
 
+        events = [
+            "instructions",
+            "cycles",
+            "cache-misses"
+        ]
+
         def baseline(configuration):
             # Setup mutilate and memcached
             Shell([
                 # Run memcached for 30 seconds
-                Perf(RunFor(30, memcached_exec)),
+                Perf(events=events, command=RunFor(30, memcached_exec)),
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 26 seconds
