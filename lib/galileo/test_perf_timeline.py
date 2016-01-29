@@ -1,10 +1,10 @@
-from perf import Perf
+from perf_counters import Perf
 from shell import Shell
 from taskset import Taskset
 import ga
 import matplotlib.pyplot as plt
 import numpy as np
-import perf
+import perf_counters
 
 
 class PerfTimelineExperiment(ga.Experiment):
@@ -16,7 +16,7 @@ class PerfTimelineExperiment(ga.Experiment):
                 Perf(Taskset(["0"], "timeout -s SIGINT 10 dd if=/dev/urandom of=/dev/null"))
             ])
 
-            timeline = perf.Timeline("perf.txt")
+            timeline = perf_counters.Timeline("perf.txt")
 
             tsv = timeline.tsv()
             for line in tsv:

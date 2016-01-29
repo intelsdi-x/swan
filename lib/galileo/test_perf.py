@@ -1,5 +1,5 @@
 import ga
-from perf import Perf
+from perf_counters import Perf
 from shell import Shell
 from taskset import Taskset
 
