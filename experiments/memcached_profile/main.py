@@ -23,7 +23,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         def baseline(configuration):
             cg = Cgroup([
-                "/memcached_experiment/cpuset.cpus=0,1,20,21",
+                "/memcached_experiment/cpuset.cpus=1,2,20,21",
                 "/memcached_experiment/cpuset.mems=0,1",
                 "/memcached_experiment/workload/cpuset.cpus=20,21",
                 "/memcached_experiment/workload/cpuset.mems=0,1",
@@ -34,7 +34,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
             # Setup mutilate and memcached
             Shell([
                 # Run memcached for 30 seconds
-                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(30, memcached_exec))),
+                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(30, memcached_exec + " -u root"))),
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 26 seconds
