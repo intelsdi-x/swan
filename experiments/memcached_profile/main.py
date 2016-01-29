@@ -14,6 +14,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         memcached_exec = "%s/../../workloads/data_caching/memcached/memcached-1.4.25/build/memcached" % experiment_root
         mutilate_exec = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
+        l1i_exec = "%s/../../aggressors/l1i" % experiment_root
 
         events = [
             "instructions",
@@ -27,7 +28,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
                 "/memcached_experiment/cpuset.mems=0,1",
                 "/memcached_experiment/workload/cpuset.cpus=20,21",
                 "/memcached_experiment/workload/cpuset.mems=0,1",
-                "/memcached_experiment/victim/cpuset.cpus=1,2",
+                "/memcached_experiment/victim/cpuset.cpus=1",
                 "/memcached_experiment/victim/cpuset.mems=0,1"
             ])
 
@@ -49,11 +50,33 @@ class MemcachedSensitivityProfile(ga.Experiment):
             return None
 
         def l1_instruction_pressure_equal_share(configuration):
-            # Setup mutilate
+            cg = Cgroup([
+                "/memcached_experiment/cpuset.cpus=1,2,20,21",
+                "/memcached_experiment/cpuset.mems=0,1",
+                "/memcached_experiment/workload/cpuset.cpus=20,21",
+                "/memcached_experiment/workload/cpuset.mems=0,1",
+                "/memcached_experiment/victim/cpuset.cpus=1",
+                "/memcached_experiment/victim/cpuset.mems=0,1",
+                "/memcached_experiment/aggresor/cpuset.cpus=1",
+                "/memcached_experiment/aggresor/cpuset.mems=0,1"
+            ])
 
-            # Setup aggressor
+            # Setup mutilate and memcached
+            Shell([
+                # Run memcached for 30 seconds
+                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(30, memcached_exec + " -u root"))),
 
-            # Setup memcached with X threads
+                # Wait 3 seconds for memcached to come up.
+                # Run load for 26 seconds
+                cg.execute("/memcached_experiment/workload", Delay(3, mutilate_exec + " -s 127.0.0.1 -t 26")),
+
+                # Start aggressor and run for 30 seconds
+                cg.execute("/memcached_experiment/aggresor", RunFor(30, l1i_exec + " 10 10"))
+            ])
+
+            # Process perf data
+
+            cg.destroy()
             return None
 
         def l1_instruction_pressure_low_be_share(configuration):
