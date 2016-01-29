@@ -35,3 +35,21 @@ class Shell:
                 del running[pid]
 
             time.sleep(0.1)
+
+
+class Delay:
+    def __init__(self, seconds, command):
+        self.seconds = seconds
+        self.command = command
+
+    def __str__(self):
+        return "sleep %d %s" % (self.seconds, self.command)
+
+
+class RunFor:
+    def __init__(self, seconds, command):
+        self.seconds = seconds
+        self.command = command
+
+    def __str__(self):
+        return "timeout -s SIGINT %d %s" % (self.seconds, self.command)
