@@ -1,5 +1,6 @@
 import collections
 
+
 class Perf:
     def __init__(self, command, events=None, interval=1000, output_file='perf.txt'):
         self.command = str(command)
@@ -12,7 +13,8 @@ class Perf:
         if self.events is not None:
             events_string = (" -e %s" % ",".join(self.events))
 
-        return "perf stat -x ',' --append %s -I %d -o %s %s" % (events_string, self.interval, self.output_file, self.command)
+        return "perf stat -x ',' --append %s -I %d -o %s %s" % (
+        events_string, self.interval, self.output_file, self.command)
 
 
 class TimelineEntry:
@@ -20,8 +22,11 @@ class TimelineEntry:
         self.time = 0.0
         self.data = {}
 
+
 class Timeline:
     def __init__(self, input_file):
+        self.started = ""
+        self.entries = []
         self.input_file = input_file
         self.process()
 
@@ -88,7 +93,7 @@ class Timeline:
                 output_entry = []
                 if "time" in column_lookup:
                     output_entry.append(entry.time)
-                
+
                 for metric, data_point in entry.data.iteritems():
                     if metric in column_lookup:
                         output_entry.append(data_point)
@@ -97,23 +102,21 @@ class Timeline:
         else:
             columns = collections.OrderedDict()
             for entry in self.entries:
-                output_entry = []
                 if "time" in column_lookup:
                     if "time" not in columns:
                         columns["time"] = []
 
                     columns["time"].append(entry.time)
-                
+
                 for metric, data_point in entry.data.iteritems():
                     if metric in column_lookup:
                         if metric not in columns:
                             columns[metric] = []
 
                         columns[metric].append(data_point)
-                
+
             for name, column in columns.iteritems():
                 output.append(column)
-            
 
         return output
 
@@ -137,7 +140,7 @@ class Timeline:
             lines.append(separator.join(line))
 
         return ["#time" + separator + separator.join(legend)] + lines
-        
+
     def tsv(self):
         return self.output('\t')
 

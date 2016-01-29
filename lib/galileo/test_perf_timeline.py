@@ -13,7 +13,7 @@ class PerfTimelineExperiment(ga.Experiment):
 
         def baseline(configuration):
             Shell([
-                    Perf(Taskset(["0"], "timeout -s SIGINT 10 dd if=/dev/urandom of=/dev/null"))
+                Perf(Taskset(["0"], "timeout -s SIGINT 10 dd if=/dev/urandom of=/dev/null"))
             ])
 
             timeline = perf.Timeline("perf.txt")
@@ -36,7 +36,7 @@ class PerfTimelineExperiment(ga.Experiment):
             plt.plot(context_switches[0], context_switches[1])
             plt.savefig("context_switches.png")
             plt.show()
-            
+
             # Compute statistics on context switches
             print("samples: %d" % len(context_switches[1]))
             print("mean: %f" % np.mean(context_switches[1]))
