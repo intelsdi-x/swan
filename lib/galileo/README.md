@@ -12,7 +12,9 @@ The end goal is to be able to produce:
 While no `setup.py` is shipped with galileo yet, you can install the dependencies by running:
 
 ```
-$ pip install -r requirements.txt
+$ sudo yum install python-devel freetype-devel libpng-devel
+$ sudo easy_install pip 
+$ sudo pip install -r requirements.txt
 ```
 
 ## Usage
