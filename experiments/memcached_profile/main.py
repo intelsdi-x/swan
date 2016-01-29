@@ -1,16 +1,29 @@
 import sys
 sys.path.append('../../lib/galileo')
 import ga
-
+from shell import Shell
+import os
+from perf_counters import Perf
+from timing import Delay, RunFor
 
 class MemcachedSensitivityProfile(ga.Experiment):
     def __init__(self):
         ga.Experiment.__init__(self)
 
-        def baseline(configuration):
-            # Setup mutilate
+        experiment_root = os.getcwd()
 
-            # Setup memcached with X threads
+        memcached_path = "%s/../../workloads/data_caching/memcached/memcached-1.4.25/build/memcached" % experiment_root
+        mutilate_path = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
+
+        def baseline(configuration):
+            # Setup mutilate and memcached
+            Shell([
+                Perf(RunFor(30, memcached_path)), # Run memcached for 30 seconds
+
+                # Wait 3 seconds for memcached to come up.
+                # Run load for 25 seconds
+                Delay(3, RunFor(25(mutilate_path + " -s 127.0.0.1 -t 25")))
+            ])
 
             # Process perf data
 
