@@ -10,7 +10,7 @@ class CgroupExperiment(ga.Experiment):
         ga.Experiment.__init__(self)
 
         def baseline(configuration):
-            cg = Cgroup(["/A/hp/cpu.shares=1024", "/A/be/cpu.shares=2"])
+            cg = Cgroup(["/A/cpu.shares=8192", "/A/hp/cpu.shares=1024", "/A/be/cpu.shares=2"])
 
             Shell([
                 cg.execute("/A/hp", Perf(Taskset(["0"], "echo foobar"))),
