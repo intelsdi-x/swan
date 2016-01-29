@@ -19,6 +19,10 @@ class Experiment:
 
         start_experiment = time.time()
 
+	# Ensure data dir is present
+	if not os.path.exists('data/'):
+	    os.mkdir('data/')
+
         # Create sandbox for experiment run
         os.mkdir('/'.join(['data', run_id]))
 

@@ -4,6 +4,7 @@ import ga
 from shell import Shell, Delay, RunFor
 import os
 from perf_counters import Perf
+from cgroup import Cgroup
 
 class MemcachedSensitivityProfile(ga.Experiment):
     def __init__(self):
@@ -21,17 +22,28 @@ class MemcachedSensitivityProfile(ga.Experiment):
         ]
 
         def baseline(configuration):
+            cg = Cgroup([
+                "/memcached_experiment/cpuset.cpus=0,1,20,21",
+                "/memcached_experiment/cpuset.mems=0,1",
+                "/memcached_experiment/workload/cpuset.cpus=20,21",
+                "/memcached_experiment/workload/cpuset.mems=0,1",
+                "/memcached_experiment/victim/cpuset.cpus=1,2",
+                "/memcached_experiment/victim/cpuset.mems=0,1"
+            ])
+
             # Setup mutilate and memcached
             Shell([
                 # Run memcached for 30 seconds
-                Perf(events=events, command=RunFor(30, memcached_exec)),
+                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(30, memcached_exec))),
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 26 seconds
-                Delay(3, mutilate_exec + " -s 127.0.0.1 -t 26")
+                cg.execute("/memcached_experiment/workload", Delay(3, mutilate_exec + " -s 127.0.0.1 -t 26"))
             ])
 
             # Process perf data
+
+            cg.destroy()
 
             # Write findings
             return None
