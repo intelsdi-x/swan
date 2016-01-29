@@ -22,7 +22,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 25 seconds
-                Delay(3, RunFor(25(mutilate_path + " -s 127.0.0.1 -t 25")))
+                Delay(3, RunFor(25, (mutilate_path + " -s 127.0.0.1 -t 25")))
             ])
 
             # Process perf data
