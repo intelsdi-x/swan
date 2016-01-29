@@ -55,6 +55,7 @@ class Cgroup:
                     log.fatal("Could not create cgroup")
                     sys.exit(1)
 
+            # NOTE: We have to apply parent settings before child setting in cgroups like 'cpuset'.
             for key, element in root.iteritems():
                 if '.' in key:
                     parameter_component = key.split('.')
@@ -65,7 +66,9 @@ class Cgroup:
                     if subprocess.call(["sh", "-c", "echo '%s' > /sys/fs/cgroup/%s%s/%s" % (element, parameter_type, location, key)]) is not 0:
                         log.fatal("Could not set configuration: %s = %s" % (key, element))
                         sys.exit(1)
-                else:
+
+            for key, element in root.iteritems():
+                if '.' not in key:
                     dfs(element, "/".join([location, key]))
 
         dfs(hierarchy_tree, '')
