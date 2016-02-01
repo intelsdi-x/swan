@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-//#define CACHE_SIZE 2*1024*1024
+#define CACHE_SIZE 20*1024*1024
 
 void remove_all_chars(char* str, char c) {
 	char *pr = str, *pw = str;
@@ -48,7 +48,7 @@ int cache_size_kb(void) {
 
 int main(int argc, char **argv) {
 	char* volatile block;
-	int CACHE_SIZE = cache_size_kb(); 
+	// int CACHE_SIZE = cache_size_kb(); 
 	printf("%d\n", CACHE_SIZE);
 
 	/*Usage: ./l3 <duration in sec>*/
