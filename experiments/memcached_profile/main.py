@@ -17,6 +17,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
         mutilate_exec = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
         l1i_exec = "%s/../../aggressors/l1i" % experiment_root
         l1d_exec = "%s/../../aggressors/l1d" % experiment_root
+        l3_exec = "%s/../../aggressors/l3" % experiment_root
 
         events = [
             "instructions",
@@ -82,17 +83,20 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         def l1_instruction_pressure_equal_share(configuration):
             run_aggressor(l1i_exec + " 30 20")
-
             return None
 
         def l1_data_pressure_equal_share(configuration):
             run_aggressor(l1d_exec + " 30")
+            return None
 
+        def l3_pressure_equal_share(configuration):
+            run_aggressor(l3_exec + " 30")
             return None
 
         self.add_phase("baseline", baseline)
         self.add_phase("L1InstructionPressure", l1_instruction_pressure_equal_share)
         self.add_phase("L1DataPressure", l1_data_pressure_equal_share)
+        self.add_phase("L3Pressure", l1_data_pressure_equal_share)
 
         # TODO:
         # LLC
@@ -104,9 +108,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
 def main():
     s = MemcachedSensitivityProfile()
-
-    # Run 5 repetitions instead of default 3.
-    s.run(5)
+    s.run()
 
 
 if __name__ == "__main__":
