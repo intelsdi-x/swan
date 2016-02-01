@@ -1,0 +1,50 @@
+#!/bin/python
+
+import glog as log
+import os
+import sys
+sys.path.append('lib/galileo')
+import perf_counters
+
+
+def find_perf_files(root, perf_file="perf.txt"):
+    perf_files = []
+    for root, dirs, files in os.walk(root):
+        for file in files:
+            if file == perf_file:
+                perf_files.append(os.path.join(root, file))
+    return perf_files
+
+
+def main():
+    if len(sys.argv) < 2:
+        print "usage: %s <data directory for experiment>" % sys.argv[0]
+        sys.exit(1)
+
+    root = sys.argv[1]
+
+    perf_file = "perf.txt"
+    if len(sys.argv) > 2:
+        perf_file = sys.argv[2]
+
+    log.info("searching for perf files with name '%s'" % perf_file)
+
+    files = find_perf_files(root)
+    if len(files) <= 0 :
+        log.warning("No perf.txt files found. Try to specify with: %s <data dir> <file_name>")
+        sys.exit(1)
+
+    log.info("processing %d perf files" % len(files))
+    for file in files:
+        timeline = perf_counters.Timeline(file)
+        csv = timeline.csv()
+        outfile = open(file + ".csv", "w")
+        for line in csv:
+            # Write to file
+            outfile.write(line + "\n")
+        outfile.close()
+
+    log.info("finished processing perf files")
+
+if __name__ == '__main__':
+    main()
