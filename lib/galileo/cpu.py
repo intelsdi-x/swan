@@ -1,3 +1,12 @@
+import random
+
+def unique(source, count):
+    keys = random.sample(source, count)
+    output = []
+    for key in keys:
+        output.append(source[key])
+    return output
+
 class HyperThread:
     def __init__(self, id):
         self.id = id
@@ -8,10 +17,16 @@ class Core:
         self.id = id
         self.hyper_threads = {}
 
+    def unique_hyper_threads(self, count):
+        return unique(self.hyper_threads, count)
+
 class Socket:
     def __init__(self, id):
         self.id = id
         self.cores = {}
+
+    def unique_cores(self, count):
+        return unique(self.cores, count)
 
 class Cpus:
     def __init__(self):
@@ -53,10 +68,5 @@ class Cpus:
             if hyper_thread.id not in self.sockets[socket_id].cores[core_id].hyper_threads:
                 self.sockets[socket_id].cores[core_id].hyper_threads[hyper_thread.id] = hyper_thread
 
-        print '%d sockets' % len(self.sockets)
-        for socket_id, socket in self.sockets.iteritems():
-            print 'Socket %d has %d cores' % (socket.id, len(socket.cores))
-            for core_id, core in socket.cores.iteritems():
-                print '\tCore %d has %d hyper threads' % (core.id, len(core.hyper_threads))
-                for hyper_thread_id, hyper_thread in core.hyper_threads.iteritems():
-                    print '\t\tHyper thread id: %d' % hyper_thread.id
+    def unique_sockets(self, count):
+        return unique(self.sockets, count)
