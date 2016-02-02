@@ -61,8 +61,6 @@ class Cgroup:
                     parameter_component = key.split('.')
                     parameter_type = parameter_component[0]
             
-                    print(["sh", "-c", "echo '%s' > /sys/fs/cgroup/%s%s/%s" % (element, parameter_type, location, key)])
-
                     if subprocess.call(["sh", "-c", "echo '%s' > /sys/fs/cgroup/%s%s/%s" % (element, parameter_type, location, key)]) is not 0:
                         log.fatal("Could not set configuration: %s = %s" % (key, element))
                         sys.exit(1)
