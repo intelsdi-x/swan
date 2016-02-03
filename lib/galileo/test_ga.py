@@ -32,8 +32,8 @@ class ExperimentTest(unittest.TestCase):
 
         s = PermutationExperiment()
         self.assertEqual(s.generate_permutations(None), [None])
-        self.assertEqual(s.generate_permutations(['A', 'B']), [['A'], ['B']])
-        self.assertEqual(s.generate_permutations(['A', 'B'], ['C', 'D']),
+        self.assertEqual(s.generate_permutations([['A', 'B']]), [['A'], ['B']])
+        self.assertEqual(s.generate_permutations([['A', 'B'], ['C', 'D']]),
                          [['A', 'C'], ['A', 'D'], ['B', 'C'], ['B', 'D']])
 
     def test_directory_structure(self):
