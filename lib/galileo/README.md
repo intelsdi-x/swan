@@ -25,3 +25,10 @@ While galileo is a library to be imported and extended by the user, you can run 
 $ python example_simple.py
 $ python example_cgroup.py
 ```
+
+## Development
+
+Run unit tests with:
+```
+py.test
+```
