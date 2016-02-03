@@ -1,13 +1,13 @@
 import sys
+
 sys.path.append('../../lib/galileo')
 from cgroup import Cgroup
 from perf_counters import Perf
 from shell import Shell, Delay, RunFor
 import ga
-import glog as log
 import os
-import time
 import topology as top
+
 
 class MemcachedSensitivityProfile(ga.Experiment):
     def __init__(self):
@@ -39,11 +39,13 @@ class MemcachedSensitivityProfile(ga.Experiment):
             # Setup mutilate and memcached
             Shell([
                 # Run memcached for 'experiment_duration' seconds
-                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(experiment_duration, memcached_exec + " -u root -t 2"))),
+                cg.execute("/memcached_experiment/victim",
+                           Perf(events=events, command=RunFor(experiment_duration, memcached_exec + " -u root -t 2"))),
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 'experiment_duration' - 4 seconds
-                cg.execute("/memcached_experiment/workload", Delay(3, "%s -s 127.0.0.1 -t %d -T 2 -c 8" % (mutilate_exec, experiment_duration - 4)))
+                cg.execute("/memcached_experiment/workload",
+                           Delay(3, "%s -s 127.0.0.1 -t %d -T 2 -c 8" % (mutilate_exec, experiment_duration - 4)))
             ])
 
             cg.destroy()
@@ -55,11 +57,13 @@ class MemcachedSensitivityProfile(ga.Experiment):
             # Setup mutilate and memcached
             Shell([
                 # Run memcached for 'experiment_duration' seconds
-                cg.execute("/memcached_experiment/victim", Perf(events=events, command=RunFor(experiment_duration, memcached_exec + " -u root -t 2"))),
+                cg.execute("/memcached_experiment/victim",
+                           Perf(events=events, command=RunFor(experiment_duration, memcached_exec + " -u root -t 2"))),
 
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 'experiment_duration' - 4 seconds
-                cg.execute("/memcached_experiment/workload", Delay(3, "%s -s 127.0.0.1 -t %d -T 2 -c 8" % (mutilate_exec, experiment_duration - 4))),
+                cg.execute("/memcached_experiment/workload",
+                           Delay(3, "%s -s 127.0.0.1 -t %d -T 2 -c 8" % (mutilate_exec, experiment_duration - 4))),
 
                 # Start aggressor and run for 'experiment_duration' seconds
                 cg.execute("/memcached_experiment/aggressor", RunFor(experiment_duration, aggressor_cmd))
@@ -67,9 +71,12 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
             cg.destroy()
 
-        l1_topology =    top.generate_topology(aggressor=True, aggressor_on_hyper_threads=True,  aggressor_on_core=True,  aggressor_on_socket=True)
-        l3_topology =    top.generate_topology(aggressor=True, aggressor_on_hyper_threads=False, aggressor_on_core=True,  aggressor_on_socket=True)
-        membw_topology = top.generate_topology(aggressor=True, aggressor_on_hyper_threads=False, aggressor_on_core=False, aggressor_on_socket=True)
+        l1_topology = top.generate_topology(aggressor=True, aggressor_on_hyper_threads=True, aggressor_on_core=True,
+                                            aggressor_on_socket=True)
+        l3_topology = top.generate_topology(aggressor=True, aggressor_on_hyper_threads=False, aggressor_on_core=True,
+                                            aggressor_on_socket=True)
+        membw_topology = top.generate_topology(aggressor=True, aggressor_on_hyper_threads=False,
+                                               aggressor_on_core=False, aggressor_on_socket=True)
 
         def l1_instruction_pressure_equal_share(configuration):
             # Run L1 instruction cache aggressor at severity 20 (1 - 20; 1 less severe, 20 most severe).

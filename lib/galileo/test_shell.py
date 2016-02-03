@@ -1,5 +1,5 @@
 import unittest
-from shell import Shell
+from shell import Shell, Delay, RunFor
 import os
 
 
@@ -50,7 +50,7 @@ class ShellTest(unittest.TestCase):
         except OSError:
             pass
 
-        s = Shell([
+        Shell([
             "echo foobar", "echo barbaz"
         ])
 
@@ -80,7 +80,7 @@ class ShellTest(unittest.TestCase):
         except OSError:
             pass
 
-        s = Shell([
+        Shell([
             "echo foobar", "echo barbaz"
         ], "foobar.txt")
 
@@ -102,3 +102,15 @@ class ShellTest(unittest.TestCase):
             os.remove('foobar.txt')
         except OSError:
             pass
+
+    def test_zero_delay(self):
+        self.assertEqual(str(Delay(0, "foobar")), "foobar")
+
+    def test_delay(self):
+        self.assertEqual(str(Delay(1, "foobar")), "sleep 1 && foobar")
+
+    def test_run_for(self):
+        self.assertEqual(str(RunFor(1, "foobar")), "timeout -s SIGINT 1 foobar")
+
+    def test_run_for_custom_signal(self):
+        self.assertEqual(str(RunFor(1, "foobar", "SIGKILL")), "timeout -s SIGKILL 1 foobar")

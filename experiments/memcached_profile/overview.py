@@ -2,10 +2,11 @@ import glog as log
 import os
 import sys
 import numpy as np
-import math
 from uuid import UUID
+
 sys.path.append('../../lib/galileo')
 import perf_counters
+
 
 def valid_uuid(name):
     try:
@@ -13,6 +14,7 @@ def valid_uuid(name):
     except ValueError:
         return False
     return True
+
 
 def main():
     if len(sys.argv) != 2:
@@ -23,7 +25,9 @@ def main():
     experiments = os.listdir(root)
     for experiment in experiments:
         if valid_uuid(experiment):
-            log.warning("Run %s against experiment output directory. Not entire data directory i.e. 'data/<uuid>/' not 'data/'" % sys.argv[0])
+            log.warning(
+                "Run %s against experiment output directory. Not entire data directory i.e. 'data/<uuid>/' not 'data/'" %
+                sys.argv[0])
             sys.exit(1)
 
         runs = os.listdir('/'.join([root, experiment]))
@@ -60,8 +64,10 @@ def main():
         if len(latencies) > 0 and len(ipcs) > 0:
             print("statistics for experiment '%s':" % experiment)
             print("\t\tmean\t\tstdev\t\tcount\tvariance\tmin\t\tmax")
-            print("latency (us):\t%f\t%f\t%d\t%f\t%f\t%f" % (np.mean(latencies), np.std(latencies), len(latencies), np.var(latencies), min(latencies), max(latencies)))
-            print("IPC:\t\t%f\t%f\t%d\t%f\t%f\t%f" % (np.mean(ipcs), np.std(ipcs), len(ipcs), np.var(ipcs), min(ipcs), max(ipcs)))
+            print("latency (us):\t%f\t%f\t%d\t%f\t%f\t%f" % (
+            np.mean(latencies), np.std(latencies), len(latencies), np.var(latencies), min(latencies), max(latencies)))
+            print("IPC:\t\t%f\t%f\t%d\t%f\t%f\t%f" % (
+            np.mean(ipcs), np.std(ipcs), len(ipcs), np.var(ipcs), min(ipcs), max(ipcs)))
             print("")
 
 

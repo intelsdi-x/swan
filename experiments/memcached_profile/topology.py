@@ -1,7 +1,9 @@
 from cpu import Cpus
 
+
 # TODO(nnielsen): Parameterize number of victim and workload hyper threads.
-def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggressor_on_core=True, aggressor_on_socket=True):
+def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggressor_on_core=True,
+                      aggressor_on_socket=True):
     cpus = Cpus()
 
     #
@@ -25,7 +27,7 @@ def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggresso
     # Gross assumption: memory node == socket id. Validate with hwloc.
     # We don't know which memory node to attach aggressor to yet.
     workload_memory_node_id = workload_socket.id
-    victim_memory_node_id = victim_socket.id 
+    victim_memory_node_id = victim_socket.id
 
     workload_cores = workload_socket.unique_cores(2)
     workload_hyper_thread_id = workload_cores[0].unique_hyper_threads(1)[0].id
