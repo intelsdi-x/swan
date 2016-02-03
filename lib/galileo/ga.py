@@ -109,6 +109,9 @@ class Experiment:
                         iteration) + " in " + str(
                         time.time() - start_iteration) + " seconds")
 
+                    # Cool off
+                    time.sleep(0.5)
+
                     # Change back to root directory
                     os.chdir(root)
 

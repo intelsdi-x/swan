@@ -50,9 +50,9 @@ class Cgroup:
             # Create cgroup
             # NOTE: Skip first (empty) root
             if location is not '':
-                log.info("Creating cgroup " + ",".join(self.cgroup_types) + ':' + location)
+                log.info("creating cgroup " + ",".join(self.cgroup_types) + ':' + location)
                 if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ':' + location]) is not 0:
-                    log.fatal("Could not create cgroup")
+                    log.fatal("could not create cgroup")
                     sys.exit(1)
 
             # NOTE: We have to apply parent settings before child setting in cgroups like 'cpuset'.
@@ -60,6 +60,8 @@ class Cgroup:
                 if '.' in key:
                     parameter_component = key.split('.')
                     parameter_type = parameter_component[0]
+
+                    log.info("setting %s=%s" % (location + key, element))
 
                     if subprocess.call(["sh", "-c", "echo '%s' > /sys/fs/cgroup/%s%s/%s" % (
                     element, parameter_type, location, key)]) is not 0:
@@ -84,6 +86,8 @@ class Cgroup:
                     dfs(element, "/".join([location, key]))
 
             if location is not '':
+                log.info("deleting cgroup " + ",".join(self.cgroup_types) + ':' + location)
+
                 if subprocess.call(['cgdelete', ",".join(self.cgroup_types) + ":" + location]) is not 0:
                     log.fatal('could not delete cgroup: ' + location)
                     sys.exit(1)
