@@ -14,7 +14,7 @@ class Perf:
             events_string = (" -e %s" % ",".join(self.events))
 
         return "perf stat -x ',' --append %s -I %d -o %s %s" % (
-        events_string, self.interval, self.output_file, self.command)
+            events_string, self.interval, self.output_file, self.command)
 
 
 class TimelineEntry:

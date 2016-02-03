@@ -1,5 +1,6 @@
 import random
 
+
 def unique(source, count):
     keys = random.sample(source, count)
     output = []
@@ -7,10 +8,12 @@ def unique(source, count):
         output.append(source[key])
     return output
 
+
 class HyperThread:
     def __init__(self, id):
         self.id = id
         self.raw_data = {}
+
 
 class Core:
     def __init__(self, id):
@@ -20,6 +23,7 @@ class Core:
     def unique_hyper_threads(self, count):
         return unique(self.hyper_threads, count)
 
+
 class Socket:
     def __init__(self, id):
         self.id = id
@@ -28,13 +32,14 @@ class Socket:
     def unique_cores(self, count):
         return unique(self.cores, count)
 
+
 class Cpus:
-    def __init__(self):
+    def __init__(self, cpu_info_file='/proc/cpuinfo'):
         self.hyper_threads = {}
         self.sockets = {}
         next_cpu = None
 
-        with open('/proc/cpuinfo') as f:
+        with open(cpu_info_file) as f:
             for line in f:
                 components = line.rstrip('\n').split(':')
                 if len(components) != 2:
@@ -43,14 +48,14 @@ class Cpus:
                 value = components[1].strip()
 
                 if key == 'processor':
-                    if next_cpu != None:
+                    if next_cpu is not None:
                         self.hyper_threads[next_cpu.id] = next_cpu
 
                     next_cpu = HyperThread(int(value))
-                
-                next_cpu.raw_data[key] = value 
 
-            if next_cpu != None:
+                next_cpu.raw_data[key] = value
+
+            if next_cpu is not None:
                 self.hyper_threads[next_cpu.id] = next_cpu
 
         for hyper_thread_id, hyper_thread in self.hyper_threads.iteritems():
