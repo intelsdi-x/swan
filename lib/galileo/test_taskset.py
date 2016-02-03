@@ -2,7 +2,7 @@ import unittest
 from taskset import Taskset
 
 
-class ExperimentTest(unittest.TestCase):
+class TaskSetTest(unittest.TestCase):
     def test_empty_cpus(self):
         self.assertEqual(str(Taskset([], "foobar")), "foobar")
 
