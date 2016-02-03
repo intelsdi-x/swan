@@ -22,6 +22,6 @@ $ sudo pip install -r requirements.txt
 While galileo is a library to be imported and extended by the user, you can run the bundled example experiments:
 
 ```
-$ python test_simple.py
-$ python test_cgroup.py
+$ python example_simple.py
+$ python example_cgroup.py
 ```
