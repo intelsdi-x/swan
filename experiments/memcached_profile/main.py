@@ -21,15 +21,15 @@ class MemcachedSensitivityProfile(ga.Experiment):
         l1d_exec = "%s/../../aggressors/l1d" % experiment_root
         l3_exec = "%s/../../aggressors/l3" % experiment_root
         membw_exec = "%s/../../aggressors/memBw" % experiment_root
+        stream_exec = "%s/../../aggressors/stream.100M" % experiment_root
 
         events = [
             "instructions",
-            "cycles",
-            "cache-misses"
+            "cycles"
         ]
 
         # Default experiment length in seconds
-        experiment_duration = 60
+        experiment_duration = 30
 
         baseline_topology = top.generate_topology()
 
@@ -95,11 +95,16 @@ class MemcachedSensitivityProfile(ga.Experiment):
             run_aggressor("%s %d" % (membw_exec, experiment_duration), membw_topology)
             return None
 
+        def stream_pressure_equal_share(configuration):
+            run_aggressor(stream_exec, membw_topology)
+            return None
+
         self.add_phase("baseline", baseline)
         self.add_phase("L1 instruction pressure", l1_instruction_pressure_equal_share)
         self.add_phase("L1 data pressure", l1_data_pressure_equal_share)
         self.add_phase("L3 pressure", l1_data_pressure_equal_share)
-        self.add_phase("Memory bandwith pressure", membw_pressure_equal_share)
+        self.add_phase("Memory bandwith pressure (membw)", membw_pressure_equal_share)
+        self.add_phase("Memory bandwith pressure (stream)", stream_pressure_equal_share)
 
         # TODO:
         # Memory capacity
@@ -109,7 +114,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
 def main():
     s = MemcachedSensitivityProfile()
-    s.run(10)
+    s.run(3)
 
 
 if __name__ == "__main__":

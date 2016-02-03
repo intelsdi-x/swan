@@ -1,4 +1,5 @@
 from cpu import Cpus
+import glog as log
 
 
 # TODO(nnielsen): Parameterize number of victim and workload hyper threads.
@@ -35,9 +36,12 @@ def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggresso
     victim_cores = victim_socket.unique_cores(2)
     victim_core = victim_cores[0]
     victim_hyper_threads = victim_core.unique_hyper_threads(2)
+    victim_hyper_thread_id = victim_hyper_threads[0].id
+    auxiliary_hyper_thread = victim_hyper_threads[1].id
 
     # Parent cgroup need to cover all used hyper threads. Make as 'set' to avoid duplicates. 
-    parent_hyper_threads = set([str(workload_hyper_thread_id), str(victim_hyper_thread_id)])
+    # NOTE: Temporary hack. Try to grab other hyperthread on victim core (auxiliary_hyper_thread) to reduce system interference.
+    parent_hyper_threads = set([str(workload_hyper_thread_id), str(victim_hyper_thread_id), str(auxiliary_hyper_thread)])
     parent_mems = set([str(workload_memory_node_id), str(victim_memory_node_id)])
 
     # Aggressor configuration is hoisted to make them available in the cgroups setup below.
@@ -74,6 +78,7 @@ def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggresso
     # Parent cgroup need to cover all hyper threads. We therefore need to figure out which aggressor
     # hyper threads that will be used before listing the cgroups settings.
     output = [
+        "/memcached_experiment/cpuset.cpu_exclusive=1",
         "/memcached_experiment/cpuset.cpus=%s" % (",".join(parent_hyper_threads)),
         "/memcached_experiment/cpuset.mems=%s" % (",".join(parent_mems)),
         "/memcached_experiment/workload/cpuset.cpus=%s" % workload_hyper_thread_id,
@@ -88,5 +93,7 @@ def generate_topology(aggressor=False, aggressor_on_hyper_threads=True, aggresso
             "/memcached_experiment/aggressor/cpuset.cpus=%s" % aggressor_hyper_thread_id,
             "/memcached_experiment/aggressor/cpuset.mems=%s" % aggressor_memory_node_id
         ]
+
+    log.info("Cgroup topology: %s" % str(output))
 
     return output
