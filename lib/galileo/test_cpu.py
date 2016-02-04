@@ -1,6 +1,5 @@
 import unittest
 from cpu import Cpus
-import os
 
 class CpuTest(unittest.TestCase):
     def test_single_cpu(self):
