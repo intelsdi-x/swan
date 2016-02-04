@@ -15,15 +15,15 @@ class Shell:
         """
         self.processes = {}
 
+        output_file = open(output, "w")
+
         for command in commands:
             if command == "":
                 log.warning("Command in list %s is empty: aborting execution" % str(commands))
                 return
-
-            output_file = open(output, "a+")
             log.info("started command: '" + str(command) + "'")
             p = subprocess.Popen(["sh", "-c", str(command)], stdout=output_file, stderr=output_file)
-            self.processes[p.pid] = {"process": p, "command": command, "output_file": output_file, "status": None}
+            self.processes[p.pid] = {"process": p, "command": command, "status": None}
 
         # Make a copy of processes. Otherwise, we loose hold of the process objects when removing from the running
         # list.
@@ -38,8 +38,6 @@ class Shell:
                 if status is not None:
                     command = process_obj["command"]
                     log.info("ended command: '" + str(command) + "' with status code " + str(status))
-                    output_file = process_obj["output_file"]
-                    output_file.flush()
                     exited_pids.append(pid)
 
                     # Update original record
@@ -53,6 +51,7 @@ class Shell:
             # Prevent busy loop
             time.sleep(0.1)
 
+        output_file.flush()
 
 class Delay:
     """
