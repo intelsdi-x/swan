@@ -2,7 +2,7 @@ import collections
 
 
 class Perf:
-    def __init__(self, command, events=None, interval=1000, output_file='perf.txt'):
+    def __init__(self, command, events=None, interval=1000, output_file="perf.txt"):
         self.command = str(command)
         self.interval = interval
         self.events = events
@@ -35,29 +35,29 @@ class Timeline:
 
         # Parser assumes:
         # - No out of order entries.
-        # - Start line with 'started at XYZ' appears only once
+        # - Start line with "started at XYZ" appears only once
 
-        with open(self.input_file, 'r') as f:
+        with open(self.input_file, "r") as f:
             found_start_tag = False
             next_entry = None
 
             for line in f:
                 line = line.strip()
-                if line == '':
+                if line == "":
                     continue
 
-                if found_start_tag == False and '# started on ' in line:
+                if found_start_tag == False and "# started on " in line:
                     self.started = line
                     found_start_tag = True
                     continue
 
                 # Allow any inline comments.
-                if line[0] == '#':
+                if line[0] == "#":
                     continue
 
                 # Skip non supported counters
-                cols = line.split(',')
-                if cols[1] == '<not supported>':
+                cols = line.split(",")
+                if cols[1] == "<not supported>":
                     continue
 
                 # Bootstrap with first entry
@@ -120,7 +120,7 @@ class Timeline:
 
         return output
 
-    def output(self, separator='\t'):
+    def output(self, separator="\t"):
         lines = []
 
         legend = []
@@ -142,7 +142,7 @@ class Timeline:
         return ["#time" + separator + separator.join(legend)] + lines
 
     def tsv(self):
-        return self.output('\t')
+        return self.output("\t")
 
     def csv(self):
-        return self.output(',')
+        return self.output(",")

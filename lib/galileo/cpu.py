@@ -34,20 +34,20 @@ class Socket:
 
 
 class Cpus:
-    def __init__(self, cpu_info_file='/proc/cpuinfo'):
+    def __init__(self, cpu_info_file="/proc/cpuinfo"):
         self.hyper_threads = {}
         self.sockets = {}
         next_cpu = None
 
         with open(cpu_info_file) as f:
             for line in f:
-                components = line.rstrip('\n').split(':')
+                components = line.rstrip("\n").split(":")
                 if len(components) != 2:
                     continue
                 key = components[0].strip()
                 value = components[1].strip()
 
-                if key == 'processor':
+                if key == "processor":
                     if next_cpu is not None:
                         self.hyper_threads[next_cpu.id] = next_cpu
 
@@ -59,14 +59,14 @@ class Cpus:
                 self.hyper_threads[next_cpu.id] = next_cpu
 
         for hyper_thread_id, hyper_thread in self.hyper_threads.iteritems():
-            if 'physical id' not in hyper_thread.raw_data:
+            if "physical id" not in hyper_thread.raw_data:
                 continue
 
-            socket_id = int(hyper_thread.raw_data['physical id'])
+            socket_id = int(hyper_thread.raw_data["physical id"])
             if socket_id not in self.sockets:
                 self.sockets[socket_id] = Socket(socket_id)
 
-            core_id = int(hyper_thread.raw_data['core id'])
+            core_id = int(hyper_thread.raw_data["core id"])
             if core_id not in self.sockets[socket_id].cores:
                 self.sockets[socket_id].cores[core_id] = Core(core_id)
 
