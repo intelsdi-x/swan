@@ -93,3 +93,6 @@ class Cgroup:
                     sys.exit(1)
 
         dfs(self.hierarchy_tree, '')
+
+        # HACK: Make sure cgroups deletion is done before recreating exlusive cpusets (which will otherwise fail).
+        time.sleep(0.5)
