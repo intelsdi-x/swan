@@ -32,9 +32,9 @@ class ExperimentTest(unittest.TestCase):
 
         s = PermutationExperiment()
         self.assertEqual(s.generate_permutations(None), [None])
-        self.assertEqual(s.generate_permutations([['A', 'B']]), [['A'], ['B']])
-        self.assertEqual(s.generate_permutations([['A', 'B'], ['C', 'D']]),
-                         [['A', 'C'], ['A', 'D'], ['B', 'C'], ['B', 'D']])
+        self.assertEqual(s.generate_permutations([["A", "B"]]), [["A"], ["B"]])
+        self.assertEqual(s.generate_permutations([["A", "B"], ["C", "D"]]),
+                         [["A", "C"], ["A", "D"], ["B", "C"], ["B", "D"]])
 
     def test_directory_structure(self):
         class DirectoryExperiment(ga.Experiment):
@@ -52,22 +52,22 @@ class ExperimentTest(unittest.TestCase):
 
                 self.add_phase("exp1", exp1)
                 self.add_phase("exp2", exp2)
-                self.add_phase("exp3", exp3, [['A', 'B'], ['C', 'D']])
+                self.add_phase("exp3", exp3, [["A", "B"], ["C", "D"]])
 
         s = DirectoryExperiment()
         s.run(2)
 
         self.assertNotEqual(s.run_id, None)
 
-        self.assertTrue(os.path.exists('data/%s/exp1/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp1/run_1' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp2/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp2/run_1' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_A_C/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_A_C/run_1' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_A_D/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_A_D/run_1' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_B_C/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_B_C/run_1' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_B_D/run_0' % s.run_id))
-        self.assertTrue(os.path.exists('data/%s/exp3_B_D/run_1' % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp1/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp1/run_1" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp2/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp2/run_1" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_A_C/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_A_C/run_1" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_A_D/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_A_D/run_1" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_B_C/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_B_C/run_1" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_B_D/run_0" % s.run_id))
+        self.assertTrue(os.path.exists("data/%s/exp3_B_D/run_1" % s.run_id))

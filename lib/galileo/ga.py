@@ -7,7 +7,7 @@ import uuid
 
 class Experiment:
     """
-    Main driver for experiments. Use 'add_phase()' to add desired experiment phases and execute with 'run()'.
+    Main driver for experiments. Use "add_phase()" to add desired experiment phases and execute with "run()".
     """
 
     def __init__(self):
@@ -22,7 +22,7 @@ class Experiment:
         :param phase: Function to execute during phase
         :param matrix: Test matrix. 2 dimensional array. For example [[A, B], [C, D]]
         """
-        self.phases[name] = {'phase': phase, 'matrix': matrix}
+        self.phases[name] = {"phase": phase, "matrix": matrix}
 
     def generate_permutations(self, matrix):
         """
@@ -63,11 +63,11 @@ class Experiment:
         start_experiment = time.time()
 
         # Ensure data dir is present
-        if not os.path.exists('data/'):
-            os.mkdir('data/')
+        if not os.path.exists("data/"):
+            os.mkdir("data/")
 
         # Create sandbox for experiment run
-        os.mkdir('/'.join(['data', self.run_id]))
+        os.mkdir("/".join(["data", self.run_id]))
 
         # TODO: Write system info and time to root of experiment run directory.
 
@@ -80,10 +80,10 @@ class Experiment:
             for permutation in permutations:
                 # Create sandbox for phase
                 if permutation is None:
-                    phase_dir = '/'.join(['data', self.run_id, name])
+                    phase_dir = "/".join(["data", self.run_id, name])
                 else:
                     mangle_permutation = "_".join((map(str, permutation)))
-                    phase_dir = '/'.join(['data', self.run_id, name + "_" + mangle_permutation])
+                    phase_dir = "/".join(["data", self.run_id, name + "_" + mangle_permutation])
 
                 os.mkdir(phase_dir)
 
@@ -94,7 +94,7 @@ class Experiment:
                 for iteration in range(0, repetitions):
                     root = os.getcwd()
 
-                    work_dir = '/'.join([phase_dir, "run_" + str(iteration)])
+                    work_dir = "/".join([phase_dir, "run_" + str(iteration)])
                     # Change directory to sandbox
                     os.mkdir(work_dir)
                     os.chdir(work_dir)

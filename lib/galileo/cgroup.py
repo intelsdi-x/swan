@@ -29,7 +29,7 @@ class Cgroup:
 
             cgroup_type = hierarchy_components[len(hierarchy_components) - 1]
 
-            cgroup_type_components = cgroup_type.split('.')
+            cgroup_type_components = cgroup_type.split(".")
             self.cgroup_types[cgroup_type_components[0]] = cgroup_type_components[0]
 
             # Build hierarchy tree
@@ -49,16 +49,16 @@ class Cgroup:
         def dfs(root, location):
             # Create cgroup
             # NOTE: Skip first (empty) root
-            if location is not '':
-                log.info("creating cgroup " + ",".join(self.cgroup_types) + ':' + location)
-                if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ':' + location]) is not 0:
+            if location is not "":
+                log.info("creating cgroup " + ",".join(self.cgroup_types) + ":" + location)
+                if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ":" + location]) is not 0:
                     log.fatal("could not create cgroup")
                     sys.exit(1)
 
-            # NOTE: We have to apply parent settings before child setting in cgroups like 'cpuset'.
+            # NOTE: We have to apply parent settings before child setting in cgroups like "cpuset".
             for key, element in root.iteritems():
-                if '.' in key:
-                    parameter_component = key.split('.')
+                if "." in key:
+                    parameter_component = key.split(".")
                     parameter_type = parameter_component[0]
 
                     log.info("setting %s=%s" % (location + key, element))
@@ -69,10 +69,10 @@ class Cgroup:
                         sys.exit(1)
 
             for key, element in root.iteritems():
-                if '.' not in key:
+                if "." not in key:
                     dfs(element, "/".join([location, key]))
 
-        dfs(hierarchy_tree, '')
+        dfs(hierarchy_tree, "")
         self.hierarchy_tree = hierarchy_tree
 
     def execute(self, location, command):
@@ -82,17 +82,17 @@ class Cgroup:
         # Depth first post-order traversal of tree
         def dfs(root, location):
             for key, element in root.iteritems():
-                if '.' not in key:
+                if "." not in key:
                     dfs(element, "/".join([location, key]))
 
-            if location is not '':
-                log.info("deleting cgroup " + ",".join(self.cgroup_types) + ':' + location)
+            if location is not "":
+                log.info("deleting cgroup " + ",".join(self.cgroup_types) + ":" + location)
 
-                if subprocess.call(['cgdelete', ",".join(self.cgroup_types) + ":" + location]) is not 0:
-                    log.fatal('could not delete cgroup: ' + location)
+                if subprocess.call(["cgdelete", ",".join(self.cgroup_types) + ":" + location]) is not 0:
+                    log.fatal("could not delete cgroup: " + location)
                     sys.exit(1)
 
-        dfs(self.hierarchy_tree, '')
+        dfs(self.hierarchy_tree, "")
 
         # HACK: Make sure cgroups deletion is done before recreating exlusive cpusets (which will otherwise fail).
         time.sleep(0.5)
