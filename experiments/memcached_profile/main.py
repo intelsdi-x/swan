@@ -7,6 +7,7 @@ from shell import Shell, Delay, RunFor
 import ga
 import os
 import topology as top
+import glog as log
 
 
 class MemcachedSensitivityProfile(ga.Experiment):
@@ -32,6 +33,74 @@ class MemcachedSensitivityProfile(ga.Experiment):
         experiment_duration = 30
 
         baseline_topology = top.generate_topology()
+
+        # Expected SLO: 99%ile latency 5ms
+        latency_slo_99p_us = 5000
+
+        # Determine QPS targets for load points 
+        load_points = range(100, 0, -10)
+        qps_load_points = {}
+
+        def memcached_calibrate():
+            max_retries = 5
+
+            def memcached_run(target_qps=None):
+                cg = Cgroup(baseline_topology)
+
+                qps_option = ""
+                if target_qps is not None:
+                    qps_option = " -q %d " % int(target_qps)
+
+                Shell([
+                    cg.execute("/memcached_experiment/victim", RunFor(6, memcached_exec + " -u root -t 2")),
+                    cg.execute("/memcached_experiment/workload", Delay(1, "%s -s 127.0.0.1 %s -t 3 -T 4 -c 128" % (mutilate_exec, qps_option)))
+                ])
+
+                cg.destroy()
+
+                # Read latency and qps number
+                latency_p99 = None
+                qps = None
+                with open("output.txt", "r") as f:
+                    for line in f:
+                        components = line.split()
+                        if len(components) == 9 and components[0] == "read":
+                            latency_p99 = float(components[8])
+                        elif len(components) == 7 and "Total QPS" in line:
+                            qps = float(components[3])
+
+                return {"latency": latency_p99, "qps": qps }
+
+            # First, run at peak QPS
+            peak = memcached_run()
+            log.info("memcached peak: %f qps / %f us 99%%ile latency" % (peak['qps'], peak['latency']))
+
+            # Try to find qps for load points
+            for load_point in load_points:
+                target_latency = float(latency_slo_99p_us) * (float(load_point) / 100)
+                log.info("looking for qps for load point %d with target latency %f" % (load_point, target_latency))
+
+                start = 0
+                end = peak['qps']
+                mid = end / 2
+                latency_found = None
+                for i in range(0, max_retries):
+                    log.info("trying %d qps to reach target latency %f" % (mid, target_latency))
+                    result = memcached_run(mid)
+                    latency_found = result['latency']
+                    log.info("result: %d qps and %f latency" % (result['qps'], result['latency']))
+                    if result['latency'] > target_latency:
+                        end = mid
+                    else:
+                        start = mid
+                    mid = int(start + (float(end - start) / 2))
+
+                log.info("final qps for load point %d: %d. latency %f with target %f" % (load_point, mid, latency_found, target_latency))
+                qps_load_points[load_point] = mid
+                
+        memcached_calibrate()
+
+        print qps_load_points
 
         def baseline(configuration):
             cg = Cgroup(baseline_topology)
@@ -99,12 +168,12 @@ class MemcachedSensitivityProfile(ga.Experiment):
             run_aggressor(stream_exec, membw_topology)
             return None
 
-        self.add_phase("baseline", baseline)
-        self.add_phase("L1 instruction pressure", l1_instruction_pressure_equal_share)
-        self.add_phase("L1 data pressure", l1_data_pressure_equal_share)
-        self.add_phase("L3 pressure", l1_data_pressure_equal_share)
-        self.add_phase("Memory bandwith pressure (membw)", membw_pressure_equal_share)
-        self.add_phase("Memory bandwith pressure (stream)", stream_pressure_equal_share)
+        # self.add_phase("baseline", baseline)
+        # self.add_phase("L1 instruction pressure", l1_instruction_pressure_equal_share)
+        # self.add_phase("L1 data pressure", l1_data_pressure_equal_share)
+        # self.add_phase("L3 pressure", l1_data_pressure_equal_share)
+        # self.add_phase("Memory bandwith pressure (membw)", membw_pressure_equal_share)
+        # self.add_phase("Memory bandwith pressure (stream)", stream_pressure_equal_share)
 
         # TODO:
         # Memory capacity
@@ -114,7 +183,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
 def main():
     s = MemcachedSensitivityProfile()
-    s.run(3)
+    # s.run(3)
 
 
 if __name__ == "__main__":
