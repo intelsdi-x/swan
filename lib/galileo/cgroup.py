@@ -45,8 +45,7 @@ class Cgroup:
             # Destroy the cgroup if the hierarchy is already present.
             # We may run into issues with misconfiguration of cpusets if we don't start from a clean slate.
             #
-            self.destroy(",".join(cgroup_types), location)
-
+            self.destroy_func(cgroup_types, location)
 
             log.info("creating cgroup " + ",".join(cgroup_types) + ":" + location)
             if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ":" + location]) is not 0:
@@ -70,7 +69,6 @@ class Cgroup:
 
                 # If hierarchy is not present, exit early.
                 if not os.path.exists(path):
-                    log.info("cannot find cgroup in '%s'. skipping" % path)
                     return True
 
                 filtered_cgroup_types.append(cgroup_type)
@@ -80,9 +78,10 @@ class Cgroup:
                 for name in os.listdir(path):
                     child_path = os.path.join(path, name)
                     if os.path.isdir(child_path):
-                        log.warning("orphan cgroup '%s' found. trying to destroy...")
+                        log.warning("orphan cgroup '%s' found. trying to destroy..." % child_path)
                         destroy([cgroup_type], location + "/" + name)
 
+            log.info("destroying cgroup " + ",".join(filtered_cgroup_types) + ":" + location)
             if subprocess.call(["cgdelete", ",".join(filtered_cgroup_types) + ":" + location]) is not 0:
                 return False
             return True
@@ -165,7 +164,7 @@ class Cgroup:
             # NOTE: Skip first (empty) root
             if location is not "":
                 log.info("creating cgroup " + ",".join(self.cgroup_types) + ":" + location)
-                if not self.create_func(",".join(self.cgroup_types), location):
+                if not self.create_func(self.cgroup_types, location):
                     log.fatal("could not create cgroup: %s" % location)
                     sys.exit(1)
 
@@ -212,7 +211,7 @@ class Cgroup:
             if location is not "":
                 log.info("deleting cgroup " + ",".join(self.cgroup_types) + ":" + location)
 
-                if not self.destroy_func(",".join(self.cgroup_types), location):
+                if not self.destroy_func(self.cgroup_types, location):
                     log.fatal("could not delete cgroup: " + location)
                     sys.exit(1)
 
