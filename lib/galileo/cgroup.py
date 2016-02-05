@@ -28,7 +28,7 @@ class Cgroup:
         :param set_func:       Function to use for setting cgroup parameters. For testing purposes only.
         """
         self.desired_states = desired_states
-        self.cgroup_types = collections.OrderedDict()
+        self.cgroup_types = set()
         self.hierarchies = []
 
         # For testing purposes, creating, destroying and changing cgroups settings have been pulled into functions
@@ -48,7 +48,7 @@ class Cgroup:
             self.destroy_func(cgroup_types, location)
 
             log.info("creating cgroup " + ",".join(cgroup_types) + ":" + location)
-            if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ":" + location]) is not 0:
+            if subprocess.call(["cgcreate", "-g", ",".join(cgroup_types) + ":" + location]) is not 0:
                 return False
             return True
 
@@ -143,7 +143,7 @@ class Cgroup:
                 log.warning("Could not determine cgroup type from parameter name '%s'. skipping!")
                 continue
 
-            self.cgroup_types[cgroup_type_components[0]] = cgroup_type_components[0]
+            self.cgroup_types.add(cgroup_type_components[0])
 
             # Build hierarchy tree
             root = hierarchy_tree
@@ -164,7 +164,7 @@ class Cgroup:
             # NOTE: Skip first (empty) root
             if location is not "":
                 log.info("creating cgroup " + ",".join(self.cgroup_types) + ":" + location)
-                if not self.create_func(self.cgroup_types, location):
+                if not self.create_func(list(self.cgroup_types), location):
                     log.fatal("could not create cgroup: %s" % location)
                     sys.exit(1)
 
@@ -211,7 +211,7 @@ class Cgroup:
             if location is not "":
                 log.info("deleting cgroup " + ",".join(self.cgroup_types) + ":" + location)
 
-                if not self.destroy_func(self.cgroup_types, location):
+                if not self.destroy_func(list(self.cgroup_types), location):
                     log.fatal("could not delete cgroup: " + location)
                     sys.exit(1)
 
