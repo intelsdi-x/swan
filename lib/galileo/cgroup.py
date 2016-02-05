@@ -35,9 +35,9 @@ class Cgroup:
         def create(cgroup_types, location):
             """
             :param cgroup_types: List of types. For example ['cpu', 'mem']
-            :param location: Path of cgroup (relative from '/sys/fs/cgroup/<type>').
-                   For example, '/A/B' for '/sys/fs/cgroup/cpu/A/B'.
-            :return: True if operation succeeded.
+            :param location:     Path of cgroup (relative from '/sys/fs/cgroup/<type>').
+                                 For example, '/A/B' for '/sys/fs/cgroup/cpu/A/B'.
+            :return:             True if operation succeeded.
             """
             log.info("creating cgroup " + ",".join(cgroup_types) + ":" + location)
             if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ":" + location]) is not 0:
@@ -157,9 +157,20 @@ class Cgroup:
         self.hierarchy_tree = hierarchy_tree
 
     def execute(self, location, command):
+        """
+        Executes command attached to cgroup defined in 'location'
+
+        :param location:    Cgroup hierarchy to run command under.
+                            For example '/A/B' for '/sys/fs/cgroup/[cpuset,cpu]/A/B'
+        :param command:     Command to run
+        :return:            String to execute with 'Shell()'
+        """
         return " ".join(["cgexec", "-g", ",".join(self.cgroup_types) + ":" + location, str(command)])
 
     def destroy(self):
+        """
+        Tears down cgroups created in __init__()
+        """
         # Depth first post-order traversal of tree
         def dfs(root, location):
             for key, element in root.iteritems():
