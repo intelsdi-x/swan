@@ -4,10 +4,11 @@ sys.path.append('../../lib/galileo')
 from cgroup import Cgroup
 from perf_counters import Perf
 from shell import Shell, Delay, RunFor
+import collections
 import ga
+import glog as log
 import os
 import topology as top
-import glog as log
 
 
 class MemcachedSensitivityProfile(ga.Experiment):
@@ -52,8 +53,8 @@ class MemcachedSensitivityProfile(ga.Experiment):
                     qps_option = " -q %d " % int(target_qps)
 
                 Shell([
-                    cg.execute("/memcached_experiment/victim", RunFor(6, memcached_exec + " -u root -t 2")),
-                    cg.execute("/memcached_experiment/workload", Delay(1, "%s -s 127.0.0.1 %s -t 3 -T 4 -c 128" % (mutilate_exec, qps_option)))
+                    cg.execute("/memcached_experiment/victim", RunFor(10, memcached_exec + " -u root -t 1")),
+                    cg.execute("/memcached_experiment/workload", Delay(2, "%s -s 127.0.0.1 %s -t 5 -T 4 -d 4 -c 128" % (mutilate_exec, qps_option)))
                 ])
 
                 cg.destroy()
@@ -75,28 +76,24 @@ class MemcachedSensitivityProfile(ga.Experiment):
             peak = memcached_run()
             log.info("memcached peak: %f qps / %f us 99%%ile latency" % (peak['qps'], peak['latency']))
 
+            # Divide peak QPS in 'resolution' steps.
+            resolution = 100
+            step = int(peak['qps'] / resolution)
+
+            # Run all steps and write output to file
+            qps_output = open("qps.csv", "w")
+            qps_output.write("#qps,latency(us)\n")
+            for i in range(0, int(peak['qps']), step):
+                log.info("Trying qps %d" % i)
+                result = memcached_run(i)
+                qps_output.write("%f,%f\n" % (result['qps'], result['latency']))
+                qps_output.flush()
+            qps_output.close()
+
             # Try to find qps for load points
             for load_point in load_points:
                 target_latency = float(latency_slo_99p_us) * (float(load_point) / 100)
                 log.info("looking for qps for load point %d with target latency %f" % (load_point, target_latency))
-
-                start = 0
-                end = peak['qps']
-                mid = end / 2
-                latency_found = None
-                for i in range(0, max_retries):
-                    log.info("trying %d qps to reach target latency %f" % (mid, target_latency))
-                    result = memcached_run(mid)
-                    latency_found = result['latency']
-                    log.info("result: %d qps and %f latency" % (result['qps'], result['latency']))
-                    if result['latency'] > target_latency:
-                        end = mid
-                    else:
-                        start = mid
-                    mid = int(start + (float(end - start) / 2))
-
-                log.info("final qps for load point %d: %d. latency %f with target %f" % (load_point, mid, latency_found, target_latency))
-                qps_load_points[load_point] = mid
                 
         memcached_calibrate()
 
