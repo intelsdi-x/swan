@@ -53,7 +53,7 @@ class CgroupTest(unittest.TestCase):
                 create.called = 0
             create.called += 1
 
-            self.assertEqual(cgroup_types, "bar")
+            self.assertEqual(cgroup_types, ["bar"])
             self.assertEqual(location, "/A")
 
             return True
@@ -63,7 +63,7 @@ class CgroupTest(unittest.TestCase):
                 destroy.called = 0
             destroy.called += 1
 
-            self.assertEqual(cgroup_types, "bar")
+            self.assertEqual(cgroup_types, ["bar"])
             self.assertEqual(location, "/A")
 
             return True
@@ -96,11 +96,11 @@ class CgroupTest(unittest.TestCase):
 
             if create.called == 1:
                 # First invocation must be the parent.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A")
             elif create.called == 2:
                 # Second invocation must be the child.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A/B")
 
             return True
@@ -112,11 +112,11 @@ class CgroupTest(unittest.TestCase):
 
             if destroy.called == 1:
                 # First invocation must be the child.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A/B")
             elif destroy.called == 2:
                 # Second invocation must be the parent.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A")
 
             return True
@@ -148,11 +148,11 @@ class CgroupTest(unittest.TestCase):
 
             if create.called == 1:
                 # First invocation must be the parent.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A")
             elif create.called == 2:
                 # Second invocation must be the child.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A/B")
 
             return True
@@ -164,11 +164,11 @@ class CgroupTest(unittest.TestCase):
 
             if destroy.called == 1:
                 # First invocation must be the child.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A/B")
             elif destroy.called == 2:
                 # Second invocation must be the parent.
-                self.assertEqual(cgroup_types, "bar")
+                self.assertEqual(cgroup_types, ["bar"])
                 self.assertEqual(location, "/A")
 
             return True
