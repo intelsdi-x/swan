@@ -8,10 +8,12 @@ class Shell:
     """
     Convenience class to run a number of commands simultaneously and reap their exit statuses.
     """
-    def __init__(self, commands, output="output.txt"):
+    def __init__(self, commands, output="output.txt", await_all_terminations=True):
         """
         :param commands: List of commands to run
         :param output: File to save commands output in.
+        :param await_all_terminations: By default, __init__() will block until all commands have terminated.
+                                       If this is set to False, running commands will be terminated when the first command finishes.
         """
         self.processes = {}
 
@@ -47,6 +49,12 @@ class Shell:
 
             for pid in exited_pids:
                 del running[pid]
+
+            # If one or more processes exited and some processes are still running. Kill all if await_all_terminations is False.
+            if len(exited_pids) > 0 and not await_all_terminations:
+                for pid, process_obj in running.iteritems():
+                    process = process_obj["process"]
+                    process.kill()
 
             # Prevent busy loop
             time.sleep(0.1)
