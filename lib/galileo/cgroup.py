@@ -2,6 +2,7 @@ import glog as log
 import subprocess
 import sys
 import time
+import os
 import collections
 
 
@@ -39,6 +40,14 @@ class Cgroup:
                                  For example, '/A/B' for '/sys/fs/cgroup/cpu/A/B'.
             :return:             True if operation succeeded.
             """
+
+            #
+            # Destroy the cgroup if the hierarchy is already present.
+            # We may run into issues with misconfiguration of cpusets if we don't start from a clean slate.
+            #
+            self.destroy(",".join(cgroup_types), location)
+
+
             log.info("creating cgroup " + ",".join(cgroup_types) + ":" + location)
             if subprocess.call(["cgcreate", "-g", ",".join(self.cgroup_types) + ":" + location]) is not 0:
                 return False
@@ -51,7 +60,30 @@ class Cgroup:
                                  For example, '/A/B' for '/sys/fs/cgroup/cpu/A/B'.
             :return:             True if operation succeeded.
             """
-            if subprocess.call(["cgdelete", ",".join(cgroup_types) + ":" + location]) is not 0:
+
+            # Some cgroup types may already have been cleaned up.
+            # 'filtered_cgroup_types' contains the ones to be destroyed.
+            filtered_cgroup_types = []
+
+            for cgroup_type in cgroup_types:
+                path = '/sys/fs/cgroup/%s/%s' % (cgroup_type, location)
+
+                # If hierarchy is not present, exit early.
+                if not os.path.exists(path)
+                    log.info("cannot find cgroup in '%s'. skipping" % path)
+                    return True
+
+                filtered_cgroup_types.append(cgroup_type)
+
+                # We may run into orphan cgroups from previous runs. Delete those recursively.
+                # Otherwise, deleting this cgroup will fail.
+                for name in os.listdir(path):
+                    child_path = os.path.join(path, name)
+                    if os.path.isdir(child_path):
+                        log.warning("orphan cgroup '%s' found. trying to destroy...")
+                        destroy([cgroup_type], location + "/" + name)
+
+            if subprocess.call(["cgdelete", ",".join(filtered_cgroup_types) + ":" + location]) is not 0:
                 return False
             return True
 
