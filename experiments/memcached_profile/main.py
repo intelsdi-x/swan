@@ -41,7 +41,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         # Tune for load points.
         # For now, only one (100% load) is targeted.
-        measurements = tune.find_qps([latency_slo_99p_us])
+        measurements = tune.find_qps([latency_slo_99p_us], baseline_topology)
         target_qps = measurements[latency_slo_99p_us]['qps']
 
         def baseline(configuration):
@@ -125,7 +125,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
 def main():
     s = MemcachedSensitivityProfile()
-    s.run(3)
+    s.run(10)
 
 
 if __name__ == "__main__":

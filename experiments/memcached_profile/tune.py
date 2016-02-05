@@ -7,13 +7,11 @@ import topology as top
 import os
 import glog as log
 
-def find_qps(slos):
+def find_qps(slos, baseline_topology):
     experiment_root = os.getcwd()
 
     memcached_exec = "%s/../../workloads/data_caching/memcached/memcached-1.4.25/build/memcached" % experiment_root
     mutilate_exec = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
-    
-    baseline_topology = top.generate_topology()
     
     def search_for_qps(latency_target):
         cg = Cgroup(baseline_topology)
