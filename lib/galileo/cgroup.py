@@ -69,7 +69,7 @@ class Cgroup:
                 path = '/sys/fs/cgroup/%s/%s' % (cgroup_type, location)
 
                 # If hierarchy is not present, exit early.
-                if not os.path.exists(path)
+                if not os.path.exists(path):
                     log.info("cannot find cgroup in '%s'. skipping" % path)
                     return True
 
