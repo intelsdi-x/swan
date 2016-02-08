@@ -68,10 +68,6 @@ outside the tolerance specified by its SLO.
 Workloads <code>w<sub>i</sub></code> and <code>w<sub>j</sub></code> are
 _colocated_ if they run simultaneously on the same physical machine.
 
-###### Aggressor
-For a given workload <code>w<sub>i</sub></code>, aggressors are colocated
-workloads.
-
 ### Scores
 
 Below, let <code>&Psi;</code> be a workload stream
