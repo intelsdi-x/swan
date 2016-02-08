@@ -103,7 +103,7 @@ _accelerated_ in run two relative to run one.
 The violation frequency is a measurement of how often QoS violations
 occurred, as a fraction of total SLI samples. Given the subset of
 violating samples from the sequence <code>SLI<sub>i</sub></code>
-<code>vs = { s &in; SLI<sub>i</sub> | &not;contains(SLO, s) }</code>
+<code>vs = { s | s &in; SLI<sub>i</sub> &and; &not;contains(SLO, s) }</code>
 then the violation frequency
 <code>V<sub>&nu;</sub> = #vs / #SLI<sub>i</sub></code>
 
