@@ -78,11 +78,11 @@ Below, let <code>&Psi;</code> be a workload stream
 <code>&lang;w<sub>1</sub>, ..., w<sub>n</sub>&rang;</code>.
 
 and let `R` be a set of resources
-<code>{ r<sub>1</sub>, ..., r<sub>n }</sub></code>.
+<code>{ r<sub>1</sub>, ..., r<sub>n</sub> }</code>.
 
 _Notation:_
 
-- `#S`: the cardinality (size of) the set or sequence `S`
+- `|S|`: the cardinality (size of) the set or sequence `S`
 - <code>&Sigma;[S]</code>: the sum of each value in `S`
 - <code>s &in; S</code>: `s` is an element of `S`
 
@@ -92,8 +92,8 @@ Given two sequences of nSLI samples <code>nSLI<sub>1</sub></code> and
 <code>nSLI<sub>2</sub></code> for workload <code>w<sub>i</sub></code>, the
 performance degradation is simply the difference of the arithmetic means:
 <code>
-&Delta;P = (&Sigma;[nSLI<sub>1</sub>] / #nSLI<sub>1</sub>) -
-(&Sigma;[nSLI<sub>2</sub> / #nSLI<sub>2</sub>)
+&Delta;P = (&Sigma;[nSLI<sub>1</sub>] / |nSLI<sub>1</sub>|) -
+(&Sigma;[nSLI<sub>2</sub> / |nSLI<sub>2</sub>|)
 </code>
 
 Negative degradation values indicate of course that the workload was
@@ -105,7 +105,7 @@ occurred, as a fraction of total SLI samples. Given the subset of
 violating samples from the sequence <code>SLI<sub>i</sub></code>
 <code>vs = { s | s &in; SLI<sub>i</sub> &and; &not;contains(SLO, s) }</code>
 then the violation frequency
-<code>V<sub>&nu;</sub> = #vs / #SLI<sub>i</sub></code>
+<code>V<sub>&nu;</sub> = |vs| / |SLI<sub>i</sub>|</code>
 
 ###### Violation severity score (<code>V<sub>s</sub></code>)
 The violation severity score for a series of SLI samples estimates the
@@ -189,7 +189,7 @@ _sample variance_ (average squared deviation) of an `nSLI` series.
 For completeness, the formula for sample variance given an `nSLI` series
 with arithmetic mean <code>s&#772;</code> is:
 
-<code>I = &Sigma;[(s<sub>i</sub> - s&#772;)<sup>2</sup>] / #nSLI</code>
+<code>I = &Sigma;[(s<sub>i</sub> - s&#772;)<sup>2</sup>] / |nSLI|</code>
 
 ###### Compute work score (`W`)
 A measurement of the useful work performed (for example, &mu;ops commited)
@@ -208,7 +208,7 @@ subfunctions, given weights
 V<sub>&nu;<sub>w<sub>i</sub></sub></sub>) +
 &omega;<sub>I</sub>I<sub>w<sub>i</sub></sub> +
 &omega;<sub>W</sub>W<sub>w<sub>i</sub></sub> | w<sub>i</sub> &in; &Psi; }] /
- #&Psi;(&omega;<sub>V<sub>&nu;</sub></sub> +
+ |&Psi;|(&omega;<sub>V<sub>&nu;</sub></sub> +
 &omega;<sub>I</sub> +
 &omega;<sub>W</sub>)
 </code>
