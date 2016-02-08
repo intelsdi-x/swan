@@ -157,8 +157,7 @@ TODO(CD): Replace these placeholders with better metrics.
 
 ###### Sensitivity score (`S`)
 A measurement of how greatly a given workload's performance (SLI) is impacted
-due to contention for a given resource. Combining this score with impact
-scores forms the basis for interference prediction and avoidance.
+due to contention for a given resource. 
 
 **TODO...**
 
@@ -168,6 +167,20 @@ TODO: Formulate the algorithm in terms of this doc.
 TODO: Write down both the offline and online versions of the algorithm.
 TODO: Cite source.
 -->
+
+###### Interference profile (`IP`)
+A set of measurements that characterize a given workload's behavior when
+colocated with other workloads. This combination of pressure and
+sensitivity scores forms the basis for interference prediction and
+avoidance.
+
+An _interference profile_ for workload <code>w<sub>i</sub></code>,
+<code>IP<sub>w<sub>i</sub></sub></code> is a 2-tuple:
+
+- <code>pressure</sub>: { (r, v) | r &in; R &and;
+v = P(w<sub>i</sub>, r) }</code>
+- <code>sensitivity: { (r, v) | r &in; R &and;
+v = S(w<sub>i</sub>, r) }</code>
 
 ###### Isolation score (`I`)
 A measurement of how well a system provides predictable performance for a
