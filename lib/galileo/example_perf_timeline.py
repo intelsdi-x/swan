@@ -29,7 +29,7 @@ class PerfTimelineExperiment(ga.Experiment):
             context_switches = timeline.filter_by_columns(["time", "context-switches"])
             print context_switches
 
-            context_switches = timeline.filter_by_columns(["time", "context-switches"], seperate_columns=True)
+            context_switches = timeline.filter_by_columns(["time", "context-switches"], separate_columns=True)
             print context_switches
 
             # Plot context switches over time
