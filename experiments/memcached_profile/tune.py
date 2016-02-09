@@ -18,7 +18,7 @@ def find_qps(slos, baseline_topology):
 
         Shell([
             cg.execute("/memcached_experiment/victim", memcached_exec + " -u root -t 1"),
-            cg.execute("/memcached_experiment/workload", Delay(2, "%s --search 99:%d -s 127.0.0.1 -T 4 -d 4 -c 128" % (mutilate_exec, latency_target)))
+            cg.execute("/memcached_experiment/workload", Delay(2, "%s --search 99:%d -s 127.0.0.1 -t 10 -T 4 -c 64" % (mutilate_exec, latency_target)))
         ], await_all_terminations=False)
 
         cg.destroy()

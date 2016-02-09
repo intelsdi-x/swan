@@ -20,11 +20,11 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         memcached_exec = "%s/../../workloads/data_caching/memcached/memcached-1.4.25/build/memcached" % experiment_root
         mutilate_exec = "%s/../../workloads/data_caching/memcached/mutilate/mutilate" % experiment_root
-        l1i_exec = "%s/../../aggressors/l1i" % experiment_root
-        l1d_exec = "%s/../../aggressors/l1d" % experiment_root
-        l3_exec = "%s/../../aggressors/l3" % experiment_root
-        membw_exec = "%s/../../aggressors/memBw" % experiment_root
-        stream_exec = "%s/../../aggressors/stream.100M" % experiment_root
+        l1i_exec = "%s/../../workloads/low-level-aggressors/l1i" % experiment_root
+        l1d_exec = "%s/../../workloads/low-level-aggressors/l1d" % experiment_root
+        l3_exec = "%s/../../workloads/low-level-aggressors/l3" % experiment_root
+        membw_exec = "%s/../../workloads/low-level-aggressors/memBw" % experiment_root
+        stream_exec = "%s/../../workloads/low-level-aggressors/stream.100M" % experiment_root
 
         events = [
             "instructions",
@@ -56,7 +56,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 'experiment_duration' - 4 seconds
                 cg.execute("/memcached_experiment/workload",
-                           Delay(3, "%s -s 127.0.0.1 -t %d -q %d -T 4 -c 128" % (mutilate_exec, experiment_duration - 4, target_qps)))
+                           Delay(3, "%s -s 127.0.0.1 -t %d -q %d -T 4 -c 64 " % (mutilate_exec, experiment_duration - 4, target_qps)))
             ])
 
             cg.destroy()
@@ -74,7 +74,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
                 # Wait 3 seconds for memcached to come up.
                 # Run load for 'experiment_duration' - 4 seconds
                 cg.execute("/memcached_experiment/workload",
-                           Delay(3, "%s -s 127.0.0.1 -t %d -q %d -T 4 -c 128" % (mutilate_exec, experiment_duration - 4, target_qps))),
+                           Delay(3, "%s -s 127.0.0.1 -t %d -q %d -T 4 -c 64" % (mutilate_exec, experiment_duration - 4, target_qps))),
 
                 # Start aggressor and run for 'experiment_duration' seconds
                 cg.execute("/memcached_experiment/aggressor", RunFor(experiment_duration, aggressor_cmd))
@@ -112,9 +112,9 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
         self.add_phase("baseline", baseline)
         self.add_phase("L1 instruction pressure", l1_instruction_pressure_equal_share)
-        self.add_phase("L1 data pressure", l1_data_pressure_equal_share)
-        self.add_phase("L3 pressure", l1_data_pressure_equal_share)
-        self.add_phase("Memory bandwith pressure (membw)", membw_pressure_equal_share)
+        # self.add_phase("L1 data pressure", l1_data_pressure_equal_share)
+        # self.add_phase("L3 pressure", l1_data_pressure_equal_share)
+        # self.add_phase("Memory bandwith pressure (membw)", membw_pressure_equal_share)
         # self.add_phase("Memory bandwith pressure (stream)", stream_pressure_equal_share)
 
         # TODO:
@@ -125,7 +125,7 @@ class MemcachedSensitivityProfile(ga.Experiment):
 
 def main():
     s = MemcachedSensitivityProfile()
-    s.run(10)
+    s.run(3)
 
 
 if __name__ == "__main__":
