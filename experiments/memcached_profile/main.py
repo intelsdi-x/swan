@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('../../lib/galileo')
+sys.path.append('../../lib')
 from cgroup import Cgroup
 from perf_counters import Perf
 from shell import Shell, Delay, RunFor

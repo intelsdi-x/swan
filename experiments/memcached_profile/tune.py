@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('../../lib/galileo')
+sys.path.append('../../lib')
 from cgroup import Cgroup
 from shell import Shell, Delay, RunFor
 import topology as top

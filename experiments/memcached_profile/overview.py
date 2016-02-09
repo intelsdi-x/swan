@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from uuid import UUID
 
-sys.path.append('../../lib/galileo')
+sys.path.append('../../lib')
 import perf_counters
 
 
