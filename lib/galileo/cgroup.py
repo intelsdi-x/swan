@@ -217,6 +217,6 @@ class Cgroup:
 
         dfs(self.hierarchy_tree, "")
 
-        # HACK: Make sure cgroups deletion is done before recreating exlusive cpusets (which will otherwise fail).
+        # HACK: Make sure cgroups deletion is done before recreating exclusive cpusets (which will otherwise fail).
         # TODO(nnielsen): Add more deterministic way of telling that the operation is done.
         time.sleep(0.5)
