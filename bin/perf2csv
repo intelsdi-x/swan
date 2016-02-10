@@ -3,7 +3,7 @@
 import glog as log
 import os
 import sys
-sys.path.append('lib/galileo')
+sys.path.append('lib/')
 import perf_counters
 
 

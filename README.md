@@ -13,9 +13,9 @@ cd aggressors
 make
 ```
 
-Then, you need to install the Galileo dependencies. Go to the [Galileo](lib/galileo) directory for instructions.
+Then, you need to install the Swan dependencies. Go to the [library](lib/) directory for instructions.
 
-After installing Galileo depencies, you can run the memcached sensitivity profile experiment by:
+After installing Swan depencies, you can run the memcached sensitivity profile experiment by:
 ```
 cd experiments/memcached_profile/
 # You need to run as root to setup cgroups hierachies.
