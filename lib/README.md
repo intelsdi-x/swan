@@ -1,6 +1,4 @@
-# Galileo
-
-Galileo works as a driver for co-located workload experiments.
+Swan works as a driver for co-located workload experiments.
 The intent is to focus on systematic testing and produce self-contained structured output  as an intermediate representation for data processing.
 
 The end goal is to be able to produce:
@@ -9,7 +7,7 @@ The end goal is to be able to produce:
 
 ## Installation
 
-While no `setup.py` is shipped with galileo yet, you can install the dependencies by running:
+While no `setup.py` is shipped with Swan yet, you can install the dependencies by running:
 
 ```
 $ sudo yum install python-devel freetype-devel libpng-devel
@@ -19,7 +17,7 @@ $ sudo pip install -r requirements.txt
 
 ## Usage
 
-While galileo is a library to be imported and extended by the user, you can run the bundled example experiments:
+While Swan is a library to be imported and extended by the user, you can run the bundled example experiments:
 
 ```
 $ python example_simple.py
@@ -37,7 +35,7 @@ NAME
     cgroup
 
 FILE
-    /Users/nqnielse/workspace/scheduler-workloads/lib/galileo/cgroup.py
+    /Users/nqnielse/workspace/swan/lib/cgroup.py
 
 CLASSES
     Cgroup
