@@ -118,7 +118,7 @@ For a given series
 
 Violation area
 <code>A<sub>V</sub> = &Sigma;[{ max(0, nSLO - s<sub>i</sub>) &times;
-s<sub>i+1</sub>.time - s<sub>i</sub>.time | s<sub>i</sub>,
+(s<sub>i+1</sub>.time - s<sub>i</sub>.time) | s<sub>i</sub>,
 s<sub>i+1</sub> &in; nSLI }]</code>
 
 nSLO area <code>A<sub>nSLO</sub> = nSLO &times;
