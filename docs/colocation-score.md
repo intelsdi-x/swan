@@ -46,15 +46,13 @@ workloads may be only available as a single sample (_execution time_.)
 Each SLI value should be accompanied by a local timestamp in order to
 correct for irregular sampling intervals.
 
-###### Normalized service level indicator (nSLI)
-SLI sample values that are normalized (contained in the closed interval
-<code>[0, 1]</code>) and oriented such that higher values represent
-better performance.
-
 ###### Service level objective (SLO)
 Criteria for acceptable values for one SLI for a workload, expressed as
-an interval `[min, max]`. "One-handed" intervals can be expressed as
-<code>[min, +&infin;)</code> or <code>(-&infin;, max]</code>.
+a "one-handed" interval, e.g.
+<code>(SLO<sub>i</sub>.min, +&infin;)</code> or
+<code>(-&infin;, SLO<sub>i</sub>.max)</code> where exactly one of
+<code>SLO<sub>i</sub>.min</code> and <code>SLO<sub>i</sub>.max</code>
+is defined.
 
 ###### Service level agreement (SLA)
 An agreement between service provider and service consumer, describing
@@ -82,50 +80,68 @@ _Notation:_
 - <code>&Sigma;[S]</code>: the sum of each value in `S`
 - <code>s &in; S</code>: `s` is an element of `S`
 
+###### Service level score (SLS)
+Workload quality is a measure of performance relative to the service
+level objective, oriented such that better performance corresponds to
+higher values.  For each workload SLO <code>SLO<sub>i</sub></code>,
+_service level score_ <code>SLS<sub>SLO<sub>i</sub></sub></code> is a
+bipartite function <code>SLS<sub>SLO<sub>i</sub></sub>: SLI &rarr; ℝ</code>.
+
+- <code>SLS<sub>SLO<sub>i</sub></sub>(sli) = sli / slo</code>
+  iff <code>SLO<sub>i</sub>.min</code> is defined.
+- <code>SLS<sub>SLO<sub>i</sub></sub>(sli) = slo / sli</code>
+  iff <code>SLO<sub>i</sub>.max</code> is defined.
+
+As an example, for an SLI like _99% tail request latency ms_, the SLO
+might be <code>(-&infin;, 100)</code>. An SLI value of `100ms` yields a
+service level score of `1`, meaning the workload is perfectly
+meeting the service level objective.  Lower SLI values yield scores greater
+than `1`, and greater values (SLO violations) yield scores less than
+`1`.
+
 ###### Performance delta score (<code>&Delta;P</code>)
 A measure of a the performance reduction between two runs of a workload.
-Given two sequences of nSLI samples <code>nSLI<sub>1</sub></code> and
-<code>nSLI<sub>2</sub></code> for workload <code>w<sub>i</sub></code>, the
+Given two sequences of `SLS` samples <code>`SLS`<sub>1</sub></code> and
+<code>SLS<sub>2</sub></code> for workload <code>w<sub>i</sub></code>, the
 performance degradation is simply the difference of the arithmetic means:
 <code>
-&Delta;P = (&Sigma;[nSLI<sub>1</sub>] / |nSLI<sub>1</sub>|) -
-(&Sigma;[nSLI<sub>2</sub> / |nSLI<sub>2</sub>|)
+&Delta;P = (&Sigma;[SLS<sub>1</sub>] / |SLS<sub>1</sub>|) -
+(&Sigma;[SLS<sub>2</sub> / |SLS<sub>2</sub>|)
 </code>
 
-Negative degradation values indicate of course that the workload was
+Negative delta values indicate of course that the workload was
 _accelerated_ in run two relative to run one.
 
 ###### Violation frequency score (<code>V<sub>&nu;</sub></code>)
 The violation frequency is a measurement of how often QoS violations
 occurred, as a fraction of total SLI samples. Given the subset of
 violating samples from the sequence <code>SLI<sub>i</sub></code>
-<code>vs = { s | s &in; SLI<sub>i</sub> &and; &not;contains(SLO, s) }</code>
+<code>vs = { s | s &in; SLI<sub>i</sub> &and;
+SLS<sub>SLO<sub>i</sub></sub>(s) < 1 }</code>
 then the violation frequency
 <code>V<sub>&nu;</sub> = |vs| / |SLI<sub>i</sub>|</code>
 
 ###### Violation severity score (<code>V<sub>s</sub></code>)
 The violation severity score for a series of SLI samples estimates the
 cumulative effect of QoS violations on end-user experience. We compute
-the area that lies under the normalized SLO line and above the normalized
-SLI curve, then normalize again against the total area below the `nSLO`
-line. Recall for normalized SLI, large values are preferable.
+the area that lies under the `SLO` line (`y = 1`) and above the service
+level score (`SLS`) curve, then normalize again against the total area below
+the `SLO` line. Recall for `SLS`, large values are preferable.
 A series containing zero SLO violations has a severity score of zero,
-and a series where all `nSLI` values are on the floor (zero) has the
+and a series where all `SLS` values are on the floor (zero) has the
 maximum severity score of one.
 
 For a given series
-<code>nSLI = &lang;s<sub>1</sub>, ..., s<sub>n</sub>&rang;</code>:
+<code>SLS = &lang;s<sub>1</sub>, ..., s<sub>n</sub>&rang;</code>:
 
 Violation area
-<code>A<sub>V</sub> = &Sigma;[{ max(0, nSLO - s<sub>i</sub>) &times;
+<code>A<sub>V</sub> = &Sigma;[{ max(0, 1 - s<sub>i</sub>) &times;
 (s<sub>i+1</sub>.time - s<sub>i</sub>.time) | s<sub>i</sub>,
-s<sub>i+1</sub> &in; nSLI }]</code>
-
-nSLO area <code>A<sub>nSLO</sub> = nSLO &times;
-(s<sub>n</sub>.time - s<sub>1</sub>.time)</code>
+s<sub>i+1</sub> &in; SLS }]</code>
 
 Violation severity
-<code>V<sub>s</sub> = A<sub>V</sub> / A<sub>nSLO</sub></code>.
+<code>V<sub>s</sub> = A<sub>V</sub> /
+(s<sub>n</sub>.time - s<sub>1</sub>.time)</code>.
 
 ###### Pressure score (`P`)
 Measures to what extent a workload prevents colocated workloads from
@@ -134,7 +150,7 @@ Scores for each resource are normalized based on their quantity or capacity.
 For example, an impact score of `0.5` for network egress on a physical
 interface means that the workload is consumes half of the available
 bandwidth. The impact score for an exlusive resource allocated to a workload
-(such as an exclusive cpu set) is defined to be `1.0`.
+(such as an exclusive cpu set) is defined to be `1`.
 
 Let `P` be a function of type <code>P: W &rarr; R &rarr; ℝ</code>.
 
@@ -181,11 +197,11 @@ v = S(w<sub>i</sub>, r) }</code>
 ###### Isolation score (`I`)
 A measurement of how well a system provides predictable performance for a
 given workload. As a first pass, this metric is defined as the
-_sample variance_ (average squared deviation) of an `nSLI` series.
-For completeness, the formula for sample variance given an `nSLI` series
+_sample variance_ (average squared deviation) of an `SLS` series.
+For completeness, the formula for sample variance given an `SLS` series
 with arithmetic mean <code>s&#772;</code> is:
 
-<code>I = &Sigma;[(s<sub>i</sub> - s&#772;)<sup>2</sup>] / |nSLI|</code>
+<code>I = &Sigma;[(s<sub>i</sub> - s&#772;)<sup>2</sup>] / |SLS|</code>
 
 ###### Compute work score (`W`)
 A measurement of the useful work performed (for example, &mu;ops commited)
