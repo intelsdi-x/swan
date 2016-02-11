@@ -77,7 +77,7 @@ and let `R` be a set of resources
 _Notation:_
 
 - `|S|`: the cardinality (size of) the set or sequence `S`
-- <code>&Sigma;[S]</code>: the sum of each value in `S`
+- <code>&Sigma;S</code>: the sum of each value in `S`
 - <code>s &in; S</code>: `s` is an element of `S`
 
 ###### Service level score (SLS)
@@ -105,8 +105,8 @@ Given two sequences of `SLS` samples <code>`SLS`<sub>1</sub></code> and
 <code>SLS<sub>2</sub></code> for workload <code>w<sub>i</sub></code>, the
 performance degradation is simply the difference of the arithmetic means:
 <code>
-&Delta;P = (&Sigma;[SLS<sub>1</sub>] / |SLS<sub>1</sub>|) -
-(&Sigma;[SLS<sub>2</sub> / |SLS<sub>2</sub>|)
+&Delta;P = (&Sigma;SLS<sub>1</sub> / |SLS<sub>1</sub>|) -
+(&Sigma;SLS<sub>2</sub> / |SLS<sub>2</sub>|)
 </code>
 
 Negative delta values indicate of course that the workload was
@@ -135,9 +135,9 @@ For a given series
 <code>SLS = &lang;s<sub>1</sub>, ..., s<sub>n</sub>&rang;</code>:
 
 Violation area
-<code>A<sub>V</sub> = &Sigma;[{ max(0, 1 - s<sub>i</sub>) &times;
+<code>A<sub>V</sub> = &Sigma;{ max(0, 1 - s<sub>i</sub>) &times;
 (s<sub>i+1</sub>.time - s<sub>i</sub>.time) | s<sub>i</sub>,
-s<sub>i+1</sub> &in; SLS }]</code>
+s<sub>i+1</sub> &in; SLS }</code>
 
 Violation severity
 <code>V<sub>s</sub> = A<sub>V</sub> /
@@ -201,7 +201,7 @@ _sample variance_ (average squared deviation) of an `SLS` series.
 For completeness, the formula for sample variance given an `SLS` series
 with arithmetic mean <code>s&#772;</code> is:
 
-<code>I = &Sigma;[(s<sub>i</sub> - s&#772;)<sup>2</sup>] / |SLS|</code>
+<code>I = &Sigma;((s<sub>i</sub> - s&#772;)<sup>2</sup>) / |SLS|</code>
 
 ###### Compute work score (`W`)
 A measurement of the useful work performed (for example, &mu;ops commited)
@@ -216,10 +216,10 @@ subfunctions, given weights
 <code>&omega;<sub>W</sub></code>.
 
 <code>C =
-&Sigma;[{ &omega;<sub>V<sub>&nu;</sub></sub>(1 -
+&Sigma;{ &omega;<sub>V<sub>&nu;</sub></sub>(1 -
 V<sub>&nu;<sub>w<sub>i</sub></sub></sub>) +
 &omega;<sub>I</sub>I<sub>w<sub>i</sub></sub> +
-&omega;<sub>W</sub>W<sub>w<sub>i</sub></sub> | w<sub>i</sub> &in; &Psi; }] /
+&omega;<sub>W</sub>W<sub>w<sub>i</sub></sub> | w<sub>i</sub> &in; &Psi; } /
  |&Psi;|(&omega;<sub>V<sub>&nu;</sub></sub> +
 &omega;<sub>I</sub> +
 &omega;<sub>W</sub>)
