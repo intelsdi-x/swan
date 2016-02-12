@@ -99,6 +99,15 @@ meeting the service level objective.  Lower SLI values yield scores greater
 than `1`, and greater values (SLO violations) yield scores less than
 `1`.
 
+![Workload Performance](sls-example.png)
+
+The workload performance graph further illustrates the service level score.
+In the image above, the red shaded area represents QoS violations that
+occurred. The green shaded area indicates that the workload exceeded the
+required SLO score. While this is usually not cause for concern, it
+is a form of waste, since those resources could have done other useful work
+while maintaining the SLO.
+
 ###### Performance delta score (<code>&Delta;P</code>)
 A measure of a the performance reduction between two runs of a workload.
 Given two sequences of `SLS` samples <code>`SLS`<sub>1</sub></code> and
