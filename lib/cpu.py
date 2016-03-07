@@ -102,7 +102,7 @@ class Cpus:
             if next_cpu is not None:
                 self.hyper_threads[next_cpu.id] = next_cpu
 
-        for hyper_thread_id, hyper_thread in self.hyper_threads.iteritems():
+        for hyper_thread_id, hyper_thread in self.hyper_threads.items():
             if "physical id" not in hyper_thread.raw_data:
                 continue
 
