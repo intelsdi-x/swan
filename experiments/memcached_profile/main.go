@@ -6,31 +6,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment"
 )
 
-type MemcachedSensitivityProfile struct {
-	*experiment.Experiment
-}
-
-func NewMemcachedSensitivityProfile() *MemcachedSensitivityProfile {
-	experiment := MemcachedSensitivityProfile{experiment.NewExperiment()}
-	return &experiment
-}
-
-func (m *MemcachedSensitivityProfile) Init() {
-	m.Name = "Memcached Sensitivity Profile"
-	// Default experiment length in seconds
-	m.Duration = 30
-	// Expected SLO: 99%ile latency 5ms
-	m.TargetSlo99pUs = 5000
-
-	m.InitLoadPoints(m.FindQPSAndLoadPoints())
-
-	// Add phases.
-	m.AddBaselinePhase(MemcachedBaselinePhase{})
-	m.AddPhase(MemcachedWithL1InstructionPressurePhase{})
-}
-
-func (m *MemcachedSensitivityProfile) FindQPSAndLoadPoints() uint {
-	log.Debug("Tuning phase. Finding QPS for ", m.TargetSlo99pUs, " SLO")
+func FindQPSAndLoadPoints(targetSLO uint) uint {
+	log.Debug("Tuning phase. Finding QPS for ", targetSLO, " SLO")
 	// TODO(bplotka): Find QPSs from SLO
 
 	// Let's assume for test 100:
@@ -59,7 +36,7 @@ func (m MemcachedBaselinePhase) Run(stresserLoad uint) float64 {
 	return float64(stresserLoad * 10)
 }
 
-// L1InstructionPressure Test
+// L1InstructionPressure Test.
 type MemcachedWithL1InstructionPressurePhase struct{}
 
 func (m MemcachedWithL1InstructionPressurePhase) GetBestEffortWorkloadName() string {
@@ -81,8 +58,20 @@ func (m MemcachedWithL1InstructionPressurePhase) Run(stresserLoad uint) float64 
 }
 
 func main() {
-	experiment := NewMemcachedSensitivityProfile()
-	experiment.Init()
-	experiment.Run()
+	memcachedExperiment := experiment.NewExperiment()
+	memcachedExperiment.Name = "Memcached Sensitivity Profile"
+	// Default experiment length in seconds
+	memcachedExperiment.Duration = 30
+	// Expected SLO: 99%ile latency 5ms
+	memcachedExperiment.TargetSlo99pUs = 5000
 
+	memcachedExperiment.InitLoadPoints(
+		FindQPSAndLoadPoints(memcachedExperiment.TargetSlo99pUs))
+
+	// Add phases.
+	memcachedExperiment.AddBaselinePhase(MemcachedBaselinePhase{})
+	memcachedExperiment.AddPhase(MemcachedWithL1InstructionPressurePhase{})
+
+	// Run experiment.
+	memcachedExperiment.Run()
 }
