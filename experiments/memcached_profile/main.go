@@ -22,24 +22,25 @@ func (m *MemcachedSensitivityProfile) Init() {
 	// Expected SLO: 99%ile latency 5ms
 	m.TargetSlo99pUs = 5000
 
-	m.FindQPSAndLoadPoints()
+	m.InitLoadPoints(m.FindQPSAndLoadPoints())
 
 	// Add phases.
 	m.AddBaselinePhase(MemcachedBaselinePhase{})
 	m.AddPhase(MemcachedWithL1InstructionPressurePhase{})
 }
 
-func (m *MemcachedSensitivityProfile) FindQPSAndLoadPoints() {
+func (m *MemcachedSensitivityProfile) FindQPSAndLoadPoints() uint {
 	log.Debug("Tuning phase. Finding QPS for ", m.TargetSlo99pUs, " SLO")
 	// TODO(bplotka): Find QPSs from SLO
 
 	// Let's assume for test 100:
 	targetQPS := uint(100)
-	m.InitLoadPoints(targetQPS)
+
+	return targetQPS
 }
 
 // Baseline Phase
-type MemcachedBaselinePhase struct {}
+type MemcachedBaselinePhase struct{}
 
 func (m MemcachedBaselinePhase) GetBestEffortWorkloadName() string {
 	return "None"
@@ -59,7 +60,7 @@ func (m MemcachedBaselinePhase) Run(stresserLoad uint) float64 {
 }
 
 // L1InstructionPressure Test
-type MemcachedWithL1InstructionPressurePhase struct {}
+type MemcachedWithL1InstructionPressurePhase struct{}
 
 func (m MemcachedWithL1InstructionPressurePhase) GetBestEffortWorkloadName() string {
 	return "L1 Instruction Pressure"
