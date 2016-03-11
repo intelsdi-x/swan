@@ -1,12 +1,13 @@
-all:
+EXPERIMENT="memcached_profile"
+
+default:
 	$(MAKE) deps
-	$(MAKE) test
-
+	$(MAKE) all
 deps:
-	./scripts/deps.sh
-
-lint:
-	./scripts/lint.sh
-
+	bash -c "godep restore"
 test:
-	./scripts/test.sh
+	bash -c "./scripts/test.sh $(TEST)"
+check:
+	$(MAKE) test
+all:
+	bash -c "./scripts/build.sh $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))) $(EXPERIMENT)"
