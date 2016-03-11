@@ -80,7 +80,7 @@ func (e *Experiment) AddPhase(phase Phase) {
 }
 
 func (e *Experiment) runPhaseFully(phase Phase, resultBucket *Measurement) {
-	// Save result of measurement from one load Point.
+	// Save result of measurement from each load Point.
 	for i, loadPoint := range e.loadPoints {
 		log.Debug("Running phase. Load: ", (i+1)*5, "% = ", loadPoint, " RPS/QPS")
 		resultBucket.SliLoadPointLatencies99pUs[i] =
@@ -91,7 +91,7 @@ func (e *Experiment) runPhaseFully(phase Phase, resultBucket *Measurement) {
 func (e *Experiment) saveMeasurements() {
 	// Save result of measurement to files.
 	// TODO(bplotka) Do saving to a file.
-	// TODO(bplotka) Move that to test.
+	// TODO(bplotka) Move these to tests.
 	log.Debug("Saving measurements from baseline = ", e.baselineMeasurement.SliLoadPointLatencies99pUs)
 
 	for antagonist, meas := range e.measurements {
