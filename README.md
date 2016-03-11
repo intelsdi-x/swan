@@ -63,4 +63,4 @@ Tests:
 
 `make test EXPERIMENT=memcached_profile`
 
-If `EXPERIMENT` is not specified - it's `memcached_profile` by default'
+If `EXPERIMENT` is not specified - it's `memcached_profile` by default

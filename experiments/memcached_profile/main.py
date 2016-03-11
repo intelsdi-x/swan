@@ -44,6 +44,14 @@ class MemcachedSensitivityProfile(ga.Experiment):
         measurements = tune.find_qps([latency_slo_99p_us], baseline_topology)
         target_qps = measurements[latency_slo_99p_us]['qps']
 
+        # TOOD(bplotka)
+        print "Needed verification that number of File descriptors is extended in OS..."
+
+        # TOOD(bplotka)
+        print "Needed verification that the CPU governor is set to `performance` for in our system..."
+
+
+
         def baseline(configuration):
             cg = Cgroup(baseline_topology)
 
