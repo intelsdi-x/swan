@@ -70,6 +70,10 @@ func main() {
 	// Expected SLO: 99%ile latency 5ms
 	memcachedExperiment.TargetSlo99pUs = 5000
 
+	// Input needed for Reproducibility Verification.
+	memcachedExperiment.ReproducibilityIterations = 3
+	memcachedExperiment.ReproducibilityVarianceAcceptanceThreshold = 0.2
+
 	memcachedExperiment.InitLoadPoints(
 		FindQPSAndLoadPoints(memcachedExperiment.TargetSlo99pUs))
 
