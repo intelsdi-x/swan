@@ -25,6 +25,10 @@ type Experiment struct {
 	// Expected SLO (99%ile latency in us).
 	TargetSlo99pUs uint
 
+	ReproducibilityIterations uint
+	ReproducibilityVarianceAcceptanceThreshold float64
+
+
 	// TODO(bplotka): Make number of these load points more dynamic
 	// 5% (0 index), 10%, ... 95% (18 index) load Points. Currently they are in form of the RPS/QPS
 	// TODO(bplotka): Move that to map for clear view?
@@ -44,6 +48,8 @@ func NewExperiment() *Experiment {
 
 	e := Experiment{}
 	e.targetLoad = 0
+	e.ReproducibilityIterations = 1
+	e.ReproducibilityVarianceAcceptanceThreshold = 0.2
 	e.measurements = make(map[string]*Measurement)
 
 	return &e
@@ -79,12 +85,36 @@ func (e *Experiment) AddPhase(phase Phase) {
 	e.phases = append(e.phases, phase)
 }
 
-func (e *Experiment) runPhaseFully(phase Phase, resultBucket *Measurement) {
+func (e *Experiment) runPhaseForAllLoadPoints(phase Phase, resultBucket *Measurement) {
 	// Save result of measurement from each load Point.
+
 	for i, loadPoint := range e.loadPoints {
-		log.Debug("Running phase. Load: ", (i+1)*5, "% = ", loadPoint, " RPS/QPS")
-		resultBucket.SliLoadPointLatencies99pUs[i] =
-			phase.Run(loadPoint)
+		if e.ReproducibilityIterations > 1 {
+			// Reproducibility verification.
+			validator := NewReproducibilityValidator(
+				e.ReproducibilityIterations,
+				e.ReproducibilityVarianceAcceptanceThreshold)
+
+			for validator.NeedToGather() {
+				// Validate the reproducibility for this loadPoint.
+				log.Debug("Running phase. Load: ", (i+1)*5, "% = ", loadPoint,
+							" RPS/QPS. Reproducibility iteration = ", validator.ValidatedResults)
+				validator.GatherResult(phase.Run(loadPoint))
+			}
+
+			if validatedResult, err := validator.Validate(); err != nil {
+				// TODO(bplotka): How to deal with that - for now only warning.
+				log.Warn(err.Error())
+				resultBucket.SliLoadPointLatencies99pUs[i] = validator.GetMeanResult();
+			} else {
+				resultBucket.SliLoadPointLatencies99pUs[i] = validatedResult
+			}
+
+		} else {
+			// Run phase only once without reproducibility verification.
+			log.Debug("Running phase. Load: ", (i+1)*5, "% = ", loadPoint, " RPS/QPS")
+			resultBucket.SliLoadPointLatencies99pUs[i]  = phase.Run(loadPoint)
+		}
 	}
 }
 
@@ -110,13 +140,13 @@ func (e *Experiment) Run() {
 
 	// Run baseline.
 	log.Info("-----Running baseline phase-----")
-	e.runPhaseFully(e.baselinePhase, e.baselineMeasurement)
+	e.runPhaseForAllLoadPoints(e.baselinePhase, e.baselineMeasurement)
 	log.Info("-----End of phase baseline phase------")
 
 	// Run rest of the phases.
 	for _, phase := range e.phases {
 		log.Info("-----Running phase with ", phase.GetBestEffortWorkloadName(), "------")
-		e.runPhaseFully(phase, e.measurements[phase.GetBestEffortWorkloadName()])
+		e.runPhaseForAllLoadPoints(phase, e.measurements[phase.GetBestEffortWorkloadName()])
 		log.Info("-----End of phase with ", phase.GetBestEffortWorkloadName(), "------")
 	}
 
