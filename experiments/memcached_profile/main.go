@@ -9,8 +9,13 @@ import (
 func FindQPSAndLoadPoints(targetSLO uint) uint {
 	log.Debug("Tuning phase. Finding QPS for ", targetSLO, " SLO")
 	// TODO(bplotka): Find QPSs from SLO
+	// - create Cgroup topology
+	// - run memcached
+	// - run mutilate in find qps mode
+	// - clean cgroups
 
-	// Let's assume for test 100:
+	// TODO(bplotka): Move that to tests
+	// Let's assume for testing purposes a 100 QPS our targetSLO:
 	targetQPS := uint(100)
 
 	return targetQPS

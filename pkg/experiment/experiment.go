@@ -9,12 +9,11 @@ func initLogging() {
 }
 
 func preExperimentVerification() {
-	log.Debug("Verification of the extended number of File descriptors in OS...")
+	log.Debug("Needed verification that number of File descriptors is extended in OS...")
 	// TOOD(bplotka)
 
-	log.Debug("Verification of the CPU governor being set to `performance` for OS...")
+	log.Debug("Needed verification that the CPU governor is set to `performance` for in our system...")
 	// TOOD(bplotka)
-
 }
 
 // Experiment driver.
