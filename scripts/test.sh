@@ -8,7 +8,7 @@
 # 6. test coverage (http://blog.golang.org/cover)
 
 # Capture what test we should run
-TEST_SUITE=${1:-"debug_unit"}
+TEST_SUITE=${1:-"unit"}
 VERBOSE="-v"
 
 
@@ -22,8 +22,8 @@ if [[ $TEST_SUITE == "unit" ]]; then
 	go get golang.org/x/tools/cmd/cover
 	
 	COVERALLS_TOKEN=t47LG6BQsfLwb9WxB56hXUezvwpED6D11
-	TEST_DIRS="main.go serenity/"
-	VET_DIRS=". ./serenity/..."
+	TEST_DIRS="experiments/ pkg/"
+	VET_DIRS="experiments/ pkg/"
 
 	set -e
 
@@ -44,8 +44,8 @@ if [[ $TEST_SUITE == "unit" ]]; then
 	# echo "golint"
 	# golint ./...
 
-	echo "go vet"
-	go vet $VET_DIRS
+	#echo "go vet"
+	#go vet $VET_DIRS
 	# go test -race ./... - Lets disable for now
  
 	# Run test coverage on each subdirectories and merge the coverage profile.
