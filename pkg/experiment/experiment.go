@@ -17,6 +17,7 @@ func preExperimentVerification() {
 
 }
 
+// Experiment driver.
 type Experiment struct {
 	// Name of the experiment.
 	Name string
@@ -74,7 +75,7 @@ func (e *Experiment) AddBaselinePhase(baselinePhase Phase) {
 
 func (e *Experiment) AddPhase(phase Phase) {
 	// Register Phase.
-	// TODO(bplotka) Assure uniqueness in the GetBestEffortWorloadName.
+	// TODO(bplotka) Assure uniqueness in the GetBestEffortWorkloadName.
 	e.measurements[phase.GetBestEffortWorkloadName()] = &Measurement{}
 	e.phases = append(e.phases, phase)
 }
