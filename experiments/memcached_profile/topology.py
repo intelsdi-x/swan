@@ -1,5 +1,6 @@
 from cpu import Cpus
 import glog as log
+import sys
 
 
 # TODO(nnielsen): Parameterize number of victim and workload hyper threads.
