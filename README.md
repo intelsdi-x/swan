@@ -51,3 +51,16 @@ statistics for experiment 'Memory bandwith pressure':
 latency (us):   269.090000      272.712568      10      74372.144900    122.400000      1082.000000
 IPC:            1.459217        0.066680        10      0.004446        1.364505        1.638444
 ```
+
+
+# Golang instructions
+
+Building experiment (pass the dir name of the scenario within experiment directory) e.g for memcached profile:
+
+`make all EXPERIMENT=memcached_profile`
+
+Tests:
+
+`make test EXPERIMENT=memcached_profile`
+
+If `EXPERIMENT` is not specified - it's `memcached_profile` by default

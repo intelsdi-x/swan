@@ -1,3 +1,4 @@
+import sys
 from cpu import Cpus
 import glog as log
 import sys

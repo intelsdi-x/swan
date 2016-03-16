@@ -1,14 +1,13 @@
-all: deps build run
+EXPERIMENT="memcached_profile"
 
-run:
-	(cd experiments/memcached_profile/; sudo -E python main.py )
-
+default:
+	$(MAKE) deps
+	$(MAKE) all
 deps:
-	pip install -r requirements.txt
-
-build: build-workloads
-
-build-workloads: 
-	(cd workloads/data_caching/memcached; ./build.sh)
-	(cd workloads/low-level-aggressors/; make)
-
+	bash -c "godep restore"
+test:
+	bash -c "./scripts/test.sh $(TEST)"
+check:
+	$(MAKE) test
+all:
+	bash -c "./scripts/build.sh $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))) $(EXPERIMENT)"
