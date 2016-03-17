@@ -13,3 +13,14 @@ $ git clone git@github.com:intelsdi-x/swan.git $GOPATH/src/github.com/intelsdi-x
 $ cd $GOPATH/src/github.com/intelsdi-x/swan
 $ make
 ```
+
+## Development
+
+When submitting patches, make sure to add test in the pull request and add the test to `./scripts/test.sh` and the new files to `./scripts/lint.sh` for linting.
+
+Before sending or updating pull requests, make sure to run:
+
+```
+$ make lint
+$ make test
+```
