@@ -1,14 +1,12 @@
-all: deps build run
-
-run:
-	(cd experiments/memcached_profile/; sudo -E python main.py )
+all:
+	$(MAKE) deps
+	$(MAKE) test
 
 deps:
-	pip install -r requirements.txt
+	./scripts/deps.sh
 
-build: build-workloads
+lint:
+	./scripts/lint.sh
 
-build-workloads: 
-	(cd workloads/data_caching/memcached; ./build.sh)
-	(cd workloads/low-level-aggressors/; make)
-
+test:
+	./scripts/test.sh
