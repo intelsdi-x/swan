@@ -1,9 +1,23 @@
 package experiment
 
+// Measurememt
+//
+// Getting SLI for LC workload at given load point for given experimental
+// conditions
 type Measurement struct {
-	// Service Level Indicators for 5% (0 index), 10%, ... 95% (18 index) load Points.
-	// Currently they are in form of the 99p latencies in us
-	// TODO(bplotka): Move that to map for clear view?
-	// TODO(bplotka): Decide: Float vs Uint?
-	SliLoadPointLatencies99pUs [19]float64
+	//
+	//
+	//
+	// Result from measurement
+	sli SLI
+}
+
+func (m Measurement) String() string {
+	return "Measurement object not defined"
+}
+
+func RunMeasurement(exp *Experiment, lp *LoadPoint) int {
+
+	// Here is the place for running commands
+	return 0
 }
