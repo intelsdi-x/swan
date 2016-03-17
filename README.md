@@ -8,5 +8,8 @@ For now, the first supported workload is memcached. Memcached is stressed with t
 First, you must build memcached and mutilate from source. Go to the [memcached](workloads/data_caching/memcached) workload directory for instructions.
 
 ```
-$ make all
+$ mkdir -p $GOPATH/src/github.com/intelsdi-x
+$ git clone git@github.com:intelsdi-x/swan.git $GOPATH/src/github.com/intelsdi-x/swan
+$ cd $GOPATH/src/github.com/intelsdi-x/swan
+$ make
 ```
