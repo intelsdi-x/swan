@@ -4,6 +4,7 @@ package experiment
 // given experimental conditions
 type Phase struct {
 	//
+	workload Workload
 	//
 	isolation Isolation
 	// Series of measurements which defines this Phase
