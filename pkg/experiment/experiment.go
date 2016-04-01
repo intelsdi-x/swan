@@ -19,19 +19,50 @@ func (e Experiment) String() string {
 	return "Experiment object not defined"
 }
 
-// WIP
+type Experimenter interface {
+	//Prepare all
+	SetEnvironment() error
+	//Find target QPS
+	Tune() int
+	//Run baseline or workload with aggressor
+	RunPhase(no int)
+	//Return number of phases
+	NumPhases() int
+	//Create Phase Isolation
+	CreateIsolation() error
+	//
+	CreateSensitivityProfile() SensitivityProfile
+}
+
+type Measurementer interface {
+	//Run single measurement
+	RunMeasurement(num_phase int, load_point int)
+}
+
+// tune - look for the target QPS
 func tune(exp *Experiment) int {
+	exp.TargetQPS = 0
 	return 0
 }
 
-func RunExperiment(exp *Experiment) *SensitivityProfile {
+// Called after all measurements has been launch.
+// Extracts SLI from Measurements and creates
+// single sensitivity profile
+func createSentivityProfile(exp *Experiment) *SensitivityProfile {
+	return &SensitivityProfile{}
+}
 
-	// 1. Configure?
+// Run the main experiment. First Phase shall be Baselining.
+func RunExperiment(exp Experimenter) SensitivityProfile {
 
-	// 2. Tune
-	err := tune(exp)
+	exp.SetEnvironment()
 
-	for i, _ := range exp.Phases {
-		RunPhase(exp, i)
+	exp.Tune()
+
+	for i := 0; i < exp.NumPhases(); i++ {
+		exp.RunPhase(i)
 	}
+
+	sp := exp.CreateSensitivityProfile()
+	return sp
 }

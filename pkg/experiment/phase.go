@@ -19,13 +19,15 @@ func phaseSetIsolation() int {
 	return 0
 }
 
-func RunPhase(exp *Experiment, no int) int {
+func RunPhase(exp *Experiment, ph *Phase) int {
 
 	//What to do with isolation?
 	phaseSetIsolation()
 
-	for i, _ := range exp.phases[no].measurements {
-		RunMeasurement(exp)
+	for i, _ := range ph.measuremetns {
+		for _, lp := range exp.LoadPoints {
+			RunMeasurement(exp, &ph.workload, &lp)
+		}
 	}
 	return 0
 }
