@@ -1,4 +1,4 @@
-package shell
+package provisioner
 
 import (
 	"os/exec"

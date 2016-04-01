@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Getting godep if not found"
 go get github.com/tools/godep
 

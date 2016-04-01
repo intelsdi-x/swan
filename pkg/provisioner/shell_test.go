@@ -1,4 +1,4 @@
-package shell
+package provisioner
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
