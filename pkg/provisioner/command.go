@@ -1,4 +1,4 @@
-package shell
+package provisioner
 
 // Command encapsulated a command to be executed.
 // Instead of using a flat string, this struct is meant to contain
