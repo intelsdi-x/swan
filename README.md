@@ -24,3 +24,16 @@ Before sending or updating pull requests, make sure to run:
 $ make lint
 $ make test
 ```
+
+
+# Golang instructions
+
+Building experiment (pass the dir name of the scenario within experiment directory) e.g for memcached profile:
+
+`make all EXPERIMENT=memcached_profile`
+
+Tests:
+
+`make test EXPERIMENT=memcached_profile`
+
+If `EXPERIMENT` is not specified - it's `memcached_profile` by default
