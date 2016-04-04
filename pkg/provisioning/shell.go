@@ -10,11 +10,18 @@ import (
 // Shell is responsible for providing the execution environment via bash or bash & ssh
 // in case of remote execution. It also needed to setup given isolation
 // using Isolation Manager.
-type Shell struct{}
+type Shell struct{
+	user string
+	taskPids map[Task]int
+}
 
 // NewShell returns a Shell instance.
-func NewShell() Shell {
-	return Shell{}
+func NewShell(user string) Shell {
+	s := Shell{
+		user: user,
+		taskPids: map[Task]int{},
+	}
+	return s
 }
 
 func targetIsLocal(targetHost string) bool {
@@ -24,7 +31,7 @@ func targetIsLocal(targetHost string) bool {
 
 // Execute runs the task given in parameters.
 // Returned channel specifies when task has completed or failed.
-func (s Shell) Execute(command string, targetHost string,
+func (s Shell) Execute(task Task, targetHost string,
 					   isolations []isolation.Isolation) (<-chan Status) {
 	statusCh := make(chan Status)
 
@@ -41,8 +48,8 @@ func (s Shell) Execute(command string, targetHost string,
 
 		// Run task in shell locally.
 		go func() {
-			log.Debug("Starting ", command)
-			cmd := exec.Command("sh", "-c", command)
+			log.Debug("Starting ", task.command)
+			cmd := exec.Command("sh", "-c", task.command)
 			cmd.Start()
 
 			log.Debug("Started with pid ", cmd.Process.Pid)
@@ -50,7 +57,7 @@ func (s Shell) Execute(command string, targetHost string,
 			taskPidCh <- cmd.Process.Pid
 			// Wait for task completion.
 			cmd.Wait()
-			log.Debug("Ended ", command)
+			log.Debug("Ended ", task.command)
 
 			// TODO(bplotka): Fetch status code.
 
@@ -74,16 +81,16 @@ func (s Shell) Execute(command string, targetHost string,
 			Port:   "22",
 		}
 		go func() {
-			log.Debug("Starting remote ", command)
+			log.Debug("Starting remote ", task.command)
 
 			// TODO(bplotka): Find a way to have a PID here for future isolation.
-			response, err := ssh.Run(command)
+			response, err := ssh.Run(task.command)
 
 			if err != nil {
 				panic("Can't run remote command: " + err.Error())
 			}
 
-			log.Debug("Ended ", command)
+			log.Debug("Ended ", task.command)
 
 			// TODO(bplotka): Fetch status code.
 			statusCh <- Status{0, response}
