@@ -9,11 +9,12 @@ import (
 
 func TestShell(t *testing.T) {
 	Convey("Creating a new shell with `sleep 3`", t, func() {
-		s := NewShell()
+		s := NewShell("root")
 
 		Convey("Should take more than three second to execute", func() {
 			start := time.Now()
-			status := <-s.Execute("sleep 3", "local", []isolation.Isolation{})
+			task := NewTask(1, "sleep 3")
+			status := <-s.Execute(task, "local", []isolation.Isolation{})
 			duration := time.Now().Sub(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 			So(durationsMs, ShouldBeGreaterThan, 3000)
