@@ -22,8 +22,8 @@ func targetIsLocal(targetHost string) bool {
 }
 
 
-// Execute runs the task given in parameters
-// parallel. Returned channel specifies when task has completed or failed.
+// Execute runs the task given in parameters.
+// Returned channel specifies when task has completed or failed.
 func (s Shell) Execute(command string, targetHost string,
 					   isolations []isolation.Isolation) (<-chan Status) {
 	statusCh := make(chan Status)
