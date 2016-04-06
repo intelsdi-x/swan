@@ -83,5 +83,3 @@ func (l Remote) Run(command string) (Task, error) {
 
 	return NewRemoteTask(), nil
 }
-
-
