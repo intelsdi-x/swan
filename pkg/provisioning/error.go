@@ -2,14 +2,16 @@ package provisioning
 
 import "fmt"
 
-type ProvisioningError struct {
+// Error is to compose different error using string message.
+type Error struct {
 	s string
 }
 
-func (e *ProvisioningError) Error() string {
+func (e *Error) Error() string {
 	return e.s
 }
 
+// NewError constructs Swan Error struct.
 func NewError(args... interface{}) error {
-	return &ProvisioningError{fmt.Sprint(args...)}
+	return &Error{fmt.Sprint(args...)}
 }

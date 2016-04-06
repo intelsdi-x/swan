@@ -17,18 +17,21 @@ func NewRemoteTask() *RemoteTask {
 	return t
 }
 
+// Stop terminates the remote task.
 func (task *RemoteTask) Stop() error {
 	// TODO(bp): Stop pid with.
 	// TODO(bp): Alicja to fill that.
 	return NewError("Not implemented")
 }
 
+// Status gets status of the remote task.
 func (task RemoteTask) Status() Status {
 	// TODO(bp): Get status.
 	// TODO(bp): Alicja to fill that.
 	return Status{}
 }
 
+// Wait blocks until process is terminated or timeout appeared.
 func (task *RemoteTask) Wait(timeoutSeconds int) error {
 	// TODO(bp): Alicja to fill that.
 	return NewError("Not implemented")

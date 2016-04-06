@@ -33,6 +33,7 @@ func (task *LocalTask) completeTask(status Status) {
 	task.statusCh = nil
 }
 
+// Stop terminates the local task.
 func (task *LocalTask) Stop() error {
 	if (task.completed) {
 		return NewError("Task is not running.")
@@ -42,11 +43,13 @@ func (task *LocalTask) Stop() error {
 	return NewError("Not implemented")
 }
 
+// Status gets status of the local task.
 func (task LocalTask) Status() Status {
 	// TODO(bp): Get status.
 	return task.status
 }
 
+// Wait blocks until process is terminated or timeout appeared.
 func (task *LocalTask) Wait(timeoutSeconds int) error {
 	if (task.completed) {
 		return nil
