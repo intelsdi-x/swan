@@ -23,7 +23,9 @@ func TestShell(t *testing.T) {
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 
-			So(durationsMs, ShouldBeGreaterThan, 3000)
+			Convey("The Duration should last longer than 3s", func() {
+				So(durationsMs, ShouldBeGreaterThan, 3000)
+			})
 
 			Convey("And the exit status should be zero", func() {
 				So(task.Status().code, ShouldEqual, 0)
@@ -43,7 +45,9 @@ func TestShell(t *testing.T) {
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 
-			So(durationsMs, ShouldBeLessThan, 3000)
+			Convey("The Duration should last less than 3s", func() {
+				So(durationsMs, ShouldBeLessThan, 3000)
+			})
 
 			Convey("And the exit status should be zero", func() {
 				So(task.Status().code, ShouldEqual, 0)
