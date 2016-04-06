@@ -4,5 +4,5 @@ package provisioning
 // workload with given isolation. It returns a pointer to the Task.
 // TODO(bp): Decide about the name: Provisioning vs Runner vs ...
 type Provisioner interface{
-	Run(command string) (Task, error)
+	Run(command string) Task
 }

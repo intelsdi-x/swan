@@ -14,9 +14,7 @@ func TestShell(t *testing.T) {
 		Convey("Should take more than three seconds to execute", func() {
 			start := time.Now()
 
-			task, err := l.Run("sleep 3")
-
-			So(err, ShouldEqual, nil)
+			task := l.Run("sleep 3")
 
 			task.Wait(0)
 
@@ -36,9 +34,7 @@ func TestShell(t *testing.T) {
 				func() {
 			start := time.Now()
 
-			task, err := l.Run("sleep 3")
-
-			So(err, ShouldEqual, nil)
+			task := l.Run("sleep 3")
 
 			task.Wait(1)
 

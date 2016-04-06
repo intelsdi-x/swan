@@ -18,10 +18,10 @@ func NewRemoteTask() *RemoteTask {
 }
 
 // Stop terminates the remote task.
-func (task *RemoteTask) Stop() error {
+func (task *RemoteTask) Stop() {
 	// TODO(bp): Stop pid with.
 	// TODO(bp): Alicja to fill that.
-	return NewError("Not implemented")
+	panic("Not implemented")
 }
 
 // Status gets status of the remote task.
@@ -32,9 +32,11 @@ func (task RemoteTask) Status() Status {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
-func (task *RemoteTask) Wait(timeoutSeconds int) error {
+func (task *RemoteTask) Wait(timeoutSeconds int) bool {
 	// TODO(bp): Alicja to fill that.
-	return NewError("Not implemented")
+	panic("Not implemented")
+
+	return true
 }
 
 // Remote provisioning is responsible for providing the execution environment
