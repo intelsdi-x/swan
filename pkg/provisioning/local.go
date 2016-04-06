@@ -12,8 +12,7 @@ type LocalTask struct{
 	pid isolation.TaskPID
 	statusCh chan Status
 	status Status
-
-	completed bool
+	terminated bool
 }
 
 // NewLocalTask returns a LocalTask instance.
@@ -28,14 +27,14 @@ func NewLocalTask(pid isolation.TaskPID, statusCh chan Status) *LocalTask {
 }
 
 func (task *LocalTask) completeTask(status Status) {
-	task.completed = true
+	task.terminated = true
 	task.status = status
 	task.statusCh = nil
 }
 
 // Stop terminates the local task.
 func (task *LocalTask) Stop() error {
-	if (task.completed) {
+	if (task.terminated) {
 		return NewError("Task is not running.")
 	}
 
@@ -51,7 +50,7 @@ func (task LocalTask) Status() Status {
 
 // Wait blocks until process is terminated or timeout appeared.
 func (task *LocalTask) Wait(timeoutSeconds int) error {
-	if (task.completed) {
+	if (task.terminated) {
 		return nil
 	}
 
