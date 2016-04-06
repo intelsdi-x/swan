@@ -1,7 +1,9 @@
 package provisioning
 
+import "syscall"
+
 // Status represents the exit status for a command.
 type Status struct {
-	code uint32
+	code syscall.WaitStatus
  	output string
 }

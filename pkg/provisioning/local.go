@@ -136,7 +136,7 @@ func (l Local) Run(command string) (Task) {
 
 		output, _ := cmd.Output()
 		statusCh <- Status{
-			uint32(cmd.ProcessState.Sys().(syscall.WaitStatus)),
+			cmd.ProcessState.Sys().(syscall.WaitStatus),
 			string(output),
 		}
 	}()
