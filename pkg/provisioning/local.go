@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"time"
+	"syscall"
 )
 
 // LocalTask implements Task interface.
@@ -38,8 +39,13 @@ func (task *LocalTask) Stop() error {
 		return NewError("Task is not running.")
 	}
 
-	// TODO(bp): Stop pid with.
-	return NewError("Not implemented")
+	log.Debug("Sending SIGTERM to PID ", -task.pid)
+	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
+	if (err != nil) {
+		return err
+	}
+
+	return nil
 }
 
 // Status gets status of the local task.
@@ -78,6 +84,8 @@ func (task *LocalTask) Wait(timeoutSeconds int) error {
 type Local struct{
 	user string
 	isolations []isolation.Isolation
+
+	SetPGID bool
 }
 
 // NewLocal returns a Local instance.
@@ -85,6 +93,7 @@ func NewLocal(user string, isolations []isolation.Isolation) Local {
 	l := Local{
 		user: user,
 		isolations: isolations,
+		SetPGID: true,
 	}
 	return l
 }
@@ -107,8 +116,13 @@ func (l Local) Run(command string) (Task, error) {
 		log.Debug("Starting ", command)
 
 		cmd := exec.Command("sh", "-c", command)
+
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.SysProcAttr.Setpgid = l.SetPGID
+
 		err := cmd.Start()
 		if (err != nil) {
+			taskPidCh <- -1
 			panic(err)
 		}
 
