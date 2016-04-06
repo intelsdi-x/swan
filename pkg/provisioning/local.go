@@ -106,11 +106,6 @@ func (l Local) Run(command string) (Task, error) {
 
 	taskPidCh := make(chan isolation.TaskPID)
 
-	// Do initialization of the isolation synchronously.
-	for _, isolation := range l.isolations {
-		isolation.Init()
-	}
-
 	// Run task in local locally.
 	go func() {
 		log.Debug("Starting ", command)
@@ -146,7 +141,7 @@ func (l Local) Run(command string) (Task, error) {
 
 	// Perform rest of the isolation synchronously.
 	for _, isolation := range l.isolations {
-		isolation.Perform(taskPid)
+		isolation.Isolate(taskPid)
 	}
 
 	t := NewLocalTask(taskPid, statusCh)
