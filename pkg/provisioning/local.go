@@ -135,7 +135,10 @@ func (l Local) Run(command string) (Task) {
 		// TODO(bplotka): Fetch status code.
 
 		output, _ := cmd.Output()
-		statusCh <- Status{0, string(output)}
+		statusCh <- Status{
+			uint32(cmd.ProcessState.Sys().(syscall.WaitStatus)),
+			string(output),
+		}
 	}()
 
 	// Get PID
