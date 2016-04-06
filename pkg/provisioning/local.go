@@ -34,18 +34,16 @@ func (task *LocalTask) completeTask(status Status) {
 }
 
 // Stop terminates the local task.
-func (task *LocalTask) Stop() error {
+func (task *LocalTask) Stop() {
 	if (task.terminated) {
-		return NewError("Task is not running.")
+		panic("Task is not running.")
 	}
 
 	log.Debug("Sending SIGTERM to PID ", -task.pid)
 	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
 	if (err != nil) {
-		return err
+		panic(err)
 	}
-
-	return nil
 }
 
 // Status gets status of the local task.
@@ -55,9 +53,10 @@ func (task LocalTask) Status() Status {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
-func (task *LocalTask) Wait(timeoutSeconds int) error {
+// Returns true after timeout exceeds.
+func (task *LocalTask) Wait(timeoutSeconds int) bool {
 	if (task.terminated) {
-		return nil
+		return false
 	}
 
 	if (timeoutSeconds == 0) {
@@ -71,11 +70,11 @@ func (task *LocalTask) Wait(timeoutSeconds int) error {
 		case s := <-task.statusCh:
 			task.completeTask(s)
 		case <-time.After(timeoutDuration):
-			return NewError("Timeout occured after: ", timeoutDuration)
+			return true
 		}
 	}
 
-	return nil
+	return false
 }
 
 // Local provisioning is responsible for providing the execution environment
@@ -85,7 +84,9 @@ type Local struct{
 	user string
 	isolations []isolation.Isolation
 
-	SetPGID bool
+	// It is important to set additional PGID for parent process and his children
+	// to have ability to kill all the children processes.
+	setPGID bool
 }
 
 // NewLocal returns a Local instance.
@@ -93,7 +94,7 @@ func NewLocal(user string, isolations []isolation.Isolation) Local {
 	l := Local{
 		user: user,
 		isolations: isolations,
-		SetPGID: true,
+		setPGID: true,
 	}
 	return l
 }
@@ -101,7 +102,7 @@ func NewLocal(user string, isolations []isolation.Isolation) Local {
 
 // Run runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
-func (l Local) Run(command string) (Task, error) {
+func (l Local) Run(command string) (Task) {
 	statusCh := make(chan Status)
 
 	taskPidCh := make(chan isolation.TaskPID)
@@ -113,11 +114,11 @@ func (l Local) Run(command string) (Task, error) {
 		cmd := exec.Command("sh", "-c", command)
 
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
-		cmd.SysProcAttr.Setpgid = l.SetPGID
+		cmd.SysProcAttr.Setpgid = l.setPGID
 
 		err := cmd.Start()
+
 		if (err != nil) {
-			taskPidCh <- -1
 			panic(err)
 		}
 
@@ -125,6 +126,7 @@ func (l Local) Run(command string) (Task, error) {
 
 		// Report the process id.
 		taskPidCh <- isolation.TaskPID(cmd.Process.Pid)
+
 		// Wait for task completion.
 		cmd.Wait()
 
@@ -146,5 +148,5 @@ func (l Local) Run(command string) (Task, error) {
 
 	t := NewLocalTask(taskPid, statusCh)
 
-	return t, nil
+	return t
 }
