@@ -2,87 +2,130 @@ package provisioning
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/hypersleep/easyssh"
 	"errors"
+	"fmt"
+	"golang.org/x/crypto/ssh"
+	"time"
 )
 
 // RemoteTask implements Task interface.
 type RemoteTask struct{
-	// TODO(bp): Alicja to fill that.
+	isTerminated bool
+	session *ssh.Session
+	statusCh chan Status
+	status Status
 }
 
-// NewRemoteTask returns a LocalTask instance.
-func NewRemoteTask() *RemoteTask {
-	t := &RemoteTask{
-	}
-	return t
+// NewRemoteTask returns a RemoteTask instance.
+func NewRemoteTask(session *ssh.Session, statusCh chan Status) *RemoteTask {
+    return &RemoteTask{
+	    false,
+	    session,
+	    statusCh,
+	    Status{},
+    }
+}
+
+// Set task as completed and clean channel
+func (task *RemoteTask) completeTask(status Status) {
+	task.isTerminated = true
+	task.status = status
+	task.statusCh = nil
 }
 
 // Stop terminates the remote task.
 func (task *RemoteTask) Stop() error {
-	// TODO(bp): Stop pid with.
-	// TODO(bp): Alicja to fill that.
-	return errors.New("Not implemented")
+    if task.isTerminated {
+	    return errors.New("Task has already completed.")
+    }
+    err := task.session.Signal("KILL");
+	if err != nil {
+		return err
+	}
+
+	s := <-task.statusCh
+	task.completeTask(s)
+
+	return nil
 }
 
 // Status gets status of the remote task.
 func (task RemoteTask) Status() Status {
-	// TODO(bp): Get status.
-	// TODO(bp): Alicja to fill that.
-	return Status{}
+	return task.status
 }
 
 // Wait blocks until process is terminated or timeout appeared.
 func (task *RemoteTask) Wait(timeoutMs int) bool {
-	// TODO(bp): Alicja to fill that.
-	panic("Not implemented")
+	if (task.isTerminated) {
+		return false
+	}
 
-	return true
+	if (timeoutMs == 0) {
+		s := <-task.statusCh
+		task.completeTask(s)
+
+	} else {
+		timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
+
+		select {
+		case s := <-task.statusCh:
+			task.completeTask(s)
+		case <-time.After(timeoutDuration):
+			return true
+		}
+	}
+
+	return false
 }
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct{
-	// TODO(bp): Alicja to fill that.
+	sshConfig SshConfig
 }
 
 // NewRemote returns a Local instance.
-func NewRemote() Remote {
-	l := Remote{
+func NewRemote(sshConfig SshConfig) *Remote {
+	return &Remote{
+		sshConfig,
 	}
-	return l
 }
-
 
 // Run runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
-func (l Remote) Run(command string) (Task, error) {
+func (remote Remote) Run(command string) (Task, error) {
 	statusCh := make(chan Status)
 
-	// Run task in shell remotely via ssh.
-	ssh := &easyssh.MakeConfig{
-	User:   "root",
-	Server: "localhost",
-	Key:    "/.ssh/id_rsa",
-	Port:   "22",
+	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
+		remote.sshConfig.clientConfig)
+	if err != nil {
+		return err
 	}
+
+	session, err := connection.NewSession()
+	if err != nil {
+		return err
+	}
+
+	terminal := ssh.TerminalModes{
+		ssh.ECHO:          0,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+	if err := session.RequestPty("xterm", 80, 40, terminal); err != nil {
+		session.Close()
+		return err
+	}
+
 	go func() {
-		log.Debug("Starting remote ", command)
-
-		response, err := ssh.Run(command)
-
+		output, err := session.Output(command)
 		if err != nil {
-			panic("Can't run remote command: " + err.Error())
+			panic(err)
 		}
+		//TODO: get exit status
+		statusCh <- Status{0, string(output[:]), ""}
+	}();
 
-		log.Debug("Ended ", command)
-
-		// TODO(bplotka): Fetch status code.
-		statusCh <- Status{0, response, ""}
-	}()
-
-	// TODO(bp): Alicja to fill that.
-	//t := NewRemoteTask(statusCh)
-
-	return NewRemoteTask(), nil
+	remoteTask := NewRemoteTask(session, statusCh)
+	return remoteTask, nil
 }
