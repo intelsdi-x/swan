@@ -2,3 +2,4 @@
 
 go test -v github.com/intelsdi-x/swan/pkg/dummy
 go test -v github.com/intelsdi-x/swan/pkg/provisioning
+go test -v github.com/intelsdi-x/swan/pkg/isolation
