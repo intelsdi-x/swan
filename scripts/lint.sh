@@ -8,3 +8,6 @@ sh -c "cd pkg/dummy && golint"
 
 echo "Checking provisioning style"
 sh -c "cd pkg/provisioning && golint"
+
+echo "Checking provisioning style"
+sh -c "cd pkg/isolation && golint"

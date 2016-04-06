@@ -1,9 +1,8 @@
 package provisioning
 
-import "github.com/intelsdi-x/swan/pkg/isolation"
-
-// Provisioner is responsible for creating execution evnironment for given
-// workload with given isolation. It is always asynchronous and returns Status chan.
+// Provisioner is responsible for creating execution environment for given
+// workload with given isolation. It returns a pointer to the Task.
+// TODO(bp): Decide about the name: Provisioning vs Runner vs ...
 type Provisioner interface{
-	Execute(string, string, []isolation.Isolation) <-chan Status
+	Run(command string) (Task, error)
 }
