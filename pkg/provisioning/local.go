@@ -141,7 +141,7 @@ func (l Local) Run(command string) (Task) {
 		}
 	}()
 
-	// Get PID
+	// Get PID.
 	taskPid := <-taskPidCh
 
 	// Perform rest of the isolation synchronously.
