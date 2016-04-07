@@ -7,6 +7,7 @@ import (
 	"time"
 	"syscall"
 	"bytes"
+	"errors"
 )
 
 // LocalTask implements Task interface.
@@ -52,7 +53,10 @@ func (task *LocalTask) Stop() {
 
 // Status gets status of the local task.
 func (task LocalTask) Status() Status {
-	// TODO(bp): Get status.
+	if (!task.terminated) {
+		return Status{code: RunningCode}
+	}
+
 	return task.status
 }
 
@@ -86,7 +90,7 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 // using Isolation Manager.
 // It runs command as current user.
 type Local struct{
-	isolations []isolation.Isolation
+	isolations []isolation.ProcessIsolation
 
 	// It is important to set additional PGID for parent process and his children
 	// to have ability to kill all the children processes.
@@ -94,7 +98,7 @@ type Local struct{
 }
 
 // NewLocal returns a Local instance.
-func NewLocal(isolations []isolation.Isolation) Local {
+func NewLocal(isolations []isolation.ProcessIsolation) Local {
 	l := Local{
 		isolations: isolations,
 		setPGID: true,
