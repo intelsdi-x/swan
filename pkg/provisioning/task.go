@@ -8,6 +8,6 @@ type Task interface{
 	Status() Status
 	// Waits for the task completion.
 	// In case of 0 timeout it will be endlessly blocked.
-	// Returns true after timeout exceeds.
+	// Returns false after timeout exceeds.
 	Wait(timeoutMs int) bool
 }
