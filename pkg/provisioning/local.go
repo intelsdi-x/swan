@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type TaskPID int64
+type taskPID int64
 
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
@@ -71,24 +71,24 @@ func (l Local) Run(command string) (Task, error) {
 		}
 	}()
 
-	taskPid := TaskPID(cmd.Process.Pid)
+	taskPid := taskPID(cmd.Process.Pid)
 
-	t := newLocalTask(taskPid, statusChannel)
+	t := newlocalTask(taskPid, statusChannel)
 
 	return t, err
 }
 
-// LocalTask implements Task interface.
-type LocalTask struct {
-	pid           TaskPID
+// localTask implements Task interface.
+type localTask struct {
+	pid           taskPID
 	statusChannel chan Status
 	status        Status
 	terminated    bool
 }
 
-// newLocalTask returns a LocalTask instance.
-func newLocalTask(pid TaskPID, statusChannel chan Status) *LocalTask {
-	t := &LocalTask{
+// newlocalTask returns a localTask instance.
+func newlocalTask(pid taskPID, statusChannel chan Status) *localTask {
+	t := &localTask{
 		pid,
 		statusChannel,
 		Status{},
@@ -97,14 +97,14 @@ func newLocalTask(pid TaskPID, statusChannel chan Status) *LocalTask {
 	return t
 }
 
-func (task *LocalTask) completeTask(status Status) {
+func (task *localTask) completeTask(status Status) {
 	task.terminated = true
 	task.status = status
 	task.statusChannel = nil
 }
 
 // Stop terminates the local task.
-func (task *LocalTask) Stop() error {
+func (task *localTask) Stop() error {
 	if task.terminated {
 		return errors.New("Task is not running.")
 	}
@@ -124,7 +124,7 @@ func (task *LocalTask) Stop() error {
 }
 
 // Status gets status of the local task.
-func (task LocalTask) Status() Status {
+func (task localTask) Status() Status {
 	if !task.terminated {
 		return Status{code: 0}
 	}
@@ -134,7 +134,7 @@ func (task LocalTask) Status() Status {
 
 // Wait blocks until process is terminated or timeout appeared.
 // Returns true when process terminates before timeout, otherwise false.
-func (task *LocalTask) Wait(timeoutMs int) bool {
+func (task *localTask) Wait(timeoutMs int) bool {
 	if task.terminated {
 		return true
 	}
