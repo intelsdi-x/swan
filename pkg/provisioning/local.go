@@ -94,17 +94,12 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 // It runs command as current user.
 type Local struct{
 	isolations []isolation.ProcessIsolation
-
-	// It is important to set additional PGID for parent process and his children
-	// to have ability to kill all the children processes.
-	setPGID bool
 }
 
 // NewLocal returns a Local instance.
 func NewLocal(isolations []isolation.ProcessIsolation) Local {
 	l := Local{
 		isolations: isolations,
-		setPGID: true,
 	}
 	return l
 }
@@ -118,7 +113,9 @@ func (l Local) Run(command string) (Task, error) {
 
 	cmd := exec.Command("sh", "-c", command)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: l.setPGID}
+	// It is important to set additional Process Group ID for parent process and his children
+	// to have ability to kill all the children processes.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Setting Buffer as io.Writer for Command output.
 	var stdout bytes.Buffer

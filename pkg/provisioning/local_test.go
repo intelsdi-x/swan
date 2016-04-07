@@ -25,7 +25,7 @@ func TestLocal(t *testing.T) {
 
 			task, err := l.Run("sleep 1")
 
-			timeoutExceeds := task.Wait(3000)
+			taskNotTimeouted := task.Wait(3000)
 
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
@@ -39,7 +39,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
@@ -52,7 +52,7 @@ func TestLocal(t *testing.T) {
 
 			task, err := l.Run("sleep 1")
 
-			timeoutExceeds := task.Wait(500)
+			taskNotTimeouted := task.Wait(500)
 
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
@@ -66,7 +66,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should exceed", func() {
-				So(timeoutExceeds, ShouldBeTrue)
+				So(taskNotTimeouted, ShouldBeFalse)
 			})
 
 			Convey("And error is nil", func() {
@@ -100,7 +100,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command `echo output` is executed and we wait for it", func() {
 			task, err := l.Run("echo output")
 
-			timeoutExceeds := task.Wait(500)
+			taskNotTimeouted := task.Wait(500)
 
 			Convey("The command stdout needs to match 'output", func() {
 				So(task.Status().stdout, ShouldEqual, addNewline("output"))
@@ -111,7 +111,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
@@ -122,7 +122,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command which does not exists is executed and we wait for it", func() {
 			task, err := l.Run("commandThatDoesNotExists")
 
-			timeoutExceeds := task.Wait(500)
+			taskNotTimeouted := task.Wait(500)
 
 			Convey("The command stderr should point that the command does not exists", func() {
 				So(task.Status().stderr, ShouldEqual,
@@ -134,7 +134,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
