@@ -7,6 +7,7 @@ import (
 	"time"
 	"syscall"
 	"bytes"
+"errors"
 )
 
 // LocalTask implements Task interface.
@@ -35,19 +36,22 @@ func (task *LocalTask) completeTask(status Status) {
 }
 
 // Stop terminates the local task.
-func (task *LocalTask) Stop() {
+func (task *LocalTask) Stop() error{
 	if (task.terminated) {
-		panic("Task is not running.")
+		return errors.New("Task is not running.")
 	}
 
 	log.Debug("Sending SIGTERM to PID ", -task.pid)
 	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
 	if (err != nil) {
-		panic(err)
+		task.statusCh = nil
+		return err
 	}
 
 	s := <-task.statusCh
 	task.completeTask(s)
+
+	return nil
 }
 
 // Status gets status of the local task.
@@ -105,10 +109,9 @@ func NewLocal(isolations []isolation.ProcessIsolation) Local {
 	return l
 }
 
-
 // Run runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
-func (l Local) Run(command string) (Task) {
+func (l Local) Run(command string) (Task, error) {
 	statusCh := make(chan Status)
 
 	log.Debug("Starting ", command)
@@ -126,7 +129,7 @@ func (l Local) Run(command string) (Task) {
 	err := cmd.Start()
 
 	if (err != nil) {
-		panic(err)
+		return nil, err
 	}
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
@@ -159,5 +162,5 @@ func (l Local) Run(command string) (Task) {
 
 	t := NewLocalTask(taskPid, statusCh)
 
-	return t
+	return t, nil
 }

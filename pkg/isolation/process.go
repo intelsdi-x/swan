@@ -8,4 +8,6 @@ type TaskPID int64
 type ProcessIsolation interface{
 	// Method executed after task started.
 	Isolate(taskPid TaskPID) error
+	// Clean up phase.
+	Cleanup() error
 }

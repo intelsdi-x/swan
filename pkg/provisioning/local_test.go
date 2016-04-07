@@ -23,7 +23,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command `sleep 1` is executed and we wait for it", func() {
 			start := time.Now()
 
-			task := l.Run("sleep 1")
+			task, err := l.Run("sleep 1")
 
 			timeoutExceeds := task.Wait(3000)
 
@@ -41,12 +41,16 @@ func TestLocal(t *testing.T) {
 			Convey("And the timeout should NOT exceed", func() {
 				So(timeoutExceeds, ShouldBeFalse)
 			})
+
+			Convey("And error is nil", func() {
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("When command `sleep 1` is executed and we wait for it with timeout 0.5s", func() {
 			start := time.Now()
 
-			task := l.Run("sleep 1")
+			task, err := l.Run("sleep 1")
 
 			timeoutExceeds := task.Wait(500)
 
@@ -64,12 +68,16 @@ func TestLocal(t *testing.T) {
 			Convey("And the timeout should exceed", func() {
 				So(timeoutExceeds, ShouldBeTrue)
 			})
+
+			Convey("And error is nil", func() {
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("When command `sleep 1` is executed and we stop it after start", func() {
 			start := time.Now()
 
-			task := l.Run("sleep 1")
+			task, err := l.Run("sleep 1")
 
 			task.Stop()
 
@@ -83,10 +91,14 @@ func TestLocal(t *testing.T) {
 			Convey("And the exit status should be -1", func() {
 				So(task.Status().code, ShouldEqual, -1)
 			})
+
+			Convey("And error is nil", func() {
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("When command `echo output` is executed and we wait for it", func() {
-			task := l.Run("echo output")
+			task, err := l.Run("echo output")
 
 			timeoutExceeds := task.Wait(500)
 
@@ -101,10 +113,14 @@ func TestLocal(t *testing.T) {
 			Convey("And the timeout should NOT exceed", func() {
 				So(timeoutExceeds, ShouldBeFalse)
 			})
+
+			Convey("And error is nil", func() {
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("When command which does not exists is executed and we wait for it", func() {
-			task := l.Run("commandThatDoesNotExists")
+			task, err := l.Run("commandThatDoesNotExists")
 
 			timeoutExceeds := task.Wait(500)
 
@@ -120,11 +136,15 @@ func TestLocal(t *testing.T) {
 			Convey("And the timeout should NOT exceed", func() {
 				So(timeoutExceeds, ShouldBeFalse)
 			})
+
+			Convey("And error is nil", func() {
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("When we run two tasks in the same time", func() {
-			task := l.Run("echo output1")
-			task2 := l.Run("echo output2")
+			task, err := l.Run("echo output1")
+			task2, err2 := l.Run("echo output2")
 
 			task.Wait(0)
 			task2.Wait(0)
@@ -137,6 +157,11 @@ func TestLocal(t *testing.T) {
 			Convey("Both exit statuses should be 0", func() {
 				So(task.Status().code, ShouldEqual, 0)
 				So(task2.Status().code, ShouldEqual, 0)
+			})
+
+			Convey("And errors are nil", func() {
+				So(err, ShouldBeNil)
+				So(err2, ShouldBeNil)
 			})
 		})
 	})
