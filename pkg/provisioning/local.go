@@ -19,14 +19,13 @@ type Local struct {
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
-	l := Local{}
-	return l
+	return Local{}
 }
 
 // Run runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Run(command string) (Task, error) {
-	statusCh := make(chan Status)
+	statusChannel := make(chan Status)
 
 	log.Debug("Starting ", command)
 
@@ -37,6 +36,7 @@ func (l Local) Run(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Setting Buffer as io.Writer for Command output.
+	// TODO: Write to temporary files instead of keeping in memory.
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -52,6 +52,9 @@ func (l Local) Run(command string) (Task, error) {
 	// Wait for local task in goroutine.
 	go func() {
 		// Wait for task completion.
+		// NOTE: Wait() returns an error. We grab the process state in any case
+		// (success or failure) below, so the error object matters less in the
+		// status handling for now.
 		cmd.Wait()
 
 		log.Debug(
@@ -61,7 +64,7 @@ func (l Local) Run(command string) (Task, error) {
 			" with status code: ",
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 
-		statusCh <- Status{
+		statusChannel <- Status{
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
 			stdout.String(),
 			stderr.String(),
@@ -70,24 +73,24 @@ func (l Local) Run(command string) (Task, error) {
 
 	taskPid := TaskPID(cmd.Process.Pid)
 
-	t := newLocalTask(taskPid, statusCh)
+	t := newLocalTask(taskPid, statusChannel)
 
 	return t, err
 }
 
 // LocalTask implements Task interface.
 type LocalTask struct {
-	pid        TaskPID
-	statusCh   chan Status
-	status     Status
-	terminated bool
+	pid           TaskPID
+	statusChannel chan Status
+	status        Status
+	terminated    bool
 }
 
 // newLocalTask returns a LocalTask instance.
-func newLocalTask(pid TaskPID, statusCh chan Status) *LocalTask {
+func newLocalTask(pid TaskPID, statusChannel chan Status) *LocalTask {
 	t := &LocalTask{
 		pid,
-		statusCh,
+		statusChannel,
 		Status{},
 		false,
 	}
@@ -97,7 +100,7 @@ func newLocalTask(pid TaskPID, statusCh chan Status) *LocalTask {
 func (task *LocalTask) completeTask(status Status) {
 	task.terminated = true
 	task.status = status
-	task.statusCh = nil
+	task.statusChannel = nil
 }
 
 // Stop terminates the local task.
@@ -106,14 +109,15 @@ func (task *LocalTask) Stop() error {
 		return errors.New("Task is not running.")
 	}
 
+	// We signal the entire process group.
+	// The kill syscall interprets a negated PID N as the process group N belongs to.
 	log.Debug("Sending SIGTERM to PID ", -task.pid)
 	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
 	if err != nil {
-		task.statusCh = nil
 		return err
 	}
 
-	s := <-task.statusCh
+	s := <-task.statusChannel
 	task.completeTask(s)
 
 	return err
@@ -122,7 +126,7 @@ func (task *LocalTask) Stop() error {
 // Status gets status of the local task.
 func (task LocalTask) Status() Status {
 	if !task.terminated {
-		return Status{code: RunningCode}
+		return Status{code: 0}
 	}
 
 	return task.status
@@ -136,7 +140,7 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 	}
 
 	if timeoutMs == 0 {
-		s := <-task.statusCh
+		s := <-task.statusChannel
 		task.completeTask(s)
 		return true
 	}
@@ -145,7 +149,7 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 	result := true
 
 	select {
-	case s := <-task.statusCh:
+	case s := <-task.statusChannel:
 		task.completeTask(s)
 	case <-time.After(timeoutDuration):
 		result = false
