@@ -6,6 +6,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"time"
 	"syscall"
+	"bytes"
 )
 
 // LocalTask implements Task interface.
@@ -44,6 +45,9 @@ func (task *LocalTask) Stop() {
 	if (err != nil) {
 		panic(err)
 	}
+
+	s := <-task.statusCh
+	task.completeTask(s)
 }
 
 // Status gets status of the local task.
@@ -80,8 +84,8 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command. It also needed to setup given isolation
 // using Isolation Manager.
+// It runs command as current user.
 type Local struct{
-	user string
 	isolations []isolation.Isolation
 
 	// It is important to set additional PGID for parent process and his children
@@ -90,9 +94,8 @@ type Local struct{
 }
 
 // NewLocal returns a Local instance.
-func NewLocal(user string, isolations []isolation.Isolation) Local {
+func NewLocal(isolations []isolation.Isolation) Local {
 	l := Local{
-		user: user,
 		isolations: isolations,
 		setPGID: true,
 	}
@@ -113,8 +116,13 @@ func (l Local) Run(command string) (Task) {
 
 		cmd := exec.Command("sh", "-c", command)
 
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
-		cmd.SysProcAttr.Setpgid = l.setPGID
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: l.setPGID}
+
+		// Setting Buffer as io.Writer for Command output.
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
 
 		err := cmd.Start()
 
@@ -130,14 +138,17 @@ func (l Local) Run(command string) (Task) {
 		// Wait for task completion.
 		cmd.Wait()
 
-		log.Debug("Ended ", command)
+		log.Debug(
+		  "Ended ", command,
+		  " with output: ", stdout.String(),
+		  " with err output: ", stderr.String(),
+		  " with status code: ",
+		  (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 
-		// TODO(bplotka): Fetch status code.
-
-		output, _ := cmd.Output()
 		statusCh <- Status{
-			cmd.ProcessState.Sys().(syscall.WaitStatus),
-			string(output),
+			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
+			stdout.String(),
+			stderr.String(),
 		}
 	}()
 
