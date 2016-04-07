@@ -8,7 +8,7 @@ const (
 )
 
 
-// Status represents the exit status for a command.
+// Status represents the status for a command.
 type Status struct {
 	code int
  	stdout string
