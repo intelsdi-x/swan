@@ -111,33 +111,28 @@ func NewLocal(isolations []isolation.ProcessIsolation) Local {
 func (l Local) Run(command string) (Task) {
 	statusCh := make(chan Status)
 
-	taskPidCh := make(chan isolation.TaskPID)
+	log.Debug("Starting ", command)
 
-	// Run task in local locally.
+	cmd := exec.Command("sh", "-c", command)
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: l.setPGID}
+
+	// Setting Buffer as io.Writer for Command output.
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Start()
+
+	if (err != nil) {
+		panic(err)
+	}
+
+	log.Debug("Started with pid ", cmd.Process.Pid)
+
+	// Wait for local task in goroutine.
 	go func() {
-		log.Debug("Starting ", command)
-
-		cmd := exec.Command("sh", "-c", command)
-
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: l.setPGID}
-
-		// Setting Buffer as io.Writer for Command output.
-		var stdout bytes.Buffer
-		var stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		err := cmd.Start()
-
-		if (err != nil) {
-			panic(err)
-		}
-
-		log.Debug("Started with pid ", cmd.Process.Pid)
-
-		// Report the process id.
-		taskPidCh <- isolation.TaskPID(cmd.Process.Pid)
-
 		// Wait for task completion.
 		cmd.Wait()
 
@@ -155,8 +150,7 @@ func (l Local) Run(command string) (Task) {
 		}
 	}()
 
-	// Get PID.
-	taskPid := <-taskPidCh
+	taskPid := isolation.TaskPID(cmd.Process.Pid)
 
 	// Perform rest of the isolation synchronously.
 	for _, isolation := range l.isolations {
