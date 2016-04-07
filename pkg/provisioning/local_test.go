@@ -7,13 +7,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
-func addNewline(text string) string {
-	// Stdout & Stderr have a newline at the end.
-	return text + `
-`
-}
-
-
 // TestLocal takes fixed amount of time (6s) since it tests command execution and
 // wait functionality.
 func TestLocal(t *testing.T) {
@@ -103,7 +96,7 @@ func TestLocal(t *testing.T) {
 			taskNotTimeouted := task.Wait(500)
 
 			Convey("The command stdout needs to match 'output", func() {
-				So(task.Status().stdout, ShouldEqual, addNewline("output"))
+				So(task.Status().stdout, ShouldEqual, "output\n")
 			})
 
 			Convey("And the exit status should be zero", func() {
@@ -145,8 +138,8 @@ func TestLocal(t *testing.T) {
 			task2.Wait(0)
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(task.Status().stdout, ShouldEqual, addNewline("output1"))
-				So(task2.Status().stdout, ShouldEqual, addNewline("output2"))
+				So(task.Status().stdout, ShouldEqual, "output1\n")
+				So(task2.Status().stdout, ShouldEqual, "output2\n")
 			})
 
 			Convey("Both exit statuses should be 0", func() {
