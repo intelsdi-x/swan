@@ -126,6 +126,8 @@ func (task *localTask) Stop() error {
 // Status gets status of the local task.
 func (task localTask) Status() Status {
 	if !task.terminated {
+		// TODO: Represent running as non-presence of an exit code or return
+		// tuple with (running, *status)
 		return Status{code: 0}
 	}
 
