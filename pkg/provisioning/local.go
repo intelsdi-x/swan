@@ -107,7 +107,7 @@ func NewLocal(isolations []isolation.ProcessIsolation) Local {
 
 
 // Run runs the command given as input.
-// Returned Task pointer is able to stop & monitor the provisioned process.
+// Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Run(command string) (Task) {
 	statusCh := make(chan Status)
 
