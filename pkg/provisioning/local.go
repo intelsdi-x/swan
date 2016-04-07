@@ -1,28 +1,25 @@
 package provisioning
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"os/exec"
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"time"
-	"syscall"
 	"bytes"
 	"errors"
+	log "github.com/Sirupsen/logrus"
+	"os/exec"
+	"syscall"
+	"time"
 )
 
+type TaskPID int64
+
 // Local provisioning is responsible for providing the execution environment
-// on local machine via exec.Command. It also needed to setup given isolation
-// using Isolation Manager.
+// on local machine via exec.Command.
 // It runs command as current user.
-type Local struct{
-	isolations []isolation.ProcessIsolation
+type Local struct {
 }
 
 // NewLocal returns a Local instance.
-func NewLocal(isolations []isolation.ProcessIsolation) Local {
-	l := Local{
-		isolations: isolations,
-	}
+func NewLocal() Local {
+	l := Local{}
 	return l
 }
 
@@ -46,7 +43,7 @@ func (l Local) Run(command string) (Task, error) {
 	cmd.Stderr = &stderr
 
 	err := cmd.Start()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -58,11 +55,11 @@ func (l Local) Run(command string) (Task, error) {
 		cmd.Wait()
 
 		log.Debug(
-		  "Ended ", command,
-		  " with output: ", stdout.String(),
-		  " with err output: ", stderr.String(),
-		  " with status code: ",
-		  (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			"Ended ", command,
+			" with output: ", stdout.String(),
+			" with err output: ", stderr.String(),
+			" with status code: ",
+			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 
 		statusCh <- Status{
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
@@ -71,12 +68,7 @@ func (l Local) Run(command string) (Task, error) {
 		}
 	}()
 
-	taskPid := isolation.TaskPID(cmd.Process.Pid)
-
-	// Perform rest of the isolation synchronously.
-	for _, isolation := range l.isolations {
-		isolation.Isolate(taskPid)
-	}
+	taskPid := TaskPID(cmd.Process.Pid)
 
 	t := newLocalTask(taskPid, statusCh)
 
@@ -84,15 +76,15 @@ func (l Local) Run(command string) (Task, error) {
 }
 
 // LocalTask implements Task interface.
-type LocalTask struct{
-	pid isolation.TaskPID
-	statusCh chan Status
-	status Status
+type LocalTask struct {
+	pid        TaskPID
+	statusCh   chan Status
+	status     Status
 	terminated bool
 }
 
 // newLocalTask returns a LocalTask instance.
-func newLocalTask(pid isolation.TaskPID, statusCh chan Status) *LocalTask {
+func newLocalTask(pid TaskPID, statusCh chan Status) *LocalTask {
 	t := &LocalTask{
 		pid,
 		statusCh,
@@ -109,14 +101,14 @@ func (task *LocalTask) completeTask(status Status) {
 }
 
 // Stop terminates the local task.
-func (task *LocalTask) Stop() error{
-	if (task.terminated) {
+func (task *LocalTask) Stop() error {
+	if task.terminated {
 		return errors.New("Task is not running.")
 	}
 
 	log.Debug("Sending SIGTERM to PID ", -task.pid)
 	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
-	if (err != nil) {
+	if err != nil {
 		task.statusCh = nil
 		return err
 	}
@@ -129,7 +121,7 @@ func (task *LocalTask) Stop() error{
 
 // Status gets status of the local task.
 func (task LocalTask) Status() Status {
-	if (!task.terminated) {
+	if !task.terminated {
 		return Status{code: RunningCode}
 	}
 
@@ -139,24 +131,25 @@ func (task LocalTask) Status() Status {
 // Wait blocks until process is terminated or timeout appeared.
 // Returns true when process terminates before timeout, otherwise false.
 func (task *LocalTask) Wait(timeoutMs int) bool {
-	if (task.terminated) {
+	if task.terminated {
 		return true
 	}
 
-	if (timeoutMs == 0) {
+	if timeoutMs == 0 {
 		s := <-task.statusCh
 		task.completeTask(s)
-
-	} else {
-		timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-
-		select {
-		case s := <-task.statusCh:
-			task.completeTask(s)
-		case <-time.After(timeoutDuration):
-			return false
-		}
+		return true
 	}
 
-	return true
+	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
+	result := true
+
+	select {
+	case s := <-task.statusCh:
+		task.completeTask(s)
+	case <-time.After(timeoutDuration):
+		result = false
+	}
+
+	return result
 }
