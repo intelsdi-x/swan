@@ -7,7 +7,7 @@ import (
 	"time"
 	"syscall"
 	"bytes"
-"errors"
+	"errors"
 )
 
 // LocalTask implements Task interface.
@@ -18,8 +18,8 @@ type LocalTask struct{
 	terminated bool
 }
 
-// NewLocalTask returns a LocalTask instance.
-func NewLocalTask(pid isolation.TaskPID, statusCh chan Status) *LocalTask {
+// newLocalTask returns a LocalTask instance.
+func newLocalTask(pid isolation.TaskPID, statusCh chan Status) *LocalTask {
 	t := &LocalTask{
 		pid,
 		statusCh,
@@ -160,7 +160,7 @@ func (l Local) Run(command string) (Task, error) {
 		isolation.Isolate(taskPid)
 	}
 
-	t := NewLocalTask(taskPid, statusCh)
+	t := newLocalTask(taskPid, statusCh)
 
 	return t, nil
 }
