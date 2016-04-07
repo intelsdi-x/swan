@@ -18,7 +18,7 @@ func addNewline(text string) string {
 // wait functionality.
 func TestLocal(t *testing.T) {
 	Convey("Using Local Shell with no isolation", t, func() {
-		l := NewLocal([]isolation.Isolation{})
+		l := NewLocal([]isolation.ProcessIsolation{})
 
 		Convey("When command `sleep 1` is executed and we wait for it", func() {
 			start := time.Now()
@@ -57,8 +57,8 @@ func TestLocal(t *testing.T) {
 				So(durationsMs, ShouldBeLessThan, 1000)
 			})
 
-			Convey("And the exit status should be zero", func() {
-				So(task.Status().code, ShouldEqual, 0)
+			Convey("And the exit status should point that task is still running", func() {
+				So(task.Status().code, ShouldEqual, RunningCode)
 			})
 
 			Convey("And the timeout should exceed", func() {
