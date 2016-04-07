@@ -51,7 +51,7 @@ func (task *LocalTask) Stop() error{
 	s := <-task.statusCh
 	task.completeTask(s)
 
-	return nil
+	return err
 }
 
 // Status gets status of the local task.
@@ -64,10 +64,10 @@ func (task LocalTask) Status() Status {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
-// Returns true after timeout exceeds.
+// Returns true when process terminates before timeout, otherwise false.
 func (task *LocalTask) Wait(timeoutMs int) bool {
 	if (task.terminated) {
-		return false
+		return true
 	}
 
 	if (timeoutMs == 0) {
@@ -81,11 +81,11 @@ func (task *LocalTask) Wait(timeoutMs int) bool {
 		case s := <-task.statusCh:
 			task.completeTask(s)
 		case <-time.After(timeoutDuration):
-			return true
+			return false
 		}
 	}
 
-	return false
+	return true
 }
 
 // Local provisioning is responsible for providing the execution environment
@@ -127,7 +127,6 @@ func (l Local) Run(command string) (Task, error) {
 	cmd.Stderr = &stderr
 
 	err := cmd.Start()
-
 	if (err != nil) {
 		return nil, err
 	}
@@ -162,5 +161,5 @@ func (l Local) Run(command string) (Task, error) {
 
 	t := newLocalTask(taskPid, statusCh)
 
-	return t, nil
+	return t, err
 }
