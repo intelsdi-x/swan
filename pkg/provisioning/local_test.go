@@ -4,14 +4,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
-	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // TestLocal takes fixed amount of time (6s) since it tests command execution and
 // wait functionality.
 func TestLocal(t *testing.T) {
-	Convey("Using Local Shell with no isolation", t, func() {
-		l := NewLocal([]isolation.ProcessIsolation{})
+	Convey("Using Local Shell", t, func() {
+		l := NewLocal()
 
 		Convey("When command `sleep 1` is executed and we wait for it", func() {
 			start := time.Now()
