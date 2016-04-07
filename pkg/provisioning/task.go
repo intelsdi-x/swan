@@ -9,5 +9,5 @@ type Task interface{
 	// Waits for the task completion.
 	// In case of 0 timeout it will be endlessly blocked.
 	// Returns true after timeout exceeds.
-	Wait(timeout int) bool
+	Wait(timeoutMs int) bool
 }
