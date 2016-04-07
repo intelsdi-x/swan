@@ -2,7 +2,7 @@ package provisioning
 
 // Task represents a process which can be stoped or monitored.
 type Task interface{
-	// Stops a task. When it cannot be stopped it returns error.
+	// Stops a task.
 	Stop()
 	// Fetches status of the task
 	Status() Status
