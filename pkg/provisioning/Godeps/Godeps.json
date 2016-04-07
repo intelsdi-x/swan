@@ -8,15 +8,6 @@
 			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
 		},
 		{
-			"ImportPath": "github.com/hypersleep/easyssh",
-			"Comment": "0.1-6-gbbef470",
-			"Rev": "bbef470f486ac474a1d24b381a5831f85fb22a2c"
-		},
-		{
-			"ImportPath": "github.com/intelsdi-x/swan/pkg/isolation",
-			"Rev": "b5794a3f635ca8550d2990f233937f29697ba4e2"
-		},
-		{
 			"ImportPath": "github.com/jtolds/gls",
 			"Rev": "9a4a02dbe491bef4bab3c24fd9f3087d6c4c6690"
 		},
@@ -29,14 +20,6 @@
 			"ImportPath": "github.com/smartystreets/goconvey/convey",
 			"Comment": "1.6.1-6-g81a3e75",
 			"Rev": "81a3e75a5feb6bed21933ac8ef3116017afd993f"
-		},
-		{
-			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
-		},
-		{
-			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
 		}
 	]
 }
