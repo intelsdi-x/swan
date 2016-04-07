@@ -54,17 +54,17 @@ func (task LocalTask) Status() Status {
 
 // Wait blocks until process is terminated or timeout appeared.
 // Returns true after timeout exceeds.
-func (task *LocalTask) Wait(timeoutSeconds int) bool {
+func (task *LocalTask) Wait(timeoutMs int) bool {
 	if (task.terminated) {
 		return false
 	}
 
-	if (timeoutSeconds == 0) {
+	if (timeoutMs == 0) {
 		s := <-task.statusCh
 		task.completeTask(s)
 
 	} else {
-		timeoutDuration := time.Duration(timeoutSeconds) * time.Second
+		timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
 
 		select {
 		case s := <-task.statusCh:

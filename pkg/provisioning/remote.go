@@ -32,7 +32,7 @@ func (task RemoteTask) Status() Status {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
-func (task *RemoteTask) Wait(timeoutSeconds int) bool {
+func (task *RemoteTask) Wait(timeoutMs int) bool {
 	// TODO(bp): Alicja to fill that.
 	panic("Not implemented")
 
