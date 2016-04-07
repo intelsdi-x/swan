@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -99,12 +98,12 @@ func (remote Remote) Run(command string) (Task, error) {
 	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
 		remote.sshConfig.clientConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	terminal := ssh.TerminalModes{
@@ -114,7 +113,7 @@ func (remote Remote) Run(command string) (Task, error) {
 	}
 	if err := session.RequestPty("xterm", 80, 40, terminal); err != nil {
 		session.Close()
-		return err
+		return nil, err
 	}
 
 	go func() {
