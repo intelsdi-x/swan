@@ -30,18 +30,16 @@ func TestLocal(t *testing.T) {
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The command Duration should last longer than 1s", func() {
-					So(durationsMs, ShouldBeGreaterThan, 1000)
-				})
+			Convey("The command Duration should last longer than 1s", func() {
+				So(durationsMs, ShouldBeGreaterThan, 1000)
+			})
 
-				Convey("And the exit status should be zero", func() {
-					So(task.Status().code, ShouldEqual, 0)
-				})
+			Convey("And the exit status should be zero", func() {
+				So(task.Status().code, ShouldEqual, 0)
+			})
 
-				Convey("And the timeout should NOT exceed", func() {
-					So(timeoutExceeds, ShouldBeFalse)
-				})
+			Convey("And the timeout should NOT exceed", func() {
+				So(timeoutExceeds, ShouldBeFalse)
 			})
 		})
 
@@ -55,18 +53,16 @@ func TestLocal(t *testing.T) {
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The Duration should last less than 1s", func() {
-					So(durationsMs, ShouldBeLessThan, 1000)
-				})
+			Convey("The Duration should last less than 1s", func() {
+				So(durationsMs, ShouldBeLessThan, 1000)
+			})
 
-				Convey("And the exit status should be zero", func() {
-					So(task.Status().code, ShouldEqual, 0)
-				})
+			Convey("And the exit status should be zero", func() {
+				So(task.Status().code, ShouldEqual, 0)
+			})
 
-				Convey("And the timeout should exceed", func() {
-					So(timeoutExceeds, ShouldBeTrue)
-				})
+			Convey("And the timeout should exceed", func() {
+				So(timeoutExceeds, ShouldBeTrue)
 			})
 		})
 
@@ -80,14 +76,12 @@ func TestLocal(t *testing.T) {
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The Duration should last less than 1s", func() {
-					So(durationsMs, ShouldBeLessThan, 1000)
-				})
+			Convey("The Duration should last less than 1s", func() {
+				So(durationsMs, ShouldBeLessThan, 1000)
+			})
 
-				Convey("And the exit status should be -1", func() {
-					So(task.Status().code, ShouldEqual, -1)
-				})
+			Convey("And the exit status should be -1", func() {
+				So(task.Status().code, ShouldEqual, -1)
 			})
 		})
 
@@ -96,18 +90,16 @@ func TestLocal(t *testing.T) {
 
 			timeoutExceeds := task.Wait(500)
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The command stdout needs to match 'output", func() {
-					So(task.Status().stdout, ShouldEqual, addNewline("output"))
-				})
+			Convey("The command stdout needs to match 'output", func() {
+				So(task.Status().stdout, ShouldEqual, addNewline("output"))
+			})
 
-				Convey("And the exit status should be zero", func() {
-					So(task.Status().code, ShouldEqual, 0)
-				})
+			Convey("And the exit status should be zero", func() {
+				So(task.Status().code, ShouldEqual, 0)
+			})
 
-				Convey("And the timeout should NOT exceed", func() {
-					So(timeoutExceeds, ShouldBeFalse)
-				})
+			Convey("And the timeout should NOT exceed", func() {
+				So(timeoutExceeds, ShouldBeFalse)
 			})
 		})
 
@@ -116,19 +108,17 @@ func TestLocal(t *testing.T) {
 
 			timeoutExceeds := task.Wait(500)
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The command stderr should point that the command does not exists", func() {
-					So(task.Status().stderr, ShouldEqual,
-					   addNewline("sh: 1: commandThatDoesNotExists: not found"))
-				})
+			Convey("The command stderr should point that the command does not exists", func() {
+				So(task.Status().stderr, ShouldEqual,
+				   addNewline("sh: 1: commandThatDoesNotExists: not found"))
+			})
 
-				Convey("The exit status should be 127", func() {
-					So(task.Status().code, ShouldEqual, 127)
-				})
+			Convey("The exit status should be 127", func() {
+				So(task.Status().code, ShouldEqual, 127)
+			})
 
-				Convey("And the timeout should NOT exceed", func() {
-					So(timeoutExceeds, ShouldBeFalse)
-				})
+			Convey("And the timeout should NOT exceed", func() {
+				So(timeoutExceeds, ShouldBeFalse)
 			})
 		})
 
@@ -139,16 +129,14 @@ func TestLocal(t *testing.T) {
 			task.Wait(0)
 			task2.Wait(0)
 
-			Convey("These expectation needs to be made", func() {
-				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-					So(task.Status().stdout, ShouldEqual, addNewline("output1"))
-					So(task2.Status().stdout, ShouldEqual, addNewline("output2"))
-				})
+			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+				So(task.Status().stdout, ShouldEqual, addNewline("output1"))
+				So(task2.Status().stdout, ShouldEqual, addNewline("output2"))
+			})
 
-				Convey("Both exit statuses should be 0", func() {
-					So(task.Status().code, ShouldEqual, 0)
-					So(task2.Status().code, ShouldEqual, 0)
-				})
+			Convey("Both exit statuses should be 0", func() {
+				So(task.Status().code, ShouldEqual, 0)
+				So(task2.Status().code, ShouldEqual, 0)
 			})
 		})
 	})
