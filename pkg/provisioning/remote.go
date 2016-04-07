@@ -3,7 +3,6 @@ package provisioning
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/hypersleep/easyssh"
-	"errors"
 )
 
 // RemoteTask implements Task interface.
@@ -19,10 +18,10 @@ func NewRemoteTask() *RemoteTask {
 }
 
 // Stop terminates the remote task.
-func (task *RemoteTask) Stop() error {
+func (task *RemoteTask) Stop() {
 	// TODO(bp): Stop pid with.
 	// TODO(bp): Alicja to fill that.
-	return errors.New("Not implemented")
+	panic("Not implemented")
 }
 
 // Status gets status of the remote task.

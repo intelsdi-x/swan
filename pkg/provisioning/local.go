@@ -7,7 +7,6 @@ import (
 	"time"
 	"syscall"
 	"bytes"
-	"errors"
 )
 
 // LocalTask implements Task interface.

@@ -1,9 +1,9 @@
 package provisioning
 
 const (
-	// Success status code.
+	// SuccessCode is a successful status code.
 	SuccessCode = 0
-	// Code pointing out that the Process is still running.
+	// RunningCode points out that the Process is still running.
 	RunningCode = 9999
 )
 
