@@ -124,11 +124,6 @@ func TestLocal(t *testing.T) {
 
 			taskNotTimeouted := task.Wait(500)
 
-			Convey("The command stderr should point that the command does not exists", func() {
-				So(task.Status().stderr, ShouldEqual,
-				   addNewline("sh: 1: commandThatDoesNotExists: not found"))
-			})
-
 			Convey("The exit status should be 127", func() {
 				So(task.Status().code, ShouldEqual, 127)
 			})
