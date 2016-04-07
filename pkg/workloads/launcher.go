@@ -1,6 +1,6 @@
 package workloads
 
-// Launcher defines how workload should be run using specified Provisioners.
+// Launcher responsibility is to launch previously configured job.
 type Launcher interface {
 	// Launch launches the workload.
 	// Returned Task is able to stop & monitor the provisioned process.
