@@ -54,7 +54,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the exit status should point that task is still running", func() {
-				So(task.Status().code, ShouldEqual, RunningCode)
+				So(task.Status().code, ShouldEqual, 0)
 			})
 
 			Convey("And the timeout should exceed", func() {
