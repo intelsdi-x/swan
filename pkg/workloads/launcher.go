@@ -4,5 +4,5 @@ package workloads
 type Launcher interface {
 	// Launch launches the workload.
 	// Returned Task is able to stop & monitor the provisioned process.
-	Launch() Task
+	Launch() (Task, error)
 }
