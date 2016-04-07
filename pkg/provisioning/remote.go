@@ -77,7 +77,7 @@ func (l Remote) Run(command string) (Task, error) {
 		log.Debug("Ended ", command)
 
 		// TODO(bplotka): Fetch status code.
-		statusCh <- Status{0, response}
+		statusCh <- Status{0, response, ""}
 	}()
 
 	// TODO(bp): Alicja to fill that.
