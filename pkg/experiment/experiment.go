@@ -1,158 +1,132 @@
 package ExperimentDriver
 
-type Task interface {
-	Wait() error    // Waits till Task finishes
-	Status() int    //TBD: is running, not launched, stopped, finished?
-	GetOutput() int //TBD - do I need this?
-	Stop() error    //Forcefully stops the workload - waits till task stops
-}
+import (
+	"fmt"
 
+	"github.com/intelsdi-x/swan/pkg/provisioning"
+)
+
+//TBD: STUB before it's defined in provisioning
 type Launcher interface {
-	/**
-	 * Launch Workload. The rest is hidden from Experiment Driver
-	 * Returns:
-	 * On error - (nil, error)
-	 * On success - (Task, nil)
-	 */
-	Launch() (Task, error)
+	Launch() (provisioning.Task, error)
 }
 
+//TBD: STUB before it's defined in provisioning
 type LoadGenerator interface {
-	/**
-	 * Performs tunning.
-	 * Takes 'slo' and timeout value as input.
-	 * Returns (targetQPS,nil) on success (nil, error) otherwise
-	 *
-	 */
 	Tune(slo int, timeout int) (targetQPS int, e error)
-	//Launch workload generator with given 'rps' (Request per Second)
-	// and for a given 'duration' of seconds (TBD).
-	// Returns (sli, nil) on success (nil, err) otherwise.
 	Load(rps int, duration int) (sli int, e error)
 }
 
 type ExperimentConfiguration struct {
-	slo               int
-	tuning_timeout    int
-	load_duration     int
-	load_points_count int
+	SLO             int
+	TuningTimeout   int
+	LoadDuration    int
+	LoadPointsCount int
 }
 
 type SensitivitiProfileExperiment struct {
-	lc Launcher
-	lg LoadGenerator //for LC Task
-	be []Launcher
-
-	//
-	tuning_timeout    int
-	load_duration     int
-	load_points_count int
-	target_qps        int
-	slo               int
-	sli               [][]int
-}
-
-func (SensitivitiProfileExperiment) String() string {
-	return "SensitivitiProfileExperiment type."
+	// Latency Sensitivity workload
+	pr Launcher
+	// Workload Generator for Latency Sensitivity workload
+	lgForPr LoadGenerator
+	// Aggressors to be but aside to LC workload
+	be         []Launcher
+	ec         ExperimentConfiguration
+	targetLoad int
+	slis       [][]int
 }
 
 // Construct new SensitivityProfileExperiment object.
 func NewSensitivitiProfileExperiment(c ExperimentConfiguration,
-	pr_task Launcher, lg LoadGenerator, be []Launcher) *SensitivitiProfileExperiment {
-	exp := SensitivitiProfileExperiment{}
+	pr Launcher,
+	lgForPr LoadGenerator,
+	be []Launcher) *SensitivitiProfileExperiment {
 
-	exp.slo = c.slo
-	exp.tuning_timeout = c.tuning_timeout
-	exp.load_duration = c.load_duration
-	exp.load_points_count = c.load_points_count
-	exp.lc = pr_task
-	exp.lg = lg
-	exp.be = be
-	return &exp
+	return &SensitivitiProfileExperiment{pr: pr, lgForPr: lgForPr,
+		be: be, ec: c}
 }
 
-// [internal]
 // Runs single measurement of PR workload with given aggressor.
-// Takes aggressor_no index in BE workload and specific loadPoint
+// Takes aggressor workload and specific loadPoint (rps)
 // Return (sli, nil) on success (0, error) otherwise.
-func (e *SensitivitiProfileExperiment) runMeasurement(aggressor_no int, loadPoint int) (sli int, err error) {
+func (e *SensitivitiProfileExperiment) runMeasurement(
+	aggressor Launcher,
+	qps int) (sli int, err error) {
 
-	lc_task, err := e.lc.Launch()
+	prTask, err := e.pr.Launch()
 	if err != nil {
 		return 0, err
 	}
+	defer prTask.Stop()
 
 	//Run aggressor
-	agr_task, err := e.be[aggressor_no].Launch()
+	agrTask, err := aggressor.Launch()
 	if err != nil {
-		lc_task.Stop()
 		return 0, err
 	}
 	//Run workload generator - blocking?
 	//TBD: output? Raw data?
-	sli, err = e.lg.Load(loadPoint, e.load_duration)
+	sli, err = e.lgForPr.Load(qps, e.ec.LoadDuration)
 
-	lc_task.Stop()
-	agr_task.Stop()
+	agrTask.Stop()
 	return sli, err
 }
 
-// [internal]
 // Executes single phase
-//
-func (e *SensitivitiProfileExperiment) runPhase(aggressor_no int) error {
-	//Do we capture output from measurement?
-	var err error
+func (e *SensitivitiProfileExperiment) runPhase(aggressor Launcher) (slis []int, err error) {
+	slis = make([]int, e.ec.LoadPointsCount)
 
-	//TBD - iteration
-	for i := 5; i < 95; i += 5 {
-		tmp_sli, err := e.runMeasurement(aggressor_no, i)
+	loadStep := int(e.targetLoad / e.ec.LoadPointsCount)
+
+	for load := loadStep; load < e.targetLoad; load += loadStep {
+		result, err := e.runMeasurement(aggressor, load)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		//Update sli only if measurement was successful
-		e.sli[aggressor_no][i] = tmp_sli
+		slis = append(slis, result)
 	}
-	return err
+	return slis, err
 }
 
-//Performs LC tunning
 func (e *SensitivitiProfileExperiment) runTunning() error {
-	pr_task, err := e.lc.Launch()
+	prTask, err := e.pr.Launch()
 	if err != nil {
 		return err
 	}
-	tmp_target_qps, err := e.lg.Tune(e.slo, e.tuning_timeout)
-	if err == nil {
-		e.target_qps = tmp_target_qps
+	defer prTask.Stop()
+
+	e.targetLoad, err = e.lgForPr.Tune(e.ec.SLO, e.ec.TuningTimeout)
+	if err != nil {
+		e.targetLoad = -1
+		return err
 	}
-	pr_task.Stop()
 	return err
 }
 
 // Prints nice output. TBD
-func (e *SensitivitiProfileExperiment) PrintSensitivitiProfile() error {
-	// TBD
+func (e *SensitivitiProfileExperiment) PrintSensitivityProfile() error {
+	fmt.Print("SensitivityProfile is TBD")
 	return nil
 }
 
-// Performs actual experiments
 func (e *SensitivitiProfileExperiment) Run() error {
-
 	var err error
+
 	err = e.runTunning()
 	if err != nil {
 		//Stop here
 		return err
 	}
 
-	for i, _ := range e.be {
-		err = e.runPhase(i)
+	for _, aggressor := range e.be {
+		slis, err := e.runPhase(aggressor)
 		if err != nil {
 			return err
 		}
+		e.slis = append(e.slis, slis)
 	}
-	//TBD
-	e.PrintSensitivitiProfile()
-	return nil
+
+	//That's TBD.
+	err = e.PrintSensitivityProfile()
+	return err
 }
