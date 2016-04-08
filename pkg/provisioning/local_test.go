@@ -4,28 +4,20 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
-	"github.com/intelsdi-x/swan/pkg/isolation"
 )
-
-func addNewline(text string) string {
-	// Stdout & Stderr have a newline at the end.
-	return text + `
-`
-}
-
 
 // TestLocal takes fixed amount of time (6s) since it tests command execution and
 // wait functionality.
 func TestLocal(t *testing.T) {
-	Convey("Using Local Shell with no isolation", t, func() {
-		l := NewLocal([]isolation.ProcessIsolation{})
+	Convey("Using Local Shell", t, func() {
+		l := NewLocal()
 
 		Convey("When command `sleep 1` is executed and we wait for it", func() {
 			start := time.Now()
 
 			task, err := l.Run("sleep 1")
 
-			timeoutExceeds := task.Wait(3000)
+			taskNotTimeouted := task.Wait(3000)
 
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
@@ -39,7 +31,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
@@ -52,7 +44,7 @@ func TestLocal(t *testing.T) {
 
 			task, err := l.Run("sleep 1")
 
-			timeoutExceeds := task.Wait(500)
+			taskNotTimeouted := task.Wait(500)
 
 			duration := time.Since(start)
 			durationsMs := duration.Nanoseconds() / 1e6
@@ -62,11 +54,11 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the exit status should point that task is still running", func() {
-				So(task.Status().code, ShouldEqual, RunningCode)
+				So(task.Status().code, ShouldEqual, 0)
 			})
 
 			Convey("And the timeout should exceed", func() {
-				So(timeoutExceeds, ShouldBeTrue)
+				So(taskNotTimeouted, ShouldBeFalse)
 			})
 
 			Convey("And error is nil", func() {
@@ -100,10 +92,10 @@ func TestLocal(t *testing.T) {
 		Convey("When command `echo output` is executed and we wait for it", func() {
 			task, err := l.Run("echo output")
 
-			timeoutExceeds := task.Wait(500)
+			taskNotTimeouted := task.Wait(500)
 
 			Convey("The command stdout needs to match 'output", func() {
-				So(task.Status().stdout, ShouldEqual, addNewline("output"))
+				So(task.Status().stdout, ShouldEqual, "output\n")
 			})
 
 			Convey("And the exit status should be zero", func() {
@@ -111,7 +103,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
@@ -122,19 +114,14 @@ func TestLocal(t *testing.T) {
 		Convey("When command which does not exists is executed and we wait for it", func() {
 			task, err := l.Run("commandThatDoesNotExists")
 
-			timeoutExceeds := task.Wait(500)
-
-			Convey("The command stderr should point that the command does not exists", func() {
-				So(task.Status().stderr, ShouldEqual,
-				   addNewline("sh: 1: commandThatDoesNotExists: not found"))
-			})
+			taskNotTimeouted := task.Wait(500)
 
 			Convey("The exit status should be 127", func() {
 				So(task.Status().code, ShouldEqual, 127)
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
-				So(timeoutExceeds, ShouldBeFalse)
+				So(taskNotTimeouted, ShouldBeTrue)
 			})
 
 			Convey("And error is nil", func() {
@@ -150,8 +137,8 @@ func TestLocal(t *testing.T) {
 			task2.Wait(0)
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(task.Status().stdout, ShouldEqual, addNewline("output1"))
-				So(task2.Status().stdout, ShouldEqual, addNewline("output2"))
+				So(task.Status().stdout, ShouldEqual, "output1\n")
+				So(task2.Status().stdout, ShouldEqual, "output2\n")
 			})
 
 			Convey("Both exit statuses should be 0", func() {

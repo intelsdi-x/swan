@@ -7,42 +7,55 @@ import (
 	"time"
 )
 
+// Remote provisioning is responsible for providing the execution environment
+// on remote machine via ssh.
+type Remote struct {
+	sshConfig SSHConfig
+}
+
+// NewRemote returns a Local instance.
+func NewRemote(sshConfig SSHConfig) *Remote {
+	return &Remote{
+		sshConfig,
+	}
+}
+
 // RemoteTask implements Task interface.
-type RemoteTask struct{
-	isTerminated bool
-	session *ssh.Session
-	statusCh chan Status
-	status Status
+type RemoteTask struct {
+	terminated    bool
+	session       *ssh.Session
+	statusChannel chan Status
+	status        Status
 }
 
 // NewRemoteTask returns a RemoteTask instance.
-func NewRemoteTask(session *ssh.Session, statusCh chan Status) *RemoteTask {
-    return &RemoteTask{
-	    false,
-	    session,
-	    statusCh,
-	    Status{},
-    }
+func NewRemoteTask(session *ssh.Session, statusChannel chan Status) *RemoteTask {
+	return &RemoteTask{
+		false,
+		session,
+		statusChannel,
+		Status{},
+	}
 }
 
 // Set task as completed and clean channel
 func (task *RemoteTask) completeTask(status Status) {
-	task.isTerminated = true
+	task.terminated = true
 	task.status = status
-	task.statusCh = nil
+	task.statusChannel = nil
 }
 
 // Stop terminates the remote task.
 func (task *RemoteTask) Stop() error {
-    if task.isTerminated {
-	    return errors.New("Task has already completed.")
-    }
-    err := task.session.Signal("KILL");
+	if task.terminated {
+		return errors.New("Task has already completed.")
+	}
+	err := task.session.Signal("KILL")
 	if err != nil {
 		return err
 	}
 
-	s := <-task.statusCh
+	s := <-task.statusChannel
 	task.completeTask(s)
 
 	return nil
@@ -55,45 +68,33 @@ func (task RemoteTask) Status() Status {
 
 // Wait blocks until process is terminated or timeout appeared.
 func (task *RemoteTask) Wait(timeoutMs int) bool {
-	if (task.isTerminated) {
-		return false
+	if task.terminated {
+		return true
 	}
 
-	if (timeoutMs == 0) {
-		s := <-task.statusCh
+	if timeoutMs == 0 {
+		s := <-task.statusChannel
 		task.completeTask(s)
-
-	} else {
-		timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-
-		select {
-		case s := <-task.statusCh:
-			task.completeTask(s)
-		case <-time.After(timeoutDuration):
-			return true
-		}
+		return true
 	}
 
-	return false
-}
+	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
+	result := true
 
-// Remote provisioning is responsible for providing the execution environment
-// on remote machine via ssh.
-type Remote struct{
-	sshConfig SshConfig
-}
-
-// NewRemote returns a Local instance.
-func NewRemote(sshConfig SshConfig) *Remote {
-	return &Remote{
-		sshConfig,
+	select {
+	case s := <-task.statusChannel:
+		task.completeTask(s)
+	case <-time.After(timeoutDuration):
+		result = false
 	}
+
+	return result
 }
 
 // Run runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Run(command string) (Task, error) {
-	statusCh := make(chan Status)
+	statusChannel := make(chan Status)
 
 	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
 		remote.sshConfig.clientConfig)
@@ -122,9 +123,9 @@ func (remote Remote) Run(command string) (Task, error) {
 			panic(err)
 		}
 		//TODO: get exit status
-		statusCh <- Status{0, string(output[:]), ""}
-	}();
+		statusChannel <- Status{0, string(output[:]), ""}
+	}()
 
-	remoteTask := NewRemoteTask(session, statusCh)
+	remoteTask := NewRemoteTask(session, statusChannel)
 	return remoteTask, nil
 }
