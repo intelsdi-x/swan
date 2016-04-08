@@ -3,58 +3,38 @@ package executor
 import (
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-	"time"
+	"syscall"
+	"os/exec"
 )
 
-// TestLocal takes fixed amount of time (6s) since it tests command execution and
-// wait functionality.
+const (FifoTestPipePath = "/tmp/swan_local_test_fifo")
+
+// TestLocal
 func TestLocal(t *testing.T) {
+	// Prepare fifo pipe for following tests.
+	cmd := exec.Command("rm", "-rf", FifoTestPipePath)
+	err := cmd.Run()
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = syscall.Mkfifo(FifoTestPipePath, syscall.S_IFIFO)
+	if err != nil {
+		t.Error(err)
+	}
+
 	Convey("Using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command `sleep 1` is executed and we wait for it", func() {
-			start := time.Now()
+		Convey("When command waiting for signal in fifo is executed and we wait for it with timeout 1ms", func() {
+			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
 
-			task, err := l.Execute("sleep 1")
+			taskNotTimeouted := task.Wait(1)
 
-			taskNotTimeouted := task.Wait(3000)
+			running, _ := task.Status()
 
-			duration := time.Since(start)
-			durationsMs := duration.Nanoseconds() / 1e6
-
-			Convey("The command Duration should last longer than 1s", func() {
-				So(durationsMs, ShouldBeGreaterThan, 1000)
-			})
-
-			Convey("And the exit status should be zero", func() {
-				So(task.Status().code, ShouldEqual, 0)
-			})
-
-			Convey("And the timeout should NOT exceed", func() {
-				So(taskNotTimeouted, ShouldBeTrue)
-			})
-
-			Convey("And error is nil", func() {
-				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("When command `sleep 1` is executed and we wait for it with timeout 0.5s", func() {
-			start := time.Now()
-
-			task, err := l.Execute("sleep 1")
-
-			taskNotTimeouted := task.Wait(500)
-
-			duration := time.Since(start)
-			durationsMs := duration.Nanoseconds() / 1e6
-
-			Convey("The Duration should last less than 1s", func() {
-				So(durationsMs, ShouldBeLessThan, 1000)
-			})
-
-			Convey("And the exit status should point that task is still running", func() {
-				So(task.Status().code, ShouldEqual, 0)
+			Convey("The status result should point that the task is still running", func() {
+				So(running, ShouldBeTrue)
 			})
 
 			Convey("And the timeout should exceed", func() {
@@ -64,24 +44,23 @@ func TestLocal(t *testing.T) {
 			Convey("And error is nil", func() {
 				So(err, ShouldBeNil)
 			})
+
+			task.Stop()
 		})
 
-		Convey("When command `sleep 1` is executed and we stop it after start", func() {
-			start := time.Now()
-
-			task, err := l.Execute("sleep 1")
+		Convey("When command waiting for signal in fifo is executed and we stop it after start", func() {
+			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
 
 			task.Stop()
 
-			duration := time.Since(start)
-			durationsMs := duration.Nanoseconds() / 1e6
+			running, status := task.Status()
 
-			Convey("The Duration should last less than 1s", func() {
-				So(durationsMs, ShouldBeLessThan, 1000)
+			Convey("The status result should point that the task is not running", func() {
+				So(running, ShouldBeFalse)
 			})
 
 			Convey("And the exit status should be -1", func() {
-				So(task.Status().code, ShouldEqual, -1)
+				So(status.code, ShouldEqual, -1)
 			})
 
 			Convey("And error is nil", func() {
@@ -94,12 +73,18 @@ func TestLocal(t *testing.T) {
 
 			taskNotTimeouted := task.Wait(500)
 
-			Convey("The command stdout needs to match 'output", func() {
-				So(task.Status().stdout, ShouldEqual, "output\n")
+			running, status := task.Status()
+
+			Convey("The status result should point that the task is not running", func() {
+				So(running, ShouldBeFalse)
 			})
 
-			Convey("And the exit status should be zero", func() {
-				So(task.Status().code, ShouldEqual, 0)
+			Convey("And the exit status should be 0", func() {
+				So(status.code, ShouldEqual, 0)
+			})
+
+			Convey("And command stdout needs to match 'output", func() {
+				So(status.stdout, ShouldEqual, "output\n")
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -116,8 +101,14 @@ func TestLocal(t *testing.T) {
 
 			taskNotTimeouted := task.Wait(500)
 
-			Convey("The exit status should be 127", func() {
-				So(task.Status().code, ShouldEqual, 127)
+			running, status := task.Status()
+
+			Convey("The status result should point that the task is not running", func() {
+				So(running, ShouldBeFalse)
+			})
+
+			Convey("And the exit status should be 127", func() {
+				So(status.code, ShouldEqual, 127)
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -136,14 +127,22 @@ func TestLocal(t *testing.T) {
 			task.Wait(0)
 			task2.Wait(0)
 
+			running1, status1 := task.Status()
+			running2, status2 := task2.Status()
+
+			Convey("The status results should point that the tasks are not running", func() {
+				So(running1, ShouldBeFalse)
+				So(running2, ShouldBeFalse)
+			})
+
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(task.Status().stdout, ShouldEqual, "output1\n")
-				So(task2.Status().stdout, ShouldEqual, "output2\n")
+				So(status1.stdout, ShouldEqual, "output1\n")
+				So(status2.stdout, ShouldEqual, "output2\n")
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(task.Status().code, ShouldEqual, 0)
-				So(task2.Status().code, ShouldEqual, 0)
+				So(status1.code, ShouldEqual, 0)
+				So(status2.code, ShouldEqual, 0)
 			})
 
 			Convey("And errors are nil", func() {
@@ -152,4 +151,11 @@ func TestLocal(t *testing.T) {
 			})
 		})
 	})
+
+	// Clean up
+	cmd = exec.Command("rm", "-rf", FifoTestPipePath)
+	err = cmd.Run()
+	if err != nil {
+		t.Error(err)
+	}
 }
