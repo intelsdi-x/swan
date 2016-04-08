@@ -123,15 +123,14 @@ func (task *localTask) Stop() error {
 	return err
 }
 
-// Status gets status of the local task.
-func (task localTask) Status() Status {
+// Status gets status of the local task when the task is terminated.
+// Otherwise return running = true and nil
+func (task localTask) Status() (bool, *Status) {
 	if !task.terminated {
-		// TODO: Represent running as non-presence of an exit code or return
-		// tuple with (running, *status)
-		return Status{code: 0}
+		return true, nil
 	}
 
-	return task.status
+	return false, &task.status
 }
 
 // Wait blocks until process is terminated or timeout appeared.
