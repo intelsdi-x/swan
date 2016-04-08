@@ -22,9 +22,9 @@ func NewLocal() Local {
 	return Local{}
 }
 
-// Run runs the command given as input.
+// Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
-func (l Local) Run(command string) (Task, error) {
+func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
 
 	log.Debug("Starting ", command)
