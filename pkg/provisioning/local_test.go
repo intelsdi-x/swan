@@ -53,7 +53,7 @@ func TestLocal(t *testing.T) {
 				So(durationsMs, ShouldBeLessThan, 1000)
 			})
 
-			Convey("And the exit status should point that task is still Executening", func() {
+			Convey("And the exit status should point that task is still running", func() {
 				So(task.Status().code, ShouldEqual, 0)
 			})
 
@@ -129,7 +129,7 @@ func TestLocal(t *testing.T) {
 			})
 		})
 
-		Convey("When we Execute two tasks in the same time", func() {
+		Convey("When we execute two tasks in the same time", func() {
 			task, err := l.Execute("echo output1")
 			task2, err2 := l.Execute("echo output2")
 
