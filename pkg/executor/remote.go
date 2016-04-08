@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"time"
+	"bytes"
+	"regexp"
+	"strconv"
 )
 
 // RemoteTask implements Task interface.
@@ -90,6 +93,14 @@ func NewRemote(sshConfig SshConfig) *Remote {
 	}
 }
 
+// getExitCode gets exit code from the error message given as input.
+func getExitCode(errorMsg string) int{
+	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
+	match := re.FindStringSubmatch(errorMsg)
+	code, _ := strconv.Atoi(match[0])
+	return code
+}
+
 // Run runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Run(command string) (Task, error) {
@@ -117,14 +128,15 @@ func (remote Remote) Run(command string) (Task, error) {
 	}
 
 	go func() {
+		var stderr bytes.Buffer
+		statusCode := 0
+		session.Stderr = &stderr
 		output, err := session.Output(command)
 		if err != nil {
-			panic(err)
+			statusCode = getExitCode(err.Error())
 		}
-		//TODO: get exit status
-		statusCh <- Status{0, string(output[:]), ""}
-	}();
-
+		statusChannel <- Status{statusCode, string(output[:]), stderr.String()}
+	}()
 	remoteTask := NewRemoteTask(session, statusCh)
 	return remoteTask, nil
 }
