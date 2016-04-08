@@ -15,7 +15,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command `sleep 1` is executed and we wait for it", func() {
 			start := time.Now()
 
-			task, err := l.Run("sleep 1")
+			task, err := l.Execute("sleep 1")
 
 			taskNotTimeouted := task.Wait(3000)
 
@@ -42,7 +42,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command `sleep 1` is executed and we wait for it with timeout 0.5s", func() {
 			start := time.Now()
 
-			task, err := l.Run("sleep 1")
+			task, err := l.Execute("sleep 1")
 
 			taskNotTimeouted := task.Wait(500)
 
@@ -53,7 +53,7 @@ func TestLocal(t *testing.T) {
 				So(durationsMs, ShouldBeLessThan, 1000)
 			})
 
-			Convey("And the exit status should point that task is still running", func() {
+			Convey("And the exit status should point that task is still Executening", func() {
 				So(task.Status().code, ShouldEqual, 0)
 			})
 
@@ -69,7 +69,7 @@ func TestLocal(t *testing.T) {
 		Convey("When command `sleep 1` is executed and we stop it after start", func() {
 			start := time.Now()
 
-			task, err := l.Run("sleep 1")
+			task, err := l.Execute("sleep 1")
 
 			task.Stop()
 
@@ -90,7 +90,7 @@ func TestLocal(t *testing.T) {
 		})
 
 		Convey("When command `echo output` is executed and we wait for it", func() {
-			task, err := l.Run("echo output")
+			task, err := l.Execute("echo output")
 
 			taskNotTimeouted := task.Wait(500)
 
@@ -112,7 +112,7 @@ func TestLocal(t *testing.T) {
 		})
 
 		Convey("When command which does not exists is executed and we wait for it", func() {
-			task, err := l.Run("commandThatDoesNotExists")
+			task, err := l.Execute("commandThatDoesNotExists")
 
 			taskNotTimeouted := task.Wait(500)
 
@@ -129,9 +129,9 @@ func TestLocal(t *testing.T) {
 			})
 		})
 
-		Convey("When we run two tasks in the same time", func() {
-			task, err := l.Run("echo output1")
-			task2, err2 := l.Run("echo output2")
+		Convey("When we Execute two tasks in the same time", func() {
+			task, err := l.Execute("echo output1")
+			task2, err2 := l.Execute("echo output2")
 
 			task.Wait(0)
 			task2.Wait(0)
