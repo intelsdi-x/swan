@@ -5,14 +5,14 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// SSHConfig with clientConfig, host and port to connect
+// SSHConfig with clientConfig, host and port to connect.
 type SSHConfig struct {
 	clientConfig *ssh.ClientConfig
 	host   string
 	port   int
 }
 
-// NewsshConfig creates a new ssh config
+// NewsshConfig creates a new ssh config.
 func NewsshConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHConfig {
 	return &SSHConfig{
 		clientConfig,
@@ -21,7 +21,7 @@ func NewsshConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHCon
 	}
 }
 
-// get AuthMethod which uses given key
+// get AuthMethod which uses given key.
 func publicKeyFile(keyPath string) ssh.AuthMethod {
 	buffer, err := ioutil.ReadFile(keyPath)
 	if err != nil {
@@ -38,7 +38,7 @@ func publicKeyFile(keyPath string) ssh.AuthMethod {
 	return ssh.PublicKeys(key)
 }
 
-// NewClientConfig create client config with credentials for ssh connection
+// NewClientConfig create client config with credentials for ssh connection.
 func NewClientConfig(username string, keyPath string) *ssh.ClientConfig {
 	return &ssh.ClientConfig{
 		User: username,
