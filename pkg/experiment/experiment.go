@@ -6,39 +6,44 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads"
 )
 
-type ExperimentConfiguration struct {
+type SensitivityProfileExperimentConfiguration struct {
 	SLO             int
 	TuningTimeout   int
 	LoadDuration    int
 	LoadPointsCount int
 }
 
-type SensitivitiProfileExperiment struct {
+type SensitivityProfileExperiment struct {
 	// Latency Sensitivity workload
 	pr workloads.Launcher
 	// Workload Generator for Latency Sensitivity workload
 	lgForPr workloads.LoadGenerator
 	// Aggressors to be but aside to LC workload
 	be         []workloads.Launcher
-	ec         ExperimentConfiguration
+	ec         SensitivityProfileExperimentConfiguration
 	targetLoad int
 	slis       [][]int
 }
 
 // Construct new SensitivityProfileExperiment object.
-func NewSensitivitiProfileExperiment(c ExperimentConfiguration,
+func NewSensitivityProfileExperiment(
+	c SensitivityProfileExperimentConfiguration,
 	pr workloads.Launcher,
 	lgForPr workloads.LoadGenerator,
-	be []workloads.Launcher) *SensitivitiProfileExperiment {
+	be []workloads.Launcher) *SensitivityProfileExperiment {
 
-	return &SensitivitiProfileExperiment{pr: pr, lgForPr: lgForPr,
-		be: be, ec: c}
+	return &SensitivityProfileExperiment{
+		pr:      pr,
+		lgForPr: lgForPr,
+		be:      be,
+		ec:      c,
+	}
 }
 
 // Runs single measurement of PR workload with given aggressor.
 // Takes aggressor workload and specific loadPoint (rps)
 // Return (sli, nil) on success (0, error) otherwise.
-func (e *SensitivitiProfileExperiment) runMeasurement(
+func (e *SensitivityProfileExperiment) runMeasurement(
 	aggressor workloads.Launcher,
 	qps int) (sli int, err error) {
 
@@ -48,21 +53,18 @@ func (e *SensitivitiProfileExperiment) runMeasurement(
 	}
 	defer prTask.Stop()
 
-	//Run aggressor
 	agrTask, err := aggressor.Launch()
 	if err != nil {
 		return 0, err
 	}
-	//Run workload generator - blocking?
-	//TBD: output? Raw data?
 	sli, err = e.lgForPr.Load(qps, e.ec.LoadDuration)
 
 	agrTask.Stop()
 	return sli, err
 }
 
-// Executes single phase
-func (e *SensitivitiProfileExperiment) runPhase(aggressor workloads.Launcher) (slis []int, err error) {
+func (e *SensitivityProfileExperiment) runPhase(
+	aggressor workloads.Launcher) (slis []int, err error) {
 	slis = make([]int, e.ec.LoadPointsCount)
 
 	loadStep := int(e.targetLoad / e.ec.LoadPointsCount)
@@ -77,7 +79,7 @@ func (e *SensitivitiProfileExperiment) runPhase(aggressor workloads.Launcher) (s
 	return slis, err
 }
 
-func (e *SensitivitiProfileExperiment) runTunning() error {
+func (e *SensitivityProfileExperiment) runTunning() error {
 	prTask, err := e.pr.Launch()
 	if err != nil {
 		return err
@@ -93,12 +95,12 @@ func (e *SensitivitiProfileExperiment) runTunning() error {
 }
 
 // Prints nice output. TBD
-func (e *SensitivitiProfileExperiment) PrintSensitivityProfile() error {
+func (e *SensitivityProfileExperiment) PrintSensitivityProfile() error {
 	fmt.Print("SensitivityProfile is TBD")
 	return nil
 }
 
-func (e *SensitivitiProfileExperiment) Run() error {
+func (e *SensitivityProfileExperiment) Run() error {
 	var err error
 
 	err = e.runTunning()
