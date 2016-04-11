@@ -1,8 +1,11 @@
 package workloads
 
+import "github.com/intelsdi-x/swan/pkg/executor"
+
 // Launcher responsibility is to launch previously configured job.
 type Launcher interface {
-	// Launch launches the workload.
-	// Returned Task is able to stop & monitor the provisioned process.
-	Launch() (Task, error)
+	// Launch starts the workload (process or group of processes). It returns a workload
+	// represented as a Task instance.
+	// Error is returned when Launcher is unable to start a job.
+	Launch() (executor.Task, error)
 }
