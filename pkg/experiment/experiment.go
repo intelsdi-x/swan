@@ -3,19 +3,8 @@ package ExperimentDriver
 import (
 	"fmt"
 
-	"github.com/intelsdi-x/swan/pkg/provisioning"
+	"github.com/intelsdi-x/swan/pkg/workloads"
 )
-
-//TBD: STUB before it's defined in provisioning
-type Launcher interface {
-	Launch() (provisioning.Task, error)
-}
-
-//TBD: STUB before it's defined in provisioning
-type LoadGenerator interface {
-	Tune(slo int, timeout int) (targetQPS int, e error)
-	Load(rps int, duration int) (sli int, e error)
-}
 
 type ExperimentConfiguration struct {
 	SLO             int
@@ -26,11 +15,11 @@ type ExperimentConfiguration struct {
 
 type SensitivitiProfileExperiment struct {
 	// Latency Sensitivity workload
-	pr Launcher
+	pr workloads.Launcher
 	// Workload Generator for Latency Sensitivity workload
-	lgForPr LoadGenerator
+	lgForPr workloads.LoadGenerator
 	// Aggressors to be but aside to LC workload
-	be         []Launcher
+	be         []workloads.Launcher
 	ec         ExperimentConfiguration
 	targetLoad int
 	slis       [][]int
@@ -38,9 +27,9 @@ type SensitivitiProfileExperiment struct {
 
 // Construct new SensitivityProfileExperiment object.
 func NewSensitivitiProfileExperiment(c ExperimentConfiguration,
-	pr Launcher,
-	lgForPr LoadGenerator,
-	be []Launcher) *SensitivitiProfileExperiment {
+	pr workloads.Launcher,
+	lgForPr workloads.LoadGenerator,
+	be []workloads.Launcher) *SensitivitiProfileExperiment {
 
 	return &SensitivitiProfileExperiment{pr: pr, lgForPr: lgForPr,
 		be: be, ec: c}
@@ -50,7 +39,7 @@ func NewSensitivitiProfileExperiment(c ExperimentConfiguration,
 // Takes aggressor workload and specific loadPoint (rps)
 // Return (sli, nil) on success (0, error) otherwise.
 func (e *SensitivitiProfileExperiment) runMeasurement(
-	aggressor Launcher,
+	aggressor workloads.Launcher,
 	qps int) (sli int, err error) {
 
 	prTask, err := e.pr.Launch()
@@ -73,7 +62,7 @@ func (e *SensitivitiProfileExperiment) runMeasurement(
 }
 
 // Executes single phase
-func (e *SensitivitiProfileExperiment) runPhase(aggressor Launcher) (slis []int, err error) {
+func (e *SensitivitiProfileExperiment) runPhase(aggressor workloads.Launcher) (slis []int, err error) {
 	slis = make([]int, e.ec.LoadPointsCount)
 
 	loadStep := int(e.targetLoad / e.ec.LoadPointsCount)
