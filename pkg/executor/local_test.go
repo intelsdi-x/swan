@@ -26,15 +26,16 @@ func TestLocal(t *testing.T) {
 	Convey("Using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command waiting for signal in fifo is executed and we wait for it with timeout 1ms", func() {
+		Convey("When command waiting for signal in fifo" +
+			   "is executed and we wait for it with timeout 1ms", func() {
 			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
 
 			taskNotTimeouted := task.Wait(1)
 
-			running, _ := task.Status()
+			taskState, _ := task.Status()
 
-			Convey("The status result should point that the task is still running", func() {
-				So(running, ShouldBeTrue)
+			Convey("The task should be still running", func() {
+				So(taskState, ShouldEqual, RUNNING)
 			})
 
 			Convey("And the timeout should exceed", func() {
@@ -48,19 +49,20 @@ func TestLocal(t *testing.T) {
 			task.Stop()
 		})
 
-		Convey("When command waiting for signal in fifo is executed and we stop it after start", func() {
+		Convey("When command waiting for signal in fif" +
+			   "is executed and we stop it after start", func() {
 			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
 
 			task.Stop()
 
-			running, status := task.Status()
+			taskState, taskStatus := task.Status()
 
-			Convey("The status result should point that the task is not running", func() {
-				So(running, ShouldBeFalse)
+			Convey("The task should be not running", func() {
+				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be -1", func() {
-				So(status.code, ShouldEqual, -1)
+				So(taskStatus.code, ShouldEqual, -1)
 			})
 
 			Convey("And error is nil", func() {
@@ -73,18 +75,18 @@ func TestLocal(t *testing.T) {
 
 			taskNotTimeouted := task.Wait(500)
 
-			running, status := task.Status()
+			taskState, taskStatus := task.Status()
 
-			Convey("The status result should point that the task is not running", func() {
-				So(running, ShouldBeFalse)
+			Convey("The task should be not running", func() {
+				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0", func() {
-				So(status.code, ShouldEqual, 0)
+				So(taskStatus.code, ShouldEqual, 0)
 			})
 
 			Convey("And command stdout needs to match 'output", func() {
-				So(status.stdout, ShouldEqual, "output\n")
+				So(taskStatus.stdout, ShouldEqual, "output\n")
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -101,14 +103,14 @@ func TestLocal(t *testing.T) {
 
 			taskNotTimeouted := task.Wait(500)
 
-			running, status := task.Status()
+			taskState, taskStatus := task.Status()
 
-			Convey("The status result should point that the task is not running", func() {
-				So(running, ShouldBeFalse)
+			Convey("The task should be not running", func() {
+				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 127", func() {
-				So(status.code, ShouldEqual, 127)
+				So(taskStatus.code, ShouldEqual, 127)
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -127,22 +129,22 @@ func TestLocal(t *testing.T) {
 			task.Wait(0)
 			task2.Wait(0)
 
-			running1, status1 := task.Status()
-			running2, status2 := task2.Status()
+			taskState1, taskStatus1 := task.Status()
+			taskState2, taskStatus2 := task2.Status()
 
-			Convey("The status results should point that the tasks are not running", func() {
-				So(running1, ShouldBeFalse)
-				So(running2, ShouldBeFalse)
+			Convey("The tasks should be not running", func() {
+				So(taskState1, ShouldEqual, TERMINATED)
+				So(taskState2, ShouldEqual, TERMINATED)
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(status1.stdout, ShouldEqual, "output1\n")
-				So(status2.stdout, ShouldEqual, "output2\n")
+				So(taskStatus1.stdout, ShouldEqual, "output1\n")
+				So(taskStatus2.stdout, ShouldEqual, "output2\n")
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(status1.code, ShouldEqual, 0)
-				So(status2.code, ShouldEqual, 0)
+				So(taskStatus1.code, ShouldEqual, 0)
+				So(taskStatus2.code, ShouldEqual, 0)
 			})
 
 			Convey("And errors are nil", func() {
