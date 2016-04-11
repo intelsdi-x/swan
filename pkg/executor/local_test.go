@@ -7,28 +7,38 @@ import (
 	"os/exec"
 )
 
-const (FifoTestPipePath = "/tmp/swan_local_test_fifo")
+const (
+	fifoTestDirTemplate = "/tmp/swan_local_test.XXXXXXXXXXX"
+	fifoTestName = "swan_fifo"
+)
 
 // TestLocal
 func TestLocal(t *testing.T) {
-	// Prepare fifo pipe for following tests.
-	cmd := exec.Command("rm", "-rf", FifoTestPipePath)
-	err := cmd.Run()
+	// Prepare unique tmp directory for the following tests.
+	cmd := exec.Command("mktemp", "-d", fifoTestDirTemplate)
+	// Parse unique dir output.
+	dirBytes, err := cmd.Output()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	err = syscall.Mkfifo(FifoTestPipePath, syscall.S_IFIFO)
+	// Remove last element - it's newline.
+	fifoDir := string(dirBytes[:len(dirBytes)-1])
+
+	fifoPath := fifoDir + "/" + fifoTestName
+
+	// Create fifo for the following tests.
+	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	Convey("Using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command waiting for signal in fifo" +
+		Convey("When command waiting for signal in fifo " +
 			   "is executed and we wait for it with timeout 1ms", func() {
-			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
+			task, err := l.Run("read -n 1 <" + fifoPath)
 
 			taskNotTimeouted := task.Wait(1)
 
@@ -49,9 +59,10 @@ func TestLocal(t *testing.T) {
 			task.Stop()
 		})
 
-		Convey("When command waiting for signal in fif" +
+		Convey("When command waiting for signal in fifo " +
+
 			   "is executed and we stop it after start", func() {
-			task, err := l.Run("read -n 1 <" + FifoTestPipePath)
+			task, err := l.Run("read -n 1 <" + fifoPath)
 
 			task.Stop()
 
@@ -154,10 +165,11 @@ func TestLocal(t *testing.T) {
 		})
 	})
 
-	// Clean up
-	cmd = exec.Command("rm", "-rf", FifoTestPipePath)
+	//Clean up
+	cmd = exec.Command("rm", "-rf", fifoDir)
 	err = cmd.Run()
+
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 }
