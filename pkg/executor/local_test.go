@@ -1,4 +1,4 @@
-package provisioning
+package executor
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
