@@ -22,17 +22,17 @@ func NewSSHConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHCon
 }
 
 // NewClientConfig create client config with credentials for ssh connection.
-func NewClientConfig(username string, keyPath string) *ssh.ClientConfig {
+func NewClientConfig(username string, keyPath string) (*ssh.ClientConfig, error) {
 	authMethod, err := publicKeyFile(keyPath)
 	if err != nil{
-		panic(err)
+		return nil, err
 	}
 	return &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
 			authMethod,
 		},
-	}
+	}, nil
 }
 
 // get AuthMethod which uses given key.
