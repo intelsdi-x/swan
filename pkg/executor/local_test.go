@@ -2,14 +2,14 @@ package executor
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
-	"syscall"
 	"os/exec"
+	"syscall"
+	"testing"
 )
 
 const (
 	fifoTestDirTemplate = "/tmp/swan_local_test.XXXXXXXXXXX"
-	fifoTestName = "swan_fifo"
+	fifoTestName        = "swan_fifo"
 )
 
 // TestLocal
@@ -36,8 +36,8 @@ func TestLocal(t *testing.T) {
 	Convey("Using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command waiting for signal in fifo " +
-			   "is executed and we wait for it with timeout 1ms", func() {
+		Convey("When command waiting for signal in fifo "+
+			"is executed and we wait for it with timeout 1ms", func() {
 			task, err := l.Execute("read -n 1 <" + fifoPath)
 
 			taskNotTimeouted := task.Wait(1)
@@ -59,9 +59,8 @@ func TestLocal(t *testing.T) {
 			task.Stop()
 		})
 
-		Convey("When command waiting for signal in fifo " +
-
-			   "is executed and we stop it after start", func() {
+		Convey("When command waiting for signal in fifo "+
+			"is executed and we stop it after start", func() {
 			task, err := l.Execute("read -n 1 <" + fifoPath)
 
 			task.Stop()
@@ -73,7 +72,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the exit status should be -1", func() {
-				So(taskStatus.code, ShouldEqual, -1)
+				So(taskStatus.ExitCode, ShouldEqual, -1)
 			})
 
 			Convey("And error is nil", func() {
@@ -93,11 +92,11 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the exit status should be 0", func() {
-				So(taskStatus.code, ShouldEqual, 0)
+				So(taskStatus.ExitCode, ShouldEqual, 0)
 			})
 
 			Convey("And command stdout needs to match 'output", func() {
-				So(taskStatus.stdout, ShouldEqual, "output\n")
+				So(taskStatus.Stdout, ShouldEqual, "output\n")
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -121,7 +120,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("And the exit status should be 127", func() {
-				So(taskStatus.code, ShouldEqual, 127)
+				So(taskStatus.ExitCode, ShouldEqual, 127)
 			})
 
 			Convey("And the timeout should NOT exceed", func() {
@@ -149,13 +148,13 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(taskStatus1.stdout, ShouldEqual, "output1\n")
-				So(taskStatus2.stdout, ShouldEqual, "output2\n")
+				So(taskStatus1.Stdout, ShouldEqual, "output1\n")
+				So(taskStatus2.Stdout, ShouldEqual, "output2\n")
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1.code, ShouldEqual, 0)
-				So(taskStatus2.code, ShouldEqual, 0)
+				So(taskStatus1.ExitCode, ShouldEqual, 0)
+				So(taskStatus2.ExitCode, ShouldEqual, 0)
 			})
 
 			Convey("And errors are nil", func() {
