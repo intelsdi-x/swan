@@ -67,10 +67,10 @@ func (remote Remote) Execute(command string) (Task, error) {
 func getExitCode(errorMsg string) int{
 	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
-	if len(match) == 0{
+	if len(match[1]) == 0{
 		panic(errors.New("Exit code not found"))
 	}
-	code, _ := strconv.Atoi(match[0])
+	code, _ := strconv.Atoi(match[1])
 	return code
 }
 
