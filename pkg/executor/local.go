@@ -1,4 +1,4 @@
-package provisioning
+package executor
 
 import (
 	"bytes"
@@ -22,9 +22,9 @@ func NewLocal() Local {
 	return Local{}
 }
 
-// Run runs the command given as input.
+// Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
-func (l Local) Run(command string) (Task, error) {
+func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
 
 	log.Debug("Starting ", command)
@@ -123,15 +123,14 @@ func (task *localTask) Stop() error {
 	return err
 }
 
-// Status gets status of the local task.
-func (task localTask) Status() Status {
+// Status returns a state of the task. If task is terminated it returns the Status as a
+// second item in tuple. Otherwise returns nil.
+func (task localTask) Status() (TaskState, *Status) {
 	if !task.terminated {
-		// TODO: Represent running as non-presence of an exit code or return
-		// tuple with (running, *status)
-		return Status{code: 0}
+		return RUNNING, nil
 	}
 
-	return task.status
+	return TERMINATED, &task.status
 }
 
 // Wait blocks until process is terminated or timeout appeared.
