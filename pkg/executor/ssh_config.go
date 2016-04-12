@@ -1,4 +1,4 @@
-package provisioning
+package executor
 
 import (
 	"io/ioutil"
@@ -13,7 +13,7 @@ type SSHConfig struct {
 }
 
 // NewsshConfig creates a new ssh config.
-func NewsshConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHConfig {
+func NewSSHConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHConfig {
 	return &SSHConfig{
 		clientConfig,
 		host,
@@ -21,29 +21,31 @@ func NewsshConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHCon
 	}
 }
 
+// NewClientConfig create client config with credentials for ssh connection.
+func NewClientConfig(username string, keyPath string) *ssh.ClientConfig {
+	authMethod, err := publicKeyFile(keyPath)
+	if err != nil{
+		panic(err)
+	}
+	return &ssh.ClientConfig{
+		User: username,
+		Auth: []ssh.AuthMethod{
+			authMethod,
+		},
+	}
+}
+
 // get AuthMethod which uses given key.
-func publicKeyFile(keyPath string) ssh.AuthMethod {
+func publicKeyFile(keyPath string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		panic(err)
-		return nil
+		return nil, err
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		panic(err)
-		return nil
+		return nil, err
 	}
 
-	return ssh.PublicKeys(key)
-}
-
-// NewClientConfig create client config with credentials for ssh connection.
-func NewClientConfig(username string, keyPath string) *ssh.ClientConfig {
-	return &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			publicKeyFile(keyPath),
-		},
-	}
+	return ssh.PublicKeys(key), nil
 }
