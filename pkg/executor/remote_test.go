@@ -2,10 +2,9 @@ package executor
 
 import (
 	"github.com/smartystreets/goconvey/convey"
-	"testing"
-
 	"os/user"
-"strings"
+	"strings"
+	"testing"
 )
 
 func TestRemote(t *testing.T){

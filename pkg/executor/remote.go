@@ -1,13 +1,13 @@
 package executor
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
-	"time"
-	"bytes"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -28,8 +28,11 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 func (remote Remote) Execute(command string) (Task, error) {
 	statusCh := make(chan Status)
 
-	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
-		remote.sshConfig.clientConfig)
+	connection, err := ssh.Dial(
+		"tcp",
+		fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
+		remote.sshConfig.clientConfig,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +47,8 @@ func (remote Remote) Execute(command string) (Task, error) {
 		ssh.TTY_OP_ISPEED: 14400,
 		ssh.TTY_OP_OSPEED: 14400,
 	}
-	if err := session.RequestPty("xterm", 80, 40, terminal); err != nil {
+	if err := session.RequestPty("xterm", 80, 40, terminal);
+	err != nil {
 		session.Close()
 		return nil, err
 	}
@@ -63,7 +67,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 	return remoteTask, nil
 }
 
-// getExitCode gets exit code from the error message given as input.
+
 func getExitCode(errorMsg string) int{
 	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
@@ -90,7 +94,7 @@ func (task *remoteTask) Stop() error {
 	return nil
 }
 
-// Status gets status of the remote task.
+// Status gets task state and status of the remote task.
 func (task *remoteTask) Status() (TaskState, *Status) {
 	if !task.terminated {
 		return RUNNING, nil
@@ -100,27 +104,28 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
+// Returns true when process terminates before timeout, otherwise false.
 func (task *remoteTask) Wait(timeoutMs int) bool {
 	if (task.terminated) {
-		return false
+		return true
 	}
 
-	if (timeoutMs == 0) {
+	if timeoutMs == 0 {
 		s := <-task.statusCh
 		task.completeTask(s)
-
-	} else {
-		timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-
-		select {
-		case s := <-task.statusCh:
-			task.completeTask(s)
-		case <-time.After(timeoutDuration):
-			return true
-		}
+		return true
 	}
 
-	return false
+	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
+	result := true
+	select {
+	case s := <-task.statusCh:
+		task.completeTask(s)
+	case <-time.After(timeoutDuration):
+		result = false
+	}
+
+	return result
 }
 
 // RemoteTask implements Task interface.
