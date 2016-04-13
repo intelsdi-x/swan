@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -54,23 +55,33 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	go func() {
 		var stderr bytes.Buffer
-		statusCode := 0
+		exitCode := -1
 		session.Stderr = &stderr
 		output, err := session.Output(command)
 		if err != nil {
-			statusCode = getExitCode(err.Error())
+			exitCode, err = getExitCode(err.Error())
+			if err != nil {
+				log.Error(err.Error())
+			}
 		}
-		statusCh <- Status{statusCode, string(output[:]), stderr.String()}
+		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
 	}()
 	remoteTask := newRemoteTask(session, statusCh)
 	return remoteTask, nil
 }
 
-func getExitCode(errorMsg string) int {
-	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
+func getExitCode(errorMsg string) int, error {
+	re, err := regexp.Compile(`Process exited with: ([0-9]+).`)
+	if err != nil {
+		error := fmt.Sprintf(
+			"Could not retrieve exit code from output: %s", errorMsg)
+		return errors.New(error)
+	}
 	match := re.FindStringSubmatch(errorMsg)
 	if len(match[1]) == 0 {
-		panic(errors.New("Exit code not found"))
+		error := fmt.Sprintf(
+			"Could not retrieve exit code from output: %s", errorMsg)
+		return errors.New(error)
 	}
 	code, _ := strconv.Atoi(match[1])
 	return code
@@ -79,7 +90,7 @@ func getExitCode(errorMsg string) int {
 // Stop terminates the remote task.
 func (task *remoteTask) Stop() error {
 	if task.terminated {
-		return errors.New("Task has already completed.")
+		return nil
 	}
 	err := task.session.Signal(ssh.SIGKILL)
 	if err != nil {
