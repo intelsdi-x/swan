@@ -2,7 +2,6 @@ package executor
 
 import (
 	"bytes"
-	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"syscall"
@@ -106,7 +105,7 @@ func (task *localTask) completeTask(status Status) {
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
 	if task.terminated {
-		return errors.New("Task is not running.")
+		return nil
 	}
 
 	// We signal the entire process group.
