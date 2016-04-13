@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"regexp"
 	"strconv"
 	"time"
-	log "github.com/Sirupsen/logrus"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -70,21 +70,21 @@ func (remote Remote) Execute(command string) (Task, error) {
 	return remoteTask, nil
 }
 
-func getExitCode(errorMsg string) int, error {
+func getExitCode(errorMsg string) (int, error) {
 	re, err := regexp.Compile(`Process exited with: ([0-9]+).`)
 	if err != nil {
 		error := fmt.Sprintf(
 			"Could not retrieve exit code from output: %s", errorMsg)
-		return errors.New(error)
+		return -1, errors.New(error)
 	}
 	match := re.FindStringSubmatch(errorMsg)
 	if len(match[1]) == 0 {
 		error := fmt.Sprintf(
 			"Could not retrieve exit code from output: %s", errorMsg)
-		return errors.New(error)
+		return -1, errors.New(error)
 	}
 	code, _ := strconv.Atoi(match[1])
-	return code
+	return code, nil
 }
 
 // Stop terminates the remote task.
