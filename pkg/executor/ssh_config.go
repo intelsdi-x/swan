@@ -1,15 +1,15 @@
 package executor
 
 import (
-	"io/ioutil"
 	"golang.org/x/crypto/ssh"
+	"io/ioutil"
 )
 
 // SSHConfig with clientConfig, host and port to connect.
 type SSHConfig struct {
 	clientConfig *ssh.ClientConfig
-	host   string
-	port   int
+	host         string
+	port         int
 }
 
 // NewsshConfig creates a new ssh config.
@@ -24,7 +24,7 @@ func NewSSHConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHCon
 // NewClientConfig create client config with credentials for ssh connection.
 func NewClientConfig(username string, keyPath string) (*ssh.ClientConfig, error) {
 	authMethod, err := publicKeyFile(keyPath)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return &ssh.ClientConfig{
