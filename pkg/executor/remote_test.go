@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func TestRemote(t *testing.T){
+func TestRemote(t *testing.T) {
 	convey.Convey("Creating a client configuration for the test user", t, func() {
 		user, err := user.Current()
 		convey.So(err, convey.ShouldBeNil)
 		convey.Convey("Using Remote Shell with proper configuration", func() {
-			clientConfig, err := NewClientConfig(user.Username, user.HomeDir + "/.ssh/id_rsa")
+			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
 			convey.So(err, convey.ShouldBeNil)
 			sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
 			remoteShell := NewRemote(*sshConfig)
@@ -21,15 +21,15 @@ func TestRemote(t *testing.T){
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
 				convey.Convey("gives empty output", func() {
-					convey.So(taskStatus.stdout, convey.ShouldEqual, "")
+					convey.So(taskStatus.Stdout, convey.ShouldEqual, "")
 				})
 			})
 			convey.Convey("with not existing command", func() {
 				remoteTask, _ := remoteShell.Execute("notexistingcommand")
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
-				convey.Convey("should give 127 error code", func() {
-					convey.So(taskStatus.code, convey.ShouldEqual, 127)
+				convey.Convey("should give 127 error ExitCode", func() {
+					convey.So(taskStatus.ExitCode, convey.ShouldEqual, 127)
 				})
 			})
 			convey.Convey("with whoami command ", func() {
@@ -38,7 +38,7 @@ func TestRemote(t *testing.T){
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
 				convey.Convey("with root user in clientconfig should give root as output", func() {
-					convey.So(strings.TrimSpace(taskStatus.stdout), convey.ShouldEqual, user.Username)
+					convey.So(strings.TrimSpace(taskStatus.Stdout), convey.ShouldEqual, user.Username)
 				})
 			})
 		})
