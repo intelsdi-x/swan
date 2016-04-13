@@ -2,7 +2,6 @@ package sensitivity
 
 import "github.com/intelsdi-x/swan/pkg/workloads"
 
-//Configuration
 type Configuration struct {
 	SLO             int
 	TuningTimeout   int
@@ -10,7 +9,6 @@ type Configuration struct {
 	LoadPointsCount int
 }
 
-//Experiment
 type Experiment struct {
 	// Latency Sensitivity workload
 	pr workloads.Launcher
@@ -24,14 +22,13 @@ type Experiment struct {
 }
 
 // Construct new Experiment object.
-//NewExperiment()
 func NewExperiment(
 	configuration Configuration,
 	productionTaskLauncher workloads.Launcher,
 	loadGeneratorForProductionTask workloads.LoadGenerator,
 	aggressorTaskLaunchers []workloads.Launcher) *Experiment {
 
-	//TODO: Validate configuration.
+	// TODO(mpatelcz): Validate configuration.
 
 	return &Experiment{
 		pr:      productionTaskLauncher,
@@ -105,7 +102,6 @@ func (e *Experiment) Run() error {
 
 	err = e.runTunning()
 	if err != nil {
-		//Stop here
 		return err
 	}
 
