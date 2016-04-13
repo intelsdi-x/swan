@@ -12,7 +12,7 @@ import (
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
-type Remote struct{
+type Remote struct {
 	sshConfig SSHConfig
 }
 
@@ -47,8 +47,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 		ssh.TTY_OP_ISPEED: 14400,
 		ssh.TTY_OP_OSPEED: 14400,
 	}
-	if err := session.RequestPty("xterm", 80, 40, terminal);
-	err != nil {
+	if err := session.RequestPty("xterm", 80, 40, terminal); err != nil {
 		session.Close()
 		return nil, err
 	}
@@ -67,11 +66,10 @@ func (remote Remote) Execute(command string) (Task, error) {
 	return remoteTask, nil
 }
 
-
-func getExitCode(errorMsg string) int{
+func getExitCode(errorMsg string) int {
 	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
-	if len(match[1]) == 0{
+	if len(match[1]) == 0 {
 		panic(errors.New("Exit code not found"))
 	}
 	code, _ := strconv.Atoi(match[1])
@@ -83,7 +81,7 @@ func (task *remoteTask) Stop() error {
 	if task.terminated {
 		return errors.New("Task has already completed.")
 	}
-	err := task.session.Signal(ssh.SIGKILL);
+	err := task.session.Signal(ssh.SIGKILL)
 	if err != nil {
 		return err
 	}
@@ -106,7 +104,7 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 // Wait blocks until process is terminated or timeout appeared.
 // Returns true when process terminates before timeout, otherwise false.
 func (task *remoteTask) Wait(timeoutMs int) bool {
-	if (task.terminated) {
+	if task.terminated {
 		return true
 	}
 
@@ -129,11 +127,11 @@ func (task *remoteTask) Wait(timeoutMs int) bool {
 }
 
 // RemoteTask implements Task interface.
-type remoteTask struct{
+type remoteTask struct {
 	terminated bool
-	session *ssh.Session
-	statusCh chan Status
-	status Status
+	session    *ssh.Session
+	statusCh   chan Status
+	status     Status
 }
 
 // NewRemoteTask returns a RemoteTask instance.
