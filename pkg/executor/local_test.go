@@ -27,8 +27,8 @@ func TestLocal(t *testing.T) {
 
 	fifoPath := fifoDir + "/" + fifoTestName
 
-	// Create fifo for the following tests.
-	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO)
+	// Create fifo for the following tests. Making sure it has proper permissions.
+	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO| 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,19 +40,22 @@ func TestLocal(t *testing.T) {
 			"is executed and we wait for it with timeout 1ms", func() {
 			task, err := l.Execute("read -n 1 <" + fifoPath)
 
-			taskNotTimeouted := task.Wait(1)
+			if task != nil {
+				taskNotTimeouted := task.Wait(1)
 
-			taskState, _ := task.Status()
+				taskState, _ := task.Status()
 
-			Convey("The task should be still running", func() {
-				So(taskState, ShouldEqual, RUNNING)
-			})
+				Convey("The task should be still running", func() {
+					So(taskState, ShouldEqual, RUNNING)
+				})
 
-			Convey("And the timeout should exceed", func() {
-				So(taskNotTimeouted, ShouldBeFalse)
-			})
+				Convey("And the timeout should exceed", func() {
+					So(taskNotTimeouted, ShouldBeFalse)
+				})
 
-			Convey("And error is nil", func() {
+			}
+
+			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
 
@@ -63,19 +66,21 @@ func TestLocal(t *testing.T) {
 			"is executed and we stop it after start", func() {
 			task, err := l.Execute("read -n 1 <" + fifoPath)
 
-			task.Stop()
+			if task != nil {
+				task.Stop()
 
-			taskState, taskStatus := task.Status()
+				taskState, taskStatus := task.Status()
 
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
+				Convey("The task should be not running", func() {
+					So(taskState, ShouldEqual, TERMINATED)
+				})
 
-			Convey("And the exit status should be -1", func() {
-				So(taskStatus.ExitCode, ShouldEqual, -1)
-			})
+				Convey("And the exit status should be -1", func() {
+					So(taskStatus.ExitCode, ShouldEqual, -1)
+				})
+			}
 
-			Convey("And error is nil", func() {
+			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
 		})
@@ -83,25 +88,27 @@ func TestLocal(t *testing.T) {
 		Convey("When command `echo output` is executed and we wait for it", func() {
 			task, err := l.Execute("echo output")
 
-			taskNotTimeouted := task.Wait(500)
+			if task != nil {
+				taskNotTimeouted := task.Wait(500)
 
-			taskState, taskStatus := task.Status()
+				taskState, taskStatus := task.Status()
 
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
+				Convey("The task should be not running", func() {
+					So(taskState, ShouldEqual, TERMINATED)
+				})
 
-			Convey("And the exit status should be 0", func() {
-				So(taskStatus.ExitCode, ShouldEqual, 0)
-			})
+				Convey("And the exit status should be 0", func() {
+					So(taskStatus.ExitCode, ShouldEqual, 0)
+				})
 
-			Convey("And command stdout needs to match 'output", func() {
-				So(taskStatus.Stdout, ShouldEqual, "output\n")
-			})
+				Convey("And command stdout needs to match 'output", func() {
+					So(taskStatus.Stdout, ShouldEqual, "output\n")
+				})
 
-			Convey("And the timeout should NOT exceed", func() {
-				So(taskNotTimeouted, ShouldBeTrue)
-			})
+				Convey("And the timeout should NOT exceed", func() {
+					So(taskNotTimeouted, ShouldBeTrue)
+				})
+			}
 
 			Convey("And error is nil", func() {
 				So(err, ShouldBeNil)
@@ -111,23 +118,26 @@ func TestLocal(t *testing.T) {
 		Convey("When command which does not exists is executed and we wait for it", func() {
 			task, err := l.Execute("commandThatDoesNotExists")
 
-			taskNotTimeouted := task.Wait(500)
+			if task != nil {
+				taskNotTimeouted := task.Wait(500)
 
-			taskState, taskStatus := task.Status()
+				taskState, taskStatus := task.Status()
 
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
+				Convey("The task should be not running", func() {
+					So(taskState, ShouldEqual, TERMINATED)
+				})
 
-			Convey("And the exit status should be 127", func() {
-				So(taskStatus.ExitCode, ShouldEqual, 127)
-			})
+				Convey("And the exit status should be 127", func() {
+					So(taskStatus.ExitCode, ShouldEqual, 127)
+				})
 
-			Convey("And the timeout should NOT exceed", func() {
-				So(taskNotTimeouted, ShouldBeTrue)
-			})
+				Convey("And the timeout should NOT exceed", func() {
+					So(taskNotTimeouted, ShouldBeTrue)
+				})
+			}
 
-			Convey("And error is nil", func() {
+
+			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
 		})
@@ -136,28 +146,30 @@ func TestLocal(t *testing.T) {
 			task, err := l.Execute("echo output1")
 			task2, err2 := l.Execute("echo output2")
 
-			task.Wait(0)
-			task2.Wait(0)
+			if task != nil && task2 != nil {
+				task.Wait(0)
+				task2.Wait(0)
 
-			taskState1, taskStatus1 := task.Status()
-			taskState2, taskStatus2 := task2.Status()
+				taskState1, taskStatus1 := task.Status()
+				taskState2, taskStatus2 := task2.Status()
 
-			Convey("The tasks should be not running", func() {
-				So(taskState1, ShouldEqual, TERMINATED)
-				So(taskState2, ShouldEqual, TERMINATED)
-			})
+				Convey("The tasks should be not running", func() {
+					So(taskState1, ShouldEqual, TERMINATED)
+					So(taskState2, ShouldEqual, TERMINATED)
+				})
 
-			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-				So(taskStatus2.Stdout, ShouldEqual, "output2\n")
-			})
+				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
+					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+				})
 
-			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1.ExitCode, ShouldEqual, 0)
-				So(taskStatus2.ExitCode, ShouldEqual, 0)
-			})
+				Convey("Both exit statuses should be 0", func() {
+					So(taskStatus1.ExitCode, ShouldEqual, 0)
+					So(taskStatus2.ExitCode, ShouldEqual, 0)
+				})
+			}
 
-			Convey("And errors are nil", func() {
+			Convey("Errors are nil", func() {
 				So(err, ShouldBeNil)
 				So(err2, ShouldBeNil)
 			})
