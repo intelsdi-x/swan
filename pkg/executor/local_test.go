@@ -2,8 +2,6 @@ package executor
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
-	"os/exec"
-	"syscall"
 	"testing"
 	log "github.com/Sirupsen/logrus"
 )
@@ -17,31 +15,12 @@ const (
 func TestLocal(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	// Prepare unique tmp directory for the following tests.
-	cmd := exec.Command("mktemp", "-d", fifoTestDirTemplate)
-	// Parse unique dir output.
-	dirBytes, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Remove last element - it's newline.
-	fifoDir := string(dirBytes[:len(dirBytes)-1])
-
-	fifoPath := fifoDir + "/" + fifoTestName
-
-	// Create fifo for the following tests. Making sure it has proper permissions.
-	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO| 0666)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command `waiting for signal in fifo` "+
+		Convey("When blocking infinitive sleep command " +
 			"is executed", func() {
-			task, err := l.Execute("read -n 1 <" + fifoPath)
+			task, err := l.Execute("sleep inf")
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
@@ -186,12 +165,4 @@ func TestLocal(t *testing.T) {
 			})
 		})
 	})
-
-	//Clean up
-	cmd = exec.Command("rm", "-rf", fifoDir)
-	err = cmd.Run()
-
-	if err != nil {
-		t.Fatal(err)
-	}
 }
