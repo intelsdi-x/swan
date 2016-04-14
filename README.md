@@ -1,5 +1,7 @@
 # Scheduler Workloads
 
+[![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan)
+
 Repository for automated experiments and data collection targeted enhanced performance isolation and resource oversubscription.
 
 ## Instructions
