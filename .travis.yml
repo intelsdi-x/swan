@@ -1,0 +1,14 @@
+sudo: false
+language: go
+go:
+- 1.5.3
+- 1.6
+before_install:
+- go get github.com/tools/godep
+- go get github.com/golang/lint/golint
+- go get golang.org/x/crypto/ssh
+script:
+- make deps
+- make
+- make lint
+- make test
