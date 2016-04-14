@@ -1,54 +1,58 @@
 package executor
 
 import (
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
+	"os"
 	"os/user"
 	"strings"
 	"testing"
 )
 
 func TestRemote(t *testing.T) {
-	convey.SkipConvey("Creating a client configuration for the test user", t, func() {
+	SkipConvey("Creating a client configuration for the test user", t, func() {
 		user, err := user.Current()
-		convey.So(err, convey.ShouldBeNil)
-		convey.Convey("Using Remote Shell with proper configuration", func() {
+		So(err, ShouldBeNil)
+		Convey("Using Remote Shell with not existing path to key file", func() {
+			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/notexistingdirectoryname")
+			Convey("should rise error", func() {
+				So(err, ShouldNotBeNil)
+			})
+			Convey("should result in nil client config", func() {
+				So(clientConfig, ShouldBeNil)
+			})
+		})
+		Convey("Using Remote Shell with proper configuration", func() {
+			if _, err := os.Stat(user.HomeDir+"/.ssh/id_rsa"); os.IsNotExist(err) {
+				t.Skip("skipping test: ssh keys not found in "+user.HomeDir+"/.ssh/id_rsa")
+			}
 			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
 			remoteShell := NewRemote(*sshConfig)
-			convey.Convey("with empty command", func() {
+			Convey("with empty command", func() {
 				remoteTask, _ := remoteShell.Execute("")
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
-				convey.Convey("gives empty output", func() {
-					convey.So(taskStatus.Stdout, convey.ShouldEqual, "")
+				Convey("gives empty output", func() {
+					So(taskStatus.Stdout, ShouldEqual, "")
 				})
 			})
-			convey.Convey("with not existing command", func() {
+			Convey("with not existing command", func() {
 				remoteTask, _ := remoteShell.Execute("notexistingcommand")
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
-				convey.Convey("should give 127 error ExitCode", func() {
-					convey.So(taskStatus.ExitCode, convey.ShouldEqual, 127)
+				Convey("should give 127 error ExitCode", func() {
+					So(taskStatus.ExitCode, ShouldEqual, 127)
 				})
 			})
-			convey.Convey("with whoami command ", func() {
+			Convey("with whoami command ", func() {
 				remoteTask, err := remoteShell.Execute("whoami")
-				convey.So(err, convey.ShouldBeNil)
+				So(err, ShouldBeNil)
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
-				convey.Convey("with root user in clientconfig should give root as output", func() {
-					convey.So(strings.TrimSpace(taskStatus.Stdout), convey.ShouldEqual, user.Username)
+				Convey("with root user in clientconfig should give root as output", func() {
+					So(strings.TrimSpace(taskStatus.Stdout), ShouldEqual, user.Username)
 				})
-			})
-		})
-		convey.Convey("Using Remote Shell with not existing path to key file", func() {
-			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/notexistingdirectoryname")
-			convey.Convey("should rise error", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-			})
-			convey.Convey("should result in nil client config", func() {
-				convey.So(clientConfig, convey.ShouldBeNil)
 			})
 		})
 
