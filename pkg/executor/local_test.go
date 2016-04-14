@@ -1,9 +1,9 @@
 package executor
 
 import (
+	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -18,7 +18,7 @@ func TestLocal(t *testing.T) {
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When blocking infinitive sleep command " +
+		Convey("When blocking infinitive sleep command "+
 			"is executed", func() {
 			task, err := l.Execute("sleep inf")
 
