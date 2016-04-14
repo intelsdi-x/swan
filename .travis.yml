@@ -7,7 +7,6 @@ before_install:
 - go get github.com/tools/godep
 - go get github.com/golang/lint/golint
 - go get golang.org/x/crypto/ssh
-- cp misc/authorized_keys ~/.ssh/
 script:
 - make deps
 - make
