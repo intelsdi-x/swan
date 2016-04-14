@@ -27,8 +27,8 @@ func TestLocal(t *testing.T) {
 
 	fifoPath := fifoDir + "/" + fifoTestName
 
-	// Create fifo for the following tests.
-	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO)
+	// Create fifo for the following tests. Making sure it has proper permissions.
+	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO | 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
