@@ -5,8 +5,8 @@ go:
 - 1.6
 before_install:
 - go get github.com/tools/godep
-- go get github.com/smartystreets/goconvey/convey
 script:
+- make deps
 - make
 - make lint
 - make test
