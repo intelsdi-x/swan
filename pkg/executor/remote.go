@@ -61,7 +61,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 		if err != nil {
 			exitCode, err = getExitCode(err.Error())
 			if err != nil {
-				log.Error(err.Error())
+				log.Fatal(err.Error())
 			}
 		}
 		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
@@ -71,12 +71,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 }
 
 func getExitCode(errorMsg string) (int, error) {
-	re, err := regexp.Compile(`Process exited with: ([0-9]+).`)
-	if err != nil {
-		error := fmt.Sprintf(
-			"Could not retrieve exit code from output: %s", errorMsg)
-		return -1, errors.New(error)
-	}
+	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
 	if len(match[1]) == 0 {
 		error := fmt.Sprintf(
