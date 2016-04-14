@@ -6,6 +6,7 @@ go:
 before_install:
 - go get github.com/tools/godep
 - go get github.com/golang/lint/golint
+- go get github.com/GeertJohan/fgt
 script:
 - make deps
 - make
