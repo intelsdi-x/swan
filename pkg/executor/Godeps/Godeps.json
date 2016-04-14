@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/intelsdi-x/swan/pkg/provisioning",
+	"ImportPath": "github.com/intelsdi-x/swan/pkg/executor",
 	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
@@ -20,6 +20,14 @@
 			"ImportPath": "github.com/smartystreets/goconvey/convey",
 			"Comment": "1.6.1-6-g81a3e75",
 			"Rev": "81a3e75a5feb6bed21933ac8ef3116017afd993f"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
 		}
 	]
 }
