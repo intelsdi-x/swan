@@ -6,7 +6,6 @@ go:
 before_install:
 - go get github.com/tools/godep
 - go get github.com/golang/lint/golint
-- go get golang.org/x/crypto/ssh
 script:
 - make deps
 - make
