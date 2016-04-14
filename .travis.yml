@@ -7,8 +7,8 @@ before_install:
 - go get github.com/tools/godep
 - go get github.com/golang/lint/golint
 - go get golang.org/x/crypto/ssh
-- make deps
 script:
+- make deps
 - make
 - make lint
 - make test
