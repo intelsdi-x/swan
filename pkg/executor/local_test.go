@@ -36,11 +36,11 @@ func TestLocal(t *testing.T) {
 				task.Stop()
 			})
 
-			Convey("When we wait for task with the 1ms timeout", func() {
-				taskNotTimeouted := task.Wait(1)
+			Convey("When we wait for task termination with the 1ms timeout", func() {
+				isTaskTerminated := task.Wait(1)
 
-				Convey("The timeout should exceed ", func() {
-					So(taskNotTimeouted, ShouldBeFalse)
+				Convey("The timeout should exceed and the task not terminated ", func() {
+					So(isTaskTerminated, ShouldBeFalse)
 				})
 
 				Convey("The task should be still running and status should be nil", func() {
@@ -59,7 +59,7 @@ func TestLocal(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
-				Convey("The task should be NOT running and the task status should be -1", func() {
+				Convey("The task should be terminated and the task status should be -1", func() {
 					taskState, taskStatus := task.Status()
 					So(taskState, ShouldEqual, TERMINATED)
 					So(taskStatus.ExitCode, ShouldEqual, -1)
@@ -76,16 +76,16 @@ func TestLocal(t *testing.T) {
 				task.Stop()
 			})
 
-			Convey("When we wait for the task", func() {
-				taskNotTimeouted := task.Wait(500)
+			Convey("When we wait for the task to terminate", func() {
+				isTaskTerminated := task.Wait(500)
 
-				Convey("The timeout should NOT exceed", func() {
-					So(taskNotTimeouted, ShouldBeTrue)
+				Convey("Wait should states that task terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
 				})
 
 				taskState, taskStatus := task.Status()
 
-				Convey("The task should be NOT running", func() {
+				Convey("The task should be terminated", func() {
 					So(taskState, ShouldEqual, TERMINATED)
 				})
 
@@ -108,16 +108,16 @@ func TestLocal(t *testing.T) {
 				task.Stop()
 			})
 
-			Convey("When we wait for the task", func() {
-				taskNotTimeouted := task.Wait(500)
+			Convey("When we wait for the task to terminate", func() {
+				isTaskTerminated := task.Wait(500)
 
-				Convey("The timeout should NOT exceed", func() {
-					So(taskNotTimeouted, ShouldBeTrue)
+				Convey("Wait should state that task terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
 				})
 
 				taskState, taskStatus := task.Status()
 
-				Convey("The task should be NOT running", func() {
+				Convey("The task should be terminated", func() {
 					So(taskState, ShouldEqual, TERMINATED)
 				})
 
@@ -136,19 +136,19 @@ func TestLocal(t *testing.T) {
 				So(err2, ShouldBeNil)
 			})
 
-			Convey("When we wait for the tasks", func() {
-				taskNotTimeouted := task.Wait(0)
-				taskNotTimeouted2 := task2.Wait(0)
+			Convey("When we wait for the tasks to terminate", func() {
+				isTaskTerminated := task.Wait(0)
+				isTaskTerminated2 := task2.Wait(0)
 
-				Convey("The timeouts should NOT exceed", func() {
-					So(taskNotTimeouted, ShouldBeTrue)
-					So(taskNotTimeouted2, ShouldBeTrue)
+				Convey("Wait should state that tasks are terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
+					So(isTaskTerminated2, ShouldBeTrue)
 				})
 
 				taskState1, taskStatus1 := task.Status()
 				taskState2, taskStatus2 := task2.Status()
 
-				Convey("The tasks should be not running", func() {
+				Convey("The tasks should be terminated", func() {
 					So(taskState1, ShouldEqual, TERMINATED)
 					So(taskState2, ShouldEqual, TERMINATED)
 				})
