@@ -6,19 +6,14 @@ import (
 	"testing"
 )
 
-const (
-	fifoTestDirTemplate = "/tmp/swan_local_test.XXXXXXXXXXX"
-	fifoTestName        = "swan_fifo"
-)
-
-// TestLocal
+// TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When blocking infinitive sleep command "+
+		Convey("When blocking infinitively sleep command "+
 			"is executed", func() {
 			task, err := l.Execute("sleep inf")
 
