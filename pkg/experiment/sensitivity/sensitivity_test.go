@@ -30,7 +30,7 @@ type myLaucher struct {
 }
 
 func (l myLaucher) Launch() (executor.Task, error) {
-	return myTask{0}, nil
+	return myTask{}, nil
 }
 
 // Implement fake LoadGenerator interface
@@ -51,7 +51,7 @@ func TestExperiment(t *testing.T) {
 		var (
 			pr      workloads.Launcher
 			lgForPr workloads.LoadGenerator
-			aggr    []workloads.Launcher
+			aggrs   []workloads.Launcher
 		)
 		conf := Configuration{
 			SLO:             100,
@@ -60,11 +60,11 @@ func TestExperiment(t *testing.T) {
 			LoadPointsCount: 19,
 		}
 
-		pr = myLaucher{0}
-		lgForPr = myLoadGenerator{0}
-		aggr = append(aggr, myLaucher{0})
+		pr = myLaucher{}
+		lgForPr = myLoadGenerator{}
+		aggrs = append(aggrs, myLaucher{})
 
-		exp := NewExperiment(conf, pr, lgForPr, aggr)
+		exp := NewExperiment(conf, pr, lgForPr, aggrs)
 		Convey("should be successful", func() {
 			So(exp.Run(), ShouldBeNil)
 		})
