@@ -1,9 +1,10 @@
 package executor
 
 import (
+	"testing"
+
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 // TestLocal tests the execution of process on local machine.
