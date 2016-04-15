@@ -13,8 +13,7 @@ func TestLocal(t *testing.T) {
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When blocking infinitively sleep command "+
-			"is executed", func() {
+		Convey("When blocking infinitively sleep command is executed", func() {
 			task, err := l.Execute("sleep inf")
 
 			Convey("There should be no error", func() {
