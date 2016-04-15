@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"regexp"
 	"strconv"
@@ -54,32 +55,37 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	go func() {
 		var stderr bytes.Buffer
-		statusCode := 0
+		var exitCode int
 		session.Stderr = &stderr
 		output, err := session.Output(command)
 		if err != nil {
-			statusCode = getExitCode(err.Error())
+			exitCode, err = getExitCode(err.Error())
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 		}
-		statusCh <- Status{statusCode, string(output[:]), stderr.String()}
+		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
 	}()
 	remoteTask := newRemoteTask(session, statusCh)
 	return remoteTask, nil
 }
 
-func getExitCode(errorMsg string) int {
+func getExitCode(errorMsg string) (int, error) {
 	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
 	if len(match[1]) == 0 {
-		panic(errors.New("Exit code not found"))
+		errorMsg := fmt.Sprintf(
+			"Could not retrieve exit code from output: %s", errorMsg)
+		return -1, errors.New(errorMsg)
 	}
 	code, _ := strconv.Atoi(match[1])
-	return code
+	return code, nil
 }
 
 // Stop terminates the remote task.
 func (task *remoteTask) Stop() error {
 	if task.terminated {
-		return errors.New("Task has already completed.")
+		return nil
 	}
 	err := task.session.Signal(ssh.SIGKILL)
 	if err != nil {
