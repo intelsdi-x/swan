@@ -8,3 +8,5 @@
 /workloads/low-level-aggressors/memCap
 /workloads/low-level-aggressors/memCapAlt
 /workloads/low-level-aggressors/stream.100M
+/build
+/vendor
