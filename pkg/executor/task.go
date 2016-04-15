@@ -1,5 +1,7 @@
 package executor
 
+import "time"
+
 // TaskState is an enum presenting current task state.
 type TaskState int
 
@@ -10,6 +12,30 @@ const (
 	TERMINATED
 )
 
+// WaitWithTimeout is a helper for waiting with a given timeout time in ms.
+// It returns with true if task was NOT timeouted.
+// NOTE: It does not mean that it is terminated. E.g. When we do multiple waits.
+func WaitWithTimeout(task Task, timeoutMs int) (result bool) {
+	result = true
+	waitChannel := make(chan bool)
+
+	go func() {
+		// Wait will return immediately when the Wait was already triggered.
+		task.Wait()
+		waitChannel <- true
+	}()
+
+	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
+
+	select {
+	case result = <-waitChannel:
+	case <-time.After(timeoutDuration):
+		result = false
+	}
+
+	return
+}
+
 // Task represents a process which can be stopped or monitored.
 type Task interface {
 	// Stops a task.
@@ -17,8 +43,8 @@ type Task interface {
 	// Status returns a state of the task. If task is terminated it returns the Status as a
 	// second item in tuple. Otherwise returns nil.
 	Status() (TaskState, *Status)
-	// Waits for the task completion.
-	// In case of 0 timeout it will be endlessly blocked.
-	// Returns false after timeout exceeds.
-	Wait(timeoutMs int) bool
+	// Wait does the blocking wait for the task completion.
+	Wait()
+	// Cleans the environment after task. E.g Clear temp output files.
+	Clean()
 }
