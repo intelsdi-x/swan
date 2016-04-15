@@ -6,6 +6,7 @@ const (
 	memcachedBinaryName = "memcached"
 )
 
+// Memcached is a launcher for memcached data caching application.
 type Memcached struct {
 	exec         executor.Executor
 	pathToBinary string
@@ -14,6 +15,7 @@ type Memcached struct {
 	connNum      int
 }
 
+// NewMemcached is a constructor for Memcached.
 func NewMemcached(exec executor.Executor, pathToBinary string,
 	user string, threadsNum int, connNum int) Memcached {
 	return Memcached{
@@ -28,11 +30,14 @@ func NewMemcached(exec executor.Executor, pathToBinary string,
 func (m Memcached) buildCommand() string {
 	return m.pathToBinary + memcachedBinaryName +
 		" -u " + m.user +
-		" -t " + m.threadsNum +
-		" -c " + m.connNum +
+		" -t " + string(m.threadsNum) +
+		" -c " + string(m.connNum) +
 		" -m mem"
 }
 
+// Launch starts the workload (process or group of processes). It returns a workload
+// represented as a Task instance.
+// Error is returned when Launcher is unable to start a job.
 func (m Memcached) Launch() (executor.Task, error) {
 	return m.exec.Execute(m.buildCommand())
 }
