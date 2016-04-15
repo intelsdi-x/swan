@@ -1,10 +1,9 @@
 package executor
 
 import (
+	"bytes"
 	"errors"
 	log "github.com/Sirupsen/logrus"
-	"io/ioutil"
-	"os"
 	"os/exec"
 	"syscall"
 )
@@ -31,43 +30,42 @@ func (l Local) Execute(command string) (Task, error) {
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Creating temporary files for stdout & stderr.
-	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_stdout")
-	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_stderr")
+	// Setting Buffer as io.Writer for Command output.
+	// TODO: Write to temporary files instead of keeping in memory.
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	// Setting os.File as io.Writer for the Command output.
-	cmd.Stdout = stdoutFile
-	cmd.Stderr = stderrFile
-
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
 
-	t := newlocalTask(command, cmd, stdoutFile.Name(), stderrFile.Name())
+	t := newlocalTask(command, cmd, &stdout, &stdout)
 
 	return t, err
 }
 
 // localTask implements Task interface.
 type localTask struct {
-	command        string
-	cmdHandler     *exec.Cmd
-	stdoutFileName string
-	stderrFileName string
-	terminated     bool
+	command    string
+	cmdHandler *exec.Cmd
+	stdout     *bytes.Buffer
+	stderr     *bytes.Buffer
+	terminated bool
 }
 
 // newlocalTask returns a localTask instance.
 func newlocalTask(command string, cmdHandler *exec.Cmd,
-	stdoutFileName string, stderrFileName string) *localTask {
+	stdout *bytes.Buffer, stderr *bytes.Buffer) *localTask {
 	t := &localTask{
 		command,
 		cmdHandler,
-		stdoutFileName,
-		stderrFileName,
+		stdout,
+		stderr,
 		false,
 	}
 	return t
@@ -84,8 +82,8 @@ func (task localTask) getPid() int {
 func (task localTask) createStatus() *Status {
 	return &Status{
 		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
-		task.stdoutFileName,
-		task.stderrFileName,
+		task.stdout.String(),
+		task.stderr.String(),
 	}
 }
 
@@ -145,20 +143,12 @@ func (task *localTask) Wait() {
 
 	log.Debug(
 		"Ended ", task.command,
-		" with output in file: ", task.stdoutFileName,
-		" with err output in file: ", task.stderrFileName,
+		" with output in file: ", task.stdout.String(),
+		" with err output in file: ", task.stderr.String(),
 		" with status code: ",
 		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 
 	task.completeTask()
 
 	return
-}
-
-func (task *localTask) Clean() {
-	os.Remove(task.stdoutFileName)
-	task.stdoutFileName = ""
-
-	os.Remove(task.stderrFileName)
-	task.stderrFileName = ""
 }

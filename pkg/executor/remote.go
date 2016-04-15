@@ -99,10 +99,6 @@ func (task *remoteTask) Wait() {
 	return
 }
 
-func (task *remoteTask) Clean() {
-	// TODO: Clean Up code if any.
-}
-
 // RemoteTask implements Task interface.
 type remoteTask struct {
 	terminated bool

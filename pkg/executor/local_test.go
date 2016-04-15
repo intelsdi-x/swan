@@ -63,9 +63,6 @@ func TestLocal(t *testing.T) {
 					So(taskStatus.ExitCode, ShouldEqual, -15)
 				})
 			})
-
-			task.Clean()
-
 		})
 
 		Convey("When command `echo output` is executed", func() {
@@ -91,12 +88,10 @@ func TestLocal(t *testing.T) {
 					So(taskStatus.ExitCode, ShouldEqual, 0)
 				})
 
-				SkipConvey("And command stdout needs to match 'output", func() {
+				Convey("And command stdout needs to match 'output", func() {
 					So(taskStatus.Stdout, ShouldEqual, "output\n")
 				})
 			})
-
-			task.Clean()
 		})
 
 		Convey("When command which does not exists is executed", func() {
@@ -121,8 +116,6 @@ func TestLocal(t *testing.T) {
 					So(taskStatus.ExitCode, ShouldEqual, 127)
 				})
 			})
-
-			task.Clean()
 		})
 
 		Convey("When we execute two tasks in the same time", func() {
@@ -146,7 +139,7 @@ func TestLocal(t *testing.T) {
 					So(taskState2, ShouldEqual, TERMINATED)
 				})
 
-				SkipConvey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
 					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
 					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
 				})
@@ -156,9 +149,6 @@ func TestLocal(t *testing.T) {
 					So(taskStatus2.ExitCode, ShouldEqual, 0)
 				})
 			})
-
-			task.Clean()
-			task2.Clean()
 		})
 	})
 }

@@ -45,6 +45,4 @@ type Task interface {
 	Status() (TaskState, *Status)
 	// Wait does the blocking wait for the task completion.
 	Wait()
-	// Cleans the environment after task. E.g Clear temp output files.
-	Clean()
 }
