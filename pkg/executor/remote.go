@@ -55,7 +55,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	go func() {
 		var stderr bytes.Buffer
-		exitCode := -1
+		var exitCode int
 		session.Stderr = &stderr
 		output, err := session.Output(command)
 		if err != nil {
@@ -74,9 +74,9 @@ func getExitCode(errorMsg string) (int, error) {
 	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
 	match := re.FindStringSubmatch(errorMsg)
 	if len(match[1]) == 0 {
-		error := fmt.Sprintf(
+		errorMsg := fmt.Sprintf(
 			"Could not retrieve exit code from output: %s", errorMsg)
-		return -1, errors.New(error)
+		return -1, errors.New(errorMsg)
 	}
 	code, _ := strconv.Atoi(match[1])
 	return code, nil
