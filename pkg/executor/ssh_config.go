@@ -12,7 +12,7 @@ type SSHConfig struct {
 	port         int
 }
 
-// NewsshConfig creates a new ssh config.
+// NewSSHConfig creates a new ssh config.
 func NewSSHConfig(clientConfig *ssh.ClientConfig, host string, port int) *SSHConfig {
 	return &SSHConfig{
 		clientConfig,
