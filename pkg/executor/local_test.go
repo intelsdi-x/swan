@@ -1,134 +1,123 @@
 package executor
 
 import (
+	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
-	"os/exec"
-	"syscall"
 	"testing"
 )
 
-const (
-	fifoTestDirTemplate = "/tmp/swan_local_test.XXXXXXXXXXX"
-	fifoTestName        = "swan_fifo"
-)
-
-// TestLocal
+// TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
-	// Prepare unique tmp directory for the following tests.
-	cmd := exec.Command("mktemp", "-d", fifoTestDirTemplate)
-	// Parse unique dir output.
-	dirBytes, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
+	log.SetLevel(log.ErrorLevel)
 
-	// Remove last element - it's newline.
-	fifoDir := string(dirBytes[:len(dirBytes)-1])
-
-	fifoPath := fifoDir + "/" + fifoTestName
-
-	// Create fifo for the following tests.
-	err = syscall.Mkfifo(fifoPath, syscall.S_IFIFO)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	Convey("Using Local Shell", t, func() {
+	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
 
-		Convey("When command waiting for signal in fifo "+
-			"is executed and we wait for it with timeout 1ms", func() {
-			task, err := l.Execute("read -n 1 <" + fifoPath)
+		Convey("When blocking infinitively sleep command is executed", func() {
+			task, err := l.Execute("sleep inf")
 
-			taskNotTimeouted := task.Wait(1)
+			Convey("There should be no error", func() {
+				So(err, ShouldBeNil)
 
-			taskState, _ := task.Status()
+				task.Stop()
+			})
 
-			Convey("The task should be still running", func() {
+			Convey("Task should be still running and status should be nil", func() {
+				taskState, taskStatus := task.Status()
 				So(taskState, ShouldEqual, RUNNING)
+				So(taskStatus, ShouldBeNil)
+
+				task.Stop()
 			})
 
-			Convey("And the timeout should exceed", func() {
-				So(taskNotTimeouted, ShouldBeFalse)
+			Convey("When we wait for task termination with the 1ms timeout", func() {
+				isTaskTerminated := task.Wait(1)
+
+				Convey("The timeout should exceed and the task not terminated ", func() {
+					So(isTaskTerminated, ShouldBeFalse)
+				})
+
+				Convey("The task should be still running and status should be nil", func() {
+					taskState, taskStatus := task.Status()
+					So(taskState, ShouldEqual, RUNNING)
+					So(taskStatus, ShouldBeNil)
+				})
+
+				task.Stop()
 			})
 
-			Convey("And error is nil", func() {
-				So(err, ShouldBeNil)
-			})
+			Convey("When we stop the task", func() {
+				err := task.Stop()
 
-			task.Stop()
+				Convey("There should be no error", func() {
+					So(err, ShouldBeNil)
+				})
+
+				Convey("The task should be terminated and the task status should be -1", func() {
+					taskState, taskStatus := task.Status()
+					So(taskState, ShouldEqual, TERMINATED)
+					So(taskStatus.ExitCode, ShouldEqual, -1)
+				})
+			})
 		})
 
-		Convey("When command waiting for signal in fifo "+
-			"is executed and we stop it after start", func() {
-			task, err := l.Execute("read -n 1 <" + fifoPath)
-
-			task.Stop()
-
-			taskState, taskStatus := task.Status()
-
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
-
-			Convey("And the exit status should be -1", func() {
-				So(taskStatus.ExitCode, ShouldEqual, -1)
-			})
-
-			Convey("And error is nil", func() {
-				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("When command `echo output` is executed and we wait for it", func() {
+		Convey("When command `echo output` is executed", func() {
 			task, err := l.Execute("echo output")
 
-			taskNotTimeouted := task.Wait(500)
-
-			taskState, taskStatus := task.Status()
-
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
-
-			Convey("And the exit status should be 0", func() {
-				So(taskStatus.ExitCode, ShouldEqual, 0)
-			})
-
-			Convey("And command stdout needs to match 'output", func() {
-				So(taskStatus.Stdout, ShouldEqual, "output\n")
-			})
-
-			Convey("And the timeout should NOT exceed", func() {
-				So(taskNotTimeouted, ShouldBeTrue)
-			})
-
-			Convey("And error is nil", func() {
+			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
+
+				task.Stop()
+			})
+
+			Convey("When we wait for the task to terminate", func() {
+				isTaskTerminated := task.Wait(500)
+
+				Convey("Wait should states that task terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
+				})
+
+				taskState, taskStatus := task.Status()
+
+				Convey("The task should be terminated", func() {
+					So(taskState, ShouldEqual, TERMINATED)
+				})
+
+				Convey("And the exit status should be 0", func() {
+					So(taskStatus.ExitCode, ShouldEqual, 0)
+				})
+
+				Convey("And command stdout needs to match 'output", func() {
+					So(taskStatus.Stdout, ShouldEqual, "output\n")
+				})
 			})
 		})
 
-		Convey("When command which does not exists is executed and we wait for it", func() {
+		Convey("When command which does not exists is executed", func() {
 			task, err := l.Execute("commandThatDoesNotExists")
 
-			taskNotTimeouted := task.Wait(500)
-
-			taskState, taskStatus := task.Status()
-
-			Convey("The task should be not running", func() {
-				So(taskState, ShouldEqual, TERMINATED)
-			})
-
-			Convey("And the exit status should be 127", func() {
-				So(taskStatus.ExitCode, ShouldEqual, 127)
-			})
-
-			Convey("And the timeout should NOT exceed", func() {
-				So(taskNotTimeouted, ShouldBeTrue)
-			})
-
-			Convey("And error is nil", func() {
+			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
+
+				task.Stop()
+			})
+
+			Convey("When we wait for the task to terminate", func() {
+				isTaskTerminated := task.Wait(500)
+
+				Convey("Wait should state that task terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
+				})
+
+				taskState, taskStatus := task.Status()
+
+				Convey("The task should be terminated", func() {
+					So(taskState, ShouldEqual, TERMINATED)
+				})
+
+				Convey("And the exit status should be 127", func() {
+					So(taskStatus.ExitCode, ShouldEqual, 127)
+				})
 			})
 		})
 
@@ -136,39 +125,38 @@ func TestLocal(t *testing.T) {
 			task, err := l.Execute("echo output1")
 			task2, err2 := l.Execute("echo output2")
 
-			task.Wait(0)
-			task2.Wait(0)
-
-			taskState1, taskStatus1 := task.Status()
-			taskState2, taskStatus2 := task2.Status()
-
-			Convey("The tasks should be not running", func() {
-				So(taskState1, ShouldEqual, TERMINATED)
-				So(taskState2, ShouldEqual, TERMINATED)
-			})
-
-			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-				So(taskStatus2.Stdout, ShouldEqual, "output2\n")
-			})
-
-			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1.ExitCode, ShouldEqual, 0)
-				So(taskStatus2.ExitCode, ShouldEqual, 0)
-			})
-
-			Convey("And errors are nil", func() {
+			Convey("There should be no errors", func() {
 				So(err, ShouldBeNil)
 				So(err2, ShouldBeNil)
 			})
+
+			Convey("When we wait for the tasks to terminate", func() {
+				isTaskTerminated := task.Wait(0)
+				isTaskTerminated2 := task2.Wait(0)
+
+				Convey("Wait should state that tasks are terminated", func() {
+					So(isTaskTerminated, ShouldBeTrue)
+					So(isTaskTerminated2, ShouldBeTrue)
+				})
+
+				taskState1, taskStatus1 := task.Status()
+				taskState2, taskStatus2 := task2.Status()
+
+				Convey("The tasks should be terminated", func() {
+					So(taskState1, ShouldEqual, TERMINATED)
+					So(taskState2, ShouldEqual, TERMINATED)
+				})
+
+				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
+					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+				})
+
+				Convey("Both exit statuses should be 0", func() {
+					So(taskStatus1.ExitCode, ShouldEqual, 0)
+					So(taskStatus2.ExitCode, ShouldEqual, 0)
+				})
+			})
 		})
 	})
-
-	//Clean up
-	cmd = exec.Command("rm", "-rf", fifoDir)
-	err = cmd.Run()
-
-	if err != nil {
-		t.Fatal(err)
-	}
 }

@@ -6,7 +6,7 @@ deps:
 	./scripts/deps.sh
 
 lint:
-	./scripts/lint.sh
+	fgt golint ./pkg/...
 
 test:
-	./scripts/test.sh
+	go test ./pkg/...

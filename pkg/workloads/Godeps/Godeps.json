@@ -1,12 +1,7 @@
 {
-	"ImportPath": "github.com/intelsdi-x/swan/pkg/executor",
+	"ImportPath": "github.com/intelsdi-x/swan/pkg/dummy",
 	"GoVersion": "go1.5.1",
 	"Deps": [
-		{
-			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.7.3",
-			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
-		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
 			"Rev": "9a4a02dbe491bef4bab3c24fd9f3087d6c4c6690"
@@ -20,14 +15,6 @@
 			"ImportPath": "github.com/smartystreets/goconvey/convey",
 			"Comment": "1.6.1-6-g81a3e75",
 			"Rev": "81a3e75a5feb6bed21933ac8ef3116017afd993f"
-		},
-		{
-			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
-		},
-		{
-			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
 		}
 	]
 }
