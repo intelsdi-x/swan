@@ -8,7 +8,7 @@ import (
 )
 
 func TestRemote(t *testing.T) {
-	convey.Convey("Creating a client configuration for the test user", t, func() {
+	convey.SkipConvey("Creating a client configuration for the test user", t, func() {
 		user, err := user.Current()
 		convey.So(err, convey.ShouldBeNil)
 		convey.Convey("Using Remote Shell with proper configuration", func() {

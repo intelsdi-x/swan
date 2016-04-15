@@ -7,6 +7,6 @@ BASEPATH=${GOPATH}/src
 
 for package in `go list ./pkg/...`
 do
-    echo "Checking ${BASEPATH}/${package} style"
+    echo "Getting dependencies for ${BASEPATH}/${package}"
     sh -c "cd ${BASEPATH}/${package} && godep restore"
 done
