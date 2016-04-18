@@ -10,3 +10,4 @@
 /workloads/low-level-aggressors/stream.100M
 /build
 /vendor
+**/debug.test

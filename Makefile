@@ -7,6 +7,7 @@ deps:
 	go get github.com/tools/godep
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
+	go get github.com/stretchr/testify
 	godep restore -v
 
 # testing
