@@ -17,8 +17,11 @@ lint:
 	fgt golint ./cmds/...
 
 test:
-	mockery -all
 	go test ./pkg/...
+	go test ./cmds/...
+
+test_all:
+	go test -tags=integration ./pkg/...
 	go test ./cmds/...
 
 # building
@@ -31,4 +34,3 @@ run: memcache
 memcache:
 	./memcache
 
-	
