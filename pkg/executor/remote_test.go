@@ -22,8 +22,8 @@ func TestRemote(t *testing.T) {
 			})
 		})
 		Convey("Using Remote Shell with proper configuration", func() {
-			if _, err := os.Stat(user.HomeDir+"/.ssh/id_rsa"); os.IsNotExist(err) {
-				t.Skip("skipping test: ssh keys not found in "+user.HomeDir+"/.ssh/id_rsa")
+			if _, err := os.Stat(user.HomeDir + "/.ssh/id_rsa"); os.IsNotExist(err) {
+				t.Skip("skipping test: ssh keys not found in " + user.HomeDir + "/.ssh/id_rsa")
 			}
 			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
 			So(err, ShouldBeNil)
