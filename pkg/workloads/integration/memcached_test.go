@@ -1,6 +1,6 @@
 // +build integration
 
-package workloads_integration
+package workloadsintegration
 
 import (
 	log "github.com/Sirupsen/logrus"
