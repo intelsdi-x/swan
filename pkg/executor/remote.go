@@ -2,12 +2,8 @@ package executor
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
-	"regexp"
-	"strconv"
 	"time"
 )
 
@@ -55,14 +51,11 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	go func() {
 		var stderr bytes.Buffer
-		var exitCode int
+		exitCode := 0
 		session.Stderr = &stderr
 		output, err := session.Output(command)
 		if err != nil {
-			exitCode, err = getExitCode(err.Error())
-			if err != nil {
-				log.Fatal(err.Error())
-			}
+			exitCode = err.(*ssh.ExitError).Waitmsg.ExitStatus()
 		}
 		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
 	}()
@@ -70,17 +63,6 @@ func (remote Remote) Execute(command string) (Task, error) {
 	return remoteTask, nil
 }
 
-func getExitCode(errorMsg string) (int, error) {
-	re := regexp.MustCompile(`Process exited with: ([0-9]+).`)
-	match := re.FindStringSubmatch(errorMsg)
-	if len(match[1]) == 0 {
-		errorMsg := fmt.Sprintf(
-			"Could not retrieve exit code from output: %s", errorMsg)
-		return -1, errors.New(errorMsg)
-	}
-	code, _ := strconv.Atoi(match[1])
-	return code, nil
-}
 
 // Stop terminates the remote task.
 func (task *remoteTask) Stop() error {
