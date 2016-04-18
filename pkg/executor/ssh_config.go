@@ -1,8 +1,9 @@
 package executor
 
 import (
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // SSHConfig with clientConfig, host and port to connect.
