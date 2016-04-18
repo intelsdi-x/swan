@@ -12,7 +12,7 @@ To create integration test file we use build tags, so you need to place
 ```
 // +build integration
 <newline>
-package workloads_integration
+package integration
 ```
 
 (Make sure you place newline between package name and build flag)
