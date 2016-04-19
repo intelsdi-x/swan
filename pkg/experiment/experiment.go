@@ -2,22 +2,15 @@ package experiment
 
 import "errors"
 
-type PhaseFunc func() (float64, error)
-
-type Phase struct {
-	Name      string
-	PhaseFunc PhaseFunc
-}
-
 type ExperimentConfiguration struct {
-	MaxVariance   float64
-	PhaseRepCount int
+	MaxVariance float64
 }
 
 type Experiment struct {
+	Session Session
 	conf    ExperimentConfiguration
 	phases  []Phase
-	results []float64
+	results map[string][]float64
 }
 
 // Construct new Experiment object.
@@ -28,21 +21,18 @@ func NewExperiment(
 	if configuration.MaxVariance <= 0 {
 		return nil, errors.New("Invalid argument: variance")
 	}
-	if configuration.PhaseRepCount <= 0 {
-		return nil, errors.New("Invalid argument: PhaseRepCount")
-	}
 	if len(phases) == 0 {
 		return nil, errors.New("Invalid argument: nil phase slice")
 	}
-	for _, phase := range phases {
-		if phase.PhaseFunc == nil {
-			return nil, errors.New("Invalid argument: nil PhaseFunc")
-		}
-	}
 
+	// mpatelcz TODO: Check if phase names are unique!
+
+	session := sessionNew()
 	return &Experiment{
-		conf:   configuration,
-		phases: phases,
+		Session: session,
+		conf:    configuration,
+		phases:  phases,
+		results: make(map[string][]float64, len(phases)),
 	}, nil
 }
 
@@ -50,14 +40,16 @@ func (e *Experiment) Run() error {
 	var err error
 
 	for _, phase := range e.phases {
-		for i := 0; i < e.conf.PhaseRepCount; i++ {
-			result, err := phase.PhaseFunc()
+		//Phase workdir is e.Session.Name + phase.Name()
+		for i := 0; i < phase.Repetitions(); i++ {
+			result, err := phase.Run()
 			if err != nil {
 				return err
 			}
-			e.results = append(e.results, result)
+			e.results[phase.Name()] = append(e.results[phase.Name()], result)
 		}
-		if variance(e.results) > e.conf.MaxVariance {
+
+		if variance(e.results[phase.Name()]) > e.conf.MaxVariance {
 			return errors.New("Phase max variance exceeded")
 		}
 	}
