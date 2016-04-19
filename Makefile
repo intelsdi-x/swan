@@ -4,9 +4,11 @@ all: lint test build
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps:
-	go get github.com/tools/godep
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
+
+godep:
+	go get github.com/tools/godep
 	godep restore -v
 
 # testing
