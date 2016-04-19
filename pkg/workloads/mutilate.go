@@ -5,19 +5,9 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"regexp"
-	//"strconv"
 	"strconv"
+	"time"
 )
-
-type Mutilate struct {
-	executor executor.Executor
-
-	mutilate_path        string
-	mutilate_threads     int
-	mutilate_connections int
-
-	memcached_uri string
-}
 
 /**
 Real deployments of memcached often handle the requests of dozens, hundreds, or thousands of front-end clients simultaneously. However, by default, mutilate establishes one connection per server and meters requests one at a time (it waits for a reply before sending the next request). This artificially limits throughput (i.e. queries per second), as the round-trip network latency is almost certainly far longer than the time it takes for the memcached server to process one request.
@@ -33,24 +23,38 @@ In order to get reasonable benchmark results with mutilate, it needs to be confi
 https://github.com/leverich/mutilate
 
 */
-func NewMutilate(
-	executor executor.Executor,
-	memcached_uri string,
-	mutilate_path string) Mutilate {
-	//mutilate_srv_connections int,
-	//mutilate_srv_threads int,
-	//mutilate_agent_threads int)
+
+type MutilateConfig struct {
+	mutilate_path      string
+	memcached_uri      string
+	tuning_time        time.Duration
+	latency_percentile int
+}
+
+func DefaultMutilateConfig() MutilateConfig {
+	return MutilateConfig{
+		mutilate_path:      "mutilate",
+		memcached_uri:      "localhost",
+		tuning_time:        10 * time.Second,
+		latency_percentile: 999,
+	}
+}
+
+type Mutilate struct {
+	executor executor.Executor
+	config   MutilateConfig
+}
+
+func NewMutilate(executor executor.Executor, config MutilateConfig) Mutilate {
 	return Mutilate{
 		executor: executor,
-		//mutilate_threads:     mutilate_threads,
-		//mutilate_connections: mutilate_connections,
-		memcached_uri: memcached_uri,
-		mutilate_path: mutilate_path,
+		config:   config,
 	}
 }
 
 func (m *Mutilate) Populate() error {
-	popCmd := fmt.Sprintf("mutilate -s %s --loadonly", m.memcached_uri)
+	popCmd := fmt.Sprintf("mutilate -s %s --loadonly",
+		m.config.memcached_uri)
 	taskHandle, err := m.executor.Execute(popCmd)
 	if err != nil {
 		return err
@@ -61,15 +65,14 @@ func (m *Mutilate) Populate() error {
 	return nil
 }
 
-func (m Mutilate) Tune(slo int, percentile int) (targetQPS int, err error) {
+func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
 	// mutilate -s localhost --search=999:1000
-	tuneCmd := fmt.Sprintf("%s -s %s --search=%d:%d -t 1",
-		m.mutilate_path,
-		m.memcached_uri,
-		percentile,
-		slo)
-
-	_ = tuneCmd
+	tuneCmd := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
+		m.config.mutilate_path,
+		m.config.memcached_uri,
+		m.config.latency_percentile,
+		slo,
+		int(m.config.tuning_time.Seconds()))
 
 	taskHandle, err := m.executor.Execute(tuneCmd)
 	if err != nil {
@@ -118,6 +121,26 @@ func matchNotFound(match []string) bool {
 	return match == nil || len(match[1]) == 0
 }
 
-func (m Mutilate) Load(qps int, durationMs int) (sli int, err error) {
+func (m Mutilate) Load(qps int, duration time.Duration) (sli int, err error) {
+	command := fmt.Sprintf("mutilate -m")
+	taskHandle, error := m.executor.Execute(command)
+
+	_ = taskHandle
+	_ = error
 	return -1, nil
+}
+
+func getLatencyFromMutilateOutputLine(line string) (latencies []int) {
+	//re := regexp.MustCompile(`\d+.\d+\s(\d+)`)
+	return latencies
+}
+
+func getLatenciesFromMutilateOutput(input string) (latencies []int) {
+
+	return latencies
+}
+
+func computeHistogramLatency(percentile int, input string) (latency int) {
+	_ = input
+	return latency
 }
