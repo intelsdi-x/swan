@@ -6,6 +6,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ type MutilateConfig struct {
 	mutilate_path      string
 	memcached_uri      string
 	tuning_time        time.Duration
-	latency_percentile int
+	latency_percentile float64
 }
 
 func DefaultMutilateConfig() MutilateConfig {
@@ -36,7 +37,7 @@ func DefaultMutilateConfig() MutilateConfig {
 		mutilate_path:      "mutilate",
 		memcached_uri:      "localhost",
 		tuning_time:        10 * time.Second,
-		latency_percentile: 999,
+		latency_percentile: 99.9,
 	}
 }
 
@@ -65,12 +66,31 @@ func (m *Mutilate) Populate() error {
 	return nil
 }
 
+// Mutilate Search method requires percentile in an integer format
+func transformFloatToIntegerWithoutDot(value float64) (ret int64, err error) {
+	percentileString := strconv.FormatFloat(value, 'f', -1, 64)
+	percentileWithoutDot := strings.Replace(percentileString, ".", "", -1)
+	tunePercentile, err := strconv.ParseInt(percentileWithoutDot, 10, 64)
+	if err != nil {
+		return 0, errors.New("Parse value failed")
+	}
+
+	return tunePercentile, err
+}
+
 func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
+	// Mutilate Search method requires percentile in an integer format
+	mutilateSearchPercentile, err := transformFloatToIntegerWithoutDot(
+		m.config.latency_percentile)
+	if err != nil {
+		return targetQPS, errors.New("Parse percentile value failed")
+	}
+
 	// mutilate -s localhost --search=999:1000
 	tuneCmd := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
 		m.config.mutilate_path,
 		m.config.memcached_uri,
-		m.config.latency_percentile,
+		mutilateSearchPercentile,
 		slo,
 		int(m.config.tuning_time.Seconds()))
 
@@ -87,8 +107,8 @@ func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
 		panic("something wrong, debug")
 	}
 
-	output := status.Stdout
-	targetQPS, err = getTargetQps(output)
+	re := regexp.MustCompile(`Total QPS =\s(\d+)`)
+	targetQPS, err = getValueFromOutput(status.Stdout, re)
 	if err != nil {
 
 	}
@@ -96,51 +116,55 @@ func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
 	return targetQPS, err
 }
 
-func getTargetQps(mutilateOutput string) (targetQps int, err error) {
-	//Total QPS = 4450.3 (89007 / 20.0s)
-	re := regexp.MustCompile(`Total QPS =\s(\d+)`)
-	match := re.FindStringSubmatch(mutilateOutput)
-
-	if matchNotFound(match) {
-		errMsg := fmt.Sprintf(
-			"Cannot find targetQPS in output: %s", mutilateOutput)
-		return targetQps, errors.New(errMsg)
-	}
-
-	targetQps, err = strconv.Atoi(match[1])
-	if err != nil {
-		errMsg := fmt.Sprintf(
-			"Cannot parse targetQPS in string: %s; ", match[1])
-		return targetQps, errors.New(errMsg + err.Error())
-	}
-
-	return targetQps, err
-}
-
 func matchNotFound(match []string) bool {
 	return match == nil || len(match[1]) == 0
 }
 
 func (m Mutilate) Load(qps int, duration time.Duration) (sli int, err error) {
-	command := fmt.Sprintf("mutilate -m")
-	taskHandle, error := m.executor.Execute(command)
+	percentile := strconv.FormatFloat(
+		m.config.latency_percentile, 'f', -1, 64)
 
-	_ = taskHandle
-	_ = error
-	return -1, nil
+	// ./mutilate -s localhost -q 3000 -t 1 --swanpercentile=99.98
+	loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%f",
+		m.config.mutilate_path,
+		m.config.memcached_uri,
+		qps,
+		duration.Seconds(),
+		percentile,
+	)
+
+	taskHandle, err := m.executor.Execute(loadCmd)
+	if err != nil {
+
+	}
+
+	taskHandle.Wait(0)
+
+	_, status := taskHandle.Status()
+
+	re := regexp.MustCompile(`Swan latency for percentile \d+.\d+:\s(\d+)`)
+	sli, err = getValueFromOutput(status.Stdout, re)
+	if err != nil {
+
+	}
+
+	return sli, err
 }
 
-func getLatencyFromMutilateOutputLine(line string) (latencies []int) {
-	//re := regexp.MustCompile(`\d+.\d+\s(\d+)`)
-	return latencies
-}
+func getValueFromOutput(output string, regex *regexp.Regexp) (value int, err error) {
+	match := regex.FindStringSubmatch(output)
+	if matchNotFound(match) {
+		errMsg := fmt.Sprintf(
+			"Cannot find regex in output: %s", output)
+		return value, errors.New(errMsg)
+	}
 
-func getLatenciesFromMutilateOutput(input string) (latencies []int) {
+	value, err = strconv.Atoi(match[1])
+	if err != nil {
+		errMsg := fmt.Sprintf(
+			"Cannot parse value in string: %s; ", match[1])
+		return value, errors.New(errMsg + err.Error())
+	}
 
-	return latencies
-}
-
-func computeHistogramLatency(percentile int, input string) (latency int) {
-	_ = input
-	return latency
+	return value, err
 }
