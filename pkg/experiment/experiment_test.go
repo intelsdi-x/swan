@@ -1,177 +1,77 @@
 package experiment
 
 import (
-	"errors"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type FakePhase struct {
+	ID          string
+	Invocations *int
+	repetitions int
+	FakeResults []float64
+}
+
+func (f FakePhase) Name() string {
+	return "Test Phase: " + f.ID
+}
+
+func (f FakePhase) Repetitions() int {
+	return f.repetitions
+}
+
+func (f FakePhase) Run() (float64, error) {
+	(*f.Invocations)++
+	return f.FakeResults[(*f.Invocations)-1], nil
+}
+
 func TestExperiment(t *testing.T) {
-	Convey("Run new experiment ", t, func() {
-		Convey("When result are equal shall pass", func() {
-			conf := ExperimentConfiguration{1.5, 5}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test02", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test05", func() (float64, error) {
-					return 1.0, nil
-				}},
-			}
-			exp, _ := NewExperiment(conf, phases)
+	Convey("Creating experiment ", t, func() {
+		Convey("with allowed variance set to zero should fail", func() {
+			conf := ExperimentConfiguration{0}
+			_, err := NewExperiment(conf, nil)
+			So(err, ShouldNotBeNil)
 
-			So(exp.Run(), ShouldBeNil)
 		})
-		Convey("When result exceeds variance test should fail", func() {
-			conf := ExperimentConfiguration{1, 5}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test02", func() (float64, error) {
-					return 5.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 10.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 15.0, nil
-				}},
-				{"Test05", func() (float64, error) {
-					return 20.0, nil
-				}},
-			}
-			exp, _ := NewExperiment(conf, phases)
+		Convey("with allowed variance set to negative should fail", func() {
+			conf := ExperimentConfiguration{-1}
+			_, err := NewExperiment(conf, nil)
+			So(err, ShouldNotBeNil)
 
-			So(exp.Run(), ShouldNotBeNil)
 		})
-		Convey("When phase func return error test should fail", func() {
-			conf := ExperimentConfiguration{1, 5}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, errors.New("Sample error")
-				}},
-				{"Test02", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test05", func() (float64, error) {
-					return 1.0, nil
-				}},
-			}
-			exp, _ := NewExperiment(conf, phases)
+		Convey("with allowed variance set to positive value and nil phases should fail", func() {
+			conf := ExperimentConfiguration{1}
+			_, err := NewExperiment(conf, nil)
+			So(err, ShouldNotBeNil)
 
-			So(exp.Run(), ShouldNotBeNil)
 		})
-		Convey("When variance is negative test should fail", func() {
-			conf := ExperimentConfiguration{-1, 5}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, errors.New("Sample error")
-				}},
-				{"Test02", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test05", func() (float64, error) {
-					return 1.0, nil
-				}},
-			}
-			Convey("Error should not be nil", func() {
-				_, err := NewExperiment(conf, phases)
-				So(err, ShouldNotBeNil)
-			})
-			Convey("Exp should be nil", func() {
-				exp, _ := NewExperiment(conf, phases)
-				So(exp, ShouldBeNil)
-			})
-		})
-		Convey("When PhaseRepCount is negative test should fail", func() {
-			conf := ExperimentConfiguration{1, -1}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, errors.New("Sample error")
-				}},
-				{"Test02", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test05", func() (float64, error) {
-					return 1.0, nil
-				}},
-			}
-			Convey("Error should not be nil", func() {
-				_, err := NewExperiment(conf, phases)
-				So(err, ShouldNotBeNil)
-			})
-			Convey("Exp should be nil", func() {
-				exp, _ := NewExperiment(conf, phases)
-				So(exp, ShouldBeNil)
-			})
-		})
-		Convey("When Phases slice is nil test should fail", func() {
-			conf := ExperimentConfiguration{1, 5}
-			phases := []Phase{}
+		Convey("with proper configuration and not empty phases should succeed", func() {
+			var phases []Phase
+			var Invocation int
 
-			Convey("Error should not be nil", func() {
-				_, err := NewExperiment(conf, phases)
-				So(err, ShouldNotBeNil)
-			})
-			Convey("Exp should be nil", func() {
-				exp, _ := NewExperiment(conf, phases)
-				So(exp, ShouldBeNil)
-			})
-		})
-		Convey("When one of phases function is nil test should fail", func() {
-			conf := ExperimentConfiguration{1, -1}
-			phases := []Phase{
-				{"Test01", func() (float64, error) {
-					return 1.0, errors.New("Sample error")
-				}},
-				{"Test02", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test03", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test04", func() (float64, error) {
-					return 1.0, nil
-				}},
-				{"Test05", nil},
+			conf := ExperimentConfiguration{1}
+
+			fakePhase := &FakePhase{
+				ID:          "Fake phase 01",
+				repetitions: 1,
+				Invocations: &Invocation,
+				FakeResults: []float64{1.0},
 			}
-			Convey("Error should not be nil", func() {
-				_, err := NewExperiment(conf, phases)
-				So(err, ShouldNotBeNil)
-			})
-			Convey("Exp should be nil", func() {
-				exp, _ := NewExperiment(conf, phases)
-				So(exp, ShouldBeNil)
+			phases = append(phases, fakePhase)
+
+			exp, err := NewExperiment(conf, phases)
+			So(exp, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+			Convey("Experiment Run() with single phase shall succeed", func() {
+				err := exp.Run()
+				So(err, ShouldBeNil)
+				Convey("with repetition set to 1 phase shall be called once", func() {
+					So(*fakePhase.Invocations, ShouldEqual, 1)
+				})
+
 			})
 		})
+
 	})
 }
