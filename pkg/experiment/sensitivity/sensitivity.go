@@ -92,7 +92,7 @@ func (e *Experiment) runPhase(
 	return slis, err
 }
 
-func (e *Experiment) runTunning() error {
+func (e *Experiment) runTuning() error {
 	prTask, err := e.pr.Launch()
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (e *Experiment) PrintSensitivityProfile() error {
 func (e *Experiment) Run() error {
 	var err error
 
-	err = e.runTunning()
+	err = e.runTuning()
 	if err != nil {
 		return err
 	}
