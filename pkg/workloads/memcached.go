@@ -36,12 +36,12 @@ type MemcachedConfig struct {
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig(pathToBinary string) MemcachedConfig {
 	return MemcachedConfig{
-		pathToBinary,
-		memcachedDefaultPort,
-		memcachedDefaultUser,
-		memcachedDefaultNumThreads,
-		memcachedDefaultMaxMemoryMB,
-		memcachedDefaultNumConnections,
+		pathToBinary:   pathToBinary,
+		port:           memcachedDefaultPort,
+		user:           memcachedDefaultUser,
+		numThreads:     memcachedDefaultNumThreads,
+		maxMemoryMB:    memcachedDefaultMaxMemoryMB,
+		numConnections: memcachedDefaultNumConnections,
 	}
 }
 

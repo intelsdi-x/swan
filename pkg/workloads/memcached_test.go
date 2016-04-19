@@ -1,13 +1,15 @@
 package workloads
 
 import (
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
-// TestMemcachedWithMockedExecutor
+// TestMemcachedWithMockedExecutor runs a Memcached launcher with the mocked executor to simulate
+// different cases like proper process execution and error case.
 func TestMemcachedWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
@@ -16,22 +18,49 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	)
 
 	mockedExecutor := new(mocks.Executor)
-	mockedExecutor.On("Execute", expectedCommand).Return(nil, nil).Once()
+	mockedTask := new(mocks.Task)
 
 	Convey("While using Memcached launcher", t, func() {
 		memcachedLauncher := NewMemcached(
 			mockedExecutor,
 			DefaultMemcachedConfig("test"))
+		Convey("While simulating proper execution", func() {
+			mockedExecutor.On("Execute", expectedCommand).Return(mockedTask, nil).Once()
 
-		Convey("Build command should create proper command", func() {
-			command := memcachedLauncher.buildCommand()
+			Convey("Build command should create proper command", func() {
+				command := memcachedLauncher.buildCommand()
+				So(command, ShouldEqual, expectedCommand)
 
-			So(command, ShouldEqual, expectedCommand)
+				Convey("Arguments passed to Executor should be a proper command", func() {
+					task, err := memcachedLauncher.Launch()
+					So(err, ShouldBeNil)
+					So(task, ShouldEqual, mockedTask)
+
+					mockedExecutor.AssertExpectations(t)
+				})
+			})
+
 		})
 
-		Convey("Arguments passed to Executor should be a proper command", func() {
-			memcachedLauncher.Launch()
-			mockedExecutor.AssertExpectations(t)
+		Convey("While simulating error execution", func() {
+			mockedExecutor.On("Execute", expectedCommand).Return(nil, errors.New("test")).Once()
+
+			Convey("Build command should create proper command", func() {
+				command := memcachedLauncher.buildCommand()
+				So(command, ShouldEqual, expectedCommand)
+
+				Convey("Arguments passed to Executor should be a proper command", func() {
+					task, err := memcachedLauncher.Launch()
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, "test")
+
+					So(task, ShouldBeNil)
+
+					mockedExecutor.AssertExpectations(t)
+				})
+			})
+
 		})
+
 	})
 }

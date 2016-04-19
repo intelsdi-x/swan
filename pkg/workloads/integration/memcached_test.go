@@ -11,8 +11,9 @@ import (
 )
 
 // Before test, make sure you have built memcached in /usr/bin e.g:
-// ln -s SWAN_REPO/workloads/data_caching/memcached/memcached-1.4.25/memcached /usr/bin/memcached
-// And user memcached is present.
+// - ln -s SWAN_REPO/workloads/data_caching/memcached/memcached-1.4.25/memcached /usr/bin/memcached
+// - user memcached is present.
+// - apt-get netstat or yum ...
 
 const (
 	memcachedPath = "/usr/bin/memcached"
