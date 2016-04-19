@@ -2,7 +2,7 @@ package workloads
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
