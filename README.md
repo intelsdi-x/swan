@@ -15,7 +15,7 @@ $ make deps
 $ make
 ```
 
-## Development
+## Development using Makefile
 
 Before sending or updating pull requests, make sure to run:
 
@@ -26,7 +26,12 @@ $ make              # lint unit_test build
 $ make run
 ```
 
-### or just in simple go way
+### Detailed options for tests
+```
+$ make test TEST_OPT="-v -run <specific test>
+```
+
+### Development using go binaries
 ```
 go test ./pkg/...
 golint ./pkg/...
