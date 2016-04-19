@@ -88,15 +88,15 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 }
 
 // Wait blocks until process is terminated or timeout appeared.
-func (task *remoteTask) Wait() {
+func (task *remoteTask) Wait() error {
 	if task.terminated {
-		return
+		return nil
 	}
 
 	s := <-task.statusCh
 	task.completeTask(s)
 
-	return
+	return nil
 }
 
 // RemoteTask implements Task interface.

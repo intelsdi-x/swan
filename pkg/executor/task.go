@@ -44,5 +44,5 @@ type Task interface {
 	// second item in tuple. Otherwise returns nil.
 	Status() (TaskState, *Status)
 	// Wait does the blocking wait for the task completion.
-	Wait()
+	Wait() error
 }

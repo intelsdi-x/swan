@@ -9,7 +9,7 @@ import (
 
 // TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
@@ -60,6 +60,7 @@ func TestLocal(t *testing.T) {
 					taskState, taskStatus := task.Status()
 
 					So(taskState, ShouldEqual, TERMINATED)
+					So(taskState, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, -15)
 				})
 			})

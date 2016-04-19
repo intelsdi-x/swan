@@ -46,14 +46,14 @@ func (_m *Task) Stop() error {
 }
 
 // Wait provides a mock function with given fields: timeoutMs
-func (_m *Task) Wait(timeoutMs int) bool {
-	ret := _m.Called(timeoutMs)
+func (_m *Task) Wait() error {
+	ret := _m.Called()
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(int) bool); ok {
-		r0 = rf(timeoutMs)
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
