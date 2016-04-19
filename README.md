@@ -28,7 +28,7 @@ $ make run
 
 ### Detailed options for tests
 ```
-$ make test TEST_OPT="-v -run <specific test>
+$ make test TEST_OPT="-v -run <specific test>"
 ```
 
 ### Development using go binaries
