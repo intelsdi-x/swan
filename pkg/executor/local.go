@@ -88,13 +88,27 @@ func (task localTask) getPid() int {
 	return task.cmdHandler.Process.Pid
 }
 
+func (task localTask) getExitCode() int {
+	if !task.isTerminated() {
+		panic("Exit code is not available until the task terminated.")
+	}
+
+	// If Process exited on his own, show the exitStatus.
+	if (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
+		return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
+	} else {
+		// Show what signal caused the termination.
+		return -int((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Signal())
+	}
+}
+
 func (task localTask) createStatus() *Status {
-	if task.isTerminated() {
+	if !task.isTerminated() {
 		return nil
 	}
 
 	return &Status{
-		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
+		task.getExitCode(),
 		task.stdout.String(),
 		task.stderr.String(),
 	}
@@ -112,7 +126,7 @@ func (task localTask) killTask(sig syscall.Signal) error {
 	// We signal the entire process group.
 	// The kill syscall interprets a negated PID N as the process group N belongs to.
 	log.Debug("Sending ", signalStr, " to PID ", -task.getPid())
-	return syscall.Kill(-int(task.getPid()), sig)
+	return task.cmdHandler.Process.Signal(sig)
 }
 
 // Stop terminates the local task.
@@ -144,7 +158,7 @@ func (task *localTask) Stop() error {
 			return taskErr
 		}
 	case <-time.After(timeoutDuration):
-		// We need to send SIGKILL the entire process group, since SIGTERM was not enough.
+		// We need to send SIGKILL to the entire process group, since SIGTERM was not enough.
 		err := task.killTask(syscall.SIGKILL)
 		if err != nil {
 			log.Error(err)
@@ -193,17 +207,18 @@ func (task *localTask) Wait() error {
 	// NOTE: Wait() returns an error. We grab the process state in any case
 	// (success or failure) below, so the error object matters less in the
 	// status handling for now.
-	err := task.cmdHandler.Wait()
-	if err != nil {
-		return err
+	if err := task.cmdHandler.Wait(); err != nil {
+		if _, ok := err.(*exec.ExitError); !ok {
+			// In case of NON Exit Errors we are sure that task does not terminate so return error.
+			return err
+		}
 	}
 
 	log.Debug(
 		"Ended ", task.command,
 		" with output in file: ", task.stdout.String(),
 		" with err output in file: ", task.stderr.String(),
-		" with status code: ",
-		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+		" with status code: ", task.getExitCode())
 
-	return err
+	return nil
 }

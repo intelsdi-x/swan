@@ -18,10 +18,10 @@ func TestLocal(t *testing.T) {
 			task, err := l.Execute("sleep inf")
 
 			Convey("There should be no error", func() {
-				So(err, ShouldBeNil)
+				stopErr := task.Stop()
 
-				err = task.Stop()
 				So(err, ShouldBeNil)
+				So(stopErr, ShouldBeNil)
 			})
 
 			Convey("Task should be still running and status should be nil", func() {
@@ -29,8 +29,9 @@ func TestLocal(t *testing.T) {
 				So(taskState, ShouldEqual, RUNNING)
 				So(taskStatus, ShouldBeNil)
 
-				err = task.Stop()
-				So(err, ShouldBeNil)
+				stopErr := task.Stop()
+				So(stopErr, ShouldBeNil)
+
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
@@ -60,7 +61,7 @@ func TestLocal(t *testing.T) {
 					taskState, taskStatus := task.Status()
 
 					So(taskState, ShouldEqual, TERMINATED)
-					So(taskState, ShouldNotBeNil)
+					So(taskStatus, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, -15)
 				})
 			})
@@ -85,11 +86,9 @@ func TestLocal(t *testing.T) {
 					So(taskState, ShouldEqual, TERMINATED)
 				})
 
-				Convey("And the exit status should be 0", func() {
+				Convey("And the exit status should be 0 and command needs to be 'output'", func() {
+					So(taskStatus, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, 0)
-				})
-
-				Convey("And command stdout needs to match 'output", func() {
 					So(taskStatus.Stdout, ShouldEqual, "output\n")
 				})
 			})
