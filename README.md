@@ -22,7 +22,7 @@ Before sending or updating pull requests, make sure to run:
 test & build & run
 ```
 $ make deps
-$ make              # lint test build
+$ make              # lint unit_test build
 $ make run
 ```
 
@@ -36,3 +36,8 @@ go build ./cmds/memcache
 ### Depedency managment
 
 Handled by [godeps](https://github.com/tools/godep).
+
+
+### Integration tests
+
+For Swan Workload integration tests see [README](src/pkg/workloads/integration/README.md) file for instructions.

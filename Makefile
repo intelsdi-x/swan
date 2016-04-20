@@ -1,6 +1,6 @@
 .PHONY: build
 
-all: lint test build  
+all: lint unit_test build
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps:
@@ -16,8 +16,12 @@ lint:
 	fgt golint ./pkg/...
 	fgt golint ./cmds/...
 
-test:
+unit_test:
 	go test ./pkg/...
+	go test ./cmds/...
+
+test:
+	go test -tags=integration ./pkg/...
 	go test ./cmds/...
 
 # building
@@ -30,4 +34,3 @@ run: memcache
 memcache:
 	./memcache
 
-	
