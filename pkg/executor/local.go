@@ -56,7 +56,7 @@ func (l Local) Execute(command string) (Task, error) {
 		// status handling for now.
 		cmd.Wait()
 
-		exitCode := -1
+		var exitCode int
 		// If Process exited on his own, show the exitStatus.
 		if (cmd.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
 			exitCode = (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
