@@ -14,10 +14,9 @@ const (
 	TERMINATED
 )
 
-// WaitWithTimeout is a helper for waiting with a given timeout time in ms.
-// It returns with true if task was NOT timeouted.
-// NOTE: It does not mean that it is terminated. E.g. When we do multiple waits.
-func WaitWithTimeout(task Task, timeoutMs int) (result bool) {
+// WaitWithTimeout is a helper for waiting with a given timeout time.
+// It returns true if task was NOT timeouted.
+func WaitWithTimeout(task Task, timeout time.Duration) (result bool) {
 	result = false
 
 	waitErrChannel := make(chan error, 1)
@@ -26,14 +25,12 @@ func WaitWithTimeout(task Task, timeoutMs int) (result bool) {
 		waitErrChannel <- x
 	}()
 
-	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-
 	select {
 	case err := <-waitErrChannel:
 		if err != nil {
 			result = true
 		}
-	case <-time.After(timeoutDuration):
+	case <-time.After(timeout):
 	}
 
 	return result

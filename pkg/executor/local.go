@@ -5,6 +5,7 @@ import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -46,34 +47,32 @@ func (l Local) Execute(command string) (Task, error) {
 
 	log.Debug("Started with PID ", cmd.Process.Pid)
 
-	t := newlocalTask(command, cmd, &stdout, &stdout)
+	t := newlocalTask(cmd, &stdout, &stdout)
 
 	return t, err
 }
 
-const killTimeoutMs = 5000 // Kill timeout in Stop function is 5 seconds.
+const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
-	command    string
 	cmdHandler *exec.Cmd
 	stdout     *bytes.Buffer
 	stderr     *bytes.Buffer
 
-	killTimeoutMs int
-	mutex         *sync.Mutex
+	killTimeout time.Duration
+	mutex       *sync.Mutex
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(command string, cmdHandler *exec.Cmd,
+func newlocalTask(cmdHandler *exec.Cmd,
 	stdout *bytes.Buffer, stderr *bytes.Buffer) *localTask {
 	t := &localTask{
-		command:       command,
-		cmdHandler:    cmdHandler,
-		stdout:        stdout,
-		stderr:        stderr,
-		killTimeoutMs: killTimeoutMs,
-		mutex:         &sync.Mutex{},
+		cmdHandler:  cmdHandler,
+		stdout:      stdout,
+		stderr:      stderr,
+		killTimeout: killTimeout,
+		mutex:       &sync.Mutex{},
 	}
 	return t
 }
@@ -148,16 +147,13 @@ func (task *localTask) Stop() error {
 		waitErrChannel <- task.Wait()
 	}()
 
-	// Set timeout.
-	timeoutDuration := time.Duration(task.killTimeoutMs) * time.Millisecond
-
 	select {
 	case taskErr := <-waitErrChannel:
 		if taskErr != nil {
 			log.Error(taskErr.Error())
 			return taskErr
 		}
-	case <-time.After(timeoutDuration):
+	case <-time.After(task.killTimeout):
 		// We need to send SIGKILL to the entire process group, since SIGTERM was not enough.
 		err := task.killTask(syscall.SIGKILL)
 		if err != nil {
@@ -172,7 +168,7 @@ func (task *localTask) Stop() error {
 				log.Error(taskErr.Error())
 				return taskErr
 			}
-		case <-time.After(timeoutDuration):
+		case <-time.After(task.killTimeout):
 			return errors.New("Cannot kill -9 task")
 		}
 	}
@@ -213,7 +209,7 @@ func (task *localTask) Wait() error {
 	}
 
 	log.Debug(
-		"Ended ", task.command,
+		"Ended ", strings.Join(task.cmdHandler.Args, ""),
 		" with output in file: ", task.stdout.String(),
 		" with err output in file: ", task.stderr.String(),
 		" with status code: ", task.getExitCode())

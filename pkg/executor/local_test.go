@@ -4,6 +4,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+	"time"
 )
 
 // TestLocal tests the execution of process on local machine.
@@ -34,7 +35,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
-				isTaskTerminated := WaitWithTimeout(task, 1)
+				isTaskTerminated := WaitWithTimeout(task, 1*time.Microsecond)
 
 				Convey("The timeout should exceed and the task not terminated ", func() {
 					So(isTaskTerminated, ShouldBeFalse)
