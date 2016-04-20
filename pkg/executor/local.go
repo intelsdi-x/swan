@@ -3,6 +3,7 @@ package executor
 import (
 	"bytes"
 	log "github.com/Sirupsen/logrus"
+	"github.com/vektra/errors"
 	"os/exec"
 	"sync"
 	"syscall"
@@ -125,7 +126,7 @@ func (task localTask) killTask(sig syscall.Signal) error {
 	// We signal the entire process group.
 	// The kill syscall interprets a negated PID N as the process group N belongs to.
 	log.Debug("Sending ", signalStr, " to PID ", -task.getPid())
-	return task.cmdHandler.Process.Signal(sig)
+	return syscall.Kill(-task.getPid(), sig)
 }
 
 // Stop terminates the local task.
@@ -142,7 +143,7 @@ func (task *localTask) Stop() error {
 	}
 
 	// Wait for task termination with timeout.
-	waitErrChannel := make(chan error)
+	waitErrChannel := make(chan error, 1)
 	go func() {
 		waitErrChannel <- task.Wait()
 	}()
@@ -172,9 +173,7 @@ func (task *localTask) Stop() error {
 				return taskErr
 			}
 		case <-time.After(timeoutDuration):
-			// We need panic here, because we cannot kill the task and
-			// we have go-routine starving on waitErrChannel or Wait.
-			panic("Cannot kill -9 task")
+			return errors.New("Cannot kill -9 task")
 		}
 	}
 

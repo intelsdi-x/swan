@@ -1,6 +1,8 @@
 package executor
 
-import "time"
+import (
+	"time"
+)
 
 // TaskState is an enum presenting current task state.
 type TaskState int
@@ -16,24 +18,25 @@ const (
 // It returns with true if task was NOT timeouted.
 // NOTE: It does not mean that it is terminated. E.g. When we do multiple waits.
 func WaitWithTimeout(task Task, timeoutMs int) (result bool) {
-	result = true
-	waitChannel := make(chan bool)
+	result = false
 
+	waitErrChannel := make(chan error, 1)
 	go func() {
-		// Wait will return immediately when the Wait was already triggered.
-		task.Wait()
-		waitChannel <- true
+		x := task.Wait()
+		waitErrChannel <- x
 	}()
 
 	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
 
 	select {
-	case result = <-waitChannel:
+	case err := <-waitErrChannel:
+		if err != nil {
+			result = true
+		}
 	case <-time.After(timeoutDuration):
-		result = false
 	}
 
-	return
+	return result
 }
 
 // Task represents a process which can be stopped or monitored.

@@ -1,10 +1,9 @@
 package executor
 
 import (
-	"testing"
-
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"testing"
 )
 
 // TestLocal tests the execution of process on local machine.
@@ -47,7 +46,8 @@ func TestLocal(t *testing.T) {
 					So(taskStatus, ShouldBeNil)
 				})
 
-				task.Stop()
+				stopErr := task.Stop()
+				So(stopErr, ShouldBeNil)
 			})
 
 			Convey("When we stop the task", func() {
@@ -63,6 +63,35 @@ func TestLocal(t *testing.T) {
 					So(taskState, ShouldEqual, TERMINATED)
 					So(taskStatus, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, -15)
+				})
+			})
+
+			Convey("When multpile go routines waits for task termination", func() {
+				waitErrChannel := make(chan error)
+				for i := 0; i < 5; i++ {
+					go func() {
+						waitErrChannel <- task.Wait()
+					}()
+				}
+
+				Convey("All waits should be blocked", func() {
+					gotWaitResult := false
+					select {
+					case _ = <-waitErrChannel:
+						gotWaitResult = true
+					default:
+					}
+
+					err := task.Stop()
+					So(err, ShouldBeNil)
+					So(gotWaitResult, ShouldBeFalse)
+
+					Convey("After stop every wait in go routine should result with nil", func() {
+						for i := 0; i < 5; i++ {
+							err = <-waitErrChannel
+							So(err, ShouldBeNil)
+						}
+					})
 				})
 			})
 		})
