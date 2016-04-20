@@ -63,7 +63,6 @@ func (remote Remote) Execute(command string) (Task, error) {
 	return remoteTask, nil
 }
 
-
 // Stop terminates the remote task.
 func (task *remoteTask) Stop() error {
 	if task.terminated {
