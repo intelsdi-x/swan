@@ -1035,12 +1035,7 @@ void args_to_options(options_t* options) {
   options->server_given = args.server_given;
   options->roundrobin = args.roundrobin_given;
 
-//  if(args.swanpercentile_given) {
-    options->swanpercentile = args.swanpercentile_arg;
-//  } else {
-//    options->swanpercentile = args.swanpercentile_orig;
-//  }
-
+  options->swanpercentile = args.swanpercentile_arg;
 
   int connections = options->connections;
   if (options->roundrobin) {
