@@ -2,8 +2,8 @@ package executor
 
 import (
 	"bytes"
+	"errors"
 	log "github.com/Sirupsen/logrus"
-	"github.com/vektra/errors"
 	"os/exec"
 	"sync"
 	"syscall"
