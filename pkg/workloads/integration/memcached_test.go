@@ -5,36 +5,35 @@ package integration
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 	"os"
 	"testing"
 )
 
 const (
-	netstatCommand        = "echo stats | nc -q 5 127.0.0.1 11211"
-	memcachedRelativePath = "workloads/data_caching/memcached/memcached-1.4.25/memcached"
+	netstatCommand       = "echo stats | nc -w 1 127.0.0.1 11211"
+	defaultMemcachedPath = "workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
+	swanPkg              = "github.com/intelsdi-x/swan"
 )
 
-// Before test, make sure you have built memcached in /usr/bin e.g:
-// - have $SWAN_ROOT environment variable for Swan repo location.
-// - user memcached is present.
-// - apt-get netstat or yum ...
-
 // TestMemcachedWithExecutor is an integration test with local executor.
+// See README for setup items.
 func TestMemcachedWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	memcachedPath := os.Getenv("SWAN_ROOT")
+	// Get optional custom Memcached path from MEMCACHED_PATH.
+	memcachedPath := os.Getenv("MEMCACHED_BIN")
 
 	if memcachedPath == "" {
-		t.Fatal("There is no $SWAN_ROOT environment variable for Swan repo location.")
+		// If custom path does not exists use default path for built memcached.
+		memcachedPath = os.Getenv("GOPATH") + "/src/" + swanPkg + "/" + defaultMemcachedPath
 	}
 
 	Convey("While using Local Shell in Memcached launcher", t, func() {
 		l := executor.NewLocal()
-		memcachedLauncher := workloads.NewMemcached(
-			l, workloads.DefaultMemcachedConfig(memcachedPath+"/"+memcachedRelativePath))
+		memcachedLauncher := memcached.New(
+			l, memcached.DefaultMemcachedConfig(memcachedPath))
 
 		Convey("When memcached is launched", func() {
 			task, err := memcachedLauncher.Launch()
@@ -45,30 +44,41 @@ func TestMemcachedWithExecutor(t *testing.T) {
 				task.Stop()
 			})
 
-			Convey("When we check the memcached endpoint for stats", func() {
-				netstatTask, netstatErr := l.Execute(netstatCommand)
+			Convey("Wait 1 second for memcached to init", func() {
+				isTerminated := task.Wait(1)
 
-				Convey("There should be no error", func() {
-					So(netstatErr, ShouldBeNil)
+				Convey("Memcached should be still running", func() {
+					So(isTerminated, ShouldBeFalse)
 
 					task.Stop()
-					netstatTask.Stop()
 				})
 
-				Convey("When we wait for netstat ", func() {
-					netstatTask.Wait(0)
+				Convey("When we check the memcached endpoint for stats after 1 second", func() {
 
-					Convey("The netstat task should be terminated, the task status should be 0"+
-						" and output resultes with a STATA information", func() {
-						netstatTaskState, netstatTaskStatus := netstatTask.Status()
+					netstatTask, netstatErr := l.Execute(netstatCommand)
 
-						So(netstatTaskState, ShouldEqual, executor.TERMINATED)
-						So(netstatTaskStatus.ExitCode, ShouldEqual, 0)
-						So(netstatTaskStatus.Stdout, ShouldStartWith, "STAT")
+					Convey("There should be no error", func() {
+						So(netstatErr, ShouldBeNil)
+
+						task.Stop()
+						netstatTask.Stop()
 					})
 
-					task.Stop()
-					netstatTask.Stop()
+					Convey("When we wait for netstat ", func() {
+						netstatTask.Wait(0)
+
+						Convey("The netstat task should be terminated, the task status should be 0"+
+							" and output resultes with a STAT information", func() {
+							netstatTaskState, netstatTaskStatus := netstatTask.Status()
+
+							So(netstatTaskState, ShouldEqual, executor.TERMINATED)
+							So(netstatTaskStatus.ExitCode, ShouldEqual, 0)
+							So(netstatTaskStatus.Stdout, ShouldStartWith, "STAT")
+
+							task.Stop()
+							netstatTask.Stop()
+						})
+					})
 				})
 
 				Convey("When we stop the memcached task", func() {
@@ -85,7 +95,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 				})
 			})
-
 		})
 	})
 }

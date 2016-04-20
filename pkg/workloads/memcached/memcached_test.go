@@ -1,4 +1,4 @@
-package workloads
+package memcached
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	mockedTask := new(mocks.Task)
 
 	Convey("While using Memcached launcher", t, func() {
-		memcachedLauncher := NewMemcached(
+		memcachedLauncher := New(
 			mockedExecutor,
 			DefaultMemcachedConfig("test"))
 		Convey("While simulating proper execution", func() {

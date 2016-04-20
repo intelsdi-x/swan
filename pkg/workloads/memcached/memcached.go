@@ -1,4 +1,4 @@
-package workloads
+package memcached
 
 import (
 	"fmt"
@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	memcachedDefaultPort           = 11211
-	memcachedDefaultUser           = "memcached"
-	memcachedDefaultNumThreads     = 4
-	memcachedDefaultMaxMemoryMB    = 64
-	memcachedDefaultNumConnections = 1024
+	defaultPort           = 11211
+	defaultUser           = "memcached"
+	defaultNumThreads     = 4
+	defaultMaxMemoryMB    = 64
+	defaultNumConnections = 1024
 )
 
-// MemcachedConfig is a config for the memcached data caching application v 1.4.25.
+// Config is a config for the memcached data caching application v 1.4.25.
 // memcached 1.4.25, supported options:
 // -p <num>      TCP port number to listen on (default: 11211)
 // -s <file>     UNIX socket path to listen on (disables network support)
@@ -24,7 +24,7 @@ const (
 //-vv           very verbose (also print client commands/reponses)
 //-vvv          extremely verbose (also print internal state transitions)
 //-t <num>      number of threads to use (default: 4)
-type MemcachedConfig struct {
+type Config struct {
 	pathToBinary   string
 	port           int
 	user           string
@@ -34,25 +34,25 @@ type MemcachedConfig struct {
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
-func DefaultMemcachedConfig(pathToBinary string) MemcachedConfig {
-	return MemcachedConfig{
+func DefaultMemcachedConfig(pathToBinary string) Config {
+	return Config{
 		pathToBinary:   pathToBinary,
-		port:           memcachedDefaultPort,
-		user:           memcachedDefaultUser,
-		numThreads:     memcachedDefaultNumThreads,
-		maxMemoryMB:    memcachedDefaultMaxMemoryMB,
-		numConnections: memcachedDefaultNumConnections,
+		port:           defaultPort,
+		user:           defaultUser,
+		numThreads:     defaultNumThreads,
+		maxMemoryMB:    defaultMaxMemoryMB,
+		numConnections: defaultNumConnections,
 	}
 }
 
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
 type Memcached struct {
 	exec executor.Executor
-	conf MemcachedConfig
+	conf Config
 }
 
-// NewMemcached is a constructor for Memcached.
-func NewMemcached(exec executor.Executor, config MemcachedConfig) Memcached {
+// New is a constructor for Memcached.
+func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
 		exec: exec,
 		conf: config,
