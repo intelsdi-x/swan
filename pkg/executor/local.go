@@ -54,14 +54,20 @@ func (l Local) Execute(command string) (Task, error) {
 		// NOTE: Wait() returns an error. We grab the process state in any case
 		// (success or failure) below, so the error object matters less in the
 		// status handling for now.
-		cmd.Wait()
+		err := cmd.Wait()
+
+		if err != nil {
+			if e, ok := err.(*exec.ExitError); ok {
+				log.Error(e.Error())
+			}
+		}
 
 		log.Debug(
 			"Ended ", command,
 			" with output: ", stdout.String(),
 			" with err output: ", stderr.String(),
 			" with status code: ",
-			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			(cmd.ProcessState.Sys().(syscall.WaitStatus)).Signal())
 
 		statusChannel <- Status{
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
