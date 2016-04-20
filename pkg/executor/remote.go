@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"io"
+	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -24,7 +27,14 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
 	statusCh := make(chan Status)
-
+	stdoutDir, err := ioutil.TempFile("/tmp/", "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrDir, err := ioutil.TempFile("/tmp/", "stderr")
+	if err != nil {
+		return nil, err
+	}
 	connection, err := ssh.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
@@ -50,17 +60,77 @@ func (remote Remote) Execute(command string) (Task, error) {
 	}
 
 	go func() {
-		var stderr bytes.Buffer
 		exitCode := 0
+		var stderr bytes.Buffer
+
 		session.Stderr = &stderr
 		output, err := session.Output(command)
+
+		ioutil.WriteFile(stdoutDir.Name(), output, 600)
+		ioutil.WriteFile(stderrDir.Name(), stderr.Bytes(), 600)
+
 		if err != nil {
 			exitCode = err.(*ssh.ExitError).Waitmsg.ExitStatus()
 		}
-		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
+		statusCh <- Status{&exitCode}
 	}()
-	remoteTask := newRemoteTask(session, statusCh)
+	remoteTask := newRemoteTask(session, statusCh, stdoutDir.Name(), stderrDir.Name())
 	return remoteTask, nil
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *remoteTask) Stdout() (io.Reader, error) {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return nil, err
+	}
+	stdoutFile, err := os.Open(task.stdoutDir)
+	if err != nil {
+		return nil, err
+	}
+	return io.Reader(stdoutFile), nil
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *remoteTask) Stderr() (io.Reader, error) {
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return nil, err
+	}
+	stderrFile, err := os.Open(task.stderrDir)
+	if err != nil {
+		return nil, err
+	}
+	return io.Reader(stderrFile), nil
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *remoteTask) Clean() error {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutDir); err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrDir); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (task *remoteTask) GetStdoutDir() (string, error) {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return "", err
+	}
+	return task.stdoutDir, nil
+}
+
+func (task *remoteTask) GetStderrDir() (string, error) {
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return "", err
+	}
+	return task.stderrDir, nil
 }
 
 // Stop terminates the remote task.
@@ -80,12 +150,12 @@ func (task *remoteTask) Stop() error {
 }
 
 // Status gets task state and status of the remote task.
-func (task *remoteTask) Status() (TaskState, *Status) {
+func (task *remoteTask) Status() (TaskState, *int) {
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.status.ExitCode
 }
 
 // Wait blocks until process is terminated or timeout appeared.
@@ -119,15 +189,19 @@ type remoteTask struct {
 	session    *ssh.Session
 	statusCh   chan Status
 	status     Status
+	stdoutDir  string
+	stderrDir  string
 }
 
 // NewRemoteTask returns a RemoteTask instance.
-func newRemoteTask(session *ssh.Session, statusCh chan Status) *remoteTask {
+func newRemoteTask(session *ssh.Session, statusCh chan Status, stdoutDir string, stderrDir string) *remoteTask {
 	return &remoteTask{
 		false,
 		session,
 		statusCh,
 		Status{},
+		stdoutDir,
+		stderrDir,
 	}
 }
 

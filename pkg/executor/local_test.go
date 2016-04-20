@@ -5,6 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 )
 
 // TestLocal tests the execution of process on local machine.
@@ -57,7 +58,7 @@ func TestLocal(t *testing.T) {
 				Convey("The task should be terminated and the task status should be -15", func() {
 					taskState, taskStatus := task.Status()
 					So(taskState, ShouldEqual, TERMINATED)
-					So(taskStatus.ExitCode, ShouldEqual, -15)
+					So(*taskStatus, ShouldEqual, -15)
 				})
 			})
 		})
@@ -85,11 +86,15 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 0", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 0)
+					So(*taskStatus, ShouldEqual, 0)
 				})
 
+				stdoutReader, err := task.Stdout()
+				So(err, ShouldBeNil)
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
 				Convey("And command stdout needs to match 'output", func() {
-					So(taskStatus.Stdout, ShouldEqual, "output\n")
+					So(string(data[:]), ShouldEqual, "output\n")
 				})
 			})
 		})
@@ -117,7 +122,7 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 127", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(*taskStatus, ShouldEqual, 127)
 				})
 			})
 		})
@@ -148,14 +153,24 @@ func TestLocal(t *testing.T) {
 					So(taskState2, ShouldEqual, TERMINATED)
 				})
 
-				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+				stdoutReader, err := task.Stdout()
+				So(err, ShouldBeNil)
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
+				Convey("The first command stdout needs to match 'output1", func() {
+					So(string(data[:]), ShouldEqual, "output1\n")
+				})
+				stdoutReader, err = task2.Stdout()
+				So(err, ShouldBeNil)
+				data, err = ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
+				Convey("The second command stdout needs to match 'output2", func() {
+					So(string(data[:]), ShouldEqual, "output2\n")
 				})
 
 				Convey("Both exit statuses should be 0", func() {
-					So(taskStatus1.ExitCode, ShouldEqual, 0)
-					So(taskStatus2.ExitCode, ShouldEqual, 0)
+					So(*taskStatus1, ShouldEqual, 0)
+					So(*taskStatus2, ShouldEqual, 0)
 				})
 			})
 		})

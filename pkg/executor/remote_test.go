@@ -2,6 +2,7 @@ package executor
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"strings"
@@ -29,30 +30,37 @@ func TestRemote(t *testing.T) {
 			So(err, ShouldBeNil)
 			sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
 			remoteShell := NewRemote(*sshConfig)
-			Convey("with empty command", func() {
-				remoteTask, _ := remoteShell.Execute("")
-				remoteTask.Stop()
-				_, taskStatus := remoteTask.Status()
-				Convey("gives empty output", func() {
-					So(taskStatus.Stdout, ShouldEqual, "")
-				})
-			})
 			Convey("with not existing command", func() {
 				remoteTask, _ := remoteShell.Execute("notexistingcommand")
 				remoteTask.Stop()
 				_, taskStatus := remoteTask.Status()
 				Convey("should give 127 error ExitCode", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(*taskStatus, ShouldEqual, 127)
 				})
 			})
 			Convey("with whoami command ", func() {
 				remoteTask, err := remoteShell.Execute("whoami")
 				So(err, ShouldBeNil)
 				remoteTask.Stop()
-				_, taskStatus := remoteTask.Status()
+				stdoutReader, err := remoteTask.Stdout()
+				So(err, ShouldBeNil)
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
 				Convey("with root user in clientconfig should give root as output", func() {
-					So(strings.TrimSpace(taskStatus.Stdout), ShouldEqual, user.Username)
+					So(strings.TrimSpace(string(data[:])), ShouldEqual, user.Username)
 				})
+				fileName, err := remoteTask.GetStdoutDir()
+				So(err, ShouldBeNil)
+				fileInf, err := os.Stat(fileName)
+				Convey("before cleaning file should exist", func() {
+					So("/tmp/"+fileInf.Name(), ShouldEqual, fileName)
+				})
+				remoteTask.Clean()
+				_, err = os.Stat(fileName)
+				Convey("after cleaning file should not exist", func() {
+					So(err, ShouldNotBeNil)
+				})
+
 			})
 		})
 

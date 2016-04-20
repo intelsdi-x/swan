@@ -3,6 +3,9 @@ package executor
 import (
 	"bytes"
 	log "github.com/Sirupsen/logrus"
+	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -25,6 +28,14 @@ func NewLocal() Local {
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
+	stdoutDir, err := ioutil.TempFile("/tmp/", "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrDir, err := ioutil.TempFile("/tmp/", "stderr")
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debug("Starting ", command)
 
@@ -41,7 +52,7 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -71,18 +82,74 @@ func (l Local) Execute(command string) (Task, error) {
 			" with err output: ", stderr.String(),
 			" with status code: ", exitCode)
 
+		ioutil.WriteFile(stdoutDir.Name(), stdout.Bytes(), 600)
+		ioutil.WriteFile(stderrDir.Name(), stderr.Bytes(), 600)
+
 		statusChannel <- Status{
-			exitCode,
-			stdout.String(),
-			stderr.String(),
+			&exitCode,
 		}
 	}()
 
 	taskPid := taskPID(cmd.Process.Pid)
 
-	t := newlocalTask(taskPid, statusChannel)
+	t := newlocalTask(taskPid, statusChannel, stdoutDir.Name(), stderrDir.Name())
 
 	return t, err
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *localTask) Stdout() (io.Reader, error) {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return nil, err
+	}
+	stdoutFile, err := os.Open(task.stdoutDir)
+	if err != nil {
+		return nil, err
+	}
+	return io.Reader(stdoutFile), nil
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *localTask) Stderr() (io.Reader, error) {
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return nil, err
+	}
+	stderrFile, err := os.Open(task.stderrDir)
+	if err != nil {
+		return nil, err
+	}
+	return io.Reader(stderrFile), nil
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *localTask) Clean() error {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutDir); err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrDir); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (task *localTask) GetStdoutDir() (string, error) {
+	if _, err := os.Stat(task.stdoutDir); err != nil {
+		return "", err
+	}
+	return task.stdoutDir, nil
+}
+
+func (task *localTask) GetStderrDir() (string, error) {
+	if _, err := os.Stat(task.stderrDir); err != nil {
+		return "", err
+	}
+	return task.stderrDir, nil
 }
 
 // localTask implements Task interface.
@@ -91,15 +158,19 @@ type localTask struct {
 	statusChannel chan Status
 	status        Status
 	terminated    bool
+	stdoutDir     string
+	stderrDir     string
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(pid taskPID, statusChannel chan Status) *localTask {
+func newlocalTask(pid taskPID, statusChannel chan Status, stdoutDir string, stderrDir string) *localTask {
 	t := &localTask{
 		pid,
 		statusChannel,
 		Status{},
 		false,
+		stdoutDir,
+		stderrDir,
 	}
 	return t
 }
@@ -132,12 +203,12 @@ func (task *localTask) Stop() error {
 
 // Status returns a state of the task. If task is terminated it returns the Status as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *Status) {
+func (task localTask) Status() (TaskState, *int) {
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.status.ExitCode
 }
 
 // Wait blocks until process is terminated or timeout appeared.
