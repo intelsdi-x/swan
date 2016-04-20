@@ -36,3 +36,10 @@ go build ./cmds/memcache
 ### Depedency managment
 
 Handled by [godeps](https://github.com/tools/godep).
+
+### Mock generation
+
+Mock generation is done by Mockery tool.
+It's not deterministic, so we are vendoring our mocks.
+
+To generate mocks go to desired package and ```mockery -name ".*" -case underscoer```

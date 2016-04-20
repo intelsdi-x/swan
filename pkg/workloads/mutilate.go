@@ -10,42 +10,32 @@ import (
 	"time"
 )
 
-/**
-Real deployments of memcached often handle the requests of dozens, hundreds, or thousands of front-end clients simultaneously. However, by default, mutilate establishes one connection per server and meters requests one at a time (it waits for a reply before sending the next request). This artificially limits throughput (i.e. queries per second), as the round-trip network latency is almost certainly far longer than the time it takes for the memcached server to process one request.
-
-In order to get reasonable benchmark results with mutilate, it needs to be configured to more accurately portray a realistic client workload. In general, this means ensuring that (1) there are a large number of client connections, (2) there is the potential for a large number of outstanding requests, and (3) the memcached server saturates and experiences queuing delay far before mutilate does. I suggest the following guidelines:
-
-    Establish on the order of 100 connections per memcached server thread.
-    Don't exceed more than about 16 connections per mutilate thread.
-    Use multiple mutilate agents in order to achieve (1) and (2).
-    Do not use more mutilate threads than hardware cores/threads.
-    Use -Q to configure the "master" agent to take latency samples at slow, a constant rate.
-
-https://github.com/leverich/mutilate
-
-*/
-
+// MutilateConfig contains all data for running mutilate.
 type MutilateConfig struct {
-	mutilate_path      string
-	memcached_uri      string
-	tuning_time        time.Duration
-	latency_percentile float64
+	mutilatePath      string
+	memcachedHost     string
+	tuningTime        time.Duration
+	latencyPercentile float64
 }
 
+// DefaultMutilateConfig ...
 func DefaultMutilateConfig() MutilateConfig {
 	return MutilateConfig{
-		mutilate_path:      "mutilate",
-		memcached_uri:      "localhost",
-		tuning_time:        10 * time.Second,
-		latency_percentile: 99.9,
+		mutilatePath:      "mutilate",
+		memcachedHost:     "localhost",
+		tuningTime:        10 * time.Second,
+		latencyPercentile: 99.9,
 	}
 }
 
+// Mutilate is a load generator for Memcached.
+// https://github.com/leverich/mutilate
 type Mutilate struct {
 	executor executor.Executor
 	config   MutilateConfig
 }
 
+// NewMutilate ...
 func NewMutilate(executor executor.Executor, config MutilateConfig) Mutilate {
 	return Mutilate{
 		executor: executor,
@@ -53,10 +43,11 @@ func NewMutilate(executor executor.Executor, config MutilateConfig) Mutilate {
 	}
 }
 
+// Populate loads Memcached and exits.
 func (m *Mutilate) Populate() error {
 	popCmd := fmt.Sprintf("%s -s %s --loadonly",
-		m.config.mutilate_path,
-		m.config.memcached_uri,
+		m.config.mutilatePath,
+		m.config.memcachedHost,
 	)
 	taskHandle, err := m.executor.Execute(popCmd)
 	if err != nil {
@@ -73,6 +64,7 @@ func (m *Mutilate) Populate() error {
 	return nil
 }
 
+// Tune returns maximum QPSes for given SLO
 func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
 	tuneCmd, err := m.getTuneCommand(slo)
 	if err != nil {
@@ -105,6 +97,7 @@ func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
 	return targetQPS, err
 }
 
+// Load exercises `qps` load on Memcached for given duration.
 func (m Mutilate) Load(qps int, duration time.Duration) (sli int, err error) {
 	loadCmd := m.getLoadCommand(qps, duration)
 
@@ -148,28 +141,28 @@ func transformFloatToIntegerWithoutDot(value float64) (ret int64, err error) {
 
 func (m Mutilate) getLoadCommand(qps int, duration time.Duration) string {
 	percentile := strconv.FormatFloat(
-		m.config.latency_percentile, 'f', -1, 64)
-	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%f",
-		m.config.mutilate_path,
-		m.config.memcached_uri,
+		m.config.latencyPercentile, 'f', -1, 64)
+	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
+		m.config.mutilatePath,
+		m.config.memcachedHost,
 		qps,
-		duration.Seconds(),
+		int(duration.Seconds()),
 		percentile,
 	)
 }
 
 func (m Mutilate) getTuneCommand(slo int) (command string, err error) {
 	mutilateSearchPercentile, err := transformFloatToIntegerWithoutDot(
-		m.config.latency_percentile)
+		m.config.latencyPercentile)
 	if err != nil {
 		return command, errors.New("Parse percentile value failed")
 	}
 	command = fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
-		m.config.mutilate_path,
-		m.config.memcached_uri,
+		m.config.mutilatePath,
+		m.config.memcachedHost,
 		mutilateSearchPercentile,
 		slo,
-		int(m.config.tuning_time.Seconds()),
+		int(m.config.tuningTime.Seconds()),
 	)
 	return command, err
 }

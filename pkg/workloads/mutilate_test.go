@@ -12,40 +12,11 @@ import (
 	"time"
 )
 
-//type mockedTaskHandle struct {
-//	mock.Mock
-//}
-//
-//func (m *mockedTaskHandle) Stop() error {
-//	args := m.Called()
-//	return args.Error(0)
-//}
-//
-//func (m *mockedTaskHandle) Status() (executor.TaskState, *executor.Status) {
-//	args := m.Called()
-//	return args.Get(0).(executor.TaskState),
-//		args.Get(1).(*executor.Status)
-//}
-//
-//func (m *mockedTaskHandle) Wait(timeoutMs int) bool {
-//	args := m.Called(timeoutMs)
-//	return args.Bool(0)
-//}
-//
-//type mockedExecutor struct {
-//	mock.Mock
-//}
-//
-//func (m *mockedExecutor) Execute(command string) (executor.Task, error) {
-//	args := m.Called(command)
-//	return args.Get(0).(executor.Task), args.Error(1)
-//}
-
 const (
-	mutilate_path = "/usr/bin/local/mutilate"
-	memcached_uri = "127.0.0.1"
+	mutilatePath  = "/usr/bin/local/mutilate"
+	memcachedHost = "127.0.0.1"
 
-	correctMutilateQps    = 4450
+	correctMutilateQPS    = 4450
 	correctMutilateOutput = `#type       avg     std     min     5th    10th    90th    95th    99th
 read       20.9    11.9    11.9    12.5    13.1    32.4    39.0    56.8
 update      0.0     0.0     0.0     0.0     0.0     0.0     0.0     0.0
@@ -75,25 +46,25 @@ type MutilateTestSuite struct {
 	mHandle   *mocks.Task
 }
 
-func (suite *MutilateTestSuite) SetupTest() {
-	suite.config.mutilate_path = mutilate_path
-	suite.config.memcached_uri = memcached_uri
-	suite.config.latency_percentile = 99.9
-	suite.config.tuning_time = 30 * time.Second
+func (s *MutilateTestSuite) SetupTest() {
+	s.config.mutilatePath = mutilatePath
+	s.config.memcachedHost = memcachedHost
+	s.config.latencyPercentile = 99.9
+	s.config.tuningTime = 30 * time.Second
 
-	suite.defaultSlo = 1000
+	s.defaultSlo = 1000
 
-	suite.mExecutor = new(mocks.Executor)
-	suite.mHandle = new(mocks.Task)
+	s.mExecutor = new(mocks.Executor)
+	s.mHandle = new(mocks.Task)
 }
 
 func (s *MutilateTestSuite) TestTuneMutilate() {
 	mutilateTuneCommand := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
-		s.config.mutilate_path,
-		s.config.memcached_uri,
+		s.config.mutilatePath,
+		s.config.memcachedHost,
 		999, // Latency Percentile translated to "Mutilate int"
 		s.defaultSlo,
-		int(s.config.tuning_time.Seconds()),
+		int(s.config.tuningTime.Seconds()),
 	)
 
 	executorStatus := executor.Status{
@@ -109,12 +80,12 @@ func (s *MutilateTestSuite) TestTuneMutilate() {
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
-		targetQps, err := mutilate.Tune(s.defaultSlo)
+		targetQPS, err := mutilate.Tune(s.defaultSlo)
 		Convey("On success, error should be nil.", func() {
 			So(err, ShouldBeNil)
 		})
 		Convey("TargetQPS should be correct.", func() {
-			So(targetQps, ShouldEqual, correctMutilateQps)
+			So(targetQPS, ShouldEqual, correctMutilateQPS)
 		})
 		Convey("Mock expectations are asserted.", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
@@ -152,11 +123,11 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 		Stderr:   "",
 	}
 
-	loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%f",
-		s.config.mutilate_path,
-		s.config.memcached_uri,
+	loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
+		s.config.mutilatePath,
+		s.config.memcachedHost,
 		load,
-		duration.Seconds(),
+		int(duration.Seconds()),
 		percentile,
 	)
 
@@ -200,8 +171,8 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 
 func (s *MutilateTestSuite) TestPopulate() {
 	mutilatePopulateCommand := fmt.Sprintf("%s -s %s --loadonly",
-		s.config.mutilate_path,
-		s.config.memcached_uri,
+		s.config.mutilatePath,
+		s.config.memcachedHost,
 	)
 
 	executorStatus := executor.Status{
