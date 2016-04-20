@@ -54,19 +54,87 @@ func NewMutilate(executor executor.Executor, config MutilateConfig) Mutilate {
 }
 
 func (m *Mutilate) Populate() error {
-	popCmd := fmt.Sprintf("mutilate -s %s --loadonly",
-		m.config.memcached_uri)
+	popCmd := fmt.Sprintf("%s -s %s --loadonly",
+		m.config.mutilate_path,
+		m.config.memcached_uri,
+	)
 	taskHandle, err := m.executor.Execute(popCmd)
 	if err != nil {
 		return err
 	}
 	taskHandle.Wait(0)
-	// TODO(skonefal): Check exit code
+
+	_, status := taskHandle.Status()
+	if status.ExitCode != 0 {
+		errMsg := fmt.Sprintf("Memchaced populate exited with code: %d", status.ExitCode)
+		return errors.New(errMsg)
+	}
 
 	return nil
 }
 
+func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
+	tuneCmd, err := m.getTuneCommand(slo)
+	if err != nil {
+		errMsg := fmt.Sprintf("Preparation of Tune command failed: %s", err)
+		return targetQPS, errors.New(errMsg)
+	}
+
+	taskHandle, err := m.executor.Execute(tuneCmd)
+	if err != nil {
+		errMsg := fmt.Sprintf("Executing Mutilate Tune command %s failed; ", tuneCmd)
+		return targetQPS, errors.New(errMsg + err.Error())
+	}
+
+	taskHandle.Wait(0)
+
+	_, status := taskHandle.Status()
+	if status.ExitCode != 0 {
+		errMsg := fmt.Sprintf(
+			"Executing Mutilate Tune command returned with exit code %d", status.ExitCode)
+		return targetQPS, errors.New(errMsg + err.Error())
+	}
+
+	re := regexp.MustCompile(`Total QPS =\s(\d+)`)
+	targetQPS, err = getValueFromOutput(status.Stdout, re)
+	if err != nil {
+		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output")
+		return targetQPS, errors.New(errMsg + err.Error())
+	}
+
+	return targetQPS, err
+}
+
+func (m Mutilate) Load(qps int, duration time.Duration) (sli int, err error) {
+	loadCmd := m.getLoadCommand(qps, duration)
+
+	taskHandle, err := m.executor.Execute(loadCmd)
+	if err != nil {
+		errMsg := fmt.Sprintf("Executing Mutilate Tune command %s failed; ", loadCmd)
+		return sli, errors.New(errMsg + err.Error())
+	}
+
+	taskHandle.Wait(0)
+
+	_, status := taskHandle.Status()
+	if status.ExitCode != 0 {
+		errMsg := fmt.Sprintf("Executing Mutilate Load returned with exit code %d",
+			status.ExitCode)
+		return sli, errors.New(errMsg + err.Error())
+	}
+
+	re := regexp.MustCompile(`Swan latency for percentile \d+.\d+:\s(\d+)`)
+	sli, err = getValueFromOutput(status.Stdout, re)
+	if err != nil {
+		errMsg := fmt.Sprintf("Could not retrieve SLI from mutilate Load output")
+		return sli, errors.New(errMsg + err.Error())
+	}
+
+	return sli, err
+}
+
 // Mutilate Search method requires percentile in an integer format
+// Transforms (float)999.9 to (int)9999
 func transformFloatToIntegerWithoutDot(value float64) (ret int64, err error) {
 	percentileString := strconv.FormatFloat(value, 'f', -1, 64)
 	percentileWithoutDot := strings.Replace(percentileString, ".", "", -1)
@@ -78,77 +146,36 @@ func transformFloatToIntegerWithoutDot(value float64) (ret int64, err error) {
 	return tunePercentile, err
 }
 
-func (m Mutilate) Tune(slo int) (targetQPS int, err error) {
-	// Mutilate Search method requires percentile in an integer format
-	mutilateSearchPercentile, err := transformFloatToIntegerWithoutDot(
-		m.config.latency_percentile)
-	if err != nil {
-		return targetQPS, errors.New("Parse percentile value failed")
-	}
-
-	// mutilate -s localhost --search=999:1000
-	tuneCmd := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
-		m.config.mutilate_path,
-		m.config.memcached_uri,
-		mutilateSearchPercentile,
-		slo,
-		int(m.config.tuning_time.Seconds()))
-
-	taskHandle, err := m.executor.Execute(tuneCmd)
-	if err != nil {
-		errMsg := fmt.Sprintf(
-			"Executing Mutilate Tune cmd %s failed; ", tuneCmd)
-		return targetQPS, errors.New(errMsg + err.Error())
-	}
-	taskHandle.Wait(0)
-
-	_, status := taskHandle.Status()
-	if status == nil {
-		panic("something wrong, debug")
-	}
-
-	re := regexp.MustCompile(`Total QPS =\s(\d+)`)
-	targetQPS, err = getValueFromOutput(status.Stdout, re)
-	if err != nil {
-
-	}
-
-	return targetQPS, err
-}
-
-func matchNotFound(match []string) bool {
-	return match == nil || len(match[1]) == 0
-}
-
-func (m Mutilate) Load(qps int, duration time.Duration) (sli int, err error) {
+func (m Mutilate) getLoadCommand(qps int, duration time.Duration) string {
 	percentile := strconv.FormatFloat(
 		m.config.latency_percentile, 'f', -1, 64)
-
-	// ./mutilate -s localhost -q 3000 -t 1 --swanpercentile=99.98
-	loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%f",
+	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%f",
 		m.config.mutilate_path,
 		m.config.memcached_uri,
 		qps,
 		duration.Seconds(),
 		percentile,
 	)
+}
 
-	taskHandle, err := m.executor.Execute(loadCmd)
+func (m Mutilate) getTuneCommand(slo int) (command string, err error) {
+	mutilateSearchPercentile, err := transformFloatToIntegerWithoutDot(
+		m.config.latency_percentile)
 	if err != nil {
-
+		return command, errors.New("Parse percentile value failed")
 	}
+	command = fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
+		m.config.mutilate_path,
+		m.config.memcached_uri,
+		mutilateSearchPercentile,
+		slo,
+		int(m.config.tuning_time.Seconds()),
+	)
+	return command, err
+}
 
-	taskHandle.Wait(0)
-
-	_, status := taskHandle.Status()
-
-	re := regexp.MustCompile(`Swan latency for percentile \d+.\d+:\s(\d+)`)
-	sli, err = getValueFromOutput(status.Stdout, re)
-	if err != nil {
-
-	}
-
-	return sli, err
+func matchNotFound(match []string) bool {
+	return match == nil || len(match[1]) == 0
 }
 
 func getValueFromOutput(output string, regex *regexp.Regexp) (value int, err error) {

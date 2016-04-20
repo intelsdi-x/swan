@@ -1,16 +1,13 @@
 package workloads
 
 import (
-	//"fmt"
+	"errors"
+	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"testing"
-	//"time"
-	//"errors"
-	"fmt"
 	"time"
 )
 
@@ -46,7 +43,6 @@ func (m *mockedExecutor) Execute(command string) (executor.Task, error) {
 const (
 	mutilate_path = "/usr/bin/local/mutilate"
 	memcached_uri = "127.0.0.1"
-	//latency_percentile = 99.999
 
 	correctMutilateQps    = 4450
 	correctMutilateOutput = `#type       avg     std     min     5th    10th    90th    95th    99th
@@ -90,26 +86,6 @@ func (suite *MutilateTestSuite) SetupTest() {
 	suite.mHandle = new(mockedTaskHandle)
 }
 
-//func (s *MutilateTestSuite) TestMutilateTuneExecutorError() {
-//mutilate := NewMutilate(s.mExecutor, s.config)
-////err := errors.New("asa")
-////_ = err
-//
-//s.mExecutor.On("Execute", s.defaultMutilateCommand).Return(s.mHandle, errors.New("error"))
-//s.mExecutor.On("Execute", s.defaultMutilateCommand).Return(s.mHandle, err)
-//
-//s.mHandle.On("Wait", 0).Return(true)
-//s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
-//
-//Convey("When Tuning Mutilate, and executor retuns error.", s.T(), func() {
-//	_, err := mutilate.Tune(s.defaultSlo)
-//	Convey("Error should not be nil.", func() {
-//		So(err, ShouldNotBeNil)
-//	})
-//})
-//_ = mutilate
-//}
-
 func (s *MutilateTestSuite) TestTuneMutilate() {
 	mutilateTuneCommand := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
 		s.config.mutilate_path,
@@ -131,7 +107,7 @@ func (s *MutilateTestSuite) TestTuneMutilate() {
 	s.mHandle.On("Wait", 0).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
-	Convey("When Tuning Mutilate to Memcached.", s.T(), func() {
+	Convey("When Tuning Memcached.", s.T(), func() {
 		targetQps, err := mutilate.Tune(s.defaultSlo)
 		Convey("On success, error should be nil.", func() {
 			So(err, ShouldBeNil)
@@ -142,6 +118,23 @@ func (s *MutilateTestSuite) TestTuneMutilate() {
 		Convey("Mock expectations are asserted.", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
 			So(s.mHandle.AssertExpectations(s.T()), ShouldBeTrue)
+		})
+	})
+}
+
+func (s *MutilateTestSuite) TestMutilateTuneExecutorError() {
+	mutilate := NewMutilate(s.mExecutor, s.config)
+	const errorMsg = "Error in execution"
+	s.mExecutor.On("Execute", mock.AnythingOfType("string")).
+		Return(s.mHandle, errors.New(errorMsg))
+
+	Convey("When executing Tune, and executor retuns error.", s.T(), func() {
+		_, err := mutilate.Tune(s.defaultSlo)
+		Convey("Error should not be nil.", func() {
+			So(err, ShouldNotBeNil)
+		})
+		Convey("Error should contain \"Error in execution\".", func() {
+			So(err.Error(), ShouldContainSubstring, errorMsg)
 		})
 	})
 }
@@ -172,7 +165,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	s.mHandle.On("Wait", 0).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
-	Convey("When Load Generating through Mutilate..", s.T(), func() {
+	Convey("When generating Load.", s.T(), func() {
 		sli, err := mutilate.Load(load, duration)
 		Convey("On success, error should be nil.", func() {
 			So(err, ShouldBeNil)
@@ -187,80 +180,54 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	})
 }
 
-func TestMutilateTestSuite(t *testing.T) {
-	suite.Run(t, new(MutilateTestSuite))
-	assert.True(t, true)
+func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
+	mutilate := NewMutilate(s.mExecutor, s.config)
+	const errorMsg = "Error in execution"
+	s.mExecutor.On("Execute", mock.AnythingOfType("string")).
+		Return(s.mHandle, errors.New(errorMsg))
+
+	Convey("When executing Load and executor retuns error.", s.T(), func() {
+		_, err := mutilate.Load(20, 1*time.Second)
+		Convey("Error should not be nil.", func() {
+			So(err, ShouldNotBeNil)
+		})
+		Convey("Error should contain \"Error in execution\".", func() {
+			So(err.Error(), ShouldContainSubstring, errorMsg)
+		})
+	})
 }
 
-//func TestGetTuningOutput(t *testing.T) {
-//	const correctTargetQps = 4450
-//
-//	Convey("When given proper Mutilate tuning output: ", t, func() {
-//		targetQps, err := getQpsFromOutput(correctMutilateOutput)
-//
-//		Convey("we receive proper targetQPS.", func() {
-//			So(err, ShouldBeNil)
-//		})
-//
-//		Convey("we receive nil error.", func() {
-//			So(targetQps, ShouldEqual, correctTargetQps)
-//		})
-//	})
-//
-//	Convey("When given inproper Mutilate tuning output we receive error.", t, func() {
-//		_, err := getQpsFromOutput("Inproper Output")
-//		So(err, ShouldNotBeNil)
-//	})
-//}
+func (s *MutilateTestSuite) TestPopulate() {
+	mutilatePopulateCommand := fmt.Sprintf("%s -s %s --loadonly",
+		s.config.mutilate_path,
+		s.config.memcached_uri,
+	)
 
-//func TestGetLatenciesFromMutilateOutput(t *testing.T) {
-//	const mutilateOutput = `1.041759 12.874603
-//1.041772 13.113022
-//1.041786 15.113022
-//`
-//	properLatencies := []int{12, 13, 15}
-//	Convey("When given proper Mutilate tuning output: ", t, func() {
-//		latencies := getLatenciesFromMutilateOutput(mutilateOutput)
-//		Convey("So latencies are correct.", func() {
-//			So(latencies, ShouldEqual, properLatencies)
-//		})
-//	})
-//}
+	executorStatus := executor.Status{
+		ExitCode: 0,
+		Stdout:   "",
+		Stderr:   "",
+	}
 
-//func TestGetLatenciesFromMutilateOutput(t *testing.T) {
-//	const mutilateOutput = `1.041759 12.874603
-//1.041772 13.113022
-//1.041786 13.113022
-//1.041799 13.828278
-//1.041813 13.113022
-//1.041827 13.113022
-//1.041840 12.874603
-//1.041853 14.066696
-//1.041867 12.874603
-//1.041881 12.874603
-//`
-//
-//}
+	mutilate := NewMutilate(s.mExecutor, s.config)
 
-//func TestTuneMutilate(t *testing.T) {
-//	localExecutor := executor.NewLocal()
-//
-//	conf := DefaultMutilateConfig()
-//
-//	conf.latency_percentile = 50
-//
-//	const slo = 1000
-//
-//	mutilate := NewMutilate(localExecutor, conf)
-//
-//	targetQps, err := mutilate.Tune(slo)
-//
-//	SkipConvey("When Tuning Mutilate to Memcached.", t, func() {
-//		Convey("Error should be nil.", func() {
-//			So(err, ShouldBeNil)
-//		})
-//		Convey("TargetQPS should be more than 0.", func() {
-//			So(targetQps, ShouldNotEqual, 0)
-//		})
-//	})
-//}
+	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mHandle, nil)
+	s.mHandle.On("Wait", 0).Return(true)
+	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+
+	Convey("When Populating Memcached.", s.T(), func() {
+		err := mutilate.Populate()
+		Convey("On success, error should be nil.", func() {
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Mock expectations are asserted.", func() {
+			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mHandle.AssertExpectations(s.T()), ShouldBeTrue)
+		})
+	})
+}
+
+func TestMutilateTestSuite(t *testing.T) {
+	suite.Run(t, new(MutilateTestSuite))
+}
