@@ -96,10 +96,9 @@ func (task localTask) getExitCode() int {
 	// If Process exited on his own, show the exitStatus.
 	if (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
 		return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
-	} else {
-		// Show what signal caused the termination.
-		return -int((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Signal())
 	}
+	// Show what signal caused the termination.
+	return -int((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Signal())
 }
 
 func (task localTask) createStatus() *Status {
