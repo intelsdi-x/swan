@@ -20,7 +20,7 @@ const (
 // TestMemcachedWithExecutor is an integration test with local executor.
 // See README for setup items.
 func TestMemcachedWithExecutor(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	// Get optional custom Memcached path from MEMCACHED_PATH.
 	memcachedPath := os.Getenv("MEMCACHED_BIN")
@@ -90,10 +90,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 						So(err, ShouldBeNil)
 					})
 
-					Convey("The task should be terminated and the task status should be -15", func() {
+					Convey("The task should be terminated and the task status should be -15 or 0", func() {
 						taskState, taskStatus := task.Status()
 						So(taskState, ShouldEqual, executor.TERMINATED)
-						So(taskStatus.ExitCode, ShouldEqual, -15)
+						// Memcached on CentOS returns 0 (successful code) after SIGTERM.
+						So(taskStatus.ExitCode, ShouldBeIn, -15, 0)
 					})
 				})
 			})
