@@ -1,16 +1,25 @@
 package experiment
 
-import "errors"
+import (
+	"errors"
+	"log"
+	"os"
+)
 
 type ExperimentConfiguration struct {
-	MaxVariance float64
+	MaxVariance      float64
+	WorkingDirectory string
 }
 
 type Experiment struct {
-	Session Session
-	conf    ExperimentConfiguration
-	phases  []Phase
-	results map[string][]float64
+	Session             Session
+	conf                ExperimentConfiguration
+	phases              []Phase
+	results             map[string][]float64
+	startingDirectory   string
+	experimentDirectory string
+	logFile             *os.File
+	logger              *log.Logger
 }
 
 // Construct new Experiment object.
@@ -39,19 +48,37 @@ func NewExperiment(
 func (e *Experiment) Run() error {
 	var err error
 
+	e.logInitialize()
 	for _, phase := range e.phases {
-		//Phase workdir is e.Session.Name + phase.Name()
+		e.logger.Print("Phase: " + phase.Name())
 		for i := 0; i < phase.Repetitions(); i++ {
-			result, err := phase.Run()
+			err = e.logMkPhase(phase.Name(), i)
 			if err != nil {
+				e.logClose()
 				return err
 			}
+			e.logger.Printf("   Repetition %v\n", i)
+			result, err := phase.Run()
+			if err != nil {
+				e.logger.Print("Phase returned error ", err)
+				e.logClose()
+				return err
+			}
+			e.logger.Print("Phase OK")
 			e.results[phase.Name()] = append(e.results[phase.Name()], result)
 		}
 
-		if variance(e.results[phase.Name()]) > e.conf.MaxVariance {
+		variance := variance(e.results[phase.Name()])
+		e.logger.Printf("Phase repetitions variance %2.4f\n", variance)
+		if variance > e.conf.MaxVariance {
+			e.logger.Printf("Variance %2.4f exceeded limit %2.4f. Exiting\n",
+				variance, e.conf.MaxVariance)
+			e.logClose()
 			return errors.New("Phase max variance exceeded")
 		}
+		e.logger.Print("Phase variance OK")
 	}
+	e.logger.Println("Done with measurement.")
+	e.logClose()
 	return err
 }

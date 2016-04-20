@@ -29,19 +29,19 @@ func (f FakePhase) Run() (float64, error) {
 func TestExperiment(t *testing.T) {
 	Convey("Creating experiment ", t, func() {
 		Convey("with allowed variance set to zero should fail", func() {
-			conf := ExperimentConfiguration{0}
+			conf := ExperimentConfiguration{0, ""}
 			_, err := NewExperiment(conf, nil)
 			So(err, ShouldNotBeNil)
 
 		})
 		Convey("with allowed variance set to negative should fail", func() {
-			conf := ExperimentConfiguration{-1}
+			conf := ExperimentConfiguration{-1, ""}
 			_, err := NewExperiment(conf, nil)
 			So(err, ShouldNotBeNil)
 
 		})
 		Convey("with allowed variance set to positive value and nil phases should fail", func() {
-			conf := ExperimentConfiguration{1}
+			conf := ExperimentConfiguration{1, ""}
 			_, err := NewExperiment(conf, nil)
 			So(err, ShouldNotBeNil)
 
@@ -50,7 +50,7 @@ func TestExperiment(t *testing.T) {
 			var phases []Phase
 			var Invocation int
 
-			conf := ExperimentConfiguration{1}
+			conf := ExperimentConfiguration{1, "/tmp"}
 
 			fakePhase := &FakePhase{
 				ID:          "Fake phase 01",
