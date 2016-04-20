@@ -1,14 +1,12 @@
 sudo: false
 language: go
 go:
-- 1.5.3
 - 1.6
 before_install:
-- go get github.com/tools/godep
-- go get github.com/golang/lint/golint
-- go get github.com/GeertJohan/fgt
-script:
 - make deps
-- make
+script:
 - make lint
 - make test
+notifications:
+  slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
+
