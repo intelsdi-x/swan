@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -11,34 +12,34 @@ import (
 	"time"
 )
 
-type mockedTaskHandle struct {
-	mock.Mock
-}
-
-func (m *mockedTaskHandle) Stop() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *mockedTaskHandle) Status() (executor.TaskState, *executor.Status) {
-	args := m.Called()
-	return args.Get(0).(executor.TaskState),
-		args.Get(1).(*executor.Status)
-}
-
-func (m *mockedTaskHandle) Wait(timeoutMs int) bool {
-	args := m.Called(timeoutMs)
-	return args.Bool(0)
-}
-
-type mockedExecutor struct {
-	mock.Mock
-}
-
-func (m *mockedExecutor) Execute(command string) (executor.Task, error) {
-	args := m.Called(command)
-	return args.Get(0).(executor.Task), args.Error(1)
-}
+//type mockedTaskHandle struct {
+//	mock.Mock
+//}
+//
+//func (m *mockedTaskHandle) Stop() error {
+//	args := m.Called()
+//	return args.Error(0)
+//}
+//
+//func (m *mockedTaskHandle) Status() (executor.TaskState, *executor.Status) {
+//	args := m.Called()
+//	return args.Get(0).(executor.TaskState),
+//		args.Get(1).(*executor.Status)
+//}
+//
+//func (m *mockedTaskHandle) Wait(timeoutMs int) bool {
+//	args := m.Called(timeoutMs)
+//	return args.Bool(0)
+//}
+//
+//type mockedExecutor struct {
+//	mock.Mock
+//}
+//
+//func (m *mockedExecutor) Execute(command string) (executor.Task, error) {
+//	args := m.Called(command)
+//	return args.Get(0).(executor.Task), args.Error(1)
+//}
 
 const (
 	mutilate_path = "/usr/bin/local/mutilate"
@@ -70,8 +71,8 @@ type MutilateTestSuite struct {
 	defaultMutilateCommand string
 	defaultSlo             int
 
-	mExecutor *mockedExecutor
-	mHandle   *mockedTaskHandle
+	mExecutor *mocks.Executor
+	mHandle   *mocks.Task
 }
 
 func (suite *MutilateTestSuite) SetupTest() {
@@ -82,8 +83,8 @@ func (suite *MutilateTestSuite) SetupTest() {
 
 	suite.defaultSlo = 1000
 
-	suite.mExecutor = new(mockedExecutor)
-	suite.mHandle = new(mockedTaskHandle)
+	suite.mExecutor = new(mocks.Executor)
+	suite.mHandle = new(mocks.Task)
 }
 
 func (s *MutilateTestSuite) TestTuneMutilate() {
