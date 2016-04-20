@@ -6,7 +6,7 @@ before_install:
 - make deps
 script:
 - make lint
-- make test
+- make unit_test
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
 
