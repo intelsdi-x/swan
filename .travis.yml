@@ -7,3 +7,6 @@ before_install:
 script:
 - make lint
 - make test
+notifications:
+  slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
+
