@@ -58,12 +58,12 @@ func TestLocal(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
-				Convey("The task should be terminated and the task status should be -15", func() {
+				Convey("The task should be terminated and the task status should be 143", func() {
 					taskState, taskStatus := task.Status()
 
 					So(taskState, ShouldEqual, TERMINATED)
 					So(taskStatus, ShouldNotBeNil)
-					So(taskStatus.ExitCode, ShouldEqual, -15)
+					So(taskStatus.ExitCode, ShouldEqual, 143)
 				})
 			})
 
