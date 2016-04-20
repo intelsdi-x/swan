@@ -56,15 +56,23 @@ func (l Local) Execute(command string) (Task, error) {
 		// status handling for now.
 		cmd.Wait()
 
+		var exitCode int
+		// If Process exited on his own, show the exitStatus.
+		if (cmd.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
+			exitCode = (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
+		} else {
+			// Show what signal caused the termination.
+			exitCode = -int((cmd.ProcessState.Sys().(syscall.WaitStatus)).Signal())
+		}
+
 		log.Debug(
 			"Ended ", command,
 			" with output: ", stdout.String(),
 			" with err output: ", stderr.String(),
-			" with status code: ",
-			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			" with status code: ", exitCode)
 
 		statusChannel <- Status{
-			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
+			exitCode,
 			stdout.String(),
 			stderr.String(),
 		}
