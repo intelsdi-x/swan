@@ -1,15 +1,16 @@
 package sensitivity
 
-import "github.com/intelsdi-x/swan/pkg/workloads"
+import (
+	"github.com/intelsdi-x/swan/pkg/workloads"
+	"time"
+)
 
 // Configuration - set of parameters to controll the experiment.
 type Configuration struct {
 	// Given SLO for the experiment.
 	SLO int
-	// Tunning time in [s].
-	TuningTimeout int
 	// Each measurement duration in [s].
-	LoadDuration int
+	LoadDuration time.Duration
 	// Number of load points to test.
 	LoadPointsCount int
 }
@@ -99,7 +100,7 @@ func (e *Experiment) runTuning() error {
 	}
 	defer prTask.Stop()
 
-	e.targetLoad, err = e.lgForPr.Tune(e.conf.SLO, e.conf.TuningTimeout)
+	e.targetLoad, err = e.lgForPr.Tune(e.conf.SLO)
 	if err != nil {
 		e.targetLoad = -1
 		return err
