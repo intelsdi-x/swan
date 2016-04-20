@@ -45,7 +45,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			})
 
 			Convey("Wait 1 second for memcached to init", func() {
-				isTerminated := task.Wait(1)
+				isTerminated := task.Wait(1000)
 
 				Convey("Memcached should be still running", func() {
 					task.Stop()
