@@ -1,7 +1,7 @@
 package dummy
 
 // Dummy class serves as fill code to exercise test and linting.
-type Dummy struct {}
+type Dummy struct{}
 
 // NewDummy returns a Dummy object.
 func NewDummy() *Dummy {
