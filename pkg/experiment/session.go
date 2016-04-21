@@ -2,20 +2,20 @@ package experiment
 
 import "github.com/nu7hatch/gouuid"
 
-type Session struct {
+type session struct {
 	UUID    string
 	Name    string
 	WorkDir string
 }
 
-func sessionNew() Session {
-	session, err := uuid.NewV4()
+func sessionNew() session {
+	s, err := uuid.NewV4()
 	if err != nil {
-		return Session{}
+		return session{}
 	}
-	return Session{
-		UUID:    session.String(),
-		Name:    session.String(),
+	return session{
+		UUID:    s.String(),
+		Name:    s.String(),
 		WorkDir: "",
 	}
 }

@@ -9,9 +9,9 @@ import (
 func (e *Experiment) mkExperimentDir() error {
 	e.startingDirectory, _ = os.Getwd()
 	if len(e.conf.WorkingDirectory) > 0 {
-		e.experimentDirectory = e.conf.WorkingDirectory + "/" + e.Session.Name
+		e.experimentDirectory = e.conf.WorkingDirectory + "/" + e.session.Name
 	} else {
-		e.experimentDirectory = e.startingDirectory + "/" + e.Session.Name
+		e.experimentDirectory = e.startingDirectory + "/" + e.session.Name
 	}
 	err := os.MkdirAll(e.experimentDirectory, 0777)
 	if err != nil {
