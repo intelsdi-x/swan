@@ -20,7 +20,7 @@ func (e *Experiment) logInitialize() error {
 		os.Chdir(e.startingDirectory)
 		return errors.New("Failed to create master log file")
 	}
-	e.logger.Println("Starting experiment with uuid: ", e.Session.Name)
+	e.logger.Println("Starting experiment with uuid: ", e.session.Name)
 	return err
 }
 

@@ -8,24 +8,24 @@ import (
 	swan "github.com/intelsdi-x/swan/pkg/experiment"
 )
 
-var phase_run_called int
+var phaseRunCalled int
 
-type SamplePhase struct {
+type samplePhase struct {
 	name    string
 	reps    int
 	called  *int
 	results []float64
 }
 
-func (p SamplePhase) Name() string {
+func (p samplePhase) Name() string {
 	return p.name
 }
 
-func (p SamplePhase) Repetitions() int {
+func (p samplePhase) Repetitions() int {
 	return p.reps
 }
 
-func (p SamplePhase) Run() (float64, error) {
+func (p samplePhase) Run() (float64, error) {
 	(*p.called)++
 	//Create log/output in current directory
 	file, err := os.Create(p.name + "__" + strconv.FormatInt(int64(*p.called), 10) + ".log")
@@ -45,16 +45,16 @@ func main() {
 
 	var phases []swan.Phase
 
-	expConf := swan.ExperimentConfiguration{
+	expConf := swan.InputConfiguration{
 		MaxVariance:      1,
 		WorkingDirectory: "/tmp",
 	}
 
-	samplePhase := &SamplePhase{
+	samplePhase := &samplePhase{
 		name:    "exp_ph_01",
 		reps:    5,
 		results: []float64{12.5, 1.9, 0, 4.7, 9.0},
-		called:  &phase_run_called,
+		called:  &phaseRunCalled,
 	}
 
 	phases = append(phases, samplePhase)
