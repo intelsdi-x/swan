@@ -9,6 +9,6 @@ package experiment
 // Run() - which will run a phase measurements.
 type Phase interface {
 	Name() string
-	Run() (float64, error)
+	Run() error
 	Repetitions() int
 }
