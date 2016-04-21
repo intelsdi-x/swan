@@ -56,12 +56,12 @@ const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
+	sync.Mutex
 	cmdHandler *exec.Cmd
 	stdout     *bytes.Buffer
 	stderr     *bytes.Buffer
 
 	killTimeout time.Duration
-	mutex       *sync.Mutex
 }
 
 // newlocalTask returns a localTask instance.
@@ -72,7 +72,6 @@ func newlocalTask(cmdHandler *exec.Cmd,
 		stdout:      stdout,
 		stderr:      stderr,
 		killTimeout: killTimeout,
-		mutex:       &sync.Mutex{},
 	}
 	return t
 }
@@ -80,15 +79,15 @@ func newlocalTask(cmdHandler *exec.Cmd,
 // isTerminated checks if ProcessState is not nil.
 // ProcessState contains information about an exited process,
 // available after successful call to Wait or Run.
-func (task localTask) isTerminated() bool {
+func (task *localTask) isTerminated() bool {
 	return task.cmdHandler.ProcessState != nil
 }
 
-func (task localTask) getPid() int {
+func (task *localTask) getPid() int {
 	return task.cmdHandler.Process.Pid
 }
 
-func (task localTask) getExitCode() int {
+func (task *localTask) getExitCode() int {
 	if !task.isTerminated() {
 		panic("Exit code is not available until the task terminated.")
 	}
@@ -101,7 +100,7 @@ func (task localTask) getExitCode() int {
 	return 128 + int((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Signal())
 }
 
-func (task localTask) createStatus() *Status {
+func (task *localTask) createStatus() *Status {
 	if !task.isTerminated() {
 		return nil
 	}
@@ -113,18 +112,10 @@ func (task localTask) createStatus() *Status {
 	}
 }
 
-func (task localTask) killTask(sig syscall.Signal) error {
-	signalStr := "custom signal"
-	switch sig {
-	case syscall.SIGTERM:
-		signalStr = "SIGTERM"
-	case syscall.SIGKILL:
-		signalStr = "SIGKILL"
-	}
-
+func (task *localTask) killTask(sig syscall.Signal) error {
 	// We signal the entire process group.
 	// The kill syscall interprets a negated PID N as the process group N belongs to.
-	log.Debug("Sending ", signalStr, " to PID ", -task.getPid())
+	log.Debug("Sending ", sig, " to PID ", -task.getPid())
 	return syscall.Kill(-task.getPid(), sig)
 }
 
@@ -174,12 +165,12 @@ func (task *localTask) Stop() error {
 	}
 
 	// No error, task terminated.
-	return err
+	return nil
 }
 
 // Status returns a state of the task. If task is terminated it returns the Status as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *Status) {
+func (task *localTask) Status() (TaskState, *Status) {
 	if !task.isTerminated() {
 		return RUNNING, nil
 	}
@@ -190,8 +181,8 @@ func (task localTask) Status() (TaskState, *Status) {
 // Wait blocks until process is terminated.
 func (task *localTask) Wait() error {
 	// This function needs to be performed only by one go routine at once.
-	task.mutex.Lock()
-	defer task.mutex.Unlock()
+	task.Lock()
+	defer task.Unlock()
 
 	if task.isTerminated() {
 		return nil
@@ -209,7 +200,7 @@ func (task *localTask) Wait() error {
 	}
 
 	log.Debug(
-		"Ended ", strings.Join(task.cmdHandler.Args, ""),
+		"Ended ", strings.Join(task.cmdHandler.Args, " "),
 		" with output in file: ", task.stdout.String(),
 		" with err output in file: ", task.stderr.String(),
 		" with status code: ", task.getExitCode())

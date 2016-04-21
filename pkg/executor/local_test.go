@@ -9,7 +9,7 @@ import (
 
 // TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
+	log.SetLevel(log.DebugLevel)
 
 	Convey("While using Local Shell", t, func() {
 		l := NewLocal()
