@@ -8,7 +8,7 @@ type session struct {
 	WorkDir string
 }
 
-func sessionNew() session {
+func newSession() session {
 	s, err := uuid.NewV4()
 	if err != nil {
 		return session{}

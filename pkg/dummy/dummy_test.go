@@ -1,8 +1,8 @@
 package dummy
 
 import (
-	"testing"
 	. "github.com/smartystreets/goconvey/convey"
+	"testing"
 )
 
 func TestDummy(t *testing.T) {
