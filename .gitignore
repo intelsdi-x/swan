@@ -11,3 +11,4 @@
 /build
 /vendor
 **/debug.test
+/misc/snap-on-docker/snap/snap-plugin-publisher-cassandra
