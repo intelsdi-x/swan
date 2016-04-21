@@ -37,48 +37,57 @@ func NewExperiment(
 	// mpatelcz TODO: Check if phase names are unique!
 
 	session := sessionNew()
-	return &Experiment{
+	e := &Experiment{
 		Session: session,
 		conf:    configuration,
 		phases:  phases,
 		results: make(map[string][]float64, len(phases)),
-	}, nil
+	}
+	err := e.mkExperimentDir()
+	if err != nil {
+		return nil, err
+	}
+	err = e.logInitialize()
+	if err != nil {
+		return nil, err
+	}
+	return e, nil
 }
 
 func (e *Experiment) Run() error {
 	var err error
 
-	e.logInitialize()
+	// Always perform cleanup on exit.
+	defer e.finalize()
+
 	for _, phase := range e.phases {
-		e.logger.Print("Phase: " + phase.Name())
 		for i := 0; i < phase.Repetitions(); i++ {
-			err = e.logMkPhase(phase.Name(), i)
+			e.logger.Printf("Starting Phase: '%s', iteration: %d\n",
+				phase.Name(), i)
+			err = e.mkPhaseDir(phase, i)
 			if err != nil {
-				e.logClose()
 				return err
 			}
-			e.logger.Printf("   Repetition %v\n", i)
 			result, err := phase.Run()
 			if err != nil {
 				e.logger.Print("Phase returned error ", err)
-				e.logClose()
 				return err
 			}
-			e.logger.Print("Phase OK")
+			e.logger.Printf("Phase ended with success. Returned: %2.4f\n", result)
 			e.results[phase.Name()] = append(e.results[phase.Name()], result)
 		}
 
 		variance := variance(e.results[phase.Name()])
 		e.logger.Printf("Phase repetitions variance %2.4f\n", variance)
+
 		if variance > e.conf.MaxVariance {
 			e.logger.Printf("Variance %2.4f exceeded limit %2.4f. Exiting\n",
 				variance, e.conf.MaxVariance)
-			e.logClose()
 			return errors.New("Phase max variance exceeded")
 		}
-		e.logger.Print("Phase variance OK")
+		e.logger.Printf("Phase variance %2.4f is within limit %2.4f\n",
+			variance, e.conf.MaxVariance)
 	}
 	e.logger.Println("Done with measurement.")
-	e.logClose()
 	return err
 }
