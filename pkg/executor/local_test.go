@@ -7,6 +7,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 func getLocalStdoutPath(task *localTask) (string, error) {
@@ -197,6 +198,30 @@ func TestLocal(t *testing.T) {
 					So(*taskStatus2, ShouldEqual, 0)
 				})
 			})
+		})
+
+		Convey("When we execute a task", func() {
+			task, _ := l.Execute("echo hello")
+			time.Sleep(time.Millisecond * 10)
+			status, exitCode := task.Status()
+
+			Convey("Status() should indicate that task is terminated even if Wait() is not called", func() {
+				So(exitCode, ShouldNotBeNil)
+				So(*exitCode, ShouldEqual, 0)
+				So(status, ShouldEqual, TERMINATED)
+			})
+
+			Convey("Status() should work as expected even if called multiple times", func() {
+				So(exitCode, ShouldNotBeNil)
+				So(*exitCode, ShouldEqual, 0)
+				So(status, ShouldEqual, TERMINATED)
+				secondStatus, secondExitCode := task.Status()
+				So(secondExitCode, ShouldNotBeNil)
+				So(*secondExitCode, ShouldEqual, 0)
+				So(secondStatus, ShouldEqual, TERMINATED)
+			})
+
+			task.Clean()
 		})
 	})
 }

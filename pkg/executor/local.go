@@ -90,6 +90,7 @@ func (l Local) Execute(command string) (Task, error) {
 		statusChannel <- Status{
 			&exitCode,
 		}
+		close(statusChannel)
 	}()
 
 	taskPid := taskPID(cmd.Process.Pid)
@@ -168,7 +169,7 @@ func (task *localTask) Clean() error {
 	return nil
 }
 
-func (task *localTask) completeTask(status Status) {
+func (task *localTask) finalizeTask(status Status) {
 	task.terminated = true
 	task.status = status
 	task.statusChannel = nil
@@ -189,19 +190,33 @@ func (task *localTask) Stop() error {
 	}
 
 	s := <-task.statusChannel
-	task.completeTask(s)
+	task.finalizeTask(s)
 
 	return err
 }
 
-// Status returns a state of the task. If task is terminated it returns the Status as a
+// Status returns a state of the task. If task is terminated it returns the exit code as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *int) {
+func (task *localTask) Status() (TaskState, *int) {
+	task.setRealTaskStatus()
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
 	return TERMINATED, task.status.ExitCode
+}
+
+// setRealTaskStatus determines if task is terminated or still running by querying a channel
+// if the task is terminated then correct state is set
+func (task *localTask) setRealTaskStatus() {
+	select {
+	case s := <-task.statusChannel:
+		if s.ExitCode != nil {
+			task.finalizeTask(s)
+		}
+	default:
+
+	}
 }
 
 // Wait blocks until process is terminated or timeout appeared.
@@ -213,7 +228,7 @@ func (task *localTask) Wait(timeoutMs int) bool {
 
 	if timeoutMs == 0 {
 		s := <-task.statusChannel
-		task.completeTask(s)
+		task.finalizeTask(s)
 		return true
 	}
 
@@ -222,7 +237,7 @@ func (task *localTask) Wait(timeoutMs int) bool {
 
 	select {
 	case s := <-task.statusChannel:
-		task.completeTask(s)
+		task.finalizeTask(s)
 	case <-time.After(timeoutDuration):
 		result = false
 	}
