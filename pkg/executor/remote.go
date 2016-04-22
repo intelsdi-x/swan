@@ -27,11 +27,15 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
 	statusCh := make(chan Status)
-	stdoutDir, err := ioutil.TempFile("/tmp/", "stdout")
+	pwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	stderrDir, err := ioutil.TempFile("/tmp/", "stderr")
+	stdoutPath, err := ioutil.TempFile(pwd, "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrPath, err := ioutil.TempFile(pwd, "stderr")
 	if err != nil {
 		return nil, err
 	}
@@ -66,71 +70,84 @@ func (remote Remote) Execute(command string) (Task, error) {
 		session.Stderr = &stderr
 		output, err := session.Output(command)
 
-		ioutil.WriteFile(stdoutDir.Name(), output, 600)
-		ioutil.WriteFile(stderrDir.Name(), stderr.Bytes(), 600)
+		ioutil.WriteFile(stdoutPath.Name(), output, ownerReadWrite)
+		ioutil.WriteFile(stderrPath.Name(), stderr.Bytes(), ownerReadWrite)
 
 		if err != nil {
 			exitCode = err.(*ssh.ExitError).Waitmsg.ExitStatus()
 		}
 		statusCh <- Status{&exitCode}
 	}()
-	remoteTask := newRemoteTask(session, statusCh, stdoutDir.Name(), stderrDir.Name())
+	stdoutFile, err := os.Open(stdoutPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := os.Open(stderrPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	remoteTask := newRemoteTask(session, statusCh, stdoutFile, stderrFile)
 	return remoteTask, nil
 }
 
+// RemoteTask implements Task interface.
+type remoteTask struct {
+	terminated bool
+	session    *ssh.Session
+	statusCh   chan Status
+	status     Status
+	stdoutFile *os.File
+	stderrFile *os.File
+}
+
+// NewRemoteTask returns a RemoteTask instance.
+func newRemoteTask(session *ssh.Session, statusCh chan Status, stdoutFile *os.File, stderrFile *os.File) *remoteTask {
+	return &remoteTask{
+		false,
+		session,
+		statusCh,
+		Status{},
+		stdoutFile,
+		stderrFile,
+	}
+}
+
 // Stdout returns io.Reader to stdout file.
-func (task *remoteTask) Stdout() (io.Reader, error) {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
-		return nil, err
-	}
-	stdoutFile, err := os.Open(task.stdoutDir)
-	if err != nil {
-		return nil, err
-	}
-	return io.Reader(stdoutFile), nil
+func (task *remoteTask) Stdout() io.Reader {
+	r := io.Reader(task.stdoutFile)
+	return r
 }
 
 // Stderr returns io.Reader to stderr file.
-func (task *remoteTask) Stderr() (io.Reader, error) {
-	if _, err := os.Stat(task.stderrDir); err != nil {
-		return nil, err
-	}
-	stderrFile, err := os.Open(task.stderrDir)
-	if err != nil {
-		return nil, err
-	}
-	return io.Reader(stderrFile), nil
+func (task *remoteTask) Stderr() io.Reader {
+	r := io.Reader(task.stderrFile)
+	return r
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.
 func (task *remoteTask) Clean() error {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
+	//TODO: fix errors returned
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
 		return err
 	}
-	if _, err := os.Stat(task.stderrDir); err != nil {
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
 		return err
 	}
-	if err := os.Remove(task.stdoutDir); err != nil {
+	err := task.stdoutFile.Close()
+	if err != nil {
 		return err
 	}
-	if err := os.Remove(task.stderrDir); err != nil {
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	err = task.stderrFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (task *remoteTask) GetStdoutDir() (string, error) {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
-		return "", err
-	}
-	return task.stdoutDir, nil
-}
-
-func (task *remoteTask) GetStderrDir() (string, error) {
-	if _, err := os.Stat(task.stderrDir); err != nil {
-		return "", err
-	}
-	return task.stderrDir, nil
 }
 
 // Stop terminates the remote task.
@@ -181,28 +198,6 @@ func (task *remoteTask) Wait(timeoutMs int) bool {
 	}
 
 	return result
-}
-
-// RemoteTask implements Task interface.
-type remoteTask struct {
-	terminated bool
-	session    *ssh.Session
-	statusCh   chan Status
-	status     Status
-	stdoutDir  string
-	stderrDir  string
-}
-
-// NewRemoteTask returns a RemoteTask instance.
-func newRemoteTask(session *ssh.Session, statusCh chan Status, stdoutDir string, stderrDir string) *remoteTask {
-	return &remoteTask{
-		false,
-		session,
-		statusCh,
-		Status{},
-		stdoutDir,
-		stderrDir,
-	}
 }
 
 // Set task as completed and clean channel

@@ -22,13 +22,9 @@ type Task interface {
 	// Clean removes files to which stdout and stderr of current task was written.
 	Clean() error
 	// Stdout returns reader for file to which current task was writing stdout.
-	Stdout() (io.Reader, error)
+	Stdout() io.Reader
 	// Stderr returns reader for file to which current task was writing stderr.
-	Stderr() (io.Reader, error)
-	// GetStdoutDir returns path to file to which current task was writing stdout.
-	GetStdoutDir() (string, error)
-	// GetStderrDir returns path to file to which current task was writing stderr.
-	GetStderrDir() (string, error)
+	Stderr() io.Reader
 	// Waits for the task completion.
 	// In case of 0 timeout it will be endlessly blocked.
 	// Returns false after timeout exceeds.

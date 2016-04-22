@@ -24,48 +24,6 @@ func (_m *Task) Clean() error {
 	return r0
 }
 
-// GetStderrDir provides a mock function with given fields:
-func (_m *Task) GetStderrDir() (string, error) {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetStdoutDir provides a mock function with given fields:
-func (_m *Task) GetStdoutDir() (string, error) {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Status provides a mock function with given fields:
 func (_m *Task) Status() (executor.TaskState, *int) {
 	ret := _m.Called()
@@ -90,7 +48,7 @@ func (_m *Task) Status() (executor.TaskState, *int) {
 }
 
 // Stderr provides a mock function with given fields:
-func (_m *Task) Stderr() (io.Reader, error) {
+func (_m *Task) Stderr() io.Reader {
 	ret := _m.Called()
 
 	var r0 io.Reader
@@ -102,18 +60,11 @@ func (_m *Task) Stderr() (io.Reader, error) {
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Stdout provides a mock function with given fields:
-func (_m *Task) Stdout() (io.Reader, error) {
+func (_m *Task) Stdout() io.Reader {
 	ret := _m.Called()
 
 	var r0 io.Reader
@@ -125,14 +76,7 @@ func (_m *Task) Stdout() (io.Reader, error) {
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Stop provides a mock function with given fields:

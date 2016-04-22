@@ -28,11 +28,15 @@ func NewLocal() Local {
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
-	stdoutDir, err := ioutil.TempFile("/tmp/", "stdout")
+	pwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	stderrDir, err := ioutil.TempFile("/tmp/", "stderr")
+	stdoutPath, err := ioutil.TempFile(pwd, "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrPath, err := ioutil.TempFile(pwd, "stderr")
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +49,6 @@ func (l Local) Execute(command string) (Task, error) {
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Setting Buffer as io.Writer for Command output.
-	// TODO: Write to temporary files instead of keeping in memory.
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -78,12 +80,12 @@ func (l Local) Execute(command string) (Task, error) {
 
 		log.Debug(
 			"Ended ", command,
-			" with output: ", stdout.String(),
-			" with err output: ", stderr.String(),
+			" with output in file: ", stdoutPath.Name(),
+			" with err output in file: ", stderrPath.Name(),
 			" with status code: ", exitCode)
 
-		ioutil.WriteFile(stdoutDir.Name(), stdout.Bytes(), 600)
-		ioutil.WriteFile(stderrDir.Name(), stderr.Bytes(), 600)
+		ioutil.WriteFile(stdoutPath.Name(), stdout.Bytes(), ownerReadWrite)
+		ioutil.WriteFile(stderrPath.Name(), stderr.Bytes(), ownerReadWrite)
 
 		statusChannel <- Status{
 			&exitCode,
@@ -92,64 +94,17 @@ func (l Local) Execute(command string) (Task, error) {
 
 	taskPid := taskPID(cmd.Process.Pid)
 
-	t := newlocalTask(taskPid, statusChannel, stdoutDir.Name(), stderrDir.Name())
+	stdoutFile, err := os.Open(stdoutPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := os.Open(stderrPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	t := newlocalTask(taskPid, statusChannel, stdoutFile, stderrFile)
 
 	return t, err
-}
-
-// Stdout returns io.Reader to stdout file.
-func (task *localTask) Stdout() (io.Reader, error) {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
-		return nil, err
-	}
-	stdoutFile, err := os.Open(task.stdoutDir)
-	if err != nil {
-		return nil, err
-	}
-	return io.Reader(stdoutFile), nil
-}
-
-// Stderr returns io.Reader to stderr file.
-func (task *localTask) Stderr() (io.Reader, error) {
-	if _, err := os.Stat(task.stderrDir); err != nil {
-		return nil, err
-	}
-	stderrFile, err := os.Open(task.stderrDir)
-	if err != nil {
-		return nil, err
-	}
-	return io.Reader(stderrFile), nil
-}
-
-// Clean removes files to which stdout and stderr of executed command was written.
-func (task *localTask) Clean() error {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
-		return err
-	}
-	if _, err := os.Stat(task.stderrDir); err != nil {
-		return err
-	}
-	if err := os.Remove(task.stdoutDir); err != nil {
-		return err
-	}
-	if err := os.Remove(task.stderrDir); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (task *localTask) GetStdoutDir() (string, error) {
-	if _, err := os.Stat(task.stdoutDir); err != nil {
-		return "", err
-	}
-	return task.stdoutDir, nil
-}
-
-func (task *localTask) GetStderrDir() (string, error) {
-	if _, err := os.Stat(task.stderrDir); err != nil {
-		return "", err
-	}
-	return task.stderrDir, nil
 }
 
 // localTask implements Task interface.
@@ -158,21 +113,59 @@ type localTask struct {
 	statusChannel chan Status
 	status        Status
 	terminated    bool
-	stdoutDir     string
-	stderrDir     string
+	stdoutFile    *os.File
+	stderrFile    *os.File
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(pid taskPID, statusChannel chan Status, stdoutDir string, stderrDir string) *localTask {
+func newlocalTask(pid taskPID, statusChannel chan Status, stdoutFile *os.File, stderrFile *os.File) *localTask {
 	t := &localTask{
 		pid,
 		statusChannel,
 		Status{},
 		false,
-		stdoutDir,
-		stderrDir,
+		stdoutFile,
+		stderrFile,
 	}
 	return t
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *localTask) Stdout() io.Reader {
+	r := io.Reader(task.stdoutFile)
+	return r
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *localTask) Stderr() io.Reader {
+	r := io.Reader(task.stderrFile)
+	return r
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *localTask) Clean() error {
+	//TODO: fix errors returned
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	err := task.stdoutFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	err = task.stderrFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (task *localTask) completeTask(status Status) {

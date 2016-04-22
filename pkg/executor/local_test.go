@@ -6,7 +6,22 @@ import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
+	"os"
 )
+
+func getLocalStdoutPath(task *localTask) (string, error) {
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stderrFile.Name(), nil
+}
+
+func getLocalStderrPath(task *localTask) (string, error) {
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stderrFile.Name(), nil
+}
 
 // TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
@@ -89,12 +104,23 @@ func TestLocal(t *testing.T) {
 					So(*taskStatus, ShouldEqual, 0)
 				})
 
-				stdoutReader, err := task.Stdout()
-				So(err, ShouldBeNil)
+				stdoutReader := task.Stdout()
 				data, err := ioutil.ReadAll(stdoutReader)
 				So(err, ShouldBeNil)
 				Convey("And command stdout needs to match 'output", func() {
 					So(string(data[:]), ShouldEqual, "output\n")
+				})
+				fileName, err := getLocalStdoutPath(task.(*localTask))
+				pwd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				fileInf, err := os.Stat(fileName)
+				Convey("before cleaning file should exist", func() {
+					So((pwd + "/" + fileInf.Name()), ShouldEqual, fileName)
+				})
+				task.Clean()
+				_, err = os.Stat(fileName)
+				Convey("after cleaning file should not exist", func() {
+					So(err, ShouldNotBeNil)
 				})
 			})
 		})
@@ -153,15 +179,13 @@ func TestLocal(t *testing.T) {
 					So(taskState2, ShouldEqual, TERMINATED)
 				})
 
-				stdoutReader, err := task.Stdout()
-				So(err, ShouldBeNil)
+				stdoutReader := task.Stdout()
 				data, err := ioutil.ReadAll(stdoutReader)
 				So(err, ShouldBeNil)
 				Convey("The first command stdout needs to match 'output1", func() {
 					So(string(data[:]), ShouldEqual, "output1\n")
 				})
-				stdoutReader, err = task2.Stdout()
-				So(err, ShouldBeNil)
+				stdoutReader = task2.Stdout()
 				data, err = ioutil.ReadAll(stdoutReader)
 				So(err, ShouldBeNil)
 				Convey("The second command stdout needs to match 'output2", func() {
