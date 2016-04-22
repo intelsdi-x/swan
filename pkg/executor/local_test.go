@@ -5,7 +5,24 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
+	"os"
+	"time"
 )
+
+func getLocalStdoutPath(task *localTask) (string, error) {
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stderrFile.Name(), nil
+}
+
+func getLocalStderrPath(task *localTask) (string, error) {
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stderrFile.Name(), nil
+}
 
 // TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
@@ -57,7 +74,7 @@ func TestLocal(t *testing.T) {
 				Convey("The task should be terminated and the task status should be -15", func() {
 					taskState, taskStatus := task.Status()
 					So(taskState, ShouldEqual, TERMINATED)
-					So(taskStatus.ExitCode, ShouldEqual, -15)
+					So(*taskStatus, ShouldEqual, -15)
 				})
 			})
 		})
@@ -85,11 +102,26 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 0", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 0)
+					So(*taskStatus, ShouldEqual, 0)
 				})
 
+				stdoutReader := task.Stdout()
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
 				Convey("And command stdout needs to match 'output", func() {
-					So(taskStatus.Stdout, ShouldEqual, "output\n")
+					So(string(data[:]), ShouldEqual, "output\n")
+				})
+				fileName, err := getLocalStdoutPath(task.(*localTask))
+				pwd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				fileInf, err := os.Stat(fileName)
+				Convey("before cleaning file should exist", func() {
+					So((pwd + "/" + fileInf.Name()), ShouldEqual, fileName)
+				})
+				task.Clean()
+				_, err = os.Stat(fileName)
+				Convey("after cleaning file should not exist", func() {
+					So(err, ShouldNotBeNil)
 				})
 			})
 		})
@@ -117,7 +149,7 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 127", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(*taskStatus, ShouldEqual, 127)
 				})
 			})
 		})
@@ -148,16 +180,48 @@ func TestLocal(t *testing.T) {
 					So(taskState2, ShouldEqual, TERMINATED)
 				})
 
-				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+				stdoutReader := task.Stdout()
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
+				Convey("The first command stdout needs to match 'output1", func() {
+					So(string(data[:]), ShouldEqual, "output1\n")
+				})
+				stdoutReader = task2.Stdout()
+				data, err = ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
+				Convey("The second command stdout needs to match 'output2", func() {
+					So(string(data[:]), ShouldEqual, "output2\n")
 				})
 
 				Convey("Both exit statuses should be 0", func() {
-					So(taskStatus1.ExitCode, ShouldEqual, 0)
-					So(taskStatus2.ExitCode, ShouldEqual, 0)
+					So(*taskStatus1, ShouldEqual, 0)
+					So(*taskStatus2, ShouldEqual, 0)
 				})
 			})
+		})
+
+		Convey("When we execute a task", func() {
+			task, _ := l.Execute("echo hello")
+			time.Sleep(time.Millisecond * 10)
+			status, exitCode := task.Status()
+
+			Convey("Status() should indicate that task is terminated even if Wait() is not called", func() {
+				So(exitCode, ShouldNotBeNil)
+				So(*exitCode, ShouldEqual, 0)
+				So(status, ShouldEqual, TERMINATED)
+			})
+
+			Convey("Status() should work as expected even if called multiple times", func() {
+				So(exitCode, ShouldNotBeNil)
+				So(*exitCode, ShouldEqual, 0)
+				So(status, ShouldEqual, TERMINATED)
+				secondStatus, secondExitCode := task.Status()
+				So(secondExitCode, ShouldNotBeNil)
+				So(*secondExitCode, ShouldEqual, 0)
+				So(secondStatus, ShouldEqual, TERMINATED)
+			})
+
+			task.Clean()
 		})
 	})
 }

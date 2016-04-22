@@ -3,6 +3,9 @@ package executor
 import (
 	"bytes"
 	log "github.com/Sirupsen/logrus"
+	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -25,6 +28,18 @@ func NewLocal() Local {
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	stdoutPath, err := ioutil.TempFile(pwd, "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrPath, err := ioutil.TempFile(pwd, "stderr")
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debug("Starting ", command)
 
@@ -34,14 +49,12 @@ func (l Local) Execute(command string) (Task, error) {
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Setting Buffer as io.Writer for Command output.
-	// TODO: Write to temporary files instead of keeping in memory.
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -67,20 +80,30 @@ func (l Local) Execute(command string) (Task, error) {
 
 		log.Debug(
 			"Ended ", command,
-			" with output: ", stdout.String(),
-			" with err output: ", stderr.String(),
+			" with output in file: ", stdoutPath.Name(),
+			" with err output in file: ", stderrPath.Name(),
 			" with status code: ", exitCode)
 
+		ioutil.WriteFile(stdoutPath.Name(), stdout.Bytes(), ownerReadWrite)
+		ioutil.WriteFile(stderrPath.Name(), stderr.Bytes(), ownerReadWrite)
+
 		statusChannel <- Status{
-			exitCode,
-			stdout.String(),
-			stderr.String(),
+			&exitCode,
 		}
+		close(statusChannel)
 	}()
 
 	taskPid := taskPID(cmd.Process.Pid)
 
-	t := newlocalTask(taskPid, statusChannel)
+	stdoutFile, err := os.Open(stdoutPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := os.Open(stderrPath.Name())
+	if err != nil {
+		return nil, err
+	}
+	t := newlocalTask(taskPid, statusChannel, stdoutFile, stderrFile)
 
 	return t, err
 }
@@ -91,20 +114,62 @@ type localTask struct {
 	statusChannel chan Status
 	status        Status
 	terminated    bool
+	stdoutFile    *os.File
+	stderrFile    *os.File
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(pid taskPID, statusChannel chan Status) *localTask {
+func newlocalTask(pid taskPID, statusChannel chan Status, stdoutFile *os.File, stderrFile *os.File) *localTask {
 	t := &localTask{
 		pid,
 		statusChannel,
 		Status{},
 		false,
+		stdoutFile,
+		stderrFile,
 	}
 	return t
 }
 
-func (task *localTask) completeTask(status Status) {
+// Stdout returns io.Reader to stdout file.
+func (task *localTask) Stdout() io.Reader {
+	r := io.Reader(task.stdoutFile)
+	return r
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *localTask) Stderr() io.Reader {
+	r := io.Reader(task.stderrFile)
+	return r
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *localTask) Clean() error {
+	//TODO: fix errors returned
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	err := task.stdoutFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	err = task.stderrFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (task *localTask) finalizeTask(status Status) {
 	task.terminated = true
 	task.status = status
 	task.statusChannel = nil
@@ -125,19 +190,33 @@ func (task *localTask) Stop() error {
 	}
 
 	s := <-task.statusChannel
-	task.completeTask(s)
+	task.finalizeTask(s)
 
 	return err
 }
 
-// Status returns a state of the task. If task is terminated it returns the Status as a
+// Status returns a state of the task. If task is terminated it returns the exit code as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *Status) {
+func (task *localTask) Status() (TaskState, *int) {
+	task.setRealTaskStatus()
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.status.ExitCode
+}
+
+// setRealTaskStatus determines if task is terminated or still running by querying a channel
+// if the task is terminated then correct state is set
+func (task *localTask) setRealTaskStatus() {
+	select {
+	case s := <-task.statusChannel:
+		if s.ExitCode != nil {
+			task.finalizeTask(s)
+		}
+	default:
+
+	}
 }
 
 // Wait blocks until process is terminated or timeout appeared.
@@ -149,7 +228,7 @@ func (task *localTask) Wait(timeoutMs int) bool {
 
 	if timeoutMs == 0 {
 		s := <-task.statusChannel
-		task.completeTask(s)
+		task.finalizeTask(s)
 		return true
 	}
 
@@ -158,7 +237,7 @@ func (task *localTask) Wait(timeoutMs int) bool {
 
 	select {
 	case s := <-task.statusChannel:
-		task.completeTask(s)
+		task.finalizeTask(s)
 	case <-time.After(timeoutDuration):
 		result = false
 	}
