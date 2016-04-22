@@ -1,5 +1,11 @@
 # memcached workload
 
+## Swan Team Changes
+
+### Mutilate:
+Added option --swanpercentile (-X) that accepts percentile and
+returns maximum latency per percentile (default: 99.9).
+
 ## Install dependencies
 
 From repo:

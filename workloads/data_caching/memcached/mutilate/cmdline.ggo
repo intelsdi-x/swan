@@ -62,6 +62,9 @@ faster than 1000us)." string typestr="N:X"
 option "scan" - "Scan latency across QPS rates from min to max."
        string typestr="min:max:step"
 
+text "\nSwan Options"
+option "swanpercentile" X "Adds maximum latency per given percentile" double default="99.9"
+
 text "\nAgent-mode options:"
 option "agentmode" A "Run client in agent mode."
 option "agent" a "Enlist remote agent." string typestr="host" multiple

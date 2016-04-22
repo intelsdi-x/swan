@@ -10,6 +10,8 @@ typedef struct {
   int qps;
   int records;
 
+  double swanpercentile;
+
   bool binary;
   bool sasl;
   char username[32];
