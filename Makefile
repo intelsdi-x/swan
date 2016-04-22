@@ -30,7 +30,7 @@ test:
 # building
 build:
 	mkdir -p build
-	(cd build; go build ../cmds/...)
+	(cd build; go build ../experiments/...; go build ../cmds/...)
 
 run: memcache
 
