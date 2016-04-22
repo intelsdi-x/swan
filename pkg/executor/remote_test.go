@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
@@ -25,7 +24,7 @@ func getRemoteStderrPath(task *remoteTask) (string, error) {
 }
 
 func TestRemote(t *testing.T) {
-	Convey("Creating a client configuration for the test user", t, func() {
+	SkipConvey("Creating a client configuration for the test user", t, func() {
 		user, err := user.Current()
 		So(err, ShouldBeNil)
 		Convey("Using Remote Shell with not existing path to key file", func() {

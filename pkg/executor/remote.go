@@ -103,14 +103,14 @@ func newRemoteTask(session *ssh.Session, statusCh chan Status, stdoutFile *os.Fi
 
 // Stdout returns io.Reader to stdout file.
 func (task *remoteTask) Stdout() io.Reader {
-	r := io.Reader(task.stdoutFile)
-	return r
+	task.stdoutFile.Seek(0, os.SEEK_SET)
+	return task.stdoutFile
 }
 
 // Stderr returns io.Reader to stderr file.
 func (task *remoteTask) Stderr() io.Reader {
-	r := io.Reader(task.stderrFile)
-	return r
+	task.stderrFile.Seek(0, os.SEEK_SET)
+	return task.stderrFile
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.

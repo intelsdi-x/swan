@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -44,7 +43,6 @@ func (l Local) Execute(command string) (Task, error) {
 	log.Debug("Starting ", command)
 
 	cmd := exec.Command("sh", "-c", command)
-	fmt.Print(stdoutFile.Name())
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -119,15 +117,14 @@ func newlocalTask(pid taskPID, statusChannel chan Status, stdoutFile *os.File, s
 
 // Stdout returns io.Reader to stdout file.
 func (task *localTask) Stdout() io.Reader {
-	fmt.Print("X", task.stdoutFile.Name())
-	r := io.Reader(task.stdoutFile)
-	return r
+	task.stdoutFile.Seek(0, os.SEEK_SET)
+	return task.stdoutFile
 }
 
 // Stderr returns io.Reader to stderr file.
 func (task *localTask) Stderr() io.Reader {
-	r := io.Reader(task.stderrFile)
-	return r
+	task.stderrFile.Seek(0, os.SEEK_SET)
+	return task.stderrFile
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.
