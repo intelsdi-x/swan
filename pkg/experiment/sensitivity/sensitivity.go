@@ -71,7 +71,7 @@ func (e *Experiment) runMeasurement(
 	if err != nil {
 		return 0, err
 	}
-	sli, err = e.lgForPr.Load(qps, e.conf.LoadDuration)
+	_, sli, err = e.lgForPr.Load(qps, e.conf.LoadDuration)
 
 	agrTask.Stop()
 	return sli, err
@@ -100,7 +100,7 @@ func (e *Experiment) runTuning() error {
 	}
 	defer prTask.Stop()
 
-	e.targetLoad, err = e.lgForPr.Tune(e.conf.SLO)
+	e.targetLoad, _, err = e.lgForPr.Tune(e.conf.SLO)
 	if err != nil {
 		e.targetLoad = -1
 		return err

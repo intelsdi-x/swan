@@ -39,7 +39,7 @@ func TestExperiment(t *testing.T) {
 			mockedLcLauncher.On("Launch").Return(mockedLcTask, nil).Once()
 
 			Convey("But load generator can't be tuned", func() {
-				mockedLoadGenerator.On("Tune", 1).Return(0, errors.New("Load generator can't be tuned"))
+				mockedLoadGenerator.On("Tune", 1).Return(0, 0, errors.New("Load generator can't be tuned"))
 
 				loadGeneratorTuningError := sensitivityExperiment.Run()
 				So(loadGeneratorTuningError.Error(), ShouldEqual, "Load generator can't be tuned")
@@ -49,7 +49,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("And load generator is tuned", func() {
-				mockedLoadGenerator.On("Tune", 1).Return(2, nil)
+				mockedLoadGenerator.On("Tune", 1).Return(2, 2, nil)
 
 				Convey("But production task can't be launched during measuring", func() {
 					mockedLcLauncher.On("Launch").Return(
@@ -90,7 +90,7 @@ func TestExperiment(t *testing.T) {
 
 						Convey("But load testing fails", func() {
 							mockedLoadGenerator.On("Load", 1, 1*time.Second).
-								Return(0, errors.New("Load testing fails"))
+								Return(0, 0, errors.New("Load testing fails"))
 
 							aggressorLaunchError := sensitivityExperiment.Run()
 							So(aggressorLaunchError.Error(), ShouldEqual, "Load testing fails")
@@ -100,7 +100,7 @@ func TestExperiment(t *testing.T) {
 						})
 
 						Convey("And load testing is successful", func() {
-							mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, nil)
+							mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, 222, nil)
 
 							thereIsNoError := sensitivityExperiment.Run()
 							So(thereIsNoError, ShouldBeNil)

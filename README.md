@@ -49,6 +49,7 @@ For Swan Workload integration tests see [README](src/pkg/workloads/integration/R
 ### Mock generation
 
 Mock generation is done by Mockery tool.
-It's not deterministic, so we are vendoring our mocks.
+Sometimes Mockery is not able to resolve all imports in file correctly.
+Developer needs to use it manually, that's why we are vendoring our mocks.
 
-To generate mocks go to desired package and ```mockery -name ".*" -case underscoer```
+To generate mocks go to desired package and ```mockery -name ".*" -case underscore```
