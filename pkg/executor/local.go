@@ -56,11 +56,11 @@ const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
-	sync.Mutex
-	cmdHandler *exec.Cmd
-	stdout     *bytes.Buffer
-	stderr     *bytes.Buffer
-
+	l           Local
+	waitMutex   sync.Mutex
+	cmdHandler  *exec.Cmd
+	stdout      *bytes.Buffer
+	stderr      *bytes.Buffer
 	killTimeout time.Duration
 }
 
@@ -87,26 +87,13 @@ func (task *localTask) getPid() int {
 	return task.cmdHandler.Process.Pid
 }
 
-func (task *localTask) getExitCode() int {
-	if !task.isTerminated() {
-		panic("Exit code is not available until the task terminated.")
-	}
-
-	// If Process exited on his own, show the exitStatus.
-	if (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
-		return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
-	}
-	// Show what signal caused the termination. (in form of 128 + signal code)
-	return 128 + int((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).Signal())
-}
-
 func (task *localTask) createStatus() *Status {
 	if !task.isTerminated() {
 		return nil
 	}
 
 	return &Status{
-		task.getExitCode(),
+		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
 		task.stdout.String(),
 		task.stderr.String(),
 	}
@@ -121,47 +108,29 @@ func (task *localTask) killTask(sig syscall.Signal) error {
 
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
+	// Check quickly if the process ended its work. Ignore status and potential errors.
+	task.Wait(1 * time.Microsecond)
+
 	if task.isTerminated() {
 		return nil
 	}
 
-	// Sending sigterm signal to local task.
-	err := task.killTask(syscall.SIGTERM)
+	// Sending SIGKILL signal to local task.
+	// TODO: Add PID namespace to handle orphan tasks properly.
+	err := task.killTask(syscall.SIGKILL)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	// Wait for task termination with timeout.
-	waitErrChannel := make(chan error, 1)
-	go func() {
-		waitErrChannel <- task.Wait()
-	}()
+	isTerminated, taskErr := task.Wait(killTimeout)
+	if taskErr != nil {
+		log.Error(taskErr.Error())
+		return taskErr
+	}
 
-	select {
-	case taskErr := <-waitErrChannel:
-		if taskErr != nil {
-			log.Error(taskErr.Error())
-			return taskErr
-		}
-	case <-time.After(task.killTimeout):
-		// We need to send SIGKILL to the entire process group, since SIGTERM was not enough.
-		err := task.killTask(syscall.SIGKILL)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
-		// Wait again with the timeout.
-		select {
-		case taskErr := <-waitErrChannel:
-			if taskErr != nil {
-				log.Error(taskErr.Error())
-				return taskErr
-			}
-		case <-time.After(task.killTimeout):
-			return errors.New("Cannot kill -9 task")
-		}
+	if !isTerminated {
+		return errors.New("Cannot kill -9 task")
 	}
 
 	// No error, task terminated.
@@ -171,6 +140,9 @@ func (task *localTask) Stop() error {
 // Status returns a state of the task. If task is terminated it returns the Status as a
 // second item in tuple. Otherwise returns nil.
 func (task *localTask) Status() (TaskState, *Status) {
+	// Check quickly if the process ended its work. Ignore status and potential errors.
+	task.Wait(1 * time.Microsecond)
+
 	if !task.isTerminated() {
 		return RUNNING, nil
 	}
@@ -179,16 +151,16 @@ func (task *localTask) Status() (TaskState, *Status) {
 }
 
 // Wait blocks until process is terminated.
-func (task *localTask) Wait() error {
-	// This function needs to be performed only by one go routine at once.
-	task.Lock()
-	defer task.Unlock()
-
+func (task *localTask) wait() error {
 	if task.isTerminated() {
 		return nil
 	}
 
-	// Wait for task completion.
+	// This function needs to be performed only by one go routine at once.
+	task.waitMutex.Lock()
+	defer task.waitMutex.Unlock()
+
+	// Wait for task co mpletion.
 	// NOTE: Wait() returns an error. We grab the process state in any case
 	// (success or failure) below, so the error object matters less in the
 	// status handling for now.
@@ -203,7 +175,41 @@ func (task *localTask) Wait() error {
 		"Ended ", strings.Join(task.cmdHandler.Args, " "),
 		" with output in file: ", task.stdout.String(),
 		" with err output in file: ", task.stderr.String(),
-		" with status code: ", task.getExitCode())
+		" with status code: ",
+		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 
 	return nil
+}
+
+// Wait waits for the command to finish with the given timeout time.
+// In case of timeout == 0 there is no timeout for that.
+// It returns true if task is terminated.
+func (task *localTask) Wait(timeout time.Duration) (bool, error) {
+	if task.isTerminated() {
+		return true, nil
+	}
+
+	if timeout == 0 {
+		err := task.wait()
+		if err != nil {
+			return true, nil
+		}
+		return false, err
+	}
+
+	waitErrChannel := make(chan error, 1)
+	go func() {
+		waitErrChannel <- task.wait()
+	}()
+
+	select {
+	case err := <-waitErrChannel:
+		if err != nil {
+			return true, nil
+		}
+
+		return false, err
+	case <-time.After(timeout):
+		return false, nil
+	}
 }

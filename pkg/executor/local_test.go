@@ -35,9 +35,10 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
-				isTaskTerminated := WaitWithTimeout(task, 1*time.Microsecond)
+				isTaskTerminated, waitErr := task.Wait(1 * time.Microsecond)
 
 				Convey("The timeout should exceed and the task not terminated ", func() {
+					So(waitErr, ShouldBeNil)
 					So(isTaskTerminated, ShouldBeFalse)
 				})
 
@@ -58,12 +59,12 @@ func TestLocal(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
-				Convey("The task should be terminated and the task status should be 143", func() {
+				Convey("The task should be terminated and the task status should be -1", func() {
 					taskState, taskStatus := task.Status()
 
 					So(taskState, ShouldEqual, TERMINATED)
 					So(taskStatus, ShouldNotBeNil)
-					So(taskStatus.ExitCode, ShouldEqual, 143)
+					So(taskStatus.ExitCode, ShouldEqual, -1)
 				})
 			})
 
@@ -71,7 +72,8 @@ func TestLocal(t *testing.T) {
 				waitErrChannel := make(chan error)
 				for i := 0; i < 5; i++ {
 					go func() {
-						waitErrChannel <- task.Wait()
+						_, err := task.Wait(0)
+						waitErrChannel <- err
 					}()
 				}
 
@@ -108,7 +110,11 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the task to terminate", func() {
-				task.Wait()
+				_, err := task.Wait(0)
+
+				Convey("There should be no error", func() {
+					So(err, ShouldBeNil)
+				})
 
 				taskState, taskStatus := task.Status()
 
@@ -134,7 +140,11 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the task to terminate", func() {
-				task.Wait()
+				_, err := task.Wait(0)
+
+				Convey("There should be no error", func() {
+					So(err, ShouldBeNil)
+				})
 
 				taskState, taskStatus := task.Status()
 
@@ -158,8 +168,13 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the tasks to terminate", func() {
-				task.Wait()
-				task2.Wait()
+				_, err := task.Wait(0)
+				_, err2 := task2.Wait(0)
+
+				Convey("There should be no errors", func() {
+					So(err, ShouldBeNil)
+					So(err2, ShouldBeNil)
+				})
 
 				taskState1, taskStatus1 := task.Status()
 				taskState2, taskStatus2 := task2.Status()

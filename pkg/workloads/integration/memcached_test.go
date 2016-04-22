@@ -48,11 +48,12 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			})
 
 			Convey("Wait 1 second for memcached to init", func() {
-				isTerminated := executor.WaitWithTimeout(task, 1*time.Second)
+				err, isTerminated := task.Wait(1 * time.Second)
 
 				Convey("Memcached should be still running", func() {
 					task.Stop()
 
+					So(err, ShouldBeNil)
 					So(isTerminated, ShouldBeFalse)
 				})
 
@@ -69,7 +70,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 
 					Convey("When we wait for netstat ", func() {
-						err := netstatTask.Wait()
+						err, _ := netstatTask.Wait(0)
 
 						Convey("There should be no error", func() {
 							So(err, ShouldBeNil)

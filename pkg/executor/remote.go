@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"time"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -87,16 +88,27 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 	return TERMINATED, &task.status
 }
 
-// Wait blocks until process is terminated or timeout appeared.
-func (task *remoteTask) Wait() error {
+// Wait waits for the command to finish with the given timeout time.
+// In case of timeout == nil there is no timeout for that.
+// It returns true if task is terminated.
+func (task *remoteTask) Wait(timeout time.Duration) (bool, error) {
 	if task.terminated {
-		return nil
+		return true, nil
 	}
 
-	s := <-task.statusCh
-	task.completeTask(s)
+	if timeout == 0 {
+		s := <-task.statusCh
+		task.completeTask(s)
+		return true, nil
+	}
 
-	return nil
+	select {
+	case s := <-task.statusCh:
+		task.completeTask(s)
+		return true, nil
+	case <-time.After(timeout):
+		return false, nil
+	}
 }
 
 // RemoteTask implements Task interface.

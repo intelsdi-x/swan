@@ -14,28 +14,6 @@ const (
 	TERMINATED
 )
 
-// WaitWithTimeout is a helper for waiting with a given timeout time.
-// It returns true if task was NOT timeouted.
-func WaitWithTimeout(task Task, timeout time.Duration) (result bool) {
-	result = false
-
-	waitErrChannel := make(chan error, 1)
-	go func() {
-		x := task.Wait()
-		waitErrChannel <- x
-	}()
-
-	select {
-	case err := <-waitErrChannel:
-		if err != nil {
-			result = true
-		}
-	case <-time.After(timeout):
-	}
-
-	return result
-}
-
 // Task represents a process which can be stopped or monitored.
 type Task interface {
 	// Stops a task.
@@ -43,6 +21,8 @@ type Task interface {
 	// Status returns a state of the task. If task is terminated it returns the Status as a
 	// second item in tuple. Otherwise returns nil.
 	Status() (TaskState, *Status)
-	// Wait does the blocking wait for the task completion.
-	Wait() error
+	// Wait does the blocking wait for the task completion in case of nil.
+	// Wait is a helper for waiting with a given timeout time.
+	// It returns true if task is terminated.
+	Wait(timeout time.Duration) (bool, error)
 }
