@@ -25,12 +25,12 @@ func (p samplePhase) Repetitions() int {
 	return p.reps
 }
 
-func (p samplePhase) Run() (float64, error) {
+func (p samplePhase) Run() error {
 	(*p.called)++
 	//Create log/output in current directory
 	file, err := os.Create(p.name + "__" + strconv.FormatInt(int64(*p.called), 10) + ".log")
 	if err != nil {
-		return 0, err
+		return err
 	}
 	message := "Sample output form phase " + p.name + "\n"
 	file.WriteString(message)
@@ -38,17 +38,12 @@ func (p samplePhase) Run() (float64, error) {
 		strconv.FormatFloat(p.results[(*p.called)-1], 'f', 4, 64) + "\n"
 	file.WriteString(message)
 	file.Close()
-	return p.results[(*p.called)-1], nil
+	return nil
 }
 
 func main() {
 
 	var phases []swan.Phase
-
-	expConf := swan.InputConfiguration{
-		MaxVariance:      1,
-		WorkingDirectory: "/tmp",
-	}
 
 	samplePhase := &samplePhase{
 		name:    "exp_ph_01",
@@ -59,7 +54,7 @@ func main() {
 
 	phases = append(phases, samplePhase)
 
-	exp, err := swan.NewExperiment(expConf, phases)
+	exp, err := swan.NewExperiment("SampleExperiment", phases, "/tmp")
 
 	if err != nil {
 
