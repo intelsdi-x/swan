@@ -34,6 +34,10 @@
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
+			"ImportPath": "github.com/shopspring/decimal",
+			"Rev": "74d668a796fa3734c552fb907d9b83146d0bebee"
+		},
+		{
 			"ImportPath": "github.com/smartystreets/assertions",
 			"Comment": "1.6.0-2-g2d74a41",
 			"Rev": "2d74a419fbe076f8c76ed8b1c7c633a676c5dc63"
@@ -74,6 +78,16 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
+			"Comment": "v1.1.3-12-gc5d7a69",
+			"Rev": "c5d7a69bf8a2c9c374798160849c071093e41dd1"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/require",
+			"Comment": "v1.1.3-12-gc5d7a69",
+			"Rev": "c5d7a69bf8a2c9c374798160849c071093e41dd1"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/suite",
 			"Comment": "v1.1.3-12-gc5d7a69",
 			"Rev": "c5d7a69bf8a2c9c374798160849c071093e41dd1"
 		},

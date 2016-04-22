@@ -42,7 +42,14 @@ go build ./cmds/memcache
 
 Handled by [godeps](https://github.com/tools/godep).
 
-
 ### Integration tests
 
 For Swan Workload integration tests see [README](src/pkg/workloads/integration/README.md) file for instructions.
+
+### Mock generation
+
+Mock generation is done by Mockery tool.
+Sometimes Mockery is not able to resolve all imports in file correctly.
+Developer needs to use it manually, that's why we are vendoring our mocks.
+
+To generate mocks go to desired package and ```mockery -name ".*" -case underscore```
