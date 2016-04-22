@@ -48,7 +48,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			})
 
 			Convey("Wait 1 second for memcached to init", func() {
-				err, isTerminated := task.Wait(1 * time.Second)
+				isTerminated, err := task.Wait(1 * time.Second)
 
 				Convey("Memcached should be still running", func() {
 					task.Stop()
@@ -70,7 +70,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 
 					Convey("When we wait for netstat ", func() {
-						err, _ := netstatTask.Wait(0)
+						_, err := netstatTask.Wait(0)
 
 						Convey("There should be no error", func() {
 							So(err, ShouldBeNil)
@@ -102,11 +102,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 
 					Convey("The task should be terminated and the task status "+
-						"should be 143 or 0", func() {
+						"should be 71 or 0", func() {
 						taskState, taskStatus := task.Status()
 						So(taskState, ShouldEqual, executor.TERMINATED)
 						// Memcached on CentOS returns 0 (successful code) after SIGTERM.
-						So(taskStatus.ExitCode, ShouldBeIn, 143, 0)
+						So(taskStatus.ExitCode, ShouldBeIn, 71, 0)
 					})
 				})
 			})
