@@ -1,7 +1,7 @@
 package executor
 
 import (
-	"bytes"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -32,11 +32,11 @@ func (l Local) Execute(command string) (Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	stdoutPath, err := ioutil.TempFile(pwd, "stdout")
+	stdoutFile, err := ioutil.TempFile(pwd, "stdout")
 	if err != nil {
 		return nil, err
 	}
-	stderrPath, err := ioutil.TempFile(pwd, "stderr")
+	stderrFile, err := ioutil.TempFile(pwd, "stderr")
 	if err != nil {
 		return nil, err
 	}
@@ -44,15 +44,13 @@ func (l Local) Execute(command string) (Task, error) {
 	log.Debug("Starting ", command)
 
 	cmd := exec.Command("sh", "-c", command)
-
+	fmt.Print(stdoutFile.Name())
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stdout = stdoutFile
+	cmd.Stderr = stderrFile
 
 	err = cmd.Start()
 	if err != nil {
@@ -80,12 +78,9 @@ func (l Local) Execute(command string) (Task, error) {
 
 		log.Debug(
 			"Ended ", command,
-			" with output in file: ", stdoutPath.Name(),
-			" with err output in file: ", stderrPath.Name(),
+			" with output in file: ", stdoutFile.Name(),
+			" with err output in file: ", stderrFile.Name(),
 			" with status code: ", exitCode)
-
-		ioutil.WriteFile(stdoutPath.Name(), stdout.Bytes(), ownerReadWrite)
-		ioutil.WriteFile(stderrPath.Name(), stderr.Bytes(), ownerReadWrite)
 
 		statusChannel <- Status{
 			&exitCode,
@@ -94,14 +89,6 @@ func (l Local) Execute(command string) (Task, error) {
 
 	taskPid := taskPID(cmd.Process.Pid)
 
-	stdoutFile, err := os.Open(stdoutPath.Name())
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := os.Open(stderrPath.Name())
-	if err != nil {
-		return nil, err
-	}
 	t := newlocalTask(taskPid, statusChannel, stdoutFile, stderrFile)
 
 	return t, err
@@ -132,6 +119,7 @@ func newlocalTask(pid taskPID, statusChannel chan Status, stdoutFile *os.File, s
 
 // Stdout returns io.Reader to stdout file.
 func (task *localTask) Stdout() io.Reader {
+	fmt.Print("X", task.stdoutFile.Name())
 	r := io.Reader(task.stdoutFile)
 	return r
 }

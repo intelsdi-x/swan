@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io"
@@ -31,11 +30,11 @@ func (remote Remote) Execute(command string) (Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	stdoutPath, err := ioutil.TempFile(pwd, "stdout")
+	stdoutFile, err := ioutil.TempFile(pwd, "stdout")
 	if err != nil {
 		return nil, err
 	}
-	stderrPath, err := ioutil.TempFile(pwd, "stderr")
+	stderrFile, err := ioutil.TempFile(pwd, "stderr")
 	if err != nil {
 		return nil, err
 	}
@@ -65,27 +64,17 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	go func() {
 		exitCode := 0
-		var stderr bytes.Buffer
 
-		session.Stderr = &stderr
-		output, err := session.Output(command)
-
-		ioutil.WriteFile(stdoutPath.Name(), output, ownerReadWrite)
-		ioutil.WriteFile(stderrPath.Name(), stderr.Bytes(), ownerReadWrite)
+		session.Stderr = stderrFile
+		session.Stdout = stdoutFile
+		err := session.Run(command)
 
 		if err != nil {
 			exitCode = err.(*ssh.ExitError).Waitmsg.ExitStatus()
 		}
 		statusCh <- Status{&exitCode}
 	}()
-	stdoutFile, err := os.Open(stdoutPath.Name())
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := os.Open(stderrPath.Name())
-	if err != nil {
-		return nil, err
-	}
+
 	remoteTask := newRemoteTask(session, statusCh, stdoutFile, stderrFile)
 	return remoteTask, nil
 }
