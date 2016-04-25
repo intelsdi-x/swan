@@ -152,8 +152,10 @@ func TestLocal(t *testing.T) {
 					So(taskState, ShouldEqual, TERMINATED)
 				})
 
-				Convey("And the exit status should be 127", func() {
+				Convey("And the exit status should be 127 and stderr mentioning not"+
+					"found command", func() {
 					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(taskStatus.Stderr, ShouldContainSubstring, "commandThatDoesNotExists")
 				})
 			})
 		})
