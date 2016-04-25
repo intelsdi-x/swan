@@ -105,8 +105,7 @@ func TestLocal(t *testing.T) {
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
 
-				err = task.Stop()
-				So(err, ShouldBeNil)
+				task.Stop()
 			})
 
 			Convey("When we wait for the task to terminate", func() {
@@ -187,11 +186,17 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+					So(taskStatus1, ShouldNotBeNil)
+					So(taskStatus2, ShouldNotBeNil)
+
 					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
 					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
 				})
 
 				Convey("Both exit statuses should be 0", func() {
+					So(taskStatus1, ShouldNotBeNil)
+					So(taskStatus2, ShouldNotBeNil)
+
 					So(taskStatus1.ExitCode, ShouldEqual, 0)
 					So(taskStatus2.ExitCode, ShouldEqual, 0)
 				})

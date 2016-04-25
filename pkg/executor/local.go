@@ -51,7 +51,8 @@ func (l Local) Execute(command string) (Task, error) {
 	waitErrChannel := make(chan error, 1)
 	// Wait End channel is for checking the status of the Wait. If this channel is closed,
 	// it means that the wait is completed (either with error or not)
-	waitEndChannel := make(chan bool)
+	// This channel will not be used for passing any message.
+	waitEndChannel := make(chan struct{})
 
 	// Wait for local task in goroutine.
 	go func() {
@@ -97,13 +98,13 @@ type localTask struct {
 	stdout         *bytes.Buffer
 	stderr         *bytes.Buffer
 	waitErrChannel chan error
-	waitEndChannel chan bool
+	waitEndChannel chan struct{}
 	killTimeout    time.Duration
 }
 
 // newlocalTask returns a localTask instance.
 func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
-	stderr *bytes.Buffer, waitErrChannel chan error, waitEndChannel chan bool) *localTask {
+	stderr *bytes.Buffer, waitErrChannel chan error, waitEndChannel chan struct{}) *localTask {
 	t := &localTask{
 		cmdHandler:     cmdHandler,
 		stdout:         stdout,
@@ -116,20 +117,17 @@ func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
 }
 
 // isTerminated checks if waitEndChannel is closed. If it is closed, it means
-// that wait ends and task is in terminated state and ProcessState is not nil.
+// that wait ends, task is in terminated state and ProcessState is not nil.
 // ProcessState contains information about an exited process,
 // available after call to Wait or Run.
 func (task *localTask) isTerminated() bool {
 	select {
-	case _, isNotClosed := <-task.waitEndChannel:
-		if !isNotClosed {
-			// If waitEndChannel is closed then task is terminated.
-			return true
-		}
+	case <-task.waitEndChannel:
+		// If waitEndChannel is closed then task is terminated.
+		return true
 	default:
+		return false
 	}
-
-	return false
 }
 
 func (task *localTask) getPid() int {
@@ -202,30 +200,25 @@ func (task *localTask) Wait(timeout time.Duration) (bool, error) {
 		return true, nil
 	}
 
-	if timeout == 0 {
-		task.waitMutex.Lock()
-		defer task.waitMutex.Unlock()
+	var timeoutChannel <-chan time.Time
+	timeoutChannel = nil
 
-		if task.isTerminated() {
-			return true, nil
-		}
-
-		err := <-task.waitErrChannel
-		if err != nil {
-			return false, err
-		}
-
-		return true, nil
+	if timeout != 0 {
+		// In case of wait with timeout set the timeout channel.
+		timeoutChannel = time.After(timeout)
 	}
 
 	select {
-	case err := <-task.waitErrChannel:
-		if err != nil {
+	case err, ok := <-task.waitErrChannel:
+		if err != nil && ok {
+			// If channel is not closed and there is error return false and error.
 			return false, err
 		}
 
+		// If channel is closed or there is no error return true and nil.
 		return true, nil
-	case <-time.After(timeout):
+	case <-timeoutChannel:
+		// If timeout time exceeded return false and nil.
 		return false, nil
 	}
 }
