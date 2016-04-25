@@ -44,7 +44,7 @@ Handled by [godeps](https://github.com/tools/godep).
 
 ### Integration tests
 
-For Swan Workload integration tests see [README](src/pkg/workloads/integration/README.md) file for instructions.
+For Swan Workload integration tests see [README](pkg/workloads/integration/README.md) file for instructions.
 
 ### Mock generation
 
