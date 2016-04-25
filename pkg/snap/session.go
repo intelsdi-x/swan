@@ -6,10 +6,16 @@ import (
 )
 
 type SnapSession struct {
+  Name string
+
+  ID string
+
   // TODO(niklas): Convert to time.Duration
   Interval string
 
   Plugins []string
+
+  pClient    *client.Client
 
   // Collectors
   // Tasks
@@ -18,12 +24,25 @@ type SnapSession struct {
   // Store task id
 }
 
-func NewSnapSession() (*SnapSession, error) {
-  return &SnapSession {}
+func NewSnapSession(name string) (*SnapSession, error) {
+  // TODO(niklas): Make 'secure' connection default
+  pClient, err := client.New("http://localhost:8181", "v1", true)
+  if err != nil {
+    return nil, err
+  }
+
+  return &SnapSession {
+    Name: name,
+    pClient: pClient,
+  }, nil
 }
 
 func CanConnectSnapd() (bool, error) {
   return false, nil
+}
+
+func ListSessions() ([]string, error) {
+  return []string{}, nil
 }
 
 type task struct {
@@ -41,18 +60,18 @@ func (s* SnapSession) Start(UUID string) error {
     Version: 1,
     Schedule: &client.Schedule {
       Type: "Simple",
-      Interval: SnapSession.Interval,
+      Interval: s.Interval,
     },
   }
-  t.Name = ctx.String("swan-session")
+  t.Name = s.Name
 
-  wmap := NewWorkflowMap()
+  wf := wmap.NewWorkflowMap()
 
-  // Populate workflow
+  // TBD: Populate workflow
 
-  t.Workflow = wmap
+  t.Workflow = wf
 
-	r := pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
+	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
   if r.Err != nil {
     return r.Err
 	}
