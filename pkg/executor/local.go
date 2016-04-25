@@ -56,7 +56,9 @@ func (l Local) Execute(command string) (Task, error) {
 		// status handling for now.
 		if err := cmd.Wait(); err != nil {
 			if _, ok := err.(*exec.ExitError); !ok {
-				// In case of NON Exit Errors we are sure that task does not terminate so return error.
+				// In case of NON Exit Errors we are not sure if task does
+				// terminate so return error.
+				log.Error("Waiting for task failed. ", err)
 				waitErrChannel <- err
 
 				close(waitErrChannel)
@@ -76,7 +78,7 @@ func (l Local) Execute(command string) (Task, error) {
 		close(waitErrChannel)
 	}()
 
-	return newlocalTask(cmd, &stdout, &stdout, waitErrChannel), nil
+	return newlocalTask(cmd, &stdout, &stderr, waitErrChannel), nil
 }
 
 const killTimeout = 5 * time.Second
