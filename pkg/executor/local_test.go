@@ -203,9 +203,6 @@ func TestLocal(t *testing.T) {
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
-
-				err = task.Stop()
-				So(err, ShouldBeNil)
 			})
 
 			// Wait for the command to execute.
