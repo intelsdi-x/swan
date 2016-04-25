@@ -201,8 +201,6 @@ func (task *localTask) Wait(timeout time.Duration) (bool, error) {
 	}
 
 	var timeoutChannel <-chan time.Time
-	timeoutChannel = nil
-
 	if timeout != 0 {
 		// In case of wait with timeout set the timeout channel.
 		timeoutChannel = time.After(timeout)
