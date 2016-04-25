@@ -47,8 +47,13 @@ func (l Local) Execute(command string) (Task, error) {
 
 	log.Debug("Started with PID ", cmd.Process.Pid)
 
-	// Wait for local task in goroutine.
+	// Wait Err channel is for gethering error potential error messages from cmd.Wait function.
 	waitErrChannel := make(chan error, 1)
+	// Wait End channel is for checking the status of the Wait. If this channel is closed,
+	// it means that the wait is completed (either with error or not)
+	waitEndChannel := make(chan bool)
+
+	// Wait for local task in goroutine.
 	go func() {
 		// Wait for task completion.
 		// NOTE: Wait() returns an error. We grab the process state in any case
@@ -62,6 +67,7 @@ func (l Local) Execute(command string) (Task, error) {
 				waitErrChannel <- err
 
 				close(waitErrChannel)
+				close(waitEndChannel)
 				return
 			}
 		}
@@ -76,9 +82,10 @@ func (l Local) Execute(command string) (Task, error) {
 		waitErrChannel <- nil
 
 		close(waitErrChannel)
+		close(waitEndChannel)
 	}()
 
-	return newlocalTask(cmd, &stdout, &stderr, waitErrChannel), nil
+	return newlocalTask(cmd, &stdout, &stderr, waitErrChannel, waitEndChannel), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -90,27 +97,39 @@ type localTask struct {
 	stdout         *bytes.Buffer
 	stderr         *bytes.Buffer
 	waitErrChannel chan error
+	waitEndChannel chan bool
 	killTimeout    time.Duration
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(cmdHandler *exec.Cmd,
-	stdout *bytes.Buffer, stderr *bytes.Buffer, waitErrChannel chan error) *localTask {
+func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
+	stderr *bytes.Buffer, waitErrChannel chan error, waitEndChannel chan bool) *localTask {
 	t := &localTask{
 		cmdHandler:     cmdHandler,
 		stdout:         stdout,
 		stderr:         stderr,
 		waitErrChannel: waitErrChannel,
+		waitEndChannel: waitEndChannel,
 		killTimeout:    killTimeout,
 	}
 	return t
 }
 
-// isTerminated checks if ProcessState is not nil.
+// isTerminated checks if waitEndChannel is closed. If it is closed, it means
+// that wait ends and task is in terminated state and ProcessState is not nil.
 // ProcessState contains information about an exited process,
-// available after successful call to Wait or Run.
+// available after call to Wait or Run.
 func (task *localTask) isTerminated() bool {
-	return task.cmdHandler.ProcessState != nil
+	select {
+	case _, isNotClosed := <-task.waitEndChannel:
+		if !isNotClosed {
+			// If waitEndChannel is closed then task is terminated.
+			return true
+		}
+	default:
+	}
+
+	return false
 }
 
 func (task *localTask) getPid() int {
