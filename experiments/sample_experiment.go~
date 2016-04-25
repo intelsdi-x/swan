@@ -1,0 +1,12 @@
+package main
+
+import "experiment"
+
+func main() {
+
+	expConf := experiment.ExperimentConfiguration{
+		MaxVariance:      1,
+		WorkingDirectory: "/tmp",
+	}
+
+}
