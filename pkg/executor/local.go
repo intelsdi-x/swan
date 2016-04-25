@@ -56,6 +56,9 @@ func (l Local) Execute(command string) (Task, error) {
 
 	// Wait for local task in goroutine.
 	go func() {
+		defer close(waitErrChannel)
+		defer close(waitEndChannel)
+
 		// Wait for task completion.
 		// NOTE: Wait() returns an error. We grab the process state in any case
 		// (success or failure) below, so the error object matters less in the
@@ -66,9 +69,6 @@ func (l Local) Execute(command string) (Task, error) {
 				// terminate so return error.
 				log.Error("Waiting for task failed. ", err)
 				waitErrChannel <- err
-
-				close(waitErrChannel)
-				close(waitEndChannel)
 				return
 			}
 		}
@@ -79,11 +79,6 @@ func (l Local) Execute(command string) (Task, error) {
 			" with err output in file: ", stderr.String(),
 			" with status code: ",
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
-
-		waitErrChannel <- nil
-
-		close(waitErrChannel)
-		close(waitEndChannel)
 	}()
 
 	return newlocalTask(cmd, &stdout, &stderr, waitErrChannel, waitEndChannel), nil
@@ -117,9 +112,9 @@ func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
 }
 
 // isTerminated checks if waitEndChannel is closed. If it is closed, it means
-// that wait ends, task is in terminated state and ProcessState is not nil.
-// ProcessState contains information about an exited process,
-// available after call to Wait or Run.
+// that wait ended and task is in terminated state.
+// NOTE: If it's true then ProcessState is not nil. ProcessState contains information
+// about an exited process available after call to Wait or Run.
 func (task *localTask) isTerminated() bool {
 	select {
 	case <-task.waitEndChannel:
