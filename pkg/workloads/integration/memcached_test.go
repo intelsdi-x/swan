@@ -8,7 +8,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 	"os"
-	"strings"
+	"path"
 	"testing"
 	"time"
 )
@@ -29,8 +29,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 	if memcachedPath == "" {
 		// If custom path does not exists use default path for built memcached.
-		pathSlice := []string{os.Getenv("GOPATH"), "src", swanPkg, defaultMemcachedPath}
-		memcachedPath = strings.Join(pathSlice, "/")
+		memcachedPath = path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMemcachedPath)
 	}
 
 	Convey("While using Local Shell in Memcached launcher", t, func() {
