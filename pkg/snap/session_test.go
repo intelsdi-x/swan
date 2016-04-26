@@ -23,6 +23,7 @@ func TestSnap(t *testing.T) {
 
 		Convey("Starting a session", func() {
 			err := session.Start()
+			defer session.Stop()
 
 			Convey("Shouldn't return any errors", func() {
 				So(err, ShouldBeNil)
@@ -39,16 +40,18 @@ func TestSnap(t *testing.T) {
 					So(status, ShouldEqual, "Running")
 				})
 			})
-		})
 
-		Convey("Stopping a session", func() {
-			err := session.Stop()
+			Convey("Stopping a session", func() {
+				err := session.Stop()
 
-			Convey("Shouldn't return any errors", func() {
-				So(err, ShouldBeNil)
-			})
+				Convey("Shouldn't return any errors", func() {
+					So(err, ShouldBeNil)
+				})
 
-			Convey("And the task should not be available", func() {
+				Convey("And the task should not be available", func() {
+					_, err := session.Status()
+					So(err, ShouldNotBeNil)
+				})
 			})
 		})
 	})
