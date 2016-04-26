@@ -3,6 +3,8 @@ package executor
 import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -108,6 +110,10 @@ func TestLocal(t *testing.T) {
 					})
 				})
 			})
+
+			if task != nil {
+				task.Clean()
+			}
 		})
 
 		Convey("When command `echo output` is executed", func() {
@@ -131,9 +137,39 @@ func TestLocal(t *testing.T) {
 				Convey("And the exit status should be 0 and command needs to be 'output'", func() {
 					So(taskStatus, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, 0)
-					So(taskStatus.Stdout, ShouldEqual, "output\n")
+
+					stdoutReader, stdoutErr := task.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
+
+					data, readErr := ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output\n")
+
+				})
+
+				Convey("And the cleaning should clean the stdout file", func() {
+
+					Convey("Before cleaning file should exist", func() {
+						fileName := task.(*localTask).stdoutFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldBeNil)
+					})
+
+					err := task.Clean()
+					So(err, ShouldBeNil)
+
+					Convey("After cleaning file should not exist", func() {
+						fileName := task.(*localTask).stdoutFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldNotBeNil)
+					})
 				})
 			})
+
+			if task != nil {
+				task.Clean()
+			}
 		})
 
 		Convey("When command which does not exists is executed", func() {
@@ -157,9 +193,39 @@ func TestLocal(t *testing.T) {
 				Convey("And the exit status should be 127 and stderr mentioning not"+
 					"found command", func() {
 					So(taskStatus.ExitCode, ShouldEqual, 127)
-					So(taskStatus.Stderr, ShouldContainSubstring, "commandThatDoesNotExists")
+
+					stderrReader, stderrErr := task.Stderr()
+					So(stderrErr, ShouldBeNil)
+					So(stderrReader, ShouldNotBeNil)
+
+					data, readErr := ioutil.ReadAll(stderrReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldContainSubstring, "commandThatDoesNotExists")
 				})
+
+				Convey("And the cleaning should clean the stderr file", func() {
+
+					Convey("Before cleaning file should exist", func() {
+						fileName := task.(*localTask).stderrFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldBeNil)
+					})
+
+					err := task.Clean()
+					So(err, ShouldBeNil)
+
+					Convey("After cleaning file should not exist", func() {
+						fileName := task.(*localTask).stderrFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldNotBeNil)
+					})
+				})
+
 			})
+
+			if task != nil {
+				task.Clean()
+			}
 		})
 
 		Convey("When we execute two tasks in the same time", func() {
@@ -184,11 +250,22 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-					So(taskStatus1, ShouldNotBeNil)
-					So(taskStatus2, ShouldNotBeNil)
+					stdoutReader, stdoutErr := task.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
 
-					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+					data, readErr := ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output1\n")
+
+					stdoutReader, stdoutErr = task2.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
+
+					data, readErr = ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output2\n")
+
 				})
 
 				Convey("Both exit statuses should be 0", func() {
@@ -199,6 +276,14 @@ func TestLocal(t *testing.T) {
 					So(taskStatus2.ExitCode, ShouldEqual, 0)
 				})
 			})
+
+			if task != nil {
+				task.Clean()
+			}
+
+			if task2 != nil {
+				task2.Clean()
+			}
 		})
 
 		Convey("When command `echo sleep 0` is executed", func() {
@@ -223,7 +308,10 @@ func TestLocal(t *testing.T) {
 					So(taskStatus.ExitCode, ShouldEqual, 0)
 				})
 			})
-		})
 
+			if task != nil {
+				task.Clean()
+			}
+		})
 	})
 }
