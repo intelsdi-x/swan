@@ -88,29 +88,26 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 	return TERMINATED, &task.status
 }
 
-// Wait blocks until process is terminated or timeout appeared.
-// Returns true when process terminates before timeout, otherwise false.
-func (task *remoteTask) Wait(timeoutMs int) bool {
+// Wait waits for the command to finish with the given timeout time.
+// It returns true if task is terminated.
+func (task *remoteTask) Wait(timeout time.Duration) bool {
 	if task.terminated {
 		return true
 	}
 
-	if timeoutMs == 0 {
+	if timeout == 0 {
 		s := <-task.statusCh
 		task.completeTask(s)
 		return true
 	}
 
-	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-	result := true
 	select {
 	case s := <-task.statusCh:
 		task.completeTask(s)
-	case <-time.After(timeoutDuration):
-		result = false
+		return true
+	case <-time.After(timeout):
+		return false
 	}
-
-	return result
 }
 
 // RemoteTask implements Task interface.
