@@ -7,6 +7,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -86,9 +87,20 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 							So(netstatTaskState, ShouldEqual, executor.TERMINATED)
 							So(netstatTaskStatus.ExitCode, ShouldEqual, 0)
-							So(netstatTaskStatus.Stdout, ShouldStartWith, "STAT")
+
+							stdoutReader, stdoutErr := netstatTask.Stdout()
+							So(stdoutErr, ShouldBeNil)
+							So(stdoutReader, ShouldNotBeNil)
+
+							data, readErr := ioutil.ReadAll(stdoutReader)
+							So(readErr, ShouldBeNil)
+							So(string(data[:]), ShouldStartWith, "STAT")
 						})
 					})
+
+					if netstatTask != nil {
+						netstatTask.Clean()
+					}
 				})
 
 				Convey("When we stop the memcached task", func() {
@@ -107,6 +119,10 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 				})
 			})
+
+			if task != nil {
+				task.Clean()
+			}
 		})
 	})
 }
