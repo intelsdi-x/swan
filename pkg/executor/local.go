@@ -65,8 +65,7 @@ func (l Local) Execute(command string) (Task, error) {
 				// terminate so panic.
 				// This error happens very rarely and it represent the critical state of the
 				// server like volume or HW problems.
-				log.Error("Waiting for task failed. ", err.Error())
-				panic("Waiting for task failed. " + err.Error())
+				log.Panic("Waiting for task failed. ", err)
 			}
 		}
 
