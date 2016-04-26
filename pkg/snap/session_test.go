@@ -13,7 +13,7 @@ func TestSnap(t *testing.T) {
 	Convey("Creating a Snap experiment session", t, func() {
 		session, err := NewSession(
 			"test-session",
-			[]string{"/intel/swan/dummy/metric1", "/intel/swan/dummy/metric2"},
+			[]string{"/intel/mock/foo"},
 			1*time.Second,
 		)
 
@@ -21,23 +21,34 @@ func TestSnap(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey("When listing running session", func() {
-			sessions, err := ListSessions()
-
-			Convey("Shouldn't return any errors", func() {
-				So(err, ShouldBeNil)
-			})
-
-			Convey("There should be zero session", func() {
-				So(len(sessions), ShouldEqual, 0)
-			})
-		})
-
 		Convey("Starting a session", func() {
 			err := session.Start()
 
 			Convey("Shouldn't return any errors", func() {
 				So(err, ShouldBeNil)
+			})
+
+			Convey("Contacting snap to get the task status", func() {
+				status, err := session.Status()
+
+				Convey("Shouldn't return any errors", func() {
+					So(err, ShouldBeNil)
+				})
+
+				Convey("And the task should be running", func() {
+					So(status, ShouldEqual, "Running")
+				})
+			})
+		})
+
+		Convey("Stopping a session", func() {
+			err := session.Stop()
+
+			Convey("Shouldn't return any errors", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the task should not be available", func() {
 			})
 		})
 	})

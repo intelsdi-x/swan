@@ -1,9 +1,11 @@
 package snap
 
 import (
+	"errors"
 	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/nu7hatch/gouuid"
 	"strings"
 	"time"
 )
@@ -11,6 +13,16 @@ import (
 var (
 	pClient *client.Client
 )
+
+type task struct {
+	Version  int
+	Schedule *client.Schedule
+	Workflow *wmap.WorkflowMap
+	Name     string
+	Deadline string
+	ID       string
+	State    string
+}
 
 // Session provides construct for tagging metrics for a specified time span:
 // defined by Start() and Stop().
@@ -27,11 +39,11 @@ type Session struct {
 	// Metrics to tag in session
 	Metrics []string
 
-	// Tasks
+	// Active task
+	task *task
+
 	// Processors
 	// Publishers
-
-	// TODO(niklas): Store task id for Stop()
 }
 
 // Lazy connection to snap
@@ -86,39 +98,58 @@ func ListSessions() ([]string, error) {
 	return out, nil
 }
 
-type task struct {
-	Version  int
-	Schedule *client.Schedule
-	Workflow *wmap.WorkflowMap
-	Name     string
-	Deadline string
-}
-
 // Start an experiment session.
 // TODO Return session id
 func (s *Session) Start() error {
+	if s.task != nil {
+		return errors.New("task already running")
+	}
+
 	err := ensureConnected()
 	if err != nil {
 		return err
 	}
 
 	// Check if plugins are loaded
+	// Currently, the mock1 collector, passthru processor and file publisher needs to be loaded.
 
 	// Convert from duration to "Xs" string.
 	secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
 
-	t := task{
+	t := &task{
 		Version: 1,
 		Schedule: &client.Schedule{
 			Type:     "simple",
 			Interval: secondString,
 		},
 	}
-	t.Name = s.Name
+
+	// Append a UUIDv4 to the session name.
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
+	s.ID = id.String()
+
+	t.Name = fmt.Sprintf("%s-%s", s.Name, s.ID)
 
 	wf := wmap.NewWorkflowMap()
 
-	// TBD: Populate workflow
+	// TODO(niklas): Add metrics from session.
+	for _, metric := range s.Metrics {
+		wf.CollectNode.AddMetric(metric, -1)
+	}
+
+	wf.CollectNode.AddConfigItem("/intel/mock/foo", "password", "secret")
+
+	pu := wmap.NewPublishNode("file", 3)
+	pu.AddConfigItem("file", "/tmp/swan-snap.out")
+
+	pr := wmap.NewProcessNode("passthru", 1)
+
+	pr.Add(pu)
+	wf.CollectNode.Add(pr)
 
 	t.Workflow = wf
 
@@ -127,15 +158,55 @@ func (s *Session) Start() error {
 		return r.Err
 	}
 
+	t.ID = r.ID
+	t.State = r.State
+
+	s.task = t
+
 	return nil
 }
 
+// Status connects to snap to verify the current state of the task.
+func (s *Session) Status() (string, error) {
+	err := ensureConnected()
+	if err != nil {
+		return "", err
+	}
+
+	if s.task == nil {
+		return "", errors.New("snap task not running or not found")
+	}
+
+	task := pClient.GetTask(s.task.ID)
+	if task.Err != nil {
+		return "", task.Err
+	}
+
+	return task.State, nil
+}
+
 // Stop an experiment session.
-func (s *Session) Stop(UUID string) error {
+func (s *Session) Stop() error {
 	err := ensureConnected()
 	if err != nil {
 		return err
 	}
+
+	if s.task == nil {
+		return errors.New("snap task not running or not found")
+	}
+
+	rs := pClient.StopTask(s.task.ID)
+	if rs.Err != nil {
+		return rs.Err
+	}
+
+	rr := pClient.RemoveTask(s.task.ID)
+	if rr.Err != nil {
+		return rr.Err
+	}
+
+	s.task = nil
 
 	return nil
 }

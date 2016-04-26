@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
-	"github.com/shopspring/decimal"
 )
 
 const (
@@ -38,14 +38,14 @@ TX    3204252 bytes :    0.2 MB/s
 
 type MutilateTestSuite struct {
 	suite.Suite
-	mutilate               mutilate
-	config                 Config
+	mutilate mutilate
+	config   Config
 
 	defaultMutilateCommand string
 	defaultSlo             int
 
-	mExecutor              *mocks.Executor
-	mHandle                *mocks.Task
+	mExecutor *mocks.Executor
+	mHandle   *mocks.Task
 }
 
 func (s *MutilateTestSuite) SetupTest() {
