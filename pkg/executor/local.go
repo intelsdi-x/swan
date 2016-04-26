@@ -6,7 +6,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -45,18 +44,15 @@ func (l Local) Execute(command string) (Task, error) {
 		return nil, err
 	}
 
-	log.Debug("Started with PID ", cmd.Process.Pid)
+	log.Debug("Started with pid ", cmd.Process.Pid)
 
-	// Wait Err channel is for gethering error potential error messages from cmd.Wait function.
-	waitErrChannel := make(chan error, 1)
 	// Wait End channel is for checking the status of the Wait. If this channel is closed,
 	// it means that the wait is completed (either with error or not)
 	// This channel will not be used for passing any message.
 	waitEndChannel := make(chan struct{})
 
-	// Wait for local task in goroutine.
+	// Wait for local task in go routine.
 	go func() {
-		defer close(waitErrChannel)
 		defer close(waitEndChannel)
 
 		// Wait for task completion.
@@ -66,10 +62,11 @@ func (l Local) Execute(command string) (Task, error) {
 		if err := cmd.Wait(); err != nil {
 			if _, ok := err.(*exec.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
-				// terminate so return error.
-				log.Error("Waiting for task failed. ", err)
-				waitErrChannel <- err
-				return
+				// terminate so panic.
+				// This error happens very rarely and it represent the critical state of the
+				// server like volume or HW problems.
+				log.Error("Waiting for task failed. ", err.Error())
+				panic("Waiting for task failed. " + err.Error())
 			}
 		}
 
@@ -81,32 +78,28 @@ func (l Local) Execute(command string) (Task, error) {
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 	}()
 
-	return newlocalTask(cmd, &stdout, &stderr, waitErrChannel, waitEndChannel), nil
+	return newlocalTask(cmd, &stdout, &stderr, waitEndChannel), nil
 }
 
 const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
-	waitMutex      sync.Mutex
 	cmdHandler     *exec.Cmd
 	stdout         *bytes.Buffer
 	stderr         *bytes.Buffer
 	waitErrChannel chan error
 	waitEndChannel chan struct{}
-	killTimeout    time.Duration
 }
 
 // newlocalTask returns a localTask instance.
 func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
-	stderr *bytes.Buffer, waitErrChannel chan error, waitEndChannel chan struct{}) *localTask {
+	stderr *bytes.Buffer, waitEndChannel chan struct{}) *localTask {
 	t := &localTask{
 		cmdHandler:     cmdHandler,
 		stdout:         stdout,
 		stderr:         stderr,
-		waitErrChannel: waitErrChannel,
 		waitEndChannel: waitEndChannel,
-		killTimeout:    killTimeout,
 	}
 	return t
 }
@@ -162,15 +155,10 @@ func (task *localTask) Stop() error {
 		return err
 	}
 
-	// Checking if kill was succesful.
-	isTerminated, taskErr := task.Wait(killTimeout)
-	if taskErr != nil {
-		log.Error(taskErr.Error())
-		return taskErr
-	}
-
+	// Checking if kill was successful.
+	isTerminated := task.Wait(killTimeout)
 	if !isTerminated {
-		return errors.New("Cannot kill -9 task")
+		return errors.New("Cannot terminate task")
 	}
 
 	// No error, task terminated.
@@ -188,11 +176,10 @@ func (task *localTask) Status() (TaskState, *Status) {
 }
 
 // Wait waits for the command to finish with the given timeout time.
-// In case of timeout == 0 there is no timeout for that.
 // It returns true if task is terminated.
-func (task *localTask) Wait(timeout time.Duration) (bool, error) {
+func (task *localTask) Wait(timeout time.Duration) bool {
 	if task.isTerminated() {
-		return true, nil
+		return true
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -202,16 +189,11 @@ func (task *localTask) Wait(timeout time.Duration) (bool, error) {
 	}
 
 	select {
-	case err, ok := <-task.waitErrChannel:
-		if err != nil && ok {
-			// If channel is not closed and there is error return false and error.
-			return false, err
-		}
-
-		// If channel is closed or there is no error return true and nil.
-		return true, nil
+	case <-task.waitEndChannel:
+		// If waitEndChannel is closed then task is terminated.
+		return true
 	case <-timeoutChannel:
-		// If timeout time exceeded return false and nil.
-		return false, nil
+		// If timeout time exceeded return then task did not terminate yet.
+		return false
 	}
 }
