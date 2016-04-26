@@ -24,5 +24,5 @@ type Task interface {
 	// Wait does the blocking wait for the task completion in case of nil.
 	// Wait is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.
-	Wait(timeout time.Duration) (bool, error)
+	Wait(timeout time.Duration) bool
 }

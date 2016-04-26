@@ -3,6 +3,7 @@ package executor
 import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"sync"
 	"testing"
 	"time"
 )
@@ -35,10 +36,9 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
-				isTaskTerminated, waitErr := task.Wait(1 * time.Microsecond)
+				isTaskTerminated := task.Wait(1 * time.Microsecond)
 
 				Convey("The timeout should exceed and the task not terminated ", func() {
-					So(waitErr, ShouldBeNil)
 					So(isTaskTerminated, ShouldBeFalse)
 				})
 
@@ -68,32 +68,43 @@ func TestLocal(t *testing.T) {
 				})
 			})
 
-			Convey("When multpile go routines waits for task termination", func() {
-				waitErrChannel := make(chan error)
+			Convey("When multiple go routines waits for task termination", func() {
+				var wg sync.WaitGroup
+				wg.Add(5)
 				for i := 0; i < 5; i++ {
 					go func() {
-						_, err := task.Wait(0)
-						waitErrChannel <- err
+						task.Wait(0)
+						wg.Done()
 					}()
 				}
 
+				allWaitsAreDone := make(chan struct{})
+
+				go func() {
+					wg.Wait()
+					close(allWaitsAreDone)
+				}()
+
 				Convey("All waits should be blocked", func() {
-					gotWaitResult := false
+					waitsDone := false
 					select {
-					case _ = <-waitErrChannel:
-						gotWaitResult = true
-					default:
+					case <-allWaitsAreDone:
+						waitsDone = true
+					case <-time.After(100 * time.Millisecond):
 					}
 
 					err := task.Stop()
 					So(err, ShouldBeNil)
-					So(gotWaitResult, ShouldBeFalse)
+					So(waitsDone, ShouldBeFalse)
 
-					Convey("After stop every wait in go routine should result with nil", func() {
-						for i := 0; i < 5; i++ {
-							err = <-waitErrChannel
-							So(err, ShouldBeNil)
+					Convey("After stop every wait should unblock", func() {
+						select {
+						case <-allWaitsAreDone:
+							waitsDone = true
+						case <-time.After(100 * time.Millisecond):
 						}
+
+						So(waitsDone, ShouldBeTrue)
 					})
 				})
 			})
@@ -109,11 +120,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the task to terminate", func() {
-				_, err := task.Wait(0)
-
-				Convey("There should be no error", func() {
-					So(err, ShouldBeNil)
-				})
+				task.Wait(0)
 
 				taskState, taskStatus := task.Status()
 
@@ -139,11 +146,7 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the task to terminate", func() {
-				_, err := task.Wait(0)
-
-				Convey("There should be no error", func() {
-					So(err, ShouldBeNil)
-				})
+				task.Wait(0)
 
 				taskState, taskStatus := task.Status()
 
@@ -169,13 +172,8 @@ func TestLocal(t *testing.T) {
 			})
 
 			Convey("When we wait for the tasks to terminate", func() {
-				_, err := task.Wait(0)
-				_, err2 := task2.Wait(0)
-
-				Convey("There should be no errors", func() {
-					So(err, ShouldBeNil)
-					So(err2, ShouldBeNil)
-				})
+				task.Wait(0)
+				task2.Wait(0)
 
 				taskState1, taskStatus1 := task.Status()
 				taskState2, taskStatus2 := task2.Status()

@@ -89,25 +89,24 @@ func (task *remoteTask) Status() (TaskState, *Status) {
 }
 
 // Wait waits for the command to finish with the given timeout time.
-// In case of timeout == nil there is no timeout for that.
 // It returns true if task is terminated.
-func (task *remoteTask) Wait(timeout time.Duration) (bool, error) {
+func (task *remoteTask) Wait(timeout time.Duration) bool {
 	if task.terminated {
-		return true, nil
+		return true
 	}
 
 	if timeout == 0 {
 		s := <-task.statusCh
 		task.completeTask(s)
-		return true, nil
+		return true
 	}
 
 	select {
 	case s := <-task.statusCh:
 		task.completeTask(s)
-		return true, nil
+		return true
 	case <-time.After(timeout):
-		return false, nil
+		return false
 	}
 }
 
