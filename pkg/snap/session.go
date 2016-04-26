@@ -1,48 +1,89 @@
 package snap
 
 import (
-  "github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"strings"
+  "time"
+  "fmt"
 )
 
-type SnapSession struct {
-  Name string
+var (
+	pClient *client.Client
+)
 
-  ID string
+// Session provides construct for tagging metrics for a specified time span:
+// defined by Start() and Stop().
+type Session struct {
+	// Name is the prefix of the session name
+	Name string
 
-  // TODO(niklas): Convert to time.Duration
-  Interval string
+	// ID is a unique identifier for the session. Regenerated when Start() is called.
+	ID string
 
-  Plugins []string
+	// Interval defines the sample interval for the listed metrics
+	Interval time.Duration
 
-  pClient    *client.Client
+	// Metrics to tag in session
+	Metrics []string
 
-  // Collectors
-  // Tasks
-  // Publishers
+	// Tasks
+	// Processors
+	// Publishers
 
-  // Store task id
+	// TODO(niklas): Store task id for Stop()
 }
 
-func NewSnapSession(name string) (*SnapSession, error) {
-  // TODO(niklas): Make 'secure' connection default
-  pClient, err := client.New("http://localhost:8181", "v1", true)
-  if err != nil {
-    return nil, err
-  }
+// Lazy connection to snap
+func ensureConnected() error {
+	if pClient == nil {
+		// TODO(niklas): Make 'secure' connection default
+		client, err := client.New("http://localhost:8181", "v1", true)
 
-  return &SnapSession {
-    Name: name,
-    pClient: pClient,
-  }, nil
+		if err != nil {
+			return err
+		}
+
+		pClient = client
+	}
+
+	return nil
 }
 
-func CanConnectSnapd() (bool, error) {
-  return false, nil
+// NewSession generates a session with a name and a list of metrics to tag.
+// The interval cannot be less than second granularity.
+func NewSession(name string, metrics []string, interval time.Duration) (*Session, error) {
+	err := ensureConnected()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Session{
+		Name:    name,
+		Metrics: metrics,
+    Interval: interval,
+	}, nil
 }
 
+// ListSessions lists current available sessions based on task listing from snap.
 func ListSessions() ([]string, error) {
-  return []string{}, nil
+	err := ensureConnected()
+	if err != nil {
+		return nil, err
+	}
+
+	out := []string{}
+
+	tasks := pClient.GetTasks()
+	if tasks.Err != nil {
+		return out, tasks.Err
+	}
+
+	for _, task := range tasks.ScheduledTasks {
+		out = append(out, strings.Join([]string{task.ID, task.Name}, "-"))
+	}
+
+	return out, nil
 }
 
 type task struct {
@@ -53,32 +94,48 @@ type task struct {
 	Deadline string
 }
 
-func (s* SnapSession) Start(UUID string) error {
-  // Check if plugins are loaded
-
-  t := task{
-    Version: 1,
-    Schedule: &client.Schedule {
-      Type: "Simple",
-      Interval: s.Interval,
-    },
-  }
-  t.Name = s.Name
-
-  wf := wmap.NewWorkflowMap()
-
-  // TBD: Populate workflow
-
-  t.Workflow = wf
-
-	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
-  if r.Err != nil {
-    return r.Err
+// Start an experiment session.
+// TODO Return session id
+func (s *Session) Start() error {
+	err := ensureConnected()
+	if err != nil {
+		return err
 	}
 
-  return nil
+	// Check if plugins are loaded
+
+  // Convert from duration to "Xs" string.
+  secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
+
+	t := task{
+		Version: 1,
+		Schedule: &client.Schedule{
+			Type:     "simple",
+			Interval: secondString,
+		},
+	}
+	t.Name = s.Name
+
+	wf := wmap.NewWorkflowMap()
+
+	// TBD: Populate workflow
+
+	t.Workflow = wf
+
+	r := pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
+	if r.Err != nil {
+		return r.Err
+	}
+
+	return nil
 }
 
-func (s* SnapSession) Stop(UUID string) error {
-  return nil
+// Stop an experiment session.
+func (s *Session) Stop(UUID string) error {
+	err := ensureConnected()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
