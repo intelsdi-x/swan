@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/shopspring/decimal"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/shopspring/decimal"
 )
 
 // Config contains all data for running mutilate.
@@ -72,7 +72,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	if status.ExitCode != 0 {
 		return qps, achievedSLI, errors.New(
 			"Executing Mutilate Tune command returned with exit code: " +
-			strconv.Itoa(status.ExitCode))
+				strconv.Itoa(status.ExitCode))
 	}
 
 	qps, achievedSLI, err = getQPSAndLatencyFrom(status.Stdout)
@@ -101,7 +101,6 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 			status.ExitCode)
 		return achievedQPS, sli, errors.New(errMsg + err.Error())
 	}
-
 
 	achievedQPS, sli, err = getQPSAndLatencyFrom(status.Stdout)
 	if err != nil {
@@ -162,7 +161,7 @@ func getQPSAndLatencyFrom(output string) (qps int, latency int, err error) {
 	if qpsError != nil {
 		errorMsg += "Could not get QPS from output: " + err.Error() + ". "
 	}
-	if (latencyError != nil) {
+	if latencyError != nil {
 		errorMsg += "Could not get Latency from output: " + err.Error() + ". "
 	}
 
