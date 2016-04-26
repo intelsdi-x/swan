@@ -1,11 +1,11 @@
 package snap
 
 import (
+	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"strings"
-  "time"
-  "fmt"
+	"time"
 )
 
 var (
@@ -59,9 +59,9 @@ func NewSession(name string, metrics []string, interval time.Duration) (*Session
 	}
 
 	return &Session{
-		Name:    name,
-		Metrics: metrics,
-    Interval: interval,
+		Name:     name,
+		Metrics:  metrics,
+		Interval: interval,
 	}, nil
 }
 
@@ -104,8 +104,8 @@ func (s *Session) Start() error {
 
 	// Check if plugins are loaded
 
-  // Convert from duration to "Xs" string.
-  secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
+	// Convert from duration to "Xs" string.
+	secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
 
 	t := task{
 		Version: 1,
