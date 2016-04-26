@@ -1,5 +1,9 @@
 package executor
 
+import (
+	"time"
+)
+
 // TaskState is an enum presenting current task state.
 type TaskState int
 
@@ -17,8 +21,8 @@ type Task interface {
 	// Status returns a state of the task. If task is terminated it returns the Status as a
 	// second item in tuple. Otherwise returns nil.
 	Status() (TaskState, *Status)
-	// Waits for the task completion.
-	// In case of 0 timeout it will be endlessly blocked.
-	// Returns false after timeout exceeds.
-	Wait(timeoutMs int) bool
+	// Wait does the blocking wait for the task completion in case of nil.
+	// Wait is a helper for waiting with a given timeout time.
+	// It returns true if task is terminated.
+	Wait(timeout time.Duration) bool
 }

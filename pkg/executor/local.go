@@ -2,13 +2,13 @@ package executor
 
 import (
 	"bytes"
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 )
-
-type taskPID int64
 
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
@@ -24,8 +24,6 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	statusChannel := make(chan Status)
-
 	log.Debug("Starting ", command)
 
 	cmd := exec.Command("sh", "-c", command)
@@ -48,120 +46,153 @@ func (l Local) Execute(command string) (Task, error) {
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
 
-	// Wait for local task in goroutine.
+	// Wait End channel is for checking the status of the Wait. If this channel is closed,
+	// it means that the wait is completed (either with error or not)
+	// This channel will not be used for passing any message.
+	waitEndChannel := make(chan struct{})
+
+	// Wait for local task in go routine.
 	go func() {
+		defer close(waitEndChannel)
+
 		// Wait for task completion.
 		// NOTE: Wait() returns an error. We grab the process state in any case
 		// (success or failure) below, so the error object matters less in the
 		// status handling for now.
-		cmd.Wait()
-
-		var exitCode int
-		// If Process exited on his own, show the exitStatus.
-		if (cmd.ProcessState.Sys().(syscall.WaitStatus)).Exited() {
-			exitCode = (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
-		} else {
-			// Show what signal caused the termination.
-			exitCode = -int((cmd.ProcessState.Sys().(syscall.WaitStatus)).Signal())
+		if err := cmd.Wait(); err != nil {
+			if _, ok := err.(*exec.ExitError); !ok {
+				// In case of NON Exit Errors we are not sure if task does
+				// terminate so panic.
+				// This error happens very rarely and it represent the critical state of the
+				// server like volume or HW problems.
+				log.Panic("Waiting for task failed. ", err)
+			}
 		}
 
 		log.Debug(
-			"Ended ", command,
-			" with output: ", stdout.String(),
-			" with err output: ", stderr.String(),
-			" with status code: ", exitCode)
-
-		statusChannel <- Status{
-			exitCode,
-			stdout.String(),
-			stderr.String(),
-		}
+			"Ended ", strings.Join(cmd.Args, " "),
+			" with output in file: ", stdout.String(),
+			" with err output in file: ", stderr.String(),
+			" with status code: ",
+			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 	}()
 
-	taskPid := taskPID(cmd.Process.Pid)
-
-	t := newlocalTask(taskPid, statusChannel)
-
-	return t, err
+	return newlocalTask(cmd, &stdout, &stderr, waitEndChannel), nil
 }
+
+const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
-	pid           taskPID
-	statusChannel chan Status
-	status        Status
-	terminated    bool
+	cmdHandler     *exec.Cmd
+	stdout         *bytes.Buffer
+	stderr         *bytes.Buffer
+	waitErrChannel chan error
+	waitEndChannel chan struct{}
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(pid taskPID, statusChannel chan Status) *localTask {
+func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
+	stderr *bytes.Buffer, waitEndChannel chan struct{}) *localTask {
 	t := &localTask{
-		pid,
-		statusChannel,
-		Status{},
-		false,
+		cmdHandler:     cmdHandler,
+		stdout:         stdout,
+		stderr:         stderr,
+		waitEndChannel: waitEndChannel,
 	}
 	return t
 }
 
-func (task *localTask) completeTask(status Status) {
-	task.terminated = true
-	task.status = status
-	task.statusChannel = nil
+// isTerminated checks if waitEndChannel is closed. If it is closed, it means
+// that wait ended and task is in terminated state.
+// NOTE: If it's true then ProcessState is not nil. ProcessState contains information
+// about an exited process available after call to Wait or Run.
+func (task *localTask) isTerminated() bool {
+	select {
+	case <-task.waitEndChannel:
+		// If waitEndChannel is closed then task is terminated.
+		return true
+	default:
+		return false
+	}
+}
+
+func (task *localTask) getPid() int {
+	return task.cmdHandler.Process.Pid
+}
+
+func (task *localTask) createStatus() *Status {
+	if !task.isTerminated() {
+		return nil
+	}
+
+	return &Status{
+		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
+		task.stdout.String(),
+		task.stderr.String(),
+	}
+}
+
+func (task *localTask) killTask(sig syscall.Signal) error {
+	// We signal the entire process group.
+	// The kill syscall interprets a negated PID N as the process group N belongs to.
+	log.Debug("Sending ", sig, " to PID ", -task.getPid())
+	return syscall.Kill(-task.getPid(), sig)
 }
 
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
-	if task.terminated {
+	if task.isTerminated() {
 		return nil
 	}
 
-	// We signal the entire process group.
-	// The kill syscall interprets a negated PID N as the process group N belongs to.
-	log.Debug("Sending SIGTERM to PID ", -task.pid)
-	err := syscall.Kill(-int(task.pid), syscall.SIGTERM)
+	// Sending SIGKILL signal to local task.
+	// TODO: Add PID namespace to handle orphan tasks properly.
+	err := task.killTask(syscall.SIGKILL)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
-	s := <-task.statusChannel
-	task.completeTask(s)
+	// Checking if kill was successful.
+	isTerminated := task.Wait(killTimeout)
+	if !isTerminated {
+		return errors.New("Cannot terminate task")
+	}
 
-	return err
+	// No error, task terminated.
+	return nil
 }
 
 // Status returns a state of the task. If task is terminated it returns the Status as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *Status) {
-	if !task.terminated {
+func (task *localTask) Status() (TaskState, *Status) {
+	if !task.isTerminated() {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.createStatus()
 }
 
-// Wait blocks until process is terminated or timeout appeared.
-// Returns true when process terminates before timeout, otherwise false.
-func (task *localTask) Wait(timeoutMs int) bool {
-	if task.terminated {
+// Wait waits for the command to finish with the given timeout time.
+// It returns true if task is terminated.
+func (task *localTask) Wait(timeout time.Duration) bool {
+	if task.isTerminated() {
 		return true
 	}
 
-	if timeoutMs == 0 {
-		s := <-task.statusChannel
-		task.completeTask(s)
-		return true
+	var timeoutChannel <-chan time.Time
+	if timeout != 0 {
+		// In case of wait with timeout set the timeout channel.
+		timeoutChannel = time.After(timeout)
 	}
-
-	timeoutDuration := time.Duration(timeoutMs) * time.Millisecond
-	result := true
 
 	select {
-	case s := <-task.statusChannel:
-		task.completeTask(s)
-	case <-time.After(timeoutDuration):
-		result = false
+	case <-task.waitEndChannel:
+		// If waitEndChannel is closed then task is terminated.
+		return true
+	case <-timeoutChannel:
+		// If timeout time exceeded return then task did not terminate yet.
+		return false
 	}
-
-	return result
 }
