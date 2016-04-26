@@ -1,3 +1,5 @@
+// +build ignore
+
 package mutilate
 
 import (
@@ -49,9 +51,9 @@ func (m mutilate) Populate() (err error) {
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
-	if status.ExitCode != 0 {
+	if status != 0 {
 		return errors.New("Memchaced population exited with code: " +
-			strconv.Itoa(status.ExitCode))
+			strconv.Itoa(status))
 	}
 
 	return err
@@ -69,10 +71,10 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
-	if status.ExitCode != 0 {
+	if status != 0 {
 		return qps, achievedSLI, errors.New(
 			"Executing Mutilate Tune command returned with exit code: " +
-				strconv.Itoa(status.ExitCode))
+				strconv.Itoa(status))
 	}
 
 	qps, achievedSLI, err = getQPSAndLatencyFrom(status.Stdout)

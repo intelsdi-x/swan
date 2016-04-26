@@ -30,7 +30,7 @@ func TestLocal(t *testing.T) {
 			Convey("Task should be still running and status should be nil", func() {
 				taskState, taskStatus := task.Status()
 				So(taskState, ShouldEqual, RUNNING)
-				So(taskStatus, ShouldBeNil)
+				So(taskStatus, ShouldEqual, -1)
 
 				stopErr := task.Stop()
 				So(stopErr, ShouldBeNil)
@@ -47,7 +47,7 @@ func TestLocal(t *testing.T) {
 				Convey("The task should be still running and status should be nil", func() {
 					taskState, taskStatus := task.Status()
 					So(taskState, ShouldEqual, RUNNING)
-					So(taskStatus, ShouldBeNil)
+					So(taskStatus, ShouldEqual, -1)
 				})
 
 				stopErr := task.Stop()
@@ -65,8 +65,7 @@ func TestLocal(t *testing.T) {
 					taskState, taskStatus := task.Status()
 
 					So(taskState, ShouldEqual, TERMINATED)
-					So(taskStatus, ShouldNotBeNil)
-					So(taskStatus.ExitCode, ShouldEqual, -1)
+					So(taskStatus, ShouldEqual, -1)
 				})
 			})
 
@@ -135,8 +134,7 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 0 and command needs to be 'output'", func() {
-					So(taskStatus, ShouldNotBeNil)
-					So(taskStatus.ExitCode, ShouldEqual, 0)
+					So(taskStatus, ShouldEqual, 0)
 
 					stdoutReader, stdoutErr := task.Stdout()
 					So(stdoutErr, ShouldBeNil)
@@ -151,7 +149,7 @@ func TestLocal(t *testing.T) {
 				Convey("And the cleaning should clean the stdout file", func() {
 
 					Convey("Before cleaning file should exist", func() {
-						fileName := task.(*localTask).stdoutFile.Name()
+						fileName := task.(*asyncTask).stdoutFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldBeNil)
 					})
@@ -160,7 +158,7 @@ func TestLocal(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("After cleaning file should not exist", func() {
-						fileName := task.(*localTask).stdoutFile.Name()
+						fileName := task.(*asyncTask).stdoutFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldNotBeNil)
 					})
@@ -192,7 +190,7 @@ func TestLocal(t *testing.T) {
 
 				Convey("And the exit status should be 127 and stderr mentioning not"+
 					"found command", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(taskStatus, ShouldEqual, 127)
 
 					stderrReader, stderrErr := task.Stderr()
 					So(stderrErr, ShouldBeNil)
@@ -206,7 +204,7 @@ func TestLocal(t *testing.T) {
 				Convey("And the cleaning should clean the stderr file", func() {
 
 					Convey("Before cleaning file should exist", func() {
-						fileName := task.(*localTask).stderrFile.Name()
+						fileName := task.(*asyncTask).stderrFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldBeNil)
 					})
@@ -215,7 +213,7 @@ func TestLocal(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("After cleaning file should not exist", func() {
-						fileName := task.(*localTask).stderrFile.Name()
+						fileName := task.(*asyncTask).stderrFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldNotBeNil)
 					})
@@ -269,11 +267,8 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("Both exit statuses should be 0", func() {
-					So(taskStatus1, ShouldNotBeNil)
-					So(taskStatus2, ShouldNotBeNil)
-
-					So(taskStatus1.ExitCode, ShouldEqual, 0)
-					So(taskStatus2.ExitCode, ShouldEqual, 0)
+					So(taskStatus1, ShouldEqual, 0)
+					So(taskStatus2, ShouldEqual, 0)
 				})
 			})
 
@@ -304,8 +299,7 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("And the exit status should be 0", func() {
-					So(taskStatus, ShouldNotBeNil)
-					So(taskStatus.ExitCode, ShouldEqual, 0)
+					So(taskStatus, ShouldEqual, 0)
 				})
 			})
 
