@@ -50,12 +50,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			})
 
 			Convey("Wait 1 second for memcached to init", func() {
-				isTerminated, err := task.Wait(1 * time.Second)
+				isTerminated := task.Wait(1 * time.Second)
 
 				Convey("Memcached should be still running", func() {
 					stopErr := task.Stop()
 
-					So(err, ShouldBeNil)
 					// NOTE: Here you will be failing if the memcached
 					// can start because it needs to have default port available.
 					So(isTerminated, ShouldBeFalse)
@@ -76,14 +75,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 
 					Convey("When we wait for netstat ", func() {
-						_, err := netstatTask.Wait(0)
-
-						Convey("There should be no error", func() {
-							So(err, ShouldBeNil)
-
-							task.Stop()
-							netstatTask.Stop()
-						})
+						netstatTask.Wait(0)
 
 						Convey("The netstat task should be terminated, the task status should be 0"+
 							" and output resultes with a STAT information", func() {
