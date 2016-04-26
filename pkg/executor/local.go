@@ -1,8 +1,10 @@
 package executor
 
 import (
-	"bytes"
 	log "github.com/Sirupsen/logrus"
+	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -25,23 +27,30 @@ func NewLocal() Local {
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
 	statusChannel := make(chan Status)
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	stdoutFile, err := ioutil.TempFile(pwd, "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := ioutil.TempFile(pwd, "stderr")
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debug("Starting ", command)
 
 	cmd := exec.Command("sh", "-c", command)
-
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Setting Buffer as io.Writer for Command output.
-	// TODO: Write to temporary files instead of keeping in memory.
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stdout = stdoutFile
+	cmd.Stderr = stderrFile
 
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -67,20 +76,18 @@ func (l Local) Execute(command string) (Task, error) {
 
 		log.Debug(
 			"Ended ", command,
-			" with output: ", stdout.String(),
-			" with err output: ", stderr.String(),
+			" with output in file: ", stdoutFile.Name(),
+			" with err output in file: ", stderrFile.Name(),
 			" with status code: ", exitCode)
 
 		statusChannel <- Status{
-			exitCode,
-			stdout.String(),
-			stderr.String(),
+			&exitCode,
 		}
 	}()
 
 	taskPid := taskPID(cmd.Process.Pid)
 
-	t := newlocalTask(taskPid, statusChannel)
+	t := newlocalTask(taskPid, statusChannel, stdoutFile, stderrFile)
 
 	return t, err
 }
@@ -91,17 +98,59 @@ type localTask struct {
 	statusChannel chan Status
 	status        Status
 	terminated    bool
+	stdoutFile    *os.File
+	stderrFile    *os.File
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(pid taskPID, statusChannel chan Status) *localTask {
+func newlocalTask(pid taskPID, statusChannel chan Status, stdoutFile *os.File, stderrFile *os.File) *localTask {
 	t := &localTask{
 		pid,
 		statusChannel,
 		Status{},
 		false,
+		stdoutFile,
+		stderrFile,
 	}
 	return t
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *localTask) Stdout() io.Reader {
+	task.stdoutFile.Seek(0, os.SEEK_SET)
+	return task.stdoutFile
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *localTask) Stderr() io.Reader {
+	task.stderrFile.Seek(0, os.SEEK_SET)
+	return task.stderrFile
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *localTask) Clean() error {
+	//TODO: fix errors returned
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	err := task.stdoutFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	err = task.stderrFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (task *localTask) completeTask(status Status) {
@@ -132,12 +181,12 @@ func (task *localTask) Stop() error {
 
 // Status returns a state of the task. If task is terminated it returns the Status as a
 // second item in tuple. Otherwise returns nil.
-func (task localTask) Status() (TaskState, *Status) {
+func (task localTask) Status() (TaskState, *int) {
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.status.ExitCode
 }
 
 // Wait blocks until process is terminated or timeout appeared.

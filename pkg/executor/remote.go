@@ -1,9 +1,11 @@
 package executor
 
 import (
-	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"io"
+	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -24,7 +26,18 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
 	statusCh := make(chan Status)
-
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	stdoutFile, err := ioutil.TempFile(pwd, "stdout")
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := ioutil.TempFile(pwd, "stderr")
+	if err != nil {
+		return nil, err
+	}
 	connection, err := ssh.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
@@ -50,17 +63,80 @@ func (remote Remote) Execute(command string) (Task, error) {
 	}
 
 	go func() {
-		var stderr bytes.Buffer
 		exitCode := 0
-		session.Stderr = &stderr
-		output, err := session.Output(command)
+
+		session.Stderr = stderrFile
+		session.Stdout = stdoutFile
+		err := session.Run(command)
+
 		if err != nil {
 			exitCode = err.(*ssh.ExitError).Waitmsg.ExitStatus()
 		}
-		statusCh <- Status{exitCode, string(output[:]), stderr.String()}
+		statusCh <- Status{&exitCode}
 	}()
-	remoteTask := newRemoteTask(session, statusCh)
+
+	remoteTask := newRemoteTask(session, statusCh, stdoutFile, stderrFile)
 	return remoteTask, nil
+}
+
+// RemoteTask implements Task interface.
+type remoteTask struct {
+	terminated bool
+	session    *ssh.Session
+	statusCh   chan Status
+	status     Status
+	stdoutFile *os.File
+	stderrFile *os.File
+}
+
+// NewRemoteTask returns a RemoteTask instance.
+func newRemoteTask(session *ssh.Session, statusCh chan Status, stdoutFile *os.File, stderrFile *os.File) *remoteTask {
+	return &remoteTask{
+		false,
+		session,
+		statusCh,
+		Status{},
+		stdoutFile,
+		stderrFile,
+	}
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *remoteTask) Stdout() io.Reader {
+	task.stdoutFile.Seek(0, os.SEEK_SET)
+	return task.stdoutFile
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *remoteTask) Stderr() io.Reader {
+	task.stderrFile.Seek(0, os.SEEK_SET)
+	return task.stderrFile
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *remoteTask) Clean() error {
+	//TODO: fix errors returned
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	err := task.stdoutFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+	err = task.stderrFile.Close()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Stop terminates the remote task.
@@ -80,12 +156,12 @@ func (task *remoteTask) Stop() error {
 }
 
 // Status gets task state and status of the remote task.
-func (task *remoteTask) Status() (TaskState, *Status) {
+func (task *remoteTask) Status() (TaskState, *int) {
 	if !task.terminated {
 		return RUNNING, nil
 	}
 
-	return TERMINATED, &task.status
+	return TERMINATED, task.status.ExitCode
 }
 
 // Wait blocks until process is terminated or timeout appeared.
@@ -111,24 +187,6 @@ func (task *remoteTask) Wait(timeoutMs int) bool {
 	}
 
 	return result
-}
-
-// RemoteTask implements Task interface.
-type remoteTask struct {
-	terminated bool
-	session    *ssh.Session
-	statusCh   chan Status
-	status     Status
-}
-
-// NewRemoteTask returns a RemoteTask instance.
-func newRemoteTask(session *ssh.Session, statusCh chan Status) *remoteTask {
-	return &remoteTask{
-		false,
-		session,
-		statusCh,
-		Status{},
-	}
 }
 
 // Set task as completed and clean channel

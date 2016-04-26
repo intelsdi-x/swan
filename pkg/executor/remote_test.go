@@ -2,11 +2,26 @@ package executor
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"strings"
 	"testing"
 )
+
+func getRemoteStdoutPath(task *remoteTask) (string, error) {
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stdoutFile.Name(), nil
+}
+
+func getRemoteStderrPath(task *remoteTask) (string, error) {
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return "", err
+	}
+	return task.stderrFile.Name(), nil
+}
 
 func TestRemote(t *testing.T) {
 	SkipConvey("Creating a client configuration for the test user", t, func() {
@@ -29,30 +44,38 @@ func TestRemote(t *testing.T) {
 			So(err, ShouldBeNil)
 			sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
 			remoteShell := NewRemote(*sshConfig)
-			Convey("with empty command", func() {
-				remoteTask, _ := remoteShell.Execute("")
-				remoteTask.Stop()
-				_, taskStatus := remoteTask.Status()
-				Convey("gives empty output", func() {
-					So(taskStatus.Stdout, ShouldEqual, "")
-				})
-			})
 			Convey("with not existing command", func() {
-				remoteTask, _ := remoteShell.Execute("notexistingcommand")
-				remoteTask.Stop()
-				_, taskStatus := remoteTask.Status()
+				task, _ := remoteShell.Execute("notexistingcommand")
+				task.Stop()
+				_, taskStatus := task.Status()
 				Convey("should give 127 error ExitCode", func() {
-					So(taskStatus.ExitCode, ShouldEqual, 127)
+					So(*taskStatus, ShouldEqual, 127)
 				})
 			})
 			Convey("with whoami command ", func() {
-				remoteTask, err := remoteShell.Execute("whoami")
+				task, err := remoteShell.Execute("whoami")
 				So(err, ShouldBeNil)
-				remoteTask.Stop()
-				_, taskStatus := remoteTask.Status()
+				task.Stop()
+				stdoutReader := task.Stdout()
+				data, err := ioutil.ReadAll(stdoutReader)
+				So(err, ShouldBeNil)
 				Convey("with root user in clientconfig should give root as output", func() {
-					So(strings.TrimSpace(taskStatus.Stdout), ShouldEqual, user.Username)
+					So(strings.TrimSpace(string(data[:])), ShouldEqual, user.Username)
 				})
+				pwd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				fileName, err := getRemoteStdoutPath(task.(*remoteTask))
+				So(err, ShouldBeNil)
+				fileInf, err := os.Stat(fileName)
+				Convey("before cleaning file should exist", func() {
+					So(pwd+"/"+fileInf.Name(), ShouldEqual, fileName)
+				})
+				//task.Clean()
+				//_, err = os.Stat(fileName)
+				//Convey("after cleaning file should not exist", func() {
+				//	So(err, ShouldNotBeNil)
+				//})
+
 			})
 		})
 
