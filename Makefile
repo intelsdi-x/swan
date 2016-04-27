@@ -16,6 +16,9 @@ deps:
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
+## NOTE: We want lint to ignore 'should not use dot imports' error, since we want to use Convey in proper way.
+## Grep have exit status 1 when it not find the string (even with inverse -v flag) so we need exit 0 always and
+## base on fgt functionalies.
 lint:
 	golint ./pkg/... | (grep -v "should not use dot imports" || exit 0) > /tmp/golint.swan
 	fgt cat /tmp/golint.swan
