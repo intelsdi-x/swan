@@ -42,6 +42,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 		Convey("When memcached is launched", func() {
 			// NOTE: It is needed for memcached to have default port available.
 			task, err := memcachedLauncher.Launch()
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
 				stopErr := task.Stop()
@@ -66,7 +71,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 				Convey("When we check the memcached endpoint for stats after 1 second", func() {
 
 					netstatTask, netstatErr := l.Execute(netstatCommand)
-
+					if netstatTask != nil {
+						defer netstatTask.Stop()
+						defer netstatTask.Clean()
+						defer netstatTask.EraseOutput()
+					}
 					Convey("There should be no error", func() {
 						task.Stop()
 						netstatTask.Stop()
@@ -82,9 +91,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 							" and output resultes with a STAT information", func() {
 							netstatTaskState, netstatTaskStatus := netstatTask.Status()
 
-							task.Stop()
-							netstatTask.Stop()
-
 							So(netstatTaskState, ShouldEqual, executor.TERMINATED)
 							So(netstatTaskStatus.ExitCode, ShouldEqual, 0)
 
@@ -97,10 +103,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 							So(string(data[:]), ShouldStartWith, "STAT")
 						})
 					})
-
-					if netstatTask != nil {
-						netstatTask.Clean()
-					}
 				})
 
 				Convey("When we stop the memcached task", func() {
@@ -119,10 +121,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					})
 				})
 			})
-
-			if task != nil {
-				task.Clean()
-			}
 		})
 	})
 }
