@@ -15,7 +15,7 @@ func TestOutputParser(t *testing.T) {
 		event := inotify.Event{Name: "/non/existing/file"}
 		baseTime := time.Now()
 
-		data, error := parse_mutilate_output(event, baseTime)
+		data, error := parse_mutilate_save_output(event, baseTime)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
@@ -26,7 +26,7 @@ func TestOutputParser(t *testing.T) {
 		event := inotify.Event{Name: "/etc/shadow"}
 		baseTime := time.Now()
 
-		data, error := parse_mutilate_output(event, baseTime)
+		data, error := parse_mutilate_save_output(event, baseTime)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /etc/shadow: permission denied")
@@ -38,7 +38,7 @@ func TestOutputParser(t *testing.T) {
 		baseTime := time.Date(2010, time.April, 10, 8, 41, 0, 0, cest)
 		zeroTime := time.Date(2010, time.April, 10, 8, 10, 26, 0, cest)
 
-		data, error := parse_mutilate_output(event, baseTime)
+		data, error := parse_mutilate_save_output(event, baseTime)
 
 		So(error, ShouldBeNil)
 		So(data, ShouldHaveLength, 10)
@@ -73,7 +73,7 @@ func TestGettingFirstRowTime(t *testing.T) {
 		baseTime := time.Date(2010, time.April, 10, 8, 41, 0, 0, cest)
 		expectedFirstRowTime := time.Date(2010, time.April, 10, 8, 10, 26, 0, cest)
 
-		realFirstRowTime := get_first_row_time(file, baseTime)
+		realFirstRowTime := get_first_save_row_time(file, baseTime)
 		fmt.Printf("\n%v\n%v", expectedFirstRowTime, realFirstRowTime)
 
 		So(realFirstRowTime.Equal(expectedFirstRowTime), ShouldBeTrue)

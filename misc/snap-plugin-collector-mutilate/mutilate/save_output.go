@@ -20,7 +20,7 @@ type MutilateRow struct {
 	latency float64
 }
 
-func parse_mutilate_output(event inotify.Event, baseTime time.Time) ([]MutilateRow, error) {
+func parse_mutilate_save_output(event inotify.Event, baseTime time.Time) ([]MutilateRow, error) {
 	csvFile, readError := os.Open(event.Name)
 	defer csvFile.Close()
 	if readError != nil {
@@ -29,17 +29,17 @@ func parse_mutilate_output(event inotify.Event, baseTime time.Time) ([]MutilateR
 	}
 	csvReader := csv.NewReader(csvFile)
 	csvReader.Comma = ' '
-	startTime := get_first_row_time(csvFile, baseTime)
-	output := get_structs_from_file(csvReader, startTime)
+	startTime := get_first_save_row_time(csvFile, baseTime)
+	output := get_structs_from_save_file(csvReader, startTime)
 
 	return output, nil
 }
 
-func get_first_row_time(file *os.File, baseTime time.Time) time.Time {
+func get_first_save_row_time(file *os.File, baseTime time.Time) time.Time {
 	file.Seek(0, os.SEEK_END)
 	defer file.Seek(0, os.SEEK_SET)
 
-	lastLineBytes := find_last_row(file)
+	lastLineBytes := find_last_save_row(file)
 	reader := csv.NewReader(bytes.NewReader(lastLineBytes))
 	reader.Comma = ' '
 	row, _ := reader.Read()
@@ -50,7 +50,7 @@ func get_first_row_time(file *os.File, baseTime time.Time) time.Time {
 	return time.Unix(int64(lastRowUnix), 0)
 }
 
-func get_structs_from_file(csvReader *csv.Reader, startTime time.Time) []MutilateRow {
+func get_structs_from_save_file(csvReader *csv.Reader, startTime time.Time) []MutilateRow {
 	var output []MutilateRow
 	for true {
 		row, error := csvReader.Read()
@@ -67,7 +67,7 @@ func get_structs_from_file(csvReader *csv.Reader, startTime time.Time) []Mutilat
 	return output
 }
 
-func find_last_row(file *os.File) []byte {
+func find_last_save_row(file *os.File) []byte {
 	var i int64
 	var line []byte
 	singleByte := make([]byte, 1)
