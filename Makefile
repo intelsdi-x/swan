@@ -17,7 +17,8 @@ deps:
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 lint:
-	fgt golint ./pkg/...
+	golint ./pkg/... | (grep -v "should not use dot imports" || exit 0) > /tmp/golint.swan
+	fgt cat /tmp/golint.swan
 	fgt golint ./cmds/...
 
 unit_test:
