@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func TestRemote(t *testing.T) {
+func TestX(t *testing.T) {
 	topol := topology{name: "Hello"}
 	
 	fmt.Printf(topol.name)

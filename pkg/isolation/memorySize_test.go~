@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-func TestCpu(t *testing.T) {
-	cpu := CpuShares{cgroupName: "M", cpuShares:"1024", cgCpus: "0-3"}
+func TestMemorySize(t *testing.T) {
+	memorysize := MemorySizeShares{cgroupName: "M", memorySizeShares:"512M"}
 	
 	cmd := exec.Command("sh","-c","sleep 1h")
 	err := cmd.Start()
@@ -17,6 +17,6 @@ func TestCpu(t *testing.T) {
 	
         cpu.Isolate(cmd.Process.Pid)
 	
-	fmt.Printf(cpu.cgroupName)
+	fmt.Printf(memorysize.cgroupName)
 
 }
