@@ -12,9 +12,7 @@ import (
 )
 
 const (
-	SPACE    rune = 0x0020
 	NEW_LINE byte = 10
-	NULL     int  = 0x00
 )
 
 type MutilateRow struct {
@@ -30,7 +28,7 @@ func parse_mutilate_output(event inotify.Event, baseTime time.Time) ([]MutilateR
 		return output, readError
 	}
 	csvReader := csv.NewReader(csvFile)
-	csvReader.Comma = SPACE
+	csvReader.Comma = ' '
 	startTime := get_first_row_time(csvFile, baseTime)
 	output := get_structs_from_file(csvReader, startTime)
 
@@ -43,9 +41,9 @@ func get_first_row_time(file *os.File, baseTime time.Time) time.Time {
 
 	lastLineBytes := find_last_row(file)
 	reader := csv.NewReader(bytes.NewReader(lastLineBytes))
-	reader.Comma = SPACE
+	reader.Comma = ' '
 	row, _ := reader.Read()
-	row[0] = strings.Trim(row[0], string(NULL))
+	row[0] = strings.Trim(row[0], "")
 	seconds, _ := strconv.ParseFloat(row[0], 64)
 	lastRowUnix := baseTime.Unix() - int64(seconds)
 
