@@ -9,6 +9,7 @@ RUN apt-get update -qq && \
     apt-get dist-upgrade -qq -y && \
     ln -s /usr/bin/g++-4.8 /usr/bin/g++
 
+COPY mutilate-src /home/mutilate/mutilate
 RUN mkdir -p /home/mutilate && \
     echo "mutilate:x:1000:1000:Mutilate load generator,,,:/home/mutilate:/bin/bash" >> /etc/passwd && \
     echo "mutilate:x:1000:" >> /etc/group && \
@@ -18,10 +19,6 @@ USER mutilate
 ENV HOME /home/mutilate
 WORKDIR /home/mutilate
 
-RUN wget https://github.com/leverich/mutilate/archive/master.zip -O mutilate.tar.gz -q && \
-    unzip mutilate.tar.gz && \
-    cd mutilate-master && \
-    ln -s /usr/bin/g++-4.8 g++
-RUN cd mutilate-master && scons
+RUN cd mutilate && scons
 
 CMD ["/bin/bash"]
