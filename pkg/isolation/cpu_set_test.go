@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-func TestCpu(t *testing.T) {
-	cpu := CpuShares{cgroupName: "M", cpuShares:"1024", cgCpus: "0-3"}
+func TestCpuSet(t *testing.T) {
+	cpuset := CpuSetShares{cgroupName: "M", cpuSetShares:"0-2"}
 	
 	cmd := exec.Command("sh","-c","sleep 1h")
 	err := cmd.Start()
@@ -15,8 +15,8 @@ func TestCpu(t *testing.T) {
 			panic(err)
 	}
 	
-        cpu.Isolate(cmd.Process.Pid)
+        cpuset.Isolate(cmd.Process.Pid)
 	
-	fmt.Printf(cpu.cgroupName)
+	fmt.Printf(cpuset.cgroupName)
 
 }
