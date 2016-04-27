@@ -19,12 +19,14 @@ func TestLocal(t *testing.T) {
 
 		Convey("When blocking infinitively sleep command is executed", func() {
 			task, err := l.Execute("sleep inf")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
-				stopErr := task.Stop()
-
 				So(err, ShouldBeNil)
-				So(stopErr, ShouldBeNil)
 			})
 
 			Convey("Task should be still running and status should be nil", func() {
@@ -34,7 +36,6 @@ func TestLocal(t *testing.T) {
 
 				stopErr := task.Stop()
 				So(stopErr, ShouldBeNil)
-
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
@@ -110,19 +111,18 @@ func TestLocal(t *testing.T) {
 					})
 				})
 			})
-
-			if task != nil {
-				task.Clean()
-			}
 		})
 
 		Convey("When command `echo output` is executed", func() {
 			task, err := l.Execute("echo output")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
-
-				task.Stop()
 			})
 
 			Convey("When we wait for the task to terminate", func() {
@@ -148,37 +148,36 @@ func TestLocal(t *testing.T) {
 
 				})
 
-				Convey("And the cleaning should clean the stdout file", func() {
-
-					Convey("Before cleaning file should exist", func() {
+				Convey("And the eraseOutput should clean the stdout file", func() {
+					task.Clean()
+					Convey("Before eraseOutput file should exist", func() {
 						fileName := task.(*localTask).stdoutFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldBeNil)
 					})
 
-					err := task.Clean()
+					err := task.EraseOutput()
 					So(err, ShouldBeNil)
 
-					Convey("After cleaning file should not exist", func() {
+					Convey("After eraseOutput file should not exist", func() {
 						fileName := task.(*localTask).stdoutFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldNotBeNil)
 					})
 				})
 			})
-
-			if task != nil {
-				task.Clean()
-			}
 		})
 
 		Convey("When command which does not exists is executed", func() {
 			task, err := l.Execute("commandThatDoesNotExists")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
-
-				task.Stop()
 			})
 
 			Convey("When we wait for the task to terminate", func() {
@@ -203,34 +202,37 @@ func TestLocal(t *testing.T) {
 					So(string(data[:]), ShouldContainSubstring, "commandThatDoesNotExists")
 				})
 
-				Convey("And the cleaning should clean the stderr file", func() {
-
-					Convey("Before cleaning file should exist", func() {
+				Convey("And the eraseOutput should clean the stderr file", func() {
+					task.Clean()
+					Convey("Before eraseOutput file should exist", func() {
 						fileName := task.(*localTask).stderrFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldBeNil)
 					})
 
-					err := task.Clean()
+					err := task.EraseOutput()
 					So(err, ShouldBeNil)
 
-					Convey("After cleaning file should not exist", func() {
+					Convey("After eraseOutput file should not exist", func() {
 						fileName := task.(*localTask).stderrFile.Name()
 						_, statErr := os.Stat(fileName)
 						So(statErr, ShouldNotBeNil)
 					})
 				})
-
 			})
-
-			if task != nil {
-				task.Clean()
-			}
 		})
 
 		Convey("When we execute two tasks in the same time", func() {
 			task, err := l.Execute("echo output1")
 			task2, err2 := l.Execute("echo output2")
+			if task != nil && task2 != nil {
+				defer task.Stop()
+				defer task2.Stop()
+				defer task.Clean()
+				defer task2.Clean()
+				defer task.EraseOutput()
+				defer task2.EraseOutput()
+			}
 
 			Convey("There should be no errors", func() {
 				So(err, ShouldBeNil)
@@ -276,14 +278,6 @@ func TestLocal(t *testing.T) {
 					So(taskStatus2.ExitCode, ShouldEqual, 0)
 				})
 			})
-
-			if task != nil {
-				task.Clean()
-			}
-
-			if task2 != nil {
-				task2.Clean()
-			}
 		})
 
 		Convey("When command `echo sleep 0` is executed", func() {
