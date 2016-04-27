@@ -69,7 +69,7 @@ But mark the PR as `ready for review` instead. If we are missing any labels, ple
 
 ### Description
 
-In the pull request description, remember to include:
+In the pull request description, remember to:
 
  - Motivate the change with _why_ your code acts as it does. What is the problem it is trying to solve and how can a reviewer be sure that the pull request indeed fixes the issue.
  - Include a testing strategy that you used to gain confidence in the correctness of the code. This also enables the reviewer to replicate the issue.
@@ -83,7 +83,9 @@ This, currently, does not carry out integration tests.
 ### Reviewing
 
 For general guidelines around code reviews, please refer this [document](http://kevinlondon.com/2015/05/05/code-review-best-practices.html).
-Code style issues should be caught by our linter and `gofmt`. We don't try to make exceptions which can't be automated.
+For best practices for Go lang coding style and reviews, please refer to this [document](https://github.com/golang/go/wiki/CodeReviewComments) and
+this [document](https://golang.org/doc/effective_go.html#introduction) as a go to resource for idiomatic Go code.
+Many code style issues should be caught by our linter and `gofmt`. We don't try to make exceptions which can't be automated.
 
 ### Merging
 

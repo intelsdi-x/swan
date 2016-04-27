@@ -14,3 +14,7 @@ $ go get github.com/intelsdi-x/swan
 $ make deps
 $ make
 ```
+
+## Contributing
+
+Best practices for Swan development and submitting code is documented [here](docs/development.md).
