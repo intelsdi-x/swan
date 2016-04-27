@@ -1,9 +1,11 @@
 package executor
 
 import (
-	"bytes"
 	"errors"
 	log "github.com/Sirupsen/logrus"
+	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -13,8 +15,7 @@ import (
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct {
-}
+type Local struct{}
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
@@ -27,19 +28,27 @@ func (l Local) Execute(command string) (Task, error) {
 	log.Debug("Starting ", command)
 
 	cmd := exec.Command("sh", "-c", command)
-
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Setting Buffer as io.Writer for Command output.
-	// TODO: Write to temporary files instead of keeping in memory.
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	// Create temporary output files.
+	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stdout_")
+	if err != nil {
+		return nil, err
+	}
+	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stderr_")
+	if err != nil {
+		return nil, err
+	}
 
-	err := cmd.Start()
+	log.Debug("Created temporary files ",
+		"stdout path:  ", stdoutFile.Name(), "stderr path:  ", stderrFile.Name())
+
+	cmd.Stdout = stdoutFile
+	cmd.Stderr = stderrFile
+
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +80,13 @@ func (l Local) Execute(command string) (Task, error) {
 
 		log.Debug(
 			"Ended ", strings.Join(cmd.Args, " "),
-			" with output in file: ", stdout.String(),
-			" with err output in file: ", stderr.String(),
+			" with output in file: ", stdoutFile.Name(),
+			" with err output in file: ", stderrFile.Name(),
 			" with status code: ",
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 	}()
 
-	return newlocalTask(cmd, &stdout, &stderr, waitEndChannel), nil
+	return newlocalTask(cmd, stdoutFile, stderrFile, waitEndChannel), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -85,19 +94,18 @@ const killTimeout = 5 * time.Second
 // localTask implements Task interface.
 type localTask struct {
 	cmdHandler     *exec.Cmd
-	stdout         *bytes.Buffer
-	stderr         *bytes.Buffer
-	waitErrChannel chan error
+	stdoutFile     *os.File
+	stderrFile     *os.File
 	waitEndChannel chan struct{}
 }
 
 // newlocalTask returns a localTask instance.
-func newlocalTask(cmdHandler *exec.Cmd, stdout *bytes.Buffer,
-	stderr *bytes.Buffer, waitEndChannel chan struct{}) *localTask {
+func newlocalTask(cmdHandler *exec.Cmd, stdoutFile *os.File, stderrFile *os.File,
+	waitEndChannel chan struct{}) *localTask {
 	t := &localTask{
 		cmdHandler:     cmdHandler,
-		stdout:         stdout,
-		stderr:         stderr,
+		stdoutFile:     stdoutFile,
+		stderrFile:     stderrFile,
 		waitEndChannel: waitEndChannel,
 	}
 	return t
@@ -128,8 +136,8 @@ func (task *localTask) createStatus() *Status {
 
 	return &Status{
 		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
-		task.stdout.String(),
-		task.stderr.String(),
+		task.stdoutFile.Name(),
+		task.stderrFile.Name(),
 	}
 }
 
@@ -172,6 +180,60 @@ func (task *localTask) Status() (TaskState, *Status) {
 	}
 
 	return TERMINATED, task.createStatus()
+}
+
+// Stdout returns io.Reader to stdout file.
+func (task *localTask) Stdout() (io.Reader, error) {
+	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+		return nil, err
+	}
+
+	task.stdoutFile.Seek(0, os.SEEK_SET)
+	return task.stdoutFile, nil
+}
+
+// Stderr returns io.Reader to stderr file.
+func (task *localTask) Stderr() (io.Reader, error) {
+	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+		return nil, err
+	}
+
+	task.stderrFile.Seek(0, os.SEEK_SET)
+	return task.stderrFile, nil
+}
+
+// Clean removes files to which stdout and stderr of executed command was written.
+func (task *localTask) Clean() error {
+	// Close stdout.
+	stdoutErr := task.stdoutFile.Close()
+
+	// Close stderr.
+	stderrErr := task.stderrFile.Close()
+
+	if stdoutErr != nil {
+		return stdoutErr
+	}
+
+	if stderrErr != nil {
+		return stderrErr
+	}
+
+	return nil
+}
+
+// EraseOutput removes task's stdout & stderr files.
+func (task *localTask) EraseOutput() error {
+	// Remove stdout file.
+	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+		return err
+	}
+
+	// Remove stderr file.
+	if err := os.Remove(task.stderrFile.Name()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Wait waits for the command to finish with the given timeout time.

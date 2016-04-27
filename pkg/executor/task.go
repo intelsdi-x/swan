@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"io"
 	"time"
 )
 
@@ -18,11 +19,20 @@ const (
 type Task interface {
 	// Stops a task.
 	Stop() error
-	// Status returns a state of the task. If task is terminated it returns the Status as a
+	// Status returns a state of the task. If task is terminated it returns exitCode as a
 	// second item in tuple. Otherwise returns nil.
 	Status() (TaskState, *Status)
+	// Stdout returns a reader for file to the task's stdout file.
+	Stdout() (io.Reader, error)
+	// Stderr returns a reader for file to the task's stderr file.
+	Stderr() (io.Reader, error)
 	// Wait does the blocking wait for the task completion in case of nil.
 	// Wait is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.
 	Wait(timeout time.Duration) bool
+	// Clean cleans task temporary resources like isolations for Local.
+	// It also closes the task's stdout & stderr files.
+	Clean() error
+	// EraseOutput removes task's stdout & stderr files.
+	EraseOutput() error
 }

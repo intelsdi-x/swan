@@ -3,6 +3,8 @@ package executor
 import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -17,12 +19,14 @@ func TestLocal(t *testing.T) {
 
 		Convey("When blocking infinitively sleep command is executed", func() {
 			task, err := l.Execute("sleep inf")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
-				stopErr := task.Stop()
-
 				So(err, ShouldBeNil)
-				So(stopErr, ShouldBeNil)
 			})
 
 			Convey("Task should be still running and status should be nil", func() {
@@ -32,7 +36,6 @@ func TestLocal(t *testing.T) {
 
 				stopErr := task.Stop()
 				So(stopErr, ShouldBeNil)
-
 			})
 
 			Convey("When we wait for task termination with the 1ms timeout", func() {
@@ -112,11 +115,14 @@ func TestLocal(t *testing.T) {
 
 		Convey("When command `echo output` is executed", func() {
 			task, err := l.Execute("echo output")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
-
-				task.Stop()
 			})
 
 			Convey("When we wait for the task to terminate", func() {
@@ -131,18 +137,47 @@ func TestLocal(t *testing.T) {
 				Convey("And the exit status should be 0 and command needs to be 'output'", func() {
 					So(taskStatus, ShouldNotBeNil)
 					So(taskStatus.ExitCode, ShouldEqual, 0)
-					So(taskStatus.Stdout, ShouldEqual, "output\n")
+
+					stdoutReader, stdoutErr := task.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
+
+					data, readErr := ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output\n")
+
+				})
+
+				Convey("And the eraseOutput should clean the stdout file", func() {
+					task.Clean()
+					Convey("Before eraseOutput file should exist", func() {
+						fileName := task.(*localTask).stdoutFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldBeNil)
+					})
+
+					err := task.EraseOutput()
+					So(err, ShouldBeNil)
+
+					Convey("After eraseOutput file should not exist", func() {
+						fileName := task.(*localTask).stdoutFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldNotBeNil)
+					})
 				})
 			})
 		})
 
 		Convey("When command which does not exists is executed", func() {
 			task, err := l.Execute("commandThatDoesNotExists")
+			if task != nil {
+				defer task.Stop()
+				defer task.Clean()
+				defer task.EraseOutput()
+			}
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
-
-				task.Stop()
 			})
 
 			Convey("When we wait for the task to terminate", func() {
@@ -157,7 +192,32 @@ func TestLocal(t *testing.T) {
 				Convey("And the exit status should be 127 and stderr mentioning not"+
 					"found command", func() {
 					So(taskStatus.ExitCode, ShouldEqual, 127)
-					So(taskStatus.Stderr, ShouldContainSubstring, "commandThatDoesNotExists")
+
+					stderrReader, stderrErr := task.Stderr()
+					So(stderrErr, ShouldBeNil)
+					So(stderrReader, ShouldNotBeNil)
+
+					data, readErr := ioutil.ReadAll(stderrReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldContainSubstring, "commandThatDoesNotExists")
+				})
+
+				Convey("And the eraseOutput should clean the stderr file", func() {
+					task.Clean()
+					Convey("Before eraseOutput file should exist", func() {
+						fileName := task.(*localTask).stderrFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldBeNil)
+					})
+
+					err := task.EraseOutput()
+					So(err, ShouldBeNil)
+
+					Convey("After eraseOutput file should not exist", func() {
+						fileName := task.(*localTask).stderrFile.Name()
+						_, statErr := os.Stat(fileName)
+						So(statErr, ShouldNotBeNil)
+					})
 				})
 			})
 		})
@@ -165,6 +225,14 @@ func TestLocal(t *testing.T) {
 		Convey("When we execute two tasks in the same time", func() {
 			task, err := l.Execute("echo output1")
 			task2, err2 := l.Execute("echo output2")
+			if task != nil && task2 != nil {
+				defer task.Stop()
+				defer task2.Stop()
+				defer task.Clean()
+				defer task2.Clean()
+				defer task.EraseOutput()
+				defer task2.EraseOutput()
+			}
 
 			Convey("There should be no errors", func() {
 				So(err, ShouldBeNil)
@@ -184,11 +252,22 @@ func TestLocal(t *testing.T) {
 				})
 
 				Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-					So(taskStatus1, ShouldNotBeNil)
-					So(taskStatus2, ShouldNotBeNil)
+					stdoutReader, stdoutErr := task.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
 
-					So(taskStatus1.Stdout, ShouldEqual, "output1\n")
-					So(taskStatus2.Stdout, ShouldEqual, "output2\n")
+					data, readErr := ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output1\n")
+
+					stdoutReader, stdoutErr = task2.Stdout()
+					So(stdoutErr, ShouldBeNil)
+					So(stdoutReader, ShouldNotBeNil)
+
+					data, readErr = ioutil.ReadAll(stdoutReader)
+					So(readErr, ShouldBeNil)
+					So(string(data[:]), ShouldEqual, "output2\n")
+
 				})
 
 				Convey("Both exit statuses should be 0", func() {
@@ -223,7 +302,10 @@ func TestLocal(t *testing.T) {
 					So(taskStatus.ExitCode, ShouldEqual, 0)
 				})
 			})
-		})
 
+			if task != nil {
+				task.Clean()
+			}
+		})
 	})
 }

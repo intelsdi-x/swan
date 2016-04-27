@@ -12,7 +12,7 @@ import (
 // dummy to execrsise the workloads
 func main() {
 	fmt.Printf("dummy = %+v\n", dummy.Dummy{})
-	fmt.Printf("remote = %+v\n", executor.NewRemote(executor.SSHConfig{}))
+	fmt.Printf("remote = %+v\n", executor.NewLocal())
 	var l workloads.Launcher
 	fmt.Printf("workloads = %+v\n", l)
 }
