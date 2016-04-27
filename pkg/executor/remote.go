@@ -168,6 +168,7 @@ func (task *remoteTask) Stop() error {
 	}
 
 	// Sending SIGKILL signal to local task.
+	log.Debug("Sending ", ssh.SIGKILL, " to remote task.")
 	err := task.session.Signal(ssh.SIGKILL)
 	if err != nil {
 		log.Error(err)
@@ -177,6 +178,7 @@ func (task *remoteTask) Stop() error {
 	// Checking if kill was successful.
 	isTerminated := task.Wait(killTimeout)
 	if !isTerminated {
+		log.Error("Cannot terminate task")
 		return errors.New("Cannot terminate task")
 
 	}

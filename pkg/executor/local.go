@@ -139,13 +139,6 @@ func (task *localTask) createStatus() *Status {
 	}
 }
 
-func (task *localTask) killTask(sig syscall.Signal) error {
-	// We signal the entire process group.
-	// The kill syscall interprets a negated PID N as the process group N belongs to.
-	log.Debug("Sending ", sig, " to PID ", -task.getPid())
-	return syscall.Kill(-task.getPid(), sig)
-}
-
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
 	if task.isTerminated() {
@@ -154,7 +147,8 @@ func (task *localTask) Stop() error {
 
 	// Sending SIGKILL signal to local task.
 	// TODO: Add PID namespace to handle orphan tasks properly.
-	err := task.killTask(syscall.SIGKILL)
+	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -task.getPid())
+	err := syscall.Kill(-task.getPid(), syscall.SIGKILL)
 	if err != nil {
 		log.Error(err)
 		return err
