@@ -22,8 +22,6 @@ func NewLocal() Local {
 	return Local{}
 }
 
-const swanTmpFilesPrefix = "swan_local_executor_"
-
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
@@ -35,11 +33,11 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile(os.TempDir(), swanTmpFilesPrefix+"stdout_")
+	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(os.TempDir(), swanTmpFilesPrefix+"stderr_")
+	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
