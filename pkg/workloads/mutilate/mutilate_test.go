@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
-	"github.com/shopspring/decimal"
 )
 
 const (
@@ -38,14 +38,14 @@ TX    3204252 bytes :    0.2 MB/s
 
 type MutilateTestSuite struct {
 	suite.Suite
-	mutilate               mutilate
-	config                 Config
+	mutilate mutilate
+	config   Config
 
 	defaultMutilateCommand string
 	defaultSlo             int
 
-	mExecutor              *mocks.Executor
-	mHandle                *mocks.Task
+	mExecutor *mocks.Executor
+	mHandle   *mocks.Task
 }
 
 func (s *MutilateTestSuite) SetupTest() {
@@ -78,7 +78,7 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilateTuneCommand).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0).Return(true)
+	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
@@ -140,7 +140,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0).Return(true)
+	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
 	Convey("When generating Load.", s.T(), func() {
@@ -193,7 +193,7 @@ func (s *MutilateTestSuite) TestPopulate() {
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0).Return(true)
+	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
 	Convey("When Populating Memcached.", s.T(), func() {
