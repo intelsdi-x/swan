@@ -41,7 +41,8 @@ func (p samplePhase) Run() error {
 	return nil
 }
 
-func sampleExperiment() {
+func main() {
+
 	var phases []swan.Phase
 
 	samplePhase := &samplePhase{
@@ -61,9 +62,4 @@ func sampleExperiment() {
 	fmt.Println("Starting new Experiment")
 	exp.Run()
 	fmt.Println("Done")
-}
-
-func main() {
-	sampleExperiment()
-	localExperiment()
 }
