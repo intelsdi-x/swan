@@ -25,6 +25,20 @@ func (_m *Task) Clean() error {
 	return r0
 }
 
+// EraseOutput provides a mock function with given fields:
+func (_m *Task) EraseOutput() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Status provides a mock function with given fields:
 func (_m *Task) Status() (executor.TaskState, *executor.Status) {
 	ret := _m.Called()

@@ -15,8 +15,7 @@ import (
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct {
-}
+type Local struct{}
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
@@ -45,10 +44,9 @@ func (l Local) Execute(command string) (Task, error) {
 		return nil, err
 	}
 
-	log.Debug("Created temporary files. ",
-		"Stdout path:  ", stdoutFile.Name(),
-		"Stderr path:  ", stderrFile.Name(),
-	)
+	log.Debug("Created temporary files ",
+		"stdout path:  ", stdoutFile.Name(), "stderr path:  ", stderrFile.Name())
+
 	cmd.Stdout = stdoutFile
 	cmd.Stderr = stderrFile
 
@@ -100,7 +98,6 @@ type localTask struct {
 	cmdHandler     *exec.Cmd
 	stdoutFile     *os.File
 	stderrFile     *os.File
-	waitErrChannel chan error
 	waitEndChannel chan struct{}
 }
 
@@ -209,28 +206,31 @@ func (task *localTask) Stderr() (io.Reader, error) {
 
 // Clean removes files to which stdout and stderr of executed command was written.
 func (task *localTask) Clean() error {
-	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
-		return err
+	// Close stdout.
+	stdoutErr := task.stdoutFile.Close()
+
+	// Close stderr.
+	stderrErr := task.stderrFile.Close()
+
+	if stdoutErr != nil {
+		return stdoutErr
 	}
 
-	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
-		return err
+	if stderrErr != nil {
+		return stderrErr
 	}
 
-	err := task.stdoutFile.Close()
-	if err != nil {
-		return err
-	}
+	return nil
+}
 
+// EraseOutput removes task's stdout & stderr files.
+func (task *localTask) EraseOutput() error {
+	// Remove stdout file.
 	if err := os.Remove(task.stdoutFile.Name()); err != nil {
 		return err
 	}
 
-	err = task.stderrFile.Close()
-	if err != nil {
-		return err
-	}
-
+	// Remove stderr file.
 	if err := os.Remove(task.stderrFile.Name()); err != nil {
 		return err
 	}
