@@ -6,13 +6,28 @@ import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/nu7hatch/gouuid"
-	"strings"
 	"time"
 )
 
 var (
 	pClient *client.Client
 )
+
+// Lazy connection to snap
+func ensureConnected() error {
+	if pClient == nil {
+		// TODO(niklas): Make 'secure' connection default
+		client, err := client.New("http://localhost:8181", "v1", true)
+
+		if err != nil {
+			return err
+		}
+
+		pClient = client
+	}
+
+	return nil
+}
 
 type task struct {
 	Version  int
@@ -42,60 +57,24 @@ type Session struct {
 	// Active task
 	task *task
 
-	// Processors
-	// Publishers
-}
-
-// Lazy connection to snap
-func ensureConnected() error {
-	if pClient == nil {
-		// TODO(niklas): Make 'secure' connection default
-		client, err := client.New("http://localhost:8181", "v1", true)
-
-		if err != nil {
-			return err
-		}
-
-		pClient = client
-	}
-
-	return nil
+	// Publisher for tagged metrics
+	Publisher *wmap.PublishWorkflowMapNode
 }
 
 // NewSession generates a session with a name and a list of metrics to tag.
 // The interval cannot be less than second granularity.
-func NewSession(name string, metrics []string, interval time.Duration) (*Session, error) {
+func NewSession(name string, metrics []string, interval time.Duration, publisher *wmap.PublishWorkflowMapNode) (*Session, error) {
 	err := ensureConnected()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Session{
-		Name:     name,
-		Metrics:  metrics,
-		Interval: interval,
+		Name:      name,
+		Metrics:   metrics,
+		Interval:  interval,
+		Publisher: publisher, // TODO(niklas): Replace with cassandra publisher
 	}, nil
-}
-
-// ListSessions lists current available sessions based on task listing from snap.
-func ListSessions() ([]string, error) {
-	err := ensureConnected()
-	if err != nil {
-		return nil, err
-	}
-
-	out := []string{}
-
-	tasks := pClient.GetTasks()
-	if tasks.Err != nil {
-		return out, tasks.Err
-	}
-
-	for _, task := range tasks.ScheduledTasks {
-		out = append(out, strings.Join([]string{task.ID, task.Name}, "-"))
-	}
-
-	return out, nil
 }
 
 // Start an experiment session.
@@ -109,9 +88,6 @@ func (s *Session) Start() error {
 	if err != nil {
 		return err
 	}
-
-	// Check if plugins are loaded
-	// Currently, the mock1 collector, passthru processor and file publisher needs to be loaded.
 
 	// Convert from duration to "Xs" string.
 	secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
@@ -136,20 +112,27 @@ func (s *Session) Start() error {
 
 	wf := wmap.NewWorkflowMap()
 
-	// TODO(niklas): Add metrics from session.
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)
 	}
 
-	wf.CollectNode.AddConfigItem("/intel/mock/foo", "password", "secret")
+	// Check if plugins are loaded
+	loaded, err := IsPluginLoaded("session-processor")
+	if err != nil {
+		return err
+	}
 
-	pu := wmap.NewPublishNode("file", 3)
-	pu.AddConfigItem("file", "/tmp/swan-snap.out")
+	if !loaded {
+		err = LoadPlugin("snap-processor-session-tagging")
+		if err != nil {
+			return err
+		}
+	}
 
-	pr := wmap.NewProcessNode("passthru", 1)
-
-	pr.Add(pu)
+	pr := wmap.NewProcessNode("session-processor", 1)
+	pr.AddConfigItem("swan-session", s.ID)
 	wf.CollectNode.Add(pr)
+	pr.Add(s.Publisher)
 
 	t.Workflow = wf
 
@@ -207,6 +190,7 @@ func (s *Session) Stop() error {
 	}
 
 	s.task = nil
+	s.ID = ""
 
 	return nil
 }
