@@ -25,7 +25,7 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting ", command)
+	log.Debug("Starting locally ", command)
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
@@ -74,7 +74,7 @@ func (l Local) Execute(command string) (Task, error) {
 				// terminate so panic.
 				// This error happens very rarely and it represent the critical state of the
 				// server like volume or HW problems.
-				log.Panic("Waiting for task failed. ", err)
+				log.Panic("Waiting for local task failed. ", err)
 			}
 		}
 
@@ -88,8 +88,6 @@ func (l Local) Execute(command string) (Task, error) {
 
 	return newlocalTask(cmd, stdoutFile, stderrFile, waitEndChannel), nil
 }
-
-const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
