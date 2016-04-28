@@ -6,20 +6,19 @@ import "strconv"
 
 //CPUSetShares input definition
 type CPUSetShares struct {
- cgroupName string
- cpuSetShares string
-
+	cgroupName   string
+	cpuSetShares string
 }
 
 //NewCPUSetShares creates an instance of input data
-func NewCPUSetShares(nameOfTheCgroup string, cpuSets string ) *CPUSetShares{
+func NewCPUSetShares(nameOfTheCgroup string, cpuSets string) *CPUSetShares {
 	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
 }
 
 //Delete removes specified cgroup
 func (cpuSet *CPUSetShares) Delete() error {
 
-        cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
+	cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
@@ -32,43 +31,41 @@ func (cpuSet *CPUSetShares) Delete() error {
 //Isolate creates specified cgroup
 func (cpuSet *CPUSetShares) Isolate(PID int) error {
 
-     	// 1.a Create cpuset cgroup
+	// 1.a Create cpuset cgroup
 
-        cmd := exec.Command("sh", "-c", "cgcreate -g cpuset:"+cpuSet.cgroupName)
+	cmd := exec.Command("sh", "-c", "cgcreate -g cpuset:"+cpuSet.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-     	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover of platform, we change accordingly
+	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover of platform, we change accordingly
 
-	cgCPUNodes := "0-1" 
+	cgCPUNodes := "0-1"
 
-        cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cgCPUNodes+" "+cpuSet.cgroupName)
-
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-
-     	// 1.c Set cpuset cgroup cpus
-
-        cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cpuSet.cpuSetShares+" "+cpuSet.cgroupName)
+	cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cgCPUNodes+" "+cpuSet.cgroupName)
 
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-     	// 2. Set PID to cgroups
+	// 1.c Set cpuset cgroup cpus
+
+	cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cpuSet.cpuSetShares+" "+cpuSet.cgroupName)
+
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// 2. Set PID to cgroups
 
 	//Associate task with the cgroup
 	//cgclassify & cgexec seem to exit with error so temporarily using file io
 
-
-        strPID :=strconv.Itoa(PID)
+	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
 	err = ioutil.WriteFile("/sys/fs/cgroup/cpuset"+"/"+cpuSet.cgroupName+"/tasks", d, 0644)
 
@@ -76,14 +73,12 @@ func (cpuSet *CPUSetShares) Isolate(PID int) error {
 		panic(err.Error())
 	}
 
-
-//        cmd = exec.Command("sh", "-c", "cgclassify -g cpuset:A " + string(PID))
-//
-//	err = cmd.Run()
-//	if err != nil {
-//		panic("Cgclassify failed: " + err.Error())
-//	}
-
+	//        cmd = exec.Command("sh", "-c", "cgclassify -g cpuset:A " + string(PID))
+	//
+	//	err = cmd.Run()
+	//	if err != nil {
+	//		panic("Cgclassify failed: " + err.Error())
+	//	}
 
 	return nil
 }
