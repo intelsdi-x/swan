@@ -5,14 +5,16 @@ package executor
 import (
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	"os"
 	"os/user"
+	"regexp"
 	"testing"
 )
 
 // This tests required following setup:
-// - id_rsa ssh keys in user home directory.
-// - no password ssh session e.g execute command: ssh-copy-id localhost
+// - id_rsa ssh keys in user home directory. [command ssh-keygen]
+// - no password ssh session. [command ssh-copy-id localhost]
 func TestRemote(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
@@ -38,6 +40,28 @@ func TestRemote(t *testing.T) {
 		Convey("When creating client configuration with proper configuration", func() {
 			if _, err := os.Stat(user.HomeDir + "/.ssh/id_rsa"); os.IsNotExist(err) {
 				t.Skip("skipping test: ssh keys not found in " + user.HomeDir + "/.ssh/id_rsa")
+			}
+
+			// Check if localhost is self-authorized.
+			hostname, err := os.Hostname()
+			if err != nil {
+				t.Skip("skipping test: cannot figure out if localhost is self-authorized")
+			}
+
+			authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
+			if err != nil {
+				t.Skip("skipping test: cannot figure out if localhost is self-authorized", err)
+			}
+			authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
+			if err != nil {
+				t.Skip("skipping test: cannot figure out if localhost is self-authorized", err)
+			}
+
+			re := regexp.MustCompile(hostname)
+			match := re.Find(authorizedHosts)
+
+			if match == nil {
+				t.Skip("skipping test: localhost (" + hostname + ") is not self-authorized")
 			}
 
 			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
