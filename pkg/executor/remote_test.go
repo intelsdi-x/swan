@@ -12,7 +12,7 @@ import (
 
 // This tests required following setup:
 // - id_rsa ssh keys in user home directory.
-// - ssh-copy-id localhost
+// - no password ssh session e.g execute command: ssh-copy-id localhost
 func TestRemote(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
@@ -50,7 +50,7 @@ func TestRemote(t *testing.T) {
 				sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
 
 				Convey("The generic Executor test should pass", func() {
-					TestExecutor(t, NewRemote(*sshConfig))
+					testExecutor(t, NewRemote(*sshConfig))
 				})
 			})
 		})

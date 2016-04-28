@@ -11,17 +11,16 @@ import (
 )
 
 // TestExecutor tests the execution of process for given executor.
-func TestExecutor(t *testing.T, executor Executor) {
-	log.SetLevel(log.ErrorLevel)
+func testExecutor(t *testing.T, executor Executor) {
+	log.SetLevel(log.DebugLevel)
 
 	Convey("When blocking infinitively sleep command is executed", func() {
 		task, err := executor.Execute("sleep inf")
-		if task != nil {
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
-		}
 		So(err, ShouldBeNil)
+
+		defer task.Stop()
+		defer task.Clean()
+		defer task.EraseOutput()
 
 		Convey("Task should be still running and status should be nil", func() {
 			taskState, taskStatus := task.Status()
@@ -35,7 +34,7 @@ func TestExecutor(t *testing.T, executor Executor) {
 		Convey("When we wait for task termination with the 1ms timeout", func() {
 			isTaskTerminated := task.Wait(1 * time.Microsecond)
 
-			Convey("The timeout should exceed and the task not terminated ", func() {
+			Convey("The timeout appeach and the task should not be terminated", func() {
 				So(isTaskTerminated, ShouldBeFalse)
 			})
 
@@ -56,7 +55,8 @@ func TestExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 			})
 
-			Convey("The task should be terminated and the task status should be -1", func() {
+			Convey("The task should be terminated and the task status should"+
+				"indicate that task was killed", func() {
 				taskState, taskStatus := task.Status()
 
 				So(taskState, ShouldEqual, TERMINATED)
@@ -109,13 +109,11 @@ func TestExecutor(t *testing.T, executor Executor) {
 
 	Convey("When command `echo output` is executed", func() {
 		task, err := executor.Execute("echo output")
-		if task != nil {
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
-		}
-
 		So(err, ShouldBeNil)
+
+		defer task.Stop()
+		defer task.Clean()
+		defer task.EraseOutput()
 
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
@@ -126,7 +124,7 @@ func TestExecutor(t *testing.T, executor Executor) {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
-			Convey("And the exit status should be 0 and command needs to be 'output'", func() {
+			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
 				So(taskStatus, ShouldNotBeNil)
 				So(taskStatus.ExitCode, ShouldEqual, 0)
 
@@ -171,13 +169,11 @@ func TestExecutor(t *testing.T, executor Executor) {
 
 	Convey("When command which does not exists is executed", func() {
 		task, err := executor.Execute("commandThatDoesNotExists")
-		if task != nil {
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
-		}
-
 		So(err, ShouldBeNil)
+
+		defer task.Stop()
+		defer task.Clean()
+		defer task.EraseOutput()
 
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
@@ -224,17 +220,15 @@ func TestExecutor(t *testing.T, executor Executor) {
 	Convey("When we execute two tasks in the same time", func() {
 		task, err := executor.Execute("echo output1")
 		task2, err2 := executor.Execute("echo output2")
-		if task != nil && task2 != nil {
-			defer task.Stop()
-			defer task2.Stop()
-			defer task.Clean()
-			defer task2.Clean()
-			defer task.EraseOutput()
-			defer task2.EraseOutput()
-		}
-
 		So(err, ShouldBeNil)
 		So(err2, ShouldBeNil)
+
+		defer task.Stop()
+		defer task2.Stop()
+		defer task.Clean()
+		defer task2.Clean()
+		defer task.EraseOutput()
+		defer task2.EraseOutput()
 
 		Convey("When we wait for the tasks to terminate", func() {
 			task.Wait(0)
@@ -279,13 +273,11 @@ func TestExecutor(t *testing.T, executor Executor) {
 
 	Convey("When command `echo sleep 0` is executed", func() {
 		task, err := executor.Execute("echo sleep 0")
-		if task != nil {
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
-		}
-
 		So(err, ShouldBeNil)
+
+		defer task.Stop()
+		defer task.Clean()
+		defer task.EraseOutput()
 
 		// Wait for the command to execute.
 		time.Sleep(100 * time.Millisecond)
