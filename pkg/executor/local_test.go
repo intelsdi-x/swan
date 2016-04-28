@@ -14,7 +14,7 @@ func TestLocal(t *testing.T) {
 		l := NewLocal()
 
 		Convey("The generic Executor test should pass", func() {
-			TestExecutor(t, l)
+			testExecutor(t, l)
 		})
 	})
 }

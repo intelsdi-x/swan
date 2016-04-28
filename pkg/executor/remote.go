@@ -69,6 +69,10 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
+	stdinPipe, err := session.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
 
 	err = session.Start(command)
 	if err != nil {
@@ -82,7 +86,10 @@ func (remote Remote) Execute(command string) (Task, error) {
 	// This channel will not be used for passing any message.
 	waitEndChannel := make(chan struct{})
 
-	exitCodeInt := int(-1)
+	const successExitCode = int(0)
+	const errorExitCode = int(-1)
+
+	exitCodeInt := errorExitCode
 	var exitCode *int
 	exitCode = &exitCodeInt
 
@@ -90,7 +97,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 	go func() {
 		defer close(waitEndChannel)
 
-		*exitCode = 0
+		*exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
 		if err != nil {
@@ -109,7 +116,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 			" with err output in file: ", stderrFile.Name(),
 			" with status code: ", *exitCode)
 	}()
-	return newRemoteTask(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
+	return newRemoteTask(session, stdoutFile, stderrFile, stdinPipe, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -119,17 +126,19 @@ type remoteTask struct {
 	session        *ssh.Session
 	stdoutFile     *os.File
 	stderrFile     *os.File
+	stdinPipe      io.WriteCloser
 	waitEndChannel chan struct{}
 	exitCode       *int
 }
 
 // newRemoteTask returns a RemoteTask instance.
 func newRemoteTask(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}, exitCode *int) *remoteTask {
+	stdinPipe io.WriteCloser, waitEndChannel chan struct{}, exitCode *int) *remoteTask {
 	return &remoteTask{
 		session:        session,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
+		stdinPipe:      stdinPipe,
 		waitEndChannel: waitEndChannel,
 		exitCode:       exitCode,
 	}
@@ -170,7 +179,9 @@ func (task *remoteTask) Stop() error {
 	// Sending SIGKILL signal to local task.
 	log.Debug("Sending ", ssh.SIGKILL, " to remote task.")
 	err := task.session.Signal(ssh.SIGKILL)
+	//p, err := task.stdinPipe.Write([]byte("\x03")) // for debug.
 	if err != nil {
+		//log.Error(err, " ", p)
 		log.Error(err)
 		return err
 	}
