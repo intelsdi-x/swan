@@ -1,8 +1,10 @@
 package mutilate
 
 import (
+	"bytes"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/exp/inotify"
+	"os"
 	"testing"
 	"time"
 )
@@ -12,7 +14,7 @@ func TestStdoutParser(t *testing.T) {
 		event := inotify.Event{Name: "/non/existing/file"}
 		baseTime := time.Now()
 
-		data, error := parse_mutilate_stdout(event, baseTime)
+		data, error := parseMutilateStdout(event, baseTime)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
@@ -23,17 +25,17 @@ func TestStdoutParser(t *testing.T) {
 		event := inotify.Event{Name: "/etc/shadow"}
 		baseTime := time.Now()
 
-		data, error := parse_mutilate_stdout(event, baseTime)
+		data, error := parseMutilateStdout(event, baseTime)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /etc/shadow: permission denied")
 	})
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
-		event := inotify.Event{Name: get_current_dir_file("/mutilate.stdout")}
+		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate.stdout")}
 		baseTime := time.Now()
 
-		data, error := parse_mutilate_stdout(event, baseTime)
+		data, error := parseMutilateStdout(event, baseTime)
 
 		So(error, ShouldBeNil)
 		So(data, ShouldHaveLength, 9)
@@ -66,4 +68,13 @@ func TestStdoutParser(t *testing.T) {
 		So(data[8].time.Unix(), ShouldEqual, baseTime.Unix())
 
 	})
+}
+
+func GetCurrentDirFilePath(name string) string {
+	var path bytes.Buffer
+	gwd, _ := os.Getwd()
+	path.WriteString(gwd)
+	path.WriteString(name)
+
+	return path.String()
 }

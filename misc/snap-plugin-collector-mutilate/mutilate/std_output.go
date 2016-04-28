@@ -10,33 +10,34 @@ import (
 	"time"
 )
 
-type MutilateMetric struct {
+// Metric represents sigle metric retrieved from mutilate standard output
+type Metric struct {
 	name  string
 	value float64
 	time  time.Time
 }
 
-func parse_mutilate_stdout(event inotify.Event, baseTime time.Time) ([]MutilateMetric, error) {
-	var output []MutilateMetric
+func parseMutilateStdout(event inotify.Event, baseTime time.Time) ([]Metric, error) {
+	var output []Metric
 	csvFile, readError := os.Open(event.Name)
 	defer csvFile.Close()
 	if readError != nil {
 		return output, readError
 	}
 	scanner := bufio.NewScanner(csvFile)
-	output = append(output, scan_mutilate_stdout_rows(scanner, baseTime)...)
+	output = append(output, scanMutilateStdoutRows(scanner, baseTime)...)
 
 	return output, nil
 }
 
-func scan_mutilate_stdout_rows(scanner *bufio.Scanner, eventTime time.Time) []MutilateMetric {
-	var output []MutilateMetric
+func scanMutilateStdoutRows(scanner *bufio.Scanner, eventTime time.Time) []Metric {
+	var output []Metric
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "read") {
-			output = append(output, parse_mutilate_stdout_row_default(line, eventTime)...)
+			output = append(output, parseDefaultMutilateStdoutRow(line, eventTime)...)
 		} else if strings.Contains(line, "Swan latency for percentile") {
-			output = append(output, parse_mutilate_stdout_row_swan(line, eventTime))
+			output = append(output, parseSwanMutilateStdoutRow(line, eventTime))
 		}
 
 	}
@@ -44,22 +45,25 @@ func scan_mutilate_stdout_rows(scanner *bufio.Scanner, eventTime time.Time) []Mu
 	return output
 }
 
-func parse_mutilate_stdout_row_default(line string, eventTime time.Time) []MutilateMetric {
-	var output []MutilateMetric
+// parseDefaultMutilateStdoutRow takes row on input; first column is ignored as it is a row description,
+// not a metric
+// example row: read 20.8 23.1 11.9 13.3 13.4 33.4 43.1 59.5
+func parseDefaultMutilateStdoutRow(line string, eventTime time.Time) []Metric {
+	var output []Metric
 	fields := strings.Fields(line)
-	metricNames := get_default_metrics_names()
-	for key, value := range fields {
-		if key == 0 {
+	metricNames := getDefaultMetricsNames()
+	for index, value := range fields {
+		if index == 0 {
 			continue
 		}
 		output = append(output,
-			create_metrics_from_default_stdout(value, metricNames[key], eventTime))
+			createMetricsFromDefaultStdout(value, metricNames[index], eventTime))
 	}
 
 	return output
 }
 
-func get_default_metrics_names() []string {
+func getDefaultMetricsNames() []string {
 	var names []string
 	names = append(names, "", "avg", "std", "min", "percentile/5th", "percentile/10th",
 		"percentile/90th", "percentile/95th", "percentile/99th")
@@ -68,22 +72,24 @@ func get_default_metrics_names() []string {
 
 }
 
-func create_metrics_from_default_stdout(value string, name string, eventTime time.Time) MutilateMetric {
+func createMetricsFromDefaultStdout(value string, name string, eventTime time.Time) Metric {
 	floatValue, _ := strconv.ParseFloat(value, 64)
-	metric := MutilateMetric{name, floatValue, eventTime}
+	metric := Metric{name, floatValue, eventTime}
 	return metric
 }
 
-func parse_mutilate_stdout_row_swan(line string, eventTime time.Time) MutilateMetric {
+// parseSwanMutilateStdoutRow takes a row containing custom percentile data on input
+// example row: Swan latency for percentile 99.999000: 1777.887805
+func parseSwanMutilateStdoutRow(line string, eventTime time.Time) Metric {
 	lineFields := strings.Split(line, ":")
 	floatValue, _ := strconv.ParseFloat(strings.TrimSpace(lineFields[1]), 64)
-	name := get_metric_name_from_swan_line_description(lineFields[0])
-	output := MutilateMetric{name, floatValue, eventTime}
+	name := getMetricNameFromSwanRowDescription(lineFields[0])
+	output := Metric{name, floatValue, eventTime}
 
 	return output
 }
 
-func get_metric_name_from_swan_line_description(description string) string {
+func getMetricNameFromSwanRowDescription(description string) string {
 	words := strings.Split(description, " ")
 	percentileName := words[len(words)-1]
 	var buffer bytes.Buffer
