@@ -4,25 +4,22 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-
-type CpuShares struct {
+//CPUShares defines data needed for CPU controller
+type CPUShares struct {
  cgroupName string
  cpuShares string
- cgCpus string
 
 }
 
-func NewCpuShares(nameOfTheCgroup string, myCpuShares string, myCpus string ) *CpuShares{
-	return &CpuShares{cgroupName: nameOfTheCgroup, cpuShares: myCpuShares, cgCpus: myCpus}
+//NewCPUShares instance creation
+func NewCPUShares(nameOfTheCgroup string, NumShares string ) *CPUShares{
+	return &CPUShares{cgroupName: nameOfTheCgroup, cpuShares: NumShares}
 }
 
-func (cpu *CpuShares) Create() error {
-	return nil
-}
+//Delete removes the specified cgroup 
+func (cpu *CPUShares) Delete() error {
 
-func (cpu *CpuShares) Delete() error {
-	controllerName := "cpu"
-        cmd := exec.Command("sh", "-c", "cgdelete -g "+controllerName+":"+cpu.cgroupName)
+        cmd := exec.Command("sh", "-c", "cgdelete -g cpu"+":"+cpu.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
@@ -32,12 +29,12 @@ func (cpu *CpuShares) Delete() error {
 	return nil
 }
 
+//Isolate creates and associates specified pid to the cgroup
+func (cpu *CPUShares) Isolate(PID int) error {
 
-func (cpu *CpuShares) Isolate(PID int) error {
      	// 1.a Create cpu cgroup
-	controllerName := "cpu"
-	cgroupName := "A"
-        cmd := exec.Command("sh", "-c", "cgcreate -g "+controllerName+":"+cgroupName)
+
+        cmd := exec.Command("sh", "-c", "cgcreate -g "+"cpu"+":"+cpu.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
@@ -46,9 +43,8 @@ func (cpu *CpuShares) Isolate(PID int) error {
 
      	// 1.b Set cpu cgroup shares
 
-	cpuShares := "1024"
 
-        cmd = exec.Command("sh", "-c", "cgset -r cpu.shares="+cpuShares+" "+ cgroupName)
+        cmd = exec.Command("sh", "-c", "cgset -r cpu.shares="+cpu.cpuShares+" "+ cpu.cgroupName)
 
 	err = cmd.Run()
 	if err != nil {
@@ -56,21 +52,19 @@ func (cpu *CpuShares) Isolate(PID int) error {
 	}
 
 
-     	// 4. Set PID to cgroups
+     	// 2. Set PID to cgroups
 
 	//Associate task with the cgroup
-	//cgclassify seems to exit with error so temporarily using file io
+	//cgclassify and cgexec seem to exit with error so temporarily using file io
 
 
         strPID :=strconv.Itoa(PID)
 	d := []byte(strPID)
-	err = ioutil.WriteFile("/sys/fs/cgroup/"+controllerName+"/"+cgroupName+"/tasks", d, 0644)
+	err = ioutil.WriteFile("/sys/fs/cgroup/"+"cpu/"+cpu.cgroupName+"/tasks", d, 0644)
 
 	if err != nil {
 		panic(err.Error())
 	}
-
-
 
 
 //        cmd = exec.Command("sh", "-c", "cgclassify -g cpu:A " + string(PID))
@@ -83,38 +77,4 @@ func (cpu *CpuShares) Isolate(PID int) error {
 
 	return nil
 }
-
-
-//	//Write CPU shares
-//        strShares :=strconv.Itoa(1024)
-//	c := []byte(strShares)
-//	err2 := ioutil.WriteFile("/tmp/x.mri", c, 0644)
-//
-//	if err2 != nil {
-//		panic(err2.Error())
-//	}
-//
-//	//Associate task with the cgroup
-//        strPID :=strconv.Itoa(PID)
-//	d := []byte(strPID)
-//	err3 := ioutil.WriteFile("/tmp/y.mri", d, 0644)
-//
-//	if err3 != nil {
-//		panic(err3.Error())
-//	}
-//
-//
-//
-//
-//
-//func (cpu *CpuShares) Isolate(PID int) error {
-//        cmd := exec.Command("sh", "-c", "touch /tmp/x.tmp")
-//
-//	err := cmd.Run()
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//
-//	return nil
-//}
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestMemorySize(t *testing.T) {
-	memorysize := MemorySizeShares{cgroupName: "M", memorySizeShares:"512M"}
+	memorysize := MemorySize{cgroupName: "M", memorySize:"512M"}
 	
 	cmd := exec.Command("sh","-c","sleep 1h")
 	err := cmd.Start()

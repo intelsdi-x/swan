@@ -4,26 +4,22 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-
-type CpuSetShares struct {
+//CPUSetShares input definition
+type CPUSetShares struct {
  cgroupName string
  cpuSetShares string
 
 }
 
-func NewCpuSetShares(nameOfTheCgroup string, myCpuSetShares string ) *CpuSetShares{
-	return &CpuSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: myCpuSetShares}
+//NewCPUSetShares creates an instance of input data
+func NewCPUSetShares(nameOfTheCgroup string, cpuSets string ) *CPUSetShares{
+	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
 }
 
-func (cpuSet *CpuSetShares) Create() error {
-	return nil
-}
+//Delete removes specified cgroup
+func (cpuSet *CPUSetShares) Delete() error {
 
-func (cpuSet *CpuSetShares) Delete() error {
-
-	controllerName := "cpuset"
-	cgroupName := "A"
-        cmd := exec.Command("sh", "-c", "cgdelete -g "+controllerName+":"+cgroupName)
+        cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
@@ -33,57 +29,52 @@ func (cpuSet *CpuSetShares) Delete() error {
 	return nil
 }
 
+//Isolate creates specified cgroup
+func (cpuSet *CPUSetShares) Isolate(PID int) error {
 
-func (cpuSet *CpuSetShares) Isolate(PID int) error {
-	cgroupName := "B"
+     	// 1.a Create cpuset cgroup
 
-     	// 2.a Create cpuset cgroup
-
-	controllerName := "cpuset"
-
-
-        cmd := exec.Command("sh", "-c", "cgcreate -g "+controllerName+":"+cgroupName)
+        cmd := exec.Command("sh", "-c", "cgcreate -g cpuset:"+cpuSet.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-     	// 2.b Set cpuset cgroup cpus
+     	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover of platform, we change accordingly
 
-	cgCpus := "0-3"
+	cgCPUNodes := "0-1" 
 
-        cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cgCpus+" "+cgroupName)
+        cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cgCPUNodes+" "+cpuSet.cgroupName)
 
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	
-	cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems=0-1 "+cgroupName)
 
-        err = cmd.Run()
-        if err != nil {
-                return err
-        }
+     	// 1.c Set cpuset cgroup cpus
 
-     	// 3. Set PID to cgroups
+        cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cpuSet.cpuSetShares+" "+cpuSet.cgroupName)
+
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+     	// 2. Set PID to cgroups
 
 	//Associate task with the cgroup
-	//cgclassify seems to exit with error so temporarily using file io
+	//cgclassify & cgexec seem to exit with error so temporarily using file io
 
-	controllerName = "cpuset"
 
         strPID :=strconv.Itoa(PID)
 	d := []byte(strPID)
-	err3 := ioutil.WriteFile("/sys/fs/cgroup/"+controllerName+"/"+cgroupName+"/tasks", d, 0644)
+	err = ioutil.WriteFile("/sys/fs/cgroup/cpuset"+"/"+cpuSet.cgroupName+"/tasks", d, 0644)
 
-	if err3 != nil {
-		panic(err3.Error())
+	if err != nil {
+		panic(err.Error())
 	}
-
-
 
 
 //        cmd = exec.Command("sh", "-c", "cgclassify -g cpuset:A " + string(PID))
