@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/inotify"
 	"os"
 	"strconv"
 	"strings"
@@ -21,9 +20,9 @@ func (m metric) isMetricEmpty() bool {
 	return m.name == "" && m.value == 0.0
 }
 
-func parseMutilateStdout(event inotify.Event) ([]metric, error) {
+func parseMutilateStdout(filePath string) ([]metric, error) {
 	var output []metric
-	csvFile, readError := os.Open(event.Name)
+	csvFile, readError := os.Open(filePath)
 	defer csvFile.Close()
 	if readError != nil {
 		return output, readError
@@ -80,8 +79,8 @@ func parseDefaultMutilateStdoutRow(line string) ([]metric, error) {
 	var output []metric
 	fields := strings.Fields(line)
 	if colCount := len(fields); colCount != 9 {
-		return output, errors.New(fmt.Sprintf("Incorrect column count (got: %d, "+
-			"expected: 9) in QPS read row", colCount))
+		return output, fmt.Errorf("Incorrect column count (got: %d, expected: 9) in "+
+			"QPS read row", colCount)
 	}
 	metricNames := [...]string{"", "avg", "std", "min", "percentile/5th",
 		"percentile/10th", "percentile/90th", "percentile/95th", "percentile/99th"}
@@ -91,8 +90,8 @@ func parseDefaultMutilateStdoutRow(line string) ([]metric, error) {
 		}
 		metric, err := newMetricFrom(value, metricNames[index])
 		if err != nil {
-			return output, errors.New(fmt.Sprintf("Non-numeric value in read "+
-				"row (value: \"%s\", column: %d)", err.Error(), index+1))
+			return output, fmt.Errorf("Non-numeric value in read row (value: \"%s\","+
+				" column: %d)", err.Error(), index+1)
 		}
 		output = append(output, metric)
 	}
