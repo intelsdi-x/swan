@@ -21,6 +21,10 @@
 			"Rev": "19e100e9652485a76176bc5fd2669f57d3a2743c"
 		},
 		{
+			"ImportPath": "github.com/intelsdi-x/snap-plugin-utilities/stack",
+			"Rev": "ce1cd11ae9a95da981fd780e1129d92764fc3609"
+		},
+		{
 			"ImportPath": "github.com/jtolds/gls",
 			"Comment": "v4.2.0",
 			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
@@ -98,6 +102,10 @@
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/exp/inotify",
+			"Rev": "d5aecea7ffa68142f6a4cdc95761c25c135cf607"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
