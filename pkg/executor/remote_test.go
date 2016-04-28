@@ -1,5 +1,3 @@
-// +build integration
-
 package executor
 
 import (
@@ -45,23 +43,23 @@ func TestRemote(t *testing.T) {
 			// Check if localhost is self-authorized.
 			hostname, err := os.Hostname()
 			if err != nil {
-				t.Skip("skipping test: cannot figure out if localhost is self-authorized")
+				t.Skip("Skipping test: cannot figure out if localhost is self-authorized")
 			}
 
 			authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
 			if err != nil {
-				t.Skip("skipping test: cannot figure out if localhost is self-authorized", err)
+				t.Skip("Skipping test: cannot figure out if localhost is self-authorized", err)
 			}
 			authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
 			if err != nil {
-				t.Skip("skipping test: cannot figure out if localhost is self-authorized", err)
+				t.Skip("Skipping test: cannot figure out if localhost is self-authorized", err)
 			}
 
 			re := regexp.MustCompile(hostname)
 			match := re.Find(authorizedHosts)
 
 			if match == nil {
-				t.Skip("skipping test: localhost (" + hostname + ") is not self-authorized")
+				t.Skip("Skipping test: localhost (" + hostname + ") is not self-authorized")
 			}
 
 			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")

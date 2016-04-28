@@ -55,13 +55,16 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 			})
 
-			Convey("The task should be terminated and the task status should"+
+			Convey("The task should be terminated and the task status should "+
 				"indicate that task was killed", func() {
 				taskState, taskStatus := task.Status()
 
 				So(taskState, ShouldEqual, TERMINATED)
 				So(taskStatus, ShouldNotBeNil)
-				So(taskStatus.ExitCode, ShouldEqual, -1)
+				// -1 for Local executor.
+				// 129 for Remote executor.
+				// TODO: Unify that in next PR.
+				So(taskStatus.ExitCode, ShouldBeIn, -1, 129)
 			})
 		})
 

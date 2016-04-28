@@ -69,7 +69,6 @@ func (remote Remote) Execute(command string) (Task, error) {
 
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
-	stdinPipe, err := session.StdinPipe()
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +95,7 @@ func (remote Remote) Execute(command string) (Task, error) {
 	// Wait for local task in go routine.
 	go func() {
 		defer close(waitEndChannel)
+		defer session.Close()
 
 		*exitCode = successExitCode
 		// Wait for task completion.
@@ -116,7 +116,8 @@ func (remote Remote) Execute(command string) (Task, error) {
 			" with err output in file: ", stderrFile.Name(),
 			" with status code: ", *exitCode)
 	}()
-	return newRemoteTask(session, stdoutFile, stderrFile, stdinPipe, waitEndChannel, exitCode), nil
+
+	return newRemoteTask(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -126,19 +127,17 @@ type remoteTask struct {
 	session        *ssh.Session
 	stdoutFile     *os.File
 	stderrFile     *os.File
-	stdinPipe      io.WriteCloser
 	waitEndChannel chan struct{}
 	exitCode       *int
 }
 
 // newRemoteTask returns a RemoteTask instance.
 func newRemoteTask(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	stdinPipe io.WriteCloser, waitEndChannel chan struct{}, exitCode *int) *remoteTask {
+	waitEndChannel chan struct{}, exitCode *int) *remoteTask {
 	return &remoteTask{
 		session:        session,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
-		stdinPipe:      stdinPipe,
 		waitEndChannel: waitEndChannel,
 		exitCode:       exitCode,
 	}
@@ -176,12 +175,16 @@ func (task *remoteTask) Stop() error {
 		return nil
 	}
 
-	// Sending SIGKILL signal to local task.
-	log.Debug("Sending ", ssh.SIGKILL, " to remote task.")
-	err := task.session.Signal(ssh.SIGKILL)
-	//p, err := task.stdinPipe.Write([]byte("\x03")) // for debug.
+	// Kill session.
+	// NOTE: We need to find here a better way to stop task, since
+	// closing channel just close the ssh session and some processes can be still running.
+	// (TBC)
+	// Some other approaches:
+	// - sending Ctrl+C (very time based and not working currently)
+	// - session.Signal does not work.
+	// - gathering PID & killing the pid in separate session (TODO)
+	err := task.session.Close()
 	if err != nil {
-		//log.Error(err, " ", p)
 		log.Error(err)
 		return err
 	}
