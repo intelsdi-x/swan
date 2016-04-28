@@ -4,26 +4,22 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-
-type MemorySizeShares struct {
+//MemorySize defines input data
+type MemorySize struct {
  cgroupName string
- memorySizeShares string
+ memorySize string
 
 }
 
-func NewMemorySizeShares(nameOfTheCgroup string, memorySizeShares string ) *MemorySizeShares{
-	return &MemorySizeShares{cgroupName: nameOfTheCgroup, memorySizeShares: memorySizeShares}
+//NewMemorySizeShares creates an instance of input data
+func NewMemorySize(nameOfTheCgroup string, memorySizeShares string ) *MemorySize{
+	return &MemorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
 }
 
-func (memorySize *MemorySizeShares) Create() error {
-	return nil
-}
+//Delete removes specified cgroup
+func (memorysize *MemorySize) Delete() error {
 
-func (memorySize *MemorySizeShares) Delete() error {
-
-	controllerName := "memory"
-	cgroupName := "A"
-        cmd := exec.Command("sh", "-c", "cgdelete -g "+controllerName+":"+cgroupName)
+        cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
@@ -33,51 +29,45 @@ func (memorySize *MemorySizeShares) Delete() error {
 	return nil
 }
 
-
-func (memorySize *MemorySizeShares) Isolate(PID int) error {
+//Isolate create specified cgroup and associates specified process id
+func (memorysize *MemorySize) Isolate(PID int) error {
 
      	// 1.a Create memory size cgroup
-	controllerName := "memory"
-	cgroupName := "A"
 
-
-        cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+cgroupName)
+        cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+memorysize.cgroupName)
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-     	// 1.b Set memory size cgroup shares
+     	// 1.b Set cgroup memory size 
 
-	memoryShares := "512M"
-
-        cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memoryShares+" "+cgroupName)
+        cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memorysize.memorySize+" "+memorysize.cgroupName)
 
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-     	// 4. Set PID to cgroups
+     	// 2. Set PID to cgroups
 
 	//Associate task with the cgroup
-	//cgclassify seems to exit with error so temporarily using file io
+	//cgclassify and cgexec seem to exit with error so temporarily using file io
 
-	controllerName = "memory"
 
         strPID :=strconv.Itoa(PID)
 	d := []byte(strPID)
-	err3 := ioutil.WriteFile("/sys/fs/cgroup/"+controllerName+"/"+cgroupName+"/tasks", d, 0644)
+	err = ioutil.WriteFile("/sys/fs/cgroup/memory/"+memorysize.cgroupName+"/tasks", d, 0644)
 
-	if err3 != nil {
-		panic(err3.Error())
+	if err != nil {
+		panic(err.Error())
 	}
 
 
 
 
-//        cmd = exec.Command("sh", "-c", "cgclassify -g memory:A " + string(PID))
+//      cmd = exec.Command("sh", "-c", "cgclassify -g memory:A " + string(PID))
 //
 //	err = cmd.Run()
 //	if err != nil {
@@ -87,37 +77,3 @@ func (memorySize *MemorySizeShares) Isolate(PID int) error {
 
 	return nil
 }
-
-
-//	//Write CPU shares
-//        strShares :=strconv.Itoa(1024)
-//	c := []byte(strShares)
-//	err2 := ioutil.WriteFile("/tmp/x.mri", c, 0644)
-//
-//	if err2 != nil {
-//		panic(err2.Error())
-//	}
-//
-//	//Associate task with the cgroup
-//        strPID :=strconv.Itoa(PID)
-//	d := []byte(strPID)
-//	err3 := ioutil.WriteFile("/tmp/y.mri", d, 0644)
-//
-//	if err3 != nil {
-//		panic(err3.Error())
-//	}
-//
-//
-//
-//
-//
-//func (cpu *CpuShares) Isolate(PID int) error {
-//        cmd := exec.Command("sh", "-c", "touch /tmp/x.tmp")
-//
-//	err := cmd.Run()
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//
-//	return nil
-//}

@@ -7,7 +7,7 @@ import (
 )
 
 func TestCpuSet(t *testing.T) {
-	cpuset := CpuSetShares{cgroupName: "M", cpuSetShares:"0-2"}
+	cpuset := CPUSetShares{cgroupName: "M", cpuSetShares:"0-2"}
 	
 	cmd := exec.Command("sh","-c","sleep 1h")
 	err := cmd.Start()

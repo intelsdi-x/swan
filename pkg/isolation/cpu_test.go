@@ -7,7 +7,7 @@ import (
 )
 
 func TestCpu(t *testing.T) {
-	cpu := CpuShares{cgroupName: "M", cpuShares:"1024", cgCpus: "0-3"}
+	cpu := CPUShares{cgroupName: "M", cpuShares:"1024"}
 	
 	cmd := exec.Command("sh","-c","sleep 1h")
 	err := cmd.Start()
