@@ -26,7 +26,7 @@ func TestExperiment(t *testing.T) {
 		mockedAggressor := new(workloadMocks.Launcher)
 		aggressors = append(aggressors, mockedAggressor)
 
-		sensitivityExperiment, err := InitExperiment("test", logrus.DebugLevel, configuration,
+		sensitivityExperiment, err := InitExperiment("test", logrus.ErrorLevel, configuration,
 			mockedLcLauncher, mockedLoadGenerator, aggressors)
 		So(err, ShouldBeNil)
 
