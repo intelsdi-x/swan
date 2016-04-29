@@ -1,41 +1,46 @@
 package mutilate
 
 import (
+	"os"
+	"time"
+
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
-	"os"
-	"time"
 )
 
+// Constant representing plugin name, version, type and unit of measurement used
 const (
 	NAME    = "mutilate"
 	VERSION = 1
 	TYPE    = plugin.CollectorPluginType
+	UNIT    = "ns"
 )
 
 type mutilate struct {
 	now time.Time
 }
 
+// NewMutilate creates new mutilate collector
 func NewMutilate(now time.Time) *mutilate {
 	return &mutilate{now}
 }
 
+// GetMetricTypes implements plugin.PluginCollector interface
 func (mutilate *mutilate) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
 	phaseName, _ := config.GetConfigItem(configType, "phase_name")
 	tags := map[string]string{"phase_name": phaseName.(string)}
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("avg"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("std"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("min"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "5th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "10th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "90th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
-	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99.999th"), Tags_: tags, Unit_: "ns", Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("avg"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("std"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("min"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "5th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "10th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "90th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99.999th"), Tags_: tags, Unit_: UNIT, Version_: VERSION})
 
 	return metrics, nil
 }
@@ -50,9 +55,11 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 	return namespace
 }
 
+// CollectMetrics implements plugin.PluginCollector interface
 func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
-	rawMetrics, _ := parseMutilateStdout("/home/developer/go/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout", mutilate.now)
+	configuration := config.GetConfigItem(metricTypes[0], "stdout_file")
+	rawMetrics, rawMetricsError := parseMutilateStdout("/home/iwan/go_workspace/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout", mutilate.now)
 	hostname, _ := os.Hostname()
 	for key, metricType := range metricTypes {
 		metricType.Data_ = rawMetrics[key].value
@@ -64,6 +71,7 @@ func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 	return metrics, nil
 }
 
+// GetConfigPolicy implements plugin.PluginCollector interface
 func (mutilate *mutilate) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	phaseName, _ := cpolicy.NewStringRule("phase_name", true)
 	tags := cpolicy.NewPolicyNode()
@@ -74,6 +82,7 @@ func (mutilate *mutilate) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	return policy, nil
 }
 
+// Meta returns plugin metadata
 func Meta() *plugin.PluginMeta {
 	meta := plugin.NewPluginMeta(
 		NAME,

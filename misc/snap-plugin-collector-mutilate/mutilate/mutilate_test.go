@@ -34,15 +34,15 @@ func TestMutilatePlugin(t *testing.T) {
 		Convey("I should receive information about metrics", func() {
 			So(metricTypesError, ShouldBeNil)
 			So(metricTypes, ShouldHaveLength, 9)
-			assertValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[3], "/intel/swan/mutilate/*/percentile/5th", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[4], "/intel/swan/mutilate/*/percentile/10th", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns", "some random tag!")
-			assertValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/percentile/99.999th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns", "some random tag!")
+			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns", "some random tag!")
+			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns", "some random tag!")
+			soValidMetricType(metricTypes[3], "/intel/swan/mutilate/*/percentile/5th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[4], "/intel/swan/mutilate/*/percentile/10th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns", "some random tag!")
+			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/percentile/99.999th", "ns", "some random tag!")
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -50,27 +50,27 @@ func TestMutilatePlugin(t *testing.T) {
 
 			So(error, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 9)
-			assertValidMetric(metrics[0], "/avg", 20.8, now)
-			assertValidMetric(metrics[1], "/std", 23.1, now)
-			assertValidMetric(metrics[2], "/min", 11.9, now)
-			assertValidMetric(metrics[3], "/percentile/5th", 13.3, now)
-			assertValidMetric(metrics[4], "/percentile/10th", 13.4, now)
-			assertValidMetric(metrics[5], "/percentile/90th", 33.4, now)
-			assertValidMetric(metrics[6], "/percentile/95th", 43.1, now)
-			assertValidMetric(metrics[7], "/percentile/99th", 59.5, now)
-			assertValidMetric(metrics[8], "/percentile/99.999th", 1777.887805, now)
+			soValidMetric(metrics[0], "/avg", 20.8, now)
+			soValidMetric(metrics[1], "/std", 23.1, now)
+			soValidMetric(metrics[2], "/min", 11.9, now)
+			soValidMetric(metrics[3], "/percentile/5th", 13.3, now)
+			soValidMetric(metrics[4], "/percentile/10th", 13.4, now)
+			soValidMetric(metrics[5], "/percentile/90th", 33.4, now)
+			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
+			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
+			soValidMetric(metrics[8], "/percentile/99.999th", 1777.887805, now)
 		})
 	})
 }
 
-func assertValidMetricType(metricType plugin.MetricType, namespace string, unit string, tag string) {
+func soValidMetricType(metricType plugin.MetricType, namespace string, unit string, tag string) {
 	So(metricType.Namespace().String(), ShouldEqual, namespace)
 	So(metricType.Unit(), ShouldEqual, unit)
 	So(metricType.Tags()["phase_name"], ShouldEqual, tag)
 	So(metricType.Version(), ShouldEqual, 1)
 }
 
-func assertValidMetric(metric plugin.MetricType, namespaceSuffix string, value float64, time time.Time) {
+func soValidMetric(metric plugin.MetricType, namespaceSuffix string, value float64, time time.Time) {
 	So(metric.Namespace().String(), ShouldStartWith, "/intel/swan/mutilate/")
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
