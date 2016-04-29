@@ -1,133 +1,95 @@
 package main
 
 import (
-	"bufio"
-	"errors"
-	"fmt"
-	"math"
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/shopspring/decimal"
 	"os"
-	"strconv"
-	"strings"
-
-	executor "github.com/intelsdi-x/swan/pkg/executor"
-	swan "github.com/intelsdi-x/swan/pkg/experiment"
+	"path"
+	"time"
 )
 
-func out2file(prefix string, task executor.Task) error {
-	_, taskStatus := task.Status()
+const (
+	defaultMemcachedPath = "workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
+	defaultMutilatePath  = "workloads/data_caching/memcached/mutilate/mutilate"
+	swanPkg              = "github.com/intelsdi-x/swan"
+)
 
-	f, err := os.Create("./" + prefix + "stdout.txt")
-	if err != nil {
-		return err
-	}
+func fetchMemcachedPath() string {
+	// Get optional custom Memcached path from MEMCACHED_PATH.
+	memcachedPath := os.Getenv("MEMCACHED_BIN")
 
-	n, err := f.WriteString(taskStatus.Stdout)
-	if err != nil {
-		f.Close()
-		return err
-	}
-	if n != len(taskStatus.Stdout) {
-		f.Close()
-		return errors.New("Write error")
-	}
-	f.Close()
-
-	f, err = os.Create("./" + prefix + "stderr.txt")
-	if err != nil {
-		return err
+	if memcachedPath == "" {
+		// If custom path does not exists use default path for built memcached.
+		return path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMemcachedPath)
 	}
 
-	n, err = f.WriteString(taskStatus.Stderr)
-	if err != nil {
-		f.Close()
-		return err
-	}
-	if n != len(taskStatus.Stderr) {
-		f.Close()
-		return errors.New("Write error")
-	}
-	f.Close()
-
-	return err
+	return memcachedPath
 }
 
-func average(x []float64) float64 {
-	var avr float64
-	for _, val := range x {
-		avr += val
-	}
-	avr /= float64(len(x))
-	return avr
-}
-func variance(x []float64) float64 {
+func fetchMutilatePath() string {
+	// Get optional custom mutilate path from MUTILATE_BIN.
+	mutilatePath := os.Getenv("MUTILATE_BIN")
 
-	avr := average(x)
-	variance := float64(0)
-	for _, val := range x {
-		variance += math.Sqrt(math.Abs(avr - val))
+	if mutilatePath == "" {
+		// If custom path does not exists use default path for built memcached.
+		return path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMutilatePath)
 	}
-	variance /= float64(len(x))
-	return variance
+
+	return mutilatePath
 }
 
-func mutilateGetResult(output string) (latency, qps float64) {
-	var err error
-	scanner := bufio.NewScanner(strings.NewReader(output))
-
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := strings.Fields(scanner.Text())
-		switch {
-		case len(line) == 7:
-			if strings.Contains(scanner.Text(), "Total QPS") {
-				qps, err = strconv.ParseFloat(line[3], 64)
-				if err != nil {
-					return 0, 0
-				}
-			}
-		case len(line) == 9:
-			if line[0] == "read" {
-				latency, err = strconv.ParseFloat(line[8], 64)
-				if err != nil {
-					return 0, 0
-				}
-			}
-		}
-	}
-	return latency, qps
-}
-
+// This Experiments contains:
+// - memcached as LC task on localhost
+// - mutilate as loadGenerator on localhost
+// - no aggressors so far
 func main() {
-	var phases []swan.Phase
+	logLevel := logrus.DebugLevel
 
-	tunePhase := &TunePhase{
-		name:     "Tuning",
-		reps:     3,
-		duration: 10,
+	local := executor.NewLocal()
+	// Init Memcached Launcher.
+	memcachedLauncher := memcached.New(local,
+		memcached.DefaultMemcachedConfig(fetchMemcachedPath()))
+	// Init Mutilate Launcher.
+	percentile, _ := decimal.NewFromString("99.9")
+	mutilateConfig := mutilate.Config{
+		MutilatePath:      fetchMutilatePath(),
+		MemcachedHost:     "localhost",
+		LatencyPercentile: percentile,
+		TuningTime:        30 * time.Second,
+	}
+	mutilateLauncher := mutilate.New(local, mutilateConfig)
+
+	// Create Experiment configuration.
+	configuration := sensitivity.Configuration{
+		SLO:             1,
+		LoadDuration:    30 * time.Second,
+		LoadPointsCount: 1,
+		Repetitions:     1,
 	}
 
-	tuneCalcPhase := &TuneCalcPhase{}
+	// Init Experiment.
+	sensitivityExperiment, err := sensitivity.InitExperiment(
+		"MemcachedWithLocalMutilate",
+		logLevel,
+		configuration,
+		memcachedLauncher,
+		mutilateLauncher,
+		[]workloads.Launcher{},
+	)
 
-	baselinePhase := &BaselinePhase{
-		name:       "Baseline",
-		reps:       3,
-		duration:   10,
-		loadPoints: 5,
-	}
-
-	baselinePrintPhase := &BaselinePrintPhase{}
-
-	phases = append(phases, tunePhase)
-	phases = append(phases, tuneCalcPhase)
-	phases = append(phases, baselinePhase)
-	phases = append(phases, baselinePrintPhase)
-
-	exp, err := swan.NewExperiment("MemcachedExperiment", phases, "/tmp")
 	if err != nil {
-		return
+		panic(err)
 	}
-	fmt.Println("Starting Memcached Experiment")
-	exp.Run()
-	fmt.Println("Done")
+
+	// Run Experiment.
+	err = sensitivityExperiment.Run()
+	if err != nil {
+		panic(err)
+	}
+
 }
