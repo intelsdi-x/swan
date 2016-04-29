@@ -4,19 +4,19 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-//CPUSetShares input definition
+// CPUSetShares input definition
 type CPUSetShares struct {
 	cgroupName   string
 	cpuSetShares string
 }
 
-//NewCPUSetShares creates an instance of input data
+// NewCPUSetShares creates an instance of input data
 func NewCPUSetShares(nameOfTheCgroup string, cpuSets string) *CPUSetShares {
 	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
 }
 
-//Delete removes specified cgroup
-func (cpuSet *CPUSetShares) Delete() error {
+// Clean removes specified cgroup
+func (cpuSet *CPUSetShares) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
 
@@ -28,8 +28,8 @@ func (cpuSet *CPUSetShares) Delete() error {
 	return nil
 }
 
-//Isolate creates specified cgroup
-func (cpuSet *CPUSetShares) Isolate(PID int) error {
+// Create specified cgroup
+func (cpuSet *CPUSetShares) Create() error {
 
 	// 1.a Create cpuset cgroup
 
@@ -40,7 +40,7 @@ func (cpuSet *CPUSetShares) Isolate(PID int) error {
 		return err
 	}
 
-	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover of platform, we change accordingly
+	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover platform, we change accordingly
 
 	cgCPUNodes := "0-1"
 
@@ -60,25 +60,22 @@ func (cpuSet *CPUSetShares) Isolate(PID int) error {
 		return err
 	}
 
-	// 2. Set PID to cgroups
+	return nil
+}
 
-	//Associate task with the cgroup
-	//cgclassify & cgexec seem to exit with error so temporarily using file io
+// Isolate creates specified cgroup
+func (cpuSet *CPUSetShares) Isolate(PID int) error {
+
+	// Set PID to cgroups
+	// cgclassify & cgexec seem to exit with error so temporarily using file io
 
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err = ioutil.WriteFile("/sys/fs/cgroup/cpuset"+"/"+cpuSet.cgroupName+"/tasks", d, 0644)
+	err := ioutil.WriteFile("/sys/fs/cgroup/cpuset"+"/"+cpuSet.cgroupName+"/tasks", d, 0644)
 
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
-
-	//        cmd = exec.Command("sh", "-c", "cgclassify -g cpuset:A " + string(PID))
-	//
-	//	err = cmd.Run()
-	//	if err != nil {
-	//		panic("Cgclassify failed: " + err.Error())
-	//	}
 
 	return nil
 }

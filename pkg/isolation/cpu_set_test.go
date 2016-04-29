@@ -15,6 +15,8 @@ func TestCpuSet(t *testing.T) {
 		panic(err)
 	}
 
+	cpuset.Create()
+
 	cpuset.Isolate(cmd.Process.Pid)
 
 	fmt.Printf(cpuset.cgroupName)
