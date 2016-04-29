@@ -1,17 +1,27 @@
 package snap
 
 import (
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"os"
 	"path"
 )
 
-// LoadPlugin loads plugin binary. Currently searching the swan repo only.
-func LoadPlugin(name string) error {
-	err := ensureConnected()
-	if err != nil {
-		return err
-	}
+// Plugins provides a 'manager' like abstraction for plugin operations.
+type Plugins struct {
+	// Client to Snapd
+	pClient *client.Client
+}
 
+// NewPlugins returns an instantiated Plugins object, using pClient for all plugin operations.
+func NewPlugins(pClient *client.Client) *Plugins {
+	return &Plugins{
+		pClient: pClient,
+	}
+}
+
+// Load plugin binary.
+// TODO: Currently searching the swan repo only. Add test for whether the name is relative or absolute path.
+func (p *Plugins) Load(name string) error {
 	// Current workaround to load plugins from swan repo
 	// Test will run in pkg/swan to backing up two directories to get to 'build' directory
 	cwd, err := os.Getwd()
@@ -20,7 +30,7 @@ func LoadPlugin(name string) error {
 	}
 	paths := []string{path.Join(cwd, "..", "..", "build", name)}
 
-	r := pClient.LoadPlugin(paths)
+	r := p.pClient.LoadPlugin(paths)
 	if r.Err != nil {
 		return r.Err
 	}
@@ -28,16 +38,11 @@ func LoadPlugin(name string) error {
 	return nil
 }
 
-// IsPluginLoaded connects to snap and looks for plugin with given name.
+// IsLoaded connects to snap and looks for plugin with given name.
 // Be aware that the name is not the plugin binary path or name but defined by the plugin itself.
-func IsPluginLoaded(name string) (bool, error) {
-	err := ensureConnected()
-	if err != nil {
-		return false, err
-	}
-
+func (p *Plugins) IsLoaded(name string) (bool, error) {
 	// Get all (running: false) plugins
-	plugins := pClient.GetPlugins(false)
+	plugins := p.pClient.GetPlugins(false)
 	if plugins.Err != nil {
 		return false, plugins.Err
 	}
@@ -51,14 +56,9 @@ func IsPluginLoaded(name string) (bool, error) {
 	return false, nil
 }
 
-// UnloadPlugin unloads a plugin of type t and given name and version.
-func UnloadPlugin(t string, name string, version int) error {
-	err := ensureConnected()
-	if err != nil {
-		return err
-	}
-
-	r := pClient.UnloadPlugin(t, name, version)
+// Unload unloads a plugin of type t and given name and version.
+func (p *Plugins) Unload(t string, name string, version int) error {
+	r := p.pClient.UnloadPlugin(t, name, version)
 	if r.Err != nil {
 		return r.Err
 	}
