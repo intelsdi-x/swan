@@ -10,7 +10,8 @@ import (
 	"time"
 )
 
-// TestExecutor tests the execution of process for given executor.
+// testExecutor tests the execution of process for given executor.
+// This test can be used inside any Executor implementation test.
 func testExecutor(t *testing.T, executor Executor) {
 	log.SetLevel(log.DebugLevel)
 
@@ -63,7 +64,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(taskStatus, ShouldNotBeNil)
 				// -1 for Local executor.
 				// 129 for Remote executor.
-				// TODO: Unify that in next PR.
+				// TODO: Unify exit code constants in next PR.
 				So(taskStatus.ExitCode, ShouldBeIn, -1, 129)
 			})
 		})
@@ -283,9 +284,10 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer task.EraseOutput()
 
 		// Wait for the command to execute.
+		// TODO(bplotka): Remove the Sleep, since this is prone to errors on different enviroments.
 		time.Sleep(100 * time.Millisecond)
 
-		Convey("When we get Status without the Wait for it", func() {
+		Convey("When we get Status without the Waiting for it", func() {
 			taskState, taskStatus := task.Status()
 
 			Convey("And the task should stated that it terminated", func() {
