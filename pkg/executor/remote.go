@@ -27,7 +27,7 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Execute runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
-	log.Debug("Starting remotely ", command)
+	log.Debug("Starting %s remotely", command)
 
 	connection, err := ssh.Dial(
 		"tcp",
@@ -55,36 +55,34 @@ func (remote Remote) Execute(command string) (Task, error) {
 	}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_remote_executor_stdout_")
+	stdoutFile, err := ioutil.TempFile("./", "swan_remote_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_remote_executor_stderr_")
+	stderrFile, err := ioutil.TempFile("./", "swan_remote_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("Created temporary files ",
-		"stdout path:  ", stdoutFile.Name(), "stderr path:  ", stderrFile.Name())
+	log.Debug("Created temporary files: ",
+		"stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
-	if err != nil {
-		return nil, err
-	}
 
 	err = session.Start(command)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("Started remote command.")
+	log.Debug("Started remote command")
 
 	// Wait End channel is for checking the status of the Wait. If this channel is closed,
 	// it means that the wait is completed (either with error or not)
 	// This channel will not be used for passing any message.
 	waitEndChannel := make(chan struct{})
 
+	// TODO(bplotka): Move exit code constants to global executor scope.
 	const successExitCode = int(0)
 	const errorExitCode = int(-1)
 
@@ -145,8 +143,6 @@ func newRemoteTask(session *ssh.Session, stdoutFile *os.File, stderrFile *os.Fil
 
 // isTerminated checks if waitEndChannel is closed. If it is closed, it means
 // that wait ended and task is in terminated state.
-// NOTE: If it's true then ProcessState is not nil. ProcessState contains information
-// about an exited process available after call to Wait or Run.
 func (task *remoteTask) isTerminated() bool {
 	select {
 	case <-task.waitEndChannel:
@@ -178,11 +174,10 @@ func (task *remoteTask) Stop() error {
 	// Kill session.
 	// NOTE: We need to find here a better way to stop task, since
 	// closing channel just close the ssh session and some processes can be still running.
-	// (TBC)
 	// Some other approaches:
 	// - sending Ctrl+C (very time based and not working currently)
 	// - session.Signal does not work.
-	// - gathering PID & killing the pid in separate session (TODO)
+	// - gathering PID & killing the pid in separate session
 	err := task.session.Close()
 	if err != nil {
 		log.Error(err)

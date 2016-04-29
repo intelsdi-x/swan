@@ -25,7 +25,7 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting locally ", command)
+	log.Debug("Starting %s locally ", command)
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
@@ -33,11 +33,11 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stdout_")
+	stdoutFile, err := ioutil.TempFile("./", "swan_local_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stderr_")
+	stderrFile, err := ioutil.TempFile("./", "swan_local_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
