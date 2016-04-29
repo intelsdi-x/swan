@@ -14,6 +14,7 @@ func TestMemorySize(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	memorysize.Create()
 
 	memorysize.Isolate(cmd.Process.Pid)
 

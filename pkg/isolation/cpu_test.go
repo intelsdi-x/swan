@@ -14,6 +14,7 @@ func TestCpu(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	cpu.Create()
 
 	cpu.Isolate(cmd.Process.Pid)
 
