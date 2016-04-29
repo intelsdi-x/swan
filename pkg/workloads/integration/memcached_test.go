@@ -23,7 +23,7 @@ const (
 // TestMemcachedWithExecutor is an integration test with local executor.
 // See README for setup items.
 func TestMemcachedWithExecutor(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	// Get optional custom Memcached path from MEMCACHED_PATH.
 	memcachedPath := os.Getenv("MEMCACHED_BIN")
