@@ -46,7 +46,7 @@ func (mutilate *mutilate) GetMetricTypes(configType plugin.ConfigType) ([]plugin
 }
 
 func createNewMetricNamespace(metricName ...string) core.Namespace {
-	namespace := core.NewNamespace([]string{"intel", "swan", "mutilate"})
+	namespace := core.NewNamespace("intel", "swan", "mutilate")
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	for _, value := range metricName {
 		namespace = namespace.AddStaticElement(value)
@@ -58,13 +58,14 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 // CollectMetrics implements plugin.PluginCollector interface
 func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
-	configuration := config.GetConfigItem(metricTypes[0], "stdout_file")
-	rawMetrics, rawMetricsError := parseMutilateStdout("/home/iwan/go_workspace/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout", mutilate.now)
+	// TODO - pass file path in configuration
+	//configuration, _ := config.GetConfigItem(metricTypes[0], "stdout_file")
+	rawMetrics, _ := parseMutilateStdout("/home/iwan/go_workspace/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
 	hostname, _ := os.Hostname()
 	for key, metricType := range metricTypes {
 		metricType.Data_ = rawMetrics[key].value
 		metricType.Namespace_[3].Value = hostname
-		metricType.Timestamp_ = rawMetrics[key].time
+		metricType.Timestamp_ = mutilate.now
 		metrics = append(metrics, metricType)
 	}
 
