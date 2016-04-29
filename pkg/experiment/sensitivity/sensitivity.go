@@ -26,8 +26,8 @@ type Configuration struct {
 type Experiment struct {
 	exp             *experiment.Experiment
 	tuning          *tuningPhase
-	baselinePhase   []*measurement
-	aggressorPhases [][]*measurement
+	baselinePhase   []*measurementPhase
+	aggressorPhases [][]*measurementPhase
 	log             *logrus.Logger
 }
 
@@ -48,7 +48,7 @@ func InitExperiment(
 	// TODO(mpatelcz): Validate configuration.
 	// Configure phases & measurements.
 	// Each phases includes couple of measurements.
-	var allMeasurements []experiment.Measurement
+	var allMeasurements []experiment.Phase
 	// Include Tuning Phase.
 	targetLoad := float64(-1)
 	tuning := &tuningPhase{
@@ -61,10 +61,10 @@ func InitExperiment(
 	allMeasurements = append(allMeasurements, tuning)
 
 	// Include Baseline Phase.
-	baselinePhase := []*measurement{}
+	baselinePhase := []*measurementPhase{}
 	// It includes measurements for each LoadPoint.
 	for i := 1; i <= configuration.LoadPointsCount; i++ {
-		baselinePhase = append(baselinePhase, &measurement{
+		baselinePhase = append(baselinePhase, &measurementPhase{
 			namePrefix:            "Baseline",
 			pr:                    productionTaskLauncher,
 			lgForPr:               loadGeneratorForProductionTask,
@@ -79,12 +79,12 @@ func InitExperiment(
 	}
 
 	// Include Measurement Phases for each aggressor.
-	aggressorPhases := [][]*measurement{}
+	aggressorPhases := [][]*measurementPhase{}
 	for beIndex, beLauncher := range aggressorTaskLaunchers {
-		aggressorPhase := []*measurement{}
+		aggressorPhase := []*measurementPhase{}
 		// Include measurements for each LoadPoint.
 		for i := 1; i <= configuration.LoadPointsCount; i++ {
-			aggressorPhase = append(aggressorPhase, &measurement{
+			aggressorPhase = append(aggressorPhase, &measurementPhase{
 				namePrefix:            "Aggressor nr " + strconv.Itoa(beIndex),
 				pr:                    productionTaskLauncher,
 				lgForPr:               loadGeneratorForProductionTask,
