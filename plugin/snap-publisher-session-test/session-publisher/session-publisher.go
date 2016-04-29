@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	name       = "session-publisher"
+	name       = "session-test"
 	version    = 1
 	pluginType = plugin.PublisherPluginType
 )
@@ -24,6 +24,8 @@ type SessionPublisher struct {
 
 func (f *SessionPublisher) Publish(contentType string, content []byte, config map[string]ctypes.ConfigValue) error {
 	var metrics []plugin.PluginMetricType
+
+	fileout := config["file"].(ctypes.ConfigValueStr).Value
 
 	switch contentType {
 	case plugin.SnapGOBContentType:
@@ -35,7 +37,7 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 		return errors.New(fmt.Sprintf("Unknown content type '%s'", contentType))
 	}
 
-	file, err := os.OpenFile(config["file"].(ctypes.ConfigValueStr).Value, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(fileout, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	defer file.Close()
 	if err != nil {
 		return err
@@ -43,7 +45,7 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 
 	w := bufio.NewWriter(file)
 	for _, m := range metrics {
-		w.WriteString(fmt.Sprintf("%v\t%v\t%v\t%v\t%v\n", m.Timestamp(), m.Namespace(), m.Data(), m.Labels()))
+		w.WriteString(fmt.Sprintf("%v\t%v\t%v\t%v\n", m.Timestamp(), m.Namespace(), m.Data(), m.Labels()))
 	}
 	w.Flush()
 

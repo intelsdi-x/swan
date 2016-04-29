@@ -45,6 +45,8 @@ func (p *SessionProcessor) Process(contentType string, content []byte, config ma
 		labels := metrics[idx].Labels_
 		labels = append(labels, core.Label{Name: "swan-was-here"})
 		metrics[idx].Labels_ = labels
+
+		logger.Printf("Passed on metric: %v\n", metrics[idx])
 	}
 
 	var buf bytes.Buffer
