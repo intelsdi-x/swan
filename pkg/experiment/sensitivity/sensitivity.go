@@ -118,6 +118,7 @@ func InitExperiment(
 // In the end it prints results to the standard output.
 func (e *Experiment) Run() error {
 	err := e.exp.Run()
+	defer e.exp.Finalize()
 	if err != nil {
 		return err
 	}

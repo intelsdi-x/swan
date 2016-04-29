@@ -58,9 +58,6 @@ func NewExperiment(name string, measurements []Measurement,
 // Run runs experiment.
 // It runs in a sequence defined measurements with given repetition count.
 func (e *Experiment) Run() error {
-	// Always perform cleanup on exit.
-	defer e.finalize()
-
 	experimentStartingTime := time.Now()
 
 	e.Log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
@@ -122,7 +119,7 @@ func (e *Experiment) createExperimentDir() error {
 	return err
 }
 
-func (e *Experiment) finalize() {
+func (e *Experiment) Finalize() {
 	e.logClose()
 
 	// Exit experiment directory
@@ -157,7 +154,7 @@ func (e *Experiment) logInitialize() error {
 
 	// Create new logger.
 	e.Log = &log.Logger{
-		Out:       os.Stdout,
+		Out:       e.logFile,
 		Formatter: new(log.TextFormatter),
 		Hooks:     make(log.LevelHooks),
 		Level:     e.logLvl,
