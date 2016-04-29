@@ -119,6 +119,7 @@ func (e *Experiment) createExperimentDir() error {
 	return err
 }
 
+// Finalize closes log file and returns to the previous working directory.
 func (e *Experiment) Finalize() {
 	e.logClose()
 
