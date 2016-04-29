@@ -1,11 +1,15 @@
 package sensitivity
 
 import (
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"os"
+	"strconv"
 	"time"
 )
 
-// Configuration - set of parameters to controll the experiment.
+// Configuration - set of parameters to control the experiment.
 type Configuration struct {
 	// Given SLO for the experiment.
 	SLO int
@@ -13,126 +17,122 @@ type Configuration struct {
 	LoadDuration time.Duration
 	// Number of load points to test.
 	LoadPointsCount int
+	// Repetitions.
+	Repetitions int
 }
 
 // Experiment is handler structure for Experiment Driver. All fields shall be
 // not visible to the experimenter.
 type Experiment struct {
-	// Latency Sensitivity (Production) workload.
-	pr workloads.Launcher
-	// Workload Generator for Latency Sensitivity task.
-	lgForPr workloads.LoadGenerator
-	// Aggressors (Best Effort) tasks to stress LC task
-	bes []workloads.Launcher
-	// Experiement configuration
-	conf Configuration
-	// Max load with SLO not violated.
-	targetLoad int
-	// Result SLIs in a [aggressor][loadpoint] layout.
-	slis [][]int
+	exp             *experiment.Experiment
+	tuning          *tuningPhase
+	baselinePhase   []*measurement
+	aggressorPhases [][]*measurement
+	log             *logrus.Logger
 }
 
-// NewExperiment construct new Experiment object.
+// InitExperiment construct new Experiment object.
 // Input parameters:
 // configuration - Experiment configuration
 // productionTaskLauncher - Latency Critical job launcher
 // loadGeneratorForProductionTask - stresser for production task
-// aggressorTasksLaucher - Best Effort jobs launcher
-func NewExperiment(
+// aggressorTasksLauncher - Best Effort jobs launcher
+func InitExperiment(
+	name string,
+	logLvl logrus.Level,
 	configuration Configuration,
 	productionTaskLauncher workloads.Launcher,
 	loadGeneratorForProductionTask workloads.LoadGenerator,
-	aggressorTaskLaunchers []workloads.Launcher) *Experiment {
+	aggressorTaskLaunchers []workloads.Launcher) (*Experiment, error) {
 
 	// TODO(mpatelcz): Validate configuration.
+	// Configure phases & measurements.
+	// Each phases includes couple of measurements.
+	var allMeasurements []experiment.Measurement
+	// Include Tuning Phase.
+	targetLoad := float64(-1)
+	tuning := &tuningPhase{
+		pr:          productionTaskLauncher,
+		lgForPr:     loadGeneratorForProductionTask,
+		SLO:         configuration.SLO,
+		repetitions: configuration.Repetitions,
+		TargetLoad:  &targetLoad,
+	}
+	allMeasurements = append(allMeasurements, tuning)
+
+	// Include Baseline Phase.
+	baselinePhase := []*measurement{}
+	// It includes measurements for each LoadPoint.
+	for i := 1; i <= configuration.LoadPointsCount; i++ {
+		baselinePhase = append(baselinePhase, &measurement{
+			namePrefix:            "Baseline",
+			pr:                    productionTaskLauncher,
+			lgForPr:               loadGeneratorForProductionTask,
+			bes:                   []workloads.Launcher{},
+			loadDuration:          configuration.LoadDuration,
+			loadPointsCount:       configuration.LoadPointsCount,
+			repetitions:           configuration.Repetitions,
+			currentLoadPointIndex: i,
+			TargetLoad:            tuning.TargetLoad,
+		})
+		allMeasurements = append(allMeasurements, baselinePhase[i-1])
+	}
+
+	// Include Measurement Phases for each aggressor.
+	aggressorPhases := [][]*measurement{}
+	for beIndex, beLauncher := range aggressorTaskLaunchers {
+		aggressorPhase := []*measurement{}
+		// Include measurements for each LoadPoint.
+		for i := 1; i <= configuration.LoadPointsCount; i++ {
+			aggressorPhase = append(aggressorPhase, &measurement{
+				namePrefix:            "Aggressor nr " + strconv.Itoa(beIndex),
+				pr:                    productionTaskLauncher,
+				lgForPr:               loadGeneratorForProductionTask,
+				bes:                   []workloads.Launcher{beLauncher},
+				loadDuration:          configuration.LoadDuration,
+				loadPointsCount:       configuration.LoadPointsCount,
+				repetitions:           configuration.Repetitions,
+				currentLoadPointIndex: i,
+				TargetLoad:            tuning.TargetLoad,
+			})
+
+			allMeasurements = append(allMeasurements, aggressorPhase[i-1])
+		}
+		aggressorPhases = append(aggressorPhases, aggressorPhase)
+	}
+
+	exp, err := experiment.NewExperiment(name, allMeasurements, os.TempDir(), logLvl)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Experiment{
-		pr:      productionTaskLauncher,
-		lgForPr: loadGeneratorForProductionTask,
-		bes:     aggressorTaskLaunchers,
-		conf:    configuration,
-	}
-}
-
-// Runs single measurement of PR workload with given aggressor.
-// Takes aggressor workload and specific loadPoint (rps)
-// Return (sli, nil) on success (0, error) otherwise.
-func (e *Experiment) runMeasurement(
-	aggressor workloads.Launcher,
-	qps int) (sli int, err error) {
-
-	prTask, err := e.pr.Launch()
-	if err != nil {
-		return 0, err
-	}
-	defer prTask.Stop()
-
-	agrTask, err := aggressor.Launch()
-	if err != nil {
-		return 0, err
-	}
-	_, sli, err = e.lgForPr.Load(qps, e.conf.LoadDuration)
-
-	agrTask.Stop()
-	return sli, err
-}
-
-func (e *Experiment) runPhase(
-	aggressor workloads.Launcher) (slis []int, err error) {
-	slis = make([]int, e.conf.LoadPointsCount)
-
-	loadStep := int(e.targetLoad / e.conf.LoadPointsCount)
-
-	for load := loadStep; load < e.targetLoad; load += loadStep {
-		result, err := e.runMeasurement(aggressor, load)
-		if err != nil {
-			return nil, err
-		}
-		slis = append(slis, result)
-	}
-	return slis, err
-}
-
-func (e *Experiment) runTuning() error {
-	prTask, err := e.pr.Launch()
-	if err != nil {
-		return err
-	}
-	defer prTask.Stop()
-
-	e.targetLoad, _, err = e.lgForPr.Tune(e.conf.SLO)
-	if err != nil {
-		e.targetLoad = -1
-		return err
-	}
-	return err
-}
-
-// PrintSensitivityProfile prints in a user friendly form Experiement's
-// resutls.
-func (e *Experiment) PrintSensitivityProfile() error {
-	return nil
+		exp:             exp,
+		baselinePhase:   baselinePhase,
+		aggressorPhases: aggressorPhases,
+		log:             exp.Log,
+	}, nil
 }
 
 // Run runs experiment.
 // In the end it prints results to the standard output.
 func (e *Experiment) Run() error {
-	var err error
-
-	err = e.runTuning()
+	err := e.exp.Run()
 	if err != nil {
 		return err
 	}
 
-	for _, aggressor := range e.bes {
-		slis, err := e.runPhase(aggressor)
-		if err != nil {
-			return err
+	// TODO(bp): Save to file. In future this will be passed to Snap.
+	for _, baselineMeasurement := range e.baselinePhase {
+		e.log.Debug(baselineMeasurement.Name(), " = ",
+			baselineMeasurement.MeasurementSliResult)
+	}
+	for _, aggressorPhase := range e.aggressorPhases {
+		for _, aggrMeasurment := range aggressorPhase {
+			e.log.Debug(aggrMeasurment.Name(), " = ",
+				aggrMeasurment.MeasurementSliResult)
 		}
-		e.slis = append(e.slis, slis)
 	}
 
-	//That's TBD.
-	err = e.PrintSensitivityProfile()
-	return err
+	return nil
 }
