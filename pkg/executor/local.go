@@ -25,7 +25,7 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting ", command)
+	log.Debug("Starting %s locally ", command)
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
@@ -33,11 +33,11 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stdout_")
+	stdoutFile, err := ioutil.TempFile("./", "swan_local_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(os.TempDir(), "swan_local_executor_stderr_")
+	stderrFile, err := ioutil.TempFile("./", "swan_local_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (l Local) Execute(command string) (Task, error) {
 				// terminate so panic.
 				// This error happens very rarely and it represent the critical state of the
 				// server like volume or HW problems.
-				log.Panic("Waiting for task failed. ", err)
+				log.Panic("Waiting for local task failed. ", err)
 			}
 		}
 
@@ -88,8 +88,6 @@ func (l Local) Execute(command string) (Task, error) {
 
 	return newlocalTask(cmd, stdoutFile, stderrFile, waitEndChannel), nil
 }
-
-const killTimeout = 5 * time.Second
 
 // localTask implements Task interface.
 type localTask struct {
@@ -141,13 +139,6 @@ func (task *localTask) createStatus() *Status {
 	}
 }
 
-func (task *localTask) killTask(sig syscall.Signal) error {
-	// We signal the entire process group.
-	// The kill syscall interprets a negated PID N as the process group N belongs to.
-	log.Debug("Sending ", sig, " to PID ", -task.getPid())
-	return syscall.Kill(-task.getPid(), sig)
-}
-
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
 	if task.isTerminated() {
@@ -156,7 +147,8 @@ func (task *localTask) Stop() error {
 
 	// Sending SIGKILL signal to local task.
 	// TODO: Add PID namespace to handle orphan tasks properly.
-	err := task.killTask(syscall.SIGKILL)
+	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -task.getPid())
+	err := syscall.Kill(-task.getPid(), syscall.SIGKILL)
 	if err != nil {
 		log.Error(err)
 		return err
