@@ -6,15 +6,13 @@ import (
 	"golang.org/x/exp/inotify"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestStdoutParser(t *testing.T) {
 	Convey("Opening non-existing file should fail", t, func() {
 		event := inotify.Event{Name: "/non/existing/file"}
-		baseTime := time.Now()
 
-		data, error := parseMutilateStdout(event, baseTime)
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
@@ -23,9 +21,8 @@ func TestStdoutParser(t *testing.T) {
 
 	Convey("Opening non-readable file should fail", t, func() {
 		event := inotify.Event{Name: "/etc/shadow"}
-		baseTime := time.Now()
 
-		data, error := parseMutilateStdout(event, baseTime)
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldBeZeroValue)
 		So(error.Error(), ShouldEqual, "open /etc/shadow: permission denied")
@@ -33,14 +30,13 @@ func TestStdoutParser(t *testing.T) {
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate.stdout")}
-		baseTime := time.Now()
 
-		data, error := parseMutilateStdout(event, baseTime)
+		data, error := parseMutilateStdout(event)
 
 		So(error, ShouldBeNil)
 		So(data, ShouldHaveLength, 9)
-		soMetric := func(metric Metric, name string, value float64) {
-			So(metric, ShouldResemble, Metric{name, value, baseTime})
+		soMetric := func(mutilateMetric metric, name string, value float64) {
+			So(mutilateMetric, ShouldResemble, metric{name, value})
 		}
 		soMetric(data[0], "avg", 20.8)
 		soMetric(data[1], "std", 23.1)
@@ -56,7 +52,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read file with wrong number of read columns should return an error and no metrics", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_incorrect_count_of_columns.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "Incorrect column count (got: 3, expected: 9) in QPS read row")
@@ -65,7 +61,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read a file with no read row at all should return an error and no metrics", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_missing_read_row.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "No default mutilate statistics found")
@@ -74,7 +70,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read a file with no swan-specific row at all should return an error and no metrics", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_missing_swan_row.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "No swan-specific statistics found")
@@ -83,7 +79,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read a file with malformed swan-specific row should return an error and no metrics", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_malformed_swan_row.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "Swan-specific row malformed")
@@ -92,7 +88,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read a file with swan-specific row missing metric value should return an error and no metrics", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_missing_metric_in_swan_row.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "Swan-specific row is missing metric value")
@@ -102,7 +98,7 @@ func TestStdoutParser(t *testing.T) {
 		//		mutilate_swan_row_missing_percentile_in_description.stdout
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_swan_row_missing_percentile_in_description.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "Swan-specific row is missing percentile value")
@@ -111,7 +107,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Attempting to read a file with read row containing incorrect values should return en error and no results", t, func() {
 		event := inotify.Event{Name: GetCurrentDirFilePath("/mutilate_non_numeric_default_metric_value.stdout")}
 
-		data, error := parseMutilateStdout(event, time.Now())
+		data, error := parseMutilateStdout(event)
 
 		So(data, ShouldHaveLength, 0)
 		So(error.Error(), ShouldEqual, "Non-numeric value in read row (value: \"thisIsNotANumber\", column: 5)")
