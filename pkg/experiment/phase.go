@@ -2,9 +2,9 @@ package experiment
 
 import "github.com/Sirupsen/logrus"
 
-// Measurement defines interface which shall be provided by user for the
+// Phase defines interface which shall be provided by user for the
 // Experiment Driver.
-type Measurement interface {
+type Phase interface {
 	// Name returns measurement name.
 	Name() string
 	// Repetitions returns desired number of measurement repetitions.

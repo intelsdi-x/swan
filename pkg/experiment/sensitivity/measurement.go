@@ -12,7 +12,7 @@ import (
 // measurementPhase performs a measurement for given loadPointIndex.
 // User of this Phase is responsible to orchestrate this phase for each loadPoint to
 // fulfill the LoadPointsCount.
-type measurement struct {
+type measurementPhase struct {
 	namePrefix string
 	// Latency Sensitivity (Production) workload.
 	pr workloads.Launcher
@@ -45,22 +45,22 @@ type measurement struct {
 }
 
 // Returns measurement name.
-func (m *measurement) Name() string {
+func (m *measurementPhase) Name() string {
 	return m.namePrefix + " Measurement for LoadPointIndex " +
 		strconv.Itoa(m.currentLoadPointIndex)
 }
 
 // Returns number of repetitions.
-func (m *measurement) Repetitions() int {
+func (m *measurementPhase) Repetitions() int {
 	return m.repetitions
 }
 
-func (m *measurement) getLoadPoint() int {
+func (m *measurementPhase) getLoadPoint() int {
 	return int(float64(m.currentLoadPointIndex) * (*m.TargetLoad / float64(m.loadPointsCount)))
 }
 
 // Run runs a measurement for given loadPointIndex.
-func (m *measurement) Run(log *logrus.Logger) error {
+func (m *measurementPhase) Run(log *logrus.Logger) error {
 	if m.TargetLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
@@ -100,7 +100,7 @@ func (m *measurement) Run(log *logrus.Logger) error {
 }
 
 // Finalize is executed after all repetitions of given measurement.
-func (m *measurement) Finalize() error {
+func (m *measurementPhase) Finalize() error {
 	// TODO: Check if variance is not too high.
 
 	var err error

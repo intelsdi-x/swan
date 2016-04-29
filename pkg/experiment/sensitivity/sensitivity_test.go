@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func TestExperiment(t *testing.T) {
+func TestSensitivityExperiment(t *testing.T) {
 	Convey("While using sensitivity profile experiment", t, func() {
 		mockedLcLauncher := new(workloadMocks.Launcher)
 		mockedLoadGenerator := new(workloadMocks.LoadGenerator)

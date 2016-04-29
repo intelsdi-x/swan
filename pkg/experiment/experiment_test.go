@@ -11,9 +11,9 @@ import (
 
 func TestExperiment(t *testing.T) {
 	Convey("While doing experiment ", t, func() {
-		Convey("With proper configuration and empty measurements", func() {
-			var measurements []Measurement
-			exp, err := NewExperiment("example-experiment1", measurements,
+		Convey("With proper configuration and empty phases", func() {
+			var phases []Phase
+			exp, err := NewExperiment("example-experiment1", phases,
 				os.TempDir(), logrus.ErrorLevel)
 
 			Convey("Experiment should return with error", func() {
@@ -22,27 +22,27 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
-		Convey("With proper configuration and not empty measurements", func() {
-			var measurements []Measurement
+		Convey("With proper configuration and not empty phases", func() {
+			var phases []Phase
 
-			mockedMeasurement := new(mocks.Measurement)
-			mockedMeasurement.On("Name").Return("mock-measurement01")
+			mockedPhase := new(mocks.Phase)
+			mockedPhase.On("Name").Return("mock-phase01")
 
-			measurements = append(measurements, mockedMeasurement)
+			phases = append(phases, mockedPhase)
 
-			exp, err := NewExperiment("example-experiment", measurements, os.TempDir(), logrus.ErrorLevel)
+			exp, err := NewExperiment("example-experiment", phases, os.TempDir(), logrus.ErrorLevel)
 			So(exp, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 
-			Convey("While setting one repetition to measurement", func() {
-				mockedMeasurement.On("Run", mock.AnythingOfType("*logrus.Logger")).Return(nil).Times(10)
-				mockedMeasurement.On("Repetitions").Return(10)
-				mockedMeasurement.On("Finalize").Return(nil).Once()
-				Convey("Experiment should succeed with 10 measurement repetitions", func() {
+			Convey("While setting one repetition to phase", func() {
+				mockedPhase.On("Run", mock.AnythingOfType("*logrus.Logger")).Return(nil).Times(10)
+				mockedPhase.On("Repetitions").Return(10)
+				mockedPhase.On("Finalize").Return(nil).Once()
+				Convey("Experiment should succeed with 10 phase repetitions", func() {
 					err := exp.Run()
 					So(err, ShouldBeNil)
 
-					mockedMeasurement.AssertExpectations(t)
+					mockedPhase.AssertExpectations(t)
 				})
 			})
 		})

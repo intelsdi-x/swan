@@ -14,7 +14,7 @@ type Experiment struct {
 	session             session
 	name                string
 	workingDirectory    string
-	measurements        []Measurement
+	phases              []Phase
 	startingDirectory   string
 	experimentDirectory string
 
@@ -25,19 +25,19 @@ type Experiment struct {
 
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
-// Caller have to provide slice of Measurement interfaces which are going to be executed.
-func NewExperiment(name string, measurements []Measurement,
+// Caller have to provide slice of Phase interfaces which are going to be executed.
+func NewExperiment(name string, phases []Phase,
 	directory string, logLevel log.Level) (*Experiment, error) {
-	if len(measurements) == 0 {
-		return nil, errors.New("invalid argument: no measurements provided")
+	if len(phases) == 0 {
+		return nil, errors.New("invalid argument: no phases provided")
 	}
 
-	// TODO(mpatelcz): Check if measurements names are unique!
+	// TODO(mpatelcz): Check if phases names are unique!
 	e := &Experiment{
 		name:             name,
 		session:          newSession(),
 		workingDirectory: directory,
-		measurements:     measurements,
+		phases:           phases,
 		logLvl:           logLevel,
 	}
 
@@ -56,41 +56,41 @@ func NewExperiment(name string, measurements []Measurement,
 }
 
 // Run runs experiment.
-// It runs in a sequence defined measurements with given repetition count.
+// It runs in a sequence defined phases with given repetition count.
 func (e *Experiment) Run() error {
 	experimentStartingTime := time.Now()
 
 	e.Log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
 	var err error
-	for _, measurement := range e.measurements {
-		for i := 0; i < measurement.Repetitions(); i++ {
-			measurementStartingTime := time.Now()
+	for _, phase := range e.phases {
+		for i := 0; i < phase.Repetitions(); i++ {
+			phaseStartingTime := time.Now()
 
-			e.Log.Info("Starting ", measurement.Name(), " repetition ", i)
-			err = e.createMeasurementDir(measurement, i)
+			e.Log.Info("Starting ", phase.Name(), " repetition ", i)
+			err = e.createPhaseDir(phase, i)
 			if err != nil {
 				return err
 			}
 
-			err := measurement.Run(e.Log)
+			err := phase.Run(e.Log)
 			if err != nil {
-				// When measurement return error we stop the whole experiment.
-				e.Log.Error(measurement.Name(), " returned error ", err)
+				// When phase return error we stop the whole experiment.
+				e.Log.Error(phase.Name(), " returned error ", err)
 				return err
 			}
 
-			e.Log.Info("Ended ", measurement.Name(), " repetition ", i,
-				" in ", time.Since(measurementStartingTime))
+			e.Log.Info("Ended ", phase.Name(), " repetition ", i,
+				" in ", time.Since(phaseStartingTime))
 		}
 
-		// Give a chance for measurement to finalize.
+		// Give a chance for phase to finalize.
 		// E.g to check statistical confidence of a result based on repetitions results.
-		e.Log.Info("Finalizing ", measurement.Name(),
-			" after ", measurement.Repetitions(), " repetitions")
-		err := measurement.Finalize()
+		e.Log.Info("Finalizing ", phase.Name(),
+			" after ", phase.Repetitions(), " repetitions")
+		err := phase.Finalize()
 		if err != nil {
-			// When measurement return error we stop the whole experiment.
-			e.Log.Error(measurement.Name(), " returned error ", err,
+			// When phase return error we stop the whole experiment.
+			e.Log.Error(phase.Name(), " returned error ", err,
 				" while finalizing.")
 			return err
 		}
@@ -127,16 +127,16 @@ func (e *Experiment) Finalize() {
 	os.Chdir(e.startingDirectory)
 }
 
-func (e *Experiment) createMeasurementDir(measurement Measurement, iteration int) error {
-	measurementDir := path.Join(e.experimentDirectory,
-		measurement.Name(), strconv.FormatInt(int64(iteration), 10))
+func (e *Experiment) createPhaseDir(phase Phase, iteration int) error {
+	phaseDir := path.Join(e.experimentDirectory,
+		phase.Name(), strconv.FormatInt(int64(iteration), 10))
 
-	err := os.MkdirAll(measurementDir, 0777)
+	err := os.MkdirAll(phaseDir, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.Chdir(measurementDir)
+	err = os.Chdir(phaseDir)
 	if err != nil {
 		return err
 	}
