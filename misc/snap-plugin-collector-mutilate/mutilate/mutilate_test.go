@@ -16,13 +16,18 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about required configuration", func() {
 			policy, error := mutilatePlugin.GetConfigPolicy()
-
-			phaseName := policy.Get([]string{"experiment"}).RulesAsTable()
 			So(error, ShouldBeNil)
-			So(phaseName, ShouldHaveLength, 1)
-			So(phaseName[0].Required, ShouldBeTrue)
-			So(phaseName[0].Type, ShouldEqual, "string")
-			So(phaseName[0].Name, ShouldEqual, "phase_name")
+
+			experimentConfig := policy.Get([]string{"experiment"}).RulesAsTable()
+			So(error, ShouldBeNil)
+			So(experimentConfig, ShouldHaveLength, 2)
+			So(experimentConfig[0].Required, ShouldBeTrue)
+			So(experimentConfig[0].Type, ShouldEqual, "string")
+			So(experimentConfig[0].Name, ShouldEqual, "phase_name")
+
+			So(experimentConfig[1].Required, ShouldBeTrue)
+			So(experimentConfig[1].Type, ShouldEqual, "string")
+			So(experimentConfig[1].Name, ShouldEqual, "stdout_file")
 		})
 
 		config := plugin.NewPluginConfigType()

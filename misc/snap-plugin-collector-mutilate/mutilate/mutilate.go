@@ -75,10 +75,12 @@ func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 // GetConfigPolicy implements plugin.PluginCollector interface
 func (mutilate *mutilate) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	phaseName, _ := cpolicy.NewStringRule("phase_name", true)
-	tags := cpolicy.NewPolicyNode()
-	tags.Add(phaseName)
+	stdoutFile, _ := cpolicy.NewStringRule("stdout_file", true)
+	experiment := cpolicy.NewPolicyNode()
+	experiment.Add(phaseName)
+	experiment.Add(stdoutFile)
 	policy := cpolicy.New()
-	policy.Add([]string{"experiment"}, tags)
+	policy.Add([]string{"experiment"}, experiment)
 
 	return policy, nil
 }
