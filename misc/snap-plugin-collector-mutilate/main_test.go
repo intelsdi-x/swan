@@ -22,7 +22,7 @@ func TestMutilatePluginLoad(t *testing.T) {
 		pluginControl := control.New(control.GetDefaultConfig())
 		pluginControl.Start()
 		//		path, _ := mutilate.Get_current_dir_file("snap-plugin-collector-mutilate")
-		requestedPlugin, requestedPluginError := core.NewRequestedPlugin("/home/developer/go/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate")
+		requestedPlugin, requestedPluginError := core.NewRequestedPlugin("/home/iwan/go_workspace/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate")
 		So(requestedPluginError, ShouldBeNil)
 
 		//		fmt.Printf("\nrequestedPlugin: %v", requestedPlugin)
