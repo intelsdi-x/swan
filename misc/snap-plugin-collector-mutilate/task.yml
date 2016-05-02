@@ -1,0 +1,21 @@
+---
+  version: 1
+  schedule:
+    type: "simple"
+    interval: "1s"
+  workflow:
+    collect:
+      metrics:
+        /intel/swan/mutilate/*/avg: {}
+        /intel/swan/mutilate/*/std: {}
+        /intel/swan/mutilate/*/min: {}
+      config:
+        /intel/swan/mutilate:
+          phase_name: "kaczka dziwaczka"
+          stdout_file: "/home/mutilate/mutilate.stdout"
+          experiment_name: "lis witalis"
+      publish:
+        -
+          plugin_name: "file"
+          config:
+            file: "/home/mutilate/mutilate.log"
