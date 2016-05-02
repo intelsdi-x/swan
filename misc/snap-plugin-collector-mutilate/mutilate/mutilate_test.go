@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/ctypes"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,10 +51,13 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/percentile/99_999th", "ns")
 		})
 
-		/*Convey("I should receive valid metrics when I try to collect them", func() {
-			fmt.Printf("\nmetricTypes: %v\n", metricTypes)
+		Convey("I should receive valid metrics when I try to collect them", func() {
+			configuration := cdata.NewNode()
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "this is experiment name"})
+			metricTypes[0].Config_ = configuration
 			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
-
 			So(error, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 9)
 			soValidMetric(metrics[0], "/avg", 20.8, now)
@@ -64,8 +68,8 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[5], "/percentile/90th", 33.4, now)
 			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
 			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
-			soValidMetric(metrics[8], "/percentile/99.999th", 1777.887805, now)
-		})*/
+			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
+		})
 	})
 }
 
@@ -80,7 +84,8 @@ func soValidMetric(metric plugin.MetricType, namespaceSuffix string, value float
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
 	So(metric.Unit(), ShouldEqual, "ns")
-	So(metric.Tags()["phase_name"], ShouldEqual, "some random tag!")
+	So(metric.Tags()["phase"], ShouldEqual, "this is phase name")
+	So(metric.Tags()["experiment"], ShouldEqual, "this is experiment name")
 	So(metric.Data().(float64), ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
 }
