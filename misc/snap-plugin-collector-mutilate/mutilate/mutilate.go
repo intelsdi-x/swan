@@ -1,10 +1,13 @@
 package mutilate
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
+	"github.com/intelsdi-x/snap-plugin-utilities/logger"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
@@ -56,11 +59,32 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 // CollectMetrics implements plugin.PluginCollector interface
 func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
-	sourceFilePath, _ := config.GetConfigItem(metricTypes[0], "stdout_file")
-	phaseName, _ := config.GetConfigItem(metricTypes[0], "phase_name")
-	experimentName, _ := config.GetConfigItem(metricTypes[0], "experiment_name")
-	rawMetrics, _ := parseMutilateStdout(sourceFilePath.(string))
-	hostname, _ := os.Hostname()
+	sourceFilePath, sFPErr := config.GetConfigItem(metricTypes[0], "stdout_file")
+	if sFPErr != nil {
+		logger.LogError("No file path set - no metrics are collected", sFPErr)
+		return metrics, errors.New("No file path set - no metrics are collected")
+	}
+	phaseName, pNErr := config.GetConfigItem(metricTypes[0], "phase_name")
+	if pNErr != nil {
+		logger.LogError("No phase name set - no metrics are collected", pNErr)
+		return metrics, errors.New("No phase name set - no metrics are collected")
+	}
+	experimentName, eNError := config.GetConfigItem(metricTypes[0], "experiment_name")
+	if eNError != nil {
+		logger.LogError("No experiment name set - no metrics are collected", eNError)
+		return metrics, errors.New("No experiment name set - no metrics are collected")
+	}
+	rawMetrics, rMErr := parseMutilateStdout(sourceFilePath.(string))
+	if rMErr != nil {
+		logger.LogError(fmt.Sprintf("Mutilate output parsing failed: %s", rMErr.Error()), rMErr)
+		return metrics, fmt.Errorf("Mutilate output parsing failed: %s", rMErr.Error())
+	}
+	hostname, hErr := os.Hostname()
+	if hErr != nil {
+		logger.LogError("Can not determine hostname", hErr)
+		return metrics, fmt.Errorf("Can not determine hostname: %s", hErr.Error())
+	}
+
 	for key, metricType := range metricTypes {
 		metric := plugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
 		metric.Data_ = rawMetrics[key].value

@@ -57,7 +57,9 @@ func TestMutilatePlugin(t *testing.T) {
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
 			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "this is experiment name"})
 			metricTypes[0].Config_ = configuration
+
 			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+
 			So(error, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 9)
 			soValidMetric(metrics[0], "/avg", 20.8, now)
@@ -69,6 +71,57 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
 			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
 			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
+		})
+
+		Convey("I should receive no metrics and error when no experiment name is set", func() {
+			configuration := cdata.NewNode()
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
+			metricTypes[0].Config_ = configuration
+
+			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+
+			So(metrics, ShouldHaveLength, 0)
+			So(error.Error(), ShouldEqual, "No experiment name set - no metrics are collected")
+		})
+
+		Convey("I should receive no metrics and error when no phase name is set", func() {
+			configuration := cdata.NewNode()
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
+			metricTypes[0].Config_ = configuration
+
+			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+
+			So(metrics, ShouldHaveLength, 0)
+			So(error.Error(), ShouldEqual, "No phase name set - no metrics are collected")
+
+		})
+
+		Convey("I should receive no metrics and error when no file path is set", func() {
+			configuration := cdata.NewNode()
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "some phase name"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
+			metricTypes[0].Config_ = configuration
+
+			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+
+			So(metrics, ShouldHaveLength, 0)
+			So(error.Error(), ShouldEqual, "No file path set - no metrics are collected")
+
+		})
+
+		Convey("I should receive no metrics and error when mutilate results parsing fails", func() {
+			configuration := cdata.NewNode()
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate_incorrect_count_of_columns.stdout"})
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "this is experiment name"})
+			metricTypes[0].Config_ = configuration
+
+			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+
+			So(metrics, ShouldHaveLength, 0)
+			So(error, ShouldNotBeNil)
 		})
 	})
 }
