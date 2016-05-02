@@ -4,13 +4,13 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-// CPUShares defines data needed for CPU controller
+// CPUShares defines data needed for CPU controller.
 type CPUShares struct {
 	cgroupName string
 	cpuShares  string
 }
 
-// NewCPUShares instance creation
+// NewCPUShares instance creation.
 func NewCPUShares(nameOfTheCgroup string, NumShares string) *CPUShares {
 	return &CPUShares{cgroupName: nameOfTheCgroup, cpuShares: NumShares}
 }
@@ -28,7 +28,7 @@ func (cpu *CPUShares) Clean() error {
 	return nil
 }
 
-// Create specified cgroup
+// Create specified cgroup.
 func (cpu *CPUShares) Create() error {
 
 	// 1 Create cpu cgroup
@@ -52,11 +52,11 @@ func (cpu *CPUShares) Create() error {
 	return nil
 }
 
-// Isolate associates specified pid to the cgroup
+// Isolate associates specified pid to the cgroup.
 func (cpu *CPUShares) Isolate(PID int) error {
 
-	// Associate task with the specified cgroup
-	// cgclassify and cgexec seem to exit with error so temporarily using file io
+	// Associate task with the specified cgroup.
+	// cgclassify and cgexec seem to exit with error so temporarily using file io.
 
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
