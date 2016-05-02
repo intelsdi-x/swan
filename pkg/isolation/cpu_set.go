@@ -4,18 +4,18 @@ import "os/exec"
 import "io/ioutil"
 import "strconv"
 
-// CPUSetShares input definition
+// CPUSetShares input definition.
 type CPUSetShares struct {
 	cgroupName   string
 	cpuSetShares string
 }
 
-// NewCPUSetShares creates an instance of input data
+// NewCPUSetShares creates an instance of input data.
 func NewCPUSetShares(nameOfTheCgroup string, cpuSets string) *CPUSetShares {
 	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
 }
 
-// Clean removes specified cgroup
+// Clean removes specified cgroup.
 func (cpuSet *CPUSetShares) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
@@ -28,10 +28,10 @@ func (cpuSet *CPUSetShares) Clean() error {
 	return nil
 }
 
-// Create specified cgroup
+// Create specified cgroup.
 func (cpuSet *CPUSetShares) Create() error {
 
-	// 1.a Create cpuset cgroup
+	// 1.a Create cpuset cgroup.
 
 	cmd := exec.Command("sh", "-c", "cgcreate -g cpuset:"+cpuSet.cgroupName)
 
@@ -40,7 +40,7 @@ func (cpuSet *CPUSetShares) Create() error {
 		return err
 	}
 
-	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover platform, we change accordingly
+	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover platform, we change accordingly.
 
 	cgCPUNodes := "0-1"
 
@@ -51,7 +51,7 @@ func (cpuSet *CPUSetShares) Create() error {
 		return err
 	}
 
-	// 1.c Set cpuset cgroup cpus
+	// 1.c Set cpuset cgroup cpus.
 
 	cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cpuSet.cpuSetShares+" "+cpuSet.cgroupName)
 
@@ -63,7 +63,7 @@ func (cpuSet *CPUSetShares) Create() error {
 	return nil
 }
 
-// Isolate creates specified cgroup
+// Isolate creates specified cgroup.
 func (cpuSet *CPUSetShares) Isolate(PID int) error {
 
 	// Set PID to cgroups

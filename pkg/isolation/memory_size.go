@@ -10,12 +10,12 @@ type MemorySize struct {
 	memorySize string
 }
 
-// NewMemorySize creates an instance of input data
+// NewMemorySize creates an instance of input data.
 func NewMemorySize(nameOfTheCgroup string, memorySizeShares string) *MemorySize {
 	return &MemorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
 }
 
-// Clean removes specified cgroup
+// Clean removes specified cgroup.
 func (memorysize *MemorySize) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.cgroupName)
@@ -28,10 +28,10 @@ func (memorysize *MemorySize) Clean() error {
 	return nil
 }
 
-// Create specified cgroup
+// Create specified cgroup.
 func (memorysize *MemorySize) Create() error {
 
-	// 1.a Create memory size cgroup
+	// 1.a Create memory size cgroup.
 
 	cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+memorysize.cgroupName)
 
@@ -40,7 +40,7 @@ func (memorysize *MemorySize) Create() error {
 		return err
 	}
 
-	// 1.b Set cgroup memory size
+	// 1.b Set cgroup memory size.
 
 	cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memorysize.memorySize+" "+memorysize.cgroupName)
 
@@ -55,8 +55,8 @@ func (memorysize *MemorySize) Create() error {
 // Isolate create specified cgroup and associates specified process id
 func (memorysize *MemorySize) Isolate(PID int) error {
 
-	// Set PID to cgroups
-	// cgclassify and cgexec seem to exit with error so temporarily using file io
+	// Set PID to cgroups.
+	// cgclassify and cgexec seem to exit with error so temporarily using file io.
 
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
