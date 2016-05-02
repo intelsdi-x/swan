@@ -1,7 +1,6 @@
 package mutilate
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -57,23 +56,18 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 // CollectMetrics implements plugin.PluginCollector interface
 func (mutilate *mutilate) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
-	// TODO - pass file path in configuration
-	//fmt.Printf("\nmetricTypes: %v\n", metricTypes[0])
 	sourceFilePath, _ := config.GetConfigItem(metricTypes[0], "stdout_file")
-	phaseName, err0 := config.GetConfigItem(metricTypes[0], "phase_name")
-	experimentName, err1 := config.GetConfigItem(metricTypes[0], "experiment_name")
-	fmt.Printf("%v, %v", err0, err1)
-	//fmt.Printf("\nsourceFilePath: %v, %v\n", sourceFilePath, confErr)
-	rawMetrics, err := parseMutilateStdout(sourceFilePath.(string))
-	fmt.Printf("\nrawMetrics: %v\nerror: %v\n", rawMetrics, err)
+	phaseName, _ := config.GetConfigItem(metricTypes[0], "phase_name")
+	experimentName, _ := config.GetConfigItem(metricTypes[0], "experiment_name")
+	rawMetrics, _ := parseMutilateStdout(sourceFilePath.(string))
 	hostname, _ := os.Hostname()
 	for key, metricType := range metricTypes {
-		metricType.Data_ = rawMetrics[key].value
-		metricType.Namespace_[3].Value = hostname
-		metricType.Timestamp_ = mutilate.now
-		metricType.Tags_["phase"] = phaseName.(string)
-		metricType.Tags_["experiment"] = experimentName.(string)
-		metrics = append(metrics, metricType)
+		metric := plugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
+		metric.Data_ = rawMetrics[key].value
+		metric.Namespace_[3].Value = hostname
+		metric.Timestamp_ = mutilate.now
+		metric.Tags_ = map[string]string{"phase": phaseName.(string), "experiment": experimentName.(string)}
+		metrics = append(metrics, metric)
 	}
 
 	return metrics, nil
