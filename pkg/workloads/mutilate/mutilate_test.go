@@ -141,6 +141,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
+	s.mHandle.On("Clean").Return(nil)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
 
 	Convey("When generating Load.", s.T(), func() {
