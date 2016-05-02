@@ -1,6 +1,8 @@
 package mutilate
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -123,6 +125,10 @@ func TestMutilatePlugin(t *testing.T) {
 			So(metrics, ShouldHaveLength, 0)
 			So(error, ShouldNotBeNil)
 		})
+
+		today := time.Now().Format("2006-01-02")
+		os.Remove(fmt.Sprintf("%s_snap-plugin-collector-mutilate.test.log", today))
+		os.Remove(fmt.Sprintf("%s_mutilate.test.log", today))
 	})
 }
 
