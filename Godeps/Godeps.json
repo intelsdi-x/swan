@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v62",
 	"Packages": [
 		"./..."
 	],
@@ -24,6 +23,11 @@
 			"ImportPath": "github.com/jtolds/gls",
 			"Comment": "v4.2.0",
 			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
+		},
+		{
+			"ImportPath": "github.com/montanaflynn/stats",
+			"Comment": "0.2.0-55-gb485fbd",
+			"Rev": "b485fbda6db941f19537d095b5a77eb2e1bc13f0"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
