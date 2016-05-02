@@ -1,53 +1,48 @@
 package experiment
 
 import (
-	"testing"
-
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/experiment/mocks"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/mock"
+	"os"
+	"testing"
 )
 
-type FakePhase struct {
-	ID          string
-	Invocations *int
-	repetitions int
-}
-
-func (f FakePhase) Name() string {
-	return f.ID
-}
-
-func (f FakePhase) Repetitions() int {
-	return f.repetitions
-}
-
-func (f FakePhase) Run() error {
-	(*f.Invocations)++
-	return nil
-}
-
 func TestExperiment(t *testing.T) {
-	Convey("Creating experiment ", t, func() {
-		Convey("With proper configuration and not empty phases should succeed", func() {
+	Convey("While doing experiment ", t, func() {
+		Convey("With proper configuration and empty phases", func() {
 			var phases []Phase
-			var Invocation int
+			exp, err := NewExperiment("example-experiment1", phases,
+				os.TempDir(), logrus.ErrorLevel)
 
-			fakePhase := &FakePhase{
-				ID:          "Fake phase 01",
-				repetitions: 1,
-				Invocations: &Invocation,
-			}
-			phases = append(phases, fakePhase)
+			Convey("Experiment should return with error", func() {
+				So(exp, ShouldBeNil)
+				So(err, ShouldNotBeNil)
+			})
+		})
 
-			exp, err := NewExperiment("example-experiment", phases, "/tmp")
+		Convey("With proper configuration and not empty phases", func() {
+			var phases []Phase
+
+			mockedPhase := new(mocks.Phase)
+			mockedPhase.On("Name").Return("mock-phase01")
+
+			phases = append(phases, mockedPhase)
+
+			exp, err := NewExperiment("example-experiment", phases, os.TempDir(), logrus.ErrorLevel)
 			So(exp, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 
-			Convey("Experiment Run() with single phase shall succeed", func() {
-				err := exp.Run()
-				So(err, ShouldBeNil)
+			Convey("While setting one repetition to phase", func() {
+				mockedPhase.On("Run", mock.AnythingOfType("*logrus.Logger")).Return(nil).Times(10)
+				mockedPhase.On("Repetitions").Return(10)
+				mockedPhase.On("Finalize").Return(nil).Once()
+				Convey("Experiment should succeed with 10 phase repetitions", func() {
+					err := exp.Run()
+					So(err, ShouldBeNil)
 
-				Convey("with repetition set to 1 phase shall be called once", func() {
-					So(*fakePhase.Invocations, ShouldEqual, 1)
+					mockedPhase.AssertExpectations(t)
 				})
 			})
 		})
