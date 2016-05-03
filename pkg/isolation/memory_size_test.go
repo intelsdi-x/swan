@@ -3,7 +3,6 @@
 package isolation
 
 import (
-	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
@@ -16,21 +15,17 @@ func TestMemorySize(t *testing.T) {
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 	err := cmd.Start()
-	if err != nil {
-		panic(err)
-	}
-	memorysize.Create()
 
-	memorysize.Isolate(cmd.Process.Pid)
-
-	fmt.Printf(memorysize.cgroupName)
+	Convey("While using TestCpu", t, func() {
+		So(err, ShouldBeNil)
+	})
 
 	Convey("Should provide memorysize Create() to return and correct memory size", t, func() {
 		So(memorysize.Create(), ShouldBeNil)
 		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + memorysize.cgroupName + "/memory.limit_in_bytes")
-		if err != nil {
-			panic(err)
-		}
+
+		So(err, ShouldBeNil)
+
 		inputFmt := data[:len(data)-1]
 		So(string(inputFmt), ShouldEqual, memorysize.memorySize)
 	})
@@ -38,9 +33,9 @@ func TestMemorySize(t *testing.T) {
 	Convey("Should provide memorysize Isolate() to return and correct process id", t, func() {
 		So(memorysize.Isolate(cmd.Process.Pid), ShouldBeNil)
 		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + memorysize.cgroupName + "/tasks")
-		if err != nil {
-			panic(err)
-		}
+
+		So(err, ShouldBeNil)
+
 		inputFmt := data[:len(data)-1]
 		strPID := strconv.Itoa(cmd.Process.Pid)
 		d := []byte(strPID)
@@ -51,6 +46,14 @@ func TestMemorySize(t *testing.T) {
 
 	Convey("Should provide Clean() to return", t, func() {
 		So(memorysize.Clean(), ShouldBeNil)
+	})
+
+	cmd = exec.Command("sh", "-c", "kill -9 ", string(cmd.Process.Pid))
+
+	err = cmd.Start()
+
+	Convey("Should provide kill to return while  TestMemorySize", t, func() {
+		So(err, ShouldBeNil)
 	})
 
 }
