@@ -40,7 +40,7 @@ func (p *Plugins) Load(name string) error {
 
 // IsLoaded connects to snap and looks for plugin with given name.
 // Be aware that the name is not the plugin binary path or name but defined by the plugin itself.
-func (p *Plugins) IsLoaded(name string) (bool, error) {
+func (p *Plugins) IsLoaded(t string, name string) (bool, error) {
 	// Get all (running: false) plugins
 	plugins := p.pClient.GetPlugins(false)
 	if plugins.Err != nil {
@@ -48,7 +48,7 @@ func (p *Plugins) IsLoaded(name string) (bool, error) {
 	}
 
 	for _, lp := range plugins.LoadedPlugins {
-		if name == lp.Name {
+		if t == lp.Type && name == lp.Name {
 			return true, nil
 		}
 	}
