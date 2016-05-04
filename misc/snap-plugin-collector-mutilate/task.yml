@@ -11,9 +11,9 @@
         /intel/swan/mutilate/*/min: {}
       config:
         /intel/swan/mutilate:
-          phase_name: "kaczka dziwaczka"
+          phase_name: "example phase name"
           stdout_file: "/home/mutilate/mutilate.stdout"
-          experiment_name: "lis witalis"
+          experiment_name: "example experiment name"
       publish:
         -
           plugin_name: "file"
