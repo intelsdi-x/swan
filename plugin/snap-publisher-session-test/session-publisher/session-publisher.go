@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
@@ -45,7 +46,13 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 
 	w := bufio.NewWriter(file)
 	for _, m := range metrics {
-		w.WriteString(fmt.Sprintf("%v\t%v\t%v\t%v\n", m.Timestamp(), m.Namespace(), m.Data(), m.Labels()))
+		var labels []string
+		for _, label := range(m.Labels()) {
+			labels = append(labels, label.Name)
+		}
+
+
+		w.WriteString(fmt.Sprintf("%s\t%s\n", "/" + strings.Join(m.Namespace(), "/"), strings.Join(labels, ",")))
 	}
 	w.Flush()
 
