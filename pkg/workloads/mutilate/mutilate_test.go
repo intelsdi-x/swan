@@ -72,17 +72,11 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	)
 	outputReader := strings.NewReader(correctMutilateOutput)
 
-	executorStatus := executor.Status{
-		ExitCode: 0,
-		Stdout:   "",
-		Stderr:   "",
-	}
-
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilateTuneCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+	s.mHandle.On("Status").Return(executor.TERMINATED, 0)
 	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
@@ -128,12 +122,6 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	const duration = 10 * time.Second
 	const percentile = "99.9"
 
-	executorStatus := executor.Status{
-		ExitCode: 0,
-		Stdout:   "",
-		Stderr:   "",
-	}
-
 	loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
 		s.config.MutilatePath,
 		s.config.MemcachedHost,
@@ -148,7 +136,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Clean").Return(nil)
-	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+	s.mHandle.On("Status").Return(executor.TERMINATED, 0)
 	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When generating Load.", s.T(), func() {
@@ -193,17 +181,11 @@ func (s *MutilateTestSuite) TestPopulate() {
 		s.config.MemcachedHost,
 	)
 
-	executorStatus := executor.Status{
-		ExitCode: 0,
-		Stdout:   "",
-		Stderr:   "",
-	}
-
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+	s.mHandle.On("Status").Return(executor.TERMINATED, 0)
 
 	Convey("When Populating Memcached.", s.T(), func() {
 		err := mutilate.Populate()
