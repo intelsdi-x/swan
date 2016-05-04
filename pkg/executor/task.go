@@ -20,8 +20,8 @@ type Task interface {
 	// Stops a task.
 	Stop() error
 	// Status returns a state of the task. If task is terminated it returns exitCode as a
-	// second item in tuple. Otherwise returns nil.
-	Status() (TaskState, *Status)
+	// second item in tuple. Otherwise returns -1.
+	Status() (TaskState, int)
 	// Stdout returns a reader for file to the task's stdout file.
 	Stdout() (io.Reader, error)
 	// Stderr returns a reader for file to the task's stderr file.

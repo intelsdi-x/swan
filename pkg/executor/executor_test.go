@@ -26,7 +26,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		Convey("Task should be still running and status should be nil", func() {
 			taskState, taskStatus := task.Status()
 			So(taskState, ShouldEqual, RUNNING)
-			So(taskStatus, ShouldBeNil)
+			So(taskStatus, ShouldEqual, -1)
 
 			stopErr := task.Stop()
 			So(stopErr, ShouldBeNil)
@@ -42,7 +42,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			Convey("The task should be still running and status should be nil", func() {
 				taskState, taskStatus := task.Status()
 				So(taskState, ShouldEqual, RUNNING)
-				So(taskStatus, ShouldBeNil)
+				So(taskStatus, ShouldEqual, -1)
 			})
 
 			stopErr := task.Stop()
@@ -61,11 +61,10 @@ func testExecutor(t *testing.T, executor Executor) {
 				taskState, taskStatus := task.Status()
 
 				So(taskState, ShouldEqual, TERMINATED)
-				So(taskStatus, ShouldNotBeNil)
 				// -1 for Local executor.
 				// 129 for Remote executor.
 				// TODO: Unify exit code constants in next PR.
-				So(taskStatus.ExitCode, ShouldBeIn, -1, 129)
+				So(taskStatus, ShouldBeIn, -1, 129)
 			})
 		})
 
@@ -129,8 +128,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
-				So(taskStatus, ShouldNotBeNil)
-				So(taskStatus.ExitCode, ShouldEqual, 0)
+				So(taskStatus, ShouldEqual, 0)
 
 				stdoutReader, stdoutErr := task.Stdout()
 				So(stdoutErr, ShouldBeNil)
@@ -189,7 +187,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 127", func() {
-				So(taskStatus.ExitCode, ShouldEqual, 127)
+				So(taskStatus, ShouldEqual, 127)
 			})
 
 			Convey("And the eraseOutput should clean the stderr file", func() {
@@ -266,11 +264,8 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1, ShouldNotBeNil)
-				So(taskStatus2, ShouldNotBeNil)
-
-				So(taskStatus1.ExitCode, ShouldEqual, 0)
-				So(taskStatus2.ExitCode, ShouldEqual, 0)
+				So(taskStatus1, ShouldEqual, 0)
+				So(taskStatus2, ShouldEqual, 0)
 			})
 		})
 	})
@@ -295,8 +290,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0", func() {
-				So(taskStatus, ShouldNotBeNil)
-				So(taskStatus.ExitCode, ShouldEqual, 0)
+				So(taskStatus, ShouldEqual, 0)
 			})
 		})
 	})

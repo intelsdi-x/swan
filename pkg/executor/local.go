@@ -127,18 +127,6 @@ func (task *localTask) getPid() int {
 	return task.cmdHandler.Process.Pid
 }
 
-func (task *localTask) createStatus() *Status {
-	if !task.isTerminated() {
-		return nil
-	}
-
-	return &Status{
-		(task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(),
-		task.stdoutFile.Name(),
-		task.stderrFile.Name(),
-	}
-}
-
 // Stop terminates the local task.
 func (task *localTask) Stop() error {
 	if task.isTerminated() {
@@ -164,14 +152,14 @@ func (task *localTask) Stop() error {
 	return nil
 }
 
-// Status returns a state of the task. If task is terminated it returns the Status as a
-// second item in tuple. Otherwise returns nil.
-func (task *localTask) Status() (TaskState, *Status) {
+// Status returns a state of the task. If task is terminated it returns exitCode as a
+// second item in tuple. Otherwise returns -1.
+func (task *localTask) Status() (TaskState, int) {
 	if !task.isTerminated() {
-		return RUNNING, nil
+		return RUNNING, -1
 	}
 
-	return TERMINATED, task.createStatus()
+	return TERMINATED, (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus()
 }
 
 // Stdout returns io.Reader to stdout file.
