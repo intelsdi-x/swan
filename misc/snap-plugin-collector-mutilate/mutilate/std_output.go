@@ -17,6 +17,10 @@ type metric struct {
 	value float64
 }
 
+func (m metric) isMetricEmpty() bool {
+	return m.name == "" && m.value == 0.0
+}
+
 func parseMutilateStdout(event inotify.Event) ([]metric, error) {
 	var output []metric
 	csvFile, readError := os.Open(event.Name)
@@ -35,36 +39,36 @@ func parseMutilateStdout(event inotify.Event) ([]metric, error) {
 }
 
 func scanMutilateStdoutRows(scanner *bufio.Scanner) ([]metric, error) {
-	var output, defaultRow []metric
-	var swanRow metric
+	var output, defaultMetrics []metric
+	var swanMetric metric
 	var err error
 	for scanner.Scan() {
 		if err = scanner.Err(); err != nil {
 			return output, err
 		}
-		line := scanner.Text()
-		if strings.Contains(line, "read") {
-			defaultRow, err = parseDefaultMutilateStdoutRow(line)
+		row := scanner.Text()
+		if strings.Contains(row, "read") {
+			defaultMetrics, err = parseDefaultMutilateStdoutRow(row)
 			if err != nil {
 				return output, err
 			}
 
-		} else if strings.Contains(line, "Swan latency for percentile") {
-			swanRow, err = parseSwanMutilateStdoutRow(line)
+		} else if strings.Contains(row, "Swan latency for percentile") {
+			swanMetric, err = parseSwanMutilateStdoutRow(row)
 			if err != nil {
 				return output, err
 			}
 		}
 
 	}
-	if defaultRow == nil {
+	if defaultMetrics == nil {
 		return output, errors.New("No default mutilate statistics found")
 	}
-	if isMetricEmpty(swanRow) {
+	if swanMetric.isMetricEmpty() {
 		return output, errors.New("No swan-specific statistics found")
 	}
-	output = append(output, defaultRow...)
-	output = append(output, swanRow)
+	output = append(output, defaultMetrics...)
+	output = append(output, swanMetric)
 
 	return output, nil
 }
@@ -76,16 +80,19 @@ func parseDefaultMutilateStdoutRow(line string) ([]metric, error) {
 	var output []metric
 	fields := strings.Fields(line)
 	if colCount := len(fields); colCount != 9 {
-		return output, errors.New(fmt.Sprintf("Incorrect column count (got: %d, expected: 9) in QPS read row", colCount))
+		return output, errors.New(fmt.Sprintf("Incorrect column count (got: %d, "+
+			"expected: 9) in QPS read row", colCount))
 	}
-	metricNames := [...]string{"", "avg", "std", "min", "percentile/5th", "percentile/10th", "percentile/90th", "percentile/95th", "percentile/99th"}
+	metricNames := [...]string{"", "avg", "std", "min", "percentile/5th",
+		"percentile/10th", "percentile/90th", "percentile/95th", "percentile/99th"}
 	for index, value := range fields {
 		if index == 0 {
 			continue
 		}
-		metric, err := createMetricsFromDefaultStdout(value, metricNames[index])
+		metric, err := newMetricFrom(value, metricNames[index])
 		if err != nil {
-			return output, errors.New(fmt.Sprintf("Non-numeric value in read row (value: \"%s\", column: %d)", err.Error(), index+1))
+			return output, errors.New(fmt.Sprintf("Non-numeric value in read "+
+				"row (value: \"%s\", column: %d)", err.Error(), index+1))
 		}
 		output = append(output, metric)
 	}
@@ -93,7 +100,7 @@ func parseDefaultMutilateStdoutRow(line string) ([]metric, error) {
 	return output, nil
 }
 
-func createMetricsFromDefaultStdout(value string, name string) (metric, error) {
+func newMetricFrom(value string, name string) (metric, error) {
 	floatValue, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return metric{}, errors.New(value)
@@ -110,7 +117,8 @@ func parseSwanMutilateStdoutRow(line string) (metric, error) {
 	if len(lineFields) != 2 {
 		return metric{}, errors.New("Swan-specific row malformed")
 	}
-	floatValue, floatParsingError := strconv.ParseFloat(strings.TrimSpace(lineFields[1]), 64)
+	floatValue, floatParsingError := strconv.ParseFloat(
+		strings.TrimSpace(lineFields[1]), 64)
 	if floatParsingError != nil {
 		return metric{}, errors.New("Swan-specific row is missing metric value")
 	}
@@ -135,8 +143,4 @@ func getMetricNameFromSwanRowDescription(description string) (string, error) {
 	buffer.WriteString("th")
 
 	return buffer.String(), nil
-}
-
-func isMetricEmpty(metricObj metric) bool {
-	return metricObj.name == "" && metricObj.value == 0.0
 }
