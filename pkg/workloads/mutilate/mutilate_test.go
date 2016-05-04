@@ -3,14 +3,16 @@ package mutilate
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
 )
 
 const (
@@ -68,10 +70,11 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 		s.defaultSlo,
 		int(s.config.TuningTime.Seconds()),
 	)
+	outputReader := strings.NewReader(correctMutilateOutput)
 
 	executorStatus := executor.Status{
 		ExitCode: 0,
-		Stdout:   correctMutilateOutput,
+		Stdout:   "",
 		Stderr:   "",
 	}
 
@@ -80,8 +83,10 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	s.mExecutor.On("Execute", mutilateTuneCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
+		outputReader.Seek(0, 0)
 		targetQPS, sli, err := mutilate.Tune(s.defaultSlo)
 		Convey("On success, error should be nil.", func() {
 			So(err, ShouldBeNil)
@@ -125,7 +130,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 
 	executorStatus := executor.Status{
 		ExitCode: 0,
-		Stdout:   correctMutilateOutput,
+		Stdout:   "",
 		Stderr:   "",
 	}
 
@@ -137,14 +142,17 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 		percentile,
 	)
 
+	outputReader := strings.NewReader(correctMutilateOutput)
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Clean").Return(nil)
 	s.mHandle.On("Status").Return(executor.TERMINATED, &executorStatus)
+	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When generating Load.", s.T(), func() {
+		outputReader.Seek(0, 0)
 		qps, sli, err := mutilate.Load(load, duration)
 		Convey("On success, error should be nil", func() {
 			So(err, ShouldBeNil)
