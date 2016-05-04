@@ -3,13 +3,16 @@ package mutilate
 import (
 	"errors"
 	"fmt"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/shopspring/decimal"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/shopspring/decimal"
 )
 
 // Config contains all data for running mutilate.
@@ -74,8 +77,11 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 			"Executing Mutilate Tune command returned with exit code: " +
 				strconv.Itoa(status.ExitCode))
 	}
-
-	qps, achievedSLI, err = getQPSAndLatencyFrom(status.Stdout)
+	stdoutReader, err := taskHandle.Stdout()
+	if err != nil {
+		return qps, achievedSLI, err
+	}
+	qps, achievedSLI, err = getQPSAndLatencyFrom(stdoutReader)
 	if err != nil {
 		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output")
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
@@ -104,7 +110,12 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 		return achievedQPS, sli, errors.New(errMsg + err.Error())
 	}
 
-	achievedQPS, sli, err = getQPSAndLatencyFrom(status.Stdout)
+	stdoutReader, err := taskHandle.Stdout()
+	if err != nil {
+		return achievedQPS, sli, err
+	}
+
+	achievedQPS, sli, err = getQPSAndLatencyFrom(stdoutReader)
 	if err != nil {
 		errMsg := fmt.Sprintf("Could not retrieve information from mutilate Load output. ")
 		return achievedQPS, sli, errors.New(errMsg + err.Error())
@@ -154,17 +165,23 @@ func matchNotFound(match []string) bool {
 	return match == nil || len(match) < 2 || len(match[1]) == 0
 }
 
-func getQPSAndLatencyFrom(output string) (qps int, latency int, err error) {
+func getQPSAndLatencyFrom(outputReader io.Reader) (qps int, latency int, err error) {
+
+	buff, err := ioutil.ReadAll(outputReader)
+	if err != nil {
+		return qps, latency, err
+	}
+	output := string(buff)
 	qps, qpsError := getQPSFrom(output)
 	latency, latencyError := getLatencyFrom(output)
 
 	var errorMsg string
 
 	if qpsError != nil {
-		errorMsg += "Could not get QPS from output: " + err.Error() + ". "
+		errorMsg += "Could not get QPS from output: " + qpsError.Error() + ". "
 	}
 	if latencyError != nil {
-		errorMsg += "Could not get Latency from output: " + err.Error() + ". "
+		errorMsg += "Could not get Latency from output: " + latencyError.Error() + ". "
 	}
 
 	if errorMsg != "" {
