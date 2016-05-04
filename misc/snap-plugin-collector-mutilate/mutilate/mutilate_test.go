@@ -1,11 +1,12 @@
 package mutilate
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/snap/control/plugin"
+	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/ctypes"
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,20 +17,20 @@ func TestMutilatePlugin(t *testing.T) {
 		now := time.Now()
 		mutilatePlugin := NewMutilate(now)
 
-		/*Convey("I should receive information about required configuration", func() {
+		Convey("I should receive information about required configuration", func() {
 			policy, error := mutilatePlugin.GetConfigPolicy()
 			fmt.Printf("%v\t%v", *policy, error)
 			So(error, ShouldBeNil)
 
-			experimentConfig := policy.Get([]string}).RulesAsTable()
+			experimentConfig := policy.Get([]string{""}).RulesAsTable()
 			So(error, ShouldBeNil)
 			So(experimentConfig, ShouldHaveLength, 3)
 			So(experimentConfig[0].Required, ShouldBeTrue)
 			So(experimentConfig[1].Required, ShouldBeTrue)
 			So(experimentConfig[2].Required, ShouldBeTrue)
-		})*/
+		})
 
-		config := plugin.NewPluginConfigType()
+		config := snapPlugin.NewPluginConfigType()
 		phaseName := ctypes.ConfigValueStr{Value: "some random tag!"}
 		config.AddItem("phase_name", phaseName)
 		config.AddItem("experiment_name",
@@ -61,9 +62,12 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
 			configuration := cdata.NewNode()
-			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
-			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
-			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "this is experiment name"})
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
+				Value: "mutilate.stdout"})
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{
+				Value: "this is phase name"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{
+				Value: "this is experiment name"})
 			metricTypes[0].Config_ = configuration
 
 			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
@@ -90,78 +94,84 @@ func TestMutilatePlugin(t *testing.T) {
 			})
 		})
 
-		Convey("I should receive no metrics and error when no experiment name is set", func() {
-			alreadyRun = false
-			configuration := cdata.NewNode()
-			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
-			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
-			metricTypes[0].Config_ = configuration
+		Convey("I should receive no metrics and error when no experiment name is set",
+			func() {
+				alreadyRun = false
+				configuration := cdata.NewNode()
+				configuration.AddItem("phase_name", ctypes.ConfigValueStr{
+					Value: "this is phase name"})
+				configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
+					Value: "mutilate.stdout"})
+				metricTypes[0].Config_ = configuration
 
-			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+				metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
 
-			So(metrics, ShouldHaveLength, 0)
-			So(error.Error(), ShouldEqual, "No experiment name set - no metrics are collected")
-		})
+				So(metrics, ShouldHaveLength, 0)
+				So(error.Error(), ShouldEqual,
+					"No experiment name set - no metrics are collected")
+			})
 
 		Convey("I should receive no metrics and error when no phase name is set", func() {
 			alreadyRun = false
 			configuration := cdata.NewNode()
-			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
-			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
+			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
+				Value: "mutilate.stdout"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{
+				Value: "some experiment name"})
 			metricTypes[0].Config_ = configuration
 
 			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(metrics, ShouldHaveLength, 0)
-			So(error.Error(), ShouldEqual, "No phase name set - no metrics are collected")
+			So(error.Error(), ShouldEqual,
+				"No phase name set - no metrics are collected")
 
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {
 			alreadyRun = false
 			configuration := cdata.NewNode()
-			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "some phase name"})
-			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
+			configuration.AddItem("phase_name", ctypes.ConfigValueStr{
+				Value: "some phase name"})
+			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{
+				Value: "some experiment name"})
 			metricTypes[0].Config_ = configuration
 
 			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(metrics, ShouldHaveLength, 0)
-			So(error.Error(), ShouldEqual, "No file path set - no metrics are collected")
+			So(error.Error(), ShouldEqual,
+				"No file path set - no metrics are collected")
 
 		})
 
-		Convey("I should receive no metrics and error when mutilate results parsing fails", func() {
-			alreadyRun = false
-			configuration := cdata.NewNode()
-			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate_incorrect_count_of_columns.stdout"})
-			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
-			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "this is experiment name"})
-			metricTypes[0].Config_ = configuration
+		Convey("I should receive no metrics and error when mutilate results parsing fails",
+			func() {
+				alreadyRun = false
+				configuration := cdata.NewNode()
+				configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
+					Value: "mutilate_incorrect_count_of_columns.stdout"})
+				configuration.AddItem("phase_name",
+					ctypes.ConfigValueStr{Value: "this is phase name"})
+				configuration.AddItem("experiment_name",
+					ctypes.ConfigValueStr{Value: "this is experiment name"})
+				metricTypes[0].Config_ = configuration
 
-			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+				metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
 
-			So(metrics, ShouldHaveLength, 0)
-			So(error, ShouldNotBeNil)
-		})
-
-		/*Reset(func() {
-			today := time.Now().Format("2006-01-02")
-			basePath := os.Getenv("GOPATH") + "/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/"
-			fmt.Println(os.Remove(fmt.Sprintf("%s%s_snap-plugin-collector-mutilate.log", basePath, today)))
-			fmt.Println(os.Remove(fmt.Sprintf("%s%s_snap-plugin-collector-mutilate.test.log", basePath, today)))
-			fmt.Println(os.Remove(fmt.Sprintf("%smutilate/%s_mutilate.test.log", basePath, today)))
-		})*/
+				So(metrics, ShouldHaveLength, 0)
+				So(error, ShouldNotBeNil)
+			})
 	})
 }
 
-func soValidMetricType(metricType plugin.MetricType, namespace string, unit string) {
+func soValidMetricType(metricType snapPlugin.MetricType, namespace string, unit string) {
 	So(metricType.Namespace().String(), ShouldEqual, namespace)
 	So(metricType.Unit(), ShouldEqual, unit)
 	So(metricType.Version(), ShouldEqual, 1)
 }
 
-func soValidMetric(metric plugin.MetricType, namespaceSuffix string, value float64, time time.Time) {
+func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value float64, time time.Time) {
 	So(metric.Namespace().String(), ShouldStartWith, "/intel/swan/mutilate/")
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)

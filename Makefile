@@ -3,7 +3,7 @@
 # Place for custom options for test commands.
 TEST_OPT?=-race
 
-all: lint unit_test build
+all: lint unit_test build cleanup
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps:
@@ -38,3 +38,8 @@ integration_test:
 build:
 	mkdir -p build
 	(cd build; go build ../experiments/...)
+
+cleanup:
+	- rm misc/snap-plugin-collector-mutilate/$(shell date +'%Y-%m-%d')_snap-plugin-collector-mutilate.log
+	- rm misc/snap-plugin-collector-mutilate/$(shell date +'%Y-%m-%d')_snap-plugin-collector-mutilate.test.log
+	- rm misc/snap-plugin-collector-mutilate/mutilate/$(shell date +'%Y-%m-%d')_mutilate.test.log
