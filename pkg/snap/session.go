@@ -98,7 +98,7 @@ func (s *Session) Start() error {
 
 	// Check if plugins are loaded
 	plugins := NewPlugins(s.pClient)
-	loaded, err := plugins.IsLoaded("session-processor")
+	loaded, err := plugins.IsLoaded("processor", "session-processor")
 	if err != nil {
 		return err
 	}

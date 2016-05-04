@@ -3,92 +3,219 @@
 package snap
 
 import (
+	"errors"
+	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"io/ioutil"
+	"net"
+	"os"
+	"path"
+	"strings"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnap(t *testing.T) {
-	Convey("Connecting to snapd", t, func() {
+type Snapd struct {
+	task executor.Task
+}
 
-		client, err := client.New("http://localhost:8181", "v1", true)
-		Convey("Shouldn't return any errors", func() {
-			So(err, ShouldBeNil)
+func NewSnapd() *Snapd {
+	return &Snapd{}
+}
+
+func (s *Snapd) Execute() error {
+	l := executor.NewLocal()
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		return errors.New("Cannot find GOPATH")
+	}
+
+	snapRoot := path.Join(gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
+	snapCommand := fmt.Sprintf("%s -t 0", snapRoot)
+
+	task, err := l.Execute(snapCommand)
+	if err != nil {
+		return err
+	}
+
+	s.task = task
+
+	return nil
+}
+
+func (s *Snapd) Stop() error {
+	if s.task == nil {
+		return errors.New("Snapd not started: cannot find task")
+	}
+
+	return s.task.Stop()
+}
+
+func (s *Snapd) Connected() bool {
+	retries := 5
+	connected := false
+	for i := 0; i < retries; i++ {
+		conn, err := net.Dial("tcp", "127.0.0.1:8181")
+		if err != nil {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		defer conn.Close()
+		connected = true
+	}
+
+	return connected
+}
+
+func TestSnap(t *testing.T) {
+	var snapd *Snapd
+	var c *client.Client
+	var s *Session
+	var publisher *wmap.PublishWorkflowMapNode
+	var metricsFile string
+
+	Convey("Testing snap session", t, func() {
+		Convey("Starting snapd", func() {
+			snapd = NewSnapd()
+			snapd.Execute()
+
+			// Wait until snap is up.
+			So(snapd.Connected(), ShouldBeTrue)
 		})
 
-		Convey("Unloading collectors", func() {
-			plugins := NewPlugins(client)
+		Convey("Connecting to snapd", func() {
+			ct, err := client.New("http://127.0.0.1:8181", "v1", true)
 
-			Convey("Loading collectors", func() {
-				plugins.Load("snap-collector-session-test")
+			Convey("Shouldn't return any errors", func() {
+				So(err, ShouldBeNil)
 			})
 
-			Convey("Loading publisher", func() {
-				plugins.Load("snap-publisher-session-test")
+			c = ct
+		})
 
-				time.Sleep(1 * time.Second)
+		Convey("Loading collectors", func() {
+			plugins := NewPlugins(c)
+			So(plugins, ShouldNotBeNil)
+			plugins.Load("snap-collector-session-test")
 
-				// TODO(niklas): Block until plugins are indeed loaded. May be a race if plugin load is slow.
+			// Wait until metric is available in namespace
+			retries := 10
+			found := false
+			for i := 0; i < retries && !found; i++ {
+				m := c.GetMetricCatalog()
+				So(m.Err, ShouldBeNil)
+				for _, metric := range m.Catalog {
+					if metric.Namespace == "/intel/swan/session/metric1" {
+						found = true
+						break
+					}
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+			So(found, ShouldBeTrue)
+		})
 
-				publisher := wmap.NewPublishNode("session-test", 1)
-				publisher.AddConfigItem("file", "/tmp/swan-snap.out")
+		Convey("Loading publishers", func() {
+			plugins := NewPlugins(c)
+			So(plugins, ShouldNotBeNil)
 
-				Convey("Creating a Snap experiment session", func() {
-					session, err := NewSession(
-						"test-session",
-						[]string{"/intel/swan/session/metric1"},
-						1*time.Second,
-						client,
-						publisher,
-					)
+			plugins.Load("snap-publisher-session-test")
 
-					Convey("Shouldn't return any errors", func() {
-						So(err, ShouldBeNil)
-					})
+			publisher = wmap.NewPublishNode("session-test", 1)
 
-					Convey("Starting a session", func() {
-						err := session.Start()
-						defer session.Stop()
+			So(publisher, ShouldNotBeNil)
 
-						Convey("Shouldn't return any errors", func() {
-							So(err, ShouldBeNil)
-						})
+			tmpfile, err := ioutil.TempFile("", "session_test")
+			tmpfile.Close()
+			So(err, ShouldBeNil)
 
-						Convey("Contacting snap to get the task status", func() {
-							status, err := session.Status()
+			metricsFile = tmpfile.Name()
 
-							Convey("Shouldn't return any errors", func() {
-								So(err, ShouldBeNil)
-							})
+			publisher.AddConfigItem("file", metricsFile)
+		})
 
-							Convey("And the task should be running", func() {
-								So(status, ShouldEqual, "Running")
-							})
-						})
+		Convey("Creating a Snap experiment session", func() {
+			ts, err := NewSession("test-session", []string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
+			So(err, ShouldBeNil)
+			s = ts
 
-						// TODO(niklas): Make sure metrics are processed. Introduce WaitUntil("hits", 1).
-						time.Sleep(5 * time.Second)
+			So(s, ShouldNotBeNil)
+		})
 
-						// TODO(niklas): Verify that the labels have swan session label.
+		Convey("Starting a session", func() {
+			So(s, ShouldNotBeNil)
+			err := s.Start()
 
-						Convey("Stopping a session", func() {
-							err := session.Stop()
-
-							Convey("Shouldn't return any errors", func() {
-								So(err, ShouldBeNil)
-							})
-
-							Convey("And the task should not be available", func() {
-								_, err := session.Status()
-								So(err, ShouldNotBeNil)
-							})
-						})
-					})
-				})
+			Convey("Shouldn't return any errors", func() {
+				So(err, ShouldBeNil)
 			})
+		})
+
+		Convey("Contacting snap to get the task status", func() {
+			status, err := s.Status()
+
+			So(err, ShouldBeNil)
+
+			Convey("And the task should be running", func() {
+				So(status, ShouldEqual, "Running")
+			})
+		})
+
+		Convey("Reading samples from file", func() {
+			retries := 5
+			found := false
+			for i := 0; i < retries; i++ {
+				time.Sleep(500 * time.Millisecond)
+
+				dat, err := ioutil.ReadFile(metricsFile)
+				if err != nil {
+					continue
+				}
+
+				if len(dat) > 0 {
+					// Look for tag on metric line
+					lines := strings.Split(string(dat), "\n")
+					if len(lines) < 1 {
+						continue
+					}
+
+					columns := strings.Split(lines[0], "\t")
+					if len(columns) < 2 {
+						continue
+					}
+
+					So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
+					So(columns[1], ShouldEqual, "swan-was-here")
+
+					found = true
+
+					break
+				}
+			}
+
+			So(found, ShouldBeTrue)
+		})
+
+		Convey("Stopping a session", func() {
+			So(s, ShouldNotBeNil)
+			err := s.Stop()
+
+			So(err, ShouldBeNil)
+
+			_, err = s.Status()
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("Stopping snapd", func() {
+			So(snapd, ShouldNotBeNil)
+
+			if snapd != nil {
+				snapd.Stop()
+			}
 		})
 	})
 }
