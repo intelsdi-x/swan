@@ -1,8 +1,6 @@
 package mutilate
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -34,7 +32,8 @@ func TestMutilatePlugin(t *testing.T) {
 		config := plugin.NewPluginConfigType()
 		phaseName := ctypes.ConfigValueStr{Value: "some random tag!"}
 		config.AddItem("phase_name", phaseName)
-		config.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some random experiment!"})
+		config.AddItem("experiment_name",
+			ctypes.ConfigValueStr{Value: "some random experiment!"})
 		config.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
 
 		metricTypes, metricTypesError := mutilatePlugin.GetMetricTypes(config)
@@ -45,12 +44,19 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns")
 			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns")
 			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns")
-			soValidMetricType(metricTypes[3], "/intel/swan/mutilate/*/percentile/5th", "ns")
-			soValidMetricType(metricTypes[4], "/intel/swan/mutilate/*/percentile/10th", "ns")
-			soValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns")
-			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
-			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
-			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/percentile/99_999th", "ns")
+			soValidMetricType(metricTypes[3],
+				"/intel/swan/mutilate/*/percentile/5th", "ns")
+			soValidMetricType(metricTypes[4],
+				"/intel/swan/mutilate/*/percentile/10th", "ns")
+			soValidMetricType(metricTypes[5],
+				"/intel/swan/mutilate/*/percentile/90th", "ns")
+			soValidMetricType(metricTypes[6],
+				"/intel/swan/mutilate/*/percentile/95th", "ns")
+			soValidMetricType(metricTypes[7],
+				"/intel/swan/mutilate/*/percentile/99th", "ns")
+			soValidMetricType(metricTypes[8],
+				"/intel/swan/mutilate/*/percentile/99_999th", "ns")
+
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -73,9 +79,19 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
 			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
 			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
+
+			Convey("Subsequent attempts to collect metrics should return error"+
+				" and empty result", func() {
+				metrics, error = mutilatePlugin.CollectMetrics(metricTypes)
+
+				So(error.Error(), ShouldEqual,
+					"Subsequent calls to CollectMetrics() are ignored")
+				So(metrics, ShouldHaveLength, 0)
+			})
 		})
 
 		Convey("I should receive no metrics and error when no experiment name is set", func() {
+			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
 			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
@@ -88,6 +104,7 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive no metrics and error when no phase name is set", func() {
+			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
 			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
@@ -101,6 +118,7 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {
+			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "some phase name"})
 			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "some experiment name"})
@@ -114,6 +132,7 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive no metrics and error when mutilate results parsing fails", func() {
+			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate_incorrect_count_of_columns.stdout"})
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "this is phase name"})
@@ -126,9 +145,13 @@ func TestMutilatePlugin(t *testing.T) {
 			So(error, ShouldNotBeNil)
 		})
 
-		today := time.Now().Format("2006-01-02")
-		os.Remove(fmt.Sprintf("%s_snap-plugin-collector-mutilate.test.log", today))
-		os.Remove(fmt.Sprintf("%s_mutilate.test.log", today))
+		/*Reset(func() {
+			today := time.Now().Format("2006-01-02")
+			basePath := os.Getenv("GOPATH") + "/src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/"
+			fmt.Println(os.Remove(fmt.Sprintf("%s%s_snap-plugin-collector-mutilate.log", basePath, today)))
+			fmt.Println(os.Remove(fmt.Sprintf("%s%s_snap-plugin-collector-mutilate.test.log", basePath, today)))
+			fmt.Println(os.Remove(fmt.Sprintf("%smutilate/%s_mutilate.test.log", basePath, today)))
+		})*/
 	})
 }
 
