@@ -90,3 +90,10 @@ Many code style issues should be caught by our linter and `gofmt`. We don't try 
 ### Merging
 
 Before merging, the PR needs at least one 'LGTM' from a maintainer.
+
+## Lab environment
+
+Currently, we use manual partitioning of internal Intel lab environments.
+Each developer has access to a set of machines until a scheduling system is in place.
+The details on the cluster can be found [here](https://intelsdi.atlassian.net/wiki/display/KOP/intel.sdi.us_west01).
+Please contact the cluster owner to get machines assigned to you.
