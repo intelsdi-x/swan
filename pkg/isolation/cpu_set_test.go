@@ -6,15 +6,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
+	"os/user"
 	"strconv"
 	"testing"
 )
 
 func TestCpuSet(t *testing.T) {
+	user, err := user.Current()
+	if err != nil {
+		t.Fatalf("Cannot get current user")
+	}
+
+	if user.Name != "root" {
+		t.Skipf("Need to be privileged user to run cgroups tests")
+	}
+
 	cpuset := CPUSetShares{cgroupName: "M", cpuSetShares: "0-2"}
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
-	err := cmd.Start()
+	err = cmd.Start()
 
 	Convey("While using TestCpu", t, func() {
 		So(err, ShouldBeNil)
