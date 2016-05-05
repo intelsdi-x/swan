@@ -65,6 +65,9 @@ func (e *Experiment) Run() error {
 	var err error
 	for _, phase := range e.phases {
 		for i := 0; i < phase.Repetitions(); i++ {
+			// TODO: Trigger snap session here. Fetch workflow & config from Phase.
+			// (proposition) and add session name & experiment id tags.
+
 			phaseStartingTime := time.Now()
 
 			e.Log.Info("Starting ", phase.Name(), " repetition ", i)

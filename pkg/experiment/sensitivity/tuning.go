@@ -28,7 +28,7 @@ type tuningPhase struct {
 
 // Returns Phase name.
 func (p *tuningPhase) Name() string {
-	return "Tuning Phase"
+	return "Tuning_Phase"
 }
 
 // Returns number of repetitions.
