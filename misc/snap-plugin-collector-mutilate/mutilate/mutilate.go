@@ -14,7 +14,7 @@ import (
 	"github.com/intelsdi-x/snap/core"
 )
 
-// Constant representing plugin name, version, type and unit of measurement used
+// Constants representing plugin name, version, type and unit of measurement used.
 const (
 	NAME    = "mutilate"
 	VERSION = 1
@@ -26,12 +26,12 @@ type plugin struct {
 	now time.Time
 }
 
-// NewMutilate creates new mutilate collector
+// NewMutilate creates new mutilate collector.
 func NewMutilate(now time.Time) snapPlugin.CollectorPlugin {
 	return &plugin{now}
 }
 
-// GetMetricTypes implements plugin.PluginCollector interface
+// GetMetricTypes implements plugin.PluginCollector interface.
 func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
 	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("avg"),
@@ -70,7 +70,7 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 	return namespace
 }
 
-// CollectMetrics implements plugin.PluginCollector interface
+// CollectMetrics implements plugin.PluginCollector interface.
 func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
 	sourceFilePath, sFPErr := config.GetConfigItem(metricTypes[0], "stdout_file")
@@ -106,7 +106,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 	return metrics, nil
 }
 
-// GetConfigPolicy implements plugin.PluginCollector interface
+// GetConfigPolicy implements plugin.PluginCollector interface.
 func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	phaseName, _ := cpolicy.NewStringRule("phase_name", true)
 	stdoutFile, _ := cpolicy.NewStringRule("stdout_file", true)
@@ -121,7 +121,7 @@ func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	return policy, nil
 }
 
-// Meta returns plugin metadata
+// Meta returns plugin metadata.
 func Meta() *snapPlugin.PluginMeta {
 	meta := snapPlugin.NewPluginMeta(
 		NAME,

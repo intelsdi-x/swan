@@ -12,8 +12,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const ()
-
 func TestMutilatePluginLoad(t *testing.T) {
 	Convey("Ensure mutilate plugin can be loaded", t, func() {
 		basePath := os.Getenv("GOPATH")
