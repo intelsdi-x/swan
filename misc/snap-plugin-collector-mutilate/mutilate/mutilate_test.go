@@ -22,10 +22,10 @@ func TestMutilatePlugin(t *testing.T) {
 
 			experimentConfig := policy.Get([]string{""}).RulesAsTable()
 			So(err, ShouldBeNil)
-			So(experimentConfig, ShouldHaveLength, 3)
+			So(experimentConfig, ShouldHaveLength, 1)
 			So(experimentConfig[0].Required, ShouldBeTrue)
-			So(experimentConfig[1].Required, ShouldBeTrue)
-			So(experimentConfig[2].Required, ShouldBeTrue)
+			So(experimentConfig[0].Name, ShouldEqual, "stdout_file")
+			So(experimentConfig[0].Type, ShouldEqual, "string")
 		})
 
 		config := snapPlugin.NewPluginConfigType()

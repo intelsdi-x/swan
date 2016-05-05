@@ -108,13 +108,9 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
 func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	phaseName, _ := cpolicy.NewStringRule("phase_name", true)
 	stdoutFile, _ := cpolicy.NewStringRule("stdout_file", true)
-	experimentName, _ := cpolicy.NewStringRule("experiment_name", true)
 	experiment := cpolicy.NewPolicyNode()
-	experiment.Add(phaseName)
 	experiment.Add(stdoutFile)
-	experiment.Add(experimentName)
 	policy := cpolicy.New()
 	policy.Add([]string{""}, experiment)
 
