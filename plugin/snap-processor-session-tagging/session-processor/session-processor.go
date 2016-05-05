@@ -8,7 +8,6 @@ import (
 
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/ctypes"
 )
 
@@ -33,7 +32,7 @@ func (p *SessionProcessor) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 func (p *SessionProcessor) Process(contentType string, content []byte, config map[string]ctypes.ConfigValue) (string, []byte, error) {
 	logger := log.New()
 
-	var metrics []plugin.PluginMetricType
+	var metrics []plugin.MetricType
 
 	dec := gob.NewDecoder(bytes.NewBuffer(content))
 	if err := dec.Decode(&metrics); err != nil {
@@ -42,11 +41,7 @@ func (p *SessionProcessor) Process(contentType string, content []byte, config ma
 	}
 
 	for idx, _ := range metrics {
-		labels := metrics[idx].Labels_
-		labels = append(labels, core.Label{Name: "swan-was-here"})
-		metrics[idx].Labels_ = labels
-
-		logger.Printf("Passed on metric: %v\n", metrics[idx])
+		metrics[idx].Tags_ = map[string]string{"phase": "foobar"}
 	}
 
 	var buf bytes.Buffer
