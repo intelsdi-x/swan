@@ -55,12 +55,12 @@ func main() {
 	memcachedLauncher := memcached.New(executor.NewLocal(),
 		memcached.DefaultMemcachedConfig(fetchMemcachedPath()))
 	// Init Mutilate Launcher.
-	percentile, _ := decimal.NewFromString("99")
+	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      fetchMutilatePath(),
 		MemcachedHost:     "127.0.0.1",
 		LatencyPercentile: percentile,
-		TuningTime:        5 * time.Second,
+		TuningTime:        1 * time.Second,
 	}
 
 	local := executor.NewLocal()
