@@ -1,7 +1,7 @@
 package executor
 
 // Status represents the status of a task in the current point of time.
-// NOTE: We need to define if we user wants status and output in one struct.
+// TODO: As Niklas mentioned we need to remove that in next PR and stay with exitCode only.
 type Status struct {
 	ExitCode int
 	Stdout   string

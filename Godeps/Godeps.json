@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v62",
 	"Packages": [
 		"./..."
 	],
@@ -128,6 +127,11 @@
 		{
 			"ImportPath": "github.com/miekg/dns",
 			"Rev": "c9d1302d540edfb97d9ecbfe90b4fb515088630b"
+		},
+		{
+			"ImportPath": "github.com/montanaflynn/stats",
+			"Comment": "0.2.0-55-gb485fbd",
+			"Rev": "b485fbda6db941f19537d095b5a77eb2e1bc13f0"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",

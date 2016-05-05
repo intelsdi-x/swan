@@ -2,10 +2,11 @@ package experiment
 
 import (
 	"errors"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"path"
 	"strconv"
+	"time"
 )
 
 // Experiment captures the internal data for the Experiment Driver.
@@ -16,25 +17,28 @@ type Experiment struct {
 	phases              []Phase
 	startingDirectory   string
 	experimentDirectory string
-	logFile             *os.File
-	logger              *log.Logger
+
+	logFile *os.File
+	logLvl  log.Level
+	Log     *log.Logger
 }
 
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
 // Caller have to provide slice of Phase interfaces which are going to be executed.
-func NewExperiment(name string, phases []Phase, directory string) (*Experiment, error) {
+func NewExperiment(name string, phases []Phase,
+	directory string, logLevel log.Level) (*Experiment, error) {
 	if len(phases) == 0 {
 		return nil, errors.New("invalid argument: no phases provided")
 	}
 
-	// TODO(mpatelcz): Check if phase names are unique!
-
+	// TODO(mpatelcz): Check if phases names are unique!
 	e := &Experiment{
 		name:             name,
 		session:          newSession(),
 		workingDirectory: directory,
 		phases:           phases,
+		logLvl:           logLevel,
 	}
 
 	err := e.createExperimentDir()
@@ -44,6 +48,7 @@ func NewExperiment(name string, phases []Phase, directory string) (*Experiment, 
 
 	err = e.logInitialize()
 	if err != nil {
+		os.Chdir(e.startingDirectory)
 		return nil, err
 	}
 
@@ -53,34 +58,45 @@ func NewExperiment(name string, phases []Phase, directory string) (*Experiment, 
 // Run runs experiment.
 // It runs in a sequence defined phases with given repetition count.
 func (e *Experiment) Run() error {
+	experimentStartingTime := time.Now()
+
+	e.Log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
 	var err error
-
-	// Always perform cleanup on exit.
-	defer e.finalize()
-
-	e.logger.Printf("starting experiment '%s' with uuid '%s'\n", e.name, e.session.Name)
-
 	for _, phase := range e.phases {
 		for i := 0; i < phase.Repetitions(); i++ {
-			e.logger.Printf("starting phase '%s' iteration %d\n", phase.Name(), i)
+			phaseStartingTime := time.Now()
 
+			e.Log.Info("Starting ", phase.Name(), " repetition ", i)
 			err = e.createPhaseDir(phase, i)
 			if err != nil {
 				return err
 			}
 
-			err := phase.Run()
+			err := phase.Run(e.Log)
 			if err != nil {
-				e.logger.Printf("phase returned error '%v'\n", err)
+				// When phase return error we stop the whole experiment.
+				e.Log.Error(phase.Name(), " returned error ", err)
 				return err
 			}
 
-			e.logger.Printf("ended phase '%s' iteration %d\n", phase.Name(), i)
+			e.Log.Info("Ended ", phase.Name(), " repetition ", i,
+				" in ", time.Since(phaseStartingTime))
+		}
+
+		// Give a chance for phase to finalize.
+		// E.g to check statistical confidence of a result based on repetitions results.
+		e.Log.Info("Finalizing ", phase.Name(),
+			" after ", phase.Repetitions(), " repetitions")
+		err := phase.Finalize()
+		if err != nil {
+			// When phase return error we stop the whole experiment.
+			e.Log.Error(phase.Name(), " returned error ", err,
+				" while finalizing.")
+			return err
 		}
 	}
-
-	e.logger.Printf("ended experiment '%s' with uuid '%s'\n", e.name, e.session.Name)
-
+	e.Log.Info("Ended experiment ", e.name, " with uuid ", e.session.Name,
+		" in ", time.Since(experimentStartingTime))
 	return err
 }
 
@@ -103,7 +119,8 @@ func (e *Experiment) createExperimentDir() error {
 	return err
 }
 
-func (e *Experiment) finalize() {
+// Finalize closes log file and returns to the previous working directory.
+func (e *Experiment) Finalize() {
 	e.logClose()
 
 	// Exit experiment directory
@@ -111,7 +128,8 @@ func (e *Experiment) finalize() {
 }
 
 func (e *Experiment) createPhaseDir(phase Phase, iteration int) error {
-	phaseDir := path.Join(e.experimentDirectory, phase.Name(), strconv.FormatInt(int64(iteration), 10))
+	phaseDir := path.Join(e.experimentDirectory,
+		phase.Name(), strconv.FormatInt(int64(iteration), 10))
 
 	err := os.MkdirAll(phaseDir, 0777)
 	if err != nil {
@@ -129,23 +147,23 @@ func (e *Experiment) createPhaseDir(phase Phase, iteration int) error {
 func (e *Experiment) logInitialize() error {
 	var err error
 
-	// create master log file "master.log"
-	e.logFile, err = os.Create(e.experimentDirectory + "/master.log")
+	// Create master log file "master.log".
+	e.logFile, err = os.OpenFile(e.experimentDirectory+"/master.log", os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
-		os.Chdir(e.startingDirectory)
 		return err
 	}
 
-	e.logger = log.New(e.logFile, "", log.LstdFlags)
-	if e.logger == nil {
-		os.Chdir(e.startingDirectory)
-		return errors.New("failed to create master log file")
+	// Create new logger.
+	e.Log = &log.Logger{
+		Out:       e.logFile,
+		Formatter: new(log.TextFormatter),
+		Hooks:     make(log.LevelHooks),
+		Level:     e.logLvl,
 	}
 
 	return err
 }
 
 func (e *Experiment) logClose() {
-	e.logger.SetOutput(os.Stdout)
 	e.logFile.Close()
 }
