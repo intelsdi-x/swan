@@ -21,7 +21,7 @@ func TestCpuSet(t *testing.T) {
 		t.Skipf("Need to be privileged user to run cgroups tests")
 	}
 
-	cpuset := CPUSetShares{cgroupName: "M", cpuSetShares: "0-2"}
+	cpuset := CPUSetShares{cgroupName: "M", cpuSetShares: "0-2", cgCPUNodes: "0"}
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 	err = cmd.Start()
