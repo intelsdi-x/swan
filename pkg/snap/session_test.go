@@ -189,7 +189,7 @@ func TestSnap(t *testing.T) {
 					}
 
 					So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-					So(columns[1], ShouldEqual, "swan-was-here")
+					So(columns[1], ShouldEqual, "phase=foobar")
 
 					found = true
 

@@ -1,11 +1,11 @@
 package sessionCollector
 
 import (
-	"os"
 	"time"
 
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
+	"github.com/intelsdi-x/snap/core"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -20,14 +20,13 @@ const (
 
 var _ plugin.CollectorPlugin = (*SessionCollector)(nil)
 
-func (f *SessionCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin.PluginMetricType, error) {
+func (f *SessionCollector) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	logger := log.New()
-	metrics := []plugin.PluginMetricType{}
+	metrics := []plugin.MetricType{}
 
 	// Just keep emitting 1's
 	for i, _ := range mts {
 		mts[i].Data_ = 1
-		mts[i].Source_, _ = os.Hostname()
 		mts[i].Timestamp_ = time.Now()
 		metrics = append(metrics, mts[i])
 
@@ -37,11 +36,11 @@ func (f *SessionCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plug
 	return metrics, nil
 }
 
-func (f *SessionCollector) GetMetricTypes(cfg plugin.PluginConfigType) ([]plugin.PluginMetricType, error) {
-	mts := []plugin.PluginMetricType{}
+func (f *SessionCollector) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
+	mts := []plugin.MetricType{}
 
-	mts = append(mts, plugin.PluginMetricType{Namespace_: []string{"intel", "swan", "session", "metric1"}})
-	mts = append(mts, plugin.PluginMetricType{Namespace_: []string{"intel", "swan", "session", "metric2"}})
+	mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace("intel", "swan", "session", "metric1")})
+	mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace("intel", "swan", "session", "metric2")})
 
 	return mts, nil
 }
