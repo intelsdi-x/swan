@@ -43,7 +43,7 @@ Swan use [goconvey](https://github.com/smartystreets/goconvey) as a framework fo
 
 ### Integration tests
 
-For Swan Workload integration tests see [README](src/pkg/workloads/integration/README.md) file for instructions.
+For Swan integration tests see [here](testing.md) file for instructions.
 
 ### Mock generation
 
