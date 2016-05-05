@@ -12,3 +12,6 @@
 /vendor
 **/debug.test
 /misc/snap-on-docker/snap/snap-plugin-publisher-cassandra
+/misc/snap-plugin-collector-mutilate/mutilate-src
+/misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate
+.*.swp
