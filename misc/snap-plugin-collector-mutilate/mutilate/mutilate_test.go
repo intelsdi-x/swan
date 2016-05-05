@@ -1,7 +1,6 @@
 package mutilate
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +18,6 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about required configuration", func() {
 			policy, error := mutilatePlugin.GetConfigPolicy()
-			fmt.Printf("%v\t%v", *policy, error)
 			So(error, ShouldBeNil)
 
 			experimentConfig := policy.Get([]string{""}).RulesAsTable()
@@ -56,7 +54,7 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[7],
 				"/intel/swan/mutilate/*/percentile/99th", "ns")
 			soValidMetricType(metricTypes[8],
-				"/intel/swan/mutilate/*/percentile/99_999th", "ns")
+				"/intel/swan/mutilate/*/percentile/*/custom", "ns")
 
 		})
 
@@ -82,7 +80,8 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[5], "/percentile/90th", 33.4, now)
 			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
 			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
-			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
+			soValidMetric(metrics[8], "/percentile/99_999th/custom", 1777.887805, now)
+			So(metrics[8].Namespace().String(), ShouldNotEndWith, "percentile/percentile/99_999th/custom")
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {

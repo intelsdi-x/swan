@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
@@ -49,8 +50,11 @@ func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snap
 		"percentile", "95th"), Unit_: UNIT, Version_: VERSION})
 	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
 		"percentile", "99th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "99_999th"), Unit_: UNIT, Version_: VERSION})
+	customNamespace := createNewMetricNamespace("percentile")
+	customNamespace = customNamespace.AddDynamicElement("percentile",
+		"Custom percentile from mutilate").AddStaticElement("custom")
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: customNamespace,
+		Unit_: UNIT, Version_: VERSION})
 
 	return metrics, nil
 }
@@ -92,6 +96,11 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		metric.Namespace_[3].Value = hostname
 		metric.Timestamp_ = mutilate.now
 		metrics = append(metrics, metric)
+		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
+		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
+			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
+		}
+
 	}
 
 	return metrics, nil
