@@ -74,16 +74,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		logger.LogError("No file path set - no metrics are collected", sFPErr)
 		return metrics, errors.New("No file path set - no metrics are collected")
 	}
-	phaseName, pNErr := config.GetConfigItem(metricTypes[0], "phase_name")
-	if pNErr != nil {
-		logger.LogError("No phase name set - no metrics are collected", pNErr)
-		return metrics, errors.New("No phase name set - no metrics are collected")
-	}
-	experimentName, eNError := config.GetConfigItem(metricTypes[0], "experiment_name")
-	if eNError != nil {
-		logger.LogError("No experiment name set - no metrics are collected", eNError)
-		return metrics, errors.New("No experiment name set - no metrics are collected")
-	}
 	rawMetrics, rMErr := parseMutilateStdout(sourceFilePath.(string))
 	if rMErr != nil {
 		logger.LogError(fmt.Sprintf("Mutilate output parsing failed: %s", rMErr.Error()), rMErr)
@@ -101,8 +91,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		metric.Data_ = rawMetrics[key].value
 		metric.Namespace_[3].Value = hostname
 		metric.Timestamp_ = mutilate.now
-		metric.Tags_ = map[string]string{"phase": phaseName.(string),
-			"experiment": experimentName.(string)}
 		metrics = append(metrics, metric)
 	}
 

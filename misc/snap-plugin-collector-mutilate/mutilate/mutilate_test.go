@@ -85,38 +85,6 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
 		})
 
-		Convey("I should receive no metrics and error when no experiment name is set",
-			func() {
-				configuration := cdata.NewNode()
-				configuration.AddItem("phase_name", ctypes.ConfigValueStr{
-					Value: "this is phase name"})
-				configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
-					Value: "mutilate.stdout"})
-				metricTypes[0].Config_ = configuration
-
-				metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
-
-				So(metrics, ShouldHaveLength, 0)
-				So(error.Error(), ShouldEqual,
-					"No experiment name set - no metrics are collected")
-			})
-
-		Convey("I should receive no metrics and error when no phase name is set", func() {
-			configuration := cdata.NewNode()
-			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
-				Value: "mutilate.stdout"})
-			configuration.AddItem("experiment_name", ctypes.ConfigValueStr{
-				Value: "some experiment name"})
-			metricTypes[0].Config_ = configuration
-
-			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
-
-			So(metrics, ShouldHaveLength, 0)
-			So(error.Error(), ShouldEqual,
-				"No phase name set - no metrics are collected")
-
-		})
-
 		Convey("I should receive no metrics and error when no file path is set", func() {
 			configuration := cdata.NewNode()
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{
@@ -163,8 +131,7 @@ func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value f
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
 	So(metric.Unit(), ShouldEqual, "ns")
-	So(metric.Tags()["phase"], ShouldEqual, "this is phase name")
-	So(metric.Tags()["experiment"], ShouldEqual, "this is experiment name")
+	So(metric.Tags(), ShouldHaveLength, 0)
 	So(metric.Data().(float64), ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
 }
