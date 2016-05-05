@@ -13,8 +13,8 @@ import (
 type SessionCollector struct{}
 
 const (
-	name = "session-test"
-	version = 1
+	name       = "session-test"
+	version    = 1
 	pluginType = plugin.CollectorPluginType
 )
 
