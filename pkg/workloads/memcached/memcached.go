@@ -59,6 +59,7 @@ func New(exec executor.Executor, config Config) Memcached {
 	}
 
 }
+
 func (m Memcached) buildCommand() string {
 	return fmt.Sprint(m.conf.pathToBinary,
 		" -p ", m.conf.port,

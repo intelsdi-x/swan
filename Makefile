@@ -28,11 +28,16 @@ unit_test:
 	go test $(TEST_OPT) ./cmds/...
 	go test $(TEST_OPT) ./misc/...
 
-integration_test:
+plugins:
+	(cd build; go build ../misc/snap-plugin-collector-session-test)
+	(cd build; go build ../misc/snap-plugin-processor-session-tagging)
+	(cd build; go build ../misc/snap-plugin-publisher-session-test)
+	(cd misc/snap-plugin-collector-mutilate; go build)
+
+integration_test: plugins
 	go test $(TEST_OPT) -tags=integration ./pkg/...
 	go test $(TEST_OPT) -tags=integration ./experiments/...
 	go test $(TEST_OPT) -tags=integration ./cmds/...
-	(cd misc/snap-plugin-collector-mutilate; go build; cd ../..)
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 #	go test $(TEST_OPT) -tags=integration ./misc/...
 	go test -tags=integration ./misc/...
@@ -40,7 +45,7 @@ integration_test:
 # building
 build:
 	mkdir -p build
-	(cd build; go build ../experiments/...)
+	(cd build; go build ../experiments/...; go build ../cmds/...)
 
 cleanup:
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
