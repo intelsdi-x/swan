@@ -100,9 +100,13 @@ func TestSnap(t *testing.T) {
 		Convey("Loading collectors", func() {
 			plugins := NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
-			plugins.Load("snap-collector-session-test")
+			err := plugins.Load("snap-plugin-collector-session-test")
 
-			// Wait until metric is available in namespace
+			if err != nil {
+				fmt.Printf("%v\n", err)
+			}
+
+			// Wait until metric is available in namespace.
 			retries := 10
 			found := false
 			for i := 0; i < retries && !found; i++ {
@@ -123,7 +127,7 @@ func TestSnap(t *testing.T) {
 			plugins := NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
-			plugins.Load("snap-publisher-session-test")
+			plugins.Load("snap-plugin-publisher-session-test")
 
 			publisher = wmap.NewPublishNode("session-test", 1)
 
@@ -139,16 +143,13 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Creating a Snap experiment session", func() {
-			ts, err := NewSession("test-session", []string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
-			So(err, ShouldBeNil)
-			s = ts
-
+			s = NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
 			So(s, ShouldNotBeNil)
 		})
 
 		Convey("Starting a session", func() {
 			So(s, ShouldNotBeNil)
-			err := s.Start()
+			err := s.Start("foobar", "barbaz")
 
 			Convey("Shouldn't return any errors", func() {
 				So(err, ShouldBeNil)
@@ -177,7 +178,7 @@ func TestSnap(t *testing.T) {
 				}
 
 				if len(dat) > 0 {
-					// Look for tag on metric line
+					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
 					if len(lines) < 1 {
 						continue
@@ -188,8 +189,15 @@ func TestSnap(t *testing.T) {
 						continue
 					}
 
+					tags := strings.Split(columns[1], ",")
+					if len(tags) < 2 {
+						continue
+					}
+
+
 					So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-					So(columns[1], ShouldEqual, "phase=foobar")
+					So(tags[0], ShouldEqual, "swan_experiment=foobar")
+					So(tags[1], ShouldEqual, "swan_phase=barbaz")
 
 					found = true
 
