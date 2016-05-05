@@ -183,14 +183,14 @@ func (task *remoteTask) Stop() error {
 	return nil
 }
 
-// Status returns a state of the task. If task is terminated it returns exitCode as a
-// second item in tuple. Otherwise returns -1.
-func (task *remoteTask) Status() (TaskState, int) {
+// Status returns a state of the task. If task is terminated it returns exitCode int as a
+// second item in tuple. Otherwise returns Empty option.
+func (task *remoteTask) Status() (TaskState, Option) {
 	if !task.isTerminated() {
-		return RUNNING, -1
+		return RUNNING, None()
 	}
 
-	return TERMINATED, *task.exitCode
+	return TERMINATED, Some(*task.exitCode)
 }
 
 // Stdout returns io.Reader to stdout file.

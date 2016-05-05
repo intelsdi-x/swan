@@ -40,7 +40,7 @@ func (_m *Task) EraseOutput() error {
 }
 
 // Status provides a mock function with given fields:
-func (_m *Task) Status() (executor.TaskState, int) {
+func (_m *Task) Status() (executor.TaskState, executor.Option) {
 	ret := _m.Called()
 
 	var r0 executor.TaskState
@@ -50,11 +50,13 @@ func (_m *Task) Status() (executor.TaskState, int) {
 		r0 = ret.Get(0).(executor.TaskState)
 	}
 
-	var r1 int
-	if rf, ok := ret.Get(1).(func() int); ok {
+	var r1 executor.Option
+	if rf, ok := ret.Get(1).(func() executor.Option); ok {
 		r1 = rf()
 	} else {
-		r1 = ret.Get(1).(int)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(executor.Option)
+		}
 	}
 
 	return r0, r1
