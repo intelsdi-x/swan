@@ -59,6 +59,7 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
+			So(metricTypesError, ShouldBeNil)
 			configuration := cdata.NewNode()
 			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
 				Value: "mutilate.stdout"})
@@ -85,6 +86,7 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {
+			So(metricTypesError, ShouldBeNil)
 			configuration := cdata.NewNode()
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{
 				Value: "some phase name"})
@@ -102,6 +104,7 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive no metrics and error when mutilate results parsing fails",
 			func() {
+				So(metricTypesError, ShouldBeNil)
 				configuration := cdata.NewNode()
 				configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
 					Value: "mutilate_incorrect_count_of_columns.stdout"})
