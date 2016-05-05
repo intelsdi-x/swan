@@ -3,7 +3,7 @@
 # Place for custom options for test commands.
 TEST_OPT?=-race
 
-all: lint unit_test build
+all: lint unit_test build cleanup
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps:
@@ -18,26 +18,32 @@ deps:
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 lint:
 	fgt golint ./pkg/...
+	fgt golint ./experiments/...
 	fgt golint ./cmds/...
 	# fgt golint ./plugin/...
+	fgt golint ./misc/...
 
 unit_test:
 	go test $(TEST_OPT) ./pkg/...
+	go test $(TEST_OPT) ./experiments/...
 	go test $(TEST_OPT) ./cmds/...
+	go test $(TEST_OPT) ./misc/...
 
-test:
-	(cd build; go build ../plugin/snap-collector-session-test)
-	(cd build; go build ../plugin/snap-processor-session-tagging)
-	(cd build; go build ../plugin/snap-publisher-session-test)
+integration_test:
 	go test $(TEST_OPT) -tags=integration ./pkg/...
-	go test $(TEST_OPT) ./cmds/...
+	go test $(TEST_OPT) -tags=integration ./experiments/...
+	go test $(TEST_OPT) -tags=integration ./cmds/...
+	(cd misc/snap-plugin-collector-mutilate; go build; cd ../..)
+#   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
+#	go test $(TEST_OPT) -tags=integration ./misc/...
+	go test -tags=integration ./misc/...
 
 # building
 build:
 	mkdir -p build
 	(cd build; go build ../experiments/...; go build ../cmds/...)
 
-run: memcache
-
-memcache:
-	./memcache
+cleanup:
+	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
+	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.test.log
+	rm -f misc/snap-plugin-collector-mutilate/mutilate/????-??-??_mutilate.test.log

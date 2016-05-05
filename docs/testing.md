@@ -1,16 +1,29 @@
-# Workload integration tests
+# Integration tests
 
-In this directory there all integration tests for each workload. These tests requires some
-setup before execution like special packages and building the workload binary.
+Integration tests are run separately from unit_tests. This is cause they require custom
+configuration and setup like special packages and building the workload binary.
 
-# Setup for Memcached tests
+# Setup steps
+
+## Setup for Memcached Workload tests
 
 Before test, make sure:
 - The Memcached is built.
   - Go to the [memcached](workloads/data_caching/memcached) workload directory for instructions.
   - Optionally, export MEMCACHED_BIN variable if you want to use memcached in custom path.
 - User `memcached` is present.
-- `nc` program is present. (`apt-get netstat` or `yum install nc`)
+- `libevent` package is present.
+- `nc` program is present.
+  - Centos `yum install nc`
+  - Ubuntu `apt-get netcat`
+
+## Setup for Isolation tests
+
+Before test, make sure:
+- Install `cgroup tools`
+  - Centos `yum install libcgroup libcgroup-tools`
+  - Ubuntu `apt-get install libcgroup-dev cgroup-bin`
+- While in docker have `sys` dir forwarded (`-v /sys/:/sys/` option)
 
 # Using with go test
 

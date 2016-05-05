@@ -3,6 +3,7 @@ package experiment
 import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
+	"io"
 	"os"
 	"path"
 	"strconv"
@@ -153,9 +154,9 @@ func (e *Experiment) logInitialize() error {
 		return err
 	}
 
-	// Create new logger.
+	// Create new logger with logging set to both output and logFile.
 	e.Log = &log.Logger{
-		Out:       e.logFile,
+		Out:       io.MultiWriter(e.logFile, os.Stdout),
 		Formatter: new(log.TextFormatter),
 		Hooks:     make(log.LevelHooks),
 		Level:     e.logLvl,
