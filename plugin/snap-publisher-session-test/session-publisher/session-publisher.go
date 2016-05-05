@@ -24,7 +24,7 @@ type SessionPublisher struct {
 }
 
 func (f *SessionPublisher) Publish(contentType string, content []byte, config map[string]ctypes.ConfigValue) error {
-	var metrics []plugin.PluginMetricType
+	var metrics []plugin.MetricType
 
 	fileout := config["file"].(ctypes.ConfigValueStr).Value
 
@@ -46,13 +46,13 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 
 	w := bufio.NewWriter(file)
 	for _, m := range metrics {
-		var labels []string
-		for _, label := range(m.Labels()) {
-			labels = append(labels, label.Name)
+		var keys []string
+		for key, value := range(m.Tags()) {
+			keys = append(keys, key + "=" + value)
 		}
 
 
-		w.WriteString(fmt.Sprintf("%s\t%s\n", "/" + strings.Join(m.Namespace(), "/"), strings.Join(labels, ",")))
+		w.WriteString(fmt.Sprintf("%s\t%s\n", "/" + strings.Join(m.Namespace().Strings(), "/"), strings.Join(keys, ",")))
 	}
 	w.Flush()
 
