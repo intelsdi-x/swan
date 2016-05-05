@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?=
+TEST_OPT?=-race
 
 all: lint unit_test build
 

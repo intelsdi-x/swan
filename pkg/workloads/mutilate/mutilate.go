@@ -93,6 +93,8 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 		errMsg := fmt.Sprintf("Mutilate Tuning %s failed; ", loadCmd)
 		return achievedQPS, sli, errors.New(errMsg + err.Error())
 	}
+	defer taskHandle.Clean()
+
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
