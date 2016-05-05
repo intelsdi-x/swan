@@ -21,9 +21,6 @@ const (
 	UNIT    = "ns"
 )
 
-// This is evil, I know. As of now we can't define Snap task that will be run only once
-var alreadyRun bool
-
 type plugin struct {
 	now time.Time
 }
@@ -72,9 +69,6 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 // CollectMetrics implements plugin.PluginCollector interface
 func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
-	if alreadyRun {
-		return metrics, errors.New("Subsequent calls to CollectMetrics() are ignored")
-	}
 	sourceFilePath, sFPErr := config.GetConfigItem(metricTypes[0], "stdout_file")
 	if sFPErr != nil {
 		logger.LogError("No file path set - no metrics are collected", sFPErr)
@@ -111,7 +105,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 			"experiment": experimentName.(string)}
 		metrics = append(metrics, metric)
 	}
-	alreadyRun = true
 
 	return metrics, nil
 }
@@ -141,7 +134,7 @@ func Meta() *snapPlugin.PluginMeta {
 		[]string{snapPlugin.SnapGOBContentType},
 		snapPlugin.Unsecure(true),
 		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-		snapPlugin.CacheTTL(1100*time.Millisecond),
+		snapPlugin.CacheTTL(1*time.Second),
 	)
 	meta.RPCType = snapPlugin.JSONRPC
 

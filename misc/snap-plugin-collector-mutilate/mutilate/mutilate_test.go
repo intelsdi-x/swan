@@ -83,20 +83,10 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
 			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
 			soValidMetric(metrics[8], "/percentile/99_999th", 1777.887805, now)
-
-			Convey("Subsequent attempts to collect metrics should return error"+
-				" and empty result", func() {
-				metrics, error = mutilatePlugin.CollectMetrics(metricTypes)
-
-				So(error.Error(), ShouldEqual,
-					"Subsequent calls to CollectMetrics() are ignored")
-				So(metrics, ShouldHaveLength, 0)
-			})
 		})
 
 		Convey("I should receive no metrics and error when no experiment name is set",
 			func() {
-				alreadyRun = false
 				configuration := cdata.NewNode()
 				configuration.AddItem("phase_name", ctypes.ConfigValueStr{
 					Value: "this is phase name"})
@@ -112,7 +102,6 @@ func TestMutilatePlugin(t *testing.T) {
 			})
 
 		Convey("I should receive no metrics and error when no phase name is set", func() {
-			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
 				Value: "mutilate.stdout"})
@@ -129,7 +118,6 @@ func TestMutilatePlugin(t *testing.T) {
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {
-			alreadyRun = false
 			configuration := cdata.NewNode()
 			configuration.AddItem("phase_name", ctypes.ConfigValueStr{
 				Value: "some phase name"})
@@ -147,7 +135,6 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive no metrics and error when mutilate results parsing fails",
 			func() {
-				alreadyRun = false
 				configuration := cdata.NewNode()
 				configuration.AddItem("stdout_file", ctypes.ConfigValueStr{
 					Value: "mutilate_incorrect_count_of_columns.stdout"})

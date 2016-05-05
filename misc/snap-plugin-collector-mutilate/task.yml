@@ -1,8 +1,8 @@
 ---
   version: 1
   schedule:
-    type: "simple"
-    interval: "1s"
+    type: "cron"
+    interval: "15 02 13 5 5 *"
   workflow:
     collect:
       metrics:
