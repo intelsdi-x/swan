@@ -76,7 +76,7 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 
 	s.mExecutor.On("Execute", mutilateTuneCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("Status").Return(executor.TERMINATED, executor.Some(0))
+	s.mHandle.On("Status").Return(executor.TERMINATED, executor.SomeInt(0))
 	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
@@ -136,7 +136,7 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Clean").Return(nil)
-	s.mHandle.On("Status").Return(executor.TERMINATED, executor.Some(0))
+	s.mHandle.On("Status").Return(executor.TERMINATED, executor.SomeInt(0))
 	s.mHandle.On("Stdout").Return(outputReader, nil)
 
 	Convey("When generating Load.", s.T(), func() {
@@ -185,7 +185,7 @@ func (s *MutilateTestSuite) TestPopulate() {
 
 	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("Status").Return(executor.TERMINATED, executor.Some(0))
+	s.mHandle.On("Status").Return(executor.TERMINATED, executor.SomeInt(0))
 
 	Convey("When Populating Memcached.", s.T(), func() {
 		err := mutilate.Populate()

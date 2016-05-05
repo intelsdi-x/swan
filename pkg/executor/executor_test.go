@@ -64,7 +64,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				// -1 for Local executor.
 				// 129 for Remote executor.
 				// TODO: Unify exit code constants in next PR.
-				So(taskStatus.Get().(int), ShouldBeIn, -1, 129)
+				So(taskStatus.Get(), ShouldBeIn, -1, 129)
 			})
 		})
 
@@ -128,7 +128,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
-				So(taskStatus.Get().(int), ShouldEqual, 0)
+				So(taskStatus.Get(), ShouldEqual, 0)
 
 				stdoutReader, stdoutErr := task.Stdout()
 				So(stdoutErr, ShouldBeNil)
@@ -187,7 +187,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 127", func() {
-				So(taskStatus.Get().(int), ShouldEqual, 127)
+				So(taskStatus.Get(), ShouldEqual, 127)
 			})
 
 			Convey("And the eraseOutput should clean the stderr file", func() {
@@ -264,8 +264,8 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1.Get().(int), ShouldEqual, 0)
-				So(taskStatus2.Get().(int), ShouldEqual, 0)
+				So(taskStatus1.Get(), ShouldEqual, 0)
+				So(taskStatus2.Get(), ShouldEqual, 0)
 			})
 		})
 	})
@@ -290,7 +290,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0", func() {
-				So(taskStatus.Get().(int), ShouldEqual, 0)
+				So(taskStatus.Get(), ShouldEqual, 0)
 			})
 		})
 	})

@@ -52,10 +52,9 @@ func (m mutilate) Populate() (err error) {
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
-	exitCode := status.Get().(int)
-	if exitCode != 0 {
+	if status.Get() != 0 {
 		return errors.New("Memchaced population exited with code: " +
-			strconv.Itoa(exitCode))
+			strconv.Itoa(status.Get()))
 	}
 
 	return err
@@ -73,11 +72,10 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
-	exitCode := status.Get().(int)
-	if exitCode != 0 {
+	if status.Get() != 0 {
 		return qps, achievedSLI, errors.New(
 			"Executing Mutilate Tune command returned with exit code: " +
-				strconv.Itoa(exitCode))
+				strconv.Itoa(status.Get()))
 	}
 	stdoutReader, err := taskHandle.Stdout()
 	if err != nil {
@@ -106,10 +104,9 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 	taskHandle.Wait(0)
 
 	_, status := taskHandle.Status()
-	exitCode := status.Get().(int)
-	if exitCode != 0 {
+	if status.Get() != 0 {
 		errMsg := fmt.Sprintf("Executing Mutilate Load returned with exit code %d",
-			exitCode)
+			status.Get())
 		return achievedQPS, sli, errors.New(errMsg + err.Error())
 	}
 
