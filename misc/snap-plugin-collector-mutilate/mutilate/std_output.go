@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// Metric represents sigle metric retrieved from mutilate standard output
+// Metric represents sigle metric retrieved from mutilate standard output.
 type metric struct {
 	name  string
 	value float64
