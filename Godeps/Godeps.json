@@ -2,13 +2,69 @@
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
 	"Packages": [
-		"./..."
+		"./pkg/...",
+		"./misc/..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.10.0-14-g081307d",
 			"Rev": "081307d9bc1364753142d5962fc1d795c742baaf"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/github.com/camlistore/go4/errorutil",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/github.com/coreos/go-semver/semver",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/github.com/spf13/pflag",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/k8s.io/kubernetes/pkg/api/resource",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/speter.net/go/exp/math/dec/inf",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/aci",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/pkg/device",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/pkg/tarheader",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/schema",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/schema/common",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
+		},
+		{
+			"ImportPath": "github.com/appc/spec/schema/types",
+			"Comment": "v0.7.4-20-g62d4693",
+			"Rev": "62d46939da30111dc3eae51dd36ad5cd146dd964"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -18,6 +74,104 @@
 			"ImportPath": "github.com/gopherjs/gopherjs/js",
 			"Comment": "go1.5-45-g19e100e",
 			"Rev": "19e100e9652485a76176bc5fd2669f57d3a2743c"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/gomit",
+			"Rev": "4f098da2bbb51d787be003e4abfbc25d01837564"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap-plugin-utilities/config",
+			"Rev": "04621af7a3979bcb8aaf08c3b6542b43fe0bf6cf"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/client",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/cpolicy",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encoding",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encrypter",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/strategy",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/core",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/core/cdata",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/core/control_event",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/core/ctypes",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/core/serror",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/aci",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/chrono",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/ctree",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/psigning",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/schedule",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/scheduler/wmap",
+			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Rev": "0a2acb7bd09234e363c8fd8ce0d824e43cec145a"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
@@ -36,6 +190,11 @@
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/robfig/cron",
+			"Comment": "v1-16-g0f39cf7",
+			"Rev": "0f39cf7ebc65a602f45692f9894bd6a193faf8fa"
 		},
 		{
 			"ImportPath": "github.com/shopspring/decimal",
@@ -96,7 +255,39 @@
 			"Rev": "c5d7a69bf8a2c9c374798160849c071093e41dd1"
 		},
 		{
+			"ImportPath": "github.com/vrischmann/jsonutil",
+			"Rev": "694784f9315ee9fc763c1d30f28753cba21307aa"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/cast5",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp/armor",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp/elgamal",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp/errors",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp/packet",
+			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/openpgp/s2k",
 			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
 		},
 		{
@@ -106,6 +297,10 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "f64b50fbea64174967a8882830d621a18ee1548e"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "c1cd2254a6dd314c9d73c338c12688c9325d85c6"
 		}
 	]
 }
