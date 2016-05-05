@@ -32,6 +32,7 @@ integration_test:
 	go test $(TEST_OPT) -tags=integration ./pkg/...
 	go test $(TEST_OPT) -tags=integration ./experiments/...
 	go test $(TEST_OPT) -tags=integration ./cmds/...
+	(cd misc/snap-plugin-collector-mutilate; go build; cd ../..)
 	go test $(TEST_OPT) -tags=integration ./misc/...
 
 # building
@@ -40,6 +41,6 @@ build:
 	(cd build; go build ../experiments/...)
 
 cleanup:
-	- rm misc/snap-plugin-collector-mutilate/$(shell date +'%Y-%m-%d')_snap-plugin-collector-mutilate.log
-	- rm misc/snap-plugin-collector-mutilate/$(shell date +'%Y-%m-%d')_snap-plugin-collector-mutilate.test.log
-	- rm misc/snap-plugin-collector-mutilate/mutilate/$(shell date +'%Y-%m-%d')_mutilate.test.log
+	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
+	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.test.log
+	rm -f misc/snap-plugin-collector-mutilate/mutilate/????-??-??_mutilate.test.log
