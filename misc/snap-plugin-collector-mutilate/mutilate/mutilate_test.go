@@ -17,11 +17,11 @@ func TestMutilatePlugin(t *testing.T) {
 		mutilatePlugin := NewMutilate(now)
 
 		Convey("I should receive information about required configuration", func() {
-			policy, error := mutilatePlugin.GetConfigPolicy()
-			So(error, ShouldBeNil)
+			policy, err := mutilatePlugin.GetConfigPolicy()
+			So(err, ShouldBeNil)
 
 			experimentConfig := policy.Get([]string{""}).RulesAsTable()
-			So(error, ShouldBeNil)
+			So(err, ShouldBeNil)
 			So(experimentConfig, ShouldHaveLength, 3)
 			So(experimentConfig[0].Required, ShouldBeTrue)
 			So(experimentConfig[1].Required, ShouldBeTrue)
@@ -68,9 +68,9 @@ func TestMutilatePlugin(t *testing.T) {
 				Value: "this is experiment name"})
 			metricTypes[0].Config_ = configuration
 
-			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
-			So(error, ShouldBeNil)
+			So(err, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 9)
 			soValidMetric(metrics[0], "/avg", 20.8, now)
 			soValidMetric(metrics[1], "/std", 23.1, now)
@@ -92,10 +92,10 @@ func TestMutilatePlugin(t *testing.T) {
 				Value: "some experiment name"})
 			metricTypes[0].Config_ = configuration
 
-			metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(metrics, ShouldHaveLength, 0)
-			So(error.Error(), ShouldEqual,
+			So(err.Error(), ShouldEqual,
 				"No file path set - no metrics are collected")
 
 		})
@@ -111,10 +111,10 @@ func TestMutilatePlugin(t *testing.T) {
 					ctypes.ConfigValueStr{Value: "this is experiment name"})
 				metricTypes[0].Config_ = configuration
 
-				metrics, error := mutilatePlugin.CollectMetrics(metricTypes)
+				metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 				So(metrics, ShouldHaveLength, 0)
-				So(error, ShouldNotBeNil)
+				So(err, ShouldNotBeNil)
 			})
 	})
 }
