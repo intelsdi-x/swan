@@ -22,8 +22,8 @@ func NewPlugins(pClient *client.Client) *Plugins {
 // Load plugin binary.
 // TODO: Currently searching the swan repo only. Add test for whether the name is relative or absolute path.
 func (p *Plugins) Load(name string) error {
-	// Current workaround to load plugins from swan repo
-	// Test will run in pkg/swan to backing up two directories to get to 'build' directory
+	// Current workaround to load plugins from swan repo.
+	// Test will run in pkg/swan to backing up two directories to get to 'build' directory.
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err

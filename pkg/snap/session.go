@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/nu7hatch/gouuid"
 	"time"
 )
 
@@ -19,52 +18,50 @@ type task struct {
 	State    string
 }
 
-// Session provides construct for tagging metrics for a specified time span:
+// Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	// Name is the prefix of the session name
-	Name string
+	// Experiment is the **unique** experiment id. For example 'foobar-13a1b0bb-4467-4476-9818-986effe5c963'.
+	Experiment string
 
-	// ID is a unique identifier for the session. Regenerated when Start() is called.
-	ID string
+	// Phase is the **unique** phase id. For example 'barbaz-13a1b0bb-4467-4476-9818-986effe5c963'.
+	Phase string
 
-	// Interval defines the sample interval for the listed metrics
+	// Interval defines the sample interval for the listed metrics.
 	Interval time.Duration
 
-	// Metrics to tag in session
+	// Metrics to tag in session.
 	Metrics []string
 
-	// Active task
+	// Active task.
 	task *task
 
-	// Publisher for tagged metrics
+	// Publisher for tagged metrics.
 	Publisher *wmap.PublishWorkflowMapNode
 
-	// Client to Snapd
+	// Client to Snapd.
 	pClient *client.Client
 }
 
 // NewSession generates a session with a name and a list of metrics to tag.
 // The interval cannot be less than second granularity.
 func NewSession(
-	name string,
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
-	publisher *wmap.PublishWorkflowMapNode) (*Session, error) {
+	publisher *wmap.PublishWorkflowMapNode) *Session {
 
 	return &Session{
-		Name:      name,
 		Metrics:   metrics,
 		Interval:  interval,
 		pClient:   pClient,
-		Publisher: publisher, // TODO(niklas): Replace with cassandra publisher
-	}, nil
+		Publisher: publisher, // TODO(niklas): Replace with cassandra publisher.
+	}
 }
 
 // Start an experiment session.
-// TODO Return session id
-func (s *Session) Start() error {
+// NOTE: The 'run' and 'permutation' for a configuration space may have to be encoded here.
+func (s *Session) Start(experiment string, phase string) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -80,23 +77,13 @@ func (s *Session) Start() error {
 		},
 	}
 
-	// Append a UUIDv4 to the session name.
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-
-	s.ID = id.String()
-
-	t.Name = fmt.Sprintf("%s-%s", s.Name, s.ID)
-
 	wf := wmap.NewWorkflowMap()
 
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)
 	}
 
-	// Check if plugins are loaded
+	// Check if plugins are loaded.
 	plugins := NewPlugins(s.pClient)
 	loaded, err := plugins.IsLoaded("processor", "session-processor")
 	if err != nil {
@@ -104,14 +91,15 @@ func (s *Session) Start() error {
 	}
 
 	if !loaded {
-		err = plugins.Load("snap-processor-session-tagging")
+		err = plugins.Load("snap-plugin-processor-session-tagging")
 		if err != nil {
 			return err
 		}
 	}
 
 	pr := wmap.NewProcessNode("session-processor", 1)
-	pr.AddConfigItem("swan-session", s.ID)
+	pr.AddConfigItem("swan_experiment", experiment)
+	pr.AddConfigItem("swan_phase", phase)
 	pr.Add(s.Publisher)
 	wf.CollectNode.Add(pr)
 
@@ -122,10 +110,14 @@ func (s *Session) Start() error {
 		return r.Err
 	}
 
+	// Save a copy of the task so we can stop it again.
 	t.ID = r.ID
 	t.State = r.State
-
 	s.task = t
+
+	// Save experiment and phase to the session
+	s.Experiment = experiment
+	s.Phase = phase
 
 	return nil
 }
@@ -161,7 +153,8 @@ func (s *Session) Stop() error {
 	}
 
 	s.task = nil
-	s.ID = ""
+	s.Experiment = ""
+	s.Phase = ""
 
 	return nil
 }
