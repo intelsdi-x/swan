@@ -6,15 +6,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
+	"os/user"
 	"strconv"
 	"testing"
 )
 
 func TestMemorySize(t *testing.T) {
+	user, err := user.Current()
+	if err != nil {
+		t.Fatalf("Cannot get current user")
+	}
+
+	if user.Name != "root" {
+		t.Skipf("Need to be privileged user to run cgroups tests")
+	}
+
 	memorysize := MemorySize{cgroupName: "M", memorySize: "536870912"}
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
-	err := cmd.Start()
+	err = cmd.Start()
 
 	Convey("While using TestCpu", t, func() {
 		So(err, ShouldBeNil)
