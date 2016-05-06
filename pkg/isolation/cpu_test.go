@@ -57,9 +57,7 @@ func TestCpu(t *testing.T) {
 		So(cpu.Clean(), ShouldBeNil)
 	})
 
-	cmd = exec.Command("sh", "-c", "kill -9 ", string(cmd.Process.Pid))
-
-	err = cmd.Start()
+	err = cmd.Process.Kill()
 
 	Convey("Should provide kill to return while  TestCpu", t, func() {
 		So(err, ShouldBeNil)
