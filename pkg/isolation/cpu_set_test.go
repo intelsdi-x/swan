@@ -56,9 +56,8 @@ func TestCpuSet(t *testing.T) {
 		So(cpuset.Clean(), ShouldBeNil)
 	})
 
-	cmd = exec.Command("sh", "-c", "kill -9 ", string(cmd.Process.Pid))
-
-	err = cmd.Start()
+	//Kill sleep to exit with clean system
+	err = cmd.Process.Kill()
 
 	Convey("Should provide kill to return while TestCpuSet", t, func() {
 		So(err, ShouldBeNil)
