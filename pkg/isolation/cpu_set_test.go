@@ -26,9 +26,16 @@ func TestCpuSet(t *testing.T) {
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 	err = cmd.Start()
 
-	Convey("While using TestCpu", t, func() {
+	Convey("While using TestCpuSet", t, func() {
 		So(err, ShouldBeNil)
 	})
+
+	defer func() {
+		err = cmd.Process.Kill()
+		Convey("Should provide kill to return while  TestCpuSet", t, func() {
+			So(err, ShouldBeNil)
+		})
+	}()
 
 	Convey("Should provide cpuset Create() to return and correct cpu set shares", t, func() {
 		So(cpuset.Create(), ShouldBeNil)
@@ -55,12 +62,4 @@ func TestCpuSet(t *testing.T) {
 	Convey("Should provide Clean() to return", t, func() {
 		So(cpuset.Clean(), ShouldBeNil)
 	})
-
-	//Kill sleep to exit with clean system
-	err = cmd.Process.Kill()
-
-	Convey("Should provide kill to return while TestCpuSet", t, func() {
-		So(err, ShouldBeNil)
-	})
-
 }
