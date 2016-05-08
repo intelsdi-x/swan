@@ -30,6 +30,13 @@ func TestMemorySize(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+	defer func() {
+		err = cmd.Process.Kill()
+		Convey("Should provide kill to return while  TestMemorySize", t, func() {
+			So(err, ShouldBeNil)
+		})
+	}()
+
 	Convey("Should provide memorysize Create() to return and correct memory size", t, func() {
 		So(memorysize.Create(), ShouldBeNil)
 		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + memorysize.cgroupName + "/memory.limit_in_bytes")
@@ -57,12 +64,4 @@ func TestMemorySize(t *testing.T) {
 	Convey("Should provide Clean() to return", t, func() {
 		So(memorysize.Clean(), ShouldBeNil)
 	})
-
-	//Kill sleep to exit with clean system
-	err = cmd.Process.Kill()
-
-	Convey("Should provide kill to return while  TestMemorySize", t, func() {
-		So(err, ShouldBeNil)
-	})
-
 }
