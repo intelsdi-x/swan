@@ -23,10 +23,11 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer task.Clean()
 		defer task.EraseOutput()
 
-		Convey("Task should be still running and status should be nil", func() {
-			taskState, taskStatus := task.Status()
+		Convey("Task should be still running and exitCode should return error", func() {
+			taskState := task.GetStatus()
 			So(taskState, ShouldEqual, RUNNING)
-			So(taskStatus.Empty(), ShouldBeTrue)
+			_, err := task.GetExitCode()
+			So(err, ShouldNotBeNil)
 
 			stopErr := task.Stop()
 			So(stopErr, ShouldBeNil)
@@ -39,10 +40,14 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(isTaskTerminated, ShouldBeFalse)
 			})
 
-			Convey("The task should be still running and status should be nil", func() {
-				taskState, taskStatus := task.Status()
+			Convey("Task should be still running and exitCode should return error", func() {
+				taskState := task.GetStatus()
 				So(taskState, ShouldEqual, RUNNING)
-				So(taskStatus.Empty(), ShouldBeTrue)
+				_, err := task.GetExitCode()
+				So(err, ShouldNotBeNil)
+
+				stopErr := task.Stop()
+				So(stopErr, ShouldBeNil)
 			})
 
 			stopErr := task.Stop()
@@ -56,15 +61,16 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 			})
 
-			Convey("The task should be terminated and the task status should "+
+			Convey("The task should be terminated and the exitCode should "+
 				"indicate that task was killed", func() {
-				taskState, taskStatus := task.Status()
-
+				taskState := task.GetStatus()
 				So(taskState, ShouldEqual, TERMINATED)
+				exitcode, err := task.GetExitCode()
+				So(err, ShouldBeNil)
 				// -1 for Local executor.
 				// 129 for Remote executor.
 				// TODO: Unify exit code constants in next PR.
-				So(taskStatus.Get(), ShouldBeIn, -1, 129)
+				So(exitcode, ShouldBeIn, -1, 129)
 			})
 		})
 
@@ -121,14 +127,16 @@ func testExecutor(t *testing.T, executor Executor) {
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
 
-			taskState, taskStatus := task.Status()
+			taskState := task.GetStatus()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
-				So(taskStatus.Get(), ShouldEqual, 0)
+				exitcode, err := task.GetExitCode()
+				So(err, ShouldBeNil)
+				So(exitcode, ShouldEqual, 0)
 
 				stdoutReader, stdoutErr := task.Stdout()
 				So(stdoutErr, ShouldBeNil)
@@ -180,14 +188,16 @@ func testExecutor(t *testing.T, executor Executor) {
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
 
-			taskState, taskStatus := task.Status()
+			taskState := task.GetStatus()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 127", func() {
-				So(taskStatus.Get(), ShouldEqual, 127)
+				exitcode, err := task.GetExitCode()
+				So(err, ShouldBeNil)
+				So(exitcode, ShouldEqual, 127)
 			})
 
 			Convey("And the eraseOutput should clean the stderr file", func() {
@@ -236,8 +246,8 @@ func testExecutor(t *testing.T, executor Executor) {
 			task.Wait(0)
 			task2.Wait(0)
 
-			taskState1, taskStatus1 := task.Status()
-			taskState2, taskStatus2 := task2.Status()
+			taskState1 := task.GetStatus()
+			taskState2 := task2.GetStatus()
 
 			Convey("The tasks should be terminated", func() {
 				So(taskState1, ShouldEqual, TERMINATED)
@@ -264,8 +274,13 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				So(taskStatus1.Get(), ShouldEqual, 0)
-				So(taskStatus2.Get(), ShouldEqual, 0)
+				exitcode, err := task.GetExitCode()
+				So(err, ShouldBeNil)
+				So(exitcode, ShouldEqual, 0)
+
+				exitcode, err = task2.GetExitCode()
+				So(err, ShouldBeNil)
+				So(exitcode, ShouldEqual, 0)
 			})
 		})
 	})
@@ -283,14 +298,16 @@ func testExecutor(t *testing.T, executor Executor) {
 		time.Sleep(100 * time.Millisecond)
 
 		Convey("When we get Status without the Waiting for it", func() {
-			taskState, taskStatus := task.Status()
+			taskState := task.GetStatus()
 
 			Convey("And the task should stated that it terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0", func() {
-				So(taskStatus.Get(), ShouldEqual, 0)
+				exitcode, err := task.GetExitCode()
+				So(err, ShouldBeNil)
+				So(exitcode, ShouldEqual, 0)
 			})
 		})
 	})

@@ -152,14 +152,22 @@ func (task *localTask) Stop() error {
 	return nil
 }
 
-// Status returns a state of the task. If task is terminated it returns exitCode int as a
-// second item in tuple. Otherwise returns Empty option.
-func (task *localTask) Status() (TaskState, OptionInt) {
+// GetStatus returns a state of the task.
+func (task *localTask) GetStatus() TaskState {
 	if !task.isTerminated() {
-		return RUNNING, NoneInt()
+		return RUNNING
 	}
 
-	return TERMINATED, SomeInt((task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+	return TERMINATED
+}
+
+// GetExitCode returns a exitCode. If task is not terminated it returns error.
+func (task *localTask) GetExitCode() (int, error) {
+	if !task.isTerminated() {
+		return -1, errors.New("Task is not terminated")
+	}
+
+	return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
 }
 
 // Stdout returns io.Reader to stdout file.
