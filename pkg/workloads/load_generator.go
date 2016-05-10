@@ -4,7 +4,7 @@ import "time"
 
 // LoadGenerator launches stresser which generates load on specified workload.
 type LoadGenerator interface {
-	// Populate inserts initial data
+	// Populate inserts initial data.
 	Populate() error
 
 	// Tune does the tuning phase which is a process of searching for a targetQPS
