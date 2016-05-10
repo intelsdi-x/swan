@@ -39,8 +39,29 @@ func (_m *Task) EraseOutput() error {
 	return r0
 }
 
-// Status provides a mock function with given fields:
-func (_m *Task) Status() (executor.TaskState, *executor.Status) {
+// GetExitCode provides a mock function with given fields:
+func (_m *Task) GetExitCode() (int, error) {
+	ret := _m.Called()
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetStatus provides a mock function with given fields:
+func (_m *Task) GetStatus() executor.TaskState {
 	ret := _m.Called()
 
 	var r0 executor.TaskState
@@ -50,16 +71,7 @@ func (_m *Task) Status() (executor.TaskState, *executor.Status) {
 		r0 = ret.Get(0).(executor.TaskState)
 	}
 
-	var r1 *executor.Status
-	if rf, ok := ret.Get(1).(func() *executor.Status); ok {
-		r1 = rf()
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*executor.Status)
-		}
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Stderr provides a mock function with given fields:
