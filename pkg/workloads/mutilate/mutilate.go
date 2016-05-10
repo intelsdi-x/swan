@@ -77,7 +77,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 	exitCode, err := taskHandle.GetExitCode()
 	if err != nil {
-		return err
+		return qps, achievedSLI, err
 	}
 
 	if exitCode != 0 {
@@ -114,7 +114,7 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 
 	exitCode, err := taskHandle.GetExitCode()
 	if err != nil {
-		return err
+		return achievedQPS, sli, err
 	}
 
 	if exitCode != 0 {

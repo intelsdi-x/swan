@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
