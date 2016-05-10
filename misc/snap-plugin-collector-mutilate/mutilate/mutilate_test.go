@@ -1,14 +1,13 @@
 package mutilate
 
 import (
-	"strings"
-	"testing"
-	"time"
-
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/ctypes"
 	. "github.com/smartystreets/goconvey/convey"
+	"strings"
+	"testing"
+	"time"
 )
 
 func TestMutilatePlugin(t *testing.T) {
@@ -73,15 +72,34 @@ func TestMutilatePlugin(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 9)
-			soValidMetric(metrics[0], "/avg", 20.8, now)
-			soValidMetric(metrics[1], "/std", 23.1, now)
-			soValidMetric(metrics[2], "/min", 11.9, now)
-			soValidMetric(metrics[3], "/percentile/5th", 13.3, now)
-			soValidMetric(metrics[4], "/percentile/10th", 13.4, now)
-			soValidMetric(metrics[5], "/percentile/90th", 33.4, now)
-			soValidMetric(metrics[6], "/percentile/95th", 43.1, now)
-			soValidMetric(metrics[7], "/percentile/99th", 59.5, now)
-			soValidMetric(metrics[8], "/percentile/99_999th/custom", 1777.887805, now)
+
+			type metric struct {
+				namespace string
+				value     float64
+				date      time.Time
+			}
+
+			var expectedMetricsValues = []metric{
+				{"/avg", 20.8, now},
+				{"/std", 23.1, now},
+				{"/min", 11.9, now},
+				{"/percentile/5th", 13.3, now},
+				{"/percentile/10th", 13.4, now},
+				{"/percentile/90th", 33.4, now},
+				{"/percentile/95th", 43.1, now},
+				{"/percentile/99th", 59.5, now},
+				{"/percentile/99_999th/custom", 1777.887805, now},
+			}
+
+			for i := range metrics {
+				for _, expectedMetric := range expectedMetricsValues {
+					if strings.Contains(metrics[i].Namespace().String(), expectedMetric.namespace) {
+						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value,
+							expectedMetric.date)
+					}
+				}
+			}
+
 			So(metrics[8].Namespace().String(), ShouldNotEndWith, "percentile/percentile/99_999th/custom")
 		})
 
