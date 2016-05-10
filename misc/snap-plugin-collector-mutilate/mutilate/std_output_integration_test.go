@@ -16,12 +16,6 @@ func TestStdoutParser(t *testing.T) {
 			"open /non/existing/file: no such file or directory")
 
 	})
-	Convey("Opening non-readable file should fail", t, func() {
-		data, err := parseMutilateStdout("/etc/shadow")
-
-		So(data, ShouldBeZeroValue)
-		So(err.Error(), ShouldEqual, "open /etc/shadow: permission denied")
-	})
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
 		data, err := parseMutilateStdout(GetCurrentDirFilePath("/mutilate.stdout"))
