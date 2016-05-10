@@ -3,7 +3,6 @@ package mutilate
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +11,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"io/ioutil"
+	"os"
 )
 
 const (
@@ -69,17 +70,24 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 		s.defaultSlo,
 		int(s.config.TuningTime.Seconds()),
 	)
-	outputReader := strings.NewReader(correctMutilateOutput)
+	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
+	if err != nil {
+		s.Fail(err.Error())
+		return
+	}
+	defer outputFile.Close()
+
+	outputFile.WriteString(correctMutilateOutput)
 
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilateTuneCommand).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("GetExitCode").Return(0, nil)
-	s.mHandle.On("Stdout").Return(outputReader, nil)
+	s.mHandle.On("GetStdoutFile").Return(outputFile, nil)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
-		outputReader.Seek(0, 0)
+		outputFile.Seek(0, 0)
 		targetQPS, sli, err := mutilate.Tune(s.defaultSlo)
 		Convey("On success, error should be nil.", func() {
 			So(err, ShouldBeNil)
@@ -129,17 +137,25 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 		percentile,
 	)
 
-	outputReader := strings.NewReader(correctMutilateOutput)
+	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
+	if err != nil {
+		s.Fail(err.Error())
+		return
+	}
+	defer outputFile.Close()
+
+	outputFile.WriteString(correctMutilateOutput)
+
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("Clean").Return(nil)
 	s.mHandle.On("GetExitCode").Return(0, nil)
-	s.mHandle.On("Stdout").Return(outputReader, nil)
+	s.mHandle.On("GetStdoutFile").Return(outputFile, nil)
 
 	Convey("When generating Load.", s.T(), func() {
-		outputReader.Seek(0, 0)
+		outputFile.Seek(0, os.SEEK_SET)
 		qps, sli, err := mutilate.Load(load, duration)
 		Convey("On success, error should be nil", func() {
 			So(err, ShouldBeNil)

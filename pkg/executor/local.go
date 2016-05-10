@@ -3,7 +3,6 @@ package executor
 import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -25,7 +24,7 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting %s locally ", command)
+	log.Debug("Starting locally ", command)
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
@@ -33,17 +32,18 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile("./", "swan_local_executor_stdout_")
+	currDir, _ := os.Getwd()
+	stdoutFile, err := ioutil.TempFile(currDir, "swan_local_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile("./", "swan_local_executor_stderr_")
+	stderrFile, err := ioutil.TempFile(currDir, "swan_local_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debug("Created temporary files ",
-		"stdout path:  ", stdoutFile.Name(), "stderr path:  ", stderrFile.Name())
+		"stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
 	cmd.Stdout = stdoutFile
 	cmd.Stderr = stderrFile
@@ -170,8 +170,8 @@ func (task *localTask) GetExitCode() (int, error) {
 	return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
 }
 
-// Stdout returns io.Reader to stdout file.
-func (task *localTask) Stdout() (io.Reader, error) {
+// GetStdoutFile returns a file handle for file to the task's stdout file.
+func (task *localTask) GetStdoutFile() (*os.File, error) {
 	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
@@ -180,8 +180,8 @@ func (task *localTask) Stdout() (io.Reader, error) {
 	return task.stdoutFile, nil
 }
 
-// Stderr returns io.Reader to stderr file.
-func (task *localTask) Stderr() (io.Reader, error) {
+// GetStderrFile returns a file handle for file to the task's stderr file.
+func (task *localTask) GetStderrFile() (*os.File, error) {
 	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
 		return nil, err
 	}

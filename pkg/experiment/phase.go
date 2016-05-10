@@ -1,7 +1,5 @@
 package experiment
 
-import "github.com/Sirupsen/logrus"
-
 // Phase defines interface which shall be provided by user for the
 // Experiment Driver.
 type Phase interface {
@@ -10,7 +8,7 @@ type Phase interface {
 	// Repetitions returns desired number of measurement repetitions.
 	Repetitions() int
 	// Run runs a measurement.
-	Run(*logrus.Logger) error
+	Run() error
 	// Finalize is executed after all repetitions of given measurement.
 	Finalize() error
 }

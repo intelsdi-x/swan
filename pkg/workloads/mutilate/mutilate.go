@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
@@ -86,13 +87,13 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 				strconv.Itoa(exitCode))
 	}
 
-	stdoutReader, err := taskHandle.Stdout()
+	stdoutFile, err := taskHandle.GetStdoutFile()
 	if err != nil {
 		return qps, achievedSLI, err
 	}
-	qps, achievedSLI, err = getQPSAndLatencyFrom(stdoutReader)
+	qps, achievedSLI, err = getQPSAndLatencyFrom(stdoutFile)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output")
+		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
 
@@ -110,6 +111,14 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 	}
 	defer taskHandle.Clean()
 
+	stdoutFile, err := taskHandle.GetStdoutFile()
+	if err != nil {
+		return achievedQPS, sli, err
+	}
+
+	// Note(bplotka): This is for debug only - for ease of testing for @iwan collector.
+	log.Debug("LoadGenerator filename: ", stdoutFile.Name())
+
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.GetExitCode()
@@ -122,12 +131,7 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 		return achievedQPS, sli, errors.New(errMsg)
 	}
 
-	stdoutReader, err := taskHandle.Stdout()
-	if err != nil {
-		return achievedQPS, sli, err
-	}
-
-	achievedQPS, sli, err = getQPSAndLatencyFrom(stdoutReader)
+	achievedQPS, sli, err = getQPSAndLatencyFrom(stdoutFile)
 	if err != nil {
 		errMsg := fmt.Sprintf("Could not retrieve information from mutilate Load output. ")
 		return achievedQPS, sli, errors.New(errMsg + err.Error())

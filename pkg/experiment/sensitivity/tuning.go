@@ -1,7 +1,6 @@
 package sensitivity
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 )
@@ -28,7 +27,7 @@ type tuningPhase struct {
 
 // Returns Phase name.
 func (p *tuningPhase) Name() string {
-	return "Tuning Phase"
+	return "Tuning_Phase"
 }
 
 // Returns number of repetitions.
@@ -37,7 +36,7 @@ func (p *tuningPhase) Repetitions() int {
 }
 
 // Run runs a tuning phase to find the targetLoad.
-func (p *tuningPhase) Run(log *logrus.Logger) error {
+func (p *tuningPhase) Run() error {
 	prTask, err := p.pr.Launch()
 	if err != nil {
 		return err

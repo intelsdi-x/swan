@@ -1,7 +1,7 @@
 package executor
 
 import (
-	"io"
+	"os"
 	"time"
 )
 
@@ -23,10 +23,12 @@ type Task interface {
 	GetStatus() TaskState
 	// GetExitCode returns a exitCode. If task is not terminated it returns error.
 	GetExitCode() (int, error)
-	// Stdout returns a reader for file to the task's stdout file.
-	Stdout() (io.Reader, error)
-	// Stderr returns a reader for file to the task's stderr file.
-	Stderr() (io.Reader, error)
+	// GetStdoutFile returns a file handle for file to the task's stdout file.
+	// TODO(bp): Move to file path only in next change part.
+	GetStdoutFile() (*os.File, error)
+	// GetStderrFile returns a file handle for file to the task's stderr file.
+	// TODO(bp): Move to file path only in next change part.
+	GetStderrFile() (*os.File, error)
 	// Wait does the blocking wait for the task completion in case of nil.
 	// Wait is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.

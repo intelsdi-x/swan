@@ -138,31 +138,24 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 
-				stdoutReader, stdoutErr := task.Stdout()
+				stdoutFile, stdoutErr := task.GetStdoutFile()
 				So(stdoutErr, ShouldBeNil)
-				So(stdoutReader, ShouldNotBeNil)
+				So(stdoutFile, ShouldNotBeNil)
 
-				data, readErr := ioutil.ReadAll(stdoutReader)
+				data, readErr := ioutil.ReadAll(stdoutFile)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output")
 
 			})
 
 			Convey("And the eraseOutput should clean the stdout file", func() {
-				var filePath string
-				switch explicitTask := task.(type) {
-				case *localTask:
-					filePath = explicitTask.stdoutFile.Name()
-				case *remoteTask:
-					filePath = explicitTask.stdoutFile.Name()
-				default:
-					t.Skip("Skipping test: task is neither instance of localTask nor remoteTask")
-
-				}
+				stdoutFile, stdoutErr := task.GetStdoutFile()
+				So(stdoutErr, ShouldBeNil)
+				So(stdoutFile, ShouldNotBeNil)
 
 				task.Clean()
 				Convey("Before eraseOutput file should exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stdoutFile.Name())
 					So(statErr, ShouldBeNil)
 				})
 
@@ -170,7 +163,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 
 				Convey("After eraseOutput file should not exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stdoutFile.Name())
 					So(statErr, ShouldNotBeNil)
 				})
 			})
@@ -255,19 +248,19 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				reader, readerErr := task.Stdout()
+				file, readerErr := task.GetStdoutFile()
 				So(readerErr, ShouldBeNil)
-				So(reader, ShouldNotBeNil)
+				So(file, ShouldNotBeNil)
 
-				data, readErr := ioutil.ReadAll(reader)
+				data, readErr := ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output1")
 
-				reader, readerErr = task2.Stdout()
+				file, readerErr = task2.GetStdoutFile()
 				So(readerErr, ShouldBeNil)
-				So(reader, ShouldNotBeNil)
+				So(file, ShouldNotBeNil)
 
-				data, readErr = ioutil.ReadAll(reader)
+				data, readErr = ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output2")
 

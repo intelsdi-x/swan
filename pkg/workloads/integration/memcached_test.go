@@ -95,11 +95,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(exitCode, ShouldEqual, 0)
 
-							stdoutReader, stdoutErr := netstatTask.Stdout()
+							stdoutFile, stdoutErr := netstatTask.GetStdoutFile()
 							So(stdoutErr, ShouldBeNil)
-							So(stdoutReader, ShouldNotBeNil)
+							So(stdoutFile, ShouldNotBeNil)
 
-							data, readErr := ioutil.ReadAll(stdoutReader)
+							data, readErr := ioutil.ReadAll(stdoutFile)
 							So(readErr, ShouldBeNil)
 							So(string(data[:]), ShouldStartWith, "STAT")
 						})

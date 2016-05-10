@@ -5,7 +5,6 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
-	"io"
 	"io/ioutil"
 	"os"
 	"time"
@@ -27,7 +26,7 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Execute runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
-	log.Debug("Starting %s remotely", command)
+	log.Debug("Starting remotely", command)
 
 	connection, err := ssh.Dial(
 		"tcp",
@@ -55,11 +54,12 @@ func (remote Remote) Execute(command string) (Task, error) {
 	}
 
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile("./", "swan_remote_executor_stdout_")
+	currDir, _ := os.Getwd()
+	stdoutFile, err := ioutil.TempFile(currDir, "swan_remote_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile("./", "swan_remote_executor_stderr_")
+	stderrFile, err := ioutil.TempFile(currDir, "swan_remote_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
@@ -201,8 +201,8 @@ func (task *remoteTask) GetExitCode() (int, error) {
 	return *task.exitCode, nil
 }
 
-// Stdout returns io.Reader to stdout file.
-func (task *remoteTask) Stdout() (io.Reader, error) {
+// GetStdoutFile returns a file handle for file to the task's stdout file.
+func (task *remoteTask) GetStdoutFile() (*os.File, error) {
 	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
@@ -211,8 +211,8 @@ func (task *remoteTask) Stdout() (io.Reader, error) {
 	return task.stdoutFile, nil
 }
 
-// Stderr returns io.Reader to stderr file.
-func (task *remoteTask) Stderr() (io.Reader, error) {
+// GetStderrFile returns a file handle for file to the task's stderr file.
+func (task *remoteTask) GetStderrFile() (*os.File, error) {
 	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
 		return nil, err
 	}
