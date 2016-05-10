@@ -194,7 +194,6 @@ func TestSnap(t *testing.T) {
 						continue
 					}
 
-
 					So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
 					So(tags[0], ShouldEqual, "swan_experiment=foobar")
 					So(tags[1], ShouldEqual, "swan_phase=barbaz")
