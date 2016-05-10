@@ -8,7 +8,7 @@ import (
 	"github.com/intelsdi-x/snap/core"
 )
 
-// SessionCollector is a plugin which provides a Swan hosted mock colllector
+// SessionCollector is a plugin which provides a Swan hosted mock collector
 // which simply emits metric value '1' in the /intel/swan/session/metric1 namespace.
 type SessionCollector struct{}
 
@@ -25,7 +25,7 @@ var _ plugin.CollectorPlugin = (*SessionCollector)(nil)
 func (f *SessionCollector) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	metrics := []plugin.MetricType{}
 
-	// Just keep emitting 1's
+	// Just keep emitting 1's.
 	for i := range mts {
 		mts[i].Data_ = 1
 		mts[i].Timestamp_ = time.Now()
