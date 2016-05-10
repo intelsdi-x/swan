@@ -2,6 +2,8 @@ package memcached
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
@@ -73,5 +75,13 @@ func (m Memcached) buildCommand() string {
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (m Memcached) Launch() (executor.TaskHandle, error) {
-	return m.exec.Execute(m.buildCommand())
+	task, err := m.exec.Execute(m.buildCommand())
+	if err != nil {
+		return task, err
+	}
+	// TODO(mpatelcz): we need to assure that memcached is running and
+	// operational. This is quick hack to just wait. We need to verify
+	// it in more general way (i.e. try to connect to instance).
+	time.Sleep(3 * time.Second)
+	return task, err
 }
