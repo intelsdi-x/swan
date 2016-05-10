@@ -107,7 +107,7 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 	if status.ExitCode != 0 {
 		errMsg := fmt.Sprintf("Executing Mutilate Load returned with exit code %d",
 			status.ExitCode)
-		return achievedQPS, sli, errors.New(errMsg + err.Error())
+		return achievedQPS, sli, errors.New(errMsg)
 	}
 
 	stdoutReader, err := taskHandle.Stdout()
