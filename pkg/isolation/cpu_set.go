@@ -8,6 +8,7 @@ import "strconv"
 type CPUSetShares struct {
 	cgroupName   string
 	cpuSetShares string
+	cgCPUNodes   string
 }
 
 // NewCPUSetShares creates an instance of input data.
@@ -42,9 +43,7 @@ func (cpuSet *CPUSetShares) Create() error {
 
 	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover platform, we change accordingly.
 
-	cgCPUNodes := "0-1"
-
-	cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cgCPUNodes+" "+cpuSet.cgroupName)
+	cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cpuSet.cgCPUNodes+" "+cpuSet.cgroupName)
 
 	err = cmd.Run()
 	if err != nil {

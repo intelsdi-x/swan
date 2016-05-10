@@ -31,6 +31,13 @@ func TestCpu(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+	defer func() {
+		err = cmd.Process.Kill()
+		Convey("Should provide kill to return while  TestCpu", t, func() {
+			So(err, ShouldBeNil)
+		})
+	}()
+
 	Convey("Should provide Create() to return and correct cpu shares", t, func() {
 		So(cpu.Create(), ShouldBeNil)
 		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpu/" + cpu.cgroupName + "/cpu.shares")
@@ -56,13 +63,4 @@ func TestCpu(t *testing.T) {
 	Convey("Should provide Clean() to return", t, func() {
 		So(cpu.Clean(), ShouldBeNil)
 	})
-
-	cmd = exec.Command("sh", "-c", "kill -9 ", string(cmd.Process.Pid))
-
-	err = cmd.Start()
-
-	Convey("Should provide kill to return while  TestCpu", t, func() {
-		So(err, ShouldBeNil)
-	})
-
 }
