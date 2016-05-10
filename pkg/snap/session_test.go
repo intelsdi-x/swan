@@ -55,6 +55,15 @@ func (s *Snapd) Stop() error {
 	return s.task.Stop()
 }
 
+func (s *Snapd) CleanAndEraseOutput() error {
+	if s.task == nil {
+		return errors.New("Snapd not started: cannot find task")
+	}
+
+	s.task.Clean()
+	return s.task.EraseOutput()
+}
+
 func (s *Snapd) Connected() bool {
 	retries := 5
 	connected := false
@@ -101,10 +110,7 @@ func TestSnap(t *testing.T) {
 			plugins := NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 			err := plugins.Load("snap-plugin-collector-session-test")
-
-			if err != nil {
-				fmt.Printf("%v\n", err)
-			}
+			So(err, ShouldBeNil)
 
 			// Wait until metric is available in namespace.
 			retries := 10
@@ -222,6 +228,7 @@ func TestSnap(t *testing.T) {
 
 			if snapd != nil {
 				snapd.Stop()
+				snapd.CleanAndEraseOutput()
 			}
 		})
 	})
