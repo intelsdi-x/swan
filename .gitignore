@@ -15,3 +15,6 @@
 /misc/snap-plugin-collector-mutilate/mutilate-src
 /misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate
 .*.swp
+/misc/snap-plugin-publisher-session-test/snap-plugin-publisher-session-test
+/misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
+/misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
