@@ -153,18 +153,6 @@ func (task *remoteTask) isTerminated() bool {
 	}
 }
 
-func (task *remoteTask) createStatus() *Status {
-	if !task.isTerminated() {
-		return nil
-	}
-
-	return &Status{
-		*task.exitCode,
-		task.stdoutFile.Name(),
-		task.stderrFile.Name(),
-	}
-}
-
 // Stop terminates the remote task.
 func (task *remoteTask) Stop() error {
 	if task.isTerminated() {
@@ -195,15 +183,22 @@ func (task *remoteTask) Stop() error {
 	return nil
 }
 
-// Status returns a state of the task. If task is terminated it returns the Status as a
-// second item in tuple. Otherwise returns nil.
-// TODO: To be changed in next PR.
-func (task *remoteTask) Status() (TaskState, *Status) {
+// GetStatus returns a state of the task.
+func (task *remoteTask) GetStatus() TaskState {
 	if !task.isTerminated() {
-		return RUNNING, nil
+		return RUNNING
 	}
 
-	return TERMINATED, task.createStatus()
+	return TERMINATED
+}
+
+// GetExitCode returns a exitCode. If task is not terminated it returns error.
+func (task *remoteTask) GetExitCode() (int, error) {
+	if !task.isTerminated() {
+		return -1, errors.New("Task is not terminated")
+	}
+
+	return *task.exitCode, nil
 }
 
 // Stdout returns io.Reader to stdout file.
