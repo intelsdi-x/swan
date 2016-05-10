@@ -165,5 +165,5 @@ func (e *Experiment) logInitialize() error {
 }
 
 func (e *Experiment) logClose() {
-	//e.logFile.Close()
+	e.logFile.Close()
 }
