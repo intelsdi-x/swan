@@ -49,25 +49,28 @@ func fetchMutilatePath() string {
 // - no aggressors so far
 func main() {
 	logLevel := logrus.DebugLevel
+	logrus.SetLevel(logLevel)
 
-	local := executor.NewLocal()
 	// Init Memcached Launcher.
-	memcachedLauncher := memcached.New(local,
+	memcachedLauncher := memcached.New(executor.NewLocal(),
 		memcached.DefaultMemcachedConfig(fetchMemcachedPath()))
 	// Init Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      fetchMutilatePath(),
-		MemcachedHost:     "localhost",
+		MemcachedHost:     "127.0.0.1",
 		LatencyPercentile: percentile,
-		TuningTime:        30 * time.Second,
+		TuningTime:        1 * time.Second,
 	}
+
+	local := executor.NewLocal()
+	local.OutputPrefix = "mutilate"
 	mutilateLauncher := mutilate.New(local, mutilateConfig)
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             1,
-		LoadDuration:    30 * time.Second,
+		SLO:             1000, // TODO: make this variable precise (us?)
+		LoadDuration:    5 * time.Second,
 		LoadPointsCount: 1,
 		Repetitions:     1,
 	}

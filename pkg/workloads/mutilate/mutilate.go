@@ -92,7 +92,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	}
 	qps, achievedSLI, err = getQPSAndLatencyFrom(stdoutReader)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output")
+		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
 

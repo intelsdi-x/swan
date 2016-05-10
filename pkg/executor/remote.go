@@ -27,7 +27,7 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Execute runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
-	log.Debug("Starting %s remotely", command)
+	log.Debug("Starting remotely", command)
 
 	connection, err := ssh.Dial(
 		"tcp",

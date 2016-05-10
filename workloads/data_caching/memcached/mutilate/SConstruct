@@ -38,7 +38,7 @@ if not conf.CheckFunc('pthread_barrier_init'):
 env = conf.Finish()
 
 env.Append(CFLAGS = ' -O3 -Wall -g')
-env.Append(CPPFLAGS = ' -O3 -Wall -g')
+env.Append(CPPFLAGS = ' -O3 -Wall -g -levent_core')
 
 env.Command(['cmdline.cc', 'cmdline.h'], 'cmdline.ggo', 'gengetopt < $SOURCE')
 

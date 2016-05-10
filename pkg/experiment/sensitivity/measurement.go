@@ -5,6 +5,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
+	"os"
+	"path"
 	"strconv"
 	"time"
 )
@@ -46,7 +48,7 @@ type measurementPhase struct {
 
 // Returns measurement name.
 func (m *measurementPhase) Name() string {
-	return m.namePrefix + " Measurement for LoadPointIndex " +
+	return m.namePrefix + "_Measurement_for_LoadPointIndex_" +
 		strconv.Itoa(m.currentLoadPointIndex)
 }
 
@@ -64,6 +66,11 @@ func (m *measurementPhase) Run(log *logrus.Logger) error {
 	if m.TargetLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
+
+	// Note(bplotka): This is for debug only - for ease of testing for @iwan collector.
+	// We can remove that when we will have snap session integrated within experiment.
+	currDir, _ := os.Getwd()
+	log.Debug("LoadGenerator filename: ", path.Join(currDir, "mutilate_stdout"))
 
 	prTask, err := m.pr.Launch()
 	if err != nil {

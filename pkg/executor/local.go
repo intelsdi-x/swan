@@ -15,35 +15,54 @@ import (
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct{}
+type Local struct {
+	OutputPrefix string
+}
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
-	return Local{}
+	return Local{OutputPrefix: "unique"}
 }
 
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting %s locally ", command)
+	log.Debug("Starting locally ", command)
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
+	var (
+		stdoutFile, stderrFile *os.File
+		err                    error
+	)
 	// Create temporary output files.
-	stdoutFile, err := ioutil.TempFile("./", "swan_local_executor_stdout_")
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := ioutil.TempFile("./", "swan_local_executor_stderr_")
-	if err != nil {
-		return nil, err
+	if l.OutputPrefix != "unique" {
+		stdoutFile, err = os.OpenFile("./"+l.OutputPrefix+"_stdout",
+			os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
+			return nil, err
+		}
+		stderrFile, err = os.OpenFile("./"+l.OutputPrefix+"_stderr",
+			os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		stdoutFile, err = ioutil.TempFile("./", "swan_local_executor_stdout_")
+		if err != nil {
+			return nil, err
+		}
+		stderrFile, err = ioutil.TempFile("./", "swan_local_executor_stderr_")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.Debug("Created temporary files ",
-		"stdout path:  ", stdoutFile.Name(), "stderr path:  ", stderrFile.Name())
+		"stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
 	cmd.Stdout = stdoutFile
 	cmd.Stderr = stderrFile
