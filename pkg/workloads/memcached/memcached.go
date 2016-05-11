@@ -70,8 +70,8 @@ func (m Memcached) buildCommand() string {
 }
 
 // Launch starts the workload (process or group of processes). It returns a workload
-// represented as a Task instance.
+// represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
-func (m Memcached) Launch() (executor.Task, error) {
+func (m Memcached) Launch() (executor.TaskHandle, error) {
 	return m.exec.Execute(m.buildCommand())
 }

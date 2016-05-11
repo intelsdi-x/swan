@@ -4,5 +4,5 @@ package executor
 // It returns Task handle when workload started gracefully.
 // Workload is executed asynchronously.
 type Executor interface {
-	Execute(command string) (Task, error)
+	Execute(command string) (TaskHandle, error)
 }

@@ -9,15 +9,15 @@ type Executor struct {
 }
 
 // Execute provides a mock function with given fields: command
-func (_m *Executor) Execute(command string) (executor.Task, error) {
+func (_m *Executor) Execute(command string) (executor.TaskHandle, error) {
 	ret := _m.Called(command)
 
-	var r0 executor.Task
-	if rf, ok := ret.Get(0).(func(string) executor.Task); ok {
+	var r0 executor.TaskHandle
+	if rf, ok := ret.Get(0).(func(string) executor.TaskHandle); ok {
 		r0 = rf(command)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(executor.Task)
+			r0 = ret.Get(0).(executor.TaskHandle)
 		}
 	}
 
