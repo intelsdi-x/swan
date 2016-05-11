@@ -194,16 +194,6 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(exitcode, ShouldEqual, 127)
 			})
 
-			Convey("And the stderr ouptut should state that file cannot be found", func() {
-				file, err := taskHandle.StderrFile()
-				So(err, ShouldBeNil)
-				So(file, ShouldNotBeNil)
-
-				data, readErr := ioutil.ReadAll(file)
-				So(readErr, ShouldBeNil)
-				So(string(data[:]), ShouldEndWith, "not found\n")
-			})
-
 			Convey("And the eraseOutput should clean the stderr file", func() {
 				taskHandle.Clean()
 
