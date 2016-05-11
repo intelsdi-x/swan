@@ -117,17 +117,12 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 					Convey("The task should be terminated and the task status "+
 						"should be -1 or 0", func() {
-<<<<<<< HEAD
-						taskState := task.Status()
+
+						taskState := taskHandle.Status()
 						So(taskState, ShouldEqual, executor.TERMINATED)
 
-						exitCode, err := task.ExitCode()
-=======
-						taskState := taskHandle.GetStatus()
-						So(taskState, ShouldEqual, executor.TERMINATED)
+						exitCode, err := taskHandle.ExitCode()
 
-						exitCode, err := taskHandle.GetExitCode()
->>>>>>> SCE329 Rename Task interface to TaskHandle
 						So(err, ShouldBeNil)
 						// Memcached on CentOS returns 0 (successful code) after SIGTERM.
 						So(exitCode, ShouldBeIn, -1, 0)
