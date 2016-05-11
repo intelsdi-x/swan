@@ -47,7 +47,7 @@ type MutilateTestSuite struct {
 	defaultSlo             int
 
 	mExecutor *mocks.Executor
-	mHandle   *mocks.Task
+	mHandle   *mocks.TaskHandle
 }
 
 func (s *MutilateTestSuite) SetupTest() {
@@ -59,7 +59,7 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.defaultSlo = 1000
 
 	s.mExecutor = new(mocks.Executor)
-	s.mHandle = new(mocks.Task)
+	s.mHandle = new(mocks.TaskHandle)
 }
 
 func (s *MutilateTestSuite) TestMutilateTuning() {
