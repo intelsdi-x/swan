@@ -40,10 +40,10 @@ func TestSensitivityExperiment(t *testing.T) {
 		})
 
 		Convey("And task is launched successfully", func() {
-			mockedLcTask := new(executorMocks.Task)
-			mockedLcTask.On("Stop").Return(nil)
-			mockedLcTask.On("Clean").Return(nil)
-			mockedLcLauncher.On("Launch").Return(mockedLcTask, nil).Once()
+			mockedLcTaskHandle := new(executorMocks.TaskHandle)
+			mockedLcTaskHandle.On("Stop").Return(nil)
+			mockedLcTaskHandle.On("Clean").Return(nil)
+			mockedLcLauncher.On("Launch").Return(mockedLcTaskHandle, nil).Once()
 
 			Convey("But load generator can't be tuned", func() {
 				mockedLoadGenerator.On("Tune", 1).Return(0, 0, errors.New("Load generator can't be tuned"))
@@ -52,7 +52,7 @@ func TestSensitivityExperiment(t *testing.T) {
 				So(loadGeneratorTuningError.Error(), ShouldEqual, "Load generator can't be tuned")
 				mockedLoadGenerator.AssertExpectations(t)
 				mockedLcLauncher.AssertExpectations(t)
-				mockedLcTask.AssertExpectations(t)
+				mockedLcTaskHandle.AssertExpectations(t)
 			})
 
 			Convey("And load generator can be tuned", func() {
@@ -67,31 +67,31 @@ func TestSensitivityExperiment(t *testing.T) {
 						"Production task can't be launched during measuring")
 					mockedLoadGenerator.AssertExpectations(t)
 					mockedLcLauncher.AssertExpectations(t)
-					mockedLcTask.AssertExpectations(t)
+					mockedLcTaskHandle.AssertExpectations(t)
 
 				})
 				Convey("And production task is launched successfully during measuring", func() {
-					mockedLcMeasuringTask := new(executorMocks.Task)
-					mockedLcMeasuringTask.On("Stop").Return(nil)
-					mockedLcMeasuringTask.On("Clean").Return(nil)
-					mockedLcLauncher.On("Launch").Return(mockedLcMeasuringTask, nil)
+					mockedLcMeasuringTaskHandle := new(executorMocks.TaskHandle)
+					mockedLcMeasuringTaskHandle.On("Stop").Return(nil)
+					mockedLcMeasuringTaskHandle.On("Clean").Return(nil)
+					mockedLcLauncher.On("Launch").Return(mockedLcMeasuringTaskHandle, nil)
 					Convey("But aggressor can't be launched", func() {
 						mockedAggressor.On("Launch").Return(
-							*new(executor.Task),
+							*new(executor.TaskHandle),
 							errors.New("Aggressor task can't be launched"))
 						mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, 222, nil)
 						mockedLoadGenerator.On("Load", 2, 1*time.Second).Return(666, 222, nil)
 
 						aggressorLaunchError := sensitivityExperiment.Run()
 						So(aggressorLaunchError.Error(), ShouldEqual, "Aggressor task can't be launched")
-						mockedLcMeasuringTask.AssertExpectations(t)
+						mockedLcMeasuringTaskHandle.AssertExpectations(t)
 						mockedLcLauncher.AssertExpectations(t)
 
 					})
 
 					Convey("And aggressor can be launched", func() {
-						mockedAggressorTask := new(executorMocks.Task)
-						mockedAggressor.On("Launch").Return(mockedAggressorTask, nil)
+						mockedAggressorTaskHandle := new(executorMocks.TaskHandle)
+						mockedAggressor.On("Launch").Return(mockedAggressorTaskHandle, nil)
 
 						Convey("But load testing fails", func() {
 							mockedLoadGenerator.On("Load", 1, 1*time.Second).
@@ -99,22 +99,22 @@ func TestSensitivityExperiment(t *testing.T) {
 
 							aggressorLaunchError := sensitivityExperiment.Run()
 							So(aggressorLaunchError.Error(), ShouldEqual, "Load testing failed")
-							mockedLcMeasuringTask.AssertExpectations(t)
+							mockedLcMeasuringTaskHandle.AssertExpectations(t)
 							mockedLcLauncher.AssertExpectations(t)
-							mockedAggressorTask.AssertExpectations(t)
+							mockedAggressorTaskHandle.AssertExpectations(t)
 						})
 
 						Convey("And load testing is successful", func() {
-							mockedAggressorTask.On("Stop").Return(nil)
-							mockedAggressorTask.On("Clean").Return(nil)
+							mockedAggressorTaskHandle.On("Stop").Return(nil)
+							mockedAggressorTaskHandle.On("Clean").Return(nil)
 							mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, 222, nil)
 							mockedLoadGenerator.On("Load", 2, 1*time.Second).Return(666, 222, nil)
 
 							thereIsNoError := sensitivityExperiment.Run()
 							So(thereIsNoError, ShouldBeNil)
-							mockedLcMeasuringTask.AssertExpectations(t)
+							mockedLcMeasuringTaskHandle.AssertExpectations(t)
 							mockedLcLauncher.AssertExpectations(t)
-							mockedAggressorTask.AssertExpectations(t)
+							mockedAggressorTaskHandle.AssertExpectations(t)
 						})
 
 					})

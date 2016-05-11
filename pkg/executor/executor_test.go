@@ -16,46 +16,46 @@ func testExecutor(t *testing.T, executor Executor) {
 	log.SetLevel(log.DebugLevel)
 
 	Convey("When blocking infinitively sleep command is executed", func() {
-		task, err := executor.Execute("sleep inf")
+		taskHandle, err := executor.Execute("sleep inf")
 		So(err, ShouldBeNil)
 
-		defer task.Stop()
-		defer task.Clean()
-		defer task.EraseOutput()
+		defer taskHandle.Stop()
+		defer taskHandle.Clean()
+		defer taskHandle.EraseOutput()
 
 		Convey("Task should be still running and exitCode should return error", func() {
-			taskState := task.GetStatus()
+			taskState := taskHandle.GetStatus()
 			So(taskState, ShouldEqual, RUNNING)
-			_, err := task.GetExitCode()
+			_, err := taskHandle.GetExitCode()
 			So(err, ShouldNotBeNil)
 
-			stopErr := task.Stop()
+			stopErr := taskHandle.Stop()
 			So(stopErr, ShouldBeNil)
 		})
 
 		Convey("When we wait for task termination with the 1ms timeout", func() {
-			isTaskTerminated := task.Wait(1 * time.Microsecond)
+			isTaskTerminated := taskHandle.Wait(1 * time.Microsecond)
 
 			Convey("The timeout appeach and the task should not be terminated", func() {
 				So(isTaskTerminated, ShouldBeFalse)
 			})
 
 			Convey("Task should be still running and exitCode should return error", func() {
-				taskState := task.GetStatus()
+				taskState := taskHandle.GetStatus()
 				So(taskState, ShouldEqual, RUNNING)
-				_, err := task.GetExitCode()
+				_, err := taskHandle.GetExitCode()
 				So(err, ShouldNotBeNil)
 
-				stopErr := task.Stop()
+				stopErr := taskHandle.Stop()
 				So(stopErr, ShouldBeNil)
 			})
 
-			stopErr := task.Stop()
+			stopErr := taskHandle.Stop()
 			So(stopErr, ShouldBeNil)
 		})
 
 		Convey("When we stop the task", func() {
-			err := task.Stop()
+			err := taskHandle.Stop()
 
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
@@ -63,9 +63,9 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			Convey("The task should be terminated and the exitCode should "+
 				"indicate that task was killed", func() {
-				taskState := task.GetStatus()
+				taskState := taskHandle.GetStatus()
 				So(taskState, ShouldEqual, TERMINATED)
-				exitcode, err := task.GetExitCode()
+				exitcode, err := taskHandle.GetExitCode()
 				So(err, ShouldBeNil)
 				// -1 for Local executor.
 				// 129 for Remote executor.
@@ -79,7 +79,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			wg.Add(5)
 			for i := 0; i < 5; i++ {
 				go func() {
-					task.Wait(0)
+					taskHandle.Wait(0)
 					wg.Done()
 				}()
 			}
@@ -99,7 +99,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				case <-time.After(100 * time.Millisecond):
 				}
 
-				err := task.Stop()
+				err := taskHandle.Stop()
 				So(err, ShouldBeNil)
 				So(waitsDone, ShouldBeFalse)
 
@@ -117,28 +117,28 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When command `echo output` is executed", func() {
-		task, err := executor.Execute("echo output")
+		taskHandle, err := executor.Execute("echo output")
 		So(err, ShouldBeNil)
 
-		defer task.Stop()
-		defer task.Clean()
-		defer task.EraseOutput()
+		defer taskHandle.Stop()
+		defer taskHandle.Clean()
+		defer taskHandle.EraseOutput()
 
 		Convey("When we wait for the task to terminate", func() {
-			task.Wait(0)
+			taskHandle.Wait(0)
 
-			taskState := task.GetStatus()
+			taskState := taskHandle.GetStatus()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := taskHandle.GetExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 
-				stdoutReader, stdoutErr := task.Stdout()
+				stdoutReader, stdoutErr := taskHandle.Stdout()
 				So(stdoutErr, ShouldBeNil)
 				So(stdoutReader, ShouldNotBeNil)
 
@@ -150,23 +150,23 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			Convey("And the eraseOutput should clean the stdout file", func() {
 				var filePath string
-				switch explicitTask := task.(type) {
-				case *localTask:
-					filePath = explicitTask.stdoutFile.Name()
-				case *remoteTask:
-					filePath = explicitTask.stdoutFile.Name()
+				switch explicitTaskHandle := taskHandle.(type) {
+				case *localTaskHandle:
+					filePath = explicitTaskHandle.stdoutFile.Name()
+				case *remoteTaskHandle:
+					filePath = explicitTaskHandle.stdoutFile.Name()
 				default:
-					t.Skip("Skipping test: task is neither instance of localTask nor remoteTask")
+					t.Skip("Skipping test: taskHandle is neither instance of localTaskHandle nor remoteTaskHandle")
 
 				}
 
-				task.Clean()
+				taskHandle.Clean()
 				Convey("Before eraseOutput file should exist", func() {
 					_, statErr := os.Stat(filePath)
 					So(statErr, ShouldBeNil)
 				})
 
-				err := task.EraseOutput()
+				err := taskHandle.EraseOutput()
 				So(err, ShouldBeNil)
 
 				Convey("After eraseOutput file should not exist", func() {
@@ -178,47 +178,47 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When command which does not exists is executed", func() {
-		task, err := executor.Execute("commandThatDoesNotExists")
+		taskHandle, err := executor.Execute("commandThatDoesNotExists")
 		So(err, ShouldBeNil)
 
-		defer task.Stop()
-		defer task.Clean()
-		defer task.EraseOutput()
+		defer taskHandle.Stop()
+		defer taskHandle.Clean()
+		defer taskHandle.EraseOutput()
 
 		Convey("When we wait for the task to terminate", func() {
-			task.Wait(0)
+			taskHandle.Wait(0)
 
-			taskState := task.GetStatus()
+			taskState := taskHandle.GetStatus()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 127", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := taskHandle.GetExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 127)
 			})
 
 			Convey("And the eraseOutput should clean the stderr file", func() {
 				var filePath string
-				switch explicitTask := task.(type) {
-				case *localTask:
-					filePath = explicitTask.stderrFile.Name()
-				case *remoteTask:
-					filePath = explicitTask.stderrFile.Name()
+				switch explicitTaskHandle := taskHandle.(type) {
+				case *localTaskHandle:
+					filePath = explicitTaskHandle.stderrFile.Name()
+				case *remoteTaskHandle:
+					filePath = explicitTaskHandle.stderrFile.Name()
 				default:
-					t.Skip("Skipping test: task is neither instance of localTask nor remoteTask")
+					t.Skip("Skipping test: taskHandle is neither instance of localTaskHandle nor remoteTaskHandle")
 
 				}
 
-				task.Clean()
+				taskHandle.Clean()
 				Convey("Before eraseOutput file should exist", func() {
 					_, statErr := os.Stat(filePath)
 					So(statErr, ShouldBeNil)
 				})
 
-				err := task.EraseOutput()
+				err := taskHandle.EraseOutput()
 				So(err, ShouldBeNil)
 
 				Convey("After eraseOutput file should not exist", func() {
@@ -230,24 +230,24 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When we execute two tasks in the same time", func() {
-		task, err := executor.Execute("echo output1")
-		task2, err2 := executor.Execute("echo output2")
+		taskHandle, err := executor.Execute("echo output1")
+		taskHandle2, err2 := executor.Execute("echo output2")
 		So(err, ShouldBeNil)
 		So(err2, ShouldBeNil)
 
-		defer task.Stop()
-		defer task2.Stop()
-		defer task.Clean()
-		defer task2.Clean()
-		defer task.EraseOutput()
-		defer task2.EraseOutput()
+		defer taskHandle.Stop()
+		defer taskHandle2.Stop()
+		defer taskHandle.Clean()
+		defer taskHandle2.Clean()
+		defer taskHandle.EraseOutput()
+		defer taskHandle2.EraseOutput()
 
 		Convey("When we wait for the tasks to terminate", func() {
-			task.Wait(0)
-			task2.Wait(0)
+			taskHandle.Wait(0)
+			taskHandle2.Wait(0)
 
-			taskState1 := task.GetStatus()
-			taskState2 := task2.GetStatus()
+			taskState1 := taskHandle.GetStatus()
+			taskState2 := taskHandle2.GetStatus()
 
 			Convey("The tasks should be terminated", func() {
 				So(taskState1, ShouldEqual, TERMINATED)
@@ -255,7 +255,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				reader, readerErr := task.Stdout()
+				reader, readerErr := taskHandle.Stdout()
 				So(readerErr, ShouldBeNil)
 				So(reader, ShouldNotBeNil)
 
@@ -263,7 +263,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output1")
 
-				reader, readerErr = task2.Stdout()
+				reader, readerErr = taskHandle2.Stdout()
 				So(readerErr, ShouldBeNil)
 				So(reader, ShouldNotBeNil)
 
@@ -274,11 +274,11 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := taskHandle.GetExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 
-				exitcode, err = task2.GetExitCode()
+				exitcode, err = taskHandle2.GetExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})
@@ -286,26 +286,26 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When command `echo sleep 0` is executed", func() {
-		task, err := executor.Execute("echo sleep 0")
+		taskHandle, err := executor.Execute("echo sleep 0")
 		So(err, ShouldBeNil)
 
-		defer task.Stop()
-		defer task.Clean()
-		defer task.EraseOutput()
+		defer taskHandle.Stop()
+		defer taskHandle.Clean()
+		defer taskHandle.EraseOutput()
 
 		// Wait for the command to execute.
 		// TODO(bplotka): Remove the Sleep, since this is prone to errors on different enviroments.
 		time.Sleep(100 * time.Millisecond)
 
 		Convey("When we get Status without the Waiting for it", func() {
-			taskState := task.GetStatus()
+			taskState := taskHandle.GetStatus()
 
 			Convey("And the task should stated that it terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := taskHandle.GetExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})

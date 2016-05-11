@@ -18,14 +18,14 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	)
 
 	mockedExecutor := new(mocks.Executor)
-	mockedTask := new(mocks.Task)
+	mockedTaskHandle := new(mocks.TaskHandle)
 
 	Convey("While using Memcached launcher", t, func() {
 		memcachedLauncher := New(
 			mockedExecutor,
 			DefaultMemcachedConfig("test"))
 		Convey("While simulating proper execution", func() {
-			mockedExecutor.On("Execute", expectedCommand).Return(mockedTask, nil).Once()
+			mockedExecutor.On("Execute", expectedCommand).Return(mockedTaskHandle, nil).Once()
 
 			Convey("Build command should create proper command", func() {
 				command := memcachedLauncher.buildCommand()
@@ -34,7 +34,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 				Convey("Arguments passed to Executor should be a proper command", func() {
 					task, err := memcachedLauncher.Launch()
 					So(err, ShouldBeNil)
-					So(task, ShouldEqual, mockedTask)
+					So(task, ShouldEqual, mockedTaskHandle)
 
 					mockedExecutor.AssertExpectations(t)
 				})

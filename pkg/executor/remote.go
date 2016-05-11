@@ -25,8 +25,8 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 }
 
 // Execute runs the command given as input.
-// Returned Task pointer is able to stop & monitor the provisioned process.
-func (remote Remote) Execute(command string) (Task, error) {
+// Returned Task Handle is able to stop & monitor the provisioned process.
+func (remote Remote) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting %s remotely", command)
 
 	connection, err := ssh.Dial(
@@ -115,13 +115,13 @@ func (remote Remote) Execute(command string) (Task, error) {
 			" with status code: ", *exitCode)
 	}()
 
-	return newRemoteTask(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
+	return newRemoteTaskHandle(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
 
-// remoteTask implements Task interface.
-type remoteTask struct {
+// remoteTaskHandle implements TaskHandle interface.
+type remoteTaskHandle struct {
 	session        *ssh.Session
 	stdoutFile     *os.File
 	stderrFile     *os.File
@@ -129,10 +129,10 @@ type remoteTask struct {
 	exitCode       *int
 }
 
-// newRemoteTask returns a RemoteTask instance.
-func newRemoteTask(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}, exitCode *int) *remoteTask {
-	return &remoteTask{
+// newRemoteTaskHandle returns a remoteTaskHandle instance.
+func newRemoteTaskHandle(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
+	waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
+	return &remoteTaskHandle{
 		session:        session,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
@@ -143,9 +143,9 @@ func newRemoteTask(session *ssh.Session, stdoutFile *os.File, stderrFile *os.Fil
 
 // isTerminated checks if waitEndChannel is closed. If it is closed, it means
 // that wait ended and task is in terminated state.
-func (task *remoteTask) isTerminated() bool {
+func (taskHandle *remoteTaskHandle) isTerminated() bool {
 	select {
-	case <-task.waitEndChannel:
+	case <-taskHandle.waitEndChannel:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	default:
@@ -154,8 +154,8 @@ func (task *remoteTask) isTerminated() bool {
 }
 
 // Stop terminates the remote task.
-func (task *remoteTask) Stop() error {
-	if task.isTerminated() {
+func (taskHandle *remoteTaskHandle) Stop() error {
+	if taskHandle.isTerminated() {
 		return nil
 	}
 
@@ -166,14 +166,14 @@ func (task *remoteTask) Stop() error {
 	// - sending Ctrl+C (very time based and not working currently)
 	// - session.Signal does not work.
 	// - gathering PID & killing the pid in separate session
-	err := task.session.Close()
+	err := taskHandle.session.Close()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
 	// Checking if kill was successful.
-	isTerminated := task.Wait(killTimeout)
+	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
 		log.Error("Cannot terminate task")
 		return errors.New("Cannot terminate task")
@@ -184,8 +184,8 @@ func (task *remoteTask) Stop() error {
 }
 
 // GetStatus returns a state of the task.
-func (task *remoteTask) GetStatus() TaskState {
-	if !task.isTerminated() {
+func (taskHandle *remoteTaskHandle) GetStatus() TaskState {
+	if !taskHandle.isTerminated() {
 		return RUNNING
 	}
 
@@ -193,41 +193,41 @@ func (task *remoteTask) GetStatus() TaskState {
 }
 
 // GetExitCode returns a exitCode. If task is not terminated it returns error.
-func (task *remoteTask) GetExitCode() (int, error) {
-	if !task.isTerminated() {
+func (taskHandle *remoteTaskHandle) GetExitCode() (int, error) {
+	if !taskHandle.isTerminated() {
 		return -1, errors.New("Task is not terminated")
 	}
 
-	return *task.exitCode, nil
+	return *taskHandle.exitCode, nil
 }
 
 // Stdout returns io.Reader to stdout file.
-func (task *remoteTask) Stdout() (io.Reader, error) {
-	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+func (taskHandle *remoteTaskHandle) Stdout() (io.Reader, error) {
+	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
 
-	task.stdoutFile.Seek(0, os.SEEK_SET)
-	return task.stdoutFile, nil
+	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
+	return taskHandle.stdoutFile, nil
 }
 
 // Stderr returns io.Reader to stderr file.
-func (task *remoteTask) Stderr() (io.Reader, error) {
-	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+func (taskHandle *remoteTaskHandle) Stderr() (io.Reader, error) {
+	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
 		return nil, err
 	}
 
-	task.stderrFile.Seek(0, os.SEEK_SET)
-	return task.stderrFile, nil
+	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
+	return taskHandle.stderrFile, nil
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.
-func (task *remoteTask) Clean() error {
+func (taskHandle *remoteTaskHandle) Clean() error {
 	// Close stdout.
-	stdoutErr := task.stdoutFile.Close()
+	stdoutErr := taskHandle.stdoutFile.Close()
 
 	// Close stderr.
-	stderrErr := task.stderrFile.Close()
+	stderrErr := taskHandle.stderrFile.Close()
 
 	if stdoutErr != nil {
 		return stdoutErr
@@ -241,14 +241,14 @@ func (task *remoteTask) Clean() error {
 }
 
 // EraseOutput removes task's stdout & stderr files.
-func (task *remoteTask) EraseOutput() error {
+func (taskHandle *remoteTaskHandle) EraseOutput() error {
 	// Remove stdout file.
-	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
 		return err
 	}
 
 	// Remove stderr file.
-	if err := os.Remove(task.stderrFile.Name()); err != nil {
+	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
 		return err
 	}
 
@@ -257,8 +257,8 @@ func (task *remoteTask) EraseOutput() error {
 
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
-func (task *remoteTask) Wait(timeout time.Duration) bool {
-	if task.isTerminated() {
+func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
+	if taskHandle.isTerminated() {
 		return true
 	}
 
@@ -269,7 +269,7 @@ func (task *remoteTask) Wait(timeout time.Duration) bool {
 	}
 
 	select {
-	case <-task.waitEndChannel:
+	case <-taskHandle.waitEndChannel:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	case <-timeoutChannel:
