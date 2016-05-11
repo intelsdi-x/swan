@@ -23,7 +23,7 @@ func NewLocal() Local {
 
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
-func (l Local) Execute(command string) (Task, error) {
+func (l Local) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting ", command, "' locally ")
 
 	cmd := exec.Command("sh", "-c", command)
@@ -86,21 +86,21 @@ func (l Local) Execute(command string) (Task, error) {
 			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 	}()
 
-	return newlocalTask(cmd, stdoutFile, stderrFile, waitEndChannel), nil
+	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, waitEndChannel), nil
 }
 
-// localTask implements Task interface.
-type localTask struct {
+// localTaskHandle implements TaskHandle interface.
+type localTaskHandle struct {
 	cmdHandler     *exec.Cmd
 	stdoutFile     *os.File
 	stderrFile     *os.File
 	waitEndChannel chan struct{}
 }
 
-// newlocalTask returns a localTask instance.
-func newlocalTask(cmdHandler *exec.Cmd, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}) *localTask {
-	t := &localTask{
+// newLocalTaskHandle returns a localTaskHandle instance.
+func newLocalTaskHandle(cmdHandler *exec.Cmd, stdoutFile *os.File, stderrFile *os.File,
+	waitEndChannel chan struct{}) *localTaskHandle {
+	t := &localTaskHandle{
 		cmdHandler:     cmdHandler,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
@@ -113,9 +113,9 @@ func newlocalTask(cmdHandler *exec.Cmd, stdoutFile *os.File, stderrFile *os.File
 // that wait ended and task is in terminated state.
 // NOTE: If it's true then ProcessState is not nil. ProcessState contains information
 // about an exited process available after call to Wait or Run.
-func (task *localTask) isTerminated() bool {
+func (taskHandle *localTaskHandle) isTerminated() bool {
 	select {
-	case <-task.waitEndChannel:
+	case <-taskHandle.waitEndChannel:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	default:
@@ -123,27 +123,27 @@ func (task *localTask) isTerminated() bool {
 	}
 }
 
-func (task *localTask) getPid() int {
-	return task.cmdHandler.Process.Pid
+func (taskHandle *localTaskHandle) getPid() int {
+	return taskHandle.cmdHandler.Process.Pid
 }
 
 // Stop terminates the local task.
-func (task *localTask) Stop() error {
-	if task.isTerminated() {
+func (taskHandle *localTaskHandle) Stop() error {
+	if taskHandle.isTerminated() {
 		return nil
 	}
 
 	// Sending SIGKILL signal to local task.
 	// TODO: Add PID namespace to handle orphan tasks properly.
-	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -task.getPid())
-	err := syscall.Kill(-task.getPid(), syscall.SIGKILL)
+	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -taskHandle.getPid())
+	err := syscall.Kill(-taskHandle.getPid(), syscall.SIGKILL)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
 	// Checking if kill was successful.
-	isTerminated := task.Wait(killTimeout)
+	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
 		return errors.New("Cannot terminate task")
 	}
@@ -153,8 +153,8 @@ func (task *localTask) Stop() error {
 }
 
 // Status returns a state of the task.
-func (task *localTask) Status() TaskState {
-	if !task.isTerminated() {
+func (taskHandle *localTaskHandle) Status() TaskState {
+	if !taskHandle.isTerminated() {
 		return RUNNING
 	}
 
@@ -162,41 +162,41 @@ func (task *localTask) Status() TaskState {
 }
 
 // ExitCode returns a exitCode. If task is not terminated it returns error.
-func (task *localTask) ExitCode() (int, error) {
-	if !task.isTerminated() {
+func (taskHandle *localTaskHandle) ExitCode() (int, error) {
+	if !taskHandle.isTerminated() {
 		return -1, errors.New("Task is not terminated")
 	}
 
-	return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
+	return (taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
 }
 
 // StdoutFile returns a file handle for file to the task's stdout file.
-func (task *localTask) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
+func (taskHandle *localTaskHandle) StdoutFile() (*os.File, error) {
+	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
 
-	task.stdoutFile.Seek(0, os.SEEK_SET)
-	return task.stdoutFile, nil
+	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
+	return taskHandle.stdoutFile, nil
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
-func (task *localTask) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
+func (taskHandle *localTaskHandle) StderrFile() (*os.File, error) {
+	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
 		return nil, err
 	}
 
-	task.stderrFile.Seek(0, os.SEEK_SET)
-	return task.stderrFile, nil
+	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
+	return taskHandle.stderrFile, nil
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.
-func (task *localTask) Clean() error {
+func (taskHandle *localTaskHandle) Clean() error {
 	// Close stdout.
-	stdoutErr := task.stdoutFile.Close()
+	stdoutErr := taskHandle.stdoutFile.Close()
 
 	// Close stderr.
-	stderrErr := task.stderrFile.Close()
+	stderrErr := taskHandle.stderrFile.Close()
 
 	if stdoutErr != nil {
 		return stdoutErr
@@ -210,14 +210,14 @@ func (task *localTask) Clean() error {
 }
 
 // EraseOutput removes task's stdout & stderr files.
-func (task *localTask) EraseOutput() error {
+func (taskHandle *localTaskHandle) EraseOutput() error {
 	// Remove stdout file.
-	if err := os.Remove(task.stdoutFile.Name()); err != nil {
+	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
 		return err
 	}
 
 	// Remove stderr file.
-	if err := os.Remove(task.stderrFile.Name()); err != nil {
+	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
 		return err
 	}
 
@@ -226,8 +226,8 @@ func (task *localTask) EraseOutput() error {
 
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
-func (task *localTask) Wait(timeout time.Duration) bool {
-	if task.isTerminated() {
+func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
+	if taskHandle.isTerminated() {
 		return true
 	}
 
@@ -238,7 +238,7 @@ func (task *localTask) Wait(timeout time.Duration) bool {
 	}
 
 	select {
-	case <-task.waitEndChannel:
+	case <-taskHandle.waitEndChannel:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	case <-timeoutChannel:
