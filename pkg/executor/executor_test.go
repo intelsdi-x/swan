@@ -188,6 +188,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 127", func() {
+
 				exitcode, err := taskHandle.ExitCode()
 
 				So(err, ShouldBeNil)
@@ -195,6 +196,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the eraseOutput should clean the stderr file", func() {
+
 				taskHandle.Clean()
 
 				stderrFile, err := taskHandle.StderrFile()
@@ -242,6 +244,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
+
 				file, err := taskHandle.StdoutFile()
 				So(err, ShouldBeNil)
 				So(file, ShouldNotBeNil)
@@ -261,6 +264,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Both exit statuses should be 0", func() {
+
 				exitcode, err := taskHandle.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
@@ -286,6 +290,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		time.Sleep(100 * time.Millisecond)
 
 		Convey("When we get Status without the Waiting for it", func() {
+
 			taskState := taskHandle.Status()
 
 			Convey("And the task should stated that it terminated", func() {
@@ -293,7 +298,9 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0", func() {
+
 				exitcode, err := taskHandle.ExitCode()
+
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})
