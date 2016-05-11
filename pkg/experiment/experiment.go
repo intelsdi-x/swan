@@ -19,9 +19,8 @@ type Experiment struct {
 	startingDirectory   string
 	experimentDirectory string
 
-	logFile *os.File
-	logLvl  log.Level
-	Log     *log.Logger
+	logFile  *os.File
+	logLevel log.Level
 }
 
 // NewExperiment creates a new Experiment instance,
@@ -39,7 +38,7 @@ func NewExperiment(name string, phases []Phase,
 		session:          newSession(),
 		workingDirectory: directory,
 		phases:           phases,
-		logLvl:           logLevel,
+		logLevel:         logLevel,
 	}
 
 	err := e.createExperimentDir()
@@ -61,42 +60,45 @@ func NewExperiment(name string, phases []Phase,
 func (e *Experiment) Run() error {
 	experimentStartingTime := time.Now()
 
-	e.Log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
+	log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
 	var err error
 	for _, phase := range e.phases {
 		for i := 0; i < phase.Repetitions(); i++ {
+			// TODO: Trigger snap session here. Fetch workflow & config from Phase.
+			// (proposition) and add session name & experiment id tags.
+
 			phaseStartingTime := time.Now()
 
-			e.Log.Info("Starting ", phase.Name(), " repetition ", i)
+			log.Info("Starting ", phase.Name(), " repetition ", i)
 			err = e.createPhaseDir(phase, i)
 			if err != nil {
 				return err
 			}
 
-			err := phase.Run(e.Log)
+			err := phase.Run()
 			if err != nil {
 				// When phase return error we stop the whole experiment.
-				e.Log.Error(phase.Name(), " returned error ", err)
+				log.Error(phase.Name(), " returned error ", err)
 				return err
 			}
 
-			e.Log.Info("Ended ", phase.Name(), " repetition ", i,
+			log.Info("Ended ", phase.Name(), " repetition ", i,
 				" in ", time.Since(phaseStartingTime))
 		}
 
 		// Give a chance for phase to finalize.
 		// E.g to check statistical confidence of a result based on repetitions results.
-		e.Log.Info("Finalizing ", phase.Name(),
+		log.Info("Finalizing ", phase.Name(),
 			" after ", phase.Repetitions(), " repetitions")
 		err := phase.Finalize()
 		if err != nil {
 			// When phase return error we stop the whole experiment.
-			e.Log.Error(phase.Name(), " returned error ", err,
+			log.Error(phase.Name(), " returned error ", err,
 				" while finalizing.")
 			return err
 		}
 	}
-	e.Log.Info("Ended experiment ", e.name, " with uuid ", e.session.Name,
+	log.Info("Ended experiment ", e.name, " with uuid ", e.session.Name,
 		" in ", time.Since(experimentStartingTime))
 	return err
 }
@@ -154,13 +156,10 @@ func (e *Experiment) logInitialize() error {
 		return err
 	}
 
-	// Create new logger with logging set to both output and logFile.
-	e.Log = &log.Logger{
-		Out:       io.MultiWriter(e.logFile, os.Stdout),
-		Formatter: new(log.TextFormatter),
-		Hooks:     make(log.LevelHooks),
-		Level:     e.logLvl,
-	}
+	// Setup logging set to both output and logFile.
+	log.SetLevel(e.logLevel)
+	log.SetFormatter(new(log.TextFormatter))
+	log.SetOutput(io.MultiWriter(e.logFile, os.Stdout))
 
 	return err
 }

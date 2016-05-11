@@ -1,7 +1,7 @@
 package sensitivity
 
 import (
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"os"
@@ -28,7 +28,6 @@ type Experiment struct {
 	tuning          *tuningPhase
 	baselinePhase   []*measurementPhase
 	aggressorPhases [][]*measurementPhase
-	log             *logrus.Logger
 }
 
 // InitExperiment construct new Experiment object.
@@ -39,7 +38,7 @@ type Experiment struct {
 // aggressorTasksLauncher - Best Effort jobs launcher
 func InitExperiment(
 	name string,
-	logLvl logrus.Level,
+	logLvl log.Level,
 	configuration Configuration,
 	productionTaskLauncher workloads.Launcher,
 	loadGeneratorForProductionTask workloads.LoadGenerator,
@@ -110,7 +109,6 @@ func InitExperiment(
 		exp:             exp,
 		baselinePhase:   baselinePhase,
 		aggressorPhases: aggressorPhases,
-		log:             exp.Log,
 	}, nil
 }
 
@@ -125,12 +123,12 @@ func (e *Experiment) Run() error {
 
 	// TODO(bp): Save to file. In future this will be passed to Snap.
 	for _, baselineMeasurement := range e.baselinePhase {
-		e.log.Debug(baselineMeasurement.Name(), " = ",
+		log.Debug(baselineMeasurement.Name(), " = ",
 			baselineMeasurement.MeasurementSliResult)
 	}
 	for _, aggressorPhase := range e.aggressorPhases {
 		for _, aggrMeasurment := range aggressorPhase {
-			e.log.Debug(aggrMeasurment.Name(), " = ",
+			log.Debug(aggrMeasurment.Name(), " = ",
 				aggrMeasurment.MeasurementSliResult)
 		}
 	}
