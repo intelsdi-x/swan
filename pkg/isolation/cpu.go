@@ -18,9 +18,9 @@ func NewCPUShares(name string, shares int) Isolation {
 	return &CPUShares{name: name, shares: shares}
 }
 
-// Prefix returns the command prefix to run with this isolation mechanism.
-func (cpu *CPUShares) Prefix() string {
-	return "cgexec -g cpu:" + cpu.name
+// Decorate implements Decorator interface
+func (cpu *CPUShares) Decorate(command string) string {
+	return "cgexec -g cpu:" + cpu.name + " " + command
 }
 
 // Clean removes the specified cgroup

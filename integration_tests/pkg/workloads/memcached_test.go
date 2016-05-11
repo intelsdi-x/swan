@@ -1,15 +1,16 @@
 package workloads
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
