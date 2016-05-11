@@ -20,7 +20,7 @@ import (
 )
 
 type Snapd struct {
-	task executor.Task
+	taskHandle executor.TaskHandle
 }
 
 func NewSnapd() *Snapd {
@@ -37,12 +37,12 @@ func (s *Snapd) Execute() error {
 	snapRoot := path.Join(gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
 	snapCommand := fmt.Sprintf("%s -t 0", snapRoot)
 
-	task, err := l.Execute(snapCommand)
+	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
 		return err
 	}
 
-	s.task = task
+	s.task = taskHandle
 
 	return nil
 }

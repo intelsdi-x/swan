@@ -11,15 +11,15 @@ type Launcher struct {
 }
 
 // Launch provides a mock function with given fields:
-func (_m *Launcher) Launch() (executor.Task, error) {
+func (_m *Launcher) Launch() (executor.TaskHandle, error) {
 	ret := _m.Called()
 
-	var r0 executor.Task
-	if rf, ok := ret.Get(0).(func() executor.Task); ok {
+	var r0 executor.TaskHandle
+	if rf, ok := ret.Get(0).(func() executor.TaskHandle); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(executor.Task)
+			r0 = ret.Get(0).(executor.TaskHandle)
 		}
 	}
 

@@ -15,8 +15,8 @@ const (
 	TERMINATED
 )
 
-// Task represents a process which can be stopped or monitored.
-type Task interface {
+// TaskHandle represents a process which can be stopped or monitored.
+type TaskHandle interface {
 	// Stops a task.
 	Stop() error
 	// Status returns a state of the task.
