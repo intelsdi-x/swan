@@ -24,9 +24,9 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer task.EraseOutput()
 
 		Convey("Task should be still running and exitCode should return error", func() {
-			taskState := task.GetStatus()
+			taskState := task.Status()
 			So(taskState, ShouldEqual, RUNNING)
-			_, err := task.GetExitCode()
+			_, err := task.ExitCode()
 			So(err, ShouldNotBeNil)
 
 			stopErr := task.Stop()
@@ -41,9 +41,9 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("Task should be still running and exitCode should return error", func() {
-				taskState := task.GetStatus()
+				taskState := task.Status()
 				So(taskState, ShouldEqual, RUNNING)
-				_, err := task.GetExitCode()
+				_, err := task.ExitCode()
 				So(err, ShouldNotBeNil)
 
 				stopErr := task.Stop()
@@ -63,9 +63,9 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			Convey("The task should be terminated and the exitCode should "+
 				"indicate that task was killed", func() {
-				taskState := task.GetStatus()
+				taskState := task.Status()
 				So(taskState, ShouldEqual, TERMINATED)
-				exitcode, err := task.GetExitCode()
+				exitcode, err := task.ExitCode()
 				So(err, ShouldBeNil)
 				// -1 for Local executor.
 				// 129 for Remote executor.
@@ -127,42 +127,35 @@ func testExecutor(t *testing.T, executor Executor) {
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
 
-			taskState := task.GetStatus()
+			taskState := task.Status()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0 and output needs to be 'output'", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := task.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 
-				stdoutReader, stdoutErr := task.Stdout()
+				stdoutFile, stdoutErr := task.StdoutFile()
 				So(stdoutErr, ShouldBeNil)
-				So(stdoutReader, ShouldNotBeNil)
+				So(stdoutFile, ShouldNotBeNil)
 
-				data, readErr := ioutil.ReadAll(stdoutReader)
+				data, readErr := ioutil.ReadAll(stdoutFile)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output")
 
 			})
 
 			Convey("And the eraseOutput should clean the stdout file", func() {
-				var filePath string
-				switch explicitTask := task.(type) {
-				case *localTask:
-					filePath = explicitTask.stdoutFile.Name()
-				case *remoteTask:
-					filePath = explicitTask.stdoutFile.Name()
-				default:
-					t.Skip("Skipping test: task is neither instance of localTask nor remoteTask")
-
-				}
+				stdoutFile, stdoutErr := task.StdoutFile()
+				So(stdoutErr, ShouldBeNil)
+				So(stdoutFile, ShouldNotBeNil)
 
 				task.Clean()
 				Convey("Before eraseOutput file should exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stdoutFile.Name())
 					So(statErr, ShouldBeNil)
 				})
 
@@ -170,7 +163,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 
 				Convey("After eraseOutput file should not exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stdoutFile.Name())
 					So(statErr, ShouldNotBeNil)
 				})
 			})
@@ -188,41 +181,44 @@ func testExecutor(t *testing.T, executor Executor) {
 		Convey("When we wait for the task to terminate", func() {
 			task.Wait(0)
 
-			taskState := task.GetStatus()
+			taskState := task.Status()
 
 			Convey("The task should be terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 127", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := task.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 127)
 			})
 
+			Convey("And the stderr ouptut should state that file cannot be found", func() {
+				file, err := task.StderrFile()
+				So(err, ShouldBeNil)
+				So(file, ShouldNotBeNil)
+
+				data, readErr := ioutil.ReadAll(file)
+				So(readErr, ShouldBeNil)
+				So(string(data[:]), ShouldEndWith, "not found\n")
+			})
+
 			Convey("And the eraseOutput should clean the stderr file", func() {
-				var filePath string
-				switch explicitTask := task.(type) {
-				case *localTask:
-					filePath = explicitTask.stderrFile.Name()
-				case *remoteTask:
-					filePath = explicitTask.stderrFile.Name()
-				default:
-					t.Skip("Skipping test: task is neither instance of localTask nor remoteTask")
-
-				}
-
 				task.Clean()
+
+				stderrFile, err := task.StderrFile()
+				So(err, ShouldBeNil)
+
 				Convey("Before eraseOutput file should exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stderrFile.Name())
 					So(statErr, ShouldBeNil)
 				})
 
-				err := task.EraseOutput()
+				err = task.EraseOutput()
 				So(err, ShouldBeNil)
 
 				Convey("After eraseOutput file should not exist", func() {
-					_, statErr := os.Stat(filePath)
+					_, statErr := os.Stat(stderrFile.Name())
 					So(statErr, ShouldNotBeNil)
 				})
 			})
@@ -246,8 +242,8 @@ func testExecutor(t *testing.T, executor Executor) {
 			task.Wait(0)
 			task2.Wait(0)
 
-			taskState1 := task.GetStatus()
-			taskState2 := task2.GetStatus()
+			taskState1 := task.Status()
+			taskState2 := task2.Status()
 
 			Convey("The tasks should be terminated", func() {
 				So(taskState1, ShouldEqual, TERMINATED)
@@ -255,30 +251,30 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("The commands stdouts needs to match 'output1' & 'output2'", func() {
-				reader, readerErr := task.Stdout()
-				So(readerErr, ShouldBeNil)
-				So(reader, ShouldNotBeNil)
+				file, err := task.StdoutFile()
+				So(err, ShouldBeNil)
+				So(file, ShouldNotBeNil)
 
-				data, readErr := ioutil.ReadAll(reader)
+				data, readErr := ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output1")
 
-				reader, readerErr = task2.Stdout()
-				So(readerErr, ShouldBeNil)
-				So(reader, ShouldNotBeNil)
+				file, err = task2.StdoutFile()
+				So(err, ShouldBeNil)
+				So(file, ShouldNotBeNil)
 
-				data, readErr = ioutil.ReadAll(reader)
+				data, readErr = ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
 				So(string(data[:]), ShouldStartWith, "output2")
 
 			})
 
 			Convey("Both exit statuses should be 0", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := task.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 
-				exitcode, err = task2.GetExitCode()
+				exitcode, err = task2.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})
@@ -298,14 +294,14 @@ func testExecutor(t *testing.T, executor Executor) {
 		time.Sleep(100 * time.Millisecond)
 
 		Convey("When we get Status without the Waiting for it", func() {
-			taskState := task.GetStatus()
+			taskState := task.Status()
 
 			Convey("And the task should stated that it terminated", func() {
 				So(taskState, ShouldEqual, TERMINATED)
 			})
 
 			Convey("And the exit status should be 0", func() {
-				exitcode, err := task.GetExitCode()
+				exitcode, err := task.ExitCode()
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})
