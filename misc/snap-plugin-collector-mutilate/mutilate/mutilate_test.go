@@ -92,11 +92,18 @@ func TestMutilatePlugin(t *testing.T) {
 			}
 
 			for i := range metrics {
+				containsMetric := false
 				for _, expectedMetric := range expectedMetricsValues {
 					if strings.Contains(metrics[i].Namespace().String(), expectedMetric.namespace) {
 						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value,
 							expectedMetric.date)
+						containsMetric = true
+						break
 					}
+				}
+				if !containsMetric {
+					t.Error("Expected metrics do not contain given metric " +
+						metrics[i].Namespace().String())
 				}
 			}
 
