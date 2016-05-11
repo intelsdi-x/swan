@@ -38,4 +38,6 @@ type TaskHandle interface {
 	Clean() error
 	// EraseOutput removes task's stdout & stderr files.
 	EraseOutput() error
+	// Location returns address where task was located.
+	Address() string
 }
