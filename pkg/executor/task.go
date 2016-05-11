@@ -19,16 +19,16 @@ const (
 type Task interface {
 	// Stops a task.
 	Stop() error
-	// GetStatus returns a state of the task.
-	GetStatus() TaskState
-	// GetExitCode returns a exitCode. If task is not terminated it returns error.
-	GetExitCode() (int, error)
-	// GetStdoutFile returns a file handle for file to the task's stdout file.
+	// Status returns a state of the task.
+	Status() TaskState
+	// ExitCode returns a exitCode. If task is not terminated it returns error.
+	ExitCode() (int, error)
+	// StdoutFile returns a file handle for file to the task's stdout file.
 	// TODO(bp): Move to file path only in next change part.
-	GetStdoutFile() (*os.File, error)
-	// GetStderrFile returns a file handle for file to the task's stderr file.
+	StdoutFile() (*os.File, error)
+	// StderrFile returns a file handle for file to the task's stderr file.
 	// TODO(bp): Move to file path only in next change part.
-	GetStderrFile() (*os.File, error)
+	StderrFile() (*os.File, error)
 	// Wait does the blocking wait for the task completion in case of nil.
 	// Wait is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.

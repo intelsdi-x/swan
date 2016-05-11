@@ -19,8 +19,8 @@ type Experiment struct {
 	startingDirectory   string
 	experimentDirectory string
 
-	logFile *os.File
-	logLvl  log.Level
+	logFile  *os.File
+	logLevel log.Level
 }
 
 // NewExperiment creates a new Experiment instance,
@@ -38,7 +38,7 @@ func NewExperiment(name string, phases []Phase,
 		session:          newSession(),
 		workingDirectory: directory,
 		phases:           phases,
-		logLvl:           logLevel,
+		logLevel:         logLevel,
 	}
 
 	err := e.createExperimentDir()
@@ -157,7 +157,7 @@ func (e *Experiment) logInitialize() error {
 	}
 
 	// Setup logging set to both output and logFile.
-	log.SetLevel(e.logLvl)
+	log.SetLevel(e.logLevel)
 	log.SetFormatter(new(log.TextFormatter))
 	log.SetOutput(io.MultiWriter(e.logFile, os.Stdout))
 

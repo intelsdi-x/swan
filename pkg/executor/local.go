@@ -24,7 +24,7 @@ func NewLocal() Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (Task, error) {
-	log.Debug("Starting locally ", command)
+	log.Debug("Starting ", command, "' locally ")
 
 	cmd := exec.Command("sh", "-c", command)
 	// It is important to set additional Process Group ID for parent process and his children
@@ -32,12 +32,12 @@ func (l Local) Execute(command string) (Task, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Create temporary output files.
-	currDir, _ := os.Getwd()
-	stdoutFile, err := ioutil.TempFile(currDir, "swan_local_executor_stdout_")
+	currentDir, _ := os.Getwd()
+	stdoutFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(currDir, "swan_local_executor_stderr_")
+	stderrFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +152,8 @@ func (task *localTask) Stop() error {
 	return nil
 }
 
-// GetStatus returns a state of the task.
-func (task *localTask) GetStatus() TaskState {
+// Status returns a state of the task.
+func (task *localTask) Status() TaskState {
 	if !task.isTerminated() {
 		return RUNNING
 	}
@@ -161,8 +161,8 @@ func (task *localTask) GetStatus() TaskState {
 	return TERMINATED
 }
 
-// GetExitCode returns a exitCode. If task is not terminated it returns error.
-func (task *localTask) GetExitCode() (int, error) {
+// ExitCode returns a exitCode. If task is not terminated it returns error.
+func (task *localTask) ExitCode() (int, error) {
 	if !task.isTerminated() {
 		return -1, errors.New("Task is not terminated")
 	}
@@ -170,8 +170,8 @@ func (task *localTask) GetExitCode() (int, error) {
 	return (task.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
 }
 
-// GetStdoutFile returns a file handle for file to the task's stdout file.
-func (task *localTask) GetStdoutFile() (*os.File, error) {
+// StdoutFile returns a file handle for file to the task's stdout file.
+func (task *localTask) StdoutFile() (*os.File, error) {
 	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
@@ -180,8 +180,8 @@ func (task *localTask) GetStdoutFile() (*os.File, error) {
 	return task.stdoutFile, nil
 }
 
-// GetStderrFile returns a file handle for file to the task's stderr file.
-func (task *localTask) GetStderrFile() (*os.File, error) {
+// StderrFile returns a file handle for file to the task's stderr file.
+func (task *localTask) StderrFile() (*os.File, error) {
 	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
 		return nil, err
 	}

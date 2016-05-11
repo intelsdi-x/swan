@@ -26,7 +26,7 @@ func NewRemote(sshConfig SSHConfig) *Remote {
 // Execute runs the command given as input.
 // Returned Task pointer is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (Task, error) {
-	log.Debug("Starting remotely", command)
+	log.Debug("Starting '", command, "' remotely")
 
 	connection, err := ssh.Dial(
 		"tcp",
@@ -54,12 +54,12 @@ func (remote Remote) Execute(command string) (Task, error) {
 	}
 
 	// Create temporary output files.
-	currDir, _ := os.Getwd()
-	stdoutFile, err := ioutil.TempFile(currDir, "swan_remote_executor_stdout_")
+	currentDir, _ := os.Getwd()
+	stdoutFile, err := ioutil.TempFile(currentDir, "swan_remote_executor_stdout_")
 	if err != nil {
 		return nil, err
 	}
-	stderrFile, err := ioutil.TempFile(currDir, "swan_remote_executor_stderr_")
+	stderrFile, err := ioutil.TempFile(currentDir, "swan_remote_executor_stderr_")
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +183,8 @@ func (task *remoteTask) Stop() error {
 	return nil
 }
 
-// GetStatus returns a state of the task.
-func (task *remoteTask) GetStatus() TaskState {
+// Status returns a state of the task.
+func (task *remoteTask) Status() TaskState {
 	if !task.isTerminated() {
 		return RUNNING
 	}
@@ -192,8 +192,8 @@ func (task *remoteTask) GetStatus() TaskState {
 	return TERMINATED
 }
 
-// GetExitCode returns a exitCode. If task is not terminated it returns error.
-func (task *remoteTask) GetExitCode() (int, error) {
+// ExitCode returns a exitCode. If task is not terminated it returns error.
+func (task *remoteTask) ExitCode() (int, error) {
 	if !task.isTerminated() {
 		return -1, errors.New("Task is not terminated")
 	}
@@ -201,8 +201,8 @@ func (task *remoteTask) GetExitCode() (int, error) {
 	return *task.exitCode, nil
 }
 
-// GetStdoutFile returns a file handle for file to the task's stdout file.
-func (task *remoteTask) GetStdoutFile() (*os.File, error) {
+// StdoutFile returns a file handle for file to the task's stdout file.
+func (task *remoteTask) StdoutFile() (*os.File, error) {
 	if _, err := os.Stat(task.stdoutFile.Name()); err != nil {
 		return nil, err
 	}
@@ -211,8 +211,8 @@ func (task *remoteTask) GetStdoutFile() (*os.File, error) {
 	return task.stdoutFile, nil
 }
 
-// GetStderrFile returns a file handle for file to the task's stderr file.
-func (task *remoteTask) GetStderrFile() (*os.File, error) {
+// StderrFile returns a file handle for file to the task's stderr file.
+func (task *remoteTask) StderrFile() (*os.File, error) {
 	if _, err := os.Stat(task.stderrFile.Name()); err != nil {
 		return nil, err
 	}

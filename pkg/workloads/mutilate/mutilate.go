@@ -52,7 +52,7 @@ func (m mutilate) Populate() (err error) {
 	}
 	taskHandle.Wait(0)
 
-	exitCode, err := taskHandle.GetExitCode()
+	exitCode, err := taskHandle.ExitCode()
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	}
 	taskHandle.Wait(0)
 
-	exitCode, err := taskHandle.GetExitCode()
+	exitCode, err := taskHandle.ExitCode()
 	if err != nil {
 		return qps, achievedSLI, err
 	}
@@ -87,7 +87,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 				strconv.Itoa(exitCode))
 	}
 
-	stdoutFile, err := taskHandle.GetStdoutFile()
+	stdoutFile, err := taskHandle.StdoutFile()
 	if err != nil {
 		return qps, achievedSLI, err
 	}
@@ -111,7 +111,7 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 	}
 	defer taskHandle.Clean()
 
-	stdoutFile, err := taskHandle.GetStdoutFile()
+	stdoutFile, err := taskHandle.StdoutFile()
 	if err != nil {
 		return achievedQPS, sli, err
 	}
@@ -121,7 +121,7 @@ func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli in
 
 	taskHandle.Wait(0)
 
-	exitCode, err := taskHandle.GetExitCode()
+	exitCode, err := taskHandle.ExitCode()
 	if err != nil {
 		return achievedQPS, sli, err
 	}

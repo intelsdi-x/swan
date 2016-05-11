@@ -39,8 +39,8 @@ func (_m *Task) EraseOutput() error {
 	return r0
 }
 
-// GetExitCode provides a mock function with given fields:
-func (_m *Task) GetExitCode() (int, error) {
+// ExitCode provides a mock function with given fields:
+func (_m *Task) ExitCode() (int, error) {
 	ret := _m.Called()
 
 	var r0 int
@@ -60,8 +60,8 @@ func (_m *Task) GetExitCode() (int, error) {
 	return r0, r1
 }
 
-// GetStatus provides a mock function with given fields:
-func (_m *Task) GetStatus() executor.TaskState {
+// Status provides a mock function with given fields:
+func (_m *Task) Status() executor.TaskState {
 	ret := _m.Called()
 
 	var r0 executor.TaskState
@@ -74,8 +74,8 @@ func (_m *Task) GetStatus() executor.TaskState {
 	return r0
 }
 
-// GetStderrFile provides a mock function with given fields:
-func (_m *Task) GetStderrFile() (*os.File, error) {
+// StderrFile provides a mock function with given fields:
+func (_m *Task) StderrFile() (*os.File, error) {
 	ret := _m.Called()
 
 	var r0 *os.File
@@ -97,8 +97,8 @@ func (_m *Task) GetStderrFile() (*os.File, error) {
 	return r0, r1
 }
 
-// GetStdoutFile provides a mock function with given fields:
-func (_m *Task) GetStdoutFile() (*os.File, error) {
+// StdoutFile provides a mock function with given fields:
+func (_m *Task) StdoutFile() (*os.File, error) {
 	ret := _m.Called()
 
 	var r0 *os.File
