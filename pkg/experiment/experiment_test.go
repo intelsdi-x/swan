@@ -4,7 +4,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment/mocks"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
 	"os"
 	"testing"
 )
@@ -35,7 +34,7 @@ func TestExperiment(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("While setting one repetition to phase", func() {
-				mockedPhase.On("Run", mock.AnythingOfType("*logrus.Logger")).Return(nil).Times(10)
+				mockedPhase.On("Run").Return(nil).Times(10)
 				mockedPhase.On("Repetitions").Return(10)
 				mockedPhase.On("Finalize").Return(nil).Once()
 				Convey("Experiment should succeed with 10 phase repetitions", func() {

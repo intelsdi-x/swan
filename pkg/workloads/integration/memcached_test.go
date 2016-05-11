@@ -88,18 +88,18 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 						Convey("The netstat task should be terminated, the task status should be 0"+
 							" and output resultes with a STAT information", func() {
-							netstatTaskState := netstatTask.GetStatus()
+							netstatTaskState := netstatTask.Status()
 							So(netstatTaskState, ShouldEqual, executor.TERMINATED)
 
-							exitCode, err := netstatTask.GetExitCode()
+							exitCode, err := netstatTask.ExitCode()
 							So(err, ShouldBeNil)
 							So(exitCode, ShouldEqual, 0)
 
-							stdoutReader, stdoutErr := netstatTask.Stdout()
+							stdoutFile, stdoutErr := netstatTask.StdoutFile()
 							So(stdoutErr, ShouldBeNil)
-							So(stdoutReader, ShouldNotBeNil)
+							So(stdoutFile, ShouldNotBeNil)
 
-							data, readErr := ioutil.ReadAll(stdoutReader)
+							data, readErr := ioutil.ReadAll(stdoutFile)
 							So(readErr, ShouldBeNil)
 							So(string(data[:]), ShouldStartWith, "STAT")
 						})
@@ -115,10 +115,10 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 					Convey("The task should be terminated and the task status "+
 						"should be -1 or 0", func() {
-						taskState := task.GetStatus()
+						taskState := task.Status()
 						So(taskState, ShouldEqual, executor.TERMINATED)
 
-						exitCode, err := task.GetExitCode()
+						exitCode, err := task.ExitCode()
 						So(err, ShouldBeNil)
 						// Memcached on CentOS returns 0 (successful code) after SIGTERM.
 						So(exitCode, ShouldBeIn, -1, 0)

@@ -2,7 +2,7 @@ package sensitivity
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 	"strconv"
@@ -46,7 +46,7 @@ type measurementPhase struct {
 
 // Returns measurement name.
 func (m *measurementPhase) Name() string {
-	return m.namePrefix + " Measurement for LoadPointIndex " +
+	return m.namePrefix + "_Measurement_for_LoadPointIndex_" +
 		strconv.Itoa(m.currentLoadPointIndex)
 }
 
@@ -60,7 +60,7 @@ func (m *measurementPhase) getLoadPoint() int {
 }
 
 // Run runs a measurement for given loadPointIndex.
-func (m *measurementPhase) Run(log *logrus.Logger) error {
+func (m *measurementPhase) Run() error {
 	if m.TargetLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
