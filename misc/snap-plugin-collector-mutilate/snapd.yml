@@ -1,3 +1,0 @@
-log_level: 1
-control:
-    auto_discover_path: /home/mutilate/snap/src/github.com/intelsdi-x/snap/build/plugin/
