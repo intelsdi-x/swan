@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
@@ -29,7 +28,7 @@ type mutilate struct {
 	config   Config
 }
 
-// New returns a new Mutilate Load Generator instance
+// New returns a new Mutilate Load Generator instance.
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
 func New(executor executor.Executor, config Config) workloads.LoadGenerator {
@@ -65,7 +64,7 @@ func (m mutilate) Populate() (err error) {
 	return err
 }
 
-// Tune returns the maximum achieved QPS where SLI is below target SLO
+// Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := m.getTuneCommand(slo)
 
@@ -100,44 +99,11 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	return qps, achievedSLI, err
 }
 
-// Load exercises `qps` load on Memcached for given duration.
-func (m mutilate) Load(qps int, duration time.Duration) (achievedQPS int, sli int, err error) {
-	loadCmd := m.getLoadCommand(qps, duration)
-
-	taskHandle, err := m.executor.Execute(loadCmd)
-	if err != nil {
-		errMsg := fmt.Sprintf("Mutilate Tuning %s failed; ", loadCmd)
-		return achievedQPS, sli, errors.New(errMsg + err.Error())
-	}
-	defer taskHandle.Clean()
-
-	stdoutFile, err := taskHandle.StdoutFile()
-	if err != nil {
-		return achievedQPS, sli, err
-	}
-
-	// Note(bplotka): This is for debug only - for ease of testing for @iwan collector.
-	log.Debug("LoadGenerator filename: ", stdoutFile.Name())
-
-	taskHandle.Wait(0)
-
-	exitCode, err := taskHandle.ExitCode()
-	if err != nil {
-		return achievedQPS, sli, err
-	}
-
-	if exitCode != 0 {
-		errMsg := fmt.Sprintf("Executing Mutilate Load returned with exit code %d", exitCode)
-		return achievedQPS, sli, errors.New(errMsg)
-	}
-
-	achievedQPS, sli, err = getQPSAndLatencyFrom(stdoutFile)
-	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve information from mutilate Load output. ")
-		return achievedQPS, sli, errors.New(errMsg + err.Error())
-	}
-
-	return achievedQPS, sli, err
+// Load starts a load on the specific workload with the defined loadPoint (number of QPS).
+// The task will do the load for specified amount of time.
+// Note: Results from Load needs to be fetched out of band e.g using Snap.
+func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
+	return m.executor.Execute(m.getLoadCommand(qps, duration))
 }
 
 // Mutilate Search method requires percentile in an integer format
@@ -230,9 +196,7 @@ func getLatencyFrom(output string) (latency int, err error) {
 	getLatencyRegex := regexp.MustCompile(`Swan latency for percentile \d+.\d+:\s(\d+)`)
 	match := getLatencyRegex.FindStringSubmatch(output)
 	if matchNotFound(match) {
-		errMsg := fmt.Sprintf(
-			"Cannot find regex match in output: %s", output)
-		return 0, errors.New(errMsg)
+		return 0, fmt.Errorf("Cannot find regex match in output: %s", output)
 	}
 
 	latency, err = strconv.Atoi(match[1])

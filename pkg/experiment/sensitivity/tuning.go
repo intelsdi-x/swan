@@ -1,6 +1,7 @@
 package sensitivity
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 )
@@ -22,7 +23,7 @@ type tuningPhase struct {
 	sliResults []float64
 
 	// Shared reference for TargetLoad needed for Measurement phases.
-	TargetLoad *float64
+	TargetLoad *int
 }
 
 // Returns Phase name.
@@ -58,15 +59,18 @@ func (p *tuningPhase) Run() error {
 
 // Finalize is executed after all repetitions of given measurement.
 func (p *tuningPhase) Finalize() error {
-	// TODO: Check if variance is not too high.
+	// TODO: Check if the variance is not too high.
+	// For need results from the tuning phase in further experiments, so we
+	// don't use snap here.
 
 	// Calculate average.
 	targetLoad, err := stats.Mean(p.loadResults)
-	*p.TargetLoad = targetLoad
+	*p.TargetLoad = int(targetLoad)
 	if err != nil {
 		p.TargetLoad = nil
 		return err
 	}
+	logrus.Debug("Calculated targetLoad (QPS/RPS): ", targetLoad, " for SLO: ", p.SLO)
 
 	return nil
 }
