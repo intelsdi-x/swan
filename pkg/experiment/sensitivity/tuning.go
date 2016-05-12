@@ -23,7 +23,7 @@ type tuningPhase struct {
 	sliResults []float64
 
 	// Shared reference for TargetLoad needed for Measurement phases.
-	TargetLoad *float64
+	TargetLoad *int
 }
 
 // Returns Phase name.
@@ -65,7 +65,7 @@ func (p *tuningPhase) Finalize() error {
 
 	// Calculate average.
 	targetLoad, err := stats.Mean(p.loadResults)
-	*p.TargetLoad = targetLoad
+	*p.TargetLoad = int(targetLoad)
 	if err != nil {
 		p.TargetLoad = nil
 		return err

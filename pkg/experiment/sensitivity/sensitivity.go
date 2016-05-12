@@ -64,8 +64,8 @@ func NewExperiment(
 	}
 }
 
-func (e *Experiment) getTuningPhase() *tuningPhase {
-	targetLoad := float64(-1)
+func (e *Experiment) prepareTuningPhase() *tuningPhase {
+	targetLoad := int(-1)
 	return &tuningPhase{
 		pr:          e.productionTaskLauncher,
 		lgForPr:     e.loadGeneratorForProductionTask,
@@ -75,7 +75,7 @@ func (e *Experiment) getTuningPhase() *tuningPhase {
 	}
 }
 
-func (e *Experiment) getBaselinePhases() []experiment.Phase {
+func (e *Experiment) prepareBaselinePhases() []experiment.Phase {
 	baseline := []experiment.Phase{}
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
@@ -96,7 +96,7 @@ func (e *Experiment) getBaselinePhases() []experiment.Phase {
 	return baseline
 }
 
-func (e *Experiment) getAggressorsPhases() [][]experiment.Phase {
+func (e *Experiment) prepareAggressorsPhases() [][]experiment.Phase {
 	aggressorPhases := [][]experiment.Phase{}
 	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
 		aggressorPhase := []experiment.Phase{}
@@ -126,15 +126,15 @@ func (e *Experiment) configureGenericExperiment() error {
 	var allMeasurements []experiment.Phase
 
 	// Include Tuning Phase.
-	e.tuningPhase = e.getTuningPhase()
+	e.tuningPhase = e.prepareTuningPhase()
 	allMeasurements = append(allMeasurements, e.tuningPhase)
 
 	// Include Baseline Phase.
-	e.baselinePhase = e.getBaselinePhases()
+	e.baselinePhase = e.prepareBaselinePhases()
 	allMeasurements = append(allMeasurements, e.baselinePhase...)
 
 	// Include Measurement Phases for each aggressor.
-	e.aggressorPhases = e.getAggressorsPhases()
+	e.aggressorPhases = e.prepareAggressorsPhases()
 	for _, aggressorPhase := range e.aggressorPhases {
 		allMeasurements = append(allMeasurements, aggressorPhase...)
 	}

@@ -31,7 +31,7 @@ type measurementPhase struct {
 	currentLoadPointIndex int
 
 	// Shared reference for measurement targetQPS resulted from Tuning Phase.
-	TargetLoad *float64
+	TargetLoad *int
 }
 
 // Returns measurement name.
@@ -46,7 +46,8 @@ func (m *measurementPhase) Repetitions() int {
 }
 
 func (m *measurementPhase) getLoadPoint() int {
-	return int(float64(m.currentLoadPointIndex) * (*m.TargetLoad / float64(m.loadPointsCount)))
+	return int(float64(m.currentLoadPointIndex) *
+		(float64(*m.TargetLoad) / float64(m.loadPointsCount)))
 }
 
 // Run runs a measurement for given loadPointIndex.
