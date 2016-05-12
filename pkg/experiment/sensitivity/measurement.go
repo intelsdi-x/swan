@@ -2,9 +2,9 @@ package sensitivity
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/montanaflynn/stats"
 	"strconv"
 	"time"
 )
@@ -30,23 +30,13 @@ type measurementPhase struct {
 	// Current measurement's load point.
 	currentLoadPointIndex int
 
-	// Shared context variables:
-
 	// Shared reference for measurement targetQPS resulted from Tuning Phase.
 	TargetLoad *float64
-	// Results for this measurement for current loadPointIndex, across repetitions.
-	// Load which was achieved during experiment e.g QPS, RPS.
-	loadResults []float64
-	// Service Level Indicator which was achieved during experiment e.g latency in us
-	sliResults []float64
-
-	// Shared reference.
-	MeasurementSliResult float64
 }
 
 // Returns measurement name.
 func (m *measurementPhase) Name() string {
-	return m.namePrefix + "_Measurement_for_LoadPointIndex_" +
+	return m.namePrefix + "_measurement_for_loadpoint_id_" +
 		strconv.Itoa(m.currentLoadPointIndex)
 }
 
@@ -64,7 +54,9 @@ func (m *measurementPhase) Run() error {
 	if m.TargetLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
+	// TODO:(bplotka): Here trigger Snap session for gathering platform metrics.
 
+	// Launch Latency Sensitive workload.
 	prTask, err := m.pr.Launch()
 	if err != nil {
 		return err
@@ -72,44 +64,60 @@ func (m *measurementPhase) Run() error {
 	defer prTask.Stop()
 	defer prTask.Clean()
 
+	// TODO:(bplotka): Here trigger Snap session for fetching SLI if it is supported for Prod Task.
+
 	// Launch specified aggressors if any.
 	for _, be := range m.bes {
 		beTask, err := be.Launch()
 		if err != nil {
 			return err
 		}
-		// This defer copies reference to the Task Handle and
+		// These defers copy reference to the Task Handle and
 		// defers it to the end of Run function.
 		defer beTask.Stop()
 		defer beTask.Clean()
+
+		// TODO:(bplotka): Here trigger Snap session for fetching SLI
+		// if it is supported for aggressor Task.
 	}
 
 	loadPoint := m.getLoadPoint()
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
-	achievedLoad, achievedSLI, err := m.lgForPr.Load(loadPoint, m.loadDuration)
+	loadGeneratorTask, err := m.lgForPr.Load(loadPoint, m.loadDuration)
 	if err != nil {
 		return err
 	}
 
-	// Save results.
-	m.sliResults = append(m.sliResults, float64(achievedSLI))
-	m.loadResults = append(m.loadResults, float64(achievedLoad))
+	defer loadGeneratorTask.Clean()
+
+	stdoutFile, err := loadGeneratorTask.StdoutFile()
+	if err != nil {
+		return err
+	}
+
+	log.Debug("LoadGenerator filename: ", stdoutFile.Name())
+	// TODO:(bplotka): Here trigger Snap session for fetching SLI.
+
+	// Wait for load generation to end.
+	loadGeneratorTask.Wait(0)
+
+	// Check status of load generation.
+	exitCode, err := loadGeneratorTask.ExitCode()
+	if err != nil {
+		return err
+	}
+
+	if exitCode != 0 {
+		// Load generator failed.
+		return fmt.Errorf("Executing Mutilate Load returned with exit code %d", exitCode)
+	}
 
 	return nil
 }
 
 // Finalize is executed after all repetitions of given measurement.
 func (m *measurementPhase) Finalize() error {
-	// TODO: Check if variance is not too high.
-
-	var err error
-	// Calculate average.
-	m.MeasurementSliResult, err = stats.Mean(m.sliResults)
-	if err != nil {
-		m.MeasurementSliResult = -1
-		return err
-	}
-
+	// All data should be aggregated in Snap. So nothing to do here.
 	return nil
 }

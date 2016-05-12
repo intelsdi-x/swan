@@ -24,113 +24,142 @@ type Configuration struct {
 // Experiment is handler structure for Experiment Driver. All fields shall be
 // not visible to the experimenter.
 type Experiment struct {
-	exp             *experiment.Experiment
-	tuning          *tuningPhase
-	baselinePhase   []*measurementPhase
-	aggressorPhases [][]*measurementPhase
+	name                           string
+	logLevel                       log.Level
+	configuration                  Configuration
+	productionTaskLauncher         workloads.Launcher
+	loadGeneratorForProductionTask workloads.LoadGenerator
+	aggressorTaskLaunchers         []workloads.Launcher
+
+	// Generic Experiment.
+	exp *experiment.Experiment
+	// Phases.
+	tuningPhase     *tuningPhase
+	baselinePhase   []experiment.Phase
+	aggressorPhases [][]experiment.Phase
 }
 
-// InitExperiment construct new Experiment object.
+// NewExperiment construct new Experiment object.
 // Input parameters:
 // configuration - Experiment configuration
 // productionTaskLauncher - Latency Critical job launcher
 // loadGeneratorForProductionTask - stresser for production task
 // aggressorTasksLauncher - Best Effort jobs launcher
-func InitExperiment(
+func NewExperiment(
 	name string,
-	logLvl log.Level,
+	logLevel log.Level,
 	configuration Configuration,
 	productionTaskLauncher workloads.Launcher,
 	loadGeneratorForProductionTask workloads.LoadGenerator,
-	aggressorTaskLaunchers []workloads.Launcher) (*Experiment, error) {
+	aggressorTaskLaunchers []workloads.Launcher) *Experiment {
 
 	// TODO(mpatelcz): Validate configuration.
-	// Configure phases & measurements.
-	// Each phases includes couple of measurements.
-	var allMeasurements []experiment.Phase
-	// Include Tuning Phase.
+	return &Experiment{
+		name:                           name,
+		logLevel:                       logLevel,
+		configuration:                  configuration,
+		productionTaskLauncher:         productionTaskLauncher,
+		loadGeneratorForProductionTask: loadGeneratorForProductionTask,
+		aggressorTaskLaunchers:         aggressorTaskLaunchers,
+	}
+}
+
+func (e *Experiment) getTuningPhase() *tuningPhase {
 	targetLoad := float64(-1)
-	tuning := &tuningPhase{
-		pr:          productionTaskLauncher,
-		lgForPr:     loadGeneratorForProductionTask,
-		SLO:         configuration.SLO,
-		repetitions: configuration.Repetitions,
+	return &tuningPhase{
+		pr:          e.productionTaskLauncher,
+		lgForPr:     e.loadGeneratorForProductionTask,
+		SLO:         e.configuration.SLO,
+		repetitions: e.configuration.Repetitions,
 		TargetLoad:  &targetLoad,
 	}
-	allMeasurements = append(allMeasurements, tuning)
+}
 
-	// Include Baseline Phase.
-	baselinePhase := []*measurementPhase{}
-	// It includes measurements for each LoadPoint.
-	for i := 1; i <= configuration.LoadPointsCount; i++ {
-		baselinePhase = append(baselinePhase, &measurementPhase{
-			namePrefix:            "Baseline",
-			pr:                    productionTaskLauncher,
-			lgForPr:               loadGeneratorForProductionTask,
-			bes:                   []workloads.Launcher{},
-			loadDuration:          configuration.LoadDuration,
-			loadPointsCount:       configuration.LoadPointsCount,
-			repetitions:           configuration.Repetitions,
+func (e *Experiment) getBaselinePhases() []experiment.Phase {
+	baseline := []experiment.Phase{}
+	// It includes all baseline measurements for each LoadPoint.
+	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
+		baseline = append(baseline, &measurementPhase{
+			namePrefix:      "baseline",
+			pr:              e.productionTaskLauncher,
+			lgForPr:         e.loadGeneratorForProductionTask,
+			bes:             []workloads.Launcher{},
+			loadDuration:    e.configuration.LoadDuration,
+			loadPointsCount: e.configuration.LoadPointsCount,
+			repetitions:     e.configuration.Repetitions,
+			TargetLoad:      e.tuningPhase.TargetLoad,
+			// Measurements in baseline have different load point input.
 			currentLoadPointIndex: i,
-			TargetLoad:            tuning.TargetLoad,
 		})
-		allMeasurements = append(allMeasurements, baselinePhase[i-1])
 	}
 
-	// Include Measurement Phases for each aggressor.
-	aggressorPhases := [][]*measurementPhase{}
-	for beIndex, beLauncher := range aggressorTaskLaunchers {
-		aggressorPhase := []*measurementPhase{}
-		// Include measurements for each LoadPoint.
-		for i := 1; i <= configuration.LoadPointsCount; i++ {
-			aggressorPhase = append(aggressorPhase, &measurementPhase{
-				namePrefix:            "Aggressor nr " + strconv.Itoa(beIndex),
-				pr:                    productionTaskLauncher,
-				lgForPr:               loadGeneratorForProductionTask,
-				bes:                   []workloads.Launcher{beLauncher},
-				loadDuration:          configuration.LoadDuration,
-				loadPointsCount:       configuration.LoadPointsCount,
-				repetitions:           configuration.Repetitions,
-				currentLoadPointIndex: i,
-				TargetLoad:            tuning.TargetLoad,
-			})
+	return baseline
+}
 
-			allMeasurements = append(allMeasurements, aggressorPhase[i-1])
+func (e *Experiment) getAggressorsPhases() [][]experiment.Phase {
+	aggressorPhases := [][]experiment.Phase{}
+	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
+		aggressorPhase := []experiment.Phase{}
+		// Include measurements for each LoadPoint.
+		for i := 1; i <= e.configuration.LoadPointsCount; i++ {
+			aggressorPhase = append(aggressorPhase, &measurementPhase{
+				namePrefix:            "aggressor_nr_" + strconv.Itoa(beIndex),
+				pr:                    e.productionTaskLauncher,
+				lgForPr:               e.loadGeneratorForProductionTask,
+				bes:                   []workloads.Launcher{beLauncher},
+				loadDuration:          e.configuration.LoadDuration,
+				loadPointsCount:       e.configuration.LoadPointsCount,
+				repetitions:           e.configuration.Repetitions,
+				currentLoadPointIndex: i,
+				TargetLoad:            e.tuningPhase.TargetLoad,
+			})
 		}
 		aggressorPhases = append(aggressorPhases, aggressorPhase)
 	}
 
-	exp, err := experiment.NewExperiment(name, allMeasurements, os.TempDir(), logLvl)
-	if err != nil {
-		return nil, err
+	return aggressorPhases
+}
+
+func (e *Experiment) configureGenericExperiment() error {
+	// Configure phases & measurements.
+	// Each sensitivity phase (part of experiment) can include couple of measurements.
+	var allMeasurements []experiment.Phase
+
+	// Include Tuning Phase.
+	e.tuningPhase = e.getTuningPhase()
+	allMeasurements = append(allMeasurements, e.tuningPhase)
+
+	// Include Baseline Phase.
+	e.baselinePhase = e.getBaselinePhases()
+	allMeasurements = append(allMeasurements, e.baselinePhase...)
+
+	// Include Measurement Phases for each aggressor.
+	e.aggressorPhases = e.getAggressorsPhases()
+	for _, aggressorPhase := range e.aggressorPhases {
+		allMeasurements = append(allMeasurements, aggressorPhase...)
 	}
 
-	return &Experiment{
-		exp:             exp,
-		baselinePhase:   baselinePhase,
-		aggressorPhases: aggressorPhases,
-	}, nil
+	var err error
+	e.exp, err = experiment.NewExperiment(e.name, allMeasurements, os.TempDir(), e.logLevel)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Run runs experiment.
 // In the end it prints results to the standard output.
 func (e *Experiment) Run() error {
-	err := e.exp.Run()
-	defer e.exp.Finalize()
+	err := e.configureGenericExperiment()
 	if err != nil {
 		return err
 	}
 
-	// TODO(bp): Save to file. In future this will be passed to Snap.
-	for _, baselineMeasurement := range e.baselinePhase {
-		log.Debug(baselineMeasurement.Name(), " = ",
-			baselineMeasurement.MeasurementSliResult)
-	}
-	for _, aggressorPhase := range e.aggressorPhases {
-		for _, aggrMeasurment := range aggressorPhase {
-			log.Debug(aggrMeasurment.Name(), " = ",
-				aggrMeasurment.MeasurementSliResult)
-		}
+	err = e.exp.Run()
+	defer e.exp.Finalize()
+	if err != nil {
+		return err
 	}
 
 	return nil
