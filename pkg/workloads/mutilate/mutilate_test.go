@@ -136,35 +136,17 @@ func (s *MutilateTestSuite) TestMutilateLoad() {
 		int(duration.Seconds()),
 		percentile,
 	)
-
-	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
-	if err != nil {
-		s.Fail(err.Error())
-		return
-	}
-	defer outputFile.Close()
-
-	outputFile.WriteString(correctMutilateOutput)
-
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", loadCmd).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("Clean").Return(nil)
-	s.mHandle.On("ExitCode").Return(0, nil)
-	s.mHandle.On("StdoutFile").Return(outputFile, nil)
 
 	Convey("When generating Load.", s.T(), func() {
-		outputFile.Seek(0, os.SEEK_SET)
-		qps, sli, err := mutilate.Load(load, duration)
+		mutilateTask, err := mutilate.Load(load, duration)
 		Convey("On success, error should be nil", func() {
 			So(err, ShouldBeNil)
 		})
-		Convey("SLI should be correct", func() {
-			So(sli, ShouldEqual, correctMutilateSLI)
-		})
-		Convey("Achieved QPS should be correct", func() {
-			So(qps, ShouldEqual, correctMutilateQPS)
+		Convey("mutilateTask should be a mockedTask", func() {
+			So(mutilateTask, ShouldEqual, s.mHandle)
 		})
 		Convey("Mock expectations are asserted", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
@@ -180,7 +162,7 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 		Return(s.mHandle, errors.New(errorMsg))
 
 	Convey("When executing Load and executor returns an error.", s.T(), func() {
-		_, _, err := mutilate.Load(20, 1*time.Second)
+		_, err := mutilate.Load(20, 1*time.Second)
 		Convey("Error should not be nil", func() {
 			So(err, ShouldNotBeNil)
 		})
