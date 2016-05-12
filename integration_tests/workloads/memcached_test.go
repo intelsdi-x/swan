@@ -61,7 +61,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 					stopErr := taskHandle.Stop()
 
 					// NOTE: Here you will be failing if the memcached
-					// can start because it needs to have default port available.
+					// can't start because it needs to have default port available.
 					So(isTerminated, ShouldBeFalse)
 
 					So(stopErr, ShouldBeNil)
