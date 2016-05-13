@@ -1,6 +1,6 @@
 // +build integration
 
-package snap
+package integration
 
 import (
 	"errors"
@@ -17,6 +17,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 type Snapd struct {
@@ -83,7 +84,7 @@ func (s *Snapd) Connected() bool {
 func TestSnap(t *testing.T) {
 	var snapd *Snapd
 	var c *client.Client
-	var s *Session
+	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
@@ -107,7 +108,7 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Loading collectors", func() {
-			plugins := NewPlugins(c)
+			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 			err := plugins.Load("snap-plugin-collector-session-test")
 			So(err, ShouldBeNil)
@@ -130,7 +131,7 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Loading publishers", func() {
-			plugins := NewPlugins(c)
+			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
 			plugins.Load("snap-plugin-publisher-session-test")
@@ -149,7 +150,7 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Creating a Snap experiment session", func() {
-			s = NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
+			s = snap.NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
 			So(s, ShouldNotBeNil)
 		})
 
