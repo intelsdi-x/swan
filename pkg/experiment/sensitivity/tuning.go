@@ -2,6 +2,7 @@ package sensitivity
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 )
@@ -14,7 +15,7 @@ type tuningPhase struct {
 	// Given Service Level Objective.
 	SLO int
 	// Number of repetitions
-	repetitions int
+	repetitions uint
 
 	// Results across repetitions.
 	// Load which was achieved during experiment e.g QPS, RPS.
@@ -32,12 +33,12 @@ func (p *tuningPhase) Name() string {
 }
 
 // Returns number of repetitions.
-func (p *tuningPhase) Repetitions() int {
+func (p *tuningPhase) Repetitions() uint {
 	return p.repetitions
 }
 
 // Run runs a tuning phase to find the targetLoad.
-func (p *tuningPhase) Run() error {
+func (p *tuningPhase) Run(phase.Session) error {
 	prTask, err := p.pr.Launch()
 	if err != nil {
 		return err

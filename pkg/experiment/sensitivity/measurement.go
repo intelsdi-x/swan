@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"strconv"
 	"time"
@@ -26,7 +27,7 @@ type measurementPhase struct {
 	// Number of load points to test.
 	loadPointsCount int
 	// Number of repetitions
-	repetitions int
+	repetitions uint
 	// Current measurement's load point.
 	currentLoadPointIndex int
 
@@ -41,7 +42,7 @@ func (m *measurementPhase) Name() string {
 }
 
 // Returns number of repetitions.
-func (m *measurementPhase) Repetitions() int {
+func (m *measurementPhase) Repetitions() uint {
 	return m.repetitions
 }
 
@@ -51,7 +52,7 @@ func (m *measurementPhase) getLoadPoint() int {
 }
 
 // Run runs a measurement for given loadPointIndex.
-func (m *measurementPhase) Run() error {
+func (m *measurementPhase) Run(session phase.Session) error {
 	if m.TargetLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
