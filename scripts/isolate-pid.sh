@@ -12,7 +12,7 @@ function display_error {
 echo -e "\e[32mChecking unshare capabilities...\e[0m"
 HAS_PID=`unshare -h | grep "\-\-pid"`
 if [ "$HAS_PID" == "" ]; then
-	echo -e "\e[32mRunning \e[7mu$@\e[27m due to lack of PID namespace support in unshare\e[0m"	
+	echo -e "\e[32mRunning \e[7m$@\e[27m due to lack of PID namespace support in unshare\e[0m"	
 	$@
 	exit $?
 fi
