@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?=-race
+TEST_OPT?=
 
 all: lint unit_test build cleanup
 
@@ -34,11 +34,10 @@ plugins:
 	(cd misc/snap-plugin-collector-mutilate; go build)
 
 integration_test: plugins unit_test
-	go test $(TEST_OPT) -tags=integration ./integration_tests/...
-	go test $(TEST_OPT) -tags=integration ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
-#	go test $(TEST_OPT) -tags=integration ./misc/...
-	go test -tags=integration ./misc/...
+	go test $(TEST_OPT) ./integration_tests/...
+	go test $(TEST_OPT) ./experiments/...
+	go test $(TEST_OPT) ./misc/...
 
 # building
 build:

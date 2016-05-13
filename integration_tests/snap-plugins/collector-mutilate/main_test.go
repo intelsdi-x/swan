@@ -1,5 +1,3 @@
-// +build integration
-
 package mutilate
 
 import (
@@ -13,7 +11,8 @@ import (
 )
 
 func TestMutilatePluginLoad(t *testing.T) {
-	Convey("Ensure mutilate plugin can be loaded", t, func() {
+	// TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
+	SkipConvey("Ensure mutilate plugin can be loaded", t, func() {
 		basePath := os.Getenv("GOPATH")
 		pluginPath := path.Join(basePath, "src", "github.com", "intelsdi-x", "swan", "misc",
 			"snap-plugin-collector-mutilate", "snap-plugin-collector-mutilate")
