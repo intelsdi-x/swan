@@ -1,6 +1,6 @@
 // +build integration
 
-package main
+package mutilate
 
 import (
 	"os"

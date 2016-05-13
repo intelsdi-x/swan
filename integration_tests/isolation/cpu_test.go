@@ -1,6 +1,6 @@
 // +build integration
 
-package integration
+package isolation
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
