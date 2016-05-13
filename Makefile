@@ -33,7 +33,7 @@ plugins:
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(cd misc/snap-plugin-collector-mutilate; go build)
 
-integration_test: plugins
+integration_test: plugins unit_test
 	go test $(TEST_OPT) -tags=integration ./integration_tests/...
 	go test $(TEST_OPT) -tags=integration ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
