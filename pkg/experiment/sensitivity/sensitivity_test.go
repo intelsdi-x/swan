@@ -3,123 +3,283 @@ package sensitivity
 import (
 	"errors"
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
 	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	workloadMocks "github.com/intelsdi-x/swan/pkg/workloads/mocks"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/suite"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 )
 
-func TestSensitivityExperiment(t *testing.T) {
-	Convey("While using sensitivity profile experiment", t, func() {
-		mockedLcLauncher := new(workloadMocks.Launcher)
-		mockedLoadGenerator := new(workloadMocks.LoadGenerator)
-		configuration := Configuration{
-			SLO:             1,
-			LoadDuration:    1 * time.Second,
-			LoadPointsCount: 2,
-			Repetitions:     1,
-		}
-		var aggressors []workloads.Launcher
-		mockedAggressor := new(workloadMocks.Launcher)
-		aggressors = append(aggressors, mockedAggressor)
+type SensitivityTestSuite struct {
+	suite.Suite
 
-		sensitivityExperiment, err := InitExperiment("test", logrus.ErrorLevel, configuration,
-			mockedLcLauncher, mockedLoadGenerator, aggressors)
-		So(err, ShouldBeNil)
+	// LC launcher & task.
+	mockedLcLauncher *workloadMocks.Launcher
+	mockedLcTask     *executorMocks.TaskHandle
+	// LoadGenerator launcher & task.
+	mockedLoadGenerator     *workloadMocks.LoadGenerator
+	mockedLoadGeneratorTask *executorMocks.TaskHandle
+	// Aggressor launcher & task.
+	mockedAggressor     *workloadMocks.Launcher
+	mockedAggressorTask *executorMocks.TaskHandle
 
-		Convey("But production task can't be launched", func() {
-			mockedLcLauncher.On("Launch").Return(nil,
-				errors.New("Production task can't be launched"))
+	configuration         Configuration
+	sensitivityExperiment *Experiment
 
-			productionTaskLaunchError := sensitivityExperiment.Run()
-			So(productionTaskLaunchError.Error(), ShouldEqual, "Production task can't be launched")
-			mockedLcLauncher.AssertExpectations(t)
+	mockedTargetLoad int
+}
+
+func (s *SensitivityTestSuite) SetupTest() {
+	// LC launcher & task.
+	s.mockedLcLauncher = new(workloadMocks.Launcher)
+	s.mockedLcTask = new(executorMocks.TaskHandle)
+	// LoadGenerator launcher & task.
+	s.mockedLoadGenerator = new(workloadMocks.LoadGenerator)
+	s.mockedLoadGeneratorTask = new(executorMocks.TaskHandle)
+	// Aggressor launcher & task.
+	s.mockedAggressor = new(workloadMocks.Launcher)
+	s.mockedAggressorTask = new(executorMocks.TaskHandle)
+
+	s.configuration = Configuration{
+		SLO:             1,
+		LoadDuration:    1 * time.Second,
+		LoadPointsCount: 2,
+		Repetitions:     1,
+	}
+
+	s.mockedTargetLoad = 2
+}
+
+func (s *SensitivityTestSuite) mockSingleProductionWorkloadExecution() {
+	s.mockedLcLauncher.On("Launch").Return(s.mockedLcTask, nil).Once()
+	s.mockedLcTask.On("Stop").Return(nil).Once()
+	s.mockedLcTask.On("Clean").Return(nil).Once()
+}
+
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorTuning() {
+	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedTargetLoad, 4, nil).Once()
+}
+
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
+	s.mockedLoadGenerator.On(
+		"Load", loadPoint, s.configuration.LoadDuration).Return(
+		s.mockedLoadGeneratorTask, nil).Once()
+	s.mockedLoadGeneratorTask.On(
+		"Wait", 0*time.Nanosecond).Return(true).Once()
+	outputFile, err := ioutil.TempFile(os.TempDir(), "sensitivity")
+	if err != nil {
+		s.T().Fatal(err.Error())
+	}
+	s.mockedLoadGeneratorTask.On("StdoutFile").Return(outputFile, nil).Once()
+	s.mockedLoadGeneratorTask.On("Clean").Return(nil).Once()
+	s.mockedLoadGeneratorTask.On("ExitCode").Return(0, nil).Once()
+}
+
+func (s *SensitivityTestSuite) mockSingleAggressorWorkloadExecution() {
+	s.mockedAggressor.On("Launch").Return(s.mockedAggressorTask, nil).Once()
+	s.mockedAggressorTask.On("Stop").Return(nil).Once()
+	s.mockedAggressorTask.On("Clean").Return(nil).Once()
+}
+
+func (s *SensitivityTestSuite) assertAllExpectations() {
+	So(s.mockedLcLauncher.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLcTask.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLoadGenerator.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLoadGeneratorTask.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedAggressor.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedAggressorTask.AssertExpectations(s.T()), ShouldBeTrue)
+}
+
+func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
+	Convey("While using sensitivity profile experiment", s.T(), func() {
+		// Create experiment.
+		s.sensitivityExperiment = NewExperiment("test", logrus.ErrorLevel, s.configuration,
+			s.mockedLcLauncher, s.mockedLoadGenerator, []workloads.Launcher{s.mockedAggressor})
+
+		Convey("When production task can't be launched we expect error", func() {
+			s.mockedLcLauncher.On("Launch").Return(nil,
+				errors.New("Production task can't be launched")).Once()
+
+			err := s.sensitivityExperiment.Run()
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "Production task can't be launched")
 		})
 
-		Convey("And task is launched successfully", func() {
-			mockedLcTaskHandle := new(executorMocks.TaskHandle)
-			mockedLcTaskHandle.On("Stop").Return(nil)
-			mockedLcTaskHandle.On("Clean").Return(nil)
-			mockedLcLauncher.On("Launch").Return(mockedLcTaskHandle, nil).Once()
+		Convey("When production task is launched successfully", func() {
+			s.mockSingleProductionWorkloadExecution()
 
-			Convey("But load generator can't be tuned", func() {
-				mockedLoadGenerator.On("Tune", 1).Return(0, 0, errors.New("Load generator can't be tuned"))
+			Convey("But load generator can't be tuned we expect error", func() {
 
-				loadGeneratorTuningError := sensitivityExperiment.Run()
-				So(loadGeneratorTuningError.Error(), ShouldEqual, "Load generator can't be tuned")
-				mockedLoadGenerator.AssertExpectations(t)
-				mockedLcLauncher.AssertExpectations(t)
-				mockedLcTaskHandle.AssertExpectations(t)
+				s.mockedLoadGenerator.On("Tune", 1).Return(
+					0, 0, errors.New("Load generator can't be tuned")).Once()
+
+				err := s.sensitivityExperiment.Run()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "Load generator can't be tuned")
 			})
 
-			Convey("And load generator can be tuned", func() {
-				mockedLoadGenerator.On("Tune", 1).Return(2, 2, nil)
+			Convey("When load generator can be tuned, but baseline fails "+
+				"we are able to fetch TargetLoad result", func() {
+				s.mockSingleLoadGeneratorTuning()
 
-				Convey("But production task can't be launched during measuring", func() {
-					mockedLcLauncher.On("Launch").Return(nil,
-						errors.New("Production task can't be launched during measuring")).Once()
+				// Make next measurement fail.
+				s.mockedLcLauncher.On("Launch").Return(nil,
+					errors.New("Production task can't be launched")).Once()
 
-					loadGeneratorTuningError := sensitivityExperiment.Run()
-					So(loadGeneratorTuningError.Error(), ShouldEqual,
-						"Production task can't be launched during measuring")
-					mockedLoadGenerator.AssertExpectations(t)
-					mockedLcLauncher.AssertExpectations(t)
-					mockedLcTaskHandle.AssertExpectations(t)
+				err := s.sensitivityExperiment.Run()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "Production task can't be launched")
 
-				})
-				Convey("And production task is launched successfully during measuring", func() {
-					mockedLcMeasuringTaskHandle := new(executorMocks.TaskHandle)
-					mockedLcMeasuringTaskHandle.On("Stop").Return(nil)
-					mockedLcMeasuringTaskHandle.On("Clean").Return(nil)
-					mockedLcLauncher.On("Launch").Return(mockedLcMeasuringTaskHandle, nil)
-					Convey("But aggressor can't be launched", func() {
-						mockedAggressor.On("Launch").Return(
-							*new(executor.TaskHandle),
-							errors.New("Aggressor task can't be launched"))
-						mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, 222, nil)
-						mockedLoadGenerator.On("Load", 2, 1*time.Second).Return(666, 222, nil)
-
-						aggressorLaunchError := sensitivityExperiment.Run()
-						So(aggressorLaunchError.Error(), ShouldEqual, "Aggressor task can't be launched")
-						mockedLcMeasuringTaskHandle.AssertExpectations(t)
-						mockedLcLauncher.AssertExpectations(t)
-
-					})
-
-					Convey("And aggressor can be launched", func() {
-						mockedAggressorTaskHandle := new(executorMocks.TaskHandle)
-						mockedAggressor.On("Launch").Return(mockedAggressorTaskHandle, nil)
-
-						Convey("But load testing fails", func() {
-							mockedLoadGenerator.On("Load", 1, 1*time.Second).
-								Return(0, 0, errors.New("Load testing failed"))
-
-							aggressorLaunchError := sensitivityExperiment.Run()
-							So(aggressorLaunchError.Error(), ShouldEqual, "Load testing failed")
-							mockedLcMeasuringTaskHandle.AssertExpectations(t)
-							mockedLcLauncher.AssertExpectations(t)
-							mockedAggressorTaskHandle.AssertExpectations(t)
-						})
-
-						Convey("And load testing is successful", func() {
-							mockedAggressorTaskHandle.On("Stop").Return(nil)
-							mockedAggressorTaskHandle.On("Clean").Return(nil)
-							mockedLoadGenerator.On("Load", 1, 1*time.Second).Return(666, 222, nil)
-							mockedLoadGenerator.On("Load", 2, 1*time.Second).Return(666, 222, nil)
-
-							thereIsNoError := sensitivityExperiment.Run()
-							So(thereIsNoError, ShouldBeNil)
-							mockedLcMeasuringTaskHandle.AssertExpectations(t)
-							mockedLcLauncher.AssertExpectations(t)
-							mockedAggressorTaskHandle.AssertExpectations(t)
-						})
-
-					})
-				})
+				So(*s.sensitivityExperiment.tuningPhase.TargetLoad, ShouldEqual, s.mockedTargetLoad)
 			})
+			s.assertAllExpectations()
 		})
 	})
+}
+
+func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
+	Convey("While using sensitivity profile experiment", s.T(), func() {
+		// Create experiment.
+		s.sensitivityExperiment = NewExperiment("test", logrus.ErrorLevel, s.configuration,
+			s.mockedLcLauncher, s.mockedLoadGenerator, []workloads.Launcher{s.mockedAggressor})
+
+		Convey("When tuning was successful", func() {
+			// Mock successful tuning phase.
+			s.mockSingleProductionWorkloadExecution()
+			s.mockSingleLoadGeneratorTuning()
+
+			Convey("But production task can't be launched during baseline we expect error", func() {
+				s.mockedLcLauncher.On("Launch").Return(nil,
+					errors.New("Production task can't be launched during baseline")).Once()
+
+				err := s.sensitivityExperiment.Run()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual,
+					"Production task can't be launched during baseline")
+			})
+
+			Convey("When production task is launched successfully during baseline", func() {
+				s.mockSingleProductionWorkloadExecution()
+
+				Convey("But load testing fails for baseline we expect error", func() {
+					s.mockedLoadGenerator.On("Load", 1, 1*time.Second).
+						Return(nil, errors.New("Load testing failed")).Once()
+
+					err := s.sensitivityExperiment.Run()
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, "Load testing failed")
+				})
+
+				Convey("When load is launched successfuly for first loadPoint", func() {
+					s.mockSingleLoadGeneratorLoad(
+						s.mockedTargetLoad / s.configuration.LoadPointsCount)
+
+					Convey("After two baseline measurements for 2 loadpoints when we know "+
+						"that Prod Launcher & Load Generator was launched 2 times", func() {
+						// Mocking second iteration of baseline:
+						s.mockSingleProductionWorkloadExecution()
+						s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
+
+						// Make next measurement fail.
+						s.mockedLcLauncher.On("Launch").Return(nil,
+							errors.New(
+								"Production task can't be launched for aggressor phase")).Once()
+
+						err := s.sensitivityExperiment.Run()
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldEqual,
+							"Production task can't be launched for aggressor phase")
+					})
+				})
+			})
+		})
+
+		s.assertAllExpectations()
+	})
+}
+
+func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
+	Convey("While using sensitivity profile experiment", s.T(), func() {
+		// Create experiment.
+		s.sensitivityExperiment = NewExperiment("test", logrus.ErrorLevel, s.configuration,
+			s.mockedLcLauncher, s.mockedLoadGenerator, []workloads.Launcher{s.mockedAggressor})
+
+		Convey("When tuning & baselining was successful", func() {
+			// Mock successful tuning phase.
+			s.mockSingleProductionWorkloadExecution()
+			s.mockSingleLoadGeneratorTuning()
+
+			// Mock successful baseline phase (for 2 loadPoints)
+			for i := 1; i <= s.configuration.LoadPointsCount; i++ {
+				s.mockSingleProductionWorkloadExecution()
+				s.mockSingleLoadGeneratorLoad(
+					i * (s.mockedTargetLoad / s.configuration.LoadPointsCount))
+			}
+
+			Convey("But production task can't be launched during aggressor phase, "+
+				"we expect error", func() {
+				s.mockedLcLauncher.On("Launch").Return(nil,
+					errors.New(
+						"Production task can't be launched during aggressor phase")).Once()
+
+				err := s.sensitivityExperiment.Run()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual,
+					"Production task can't be launched during aggressor phase")
+			})
+
+			Convey("When production task is launched successfully during aggressor phase", func() {
+				s.mockSingleProductionWorkloadExecution()
+
+				Convey("But aggressor fails, we expect error", func() {
+					s.mockedAggressor.On("Launch").
+						Return(nil, errors.New("Agressor failed")).Once()
+
+					err := s.sensitivityExperiment.Run()
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, "Agressor failed")
+				})
+
+				Convey("When aggressor is launched successfuly", func() {
+					s.mockSingleAggressorWorkloadExecution()
+
+					Convey("But when load testing fails, we expect error", func() {
+						s.mockedLoadGenerator.On("Load", 1, 1*time.Second).
+							Return(nil, errors.New("Load testing failed")).Once()
+
+						err := s.sensitivityExperiment.Run()
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldEqual, "Load testing failed")
+					})
+
+					Convey("When load is launched successfuly for last phase", func() {
+						s.mockSingleLoadGeneratorLoad(
+							s.mockedTargetLoad / s.configuration.LoadPointsCount)
+
+						Convey("And next iteration is also sucessful, we have "+
+							"made succesful experiment", func() {
+							// Mocking second iteration of aggressor phase:
+							s.mockSingleProductionWorkloadExecution()
+							s.mockSingleAggressorWorkloadExecution()
+							s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
+
+							err := s.sensitivityExperiment.Run()
+							So(err, ShouldBeNil)
+						})
+					})
+
+				})
+			})
+		})
+
+		s.assertAllExpectations()
+	})
+}
+
+func TestSensitivityExperiment(t *testing.T) {
+	suite.Run(t, new(SensitivityTestSuite))
 }

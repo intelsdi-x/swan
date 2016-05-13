@@ -73,8 +73,7 @@ func main() {
 		Repetitions:     1,
 	}
 
-	// Init Experiment.
-	sensitivityExperiment, err := sensitivity.InitExperiment(
+	sensitivityExperiment := sensitivity.NewExperiment(
 		"MemcachedWithLocalMutilate",
 		logLevel,
 		configuration,
@@ -83,14 +82,9 @@ func main() {
 		[]workloads.Launcher{},
 	)
 
-	if err != nil {
-		panic(err)
-	}
-
 	// Run Experiment.
-	err = sensitivityExperiment.Run()
+	err := sensitivityExperiment.Run()
 	if err != nil {
 		panic(err)
 	}
-
 }

@@ -20,7 +20,7 @@ import (
 )
 
 type Snapd struct {
-	taskHandle executor.TaskHandle
+	task executor.TaskHandle
 }
 
 func NewSnapd() *Snapd {
