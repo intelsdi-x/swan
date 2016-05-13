@@ -9,6 +9,14 @@ function display_error {
 	exit 255
 }
 
+echo -e "\e[32mChecking unshare capabilities...\e[0m"
+HAS_PID=`unshare -h | grep "\-\-pid"`
+if [ "$HAS_PID" == "" ]; then
+	echo -e "\e[32mRunning \e[7mu$@\e[27m due to lack of PID namespace support in unshare\e[0m"	
+	$@
+	exit $?
+fi
+
 if [ "$#" -lt "1" ]; then
 	display_error "Missing path to experiment binary. Example usage: \e[7m$0 path/to/experiment/binary\e[27ms"
         exit 251
@@ -34,7 +42,9 @@ fi
 
 read -ra ARGS <<< "$@"
 ARGS[0]=$BINARY
+EXEC="sudo -E unshare --pid --fork --mount-proc ${ARGS[*]}"
 
-echo -e "\e[32mRunning \e[7msudo -E unshare --pid --fork --mount-proc ${ARGS[*]}\e[27m\e[0m"
-sudo -E unshare --pid --fork --mount-proc ${ARGS[*]} 
+echo -e "\e[32mRunning \e[7m$EXEC\e[27m\e[0m"
+$EXEC 
+
 exit $?
