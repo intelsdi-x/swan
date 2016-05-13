@@ -1,6 +1,6 @@
 // +build integration
 
-package isolation
+package integration
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"strconv"
 	"testing"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 func TestCpu(t *testing.T) {
@@ -21,7 +22,10 @@ func TestCpu(t *testing.T) {
 		t.Skipf("Need to be privileged user to run cgroups tests")
 	}
 
-	cpu := CPUShares{cgroupName: "M", cpuShares: "1024"}
+	const cgroupName = "M"
+	const cpuSharesNum = "1024"
+
+	cpu := isolation.NewCPUShares(cgroupName, cpuSharesNum)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 
@@ -40,16 +44,16 @@ func TestCpu(t *testing.T) {
 
 	Convey("Should provide Create() to return and correct cpu shares", t, func() {
 		So(cpu.Create(), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpu/" + cpu.cgroupName + "/cpu.shares")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpu/" + cgroupName + "/cpu.shares")
 		So(err, ShouldBeNil)
 
 		inputFmt := data[:len(data)-1]
-		So(string(inputFmt), ShouldEqual, cpu.cpuShares)
+		So(string(inputFmt), ShouldEqual, cpuSharesNum)
 	})
 
 	Convey("Should provide Isolate() to return and correct process id", t, func() {
 		So(cpu.Isolate(cmd.Process.Pid), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpu/" + cpu.cgroupName + "/tasks")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpu/" + cgroupName + "/tasks")
 		So(err, ShouldBeNil)
 
 		inputFmt := data[:len(data)-1]

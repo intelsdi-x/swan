@@ -5,19 +5,23 @@ import "io/ioutil"
 import "strconv"
 
 // CPUSetShares input definition.
-type CPUSetShares struct {
+type cpuSetShares struct {
 	cgroupName   string
 	cpuSetShares string
 	cgCPUNodes   string
 }
 
 // NewCPUSetShares creates an instance of input data.
-func NewCPUSetShares(nameOfTheCgroup string, cpuSets string) *CPUSetShares {
-	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
+func NewCPUSetShares(nameOfTheCgroup string, cpuSets string, cgCPUNodes string) Isolation {
+	return &cpuSetShares{
+		cgroupName: nameOfTheCgroup,
+		cpuSetShares: cpuSets,
+		cgCPUNodes: cgCPUNodes,
+	}
 }
 
 // Clean removes specified cgroup.
-func (cpuSet *CPUSetShares) Clean() error {
+func (cpuSet *cpuSetShares) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
 
@@ -30,7 +34,7 @@ func (cpuSet *CPUSetShares) Clean() error {
 }
 
 // Create specified cgroup.
-func (cpuSet *CPUSetShares) Create() error {
+func (cpuSet *cpuSetShares) Create() error {
 
 	// 1.a Create cpuset cgroup.
 
@@ -63,7 +67,7 @@ func (cpuSet *CPUSetShares) Create() error {
 }
 
 // Isolate creates specified cgroup.
-func (cpuSet *CPUSetShares) Isolate(PID int) error {
+func (cpuSet *cpuSetShares) Isolate(PID int) error {
 
 	// Set PID to cgroups
 	// cgclassify & cgexec seem to exit with error so temporarily using file io

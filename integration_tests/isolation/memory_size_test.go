@@ -1,6 +1,6 @@
 // +build integration
 
-package isolation
+package integration
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"strconv"
 	"testing"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 func TestMemorySize(t *testing.T) {
@@ -21,7 +22,9 @@ func TestMemorySize(t *testing.T) {
 		t.Skipf("Need to be privileged user to run cgroups tests")
 	}
 
-	memorysize := MemorySize{cgroupName: "M", memorySize: "536870912"}
+	const cgroupName = "M"
+	const memorySize = "536870912"
+	memorysize := isolation.NewMemorySize(cgroupName, memorySize)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 	err = cmd.Start()
@@ -39,17 +42,17 @@ func TestMemorySize(t *testing.T) {
 
 	Convey("Should provide memorysize Create() to return and correct memory size", t, func() {
 		So(memorysize.Create(), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + memorysize.cgroupName + "/memory.limit_in_bytes")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + cgroupName + "/memory.limit_in_bytes")
 
 		So(err, ShouldBeNil)
 
 		inputFmt := data[:len(data)-1]
-		So(string(inputFmt), ShouldEqual, memorysize.memorySize)
+		So(string(inputFmt), ShouldEqual, memorySize)
 	})
 
 	Convey("Should provide memorysize Isolate() to return and correct process id", t, func() {
 		So(memorysize.Isolate(cmd.Process.Pid), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + memorysize.cgroupName + "/tasks")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/memory/" + cgroupName + "/tasks")
 
 		So(err, ShouldBeNil)
 
