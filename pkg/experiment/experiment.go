@@ -3,6 +3,8 @@ package experiment
 import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
+	experimentPhase "github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/nu7hatch/gouuid"
 	"io"
 	"os"
 	"path"
@@ -12,10 +14,10 @@ import (
 
 // Experiment captures the internal data for the Experiment Driver.
 type Experiment struct {
-	session             session
-	name                string
+	customName          string
+	uuidName            string
 	workingDirectory    string
-	phases              []Phase
+	phases              []experimentPhase.Phase
 	startingDirectory   string
 	experimentDirectory string
 
@@ -26,22 +28,26 @@ type Experiment struct {
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
 // Caller have to provide slice of Phase interfaces which are going to be executed.
-func NewExperiment(name string, phases []Phase,
+func NewExperiment(customName string, phases []experimentPhase.Phase,
 	directory string, logLevel log.Level) (*Experiment, error) {
 	if len(phases) == 0 {
 		return nil, errors.New("invalid argument: no phases provided")
 	}
 
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 	// TODO(mpatelcz): Check if phases names are unique!
 	e := &Experiment{
-		name:             name,
-		session:          newSession(),
+		customName:       customName,
+		uuidName:         time.Now().Format("2006-01-02T15h04m05s_") + uuid.String(),
 		workingDirectory: directory,
 		phases:           phases,
 		logLevel:         logLevel,
 	}
 
-	err := e.createExperimentDir()
+	err = e.createExperimentDir()
 	if err != nil {
 		return nil, err
 	}
@@ -57,25 +63,31 @@ func NewExperiment(name string, phases []Phase,
 
 // Run runs experiment.
 // It runs in a sequence defined phases with given repetition count.
-func (e *Experiment) Run() error {
+func (e *Experiment) Run() (err error) {
 	experimentStartingTime := time.Now()
 
-	log.Info("Starting Experiment ", e.name, " with uuid ", e.session.Name)
-	var err error
+	log.Info("Starting Experiment ", e.customName, " with uuid ", e.uuidName)
 	for _, phase := range e.phases {
-		for i := 0; i < phase.Repetitions(); i++ {
-			// TODO: Trigger snap session here. Fetch workflow & config from Phase.
-			// (proposition) and add session name & experiment id tags.
+		for i := uint(0); i < phase.Repetitions(); i++ {
+			// Create phase session.
+			session := experimentPhase.Session{
+				Name:         phase.Name(),
+				ExperimentID: e.uuidName, // TODO: Decide if we want to have `customName` here as well.
+				RepetitionID: i,
+			}
 
+			// Start timer.
 			phaseStartingTime := time.Now()
+			log.Info("Starting ", session.Name, " repetition ", session.RepetitionID)
 
-			log.Info("Starting ", phase.Name(), " repetition ", i)
-			err = e.createPhaseDir(phase, i)
+			// Create and step into unique phase dir.
+			err = e.createPhaseDir(session)
 			if err != nil {
 				return err
 			}
 
-			err := phase.Run()
+			// Start phase.
+			err := phase.Run(session)
 			if err != nil {
 				// When phase return error we stop the whole experiment.
 				log.Error(phase.Name(), " returned error ", err)
@@ -98,20 +110,21 @@ func (e *Experiment) Run() error {
 			return err
 		}
 	}
-	log.Info("Ended experiment ", e.name, " with uuid ", e.session.Name,
+
+	log.Info("Ended experiment ", e.customName, " with uuid ", e.uuidName,
 		" in ", time.Since(experimentStartingTime))
 	return err
 }
 
 // createExperimentDir creates unique directory for experiment logs and results.
 func (e *Experiment) createExperimentDir() error {
-	e.startingDirectory, _ = os.Getwd()
-
 	if len(e.workingDirectory) > 0 {
-		e.experimentDirectory = path.Join(e.workingDirectory, e.name, e.session.Name)
+		e.startingDirectory = e.workingDirectory
 	} else {
-		e.experimentDirectory = path.Join(e.startingDirectory, e.name, e.session.Name)
+		e.startingDirectory, _ = os.Getwd()
 	}
+
+	e.experimentDirectory = path.Join(e.startingDirectory, e.customName, e.uuidName)
 
 	err := os.MkdirAll(e.experimentDirectory, 0777)
 	if err != nil {
@@ -130,9 +143,9 @@ func (e *Experiment) Finalize() {
 	os.Chdir(e.startingDirectory)
 }
 
-func (e *Experiment) createPhaseDir(phase Phase, iteration int) error {
+func (e *Experiment) createPhaseDir(session experimentPhase.Session) error {
 	phaseDir := path.Join(e.experimentDirectory,
-		phase.Name(), strconv.FormatInt(int64(iteration), 10))
+		session.Name, strconv.FormatInt(int64(session.RepetitionID), 10))
 
 	err := os.MkdirAll(phaseDir, 0777)
 	if err != nil {

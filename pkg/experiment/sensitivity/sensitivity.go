@@ -3,6 +3,7 @@ package sensitivity
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"os"
 	"strconv"
@@ -18,7 +19,7 @@ type Configuration struct {
 	// Number of load points to test.
 	LoadPointsCount int
 	// Repetitions.
-	Repetitions int
+	Repetitions uint
 }
 
 // Experiment is handler structure for Experiment Driver. All fields shall be
@@ -35,8 +36,8 @@ type Experiment struct {
 	exp *experiment.Experiment
 	// Phases.
 	tuningPhase     *tuningPhase
-	baselinePhase   []experiment.Phase
-	aggressorPhases [][]experiment.Phase
+	baselinePhase   []phase.Phase
+	aggressorPhases [][]phase.Phase
 }
 
 // NewExperiment construct new Experiment object.
@@ -75,8 +76,8 @@ func (e *Experiment) prepareTuningPhase() *tuningPhase {
 	}
 }
 
-func (e *Experiment) prepareBaselinePhases() []experiment.Phase {
-	baseline := []experiment.Phase{}
+func (e *Experiment) prepareBaselinePhases() []phase.Phase {
+	baseline := []phase.Phase{}
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
 		baseline = append(baseline, &measurementPhase{
@@ -96,10 +97,10 @@ func (e *Experiment) prepareBaselinePhases() []experiment.Phase {
 	return baseline
 }
 
-func (e *Experiment) prepareAggressorsPhases() [][]experiment.Phase {
-	aggressorPhases := [][]experiment.Phase{}
+func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
+	aggressorPhases := [][]phase.Phase{}
 	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
-		aggressorPhase := []experiment.Phase{}
+		aggressorPhase := []phase.Phase{}
 		// Include measurements for each LoadPoint.
 		for i := 1; i <= e.configuration.LoadPointsCount; i++ {
 			aggressorPhase = append(aggressorPhase, &measurementPhase{
@@ -123,7 +124,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]experiment.Phase {
 func (e *Experiment) configureGenericExperiment() error {
 	// Configure phases & measurements.
 	// Each sensitivity phase (part of experiment) can include couple of measurements.
-	var allMeasurements []experiment.Phase
+	var allMeasurements []phase.Phase
 
 	// Include Tuning Phase.
 	e.tuningPhase = e.prepareTuningPhase()

@@ -2,8 +2,10 @@ package experiment
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/experiment/mocks"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase/mocks"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/mock"
 	"os"
 	"testing"
 )
@@ -11,7 +13,7 @@ import (
 func TestExperiment(t *testing.T) {
 	Convey("While doing experiment ", t, func() {
 		Convey("With proper configuration and empty phases", func() {
-			var phases []Phase
+			var phases []phase.Phase
 			exp, err := NewExperiment("example-experiment1", phases,
 				os.TempDir(), logrus.ErrorLevel)
 
@@ -22,7 +24,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper configuration and not empty phases", func() {
-			var phases []Phase
+			var phases []phase.Phase
 
 			mockedPhase := new(mocks.Phase)
 			mockedPhase.On("Name").Return("mock-phase01")
@@ -34,8 +36,8 @@ func TestExperiment(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("While setting one repetition to phase", func() {
-				mockedPhase.On("Run").Return(nil).Times(10)
-				mockedPhase.On("Repetitions").Return(10)
+				mockedPhase.On("Run", mock.AnythingOfType("phase.Session")).Return(nil).Times(10)
+				mockedPhase.On("Repetitions").Return(uint(10))
 				mockedPhase.On("Finalize").Return(nil).Once()
 				Convey("Experiment should succeed with 10 phase repetitions", func() {
 					err := exp.Run()
