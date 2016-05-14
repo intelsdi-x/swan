@@ -40,11 +40,18 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if len(l.isolators) == 0 {
 		cmd = exec.Command("sh", "-c", command)
 	} else if len(l.isolators) > 0 {
-		// TODO(niklas): Verify paths
-		// TODO(niklas): Build cgroup controller list
-		// TODO(niklas): Move to Isolators file
-		log.Debug("Executing isolated command: '/bin/cgexec -g cpuset:/A " + command + "'")
-		cmd = exec.Command("/bin/sh", "-c", "/bin/cgexec -g cpuset:/A "+command)
+		// TODO(niklas): Move to isolators.go.
+		path := l.isolators[0].Path()
+		controllers := []string{}
+		for _, isolator := range l.isolators {
+			if isolator.Path() != path {
+				return nil, errors.New("Path '" + isolator.Path() + "' differ from path '" + path + "'")
+			}
+
+			controllers = append(controllers, isolator.Controller())
+		}
+
+		cmd = exec.Command("/bin/sh", "-c", "/bin/cgexec -g "+strings.Join(controllers, ",")+":"+path+" "+command)
 	}
 
 	// It is important to set additional Process Group ID for parent process and his children

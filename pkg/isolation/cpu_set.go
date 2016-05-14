@@ -37,6 +37,16 @@ func NewCPUSet(name string, cpus Set, mems Set) *CPUSet {
 	}
 }
 
+// Controller returns the cgroup controller name.
+func (cpuSet *CPUSet) Controller() string {
+	return "cpuset"
+}
+
+// Path returns the path relative to the controller root.
+func (cpuSet *CPUSet) Path() string {
+	return cpuSet.name
+}
+
 // Clean removes specified cgroup.
 func (cpuSet *CPUSet) Clean() error {
 	cmd := exec.Command("cgdelete", "-g", "cpuset:"+cpuSet.name)

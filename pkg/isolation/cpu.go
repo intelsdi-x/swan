@@ -18,6 +18,18 @@ func NewShares(name string, shares int) *CPUShares {
 	return &CPUShares{name: name, shares: shares}
 }
 
+// Controller returns the cgroup controller name.
+func (cpu *CPUShares) Controller() string {
+	return "cpu"
+}
+
+// Path returns the path relative to the controller root.
+func (cpu *CPUShares) Path() string {
+	return cpu.name
+}
+
+
+
 // Clean removes the specified cgroup
 func (cpu *CPUShares) Clean() error {
 
