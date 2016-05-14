@@ -6,19 +6,19 @@ import "strconv"
 
 // MemorySize defines input data
 type MemorySize struct {
-	cgroupName string
+	name string
 	memorySize string
 }
 
 // NewMemorySize creates an instance of input data.
 func NewMemorySize(nameOfTheCgroup string, memorySizeShares string) *MemorySize {
-	return &MemorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
+	return &MemorySize{name: nameOfTheCgroup, memorySize: memorySizeShares}
 }
 
 // Clean removes specified cgroup.
 func (memorysize *MemorySize) Clean() error {
 
-	cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.cgroupName)
+	cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.name)
 
 	err := cmd.Run()
 	if err != nil {
@@ -33,7 +33,7 @@ func (memorysize *MemorySize) Create() error {
 
 	// 1.a Create memory size cgroup.
 
-	cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+memorysize.cgroupName)
+	cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+memorysize.name)
 
 	err := cmd.Run()
 	if err != nil {
@@ -42,7 +42,7 @@ func (memorysize *MemorySize) Create() error {
 
 	// 1.b Set cgroup memory size.
 
-	cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memorysize.memorySize+" "+memorysize.cgroupName)
+	cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memorysize.memorySize+" "+memorysize.name)
 
 	err = cmd.Run()
 	if err != nil {
@@ -60,7 +60,7 @@ func (memorysize *MemorySize) Isolate(PID int) error {
 
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile("/sys/fs/cgroup/memory/"+memorysize.cgroupName+"/tasks", d, 0644)
+	err := ioutil.WriteFile("/sys/fs/cgroup/memory/"+memorysize.name+"/tasks", d, 0644)
 
 	if err != nil {
 		return err

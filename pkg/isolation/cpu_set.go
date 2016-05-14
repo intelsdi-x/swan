@@ -1,25 +1,45 @@
 package isolation
 
-import "os/exec"
-import "io/ioutil"
-import "strconv"
+import (
+	"io/ioutil"
+	"os/exec"
+	"path"
+	"strconv"
+	"strings"
+)
 
-// CPUSetShares input definition.
-type CPUSetShares struct {
-	cgroupName   string
-	cpuSetShares string
-	cgCPUNodes   string
+// CPUSet describes a cgroup cpuset with core ids and numa (memory) nodes.
+type CPUSet struct {
+	name string
+	cpus Set
+	mems Set
 }
 
-// NewCPUSetShares creates an instance of input data.
-func NewCPUSetShares(nameOfTheCgroup string, cpuSets string) *CPUSetShares {
-	return &CPUSetShares{cgroupName: nameOfTheCgroup, cpuSetShares: cpuSets}
+// Set represents a traditional set type so we can do intersections, joins, etc.
+// on core and memory node ids.
+type Set map[int]struct{}
+
+// NewSet returns a set containing the element from ids.
+func NewSet(ids ...int) Set {
+	ret := Set{}
+	for id := range(ids) {
+		ret[id] = struct{}{}
+	}
+	return ret
+}
+
+// NewCPUSet creates an instance of input data.
+func NewCPUSet(name string, cpus Set, mems Set) *CPUSet {
+	return &CPUSet{
+		name: name,
+		cpus: cpus,
+		mems: mems,
+	}
 }
 
 // Clean removes specified cgroup.
-func (cpuSet *CPUSetShares) Clean() error {
-
-	cmd := exec.Command("sh", "-c", "cgdelete -g cpuset:"+cpuSet.cgroupName)
+func (cpuSet *CPUSet) Clean() error {
+	cmd := exec.Command("cgdelete", "-g", "cpuset:"+cpuSet.name)
 
 	err := cmd.Run()
 	if err != nil {
@@ -30,29 +50,36 @@ func (cpuSet *CPUSetShares) Clean() error {
 }
 
 // Create specified cgroup.
-func (cpuSet *CPUSetShares) Create() error {
+func (cpuSet *CPUSet) Create() error {
 
 	// 1.a Create cpuset cgroup.
-
-	cmd := exec.Command("sh", "-c", "cgcreate -g cpuset:"+cpuSet.cgroupName)
+	cmd := exec.Command("cgcreate", "-g", "cpuset:"+cpuSet.name)
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change. After we discover platform, we change accordingly.
+	// 1.b Set cpu nodes for cgroup cpus. This is a temporary change.
+	// After we discover platform, we change accordingly.
+	cpus := []string{}
+	for cpu := range cpuSet.cpus {
+		cpus = append(cpus, strconv.Itoa(cpu))
+	}
 
-	cmd = exec.Command("sh", "-c", "cgset -r cpuset.mems="+cpuSet.cgCPUNodes+" "+cpuSet.cgroupName)
+	cmd = exec.Command("cgset", "-r", "cpuset.cpus="+strings.Join(cpus, ","), cpuSet.name)
 
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	// 1.c Set cpuset cgroup cpus.
+	mems := []string{}
+	for mem := range cpuSet.mems {
+		mems = append(mems, strconv.Itoa(mem))
+	}
 
-	cmd = exec.Command("sh", "-c", "cgset -r cpuset.cpus="+cpuSet.cpuSetShares+" "+cpuSet.cgroupName)
+	cmd = exec.Command("cgset", "-r", "cpuset.mems="+strings.Join(mems, ","), cpuSet.name)
 
 	err = cmd.Run()
 	if err != nil {
@@ -63,14 +90,14 @@ func (cpuSet *CPUSetShares) Create() error {
 }
 
 // Isolate creates specified cgroup.
-func (cpuSet *CPUSetShares) Isolate(PID int) error {
+func (cpuSet *CPUSet) Isolate(PID int) error {
 
 	// Set PID to cgroups
 	// cgclassify & cgexec seem to exit with error so temporarily using file io
 
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile("/sys/fs/cgroup/cpuset"+"/"+cpuSet.cgroupName+"/tasks", d, 0644)
+	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/cpuset", cpuSet.name, "/tasks"), d, 0644)
 
 	if err != nil {
 		return err

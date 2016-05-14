@@ -3,6 +3,7 @@ package executor
 import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,11 +15,20 @@ import (
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct{}
+type Local struct {
+	isolators []isolation.Isolation
+}
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
 	return Local{}
+}
+
+// NewIsolatedLocal returns a Local instance with isolators.
+func NewIsolatedLocal(isolators []isolation.Isolation) Local {
+	return Local{
+		isolators: isolators,
+	}
 }
 
 // Execute runs the command given as input.
@@ -26,7 +36,16 @@ func NewLocal() Local {
 func (l Local) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting ", command, "' locally ")
 
-	cmd := exec.Command("sh", "-c", command)
+	var cmd *exec.Cmd
+	if len(l.isolators) == 0 {
+		cmd = exec.Command("sh", "-c", command)
+	} else if len(l.isolators) > 0 {
+		// TODO(niklas): Verify paths
+		// TODO(niklas): Build cgroup controller list
+		// TODO(niklas): Move to Isolators file
+		cmd = exec.Command("/bin/cgexec", "-g", "cpuset:/A", command)
+	}
+
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
