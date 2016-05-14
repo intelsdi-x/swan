@@ -43,7 +43,8 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		// TODO(niklas): Verify paths
 		// TODO(niklas): Build cgroup controller list
 		// TODO(niklas): Move to Isolators file
-		cmd = exec.Command("/bin/cgexec", "-g", "cpuset:/A", command)
+		log.Debug("Executing isolated command: '/bin/cgexec -g cpuset:/A " + command + "'")
+		cmd = exec.Command("/bin/sh", "-c", "/bin/cgexec -g cpuset:/A "+command)
 	}
 
 	// It is important to set additional Process Group ID for parent process and his children
