@@ -1,8 +1,7 @@
-// +build integration
-
 package isolation
 
 import (
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
@@ -22,8 +21,11 @@ func TestCpuSet(t *testing.T) {
 		t.Skipf("Need to be privileged user to run cgroups tests")
 	}
 
-	cpuset := NewCPUSet("M", NewSet(0, 1))
+	cpusetName := "M"
+	cpus := isolation.NewSet(0, 1)
+	mems := isolation.NewSet(0)
 
+	cpuset := isolation.NewCPUSet("M", cpus, mems)
 	cmd := exec.Command("sleep", "1h")
 	err = cmd.Start()
 
@@ -40,23 +42,25 @@ func TestCpuSet(t *testing.T) {
 
 	Convey("Should provide cpuset Create() to return and correct cpu set shares", t, func() {
 		So(cpuset.Create(), ShouldBeNil)
-		data, err := ioutil.ReadFile(path.Join("/sys/fs/cgroup/cpuset", cpuset.name, "cpuset.cpus"))
+		data, err := ioutil.ReadFile(path.Join("/sys/fs/cgroup/cpuset", cpusetName, "cpuset.cpus"))
 		So(err, ShouldBeNil)
 
-		inputFmt := data[:len(data)-1]
-		So(string(inputFmt), ShouldEqual, cpuset.cpus)
+		inputFmt := string(data[:len(data)-1])
+		set, err := isolation.NewSetFromRange(inputFmt)
+		So(err, ShouldBeNil)
+		So(set, ShouldResemble, cpus)
 	})
 
 	Convey("Should provide cpuset Isolate() to return and correct process id", t, func() {
 		So(cpuset.Isolate(cmd.Process.Pid), ShouldBeNil)
-		data, err := ioutil.ReadFile(path.Join("/sys/fs/cgroup/cpuset/", cpuset.name, "/tasks"))
+		data, err := ioutil.ReadFile(path.Join("/sys/fs/cgroup/cpuset", cpusetName, "tasks"))
 		So(err, ShouldBeNil)
 
-		inputFmt := data[:len(data)-1]
+		inputFmt := string(data[:len(data)-1])
 		strPID := strconv.Itoa(cmd.Process.Pid)
 		d := []byte(strPID)
 
-		So(string(inputFmt), ShouldContainSubstring, string(d))
+		So(inputFmt, ShouldContainSubstring, string(d))
 	})
 
 	Convey("Should provide Clean() to return", t, func() {

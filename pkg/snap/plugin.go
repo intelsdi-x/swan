@@ -2,8 +2,6 @@ package snap
 
 import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"os"
-	"path"
 )
 
 // Plugins provides a 'manager' like abstraction for plugin operations.
@@ -20,17 +18,9 @@ func NewPlugins(pClient *client.Client) *Plugins {
 }
 
 // Load plugin binary.
-// TODO: Currently searching the swan repo only. Add test for whether the name is relative or absolute path.
-func (p *Plugins) Load(name string) error {
-	// Current workaround to load plugins from swan repo.
-	// Test will run in pkg/swan to backing up two directories to get to 'build' directory.
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	paths := []string{path.Join(cwd, "..", "..", "build", name)}
-
-	r := p.pClient.LoadPlugin(paths)
+// TODO(skonefal): Currently accepts only absolute path.
+func (p *Plugins) Load(pluginPath []string) error {
+	r := p.pClient.LoadPlugin(pluginPath)
 	if r.Err != nil {
 		return r.Err
 	}
