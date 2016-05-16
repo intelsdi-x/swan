@@ -2,13 +2,13 @@ package executor
 
 import (
 	"errors"
-	log "github.com/Sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Local provisioning is responsible for providing the execution environment
@@ -31,13 +31,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Create temporary output files.
-	currentDir, _ := os.Getwd()
-	stdoutFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stdout_")
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stderr_")
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
 		return nil, err
 	}
