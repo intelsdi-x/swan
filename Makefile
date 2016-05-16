@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?=-race
+TEST_OPT?=
 
 all: lint unit_test build cleanup
 
@@ -20,6 +20,7 @@ lint:
 	fgt golint ./pkg/...
 	fgt golint ./experiments/...
 	fgt golint ./misc/...
+	fgt golint ./integration_tests/...
 
 unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/...
@@ -32,17 +33,19 @@ plugins:
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(cd misc/snap-plugin-collector-mutilate; go build)
 
-integration_test: plugins
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -tags=integration ./pkg/...
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -tags=integration ./experiments/...
+integration_test: plugins unit_test
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
-#	./scripts/isolate-pid.sh go test $(TEST_OPT) -tags=integration ./misc/...
-	./scripts/isolate-pid.sh go test -tags=integration ./misc/...
+#	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 # building
 build:
 	mkdir -p build
 	(cd build; go build ../experiments/...)
+
+build_workloads:
+	(cd workloads/data_caching/memcached; ./build.sh)
 
 cleanup:
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
