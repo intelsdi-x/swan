@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"strconv"
@@ -46,9 +47,14 @@ func (m *measurementPhase) Repetitions() uint {
 	return m.repetitions
 }
 
-func (m *measurementPhase) getLoadPoint() int {
-	return int(float64(m.currentLoadPointIndex) *
-		(float64(*m.TargetLoad) / float64(m.loadPointsCount)))
+// Gets current loadPoint from linear function y = a * x where `x` is loadPointIndex.
+func (m *measurementPhase) getLoadPointUsingLinearFunction() int {
+	// Since we know that the function is satisfied
+	// when TargetLoadPoint = a * loadPointsCount, we can calculate `a` parameter.
+	a := float64(*m.TargetLoad) / float64(m.loadPointsCount)
+	x := float64(m.currentLoadPointIndex)
+
+	return int(a * x)
 }
 
 // Run runs a measurement for given loadPointIndex.
@@ -63,6 +69,7 @@ func (m *measurementPhase) Run(session phase.Session) error {
 	if err != nil {
 		return err
 	}
+
 	defer prTask.Stop()
 	defer prTask.Clean()
 
@@ -83,7 +90,8 @@ func (m *measurementPhase) Run(session phase.Session) error {
 		// if it is supported for aggressor Task.
 	}
 
-	loadPoint := m.getLoadPoint()
+	// NOTE: We can specify here different functions for specifying loadPoints distribution.
+	loadPoint := m.getLoadPointUsingLinearFunction()
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.Load(loadPoint, m.loadDuration)
