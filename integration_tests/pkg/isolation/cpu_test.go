@@ -55,11 +55,10 @@ func TestCpu(t *testing.T) {
 		data, err := ioutil.ReadFile(path.Join("/sys/fs/cgroup/cpu", cpuName, "tasks"))
 		So(err, ShouldBeNil)
 
-		inputFmt := data[:len(data)-1]
+		inputFmt := string(data[:len(data)-1])
 		strPID := strconv.Itoa(cmd.Process.Pid)
-		d := []byte(strPID)
 
-		So(string(inputFmt), ShouldEqual, string(d))
+		So(inputFmt, ShouldEqual, strPID)
 	})
 
 	Convey("Should provide Clean() to return", t, func() {

@@ -18,14 +18,9 @@ func NewCPUShares(name string, shares int) Isolation {
 	return &CPUShares{name: name, shares: shares}
 }
 
-// Controller returns the cgroup controller name.
-func (cpu *CPUShares) Controller() string {
-	return "cpu"
-}
-
-// Path returns the path relative to the controller root.
-func (cpu *CPUShares) Path() string {
-	return cpu.name
+// Prefix returns the command prefix to run with this isolation mechanism.
+func (cpu *CPUShares) Prefix() string {
+	return "cgexec -g cpu:" + cpu.name
 }
 
 // Clean removes the specified cgroup

@@ -24,14 +24,9 @@ func NewCPUSet(name string, cpus Set, mems Set) Isolation {
 	}
 }
 
-// Controller returns the cgroup controller name.
-func (cpuSet *CPUSet) Controller() string {
-	return "cpuset"
-}
-
-// Path returns the path relative to the controller root.
-func (cpuSet *CPUSet) Path() string {
-	return cpuSet.name
+// Prefix returns the command prefix to run with this isolation mechanism.
+func (cpuSet *CPUSet) Prefix() string {
+	return "cgexec -g cpuset:" + cpuSet.name
 }
 
 // Clean removes specified cgroup.

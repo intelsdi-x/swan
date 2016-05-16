@@ -39,18 +39,12 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if len(l.isolators) == 0 {
 		cmd = exec.Command("sh", "-c", command)
 	} else if len(l.isolators) > 0 {
-		// TODO(niklas): Move to isolators.go.
-		path := l.isolators[0].Path()
-		controllers := []string{}
+		prefixes := []string{}
 		for _, isolator := range l.isolators {
-			if isolator.Path() != path {
-				return nil, errors.New("Path '" + isolator.Path() + "' differ from path '" + path + "'")
-			}
-
-			controllers = append(controllers, isolator.Controller())
+			prefixes = append(prefixes, isolator.Prefix())
 		}
 
-		cmd = exec.Command("/bin/sh", "-c", "/bin/cgexec -g "+strings.Join(controllers, ",")+":"+path+" "+command)
+		cmd = exec.Command("/bin/sh", "-c", strings.Join(prefixes, " ") + " " + command)
 	}
 
 	// It is important to set additional Process Group ID for parent process and his children

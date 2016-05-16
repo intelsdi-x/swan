@@ -1,7 +1,9 @@
 package isolation
 
 import (
+	"bytefmt"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
@@ -22,7 +24,7 @@ func TestMemorySize(t *testing.T) {
 	}
 
 	memoryName := "M"
-	memorysizeInBytes := "536870912"
+	memorysizeInBytes := 64 * bytefmt.MEGABYTE
 	memorysize := isolation.NewMemorySize(memoryName, memorysizeInBytes)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
@@ -45,8 +47,10 @@ func TestMemorySize(t *testing.T) {
 
 		So(err, ShouldBeNil)
 
-		inputFmt := data[:len(data)-1]
-		So(string(inputFmt), ShouldEqual, memorysizeInBytes)
+		inputFmt := string(data[:len(data)-1])
+		readMemoryInBytes, err := strconv.Atoi(inputFmt)
+		So(err, ShouldBeNil)
+		So(readMemoryInBytes, ShouldEqual, memorysizeInBytes)
 	})
 
 	Convey("Should provide memorysize Isolate() to return and correct process id", t, func() {
