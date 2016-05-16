@@ -5,18 +5,18 @@ import "io/ioutil"
 import "strconv"
 
 // CPUShares defines data needed for CPU controller.
-type CPUShares struct {
+type cpuShares struct {
 	cgroupName string
 	cpuShares  string
 }
 
 // NewCPUShares instance creation.
-func NewCPUShares(nameOfTheCgroup string, NumShares string) *CPUShares {
-	return &CPUShares{cgroupName: nameOfTheCgroup, cpuShares: NumShares}
+func NewCPUShares(nameOfTheCgroup string, NumShares string) Isolation {
+	return &cpuShares{cgroupName: nameOfTheCgroup, cpuShares: NumShares}
 }
 
 // Clean removes the specified cgroup
-func (cpu *CPUShares) Clean() error {
+func (cpu *cpuShares) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g cpu"+":"+cpu.cgroupName)
 
@@ -29,7 +29,7 @@ func (cpu *CPUShares) Clean() error {
 }
 
 // Create specified cgroup.
-func (cpu *CPUShares) Create() error {
+func (cpu *cpuShares) Create() error {
 
 	// 1 Create cpu cgroup
 
@@ -53,7 +53,7 @@ func (cpu *CPUShares) Create() error {
 }
 
 // Isolate associates specified pid to the cgroup.
-func (cpu *CPUShares) Isolate(PID int) error {
+func (cpu *cpuShares) Isolate(PID int) error {
 
 	// Associate task with the specified cgroup.
 	// cgclassify and cgexec seem to exit with error so temporarily using file io.

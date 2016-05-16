@@ -1,5 +1,3 @@
-// +build integration
-
 package isolation
 
 import (
@@ -9,6 +7,7 @@ import (
 	"os/user"
 	"strconv"
 	"testing"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 func TestCpuSet(t *testing.T) {
@@ -21,7 +20,11 @@ func TestCpuSet(t *testing.T) {
 		t.Skipf("Need to be privileged user to run cgroups tests")
 	}
 
-	cpuset := CPUSetShares{cgroupName: "M", cpuSetShares: "0-2", cgCPUNodes: "0"}
+	const cgroupName = "M"
+	const cpuSetShares = "0-2"
+	const cgCPUNodes = "0"
+
+	cpuset := isolation.NewCPUSetShares(cgroupName, cpuSetShares, cgCPUNodes)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
 	err = cmd.Start()
@@ -39,16 +42,16 @@ func TestCpuSet(t *testing.T) {
 
 	Convey("Should provide cpuset Create() to return and correct cpu set shares", t, func() {
 		So(cpuset.Create(), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpuset/" + cpuset.cgroupName + "/cpuset.cpus")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpuset/" + cgroupName + "/cpuset.cpus")
 		So(err, ShouldBeNil)
 
 		inputFmt := data[:len(data)-1]
-		So(string(inputFmt), ShouldEqual, cpuset.cpuSetShares)
+		So(string(inputFmt), ShouldEqual, cpuSetShares)
 	})
 
 	Convey("Should provide cpuset Isolate() to return and correct process id", t, func() {
 		So(cpuset.Isolate(cmd.Process.Pid), ShouldBeNil)
-		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpuset/" + cpuset.cgroupName + "/tasks")
+		data, err := ioutil.ReadFile("/sys/fs/cgroup/cpuset/" + cgroupName + "/tasks")
 		So(err, ShouldBeNil)
 
 		inputFmt := data[:len(data)-1]
