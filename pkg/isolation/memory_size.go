@@ -10,24 +10,18 @@ import (
 // MemorySize defines input data
 type MemorySize struct {
 	name string
-	size string
+	size int
 }
 
 // NewMemorySize creates an instance of input data.
-func NewMemorySize(name string, size string) Isolation {
+func NewMemorySize(name string, size int) Isolation {
 	return &MemorySize{name: name, size: size}
 }
 
-// Controller returns the cgroup controller name.
-func (memorySize *MemorySize) Controller() string {
-	return "mem"
+// Prefix returns the command prefix to run with this isolation mechanism.
+func (memorySize *MemorySize) Prefix() string {
+	return "cgexec -g memory:" + memorySize.name
 }
-
-// Path returns the path relative to the controller root.
-func (memorySize *MemorySize) Path() string {
-	return memorySize.name
-}
-
 
 // Clean removes specified cgroup.
 func (memorySize *MemorySize) Clean() error {
@@ -55,7 +49,7 @@ func (memorySize *MemorySize) Create() error {
 
 	// 1.b Set cgroup memory size.
 
-	cmd = exec.Command("cgset", "-r", "memory.limit_in_bytes="+memorySize.size, memorySize.name)
+	cmd = exec.Command("cgset", "-r", "memory.limit_in_bytes="+strconv.Itoa(memorySize.size), memorySize.name)
 
 	err = cmd.Run()
 	if err != nil {
