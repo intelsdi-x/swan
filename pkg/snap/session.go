@@ -123,7 +123,7 @@ func (s *Session) Start(experiment string, phase string) error {
 	t.State = r.State
 	s.task = t
 
-	// Save experiment and phase to the session
+	// Save experiment and phase to the session.
 	s.Experiment = experiment
 	s.Phase = phase
 
