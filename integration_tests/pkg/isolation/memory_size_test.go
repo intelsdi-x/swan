@@ -1,7 +1,6 @@
 package isolation
 
 import (
-	"bytefmt"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
