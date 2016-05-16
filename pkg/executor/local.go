@@ -4,7 +4,6 @@ import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -58,13 +57,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	// Create temporary output files.
-	currentDir, _ := os.Getwd()
-	stdoutFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stdout_")
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := ioutil.TempFile(currentDir, "swan_local_executor_stderr_")
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
 		return nil, err
 	}

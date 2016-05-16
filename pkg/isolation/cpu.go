@@ -13,8 +13,8 @@ type CPUShares struct {
 	shares int
 }
 
-// NewShares instance creation.
-func NewShares(name string, shares int) *CPUShares {
+// NewCPUShares instance creation.
+func NewCPUShares(name string, shares int) Isolation {
 	return &CPUShares{name: name, shares: shares}
 }
 
@@ -27,8 +27,6 @@ func (cpu *CPUShares) Controller() string {
 func (cpu *CPUShares) Path() string {
 	return cpu.name
 }
-
-
 
 // Clean removes the specified cgroup
 func (cpu *CPUShares) Clean() error {

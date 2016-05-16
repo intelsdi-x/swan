@@ -3,11 +3,11 @@ package executor
 import (
 	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"golang.org/x/crypto/ssh"
-	"io/ioutil"
 	"os"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -53,13 +53,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		return nil, err
 	}
 
-	// Create temporary output files.
-	currentDir, _ := os.Getwd()
-	stdoutFile, err := ioutil.TempFile(currentDir, "swan_remote_executor_stdout_")
-	if err != nil {
-		return nil, err
-	}
-	stderrFile, err := ioutil.TempFile(currentDir, "swan_remote_executor_stderr_")
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
 	if err != nil {
 		return nil, err
 	}

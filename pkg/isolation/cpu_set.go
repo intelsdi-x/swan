@@ -15,21 +15,8 @@ type CPUSet struct {
 	mems Set
 }
 
-// Set represents a traditional set type so we can do intersections, joins, etc.
-// on core and memory node ids.
-type Set map[int]struct{}
-
-// NewSet returns a set containing the element from ids.
-func NewSet(ids ...int) Set {
-	ret := Set{}
-	for id := range(ids) {
-		ret[id] = struct{}{}
-	}
-	return ret
-}
-
 // NewCPUSet creates an instance of input data.
-func NewCPUSet(name string, cpus Set, mems Set) *CPUSet {
+func NewCPUSet(name string, cpus Set, mems Set) Isolation {
 	return &CPUSet{
 		name: name,
 		cpus: cpus,
@@ -101,7 +88,6 @@ func (cpuSet *CPUSet) Create() error {
 
 // Isolate creates specified cgroup.
 func (cpuSet *CPUSet) Isolate(PID int) error {
-
 	// Set PID to cgroups
 	// cgclassify & cgexec seem to exit with error so temporarily using file io
 
