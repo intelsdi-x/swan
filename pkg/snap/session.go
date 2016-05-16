@@ -6,6 +6,8 @@ import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"time"
+	"os"
+	"path"
 )
 
 type task struct {
@@ -91,7 +93,13 @@ func (s *Session) Start(experiment string, phase string) error {
 	}
 
 	if !loaded {
-		err = plugins.Load("snap-plugin-processor-session-tagging")
+		// TODO(skonefal): Remove loading this plugin from code.
+		goPath := os.Getenv("GOPATH")
+		buildPath := path.Join(goPath, "src", "github.com",
+			"intelsdi-x", "swan", "build")
+		pluginPath := []string{path.Join(
+			buildPath, "snap-plugin-processor-session-tagging")}
+		err = plugins.Load(pluginPath)
 		if err != nil {
 			return err
 		}

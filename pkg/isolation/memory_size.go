@@ -5,18 +5,18 @@ import "io/ioutil"
 import "strconv"
 
 // MemorySize defines input data
-type MemorySize struct {
+type memorySize struct {
 	cgroupName string
 	memorySize string
 }
 
 // NewMemorySize creates an instance of input data.
-func NewMemorySize(nameOfTheCgroup string, memorySizeShares string) *MemorySize {
-	return &MemorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
+func NewMemorySize(nameOfTheCgroup string, memorySizeShares string) Isolation {
+	return &memorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
 }
 
 // Clean removes specified cgroup.
-func (memorysize *MemorySize) Clean() error {
+func (memorysize *memorySize) Clean() error {
 
 	cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.cgroupName)
 
@@ -29,7 +29,7 @@ func (memorysize *MemorySize) Clean() error {
 }
 
 // Create specified cgroup.
-func (memorysize *MemorySize) Create() error {
+func (memorysize *memorySize) Create() error {
 
 	// 1.a Create memory size cgroup.
 
@@ -53,7 +53,7 @@ func (memorysize *MemorySize) Create() error {
 }
 
 // Isolate create specified cgroup and associates specified process id
-func (memorysize *MemorySize) Isolate(PID int) error {
+func (memorysize *memorySize) Isolate(PID int) error {
 
 	// Set PID to cgroups.
 	// cgclassify and cgexec seem to exit with error so temporarily using file io.

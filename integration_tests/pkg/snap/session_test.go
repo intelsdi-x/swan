@@ -1,5 +1,3 @@
-// +build integration
-
 package snap
 
 import (
@@ -17,6 +15,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 type Snapd struct {
@@ -83,9 +82,13 @@ func (s *Snapd) Connected() bool {
 func TestSnap(t *testing.T) {
 	var snapd *Snapd
 	var c *client.Client
-	var s *Session
+	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
+
+	goPath := os.Getenv("GOPATH")
+	//buildPath := []string{goPath, "src", "github.com", "intelsdi-x", "swan", "build"}
+	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("Testing snap session", t, func() {
 		Convey("Starting snapd", func() {
@@ -107,9 +110,11 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Loading collectors", func() {
-			plugins := NewPlugins(c)
+			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
-			err := plugins.Load("snap-plugin-collector-session-test")
+
+			pluginPath := []string{path.Join(buildPath, "snap-plugin-collector-session-test")}
+			err := plugins.Load(pluginPath)
 			So(err, ShouldBeNil)
 
 			// Wait until metric is available in namespace.
@@ -130,10 +135,14 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Loading publishers", func() {
-			plugins := NewPlugins(c)
+			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
-			plugins.Load("snap-plugin-publisher-session-test")
+
+			//pluginPath := append(buildPath, "snap-plugin-publisher-session-test")
+
+			pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
+			plugins.Load(pluginPath)
 
 			publisher = wmap.NewPublishNode("session-test", 1)
 
@@ -149,7 +158,7 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Creating a Snap experiment session", func() {
-			s = NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
+			s = snap.NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
 			So(s, ShouldNotBeNil)
 		})
 
@@ -182,7 +191,7 @@ func TestSnap(t *testing.T) {
 				if err != nil {
 					continue
 				}
-
+				
 				if len(dat) > 0 {
 					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
