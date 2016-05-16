@@ -86,6 +86,10 @@ func TestSnap(t *testing.T) {
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
+	goPath := os.Getenv("GOPATH")
+	//buildPath := []string{goPath, "src", "github.com", "intelsdi-x", "swan", "build"}
+	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
+
 	Convey("Testing snap session", t, func() {
 		Convey("Starting snapd", func() {
 			snapd = NewSnapd()
@@ -108,7 +112,9 @@ func TestSnap(t *testing.T) {
 		Convey("Loading collectors", func() {
 			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
-			err := plugins.Load("snap-plugin-collector-session-test")
+
+			pluginPath := []string{path.Join(buildPath, "snap-plugin-collector-session-test")}
+			err := plugins.Load(pluginPath)
 			So(err, ShouldBeNil)
 
 			// Wait until metric is available in namespace.
@@ -132,7 +138,11 @@ func TestSnap(t *testing.T) {
 			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
-			plugins.Load("snap-plugin-publisher-session-test")
+
+			//pluginPath := append(buildPath, "snap-plugin-publisher-session-test")
+
+			pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
+			plugins.Load(pluginPath)
 
 			publisher = wmap.NewPublishNode("session-test", 1)
 
@@ -172,16 +182,18 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Reading samples from file", func() {
-			retries := 5
+			retries := 15
 			found := false
 			for i := 0; i < retries; i++ {
 				time.Sleep(500 * time.Millisecond)
 
 				dat, err := ioutil.ReadFile(metricsFile)
 				if err != nil {
+					fmt.Printf("error: %s\n", err.Error())
 					continue
 				}
 
+				fmt.Printf("len(dat): %d\n", len(dat))
 				if len(dat) > 0 {
 					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
