@@ -182,18 +182,16 @@ func TestSnap(t *testing.T) {
 		})
 
 		Convey("Reading samples from file", func() {
-			retries := 15
+			retries := 5
 			found := false
 			for i := 0; i < retries; i++ {
 				time.Sleep(500 * time.Millisecond)
 
 				dat, err := ioutil.ReadFile(metricsFile)
 				if err != nil {
-					fmt.Printf("error: %s\n", err.Error())
 					continue
 				}
-
-				fmt.Printf("len(dat): %d\n", len(dat))
+				
 				if len(dat) > 0 {
 					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
