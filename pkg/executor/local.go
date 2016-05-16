@@ -44,7 +44,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			prefixes = append(prefixes, isolator.Prefix())
 		}
 
-		cmd = exec.Command("/bin/sh", "-c", strings.Join(prefixes, " ") + " " + command)
+		cmd = exec.Command("/bin/sh", "-c", strings.Join(prefixes, " ")+" "+command)
 	}
 
 	// It is important to set additional Process Group ID for parent process and his children

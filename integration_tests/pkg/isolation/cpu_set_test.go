@@ -25,7 +25,7 @@ func TestCpuSet(t *testing.T) {
 	cpus := isolation.NewSet(0, 1)
 	mems := isolation.NewSet(0)
 
-	cpuset := isolation.NewCPUSet("M", cpus, mems)
+	cpuset := isolation.NewCPUSet(cpusetName, cpus, mems)
 	cmd := exec.Command("sleep", "1h")
 	err = cmd.Start()
 
