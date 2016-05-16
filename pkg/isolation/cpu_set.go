@@ -32,7 +32,6 @@ func (cpuSet *CPUSet) Prefix() string {
 // Clean removes specified cgroup.
 func (cpuSet *CPUSet) Clean() error {
 	cmd := exec.Command("cgdelete", "-g", "cpuset:"+cpuSet.name)
-
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -43,10 +42,8 @@ func (cpuSet *CPUSet) Clean() error {
 
 // Create specified cgroup.
 func (cpuSet *CPUSet) Create() error {
-
 	// 1.a Create cpuset cgroup.
 	cmd := exec.Command("cgcreate", "-g", "cpuset:"+cpuSet.name)
-
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -60,7 +57,6 @@ func (cpuSet *CPUSet) Create() error {
 	}
 
 	cmd = exec.Command("cgset", "-r", "cpuset.cpus="+strings.Join(cpus, ","), cpuSet.name)
-
 	err = cmd.Run()
 	if err != nil {
 		return err
@@ -84,8 +80,6 @@ func (cpuSet *CPUSet) Create() error {
 // Isolate creates specified cgroup.
 func (cpuSet *CPUSet) Isolate(PID int) error {
 	// Set PID to cgroups
-	// cgclassify & cgexec seem to exit with error so temporarily using file io
-
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
 	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/cpuset", cpuSet.name, "/tasks"), d, 0644)
