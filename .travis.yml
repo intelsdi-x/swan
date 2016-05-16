@@ -1,5 +1,6 @@
 sudo: false
 language: go
+sudo: required
 go:
 - 1.6
 before_install:
