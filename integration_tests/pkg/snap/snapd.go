@@ -10,14 +10,17 @@ import (
 	"time"
 )
 
+// Snapd represents Snap daemon used in tests.
 type Snapd struct {
 	task executor.TaskHandle
 }
 
+// NewSnapd constructs Snapd.
 func NewSnapd() *Snapd {
 	return &Snapd{}
 }
 
+// Execute starts Snap daemon.
 func (s *Snapd) Execute() error {
 	l := executor.NewLocal()
 	gopath := os.Getenv("GOPATH")
@@ -37,6 +40,7 @@ func (s *Snapd) Execute() error {
 	return nil
 }
 
+// Stop stops Snap daemon.
 func (s *Snapd) Stop() error {
 	if s.task == nil {
 		return errors.New("Snapd not started: cannot find task")
@@ -45,6 +49,7 @@ func (s *Snapd) Stop() error {
 	return s.task.Stop()
 }
 
+// CleanAndEraseOutput cleans and removes Output.
 func (s *Snapd) CleanAndEraseOutput() error {
 	if s.task == nil {
 		return errors.New("Snapd not started: cannot find task")
@@ -54,6 +59,7 @@ func (s *Snapd) CleanAndEraseOutput() error {
 	return s.task.EraseOutput()
 }
 
+// Connected checks if we can connect to Snap daemon.
 func (s *Snapd) Connected() bool {
 	retries := 5
 	connected := false
