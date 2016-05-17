@@ -1,24 +1,31 @@
 package isolation
 
-import "os/exec"
-import "io/ioutil"
-import "strconv"
+import (
+	"io/ioutil"
+	"os/exec"
+	"path"
+	"strconv"
+)
 
 // CPUShares defines data needed for CPU controller.
-type cpuShares struct {
-	cgroupName string
-	cpuShares  string
+type CPUShares struct {
+	name   string
+	shares int
 }
 
 // NewCPUShares instance creation.
-func NewCPUShares(nameOfTheCgroup string, NumShares string) Isolation {
-	return &cpuShares{cgroupName: nameOfTheCgroup, cpuShares: NumShares}
+func NewCPUShares(name string, shares int) Isolation {
+	return &CPUShares{name: name, shares: shares}
+}
+
+// Prefix returns the command prefix to run with this isolation mechanism.
+func (cpu *CPUShares) Prefix() string {
+	return "cgexec -g cpu:" + cpu.name
 }
 
 // Clean removes the specified cgroup
-func (cpu *cpuShares) Clean() error {
-
-	cmd := exec.Command("sh", "-c", "cgdelete -g cpu"+":"+cpu.cgroupName)
+func (cpu *CPUShares) Clean() error {
+	cmd := exec.Command("sh", "-c", "cgdelete -g cpu"+":"+cpu.name)
 
 	err := cmd.Run()
 	if err != nil {
@@ -29,21 +36,16 @@ func (cpu *cpuShares) Clean() error {
 }
 
 // Create specified cgroup.
-func (cpu *cpuShares) Create() error {
-
+func (cpu *CPUShares) Create() error {
 	// 1 Create cpu cgroup
-
-	cmd := exec.Command("sh", "-c", "cgcreate -g "+"cpu"+":"+cpu.cgroupName)
-
+	cmd := exec.Command("cgcreate", "-g", "cpu:"+cpu.name)
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
 	// 2 Set cpu cgroup shares
-
-	cmd = exec.Command("sh", "-c", "cgset -r cpu.shares="+cpu.cpuShares+" "+cpu.cgroupName)
-
+	cmd = exec.Command("cgset", "-r", "cpu.shares="+strconv.Itoa(cpu.shares), cpu.name)
 	err = cmd.Run()
 	if err != nil {
 		return err
@@ -53,14 +55,11 @@ func (cpu *cpuShares) Create() error {
 }
 
 // Isolate associates specified pid to the cgroup.
-func (cpu *cpuShares) Isolate(PID int) error {
-
+func (cpu *CPUShares) Isolate(PID int) error {
 	// Associate task with the specified cgroup.
-	// cgclassify and cgexec seem to exit with error so temporarily using file io.
-
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile("/sys/fs/cgroup/"+"cpu/"+cpu.cgroupName+"/tasks", d, 0644)
+	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/cpu", cpu.name, "tasks"), d, 0644)
 
 	if err != nil {
 		return err
