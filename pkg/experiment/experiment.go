@@ -71,14 +71,14 @@ func (e *Experiment) Run() (err error) {
 		for i := uint(0); i < phase.Repetitions(); i++ {
 			// Create phase session.
 			session := experimentPhase.Session{
-				Name:         phase.Name(),
+				PhaseID:      phase.Name(),
 				ExperimentID: e.uuidName, // TODO: Decide if we want to have `customName` here as well.
 				RepetitionID: i,
 			}
 
 			// Start timer.
 			phaseStartingTime := time.Now()
-			log.Info("Starting ", session.Name, " repetition ", session.RepetitionID)
+			log.Info("Starting ", session.PhaseID, " repetition ", session.RepetitionID)
 
 			// Create and step into unique phase dir.
 			err = e.createPhaseDir(session)
@@ -145,7 +145,7 @@ func (e *Experiment) Finalize() {
 
 func (e *Experiment) createPhaseDir(session experimentPhase.Session) error {
 	phaseDir := path.Join(e.experimentDirectory,
-		session.Name, strconv.FormatInt(int64(session.RepetitionID), 10))
+		session.PhaseID, strconv.FormatInt(int64(session.RepetitionID), 10))
 
 	err := os.MkdirAll(phaseDir, 0777)
 	if err != nil {

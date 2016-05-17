@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"time"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"os"
 	"path"
+	"time"
 )
 
 type task struct {
@@ -23,11 +24,11 @@ type task struct {
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	// Experiment is the **unique** experiment id. For example 'foobar-13a1b0bb-4467-4476-9818-986effe5c963'.
-	Experiment string
-
-	// Phase is the **unique** phase id. For example 'barbaz-13a1b0bb-4467-4476-9818-986effe5c963'.
-	Phase string
+	//	// Experiment is the **unique** experiment id. For example 'foobar-13a1b0bb-4467-4476-9818-986effe5c963'.
+	//	Experiment string
+	//
+	//	// Phase is the **unique** phase id. For example 'barbaz-13a1b0bb-4467-4476-9818-986effe5c963'.
+	//	Phase string
 
 	// Interval defines the sample interval for the listed metrics.
 	Interval time.Duration
@@ -62,8 +63,7 @@ func NewSession(
 }
 
 // Start an experiment session.
-// NOTE: The 'run' and 'permutation' for a configuration space may have to be encoded here.
-func (s *Session) Start(experiment string, phase string) error {
+func (s *Session) Start(phaseSession phase.Session) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -106,8 +106,10 @@ func (s *Session) Start(experiment string, phase string) error {
 	}
 
 	pr := wmap.NewProcessNode("session-processor", 1)
-	pr.AddConfigItem("swan_experiment", experiment)
-	pr.AddConfigItem("swan_phase", phase)
+	pr.AddConfigItem("swan_experiment", phaseSession.ExperimentID)
+	pr.AddConfigItem("swan_phase", phaseSession.PhaseID)
+	// TODO: Decide permutation vs repetition name, what's better?
+	pr.AddConfigItem("swan_permutation", fmt.Sprintf("%d", phaseSession.RepetitionID))
 	pr.Add(s.Publisher)
 	wf.CollectNode.Add(pr)
 
@@ -122,10 +124,6 @@ func (s *Session) Start(experiment string, phase string) error {
 	t.ID = r.ID
 	t.State = r.State
 	s.task = t
-
-	// Save experiment and phase to the session.
-	s.Experiment = experiment
-	s.Phase = phase
 
 	return nil
 }
@@ -161,8 +159,6 @@ func (s *Session) Stop() error {
 	}
 
 	s.task = nil
-	s.Experiment = ""
-	s.Phase = ""
 
 	return nil
 }
