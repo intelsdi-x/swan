@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -236,16 +237,12 @@ func (taskHandle *remoteTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
-	// Remove stdout file.
-	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
+	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+
+	// Remove temporary directory created for stdout and stderr.
+	if err := os.RemoveAll(outputDir); err != nil {
 		return err
 	}
-
-	// Remove stderr file.
-	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
-		return err
-	}
-
 	return nil
 }
 
