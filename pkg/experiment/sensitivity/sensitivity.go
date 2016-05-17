@@ -4,7 +4,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"os"
 	"strconv"
 	"time"
@@ -28,9 +27,9 @@ type Experiment struct {
 	name                           string
 	logLevel                       log.Level
 	configuration                  Configuration
-	productionTaskLauncher         workloads.Launcher
-	loadGeneratorForProductionTask workloads.LoadGenerator
-	aggressorTaskLaunchers         []workloads.Launcher
+	productionTaskLauncher         LauncherWithCollection
+	loadGeneratorForProductionTask LoadGeneratorWithCollection
+	aggressorTaskLaunchers         []LauncherWithCollection
 
 	// Generic Experiment.
 	exp *experiment.Experiment
@@ -50,9 +49,9 @@ func NewExperiment(
 	name string,
 	logLevel log.Level,
 	configuration Configuration,
-	productionTaskLauncher workloads.Launcher,
-	loadGeneratorForProductionTask workloads.LoadGenerator,
-	aggressorTaskLaunchers []workloads.Launcher) *Experiment {
+	productionTaskLauncher LauncherWithCollection,
+	loadGeneratorForProductionTask LoadGeneratorWithCollection,
+	aggressorTaskLaunchers []LauncherWithCollection) *Experiment {
 
 	// TODO(mpatelcz): Validate configuration.
 	return &Experiment{
@@ -68,8 +67,8 @@ func NewExperiment(
 func (e *Experiment) prepareTuningPhase() *tuningPhase {
 	targetLoad := int(-1)
 	return &tuningPhase{
-		pr:          e.productionTaskLauncher,
-		lgForPr:     e.loadGeneratorForProductionTask,
+		pr:          e.productionTaskLauncher.Launcher,
+		lgForPr:     e.loadGeneratorForProductionTask.LoadGenerator,
 		SLO:         e.configuration.SLO,
 		repetitions: e.configuration.Repetitions,
 		TargetLoad:  &targetLoad,
@@ -84,7 +83,7 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 			namePrefix:      "baseline",
 			pr:              e.productionTaskLauncher,
 			lgForPr:         e.loadGeneratorForProductionTask,
-			bes:             []workloads.Launcher{},
+			bes:             []LauncherWithCollection{},
 			loadDuration:    e.configuration.LoadDuration,
 			loadPointsCount: e.configuration.LoadPointsCount,
 			repetitions:     e.configuration.Repetitions,
@@ -107,7 +106,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 				namePrefix:            "aggressor_nr_" + strconv.Itoa(beIndex),
 				pr:                    e.productionTaskLauncher,
 				lgForPr:               e.loadGeneratorForProductionTask,
-				bes:                   []workloads.Launcher{beLauncher},
+				bes:                   []LauncherWithCollection{beLauncher},
 				loadDuration:          e.configuration.LoadDuration,
 				loadPointsCount:       e.configuration.LoadPointsCount,
 				repetitions:           e.configuration.Repetitions,
