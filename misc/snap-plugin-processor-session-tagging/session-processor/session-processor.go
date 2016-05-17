@@ -31,13 +31,13 @@ func (p *SessionProcessor) Process(contentType string, content []byte, config ma
 
 	swanExperiment := config["swan_experiment"].(ctypes.ConfigValueStr).Value
 	swanPhase := config["swan_phase"].(ctypes.ConfigValueStr).Value
-	swanPermutation := config["swan_permutation"].(ctypes.ConfigValueStr).Value
+	swanRepetition := config["swan_repetition"].(ctypes.ConfigValueStr).Value
 
 	for idx := range metrics {
 		metrics[idx].Tags_ = map[string]string{
-			"swan_experiment":  swanExperiment,
-			"swan_phase":       swanPhase,
-			"swan_permutation": swanPermutation,
+			"swan_experiment": swanExperiment,
+			"swan_phase":      swanPhase,
+			"swan_repetition": swanRepetition,
 		}
 	}
 

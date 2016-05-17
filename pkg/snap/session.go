@@ -108,8 +108,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	pr := wmap.NewProcessNode("session-processor", 1)
 	pr.AddConfigItem("swan_experiment", phaseSession.ExperimentID)
 	pr.AddConfigItem("swan_phase", phaseSession.PhaseID)
-	// TODO: Decide permutation vs repetition name, what's better?
-	pr.AddConfigItem("swan_permutation", fmt.Sprintf("%d", phaseSession.RepetitionID))
+	pr.AddConfigItem("swan_repetition", fmt.Sprintf("%d", phaseSession.RepetitionID))
 	pr.Add(s.Publisher)
 	wf.CollectNode.Add(pr)
 
