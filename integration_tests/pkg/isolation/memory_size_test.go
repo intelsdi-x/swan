@@ -23,7 +23,7 @@ func TestMemorySize(t *testing.T) {
 	}
 
 	memoryName := "M"
-	memorysizeInBytes := 64 * bytefmt.MEGABYTE
+	memorysizeInBytes := int(64 * bytefmt.MEGABYTE)
 	memorysize := isolation.NewMemorySize(memoryName, memorysizeInBytes)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")
