@@ -14,12 +14,20 @@ import (
 	"github.com/vektra/errors"
 	"os"
 	"path"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 )
 
 
 func TestCassandraPublisher(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
-	err := runCassandraPublisherWorkflow()
+
+	err := loadSnapPlugins()
+	Convey("When loading snap plugins.", t, func() {
+		So(err, ShouldBeNil)
+	})
+
+	err = runCassandraPublisherWorkflow()
 	Convey("When running Cassadndra workflow.", t, func() {
 		So(err, ShouldBeNil)
 	})
@@ -36,6 +44,76 @@ func TestCassandraPublisher(t *testing.T) {
 		})
 	})
 }
+
+func loadSnapPlugins() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Recovered from panic: %v\n", r)
+			err = r.(error)
+		}
+	}()
+
+	snapClient, err := client.New("http://127.0.0.1:8181", "v1", true)
+	if err != nil {
+		return fmt.Errorf("loadSnapPlugins: error connecting to snap: %s\n",
+				   err.Error())
+	}
+	plugins := snap.NewPlugins(snapClient)
+
+	if isNotCassandraPluginLoaded(plugins) {
+		loadCassandraPublisherPlugin(plugins)
+	}
+	if isNotMockCollectorPluginLoaded(plugins) {
+		loadMockCollectorPlugin(plugins)
+	}
+	if isNotSessionProcessorPluginLoaded(plugins) {
+		loadSessionProcessorPlugin(plugins)
+	}
+
+	return err
+}
+
+func isNotCassandraPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
+	isLoaded, err := pluginClient.IsLoaded("publisher", "cassandra")
+	if err != nil {
+		panic("isNotCassandraPluginLoaded: " + err.Error())
+	}
+	return !isLoaded
+}
+
+func isNotMockCollectorPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
+	isLoaded, err := pluginClient.IsLoaded("collector", "mock")
+	if err != nil {
+		panic("isNotMockCollectorPluginLoaded: " + err.Error())
+	}
+	return !isLoaded
+}
+
+func isNotSessionProcessorPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
+	isLoaded, err := pluginClient.IsLoaded("processor", "session-processor")
+	if err != nil {
+		panic("isNotSessionProcessorPluginLoaded: " + err.Error())
+	}
+	return !isLoaded
+}
+
+func loadCassandraPublisherPlugin(*snap.Plugins) (err error) {
+	goPath := os.Getenv("GOPATH")
+	pluginPath :=
+	return nil
+}
+
+func loadMockCollectorPlugin(*snap.Plugins) (err error) {
+	goPath := os.Getenv("GOPATH")
+	return nil
+}
+
+
+func loadSessionProcessorPlugin(*snap.Plugins) (err error) {
+	goPath := os.Getenv("GOPATH")
+	return nil
+}
+
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error){
 	cluster := gocql.NewCluster("127.0.0.1")
