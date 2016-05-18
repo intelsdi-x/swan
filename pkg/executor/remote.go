@@ -125,9 +125,9 @@ type remoteTaskHandle struct {
 	exitCode       *int
 }
 
-// newRemoteTask returns a RemoteTask instance.
+// newRemoteTaskHandle returns a remoteTaskHandle instance.
 func newRemoteTaskHandle(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	host string, waitEndChannel chan struct{}, exitCode *int) *remoteTask {
+	host string, waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
 	return &remoteTaskHandle{
 		session:        session,
 		stdoutFile:     stdoutFile,
@@ -275,6 +275,6 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 	}
 }
 
-func (task *remoteTask) Address() string {
-	return task.host
+func (taskHandle *remoteTaskHandle) Address() string {
+	return taskHandle.host
 }
