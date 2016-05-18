@@ -29,7 +29,7 @@ type measurementPhase struct {
 	// Number of load points to test.
 	loadPointsCount int
 	// Number of repetitions
-	repetitions uint
+	repetitions int
 	// Current measurement's load point.
 	currentLoadPointIndex int
 
@@ -48,7 +48,7 @@ func (m *measurementPhase) Name() string {
 }
 
 // Returns number of repetitions.
-func (m *measurementPhase) Repetitions() uint {
+func (m *measurementPhase) Repetitions() int {
 	return m.repetitions
 }
 

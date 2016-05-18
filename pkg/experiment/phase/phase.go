@@ -6,7 +6,7 @@ type Phase interface {
 	// Name returns measurement name.
 	Name() string
 	// Repetitions returns desired number of measurement repetitions.
-	Repetitions() uint
+	Repetitions() int
 	// Run runs a measurement. It takes phase session to make each phase
 	// unique for collected results.
 	Run(Session) error

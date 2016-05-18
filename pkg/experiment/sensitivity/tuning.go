@@ -15,7 +15,7 @@ type tuningPhase struct {
 	// Given Service Level Objective.
 	SLO int
 	// Number of repetitions
-	repetitions uint
+	repetitions int
 
 	// Results across repetitions.
 	// Load which was achieved during experiment e.g QPS, RPS.
@@ -33,7 +33,7 @@ func (p *tuningPhase) Name() string {
 }
 
 // Returns number of repetitions.
-func (p *tuningPhase) Repetitions() uint {
+func (p *tuningPhase) Repetitions() int {
 	return p.repetitions
 }
 
