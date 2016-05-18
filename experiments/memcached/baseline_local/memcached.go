@@ -76,9 +76,9 @@ func main() {
 		"MemcachedWithLocalMutilateNoCollection",
 		logLevel,
 		configuration,
-		sensitivity.NewLauncher(memcachedLauncher),
-		sensitivity.NewLoadGenerator(mutilateLoadGenerator),
-		[]sensitivity.LauncherWithCollection{},
+		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
+		sensitivity.NewLoadGeneratorWithoutSession(mutilateLoadGenerator),
+		[]sensitivity.LauncherAndSessionPair{},
 	)
 
 	// Run Experiment.

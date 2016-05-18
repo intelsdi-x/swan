@@ -27,14 +27,14 @@ type SensitivityTestSuite struct {
 	mockedAggressorTask *executorMocks.TaskHandle
 
 	// LC collection Launcher and Handle.
-	mockedLcCollectionLauncher *snapMocks.SessionLauncher
-	mockedLcCollectionHandle   *snapMocks.SessionHandle
+	mockedLcSessionLauncher *snapMocks.SessionLauncher
+	mockedLcSessionHandle   *snapMocks.SessionHandle
 	// LoadGenerator Launcher and Handle.
-	mockedLoadGeneratorCollectionLauncher *snapMocks.SessionLauncher
-	mockedLoadGeneratorCollectionHandle   *snapMocks.SessionHandle
+	mockedLoadGeneratorSessionLauncher *snapMocks.SessionLauncher
+	mockedLoadGeneratorSessionHandle   *snapMocks.SessionHandle
 	// Aggressor Launcher and Handle.
-	mockedAggressorCollectionLauncher *snapMocks.SessionLauncher
-	mockedAggressorCollectionHandle   *snapMocks.SessionHandle
+	mockedAggressorSessionLauncher *snapMocks.SessionLauncher
+	mockedAggressorSessionHandle   *snapMocks.SessionHandle
 
 	configuration         Configuration
 	sensitivityExperiment *Experiment
@@ -54,14 +54,14 @@ func (s *SensitivityTestSuite) SetupTest() {
 	s.mockedAggressorTask = new(executorMocks.TaskHandle)
 
 	// LC collection Launcher and Handle.
-	s.mockedLcCollectionLauncher = new(snapMocks.SessionLauncher)
-	s.mockedLcCollectionHandle = new(snapMocks.SessionHandle)
+	s.mockedLcSessionLauncher = new(snapMocks.SessionLauncher)
+	s.mockedLcSessionHandle = new(snapMocks.SessionHandle)
 	// LoadGenerator Launcher and Handle.
-	s.mockedLoadGeneratorCollectionLauncher = new(snapMocks.SessionLauncher)
-	s.mockedLoadGeneratorCollectionHandle = new(snapMocks.SessionHandle)
+	s.mockedLoadGeneratorSessionLauncher = new(snapMocks.SessionLauncher)
+	s.mockedLoadGeneratorSessionHandle = new(snapMocks.SessionHandle)
 	// Aggressor Launcher and Handle.
-	s.mockedAggressorCollectionLauncher = new(snapMocks.SessionLauncher)
-	s.mockedAggressorCollectionHandle = new(snapMocks.SessionHandle)
+	s.mockedAggressorSessionLauncher = new(snapMocks.SessionLauncher)
+	s.mockedAggressorSessionHandle = new(snapMocks.SessionHandle)
 
 	s.configuration = Configuration{
 		SLO:             1,
@@ -118,25 +118,26 @@ func (s *SensitivityTestSuite) assertAllExpectations() {
 	So(s.mockedAggressor.AssertExpectations(s.T()), ShouldBeTrue)
 	So(s.mockedAggressorTask.AssertExpectations(s.T()), ShouldBeTrue)
 
-	So(s.mockedLcCollectionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
-	So(s.mockedLcCollectionHandle.AssertExpectations(s.T()), ShouldBeTrue)
-	So(s.mockedLoadGeneratorCollectionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
-	So(s.mockedLoadGeneratorCollectionHandle.AssertExpectations(s.T()), ShouldBeTrue)
-	So(s.mockedAggressorCollectionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
-	So(s.mockedAggressorCollectionHandle.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLcSessionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLcSessionHandle.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLoadGeneratorSessionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedLoadGeneratorSessionHandle.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedAggressorSessionLauncher.AssertExpectations(s.T()), ShouldBeTrue)
+	So(s.mockedAggressorSessionHandle.AssertExpectations(s.T()), ShouldBeTrue)
 }
 
 func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 	Convey("While using sensitivity profile experiment", s.T(), func() {
-		// Create experiment without any collection session.
+		// Create experiment without any Snap session.
+
 		s.sensitivityExperiment = NewExperiment(
 			"test",
 			logrus.ErrorLevel,
 			s.configuration,
-			NewLauncher(s.mockedLcLauncher),
-			NewLoadGenerator(s.mockedLoadGenerator),
-			[]LauncherWithCollection{
-				NewLauncher(s.mockedAggressor),
+			NewLauncherWithoutSession(s.mockedLcLauncher),
+			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
+			[]LauncherAndSessionPair{
+				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
 
@@ -174,7 +175,8 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEndWith, "Production task can't be launched")
 
-				So(*s.sensitivityExperiment.tuningPhase.TargetLoad, ShouldEqual, s.mockedTargetLoad)
+				So(*s.sensitivityExperiment.tuningPhase.PeakLoadSatisfyingSLO,
+					ShouldEqual, s.mockedTargetLoad)
 			})
 			s.assertAllExpectations()
 		})
@@ -183,15 +185,15 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 
 func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 	Convey("While using sensitivity profile experiment", s.T(), func() {
-		// Create experiment without any collection session.
+		// Create experiment without any Snap session.
 		s.sensitivityExperiment = NewExperiment(
 			"test",
 			logrus.ErrorLevel,
 			s.configuration,
-			NewLauncher(s.mockedLcLauncher),
-			NewLoadGenerator(s.mockedLoadGenerator),
-			[]LauncherWithCollection{
-				NewLauncher(s.mockedAggressor),
+			NewLauncherWithoutSession(s.mockedLcLauncher),
+			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
+			[]LauncherAndSessionPair{
+				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
 
@@ -252,15 +254,15 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 
 func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 	Convey("While using sensitivity profile experiment", s.T(), func() {
-		// Create experiment without any collection session.
+		// Create experiment without any Snap session.
 		s.sensitivityExperiment = NewExperiment(
 			"test",
 			logrus.ErrorLevel,
 			s.configuration,
-			NewLauncher(s.mockedLcLauncher),
-			NewLoadGenerator(s.mockedLoadGenerator),
-			[]LauncherWithCollection{
-				NewLauncher(s.mockedAggressor),
+			NewLauncherWithoutSession(s.mockedLcLauncher),
+			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
+			[]LauncherAndSessionPair{
+				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
 
@@ -336,47 +338,47 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 	})
 }
 
-func (s *SensitivityTestSuite) mockSingleLcCollectionExecution() {
-	s.mockedLcCollectionLauncher.On(
-		"Launch", s.mockedLcTask, mock.AnythingOfType("phase.Session")).Return(
-		s.mockedLcCollectionHandle, nil).Once()
-	s.mockedLcCollectionHandle.On("Stop").Return(nil).Once()
+func (s *SensitivityTestSuite) mockSingleLcSessionExecution() {
+	s.mockedLcSessionLauncher.On(
+		"LaunchSession", s.mockedLcTask, mock.AnythingOfType("phase.Session")).Return(
+		s.mockedLcSessionHandle, nil).Once()
+	s.mockedLcSessionHandle.On("Stop").Return(nil).Once()
 }
 
-func (s *SensitivityTestSuite) mockSingleLoadGeneratorCollectionExecution() {
-	s.mockedLoadGeneratorCollectionLauncher.On(
-		"Launch", s.mockedLoadGeneratorTask, mock.AnythingOfType("phase.Session")).Return(
-		s.mockedLoadGeneratorCollectionHandle, nil).Once()
-	s.mockedLoadGeneratorCollectionHandle.On("Stop").Return(nil).Once()
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorSessionExecution() {
+	s.mockedLoadGeneratorSessionLauncher.On(
+		"LaunchSession", s.mockedLoadGeneratorTask, mock.AnythingOfType("phase.Session")).Return(
+		s.mockedLoadGeneratorSessionHandle, nil).Once()
+	s.mockedLoadGeneratorSessionHandle.On("Stop").Return(nil).Once()
 }
 
-func (s *SensitivityTestSuite) mockSingleAggressorCollectionExecution() {
-	s.mockedAggressorCollectionLauncher.On(
-		"Launch", s.mockedAggressorTask, mock.AnythingOfType("phase.Session")).Return(
-		s.mockedAggressorCollectionHandle, nil).Once()
-	s.mockedAggressorCollectionHandle.On("Stop").Return(nil).Once()
+func (s *SensitivityTestSuite) mockSingleAggressorSessionExecution() {
+	s.mockedAggressorSessionLauncher.On(
+		"LaunchSession", s.mockedAggressorTask, mock.AnythingOfType("phase.Session")).Return(
+		s.mockedAggressorSessionHandle, nil).Once()
+	s.mockedAggressorSessionHandle.On("Stop").Return(nil).Once()
 }
 
-func (s *SensitivityTestSuite) TestSensitivityWithCollectionSessions() {
+func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 	Convey("While using sensitivity profile experiment", s.T(), func() {
-		// Create experiment with collection session per productionTask,
+		// Create experiment with Snap session per productionTask,
 		// loadGenerator and aggressor.
 
 		s.sensitivityExperiment = NewExperiment(
 			"test",
 			logrus.ErrorLevel,
 			s.configuration,
-			NewLauncherWithCollection(
+			NewCollectedLauncher(
 				s.mockedLcLauncher,
-				s.mockedLcCollectionLauncher,
+				s.mockedLcSessionLauncher,
 			),
-			NewLoadGeneratorWithCollection(
+			NewCollectedLoadGenerator(
 				s.mockedLoadGenerator,
-				s.mockedLoadGeneratorCollectionLauncher,
+				s.mockedLoadGeneratorSessionLauncher,
 			),
-			[]LauncherWithCollection{
-				NewLauncherWithCollection(
-					s.mockedAggressor, s.mockedAggressorCollectionLauncher,
+			[]LauncherAndSessionPair{
+				NewCollectedLauncher(
+					s.mockedAggressor, s.mockedAggressorSessionLauncher,
 				),
 			},
 		)
@@ -389,85 +391,88 @@ func (s *SensitivityTestSuite) TestSensitivityWithCollectionSessions() {
 			// Mock successful baseline phase (for 2 loadPoints)
 			for i := 1; i <= s.configuration.LoadPointsCount; i++ {
 				s.mockSingleLcWorkloadExecution()
-				s.mockSingleLcCollectionExecution()
+				s.mockSingleLcSessionExecution()
 				s.mockSingleLoadGeneratorLoad(
 					i * (s.mockedTargetLoad / s.configuration.LoadPointsCount))
-				s.mockSingleLoadGeneratorCollectionExecution()
+				s.mockSingleLoadGeneratorSessionExecution()
 			}
 
 			// Mock first aggressors phase lcLauncher execution.
 			s.mockSingleLcWorkloadExecution()
-			Convey("When production task's collection session can't be launched we expect error",
+			Convey("When production task's Snap session can't be launched we expect error",
 				func() {
-					s.mockedLcCollectionLauncher.On(
-						"Launch", s.mockedLcTask, mock.AnythingOfType("phase.Session")).Return(
-						nil, errors.New("Production task's collection can't be launched")).Once()
+					s.mockedLcSessionLauncher.On(
+						"LaunchSession",
+						s.mockedLcTask,
+						mock.AnythingOfType("phase.Session"),
+					).Return(
+						nil, errors.New("Production task's session can't be launched")).Once()
 
 					err := s.sensitivityExperiment.Run()
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEndWith, "Production task's collection can't be launched")
+					So(err.Error(), ShouldEndWith, "Production task's session can't be launched")
 				})
 
-			Convey("When production task's collection session is launched successfully", func() {
-				s.mockSingleLcCollectionExecution()
+			Convey("When production task's Snap session is launched successfully", func() {
+				s.mockSingleLcSessionExecution()
 
 				// Mock first aggressors phase aggressor execution.
 				s.mockSingleAggressorWorkloadExecution()
-				Convey("When aggressor's collection session can't be launched we expect error",
+				Convey("When aggressor's Snap session can't be launched we expect error",
 					func() {
-						s.mockedAggressorCollectionLauncher.On(
-							"Launch",
+						s.mockedAggressorSessionLauncher.On(
+							"LaunchSession",
 							s.mockedAggressorTask,
 							mock.AnythingOfType("phase.Session")).Return(
-							nil, errors.New("Aggressor's collection can't be launched")).Once()
+							nil, errors.New("Aggressor's session can't be launched")).Once()
 
 						err := s.sensitivityExperiment.Run()
 						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEndWith, "Aggressor's collection can't be launched")
+						So(err.Error(), ShouldEndWith, "Aggressor's session can't be launched")
 					})
 
-				Convey("When aggressor's collection session is launched successfully", func() {
-					s.mockSingleAggressorCollectionExecution()
+				Convey("When aggressor's Snap session is launched successfully", func() {
+					s.mockSingleAggressorSessionExecution()
 
-					Convey("When loadGenerator collection session can't be launched we expect error",
+					Convey("When loadGenerator Snap session can't be launched we expect error",
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
 							s.mockSingleLoadGeneratorLoadWhenSessionErr(
 								s.mockedTargetLoad / s.configuration.LoadPointsCount)
-							s.mockedLoadGeneratorCollectionLauncher.On(
-								"Launch",
+							s.mockedLoadGeneratorSessionLauncher.On(
+								"LaunchSession",
 								s.mockedLoadGeneratorTask,
 								mock.AnythingOfType("phase.Session")).Return(
-								nil, errors.New("LoadGenerator collection can't be launched")).Once()
+								nil, errors.New("LoadGenerator session can't be launched")).Once()
 
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldNotBeNil)
 							So(err.Error(), ShouldEndWith,
-								"LoadGenerator collection can't be launched")
+								"LoadGenerator session can't be launched")
 						})
 
-					Convey("When loadGenerator collection session is launched successfully",
+					Convey("When loadGenerator Snap session is launched successfully",
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
 							s.mockSingleLoadGeneratorLoad(
 								s.mockedTargetLoad / s.configuration.LoadPointsCount)
-							s.mockSingleLoadGeneratorCollectionExecution()
+							s.mockSingleLoadGeneratorSessionExecution()
 
 							Convey("And next iteration is succesful, we expect no error", func() {
 								// Last iteration.
 
 								// Latency Sensitive task starts.
 								s.mockSingleLcWorkloadExecution()
-								// Latency Sensitive task's collection starts.
-								s.mockSingleLcCollectionExecution()
+								// Latency Sensitive task's session starts.
+								s.mockSingleLcSessionExecution()
 								// Aggressor starts.
 								s.mockSingleAggressorWorkloadExecution()
-								// Aggressor's collection starts.
-								s.mockSingleAggressorCollectionExecution()
+								// Aggressor's session starts.
+								s.mockSingleAggressorSessionExecution()
 								// Load generator starts.
 								s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
-								// Load generator's collection starts.
-								s.mockSingleLoadGeneratorCollectionExecution()
+								// Load generator's session starts.
+								s.mockSingleLoadGeneratorSessionExecution()
 
 								err := s.sensitivityExperiment.Run()
 								So(err, ShouldBeNil)

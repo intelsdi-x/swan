@@ -1,9 +1,10 @@
 package mocks
 
-import "github.com/intelsdi-x/swan/pkg/snap"
+import (
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/snap"
+)
 import "github.com/stretchr/testify/mock"
-
-import "github.com/intelsdi-x/swan/pkg/executor"
 
 import "github.com/intelsdi-x/swan/pkg/experiment/phase"
 
@@ -12,8 +13,8 @@ type SessionLauncher struct {
 	mock.Mock
 }
 
-// Launch provides a mock function with given fields: _a0, _a1
-func (_m *SessionLauncher) Launch(_a0 executor.TaskInfo, _a1 phase.Session) (snap.SessionHandle, error) {
+// LaunchSession provides a mock function with given fields: _a0, _a1
+func (_m *SessionLauncher) LaunchSession(_a0 executor.TaskInfo, _a1 phase.Session) (snap.SessionHandle, error) {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 snap.SessionHandle

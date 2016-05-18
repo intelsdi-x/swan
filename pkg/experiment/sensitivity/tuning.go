@@ -24,7 +24,7 @@ type tuningPhase struct {
 	sliResults []float64
 
 	// Shared reference for TargetLoad needed for Measurement phases.
-	TargetLoad *int
+	PeakLoadSatisfyingSLO *int
 }
 
 // Returns Phase name.
@@ -66,12 +66,13 @@ func (p *tuningPhase) Finalize() error {
 
 	// Calculate average.
 	targetLoad, err := stats.Mean(p.loadResults)
-	*p.TargetLoad = int(targetLoad)
+	*p.PeakLoadSatisfyingSLO = int(targetLoad)
 	if err != nil {
-		p.TargetLoad = nil
+		p.PeakLoadSatisfyingSLO = nil
 		return err
 	}
-	logrus.Debug("Calculated targetLoad (QPS/RPS): ", targetLoad, " for SLO: ", p.SLO)
+	logrus.Debug("Calculated targetLoad (PeakLoadSatisfyingSLO) (QPS/RPS): ",
+		targetLoad, " for SLO: ", p.SLO)
 
 	return nil
 }

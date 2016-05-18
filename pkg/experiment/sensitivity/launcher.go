@@ -5,41 +5,44 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads"
 )
 
-// LauncherWithCollection is a pair of Launcher and corresponding Collection Launcher.
-type LauncherWithCollection struct {
-	Launcher           workloads.Launcher
-	CollectionLauncher snap.SessionLauncher
+// LauncherAndSessionPair is a pair of Launcher and corresponding Session Launcher.
+// TODO(bp): We can think about moving to unified Launcher which launch both
+// Launcher and SessionLauncher. It is not possible right now since Launcher
+// and LauncherSession have not the same API.
+type LauncherAndSessionPair struct {
+	Launcher        workloads.Launcher
+	SessionLauncher snap.SessionLauncher
 }
 
-// NewLauncher constructs Launcher without any Collection.
-func NewLauncher(launcher workloads.Launcher) LauncherWithCollection {
-	return LauncherWithCollection{launcher, nil}
+// NewLauncherWithoutSession constructs LauncherAndSessionPair without any Session.
+func NewLauncherWithoutSession(launcher workloads.Launcher) LauncherAndSessionPair {
+	return LauncherAndSessionPair{launcher, nil}
 }
 
-// NewLauncherWithCollection constructs Launcher with specified Collection.
-func NewLauncherWithCollection(
+// NewCollectedLauncher constructs WorkloadAndSessionPair with specified Session.
+func NewCollectedLauncher(
 	launcher workloads.Launcher,
-	collectionLauncher snap.SessionLauncher) LauncherWithCollection {
-	return LauncherWithCollection{launcher, collectionLauncher}
+	sessionLauncher snap.SessionLauncher) LauncherAndSessionPair {
+	return LauncherAndSessionPair{launcher, sessionLauncher}
 }
 
-// LoadGeneratorWithCollection is a pair of Load Generator and corresponding Collection Launcher.
-type LoadGeneratorWithCollection struct {
-	LoadGenerator      workloads.LoadGenerator
-	CollectionLauncher snap.SessionLauncher
+// LoadGeneratorAndSessionPair is a pair of Load Generator and corresponding Session Launcher.
+type LoadGeneratorAndSessionPair struct {
+	LoadGenerator   workloads.LoadGenerator
+	SessionLauncher snap.SessionLauncher
 }
 
-// NewLoadGenerator constructs LoadGenerator without any Collection.
-func NewLoadGenerator(
-	loadGenerator workloads.LoadGenerator) LoadGeneratorWithCollection {
+// NewLoadGeneratorWithoutSession constructs LoadGenerator without any Session.
+func NewLoadGeneratorWithoutSession(
+	loadGenerator workloads.LoadGenerator) LoadGeneratorAndSessionPair {
 
-	return LoadGeneratorWithCollection{loadGenerator, nil}
+	return LoadGeneratorAndSessionPair{loadGenerator, nil}
 }
 
-// NewLoadGeneratorWithCollection constructs LoadGenerator with specified Collection.
-func NewLoadGeneratorWithCollection(
+// NewCollectedLoadGenerator constructs LoadGenerator with specified Session.
+func NewCollectedLoadGenerator(
 	loadGenerator workloads.LoadGenerator,
-	collectionLauncher snap.SessionLauncher) LoadGeneratorWithCollection {
+	sessionLauncher snap.SessionLauncher) LoadGeneratorAndSessionPair {
 
-	return LoadGeneratorWithCollection{loadGenerator, collectionLauncher}
+	return LoadGeneratorAndSessionPair{loadGenerator, sessionLauncher}
 }

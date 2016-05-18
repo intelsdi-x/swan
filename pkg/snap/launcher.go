@@ -14,5 +14,5 @@ type SessionHandle interface {
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.
 type SessionLauncher interface {
-	Launch(executor.TaskInfo, phase.Session) (SessionHandle, error)
+	LaunchSession(executor.TaskInfo, phase.Session) (SessionHandle, error)
 }

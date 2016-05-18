@@ -12,12 +12,16 @@ import (
 // Configuration - set of parameters to control the experiment.
 type Configuration struct {
 	// Given SLO for the experiment.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	SLO int
 	// Each measurement duration in [s].
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	LoadDuration time.Duration
 	// Number of load points to test.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	LoadPointsCount int
 	// Repetitions.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	Repetitions int
 }
 
@@ -27,9 +31,9 @@ type Experiment struct {
 	name                           string
 	logLevel                       log.Level
 	configuration                  Configuration
-	productionTaskLauncher         LauncherWithCollection
-	loadGeneratorForProductionTask LoadGeneratorWithCollection
-	aggressorTaskLaunchers         []LauncherWithCollection
+	productionTaskLauncher         LauncherAndSessionPair
+	loadGeneratorForProductionTask LoadGeneratorAndSessionPair
+	aggressorTaskLaunchers         []LauncherAndSessionPair
 
 	// Generic Experiment.
 	exp *experiment.Experiment
@@ -49,9 +53,9 @@ func NewExperiment(
 	name string,
 	logLevel log.Level,
 	configuration Configuration,
-	productionTaskLauncher LauncherWithCollection,
-	loadGeneratorForProductionTask LoadGeneratorWithCollection,
-	aggressorTaskLaunchers []LauncherWithCollection) *Experiment {
+	productionTaskLauncher LauncherAndSessionPair,
+	loadGeneratorForProductionTask LoadGeneratorAndSessionPair,
+	aggressorTaskLaunchers []LauncherAndSessionPair) *Experiment {
 
 	// TODO(mpatelcz): Validate configuration.
 	return &Experiment{
@@ -65,13 +69,13 @@ func NewExperiment(
 }
 
 func (e *Experiment) prepareTuningPhase() *tuningPhase {
-	targetLoad := int(-1)
+	peakLoadSatisfyingSLO := int(-1)
 	return &tuningPhase{
-		pr:          e.productionTaskLauncher.Launcher,
-		lgForPr:     e.loadGeneratorForProductionTask.LoadGenerator,
-		SLO:         e.configuration.SLO,
-		repetitions: e.configuration.Repetitions,
-		TargetLoad:  &targetLoad,
+		pr:                    e.productionTaskLauncher.Launcher,
+		lgForPr:               e.loadGeneratorForProductionTask.LoadGenerator,
+		SLO:                   e.configuration.SLO,
+		repetitions:           e.configuration.Repetitions,
+		PeakLoadSatisfyingSLO: &peakLoadSatisfyingSLO,
 	}
 }
 
@@ -80,14 +84,14 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
 		baseline = append(baseline, &measurementPhase{
-			namePrefix:      "baseline",
-			pr:              e.productionTaskLauncher,
-			lgForPr:         e.loadGeneratorForProductionTask,
-			bes:             []LauncherWithCollection{},
-			loadDuration:    e.configuration.LoadDuration,
-			loadPointsCount: e.configuration.LoadPointsCount,
-			repetitions:     e.configuration.Repetitions,
-			TargetLoad:      e.tuningPhase.TargetLoad,
+			namePrefix:            "baseline",
+			pr:                    e.productionTaskLauncher,
+			lgForPr:               e.loadGeneratorForProductionTask,
+			bes:                   []LauncherAndSessionPair{},
+			loadDuration:          e.configuration.LoadDuration,
+			loadPointsCount:       e.configuration.LoadPointsCount,
+			repetitions:           e.configuration.Repetitions,
+			PeakLoadSatisfyingSLO: e.tuningPhase.PeakLoadSatisfyingSLO,
 			// Measurements in baseline have different load point input.
 			currentLoadPointIndex: i,
 		})
@@ -106,12 +110,12 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 				namePrefix:            "aggressor_nr_" + strconv.Itoa(beIndex),
 				pr:                    e.productionTaskLauncher,
 				lgForPr:               e.loadGeneratorForProductionTask,
-				bes:                   []LauncherWithCollection{beLauncher},
+				bes:                   []LauncherAndSessionPair{beLauncher},
 				loadDuration:          e.configuration.LoadDuration,
 				loadPointsCount:       e.configuration.LoadPointsCount,
 				repetitions:           e.configuration.Repetitions,
 				currentLoadPointIndex: i,
-				TargetLoad:            e.tuningPhase.TargetLoad,
+				PeakLoadSatisfyingSLO: e.tuningPhase.PeakLoadSatisfyingSLO,
 			})
 		}
 		aggressorPhases = append(aggressorPhases, aggressorPhase)
