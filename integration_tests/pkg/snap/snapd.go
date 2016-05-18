@@ -61,17 +61,13 @@ func (s *Snapd) CleanAndEraseOutput() error {
 
 // Connected checks if we can connect to Snap daemon.
 func (s *Snapd) Connected() bool {
-	retries := 5
-	connected := false
-	for i := 0; i < retries; i++ {
-		conn, err := net.Dial("tcp", "127.0.0.1:8181")
-		if err != nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-		defer conn.Close()
-		connected = true
+	conn, err := net.DialTimeout(
+		"tcp", "127.0.0.1:8181", time.Duration(5000*time.Millisecond))
+	if err != nil {
+		// Connection timeout.
+		return false
 	}
 
-	return connected
+	defer conn.Close()
+	return true
 }

@@ -36,7 +36,7 @@ func setupMutilateExpectedMetrics() map[string]string {
 	return expectedMetrics
 }
 
-func validateReturnedMetricRow(expectedMetrics map[string]string, namespace string,
+func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	tags string, value string) {
 
 	// Check tags.
@@ -104,8 +104,8 @@ func TestMutilateSnapSession(t *testing.T) {
 				So(publisher, ShouldNotBeNil)
 
 				tmpFile, err := ioutil.TempFile("", "session_test")
-				tmpFile.Close()
 				So(err, ShouldBeNil)
+				tmpFile.Close()
 
 				metricsFile = tmpFile.Name()
 
@@ -186,7 +186,7 @@ func TestMutilateSnapSession(t *testing.T) {
 
 									for i := 0; i < len(expectedMetrics); i++ {
 										columns := strings.Split(lines[i], "\t")
-										validateReturnedMetricRow(
+										soMetricRowIsValid(
 											expectedMetrics,
 											columns[0], columns[1], columns[2])
 									}
