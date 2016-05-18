@@ -46,7 +46,7 @@ func UnitsOfBytes(s string) (int, error) {
 	}
 }
 
-// DiscoverCPU removes the specified cgroup
+// Discover CPU removes the specified cgroup
 func (cputopo *CPUInfo) Discover() error {
 
 	out, err := exec.Command("lscpu").Output()
