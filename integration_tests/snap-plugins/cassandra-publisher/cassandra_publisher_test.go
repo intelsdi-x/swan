@@ -45,6 +45,12 @@ func TestCassandraPublisher(t *testing.T) {
 	})
 }
 
+type snapPluginInfo struct {
+	pluginName string
+	pluginType string
+	pluginPath string
+}
+
 func loadSnapPlugins() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -52,68 +58,69 @@ func loadSnapPlugins() (err error) {
 			err = r.(error)
 		}
 	}()
-
 	snapClient, err := client.New("http://127.0.0.1:8181", "v1", true)
 	if err != nil {
 		return fmt.Errorf("loadSnapPlugins: error connecting to snap: %s\n",
 				   err.Error())
 	}
-	plugins := snap.NewPlugins(snapClient)
+	pluginClient := snap.NewPlugins(snapClient)
+	requiredPlugins := getRequiredPlugins()
 
-	if isNotCassandraPluginLoaded(plugins) {
-		loadCassandraPublisherPlugin(plugins)
-	}
-	if isNotMockCollectorPluginLoaded(plugins) {
-		loadMockCollectorPlugin(plugins)
-	}
-	if isNotSessionProcessorPluginLoaded(plugins) {
-		loadSessionProcessorPlugin(plugins)
+	for _, plugin := range requiredPlugins {
+		if isNotPluginLoaded(pluginClient, plugin) {
+			log.Error(plugin.pluginPath)
+			loadPlugin(pluginClient, plugin)
+		}
 	}
 
 	return err
 }
 
-func isNotCassandraPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
-	isLoaded, err := pluginClient.IsLoaded("publisher", "cassandra")
+func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded bool){
+	isLoaded, err := pluginClient.IsLoaded(pi.pluginType, pi.pluginName)
 	if err != nil {
-		panic("isNotCassandraPluginLoaded: " + err.Error())
+		panic(fmt.Errorf("isNotCassandraPluginLoaded: %s\n", err.Error()))
 	}
 	return !isLoaded
 }
 
-func isNotMockCollectorPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
-	isLoaded, err := pluginClient.IsLoaded("collector", "mock")
+func loadPlugin(pluginClient *snap.Plugins, pi snapPluginInfo) {
+	err := pluginClient.Load([]string{pi.pluginPath})
 	if err != nil {
-		panic("isNotMockCollectorPluginLoaded: " + err.Error())
+		panic(fmt.Errorf("Could not load plugin in path: %s; %s\n",
+			pi.pluginPath, err.Error()))
 	}
-	return !isLoaded
 }
 
-func isNotSessionProcessorPluginLoaded(pluginClient *snap.Plugins) (isLoaded bool) {
-	isLoaded, err := pluginClient.IsLoaded("processor", "session-processor")
-	if err != nil {
-		panic("isNotSessionProcessorPluginLoaded: " + err.Error())
-	}
-	return !isLoaded
-}
-
-func loadCassandraPublisherPlugin(*snap.Plugins) (err error) {
+func getRequiredPlugins() (plugins []snapPluginInfo) {
 	goPath := os.Getenv("GOPATH")
-	pluginPath :=
-	return nil
+	plugins = make([]snapPluginInfo, 0, 3)
+	plugins = append(plugins, snapPluginInfo{
+		pluginName: "mock",
+		pluginType: "collector",
+		pluginPath: path.Join(goPath,
+			"src", "github.com", "intelsdi-x",
+			"snap", "build", "plugin", "snap-collector-mock1"),
+		})
+	plugins = append(plugins, snapPluginInfo{
+		pluginName: "session-processor",
+		pluginType: "processor",
+		pluginPath: path.Join(goPath,
+			"src", "github.com", "intelsdi-x",
+			"swan", "build", "snap-plugin-processor-session-tagging"),
+	})
+	plugins = append(plugins, snapPluginInfo{
+		pluginName: "cassandra",
+		pluginType: "publisher",
+		pluginPath: path.Join(goPath,
+			"src", "github.com", "intelsdi-x",
+			"snap-plugin-publisher-cassandra","build","rootfs",
+			"snap-plugin-publisher-cassandra"),
+	})
+	log.Error(plugins[0].pluginName)
+	log.Error(plugins[0].pluginPath)
+	return plugins
 }
-
-func loadMockCollectorPlugin(*snap.Plugins) (err error) {
-	goPath := os.Getenv("GOPATH")
-	return nil
-}
-
-
-func loadSessionProcessorPlugin(*snap.Plugins) (err error) {
-	goPath := os.Getenv("GOPATH")
-	return nil
-}
-
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error){
 	cluster := gocql.NewCluster("127.0.0.1")
