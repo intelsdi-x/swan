@@ -19,12 +19,6 @@ type task struct {
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	//	// Experiment is the **unique** experiment id. For example 'foobar-13a1b0bb-4467-4476-9818-986effe5c963'.
-	//	Experiment string
-	//
-	//	// Phase is the **unique** phase id. For example 'barbaz-13a1b0bb-4467-4476-9818-986effe5c963'.
-	//	Phase string
-
 	// Interval defines the sample interval for the listed metrics.
 	Interval time.Duration
 

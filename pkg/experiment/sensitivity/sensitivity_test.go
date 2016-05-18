@@ -16,23 +16,23 @@ import (
 type SensitivityTestSuite struct {
 	suite.Suite
 
-	// LC launcher & task.
+	// LC launcher and task.
 	mockedLcLauncher *workloadMocks.Launcher
 	mockedLcTask     *executorMocks.TaskHandle
-	// LoadGenerator launcher & task.
+	// LoadGenerator launcher and task.
 	mockedLoadGenerator     *workloadMocks.LoadGenerator
 	mockedLoadGeneratorTask *executorMocks.TaskHandle
-	// Aggressor launcher & task.
+	// Aggressor launcher and task.
 	mockedAggressor     *workloadMocks.Launcher
 	mockedAggressorTask *executorMocks.TaskHandle
 
-	// LC collection Launcher & Handle.
+	// LC collection Launcher and Handle.
 	mockedLcCollectionLauncher *snapMocks.SessionLauncher
 	mockedLcCollectionHandle   *snapMocks.SessionHandle
-	// LoadGenerator Launcher & Handle.
+	// LoadGenerator Launcher and Handle.
 	mockedLoadGeneratorCollectionLauncher *snapMocks.SessionLauncher
 	mockedLoadGeneratorCollectionHandle   *snapMocks.SessionHandle
-	// Aggressor Launcher & Handle.
+	// Aggressor Launcher and Handle.
 	mockedAggressorCollectionLauncher *snapMocks.SessionLauncher
 	mockedAggressorCollectionHandle   *snapMocks.SessionHandle
 
@@ -43,23 +43,23 @@ type SensitivityTestSuite struct {
 }
 
 func (s *SensitivityTestSuite) SetupTest() {
-	// LC launcher & task.
+	// LC launcher and task.
 	s.mockedLcLauncher = new(workloadMocks.Launcher)
 	s.mockedLcTask = new(executorMocks.TaskHandle)
-	// LoadGenerator launcher & task.
+	// LoadGenerator launcher and task.
 	s.mockedLoadGenerator = new(workloadMocks.LoadGenerator)
 	s.mockedLoadGeneratorTask = new(executorMocks.TaskHandle)
-	// Aggressor launcher & task.
+	// Aggressor launcher and task.
 	s.mockedAggressor = new(workloadMocks.Launcher)
 	s.mockedAggressorTask = new(executorMocks.TaskHandle)
 
-	// LC collection Launcher & Handle.
+	// LC collection Launcher and Handle.
 	s.mockedLcCollectionLauncher = new(snapMocks.SessionLauncher)
 	s.mockedLcCollectionHandle = new(snapMocks.SessionHandle)
-	// LoadGenerator Launcher & Handle.
+	// LoadGenerator Launcher and Handle.
 	s.mockedLoadGeneratorCollectionLauncher = new(snapMocks.SessionLauncher)
 	s.mockedLoadGeneratorCollectionHandle = new(snapMocks.SessionHandle)
-	// Aggressor Launcher & Handle.
+	// Aggressor Launcher and Handle.
 	s.mockedAggressorCollectionLauncher = new(snapMocks.SessionLauncher)
 	s.mockedAggressorCollectionHandle = new(snapMocks.SessionHandle)
 
@@ -83,23 +83,25 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorTuning() {
 	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedTargetLoad, 4, nil).Once()
 }
 
+// Mocking single LoadGenerator flow when collection session for loadGenerator is successful
+// as well.
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
 	s.mockedLoadGeneratorTask.On(
 		"Wait", 0*time.Nanosecond).Return(true).Once()
-	s.mockedLoadGeneratorTask.On("Clean").Return(nil).Once()
 	s.mockedLoadGeneratorTask.On("ExitCode").Return(0, nil).Once()
+	s.mockedLoadGeneratorTask.On("Clean").Return(nil).Once()
 }
 
+// Mocking single LoadGenerator flow when collection session for loadGenerator is NOT
+// successful. That means Wait() and ExitCode() methods will not be triggered.
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadWhenSessionErr(loadPoint int) {
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
 	s.mockedLoadGeneratorTask.On("Clean").Return(nil).Once()
-	// Exceptional case for loadGenerator mock. Wait() and ExitCode()
-	// won't be triggered since we expect error before that happens.
 }
 
 func (s *SensitivityTestSuite) mockSingleAggressorWorkloadExecution() {
@@ -225,7 +227,7 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 						s.mockedTargetLoad / s.configuration.LoadPointsCount)
 
 					Convey("After two baseline measurements for 2 loadpoints, we know "+
-						"that Prod Launcher & Load Generator was launched 2 times", func() {
+						"that Prod Launcher and Load Generator was launched 2 times", func() {
 						// Mocking second iteration of baseline:
 						s.mockSingleLcWorkloadExecution()
 						s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
@@ -262,7 +264,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			},
 		)
 
-		Convey("When tuning & baselining was successful", func() {
+		Convey("When tuning and baselining was successful", func() {
 			// Mock successful tuning phase.
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
@@ -379,7 +381,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithCollectionSessions() {
 			},
 		)
 
-		Convey("When tuning & baselining was successful, during aggressors phase", func() {
+		Convey("When tuning and baselining was successful, during aggressors phase", func() {
 			// Mock successful tuning phase.
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
