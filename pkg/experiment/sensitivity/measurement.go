@@ -18,12 +18,12 @@ import (
 type measurementPhase struct {
 	namePrefix string
 	// Latency Sensitivity (Production) workload.
-	pr LauncherWithCollection
+	pr LauncherAndSessionPair
 	// Workload Generator for Latency Sensitivity task.
-	lgForPr LoadGeneratorWithCollection
+	lgForPr LoadGeneratorAndSessionPair
 	// Aggressors (Best Effort) tasks to stress LC task.
 	// It can be empty in case of baseline phase.
-	bes []LauncherWithCollection
+	bes []LauncherAndSessionPair
 	// Measurement duration in [s].
 	loadDuration time.Duration
 	// Number of load points to test.
@@ -34,7 +34,7 @@ type measurementPhase struct {
 	currentLoadPointIndex int
 
 	// Shared reference for measurement targetQPS resulted from Tuning Phase.
-	TargetLoad *int
+	PeakLoadSatisfyingSLO *int
 
 	activeSnapSessions       []snap.SessionHandle
 	activeLaunchersTasks     []executor.TaskHandle
@@ -56,7 +56,7 @@ func (m *measurementPhase) Repetitions() int {
 func (m *measurementPhase) getLoadPoint() int {
 	// Since we know that the function is satisfied
 	// when TargetLoadPoint = a * loadPointsCount, we can calculate `a` parameter.
-	a := float64(*m.TargetLoad) / float64(m.loadPointsCount)
+	a := float64(*m.PeakLoadSatisfyingSLO) / float64(m.loadPointsCount)
 	x := float64(m.currentLoadPointIndex)
 
 	return int(a * x)
@@ -107,7 +107,7 @@ func (m *measurementPhase) clean() error {
 
 // Run runs a measurement for given loadPointIndex.
 func (m *measurementPhase) Run(session phase.Session) error {
-	if m.TargetLoad == nil {
+	if m.PeakLoadSatisfyingSLO == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
 
@@ -131,18 +131,18 @@ func (m *measurementPhase) Run(session phase.Session) error {
 	return nil
 }
 
-func (m *measurementPhase) launchCollectionSession(taskInfo executor.TaskInfo,
+func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 	session phase.Session, launcher snap.SessionLauncher) error {
 	// Check if Snap Session is specified.
 	if launcher != nil {
 		// Launch specified Snap Session.
-		collectionHandle, err := launcher.Launch(taskInfo, session)
+		sessionHandle, err := launcher.LaunchSession(taskInfo, session)
 		if err != nil {
 			return err
 		}
 
 		// Defer stopping launched Snap Session.
-		m.activeSnapSessions = append(m.activeSnapSessions, collectionHandle)
+		m.activeSnapSessions = append(m.activeSnapSessions, sessionHandle)
 	}
 
 	return nil
@@ -160,7 +160,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 	m.activeLaunchersTasks = append(m.activeLaunchersTasks, prTask)
 
 	// Launch Snap Session for Latency Sensitive workload if specified.
-	err = m.launchCollectionSession(prTask, session, m.pr.CollectionLauncher)
+	err = m.launchSnapSession(prTask, session, m.pr.SessionLauncher)
 	if err != nil {
 		return err
 	}
@@ -175,12 +175,13 @@ func (m *measurementPhase) run(session phase.Session) error {
 		m.activeLaunchersTasks = append(m.activeLaunchersTasks, beTask)
 
 		// Launch Snap Session for be workload if specified.
-		err = m.launchCollectionSession(beTask, session, be.CollectionLauncher)
+		err = m.launchSnapSession(beTask, session, be.SessionLauncher)
 		if err != nil {
 			return err
 		}
 	}
 
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	loadPoint := m.getLoadPoint()
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
@@ -193,13 +194,10 @@ func (m *measurementPhase) run(session phase.Session) error {
 	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, loadGeneratorTask)
 
 	// Launch Snap Session for loadGenerator if specified.
-	err = m.launchCollectionSession(loadGeneratorTask, session, m.lgForPr.CollectionLauncher)
+	err = m.launchSnapSession(loadGeneratorTask, session, m.lgForPr.SessionLauncher)
 	if err != nil {
 		return err
 	}
-
-	//log.Debug("LoadGenerator filename: ", stdoutFile.Name())
-	// TODO:(bplotka): Here trigger Snap session for fetching SLI.
 
 	// Wait for load generation to end.
 	loadGeneratorTask.Wait(0)

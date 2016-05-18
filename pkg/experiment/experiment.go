@@ -14,10 +14,12 @@ import (
 
 // Experiment captures the internal data for the Experiment Driver.
 type Experiment struct {
-	// Custom human-readable name.
-	customName string
-	// Current date_time_uuid.
-	uuidName            string
+	// Human-readable name.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
+	name string
+	// Unique ID for Experiment.
+	// Pushed to DB via Snap in tag.
+	uuid                string
 	workingDirectory    string
 	phases              []experimentPhase.Phase
 	startingDirectory   string
@@ -30,7 +32,7 @@ type Experiment struct {
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
 // Caller have to provide slice of Phase interfaces which are going to be executed.
-func NewExperiment(customName string, phases []experimentPhase.Phase,
+func NewExperiment(name string, phases []experimentPhase.Phase,
 	directory string, logLevel log.Level) (*Experiment, error) {
 	if len(phases) == 0 {
 		return nil, errors.New("invalid argument: no phases provided")
@@ -42,8 +44,8 @@ func NewExperiment(customName string, phases []experimentPhase.Phase,
 	}
 	// TODO(mpatelcz): Check if phases names are unique!
 	e := &Experiment{
-		customName:       customName,
-		uuidName:         time.Now().Format("2006-01-02T15h04m05s_") + uuid.String(),
+		name:             name,
+		uuid:             uuid.String(),
 		workingDirectory: directory,
 		phases:           phases,
 		logLevel:         logLevel,
@@ -68,13 +70,13 @@ func NewExperiment(customName string, phases []experimentPhase.Phase,
 func (e *Experiment) Run() (err error) {
 	experimentStartingTime := time.Now()
 
-	log.Info("Starting Experiment ", e.customName, " with uuid ", e.uuidName)
+	log.Info("Starting Experiment ", e.name, " with uuid ", e.uuid)
 	for _, phase := range e.phases {
 		for i := 0; i < phase.Repetitions(); i++ {
 			// Create phase session.
 			session := experimentPhase.Session{
 				PhaseID:      phase.Name(),
-				ExperimentID: e.uuidName, // TODO: Decide if we want to have `customName` here as well.
+				ExperimentID: e.uuid,
 				RepetitionID: i,
 			}
 
@@ -113,7 +115,7 @@ func (e *Experiment) Run() (err error) {
 		}
 	}
 
-	log.Info("Ended experiment ", e.customName, " with uuid ", e.uuidName,
+	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
 		" in ", time.Since(experimentStartingTime))
 	return err
 }
@@ -126,7 +128,10 @@ func (e *Experiment) createExperimentDir() error {
 		e.startingDirectory, _ = os.Getwd()
 	}
 
-	e.experimentDirectory = path.Join(e.startingDirectory, e.customName, e.uuidName)
+	e.experimentDirectory = path.Join(
+		e.startingDirectory,
+		e.name,
+		time.Now().Format("2006-01-02T15h04m05s_")+e.uuid)
 
 	err := os.MkdirAll(e.experimentDirectory, 0777)
 	if err != nil {
