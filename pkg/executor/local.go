@@ -2,23 +2,33 @@ package executor
 
 import (
 	"errors"
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"syscall"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct{}
+type Local struct {
+	isolators []isolation.Isolation
+}
 
 // NewLocal returns a Local instance.
 func NewLocal() Local {
 	return Local{}
+}
+
+// NewIsolatedLocal returns a Local instance with isolators.
+func NewIsolatedLocal(isolators []isolation.Isolation) Local {
+	return Local{
+		isolators: isolators,
+	}
 }
 
 // Execute runs the command given as input.
@@ -26,7 +36,18 @@ func NewLocal() Local {
 func (l Local) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting ", command, "' locally ")
 
-	cmd := exec.Command("sh", "-c", command)
+	var cmd *exec.Cmd
+	if len(l.isolators) == 0 {
+		cmd = exec.Command("sh", "-c", command)
+	} else if len(l.isolators) > 0 {
+		prefixes := []string{}
+		for _, isolator := range l.isolators {
+			prefixes = append(prefixes, isolator.Prefix())
+		}
+
+		cmd = exec.Command("/bin/sh", "-c", strings.Join(prefixes, " ")+" "+command)
+	}
+
 	// It is important to set additional Process Group ID for parent process and his children
 	// to have ability to kill all the children processes.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -205,16 +226,12 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	// Remove stdout file.
-	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
+	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+
+	// Remove temporary directory created for stdout and stderr.
+	if err := os.RemoveAll(outputDir); err != nil {
 		return err
 	}
-
-	// Remove stderr file.
-	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
-		return err
-	}
-
 	return nil
 }
 

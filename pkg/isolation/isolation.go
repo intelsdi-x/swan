@@ -5,4 +5,5 @@ type Isolation interface {
 	Create() error
 	Isolate(PID int) error
 	Clean() error
+	Prefix() string
 }

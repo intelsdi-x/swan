@@ -28,13 +28,14 @@ unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 plugins:
+	mkdir -p build
 	(cd build; go build ../misc/snap-plugin-collector-session-test)
 	(cd build; go build ../misc/snap-plugin-processor-session-tagging)
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(./misc/build_cassandra_publisher.sh)
 	(cd misc/snap-plugin-collector-mutilate; go build)
 
-integration_test: plugins unit_test
+integration_test: plugins unit_test build_workloads
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
@@ -47,6 +48,7 @@ build:
 
 build_workloads:
 	(cd workloads/data_caching/memcached; ./build.sh)
+	(cd workloads/low-level-aggressors; make)
 
 cleanup:
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log

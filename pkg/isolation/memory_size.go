@@ -1,25 +1,34 @@
 package isolation
 
-import "os/exec"
-import "io/ioutil"
-import "strconv"
+import (
+	"io/ioutil"
+	"os/exec"
+	"path"
+	"strconv"
+)
 
 // MemorySize defines input data
-type memorySize struct {
-	cgroupName string
-	memorySize string
+type MemorySize struct {
+	name string
+	size int
 }
 
 // NewMemorySize creates an instance of input data.
-func NewMemorySize(nameOfTheCgroup string, memorySizeShares string) Isolation {
-	return &memorySize{cgroupName: nameOfTheCgroup, memorySize: memorySizeShares}
+func NewMemorySize(name string, size int) Isolation {
+	return &MemorySize{
+		name: name,
+		size: size,
+	}
+}
+
+// Prefix returns the command prefix to run with this isolation mechanism.
+func (memorySize *MemorySize) Prefix() string {
+	return "cgexec -g memory:" + memorySize.name
 }
 
 // Clean removes specified cgroup.
-func (memorysize *memorySize) Clean() error {
-
-	cmd := exec.Command("sh", "-c", "cgdelete -g memory:"+memorysize.cgroupName)
-
+func (memorySize *MemorySize) Clean() error {
+	cmd := exec.Command("cgdelete", "-g", "memory:"+memorySize.name)
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -29,21 +38,16 @@ func (memorysize *memorySize) Clean() error {
 }
 
 // Create specified cgroup.
-func (memorysize *memorySize) Create() error {
-
+func (memorySize *MemorySize) Create() error {
 	// 1.a Create memory size cgroup.
-
-	cmd := exec.Command("sh", "-c", "cgcreate -g memory:"+memorysize.cgroupName)
-
+	cmd := exec.Command("cgcreate", "-g", "memory:"+memorySize.name)
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
 	// 1.b Set cgroup memory size.
-
-	cmd = exec.Command("sh", "-c", "cgset -r memory.limit_in_bytes="+memorysize.memorySize+" "+memorysize.cgroupName)
-
+	cmd = exec.Command("cgset", "-r", "memory.limit_in_bytes="+strconv.Itoa(memorySize.size), memorySize.name)
 	err = cmd.Run()
 	if err != nil {
 		return err
@@ -53,14 +57,11 @@ func (memorysize *memorySize) Create() error {
 }
 
 // Isolate create specified cgroup and associates specified process id
-func (memorysize *memorySize) Isolate(PID int) error {
-
+func (memorySize *MemorySize) Isolate(PID int) error {
 	// Set PID to cgroups.
-	// cgclassify and cgexec seem to exit with error so temporarily using file io.
-
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile("/sys/fs/cgroup/memory/"+memorysize.cgroupName+"/tasks", d, 0644)
+	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/memory", memorySize.name, "tasks"), d, 0644)
 
 	if err != nil {
 		return err
