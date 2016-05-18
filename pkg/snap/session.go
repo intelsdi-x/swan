@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"time"
 	"os"
 	"path"
+	"time"
 )
 
 type task struct {
