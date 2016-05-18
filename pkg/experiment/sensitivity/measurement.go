@@ -36,9 +36,9 @@ type measurementPhase struct {
 	// Shared reference for measurement targetQPS resulted from Tuning Phase.
 	TargetLoad *int
 
-	deferredCollectionHandlesToClose []snap.SessionHandle
-	deferredTasksToStop              []executor.TaskHandle
-	deferredTasksToClean             []executor.TaskHandle
+	activeSnapSessions       []snap.SessionHandle
+	activeLaunchersTasks     []executor.TaskHandle
+	activeLoadGeneratorTasks []executor.TaskHandle
 }
 
 // Returns measurement name.
@@ -53,7 +53,7 @@ func (m *measurementPhase) Repetitions() uint {
 }
 
 // Gets current loadPoint from linear function y = a * x where `x` is loadPointIndex.
-func (m *measurementPhase) getLoadPointUsingLinearFunction() int {
+func (m *measurementPhase) getLoadPoint() int {
 	// Since we know that the function is satisfied
 	// when TargetLoadPoint = a * loadPointsCount, we can calculate `a` parameter.
 	a := float64(*m.TargetLoad) / float64(m.loadPointsCount)
@@ -62,33 +62,41 @@ func (m *measurementPhase) getLoadPointUsingLinearFunction() int {
 	return int(a * x)
 }
 
-func (m *measurementPhase) closeAllHandles() error {
+func (m *measurementPhase) clean() error {
 	var err error
 	errMsg := ""
-	for _, task := range m.deferredTasksToStop {
+	// Cleaning and stopping active Launchers' tasks.
+	for _, task := range m.activeLaunchersTasks {
 		err = task.Stop()
 		if err != nil {
 			errMsg += " Error while stopping task: " + err.Error()
 		}
-	}
-	m.deferredTasksToStop = []executor.TaskHandle{}
 
-	for _, task := range m.deferredTasksToClean {
 		err = task.Clean()
 		if err != nil {
 			errMsg += " Error while cleaning task: " + err.Error()
 		}
 	}
-	m.deferredTasksToClean = []executor.TaskHandle{}
+	m.activeLaunchersTasks = []executor.TaskHandle{}
 
-	for _, collection := range m.deferredCollectionHandlesToClose {
-		// NOTE: Collection needs to ensure inside if it completed its work.
-		err = collection.Stop()
+	// Cleaning only active LoadGenerators' tasks.
+	for _, task := range m.activeLoadGeneratorTasks {
+		err = task.Clean()
+		if err != nil {
+			errMsg += " Error while cleaning task: " + err.Error()
+		}
+	}
+	m.activeLoadGeneratorTasks = []executor.TaskHandle{}
+
+	// Stopping only active Snap sessions.
+	for _, snapSession := range m.activeSnapSessions {
+		// NOTE: snapSession needs to ensure inside if it completed its work.
+		err = snapSession.Stop()
 		if err != nil {
 			errMsg += " Error while stopping Snap session: " + err.Error()
 		}
 	}
-	m.deferredCollectionHandlesToClose = []snap.SessionHandle{}
+	m.activeSnapSessions = []snap.SessionHandle{}
 
 	if strings.Compare(errMsg, "") != 0 {
 		return errors.New(errMsg)
@@ -104,13 +112,13 @@ func (m *measurementPhase) Run(session phase.Session) error {
 	}
 
 	errMsg := ""
-	err := m.runMeasurementScenario(session)
+	err := m.run(session)
 	if err != nil {
 		errMsg += " Error while running measurement: " + err.Error()
 	}
 
 	// Make sure that deferred stops and cleans are executed.
-	err = m.closeAllHandles()
+	err = m.clean()
 	if err != nil {
 		errMsg += " " + err.Error()
 	}
@@ -134,14 +142,13 @@ func (m *measurementPhase) launchCollectionSession(taskInfo executor.TaskInfo,
 		}
 
 		// Defer stopping launched Snap Session.
-		m.deferredCollectionHandlesToClose =
-			append(m.deferredCollectionHandlesToClose, collectionHandle)
+		m.activeSnapSessions = append(m.activeSnapSessions, collectionHandle)
 	}
 
 	return nil
 }
 
-func (m *measurementPhase) runMeasurementScenario(session phase.Session) error {
+func (m *measurementPhase) run(session phase.Session) error {
 	// TODO:(bplotka): Here trigger Snap session for gathering platform metrics.
 
 	// Launch Latency Sensitive workload.
@@ -150,8 +157,7 @@ func (m *measurementPhase) runMeasurementScenario(session phase.Session) error {
 		return err
 	}
 	// Defer stopping and closing the prTask.
-	m.deferredTasksToStop = append(m.deferredTasksToStop, prTask)
-	m.deferredTasksToClean = append(m.deferredTasksToClean, prTask)
+	m.activeLaunchersTasks = append(m.activeLaunchersTasks, prTask)
 
 	// Launch Snap Session for Latency Sensitive workload if specified.
 	err = m.launchCollectionSession(prTask, session, m.pr.CollectionLauncher)
@@ -166,8 +172,7 @@ func (m *measurementPhase) runMeasurementScenario(session phase.Session) error {
 			return err
 		}
 		// Defer stopping and closing the beTask.
-		m.deferredTasksToStop = append(m.deferredTasksToStop, beTask)
-		m.deferredTasksToClean = append(m.deferredTasksToClean, beTask)
+		m.activeLaunchersTasks = append(m.activeLaunchersTasks, beTask)
 
 		// Launch Snap Session for be workload if specified.
 		err = m.launchCollectionSession(beTask, session, be.CollectionLauncher)
@@ -176,8 +181,7 @@ func (m *measurementPhase) runMeasurementScenario(session phase.Session) error {
 		}
 	}
 
-	// NOTE: We can specify here different functions for specifying loadPoints distribution.
-	loadPoint := m.getLoadPointUsingLinearFunction()
+	loadPoint := m.getLoadPoint()
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.LoadGenerator.Load(loadPoint, m.loadDuration)
@@ -185,8 +189,8 @@ func (m *measurementPhase) runMeasurementScenario(session phase.Session) error {
 		return err
 	}
 
-	// Defer closing the loadGeneratorTask.
-	m.deferredTasksToClean = append(m.deferredTasksToClean, loadGeneratorTask)
+	// Defer cleaning the loadGeneratorTask.
+	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, loadGeneratorTask)
 
 	// Launch Snap Session for loadGenerator if specified.
 	err = m.launchCollectionSession(loadGeneratorTask, session, m.lgForPr.CollectionLauncher)

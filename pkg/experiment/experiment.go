@@ -14,7 +14,9 @@ import (
 
 // Experiment captures the internal data for the Experiment Driver.
 type Experiment struct {
-	customName          string
+	// Custom human-readable name.
+	customName string
+	// Current date_time_uuid.
 	uuidName            string
 	workingDirectory    string
 	phases              []experimentPhase.Phase
