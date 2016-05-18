@@ -2,6 +2,10 @@ package memcached
 
 import (
 	"fmt"
+	"net"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
@@ -45,17 +49,29 @@ func DefaultMemcachedConfig(pathToBinary string) Config {
 	}
 }
 
+type dialTimeoutFunc func(address string, timeout time.Duration) error
+
+func tryConnectTimeout(address string, timeout time.Duration) error {
+	conn, err := net.DialTimeout("tcp", address, timeout)
+	if err == nil {
+		conn.Close()
+	}
+	return err
+}
+
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
 type Memcached struct {
-	exec executor.Executor
-	conf Config
+	exec       executor.Executor
+	conf       Config
+	tryConnect dialTimeoutFunc // For mocking purposes.
 }
 
 // New is a constructor for Memcached.
 func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
-		exec: exec,
-		conf: config,
+		exec:       exec,
+		conf:       config,
+		tryConnect: tryConnectTimeout,
 	}
 
 }
@@ -73,5 +89,24 @@ func (m Memcached) buildCommand() string {
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (m Memcached) Launch() (executor.TaskHandle, error) {
-	return m.exec.Execute(m.buildCommand())
+	task, err := m.exec.Execute(m.buildCommand())
+	if err != nil {
+		return task, err
+	}
+
+	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.port)
+	err = m.tryConnect(address, 5*time.Second)
+	if err != nil {
+		log.Error("Failed to test memcached instance. Error: " + err.Error())
+		err1 := task.Stop()
+		if err1 != nil {
+			log.Error("Failed to stop memcached instance. Error: " + err1.Error())
+		}
+		err1 = task.Clean()
+		if err1 != nil {
+			log.Error("Failed to cleanup memcached task. Error: " + err1.Error())
+		}
+		return nil, err
+	}
+	return task, err
 }
