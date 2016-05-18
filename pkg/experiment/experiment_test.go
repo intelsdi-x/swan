@@ -37,7 +37,7 @@ func TestExperiment(t *testing.T) {
 
 			Convey("While setting one repetition to phase", func() {
 				mockedPhase.On("Run", mock.AnythingOfType("phase.Session")).Return(nil).Times(10)
-				mockedPhase.On("Repetitions").Return(uint(10))
+				mockedPhase.On("Repetitions").Return(int(10))
 				mockedPhase.On("Finalize").Return(nil).Once()
 				Convey("Experiment should succeed with 10 phase repetitions", func() {
 					err := exp.Run()

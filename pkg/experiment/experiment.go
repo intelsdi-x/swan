@@ -70,7 +70,7 @@ func (e *Experiment) Run() (err error) {
 
 	log.Info("Starting Experiment ", e.customName, " with uuid ", e.uuidName)
 	for _, phase := range e.phases {
-		for i := uint(0); i < phase.Repetitions(); i++ {
+		for i := 0; i < phase.Repetitions(); i++ {
 			// Create phase session.
 			session := experimentPhase.Session{
 				PhaseID:      phase.Name(),

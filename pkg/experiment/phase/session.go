@@ -4,5 +4,5 @@ package phase
 type Session struct {
 	ExperimentID string
 	PhaseID      string
-	RepetitionID uint
+	RepetitionID int
 }

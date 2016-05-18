@@ -18,7 +18,7 @@ type Configuration struct {
 	// Number of load points to test.
 	LoadPointsCount int
 	// Repetitions.
-	Repetitions uint
+	Repetitions int
 }
 
 // Experiment is handler structure for Experiment Driver. All fields shall be
