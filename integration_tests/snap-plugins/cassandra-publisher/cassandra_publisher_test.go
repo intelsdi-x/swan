@@ -68,8 +68,7 @@ func loadSnapPlugins() (err error) {
 
 	for _, plugin := range requiredPlugins {
 		if isNotPluginLoaded(pluginClient, plugin) {
-			log.Error(plugin.pluginPath)
-			loadPlugin(pluginClient, plugin)
+			loadPlugin(pluginClient, plugin.pluginPath)
 		}
 	}
 
@@ -79,16 +78,17 @@ func loadSnapPlugins() (err error) {
 func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded bool){
 	isLoaded, err := pluginClient.IsLoaded(pi.pluginType, pi.pluginName)
 	if err != nil {
-		panic(fmt.Errorf("isNotCassandraPluginLoaded: %s\n", err.Error()))
+		panic(fmt.Errorf("Error while checking if plugin %s:%s is loaded: %s\n",
+			pi.pluginType, pi.pluginName, err.Error()))
 	}
 	return !isLoaded
 }
 
-func loadPlugin(pluginClient *snap.Plugins, pi snapPluginInfo) {
-	err := pluginClient.Load([]string{pi.pluginPath})
+func loadPlugin(pluginClient *snap.Plugins, pluginPath string) {
+	err := pluginClient.Load([]string{pluginPath})
 	if err != nil {
 		panic(fmt.Errorf("Could not load plugin in path: %s; %s\n",
-			pi.pluginPath, err.Error()))
+			pluginPath, err.Error()))
 	}
 }
 
@@ -117,8 +117,6 @@ func getRequiredPlugins() (plugins []snapPluginInfo) {
 			"snap-plugin-publisher-cassandra","build","rootfs",
 			"snap-plugin-publisher-cassandra"),
 	})
-	log.Error(plugins[0].pluginName)
-	log.Error(plugins[0].pluginPath)
 	return plugins
 }
 
