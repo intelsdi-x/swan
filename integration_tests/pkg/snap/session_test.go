@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type Snapd struct {
@@ -138,7 +138,6 @@ func TestSnap(t *testing.T) {
 			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
-
 			//pluginPath := append(buildPath, "snap-plugin-publisher-session-test")
 
 			pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
@@ -191,7 +190,7 @@ func TestSnap(t *testing.T) {
 				if err != nil {
 					continue
 				}
-				
+
 				if len(dat) > 0 {
 					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
