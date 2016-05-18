@@ -4,7 +4,8 @@ This project attempts to be scientific regarding experimental results.
 
 For another perspective on this, see the following article from
 _Communications of the ACM_ by Don Monroe:
-[When Data Is Not Enough](http://goo.gl/8eIYtW)
+[When Data Is Not
+Enough](http://dl.acm.org/citation.cfm?id=2847579.2833138)
 
 ## Lab report outline
 Each report should contain at least the following sections:
