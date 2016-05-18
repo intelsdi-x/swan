@@ -30,7 +30,7 @@ func NewCPUInfo(cores int, threads int, l1i int, l1d int, l2 int, l3 int) *CPUIn
 	return &CPUInfo{physicalCores: cores, threadsPerCore: threads, cacheL1i: l1i, cacheL1d: l1d, cacheL2: l2, cacheL3: l3}
 }
 
-// UnitsOfBytes returns KILOBYTES, MEGHABYTES, etc as detected in the input string
+// UnitsOfBytes returns KILOBYTES, MEGABYTES, etc as detected in the input string
 func UnitsOfBytes(s string) (int, error) {
 	if strings.Contains(s, "K") {
 		return KILOBYTE, nil
@@ -46,10 +46,14 @@ func UnitsOfBytes(s string) (int, error) {
 	}
 }
 
-// Discover CPU removes the specified cgroup
+// Discover CPU topology and caches sizes
 func (cputopo *CPUInfo) Discover() error {
 
 	out, err := exec.Command("lscpu").Output()
+	if err != nil {
+		return err
+	}
+
 	outstring := strings.TrimSpace(string(out))
 	lines := strings.Split(outstring, "\n")
 
