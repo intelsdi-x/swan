@@ -92,15 +92,25 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 	for key, metricType := range metricTypes {
 		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_,
 			Unit_: metricType.Unit_, Version_: metricType.Version_}
-		metric.Data_ = rawMetrics[key].value
 		metric.Namespace_[3].Value = hostname
 		metric.Timestamp_ = mutilate.now
-		metrics = append(metrics, metric)
+		for m := range rawMetrics {
+			rawMetricName := rawMetrics[m].name
+			if strings.Contains(rawMetricName, "/") {
+				rawMetricName = "/" + strings.Split(rawMetrics[m].name, "/")[1]
+			}
+			// assign value to metric for proper name
+			if strings.Contains(metricType.Namespace().String(), rawMetricName) {
+				metric.Data_ = rawMetrics[m].value
+			}
+		}
 		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
 		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
 			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
+			// assign value for custom metric - always last item in rawMetrics
+			metric.Data_ = rawMetrics[len(rawMetrics)-1].value
 		}
-
+		metrics = append(metrics, metric)
 	}
 
 	return metrics, nil
