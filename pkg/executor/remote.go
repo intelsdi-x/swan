@@ -110,7 +110,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			" with status code: ", *exitCode)
 	}()
 
-	return newRemoteTaskHandle(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
+	return newRemoteTaskHandle(session, stdoutFile, stderrFile,
+		remote.sshConfig.host, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -120,17 +121,19 @@ type remoteTaskHandle struct {
 	session        *ssh.Session
 	stdoutFile     *os.File
 	stderrFile     *os.File
+	host           string
 	waitEndChannel chan struct{}
 	exitCode       *int
 }
 
 // newRemoteTaskHandle returns a remoteTaskHandle instance.
 func newRemoteTaskHandle(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
+	host string, waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
 	return &remoteTaskHandle{
 		session:        session,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
+		host:           host,
 		waitEndChannel: waitEndChannel,
 		exitCode:       exitCode,
 	}
@@ -267,4 +270,8 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 		// If timeout time exceeded return then task did not terminate yet.
 		return false
 	}
+}
+
+func (taskHandle *remoteTaskHandle) Address() string {
+	return taskHandle.host
 }

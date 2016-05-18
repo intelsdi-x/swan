@@ -257,3 +257,7 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 		return false
 	}
 }
+
+func (taskHandle *localTaskHandle) Address() string {
+	return "127.0.0.1"
+}
