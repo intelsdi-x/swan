@@ -26,12 +26,10 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	So(len(tagsSplitted), ShouldBeGreaterThan, 2)
 
 	// Unfortunately we are not sure about the order in this slice.
-	So(tagsSplitted[0], ShouldBeIn,
-		"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
-	So(tagsSplitted[1], ShouldBeIn,
-		"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
-	So(tagsSplitted[2], ShouldBeIn,
-		"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
+	So("swan_experiment=foobar", ShouldBeIn, tagsSplitted)
+	So("swan_phase=barbaz", ShouldBeIn, tagsSplitted)
+	So("swan_repetition=1", ShouldBeIn, tagsSplitted)
+
 	// Check namespace & values.
 	namespaceSplitted := strings.Split(namespace, "/")
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
@@ -39,7 +37,7 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	So(expectedValue, ShouldEqual, value)
 }
 
-func TestMutilateSnapSession(t *testing.T) {
+func TestSnapMutilateSession(t *testing.T) {
 	var snapd *snapTest.Snapd
 	var c *client.Client
 	var publisher *wmap.PublishWorkflowMapNode
@@ -57,17 +55,15 @@ func TestMutilateSnapSession(t *testing.T) {
 
 		defer func() {
 			if snapd != nil {
-				snapd.Stop()
+				err := snapd.Stop()
 				snapd.CleanAndEraseOutput()
+				So(err, ShouldBeNil)
 			}
 		}()
 
 		Convey("We are able to connect with snapd", func() {
 			ct, err := client.New("http://127.0.0.1:8181", "v1", true)
-
-			Convey("Shouldn't return any errors", func() {
-				So(err, ShouldBeNil)
-			})
+			So(err, ShouldBeNil)
 
 			c = ct
 
