@@ -94,11 +94,10 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 			Unit_: metricType.Unit_, Version_: metricType.Version_}
 		metric.Namespace_[3].Value = hostname
 		metric.Timestamp_ = mutilate.now
-		for m := range rawMetrics {
-			rawMetricName := rawMetrics[m].name
+		for _, m := range rawMetrics {
 			// Assign value to metric for proper name.
-			if strings.Contains(metricType.Namespace().String(), rawMetricName) {
-				metric.Data_ = rawMetrics[m].value
+			if strings.Contains(metricType.Namespace().String(), m.name) {
+				metric.Data_ = m.value
 			}
 		}
 		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
