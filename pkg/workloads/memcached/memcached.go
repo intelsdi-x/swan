@@ -101,7 +101,7 @@ func (m Memcached) buildCommand() string {
 func (m Memcached) Launch() (executor.TaskHandle, error) {
 	task, err := m.exec.Execute(m.buildCommand())
 	if err != nil {
-		return task, err
+		return nil, err
 	}
 
 	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.port)
@@ -120,5 +120,5 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		}
 		return nil, err
 	}
-	return task, err
+	return task, nil
 }
