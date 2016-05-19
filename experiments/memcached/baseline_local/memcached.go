@@ -78,7 +78,7 @@ func main() {
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewLoadGeneratorWithoutSession(mutilateLoadGenerator),
-		[]sensitivity.LauncherAndSessionPair{},
+		[]sensitivity.LauncherSessionPair{},
 	)
 
 	// Run Experiment.

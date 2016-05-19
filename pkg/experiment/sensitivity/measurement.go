@@ -18,12 +18,12 @@ import (
 type measurementPhase struct {
 	namePrefix string
 	// Latency Sensitivity (Production) workload.
-	pr LauncherAndSessionPair
+	pr LauncherSessionPair
 	// Workload Generator for Latency Sensitivity task.
-	lgForPr LoadGeneratorAndSessionPair
+	lgForPr LoadGeneratorSessionPair
 	// Aggressors (Best Effort) tasks to stress LC task.
 	// It can be empty in case of baseline phase.
-	bes []LauncherAndSessionPair
+	bes []LauncherSessionPair
 	// Measurement duration in [s].
 	loadDuration time.Duration
 	// Number of load points to test.
@@ -34,7 +34,7 @@ type measurementPhase struct {
 	currentLoadPointIndex int
 
 	// Shared reference for measurement targetQPS resulted from Tuning Phase.
-	PeakLoadSatisfyingSLO *int
+	PeakLoad *int
 
 	activeSnapSessions       []snap.SessionHandle
 	activeLaunchersTasks     []executor.TaskHandle
@@ -56,7 +56,7 @@ func (m *measurementPhase) Repetitions() int {
 func (m *measurementPhase) getLoadPoint() int {
 	// Since we know that the function is satisfied
 	// when TargetLoadPoint = a * loadPointsCount, we can calculate `a` parameter.
-	a := float64(*m.PeakLoadSatisfyingSLO) / float64(m.loadPointsCount)
+	a := float64(*m.PeakLoad) / float64(m.loadPointsCount)
 	x := float64(m.currentLoadPointIndex)
 
 	return int(a * x)
@@ -70,6 +70,8 @@ func (m *measurementPhase) clean() error {
 		err = task.Stop()
 		if err != nil {
 			errMsg += " Error while stopping task: " + err.Error()
+			// Don't clean when stop failed.
+			continue
 		}
 
 		err = task.Clean()
@@ -107,7 +109,7 @@ func (m *measurementPhase) clean() error {
 
 // Run runs a measurement for given loadPointIndex.
 func (m *measurementPhase) Run(session phase.Session) error {
-	if m.PeakLoadSatisfyingSLO == nil {
+	if m.PeakLoad == nil {
 		return errors.New("Target QPS for measurement was not given.")
 	}
 
@@ -160,7 +162,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 	m.activeLaunchersTasks = append(m.activeLaunchersTasks, prTask)
 
 	// Launch Snap Session for Latency Sensitive workload if specified.
-	err = m.launchSnapSession(prTask, session, m.pr.SessionLauncher)
+	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
 	if err != nil {
 		return err
 	}
@@ -175,7 +177,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 		m.activeLaunchersTasks = append(m.activeLaunchersTasks, beTask)
 
 		// Launch Snap Session for be workload if specified.
-		err = m.launchSnapSession(beTask, session, be.SessionLauncher)
+		err = m.launchSnapSession(beTask, session, be.SnapSessionLauncher)
 		if err != nil {
 			return err
 		}
@@ -194,7 +196,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, loadGeneratorTask)
 
 	// Launch Snap Session for loadGenerator if specified.
-	err = m.launchSnapSession(loadGeneratorTask, session, m.lgForPr.SessionLauncher)
+	err = m.launchSnapSession(loadGeneratorTask, session, m.lgForPr.SnapSessionLauncher)
 	if err != nil {
 		return err
 	}
