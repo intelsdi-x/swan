@@ -1,10 +1,12 @@
 package isolation
 
-import "os/exec"
-import "strconv"
-import "strings"
-import "errors"
-import "github.com/pivotal-golang/bytefmt"
+import (
+	"errors"
+	"github.com/pivotal-golang/bytefmt"
+	"os/exec"
+	"strconv"
+	"strings"
+)
 
 // CPUInfo defines data needed for CPU topology
 type CPUInfo struct {
