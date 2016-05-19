@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"io/ioutil"
@@ -37,6 +38,10 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	So(expectedValue, ShouldEqual, value)
 }
 
+const (
+	snapMutilateSessionTestAPIPort = 12346
+)
+
 func TestSnapMutilateSession(t *testing.T) {
 	var snapd *snapTest.Snapd
 	var c *client.Client
@@ -47,7 +52,7 @@ func TestSnapMutilateSession(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-		snapd = snapTest.NewSnapd()
+		snapd = snapTest.NewSnapd(snapMutilateSessionTestAPIPort)
 		snapd.Execute()
 
 		// Wait until snap is up.
@@ -62,7 +67,8 @@ func TestSnapMutilateSession(t *testing.T) {
 		}()
 
 		Convey("We are able to connect with snapd", func() {
-			ct, err := client.New("http://127.0.0.1:8181", "v1", true)
+			ct, err := client.New(
+				fmt.Sprintf("http://127.0.0.1:%d", snapMutilateSessionTestAPIPort), "v1", true)
 			So(err, ShouldBeNil)
 
 			c = ct

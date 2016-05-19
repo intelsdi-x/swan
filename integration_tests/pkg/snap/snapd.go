@@ -12,12 +12,15 @@ import (
 
 // Snapd represents Snap daemon used in tests.
 type Snapd struct {
-	task executor.TaskHandle
+	task    executor.TaskHandle
+	apiPort int
 }
 
 // NewSnapd constructs Snapd.
-func NewSnapd() *Snapd {
-	return &Snapd{}
+// NOTE(bp): Since Convey test like to overlap tests it is crucial to run snapd on
+// different ports.
+func NewSnapd(apiPort int) *Snapd {
+	return &Snapd{apiPort: apiPort}
 }
 
 // Execute starts Snap daemon.
@@ -29,7 +32,7 @@ func (s *Snapd) Execute() error {
 	}
 
 	snapRoot := path.Join(gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
-	snapCommand := fmt.Sprintf("%s -t 0", snapRoot)
+	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapRoot, s.apiPort)
 
 	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
@@ -64,7 +67,7 @@ func (s *Snapd) Connected() bool {
 	retries := 5
 	connected := false
 	for i := 0; i < retries; i++ {
-		conn, err := net.Dial("tcp", "127.0.0.1:8181")
+		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", s.apiPort))
 		if err != nil {
 			time.Sleep(100 * time.Millisecond)
 			continue

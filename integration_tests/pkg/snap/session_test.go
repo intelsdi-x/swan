@@ -1,18 +1,22 @@
 package snap
 
 import (
+	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+)
 
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	. "github.com/smartystreets/goconvey/convey"
+const (
+	snapSessionTestAPIPort = 12345
 )
 
 func TestSnap(t *testing.T) {
@@ -26,7 +30,8 @@ func TestSnap(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-		snapd = NewSnapd()
+
+		snapd = NewSnapd(snapSessionTestAPIPort)
 		snapd.Execute()
 
 		defer func() {
@@ -41,7 +46,8 @@ func TestSnap(t *testing.T) {
 		So(snapd.Connected(), ShouldBeTrue)
 
 		Convey("We are able to connect with snapd", func() {
-			ct, err := client.New("http://127.0.0.1:8181", "v1", true)
+			ct, err := client.New(
+				fmt.Sprintf("http://127.0.0.1:%d", snapSessionTestAPIPort), "v1", true)
 			So(err, ShouldBeNil)
 
 			c = ct
