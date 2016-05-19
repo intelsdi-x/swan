@@ -96,10 +96,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		metric.Timestamp_ = mutilate.now
 		for m := range rawMetrics {
 			rawMetricName := rawMetrics[m].name
-			// Get metric name without namespace.
-			if strings.Contains(rawMetricName, "/") {
-				rawMetricName = "/" + strings.Split(rawMetrics[m].name, "/")[1]
-			}
 			// Assign value to metric for proper name.
 			if strings.Contains(metricType.Namespace().String(), rawMetricName) {
 				metric.Data_ = rawMetrics[m].value
