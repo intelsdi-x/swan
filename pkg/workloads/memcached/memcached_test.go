@@ -2,11 +2,21 @@ package memcached
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
+
+func connectTimeoutSuccess(address string, timeout time.Duration) bool {
+	return true
+}
+
+func connectTimeoutFailure(address string, timeout time.Duration) bool {
+	return false
+}
 
 // TestMemcachedWithMockedExecutor runs a Memcached launcher with the mocked executor to simulate
 // different cases like proper process execution and error case.
@@ -15,6 +25,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 
 	const (
 		expectedCommand = "test -p 11211 -u memcached -t 4 -m 64 -c 1024"
+		expectedHost    = "127.0.0.1"
 	)
 
 	mockedExecutor := new(mocks.Executor)
@@ -24,9 +35,10 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		memcachedLauncher := New(
 			mockedExecutor,
 			DefaultMemcachedConfig("test"))
+		memcachedLauncher.tryConnect = connectTimeoutSuccess
 		Convey("While simulating proper execution", func() {
 			mockedExecutor.On("Execute", expectedCommand).Return(mockedTaskHandle, nil).Once()
-
+			mockedTaskHandle.On("Address").Return(expectedHost)
 			Convey("Build command should create proper command", func() {
 				command := memcachedLauncher.buildCommand()
 				So(command, ShouldEqual, expectedCommand)
@@ -34,10 +46,48 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 				Convey("Arguments passed to Executor should be a proper command", func() {
 					task, err := memcachedLauncher.Launch()
 					So(err, ShouldBeNil)
+
+					So(task, ShouldNotBeNil)
 					So(task, ShouldEqual, mockedTaskHandle)
+
+					Convey("Location of the returned task shall be 127.0.0.1", func() {
+						addr := task.Address()
+						So(addr, ShouldEqual, expectedHost)
+						mockedTaskHandle.AssertExpectations(t)
+					})
+					mockedExecutor.AssertExpectations(t)
+				})
+				Convey("When test connection to memcached fails task handle shall be nil and error shall be return", func() {
+					mockedTaskHandle.On("Stop").Return(nil)
+					mockedTaskHandle.On("Clean").Return(nil)
+					memcachedLauncher.tryConnect = connectTimeoutFailure
+					task, err := memcachedLauncher.Launch()
+					So(err, ShouldNotBeNil)
+					So(task, ShouldBeNil)
 
 					mockedExecutor.AssertExpectations(t)
 				})
+				Convey("When test connection to memcached fails and task.Stop fails task handle shall be nil and error shall be return", func() {
+					mockedTaskHandle.On("Stop").Return(errors.New("Test error code for stop"))
+					mockedTaskHandle.On("Clean").Return(nil)
+					memcachedLauncher.tryConnect = connectTimeoutFailure
+					task, err := memcachedLauncher.Launch()
+					So(err, ShouldNotBeNil)
+					So(task, ShouldBeNil)
+
+					mockedExecutor.AssertExpectations(t)
+				})
+				Convey("When test connection to memcached fails, task.Stop succeeds and task.Clean fails task handle shall be nil and error shall be return", func() {
+					mockedTaskHandle.On("Stop").Return(nil)
+					mockedTaskHandle.On("Clean").Return(errors.New("Test error code for clean"))
+					memcachedLauncher.tryConnect = connectTimeoutFailure
+					task, err := memcachedLauncher.Launch()
+					So(err, ShouldNotBeNil)
+					So(task, ShouldBeNil)
+
+					mockedExecutor.AssertExpectations(t)
+				})
+
 			})
 
 		})

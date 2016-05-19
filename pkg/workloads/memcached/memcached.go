@@ -2,6 +2,10 @@ package memcached
 
 import (
 	"fmt"
+	"net"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
@@ -45,17 +49,39 @@ func DefaultMemcachedConfig(pathToBinary string) Config {
 	}
 }
 
+type dialTimeoutFunc func(address string, timeout time.Duration) bool
+
+func tryConnect(address string, timeout time.Duration) bool {
+	retries := 5
+	sleepTime := time.Duration(
+		timeout.Nanoseconds() / int64(retries))
+	connected := false
+	for i := 0; i < retries; i++ {
+		conn, err := net.Dial("tcp", address)
+		if err != nil {
+			time.Sleep(sleepTime)
+			continue
+		}
+		defer conn.Close()
+		connected = true
+	}
+
+	return connected
+}
+
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
 type Memcached struct {
-	exec executor.Executor
-	conf Config
+	exec       executor.Executor
+	conf       Config
+	tryConnect dialTimeoutFunc // For mocking purposes.
 }
 
 // New is a constructor for Memcached.
 func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
-		exec: exec,
-		conf: config,
+		exec:       exec,
+		conf:       config,
+		tryConnect: tryConnect,
 	}
 
 }
@@ -73,5 +99,26 @@ func (m Memcached) buildCommand() string {
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (m Memcached) Launch() (executor.TaskHandle, error) {
-	return m.exec.Execute(m.buildCommand())
+	task, err := m.exec.Execute(m.buildCommand())
+	if err != nil {
+		return task, err
+	}
+
+	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.port)
+	if !m.tryConnect(address, 5*time.Second) {
+		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
+			address)
+		log.Error(err)
+
+		err1 := task.Stop()
+		if err1 != nil {
+			log.Error("Failed to stop memcached instance. Error: " + err1.Error())
+		}
+		err1 = task.Clean()
+		if err1 != nil {
+			log.Error("Failed to cleanup memcached task. Error: " + err1.Error())
+		}
+		return nil, err
+	}
+	return task, err
 }

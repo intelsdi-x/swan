@@ -31,11 +31,13 @@ func (p *SessionProcessor) Process(contentType string, content []byte, config ma
 
 	swanExperiment := config["swan_experiment"].(ctypes.ConfigValueStr).Value
 	swanPhase := config["swan_phase"].(ctypes.ConfigValueStr).Value
+	swanRepetition := config["swan_repetition"].(ctypes.ConfigValueStr).Value
 
 	for idx := range metrics {
 		metrics[idx].Tags_ = map[string]string{
 			"swan_experiment": swanExperiment,
 			"swan_phase":      swanPhase,
+			"swan_repetition": swanRepetition,
 		}
 	}
 
@@ -53,19 +55,26 @@ func (p *SessionProcessor) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	cp := cpolicy.New()
 	config := cpolicy.NewPolicyNode()
 
-	r1, err := cpolicy.NewStringRule("swan_experiment", true)
+	experimentRule, err := cpolicy.NewStringRule("swan_experiment", true)
 	if err != nil {
 		panic(err)
 	}
-	r1.Description = "Swan experiment ID to tag metrics with"
-	config.Add(r1)
+	experimentRule.Description = "Swan experiment ID to tag metrics with"
+	config.Add(experimentRule)
 
-	r2, err := cpolicy.NewStringRule("swan_phase", true)
+	phaseRule, err := cpolicy.NewStringRule("swan_phase", true)
 	if err != nil {
 		panic(err)
 	}
-	r1.Description = "Swan phase ID to tag metrics with"
-	config.Add(r2)
+	phaseRule.Description = "Swan phase ID to tag metrics with"
+	config.Add(phaseRule)
+
+	repetitionRule, err := cpolicy.NewStringRule("swan_repetition", true)
+	if err != nil {
+		panic(err)
+	}
+	repetitionRule.Description = "Swan repetition ID to tag metrics with"
+	config.Add(repetitionRule)
 
 	cp.Add([]string{""}, config)
 	return cp, nil
