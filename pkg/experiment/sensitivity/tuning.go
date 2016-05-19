@@ -2,6 +2,7 @@ package sensitivity
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 )
@@ -23,7 +24,7 @@ type tuningPhase struct {
 	sliResults []float64
 
 	// Shared reference for TargetLoad needed for Measurement phases.
-	TargetLoad *int
+	PeakLoad *int
 }
 
 // Returns Phase name.
@@ -37,7 +38,7 @@ func (p *tuningPhase) Repetitions() int {
 }
 
 // Run runs a tuning phase to find the targetLoad.
-func (p *tuningPhase) Run() error {
+func (p *tuningPhase) Run(phase.Session) error {
 	prTask, err := p.pr.Launch()
 	if err != nil {
 		return err
@@ -64,13 +65,14 @@ func (p *tuningPhase) Finalize() error {
 	// don't use snap here.
 
 	// Calculate average.
-	targetLoad, err := stats.Mean(p.loadResults)
-	*p.TargetLoad = int(targetLoad)
+	peakLoad, err := stats.Mean(p.loadResults)
+	*p.PeakLoad = int(peakLoad)
 	if err != nil {
-		p.TargetLoad = nil
+		p.PeakLoad = nil
 		return err
 	}
-	logrus.Debug("Calculated targetLoad (QPS/RPS): ", targetLoad, " for SLO: ", p.SLO)
+	logrus.Debug("Calculated targetLoad (PeakLoadSatisfyingSLO) (QPS/RPS): ",
+		peakLoad, " for SLO: ", p.SLO)
 
 	return nil
 }

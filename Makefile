@@ -40,6 +40,11 @@ integration_test: plugins unit_test build_workloads
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 #	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
+# For development purposes we need to do integration test faster on already built components.
+integration_test_no_build: unit_test
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
+
 # building
 build:
 	mkdir -p build

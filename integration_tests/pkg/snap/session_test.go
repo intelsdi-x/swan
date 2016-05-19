@@ -6,6 +6,9 @@ import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"net"
 	"os"
@@ -13,9 +16,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/intelsdi-x/swan/pkg/snap"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type Snapd struct {
@@ -87,7 +87,6 @@ func TestSnap(t *testing.T) {
 	var metricsFile string
 
 	goPath := os.Getenv("GOPATH")
-	//buildPath := []string{goPath, "src", "github.com", "intelsdi-x", "swan", "build"}
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("Testing snap session", t, func() {
@@ -138,8 +137,6 @@ func TestSnap(t *testing.T) {
 			plugins := snap.NewPlugins(c)
 			So(plugins, ShouldNotBeNil)
 
-			//pluginPath := append(buildPath, "snap-plugin-publisher-session-test")
-
 			pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
 			plugins.Load(pluginPath)
 
@@ -147,11 +144,11 @@ func TestSnap(t *testing.T) {
 
 			So(publisher, ShouldNotBeNil)
 
-			tmpfile, err := ioutil.TempFile("", "session_test")
-			tmpfile.Close()
+			tmpFile, err := ioutil.TempFile("", "session_test")
+			tmpFile.Close()
 			So(err, ShouldBeNil)
 
-			metricsFile = tmpfile.Name()
+			metricsFile = tmpFile.Name()
 
 			publisher.AddConfigItem("file", metricsFile)
 		})
@@ -163,7 +160,11 @@ func TestSnap(t *testing.T) {
 
 		Convey("Starting a session", func() {
 			So(s, ShouldNotBeNil)
-			err := s.Start("foobar", "barbaz")
+			err := s.Start(phase.Session{
+				ExperimentID: "foobar",
+				PhaseID:      "barbaz",
+				RepetitionID: 1,
+			})
 
 			Convey("Shouldn't return any errors", func() {
 				So(err, ShouldBeNil)
@@ -195,29 +196,37 @@ func TestSnap(t *testing.T) {
 					// Look for tag on metric line.
 					lines := strings.Split(string(dat), "\n")
 					if len(lines) < 1 {
+						t.Log("There should be at least one line. Checking again.")
 						continue
 					}
 
 					columns := strings.Split(lines[0], "\t")
 					if len(columns) < 2 {
+						t.Log("There should be at least 2 columns. Checking again.")
 						continue
 					}
 
 					tags := strings.Split(columns[1], ",")
-					if len(tags) < 2 {
+					if len(tags) < 3 {
+						t.Log("There should be at least 3 tags. Checking again.")
 						continue
 					}
 
 					So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-					So(tags[0], ShouldBeIn, "swan_experiment=foobar", "swan_phase=barbaz")
-					So(tags[1], ShouldBeIn, "swan_experiment=foobar", "swan_phase=barbaz")
+					// Unfortunately we are not sure about the order in this slice.
+					So(tags[0], ShouldBeIn,
+						"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
+					So(tags[1], ShouldBeIn,
+						"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
+					So(tags[2], ShouldBeIn,
+						"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
 
 					found = true
 
 					break
 				}
-			}
 
+			}
 			So(found, ShouldBeTrue)
 		})
 

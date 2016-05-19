@@ -49,14 +49,24 @@ func DefaultMemcachedConfig(pathToBinary string) Config {
 	}
 }
 
-type dialTimeoutFunc func(address string, timeout time.Duration) error
+type dialTimeoutFunc func(address string, timeout time.Duration) bool
 
-func tryConnectTimeout(address string, timeout time.Duration) error {
-	conn, err := net.DialTimeout("tcp", address, timeout)
-	if err == nil {
-		conn.Close()
+func tryConnect(address string, timeout time.Duration) bool {
+	retries := 5
+	sleepTime := time.Duration(
+		timeout.Nanoseconds() / int64(retries))
+	connected := false
+	for i := 0; i < retries; i++ {
+		conn, err := net.Dial("tcp", address)
+		if err != nil {
+			time.Sleep(sleepTime)
+			continue
+		}
+		defer conn.Close()
+		connected = true
 	}
-	return err
+
+	return connected
 }
 
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
@@ -71,7 +81,7 @@ func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
 		exec:       exec,
 		conf:       config,
-		tryConnect: tryConnectTimeout,
+		tryConnect: tryConnect,
 	}
 
 }
@@ -95,9 +105,11 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 	}
 
 	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.port)
-	err = m.tryConnect(address, 5*time.Second)
-	if err != nil {
-		log.Error("Failed to test memcached instance. Error: " + err.Error())
+	if !m.tryConnect(address, 5*time.Second) {
+		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
+			address)
+		log.Error(err)
+
 		err1 := task.Stop()
 		if err1 != nil {
 			log.Error("Failed to stop memcached instance. Error: " + err1.Error())
