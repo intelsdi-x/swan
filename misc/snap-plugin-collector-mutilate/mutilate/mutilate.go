@@ -96,10 +96,11 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		metric.Timestamp_ = mutilate.now
 		for m := range rawMetrics {
 			rawMetricName := rawMetrics[m].name
+			// Get metric name without namespace.
 			if strings.Contains(rawMetricName, "/") {
 				rawMetricName = "/" + strings.Split(rawMetrics[m].name, "/")[1]
 			}
-			// assign value to metric for proper name
+			// Assign value to metric for proper name.
 			if strings.Contains(metricType.Namespace().String(), rawMetricName) {
 				metric.Data_ = rawMetrics[m].value
 			}
@@ -107,13 +108,14 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
 		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
 			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
-			// assign value for custom metric - always last item in rawMetrics
+			// Assign value for custom metric - always last item in rawMetrics.
 			metric.Data_ = rawMetrics[len(rawMetrics)-1].value
 		}
 		metrics = append(metrics, metric)
 	}
 
 	return metrics, nil
+
 }
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
