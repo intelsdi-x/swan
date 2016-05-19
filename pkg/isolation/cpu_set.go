@@ -11,12 +11,12 @@ import (
 // CPUSet describes a cgroup cpuset with core ids and numa (memory) nodes.
 type CPUSet struct {
 	name string
-	cpus Set
-	mems Set
+	cpus IntSet
+	mems IntSet
 }
 
 // NewCPUSet creates an instance of input data.
-func NewCPUSet(name string, cpus Set, mems Set) Isolation {
+func NewCPUSet(name string, cpus IntSet, mems IntSet) Isolation {
 	return &CPUSet{
 		name: name,
 		cpus: cpus,
