@@ -1,6 +1,11 @@
 package snap
 
 import (
+	"errors"
+	"fmt"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"os"
 	"path"
 	"time"
