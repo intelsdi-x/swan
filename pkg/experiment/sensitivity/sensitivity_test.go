@@ -97,7 +97,7 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is NOT
 // successful. That means Wait() and ExitCode() methods will not be triggered.
-func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadWhenSessionErr(loadPoint int) {
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadNoWait(loadPoint int) {
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
@@ -136,7 +136,7 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 			s.configuration,
 			NewLauncherWithoutSession(s.mockedLcLauncher),
 			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
-			[]LauncherAndSessionPair{
+			[]LauncherSessionPair{
 				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
@@ -175,7 +175,7 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEndWith, "Production task can't be launched")
 
-				So(*s.sensitivityExperiment.tuningPhase.PeakLoadSatisfyingSLO,
+				So(*s.sensitivityExperiment.tuningPhase.PeakLoad,
 					ShouldEqual, s.mockedTargetLoad)
 			})
 			s.assertAllExpectations()
@@ -192,7 +192,7 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 			s.configuration,
 			NewLauncherWithoutSession(s.mockedLcLauncher),
 			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
-			[]LauncherAndSessionPair{
+			[]LauncherSessionPair{
 				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
@@ -261,7 +261,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			s.configuration,
 			NewLauncherWithoutSession(s.mockedLcLauncher),
 			NewLoadGeneratorWithoutSession(s.mockedLoadGenerator),
-			[]LauncherAndSessionPair{
+			[]LauncherSessionPair{
 				NewLauncherWithoutSession(s.mockedAggressor),
 			},
 		)
@@ -368,16 +368,16 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 			"test",
 			logrus.ErrorLevel,
 			s.configuration,
-			NewCollectedLauncher(
+			NewMonitoredLauncher(
 				s.mockedLcLauncher,
 				s.mockedLcSessionLauncher,
 			),
-			NewCollectedLoadGenerator(
+			NewMonitoredLoadGenerator(
 				s.mockedLoadGenerator,
 				s.mockedLoadGeneratorSessionLauncher,
 			),
-			[]LauncherAndSessionPair{
-				NewCollectedLauncher(
+			[]LauncherSessionPair{
+				NewMonitoredLauncher(
 					s.mockedAggressor, s.mockedAggressorSessionLauncher,
 				),
 			},
@@ -437,7 +437,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 					Convey("When loadGenerator Snap session can't be launched we expect error",
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
-							s.mockSingleLoadGeneratorLoadWhenSessionErr(
+							s.mockSingleLoadGeneratorLoadNoWait(
 								s.mockedTargetLoad / s.configuration.LoadPointsCount)
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
