@@ -21,6 +21,13 @@ type task struct {
 	State    string
 }
 
+// CollectNodeConfigItem represents ConfigItem in CollectWorkflowMapNode.
+type CollectNodeConfigItem struct {
+	Ns    string
+	Key   string
+	Value interface{}
+}
+
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
@@ -29,6 +36,9 @@ type Session struct {
 
 	// Metrics to tag in session.
 	Metrics []string
+
+	// CollectNodeConfigItems represent ConfigItems for CollectNode.
+	CollectNodeConfigItems []CollectNodeConfigItem
 
 	// Active task.
 	task *task
@@ -46,13 +56,15 @@ func NewSession(
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
+
 	publisher *wmap.PublishWorkflowMapNode) *Session {
 
 	return &Session{
-		Metrics:   metrics,
-		Interval:  interval,
-		pClient:   pClient,
-		Publisher: publisher, // TODO(niklas): Replace with cassandra publisher.
+		Metrics:                metrics,
+		Interval:               interval,
+		pClient:                pClient,
+		Publisher:              publisher, // TODO(niklas): Replace with cassandra publisher.
+		CollectNodeConfigItems: []CollectNodeConfigItem{},
 	}
 }
 
@@ -79,7 +91,11 @@ func (s *Session) Start(phaseSession phase.Session) error {
 		wf.CollectNode.AddMetric(metric, -1)
 	}
 
-	// Check if plugins are loaded.
+	for _, configItem := range s.CollectNodeConfigItems {
+		wf.CollectNode.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
+	}
+
+	// Check if session processor plugins is loaded.
 	plugins := NewPlugins(s.pClient)
 	loaded, err := plugins.IsLoaded("processor", "session-processor")
 	if err != nil {
@@ -87,7 +103,6 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	}
 
 	if !loaded {
-		// TODO(skonefal): Remove loading this plugin from code.
 		goPath := os.Getenv("GOPATH")
 		buildPath := path.Join(goPath, "src", "github.com",
 			"intelsdi-x", "swan", "build")
@@ -141,6 +156,10 @@ func (s *Session) Stop() error {
 		return errors.New("snap task not running or not found")
 	}
 
+	// TODO(bp): Make sure Test completed its work. (!IMPORTANT)
+	// Hint from @Iwan: To achieve that look on:
+	// https://github.com/intelsdi-x/swan/blob/iwan/sprint-17-demo/misc/snap-plugin-collector-mutilate/snap-with-mutilate/test.sh
+	// It is convenient to just check how many successful task runs has been.
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
 		return rs.Err
