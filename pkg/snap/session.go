@@ -103,8 +103,6 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	}
 
 	if !loaded {
-		// TODO(skonefal): Remove loading this plugin from code.
-		// NOTE(bp): Disagree with above (:
 		goPath := os.Getenv("GOPATH")
 		buildPath := path.Join(goPath, "src", "github.com",
 			"intelsdi-x", "swan", "build")
@@ -158,8 +156,8 @@ func (s *Session) Stop() error {
 		return errors.New("snap task not running or not found")
 	}
 
-	// TODO(bp): Make sure Test completed it's work. (!IMPORTANT)
-	// Hint from @Iwan: Look on to achieve that.
+	// TODO(bp): Make sure Test completed its work. (!IMPORTANT)
+	// Hint from @Iwan: To achieve that look on:
 	// https://github.com/intelsdi-x/swan/blob/iwan/sprint-17-demo/misc/snap-plugin-collector-mutilate/snap-with-mutilate/test.sh
 	// It is convenient to just check how many successful task runs has been.
 	rs := s.pClient.StopTask(s.task.ID)
