@@ -3,7 +3,7 @@ package sensitivity
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment"
-	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"os"
 	"strconv"
 	"time"
@@ -12,12 +12,16 @@ import (
 // Configuration - set of parameters to control the experiment.
 type Configuration struct {
 	// Given SLO for the experiment.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	SLO int
 	// Each measurement duration in [s].
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	LoadDuration time.Duration
 	// Number of load points to test.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	LoadPointsCount int
 	// Repetitions.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	Repetitions int
 }
 
@@ -27,16 +31,16 @@ type Experiment struct {
 	name                           string
 	logLevel                       log.Level
 	configuration                  Configuration
-	productionTaskLauncher         workloads.Launcher
-	loadGeneratorForProductionTask workloads.LoadGenerator
-	aggressorTaskLaunchers         []workloads.Launcher
+	productionTaskLauncher         LauncherSessionPair
+	loadGeneratorForProductionTask LoadGeneratorSessionPair
+	aggressorTaskLaunchers         []LauncherSessionPair
 
 	// Generic Experiment.
 	exp *experiment.Experiment
 	// Phases.
 	tuningPhase     *tuningPhase
-	baselinePhase   []experiment.Phase
-	aggressorPhases [][]experiment.Phase
+	baselinePhase   []phase.Phase
+	aggressorPhases [][]phase.Phase
 }
 
 // NewExperiment construct new Experiment object.
@@ -49,9 +53,9 @@ func NewExperiment(
 	name string,
 	logLevel log.Level,
 	configuration Configuration,
-	productionTaskLauncher workloads.Launcher,
-	loadGeneratorForProductionTask workloads.LoadGenerator,
-	aggressorTaskLaunchers []workloads.Launcher) *Experiment {
+	productionTaskLauncher LauncherSessionPair,
+	loadGeneratorForProductionTask LoadGeneratorSessionPair,
+	aggressorTaskLaunchers []LauncherSessionPair) *Experiment {
 
 	// TODO(mpatelcz): Validate configuration.
 	return &Experiment{
@@ -65,29 +69,29 @@ func NewExperiment(
 }
 
 func (e *Experiment) prepareTuningPhase() *tuningPhase {
-	targetLoad := int(-1)
+	peakLoad := int(-1)
 	return &tuningPhase{
-		pr:          e.productionTaskLauncher,
-		lgForPr:     e.loadGeneratorForProductionTask,
+		pr:          e.productionTaskLauncher.Launcher,
+		lgForPr:     e.loadGeneratorForProductionTask.LoadGenerator,
 		SLO:         e.configuration.SLO,
 		repetitions: e.configuration.Repetitions,
-		TargetLoad:  &targetLoad,
+		PeakLoad:    &peakLoad,
 	}
 }
 
-func (e *Experiment) prepareBaselinePhases() []experiment.Phase {
-	baseline := []experiment.Phase{}
+func (e *Experiment) prepareBaselinePhases() []phase.Phase {
+	baseline := []phase.Phase{}
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
 		baseline = append(baseline, &measurementPhase{
 			namePrefix:      "baseline",
 			pr:              e.productionTaskLauncher,
 			lgForPr:         e.loadGeneratorForProductionTask,
-			bes:             []workloads.Launcher{},
+			bes:             []LauncherSessionPair{},
 			loadDuration:    e.configuration.LoadDuration,
 			loadPointsCount: e.configuration.LoadPointsCount,
 			repetitions:     e.configuration.Repetitions,
-			TargetLoad:      e.tuningPhase.TargetLoad,
+			PeakLoad:        e.tuningPhase.PeakLoad,
 			// Measurements in baseline have different load point input.
 			currentLoadPointIndex: i,
 		})
@@ -96,22 +100,22 @@ func (e *Experiment) prepareBaselinePhases() []experiment.Phase {
 	return baseline
 }
 
-func (e *Experiment) prepareAggressorsPhases() [][]experiment.Phase {
-	aggressorPhases := [][]experiment.Phase{}
+func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
+	aggressorPhases := [][]phase.Phase{}
 	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
-		aggressorPhase := []experiment.Phase{}
+		aggressorPhase := []phase.Phase{}
 		// Include measurements for each LoadPoint.
 		for i := 1; i <= e.configuration.LoadPointsCount; i++ {
 			aggressorPhase = append(aggressorPhase, &measurementPhase{
 				namePrefix:            "aggressor_nr_" + strconv.Itoa(beIndex),
 				pr:                    e.productionTaskLauncher,
 				lgForPr:               e.loadGeneratorForProductionTask,
-				bes:                   []workloads.Launcher{beLauncher},
+				bes:                   []LauncherSessionPair{beLauncher},
 				loadDuration:          e.configuration.LoadDuration,
 				loadPointsCount:       e.configuration.LoadPointsCount,
 				repetitions:           e.configuration.Repetitions,
 				currentLoadPointIndex: i,
-				TargetLoad:            e.tuningPhase.TargetLoad,
+				PeakLoad:              e.tuningPhase.PeakLoad,
 			})
 		}
 		aggressorPhases = append(aggressorPhases, aggressorPhase)
@@ -123,7 +127,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]experiment.Phase {
 func (e *Experiment) configureGenericExperiment() error {
 	// Configure phases & measurements.
 	// Each sensitivity phase (part of experiment) can include couple of measurements.
-	var allMeasurements []experiment.Phase
+	var allMeasurements []phase.Phase
 
 	// Include Tuning Phase.
 	e.tuningPhase = e.prepareTuningPhase()

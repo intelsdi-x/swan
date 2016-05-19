@@ -2,7 +2,6 @@ package memcached
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,12 +10,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func connectTimeoutSuccess(address string, timeout time.Duration) error {
-	return nil
+func connectTimeoutSuccess(address string, timeout time.Duration) bool {
+	return true
 }
 
-func connectTimeoutFailure(address string, timeout time.Duration) error {
-	return fmt.Errorf("Failed to connect to the host %s", address)
+func connectTimeoutFailure(address string, timeout time.Duration) bool {
+	return false
 }
 
 // TestMemcachedWithMockedExecutor runs a Memcached launcher with the mocked executor to simulate
@@ -47,6 +46,8 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 				Convey("Arguments passed to Executor should be a proper command", func() {
 					task, err := memcachedLauncher.Launch()
 					So(err, ShouldBeNil)
+
+					So(task, ShouldNotBeNil)
 					So(task, ShouldEqual, mockedTaskHandle)
 
 					Convey("Location of the returned task shall be 127.0.0.1", func() {
