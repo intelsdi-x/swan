@@ -44,7 +44,6 @@ const (
 
 func TestSnapMutilateSession(t *testing.T) {
 	var snapd *snapTest.Snapd
-	var c *client.Client
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
@@ -53,7 +52,8 @@ func TestSnapMutilateSession(t *testing.T) {
 
 	Convey("While having Snapd running", t, func() {
 		snapd = snapTest.NewSnapd(snapMutilateSessionTestAPIPort)
-		snapd.Execute()
+		err := snapd.Execute()
+		So(err, ShouldBeNil)
 
 		// Wait until snap is up.
 		So(snapd.Connected(), ShouldBeTrue)
@@ -61,17 +61,17 @@ func TestSnapMutilateSession(t *testing.T) {
 		defer func() {
 			if snapd != nil {
 				err := snapd.Stop()
-				snapd.CleanAndEraseOutput()
+				err2 := snapd.CleanAndEraseOutput()
+
 				So(err, ShouldBeNil)
+				So(err2, ShouldBeNil)
 			}
 		}()
 
 		Convey("We are able to connect with snapd", func() {
-			ct, err := client.New(
+			c, err := client.New(
 				fmt.Sprintf("http://127.0.0.1:%d", snapMutilateSessionTestAPIPort), "v1", true)
 			So(err, ShouldBeNil)
-
-			c = ct
 
 			Convey("Loading test publisher", func() {
 				plugins := snap.NewPlugins(c)

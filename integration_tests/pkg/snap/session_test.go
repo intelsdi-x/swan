@@ -21,7 +21,6 @@ const (
 
 func TestSnap(t *testing.T) {
 	var snapd *Snapd
-	var c *client.Client
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
@@ -30,15 +29,17 @@ func TestSnap(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-
 		snapd = NewSnapd(snapSessionTestAPIPort)
-		snapd.Execute()
+		err := snapd.Execute()
+		So(err, ShouldBeNil)
 
 		defer func() {
 			if snapd != nil {
 				err := snapd.Stop()
-				snapd.CleanAndEraseOutput()
+				err2 := snapd.CleanAndEraseOutput()
+
 				So(err, ShouldBeNil)
+				So(err2, ShouldBeNil)
 			}
 		}()
 
@@ -46,11 +47,9 @@ func TestSnap(t *testing.T) {
 		So(snapd.Connected(), ShouldBeTrue)
 
 		Convey("We are able to connect with snapd", func() {
-			ct, err := client.New(
+			c, err := client.New(
 				fmt.Sprintf("http://127.0.0.1:%d", snapSessionTestAPIPort), "v1", true)
 			So(err, ShouldBeNil)
-
-			c = ct
 
 			Convey("Loading collectors", func() {
 				plugins := snap.NewPlugins(c)
@@ -80,8 +79,10 @@ func TestSnap(t *testing.T) {
 					plugins := snap.NewPlugins(c)
 					So(plugins, ShouldNotBeNil)
 
-					pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
-					plugins.Load(pluginPath)
+					pluginPath := []string{path.Join(
+						buildPath, "snap-plugin-publisher-session-test")}
+					err := plugins.Load(pluginPath)
+					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("session-test", 1)
 
