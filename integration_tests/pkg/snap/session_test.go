@@ -37,7 +37,6 @@ func TestSnap(t *testing.T) {
 			if snapd != nil {
 				err := snapd.Stop()
 				err2 := snapd.CleanAndEraseOutput()
-
 				So(err, ShouldBeNil)
 				So(err2, ShouldBeNil)
 			}

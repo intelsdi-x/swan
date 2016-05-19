@@ -44,7 +44,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			defer taskHandle.Clean()
 			defer taskHandle.EraseOutput()
 
-
 			Convey("There should be no error", func() {
 				stopErr := taskHandle.Stop()
 
