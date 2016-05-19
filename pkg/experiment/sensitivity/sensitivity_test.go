@@ -39,7 +39,7 @@ type SensitivityTestSuite struct {
 	configuration         Configuration
 	sensitivityExperiment *Experiment
 
-	mockedTargetLoad int
+	mockedPeakLoad int
 }
 
 func (s *SensitivityTestSuite) SetupTest() {
@@ -70,7 +70,7 @@ func (s *SensitivityTestSuite) SetupTest() {
 		Repetitions:     1,
 	}
 
-	s.mockedTargetLoad = 2
+	s.mockedPeakLoad = 2
 }
 
 func (s *SensitivityTestSuite) mockSingleLcWorkloadExecution() {
@@ -80,7 +80,7 @@ func (s *SensitivityTestSuite) mockSingleLcWorkloadExecution() {
 }
 
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorTuning() {
-	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedTargetLoad, 4, nil).Once()
+	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedPeakLoad, 4, nil).Once()
 }
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is successful
@@ -176,7 +176,7 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 				So(err.Error(), ShouldEndWith, "Production task can't be launched")
 
 				So(*s.sensitivityExperiment.tuningPhase.PeakLoad,
-					ShouldEqual, s.mockedTargetLoad)
+					ShouldEqual, s.mockedPeakLoad)
 			})
 			s.assertAllExpectations()
 		})
@@ -226,13 +226,13 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 
 				Convey("When load is launched successfuly for first loadPoint", func() {
 					s.mockSingleLoadGeneratorLoad(
-						s.mockedTargetLoad / s.configuration.LoadPointsCount)
+						s.mockedPeakLoad / s.configuration.LoadPointsCount)
 
 					Convey("After two baseline measurements for 2 loadpoints, we know "+
 						"that Prod Launcher and Load Generator was launched 2 times", func() {
 						// Mocking second iteration of baseline:
 						s.mockSingleLcWorkloadExecution()
-						s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
+						s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
 
 						// Make next measurement fail.
 						s.mockedLcLauncher.On("Launch").Return(nil,
@@ -275,7 +275,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			for i := 1; i <= s.configuration.LoadPointsCount; i++ {
 				s.mockSingleLcWorkloadExecution()
 				s.mockSingleLoadGeneratorLoad(
-					i * (s.mockedTargetLoad / s.configuration.LoadPointsCount))
+					i * (s.mockedPeakLoad / s.configuration.LoadPointsCount))
 			}
 
 			Convey("But production task can't be launched during aggressor phase, "+
@@ -316,14 +316,14 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 
 					Convey("When load is launched successfuly for last phase", func() {
 						s.mockSingleLoadGeneratorLoad(
-							s.mockedTargetLoad / s.configuration.LoadPointsCount)
+							s.mockedPeakLoad / s.configuration.LoadPointsCount)
 
 						Convey("And next iteration is also sucessful, we have "+
 							"made succesful experiment", func() {
 							// Mocking second iteration of aggressor phase:
 							s.mockSingleLcWorkloadExecution()
 							s.mockSingleAggressorWorkloadExecution()
-							s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
+							s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
 
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldBeNil)
@@ -363,7 +363,6 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 	Convey("While using sensitivity profile experiment", s.T(), func() {
 		// Create experiment with Snap session per productionTask,
 		// loadGenerator and aggressor.
-
 		s.sensitivityExperiment = NewExperiment(
 			"test",
 			logrus.ErrorLevel,
@@ -388,12 +387,12 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
 
-			// Mock successful baseline phase (for 2 loadPoints)
+			// Mock successful baseline phase (for 2 loadPoints).
 			for i := 1; i <= s.configuration.LoadPointsCount; i++ {
 				s.mockSingleLcWorkloadExecution()
 				s.mockSingleLcSessionExecution()
 				s.mockSingleLoadGeneratorLoad(
-					i * (s.mockedTargetLoad / s.configuration.LoadPointsCount))
+					i * (s.mockedPeakLoad / s.configuration.LoadPointsCount))
 				s.mockSingleLoadGeneratorSessionExecution()
 			}
 
@@ -438,13 +437,12 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
 							s.mockSingleLoadGeneratorLoadNoWait(
-								s.mockedTargetLoad / s.configuration.LoadPointsCount)
+								s.mockedPeakLoad / s.configuration.LoadPointsCount)
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
 								s.mockedLoadGeneratorTask,
 								mock.AnythingOfType("phase.Session")).Return(
 								nil, errors.New("LoadGenerator session can't be launched")).Once()
-
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldNotBeNil)
 							So(err.Error(), ShouldEndWith,
@@ -455,7 +453,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
 							s.mockSingleLoadGeneratorLoad(
-								s.mockedTargetLoad / s.configuration.LoadPointsCount)
+								s.mockedPeakLoad / s.configuration.LoadPointsCount)
 							s.mockSingleLoadGeneratorSessionExecution()
 
 							Convey("And next iteration is succesful, we expect no error", func() {
@@ -470,7 +468,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 								// Aggressor's session starts.
 								s.mockSingleAggressorSessionExecution()
 								// Load generator starts.
-								s.mockSingleLoadGeneratorLoad(s.mockedTargetLoad)
+								s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
 								// Load generator's session starts.
 								s.mockSingleLoadGeneratorSessionExecution()
 

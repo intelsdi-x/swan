@@ -48,12 +48,19 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 
 	w := bufio.NewWriter(file)
 	for _, m := range metrics {
-		var keys []string
+		var tags []string
 		for key, value := range m.Tags() {
-			keys = append(keys, key+"="+value)
+			tags = append(tags, key+"="+value)
 		}
 
-		w.WriteString(fmt.Sprintf("%s\t%s\n", "/"+strings.Join(m.Namespace().Strings(), "/"), strings.Join(keys, ",")))
+		// Make row: Namespace\t Tags\t Values\n.
+		w.WriteString(
+			fmt.Sprintf(
+				"%s\t%s\t%0.5f\n",
+				"/"+strings.Join(m.Namespace().Strings(), "/"),
+				strings.Join(tags, ","),
+				m.Data(),
+			))
 	}
 	w.Flush()
 
