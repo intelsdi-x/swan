@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	snapTest "github.com/intelsdi-x/swan/integration_tests/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
@@ -18,23 +17,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func setupMutilateExpectedMetrics() map[string]string {
-	expectedMetrics := make(map[string]string)
-	// These are results from test output file
-	// in "src/github.com/intelsdi-x/swan/misc/
-	// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
-	expectedMetrics["avg"] = "20.80000"
-	expectedMetrics["std"] = "23.10000"
-	expectedMetrics["min"] = "11.90000"
-	expectedMetrics["5th"] = "13.30000"
-	expectedMetrics["10th"] = "13.40000"
-	expectedMetrics["90th"] = "33.40000"
-	expectedMetrics["95th"] = "43.10000"
-	expectedMetrics["99th"] = "59.50000"
-
-	return expectedMetrics
-}
 
 func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	tags string, value string) {
@@ -50,8 +32,6 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 		"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
 	So(tagsSplitted[2], ShouldBeIn,
 		"swan_experiment=foobar", "swan_phase=barbaz", "swan_repetition=1")
-	logrus.SetLevel(logrus.ErrorLevel)
-	logrus.Error("Checking ", namespace)
 	// Check namespace & values.
 	namespaceSplitted := strings.Split(namespace, "/")
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
@@ -64,7 +44,6 @@ func TestMutilateSnapSession(t *testing.T) {
 	var c *client.Client
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
-	expectedMetrics := setupMutilateExpectedMetrics()
 
 	goPath := os.Getenv("GOPATH")
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
@@ -125,13 +104,13 @@ func TestMutilateSnapSession(t *testing.T) {
 					defer file.Close()
 
 					mockedTaskInfo.On("StdoutFile").Return(file, nil)
-					customPhaseSession := phase.Session{
+					session := phase.Session{
 						ExperimentID: "foobar",
 						PhaseID:      "barbaz",
 						RepetitionID: 1,
 					}
 
-					handle, err := mutilateSnapSession.Launch(mockedTaskInfo, customPhaseSession)
+					handle, err := mutilateSnapSession.Launch(mockedTaskInfo, session)
 					So(err, ShouldBeNil)
 
 					defer func() {
@@ -144,6 +123,20 @@ func TestMutilateSnapSession(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						So(status, ShouldEqual, "Running")
+
+						// These are results from test output file
+						// in "src/github.com/intelsdi-x/swan/misc/
+						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
+						expectedMetrics := map[string]string{
+							"avg":  "20.80000",
+							"std":  "23.10000",
+							"min":  "11.90000",
+							"5th":  "13.30000",
+							"10th": "13.40000",
+							"90th": "33.40000",
+							"95th": "43.10000",
+							"99th": "59.50000",
+						}
 
 						Convey("Reading samples from file", func() {
 							retries := 5
@@ -169,9 +162,6 @@ func TestMutilateSnapSession(t *testing.T) {
 									allLinesHaveAllColumns := true
 									// All lines should have 3 columns.
 									for i := 0; i < len(expectedMetrics); i++ {
-										// Debug only. Testing bug on bad slice order.
-										// SCE-328.
-										logrus.Errorf(lines[i])
 										columns := strings.Split(lines[i], "\t")
 										if len(columns) < 3 {
 											allLinesHaveAllColumns = false
