@@ -49,7 +49,7 @@ func TestSnapMutilateSession(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-		snapd = snapTest.NewSnapd(snapMutilateSessionTestAPIPort)
+		snapd = snapTest.NewSnapdOnPort(snapMutilateSessionTestAPIPort)
 		err := snapd.Execute()
 		So(err, ShouldBeNil)
 

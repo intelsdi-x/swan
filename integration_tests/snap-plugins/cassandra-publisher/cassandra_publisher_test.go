@@ -2,49 +2,56 @@ package cassandra
 
 import (
 	"testing"
-	//"github.com/intelsdi-x/swan/pkg/executor"
-	//"io/ioutil"
 	"time"
-	//"strings"
-	//"regexp"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocql/gocql"
-	//"github.com/vektra/errors"
 	"os"
 	"path"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 
 func TestCassandraPublisher(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	snapClient, err := client.New("http://127.0.0.1:8181", "v1", true)
-	Convey("When connecting to snap client", t, func() {
+	//port := 5055
+	snapd := testhelpers.NewSnapd()
+	err := snapd.Start()
+	Convey("Snapd should start successfully", t, func() {
+		So(err, ShouldBeNil)
+		So(snapd.Connected(), ShouldBeTrue)
+	})
+	defer snapd.Stop()
+	defer snapd.CleanAndEraseOutput()
+
+	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
+	//snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", 8181)
+	snapClient, err := client.New(snapdAddress, "v1", true)
+	Convey("Snap client should connect successfully", t, func() {
 		So(err, ShouldBeNil)
 	})
 
-
 	err = loadSnapPlugins(snapClient)
-	Convey("When loading snap plugins", t, func() {
+	Convey("Snap plugins loading is successfull", t, func() {
 		So(err, ShouldBeNil)
 	})
 
 	err = runCassandraPublisherWorkflow(snapClient)
-	Convey("When running Cassadndra workflow", t, func() {
+	Convey("Cassadndra workflow runs successfully", t, func() {
 		So(err, ShouldBeNil)
 	})
 
 	value, tags, err := getValueAndTagsFromCassandra()
 	Convey("When getting values from Cassadndra", t, func() {
 		So(err, ShouldBeNil)
-		Convey("Value should be different than zero", func() {
-			So(value, ShouldNotEqual, 0)
+		Convey("Stored value in Cassandra should equal 1", func() {
+			So(value, ShouldEqual, 1)
 		})
 		Convey("Tags should be approprierate", func() {
 			So(tags["swan_experiment"], ShouldEqual, "example-experiment")
@@ -52,12 +59,6 @@ func TestCassandraPublisher(t *testing.T) {
 			So(tags["swan_repetition"], ShouldEqual, "42")
 		})
 	})
-}
-
-type snapPluginInfo struct {
-	pluginName string
-	pluginType string
-	pluginPath string
 }
 
 func loadSnapPlugins(snapClient *client.Client) (err error) {
@@ -97,13 +98,20 @@ func loadPlugin(pluginClient *snap.Plugins, pluginPath string) {
 	}
 }
 
+// Small struct for storing information for loading plugins.
+type snapPluginInfo struct {
+	pluginName string
+	pluginType string
+	pluginPath string
+}
+
 func getRequiredPlugins() (plugins []snapPluginInfo) {
 	goPath := os.Getenv("GOPATH")
 	plugins = make([]snapPluginInfo, 0, 2)
 	plugins = append(plugins, snapPluginInfo{
 		pluginName: "mock",
 		pluginType: "collector",
-		pluginPath: path.Join(goPath,
+		pluginPath: path.Join(
 			goPath, "src", "github.com", "intelsdi-x", "swan",
 			"build", "snap-plugin-collector-session-test"),
 		})
