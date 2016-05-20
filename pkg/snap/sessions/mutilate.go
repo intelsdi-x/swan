@@ -60,6 +60,7 @@ func (s *MutilateSnapSessionLauncher) Launch(
 		return nil, err
 	}
 
+	// TODO(skonefal): We should have factory for plugins. This code will be repeated many times.
 	if !loaded {
 		pluginPath :=
 			[]string{path.Join(s.mutilateCollectorBuildPath, "snap-plugin-collector-mutilate")}
