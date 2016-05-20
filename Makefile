@@ -30,10 +30,9 @@ unit_test:
 plugins:
 	mkdir -p build
 	(cd build; go build ../misc/snap-plugin-collector-session-test)
-	(cd build; go build ../misc/snap-plugin-processor-session-tagging)
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
+	(cd build; go build ../misc/snap-plugin-collector-mutilate)
 	(./misc/build_cassandra_publisher.sh)
-	(cd misc/snap-plugin-collector-mutilate; go build)
 
 integration_test: plugins unit_test build_workloads
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...

@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v62",
 	"Packages": [
 		"./..."
 	],
@@ -103,6 +102,10 @@
 		{
 			"ImportPath": "github.com/intelsdi-x/gomit",
 			"Rev": "4f098da2bbb51d787be003e4abfbc25d01837564"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap-plugin-processor-tag/tag",
+			"Rev": "a7bf390b6855fd4073ffa04a16243f084d369bb3"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap-plugin-utilities/config",
@@ -224,7 +227,6 @@
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
-			"Comment": "v4.2.0",
 			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
 		},
 		{

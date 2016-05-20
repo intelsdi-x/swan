@@ -39,11 +39,10 @@ func TestMemcachedWithExecutor(t *testing.T) {
 		Convey("When memcached is launched", func() {
 			// NOTE: It is needed for memcached to have default port available.
 			taskHandle, err := memcachedLauncher.Launch()
-			if taskHandle != nil {
-				defer taskHandle.Stop()
-				defer taskHandle.Clean()
-				defer taskHandle.EraseOutput()
-			}
+			So(taskHandle, ShouldNotBeNil)
+			defer taskHandle.Stop()
+			defer taskHandle.Clean()
+			defer taskHandle.EraseOutput()
 
 			Convey("There should be no error", func() {
 				stopErr := taskHandle.Stop()
