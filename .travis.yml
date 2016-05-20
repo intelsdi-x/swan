@@ -5,7 +5,6 @@ language: go
 go:
 - 1.6
 before_install:
-- go get golang.org/x/sys/unix
 - make deps
 script:
 - make lint
