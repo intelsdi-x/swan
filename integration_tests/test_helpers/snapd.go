@@ -1,4 +1,4 @@
-package testhelpers
+gackage testhelpers
 
 import (
 	"errors"
@@ -28,7 +28,7 @@ func NewSnapdOnPort(apiPort int) *Snapd {
 	return &Snapd{apiPort: apiPort}
 }
 
-// Execute starts Snap daemon.
+// Start starts Snap daemon.
 func (s *Snapd) Start() error {
 	l := executor.NewLocal()
 	gopath := os.Getenv("GOPATH")
