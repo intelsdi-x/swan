@@ -1,4 +1,4 @@
-gackage testhelpers
+package testhelpers
 
 import (
 	"errors"
