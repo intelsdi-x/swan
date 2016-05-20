@@ -1,0 +1,34 @@
+FROM ubuntu:16.04
+
+MAINTAINER https://github.com/intelsdi-x/swan
+
+ENV GOPATH=/opt/gopath \
+    PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
+    GIT_TERMINAL_PROMPT=1
+
+RUN apt-get update && \
+    apt-get install -y build-essential \
+        automake \
+        cgroup-bin \
+        gengetopt \
+        git \
+        libevent-dev \
+        libcgroup-dev \
+        netcat \
+        scons \
+        sudo \
+        wget && \
+    ln -s /usr/bin/automake /usr/bin/automake-1.13 && \
+    ln -s /usr/bin/aclocal /usr/bin/aclocal-1.13 && \
+    ln -s /usr/bin/autoconf /usr/bin/autoconf-1.13 && \
+    cp /usr/sbin/useradd /usr/sbin/adduser && \
+    wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
+    cd /usr/local/ && \
+    tar xfvv go.tar.gz && \
+    mkdir /opt/gopath
+
+WORKDIR /opt/gopath/src/github.com/intelsdi-x
+ADD start.sh /start.sh
+
+ENTRYPOINT ["/start.sh"]
+CMD ["integration_test"]
