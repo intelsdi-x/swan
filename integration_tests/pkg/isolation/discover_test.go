@@ -1,15 +1,17 @@
 package isolation
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDiscover(t *testing.T) {
-	cpuTopo := CPUInfo{Sockets: 1, PhysicalCores: 1, ThreadsPerCore: 1, CacheL1i: 1, CacheL1d: 1, CacheL2: 1, CacheL3: 1}
+	cpuTopo := isolation.NewCPUInfo(1, 1, 1, 1, 1, 1, 1)
 
 	Convey("Should provide Discover() to return and correct cpu topology", t, func() {
 		So(cpuTopo.Discover(), ShouldBeNil)
