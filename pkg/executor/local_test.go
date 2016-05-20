@@ -43,7 +43,7 @@ func TestLocal(t *testing.T) {
 		}
 
 		Convey("Creating a single cgroup with cpu set for core 0 numa node 0", func() {
-			cpuset := isolation.NewCPUSet("/A", isolation.NewSet(0), isolation.NewSet(0))
+			cpuset := isolation.NewCPUSet("/A", isolation.NewIntSet(0), isolation.NewIntSet(0))
 			cpuset.Create()
 			defer cpuset.Clean()
 

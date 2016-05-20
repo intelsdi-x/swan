@@ -6,90 +6,90 @@ import (
 	"strings"
 )
 
-// Set represents a traditional set type so we can do intersections, joins, etc.
+// IntSet represents a traditional set type so we can do intersections, joins, etc.
 // on core and memory node ids.
-type Set map[int]struct{}
+type IntSet map[int]struct{}
 
 // Empty returns true iff this set has exactly zero elements.
-func (as Set) Empty() bool {
-	return len(as) == 0
+func (s IntSet) Empty() bool {
+	return len(s) == 0
 }
 
-// Contains returns true if the supplied item is present in this set.
-func (as Set) Contains(item int) bool {
-	_, found := as[item]
+// Contains returns true if the supplied element is present in this set.
+func (s IntSet) Contains(elem int) bool {
+	_, found := s[elem]
 	return found
 }
 
-// Add mutates this set to include the supplied item.
-func (as Set) Add(item int) {
-	as[item] = struct{}{}
+// Add mutates this set to include the supplied element.
+func (s IntSet) Add(elem int) {
+	s[elem] = struct{}{}
 }
 
-// Remove mutates this set to remove the supplied item.
-func (as Set) Remove(item int) {
-	delete(as, item) // does nothing if item does not exist
+// Remove mutates this set to remove the supplied element.
+func (s IntSet) Remove(elem int) {
+	delete(s, elem) // does nothing if item does not exist
 }
 
 // Equals returns true iff the supplied set is equal to this set.
-func (as Set) Equals(bs Set) bool {
-	return reflect.DeepEqual(as, bs)
+func (s IntSet) Equals(t IntSet) bool {
+	return reflect.DeepEqual(s, t)
 }
 
-// Union returns a new set that contains all of the items from this set
-// and all of the items from the supplied set.
+// Union returns a new set that contains all of the elements from this set
+// and all of the elements from the supplied set.
 // It does not mutate either set.
-func (as Set) Union(bs Set) Set {
-	result := NewSet()
-	for a := range as {
-		result.Add(a)
+func (s IntSet) Union(t IntSet) IntSet {
+	result := NewIntSet()
+	for elem := range s {
+		result.Add(elem)
 	}
-	for b := range bs {
-		result.Add(b)
+	for elem := range t {
+		result.Add(elem)
 	}
 	return result
 }
 
-// Intersection returns a new set that contains all of the items that are
+// Intersection returns a new set that contains all of the elements that are
 // present in both this set and the supplied set.
 // It does not mutate either set.
-func (as Set) Intersection(bs Set) Set {
-	result := NewSet()
-	for a := range as {
-		if bs.Contains(a) {
-			result.Add(a)
+func (s IntSet) Intersection(t IntSet) IntSet {
+	result := NewIntSet()
+	for elem := range s {
+		if t.Contains(elem) {
+			result.Add(elem)
 		}
 	}
 	return result
 }
 
-// Difference returns a new set that contains all of the items that are
+// Difference returns a new set that contains all of the elements that are
 // present in this set and not the supplied set.
 // It does not mutate either set.
-func (as Set) Difference(bs Set) Set {
-	result := NewSet()
-	for a := range as {
-		result.Add(a)
+func (s IntSet) Difference(t IntSet) IntSet {
+	result := NewIntSet()
+	for elem := range s {
+		result.Add(elem)
 	}
-	for b := range bs {
-		result.Remove(b)
+	for elem := range t {
+		result.Remove(elem)
 	}
 	return result
 }
 
-// NewSet returns a set containing the element from ids.
-func NewSet(ids ...int) Set {
-	ret := Set{}
-	for _, id := range ids {
-		ret.Add(id)
+// NewIntSet returns a new set containing all of the supplied elements.
+func NewIntSet(elems ...int) IntSet {
+	result := IntSet{}
+	for _, elem := range elems {
+		result.Add(elem)
 	}
-	return ret
+	return result
 }
 
-// NewSetFromRange creates a set from traditional cgroup set representation.
+// NewIntSetFromRange creates a set from traditional cgroup set representation.
 // For example, "0-5,34,46-48"
-func NewSetFromRange(rangesString string) (Set, error) {
-	ret := Set{}
+func NewIntSetFromRange(rangesString string) (IntSet, error) {
+	result := IntSet{}
 
 	// Split ranges string:
 	// "0-5,34,46-48" becomes ["0-5", "34", "46-48"]
@@ -99,31 +99,30 @@ func NewSetFromRange(rangesString string) (Set, error) {
 
 		if len(boundaries) == 1 {
 			// Some entries may only contain one id, like "34" in our example.
-			id, err := strconv.Atoi(boundaries[0])
+			elem, err := strconv.Atoi(boundaries[0])
 			if err != nil {
-				return Set{}, err
+				return nil, err
 			}
-
-			ret[id] = struct{}{}
+			result.Add(elem)
 		} else if len(boundaries) == 2 {
 			// For ranges, we parse start and end.
 			start, err := strconv.Atoi(boundaries[0])
 			if err != nil {
-				return Set{}, err
+				return nil, err
 			}
 
 			end, err := strconv.Atoi(boundaries[1])
 			if err != nil {
-				return Set{}, err
+				return nil, err
 			}
 
 			// And add all the ids to the set.
 			// Here, "0-5", "46-48" should become [0,1,2,3,4,5,46,47,48]
-			for id := start; id <= end; id++ {
-				ret.Add(id)
+			for elem := start; elem <= end; elem++ {
+				result.Add(elem)
 			}
 		}
 	}
 
-	return ret, nil
+	return result, nil
 }
