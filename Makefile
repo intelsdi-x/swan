@@ -45,6 +45,9 @@ integration_test_no_build: unit_test
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 
+integration_test_on_docker:
+	(cd integration_tests/docker; ./inside-docker-tests.sh)
+
 # building
 build:
 	mkdir -p build
