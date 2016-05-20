@@ -3,6 +3,7 @@ package snap
 import (
 	"errors"
 	"fmt"
+	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
@@ -58,7 +59,6 @@ func NewSession(
 	pClient *client.Client,
 
 	publisher *wmap.PublishWorkflowMapNode) *Session {
-
 	return &Session{
 		Metrics:                metrics,
 		Interval:               interval,
@@ -95,29 +95,35 @@ func (s *Session) Start(phaseSession phase.Session) error {
 		wf.CollectNode.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
 	}
 
-	// Check if session processor plugins is loaded.
+	// Check if `processor-tag` plugins is loaded.
+	// Get the Name of the processor-tag plugin from its Meta.
 	plugins := NewPlugins(s.pClient)
-	loaded, err := plugins.IsLoaded("processor", "session-processor")
+	loaded, err := plugins.IsLoaded("processor", snapProcessorTag.Meta().Name)
 	if err != nil {
 		return err
 	}
 
 	if !loaded {
 		goPath := os.Getenv("GOPATH")
-		buildPath := path.Join(goPath, "src", "github.com",
-			"intelsdi-x", "swan", "build")
 		pluginPath := []string{path.Join(
-			buildPath, "snap-plugin-processor-session-tagging")}
+			goPath, "bin", "snap-plugin-processor-tag")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	pr := wmap.NewProcessNode("session-processor", 1)
-	pr.AddConfigItem("swan_experiment", phaseSession.ExperimentID)
-	pr.AddConfigItem("swan_phase", phaseSession.PhaseID)
-	pr.AddConfigItem("swan_repetition", fmt.Sprintf("%d", phaseSession.RepetitionID))
+	pr := wmap.NewProcessNode(snapProcessorTag.Meta().Name, 3)
+
+	// Constructing Tags config item as stated in
+	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
+	pr.AddConfigItem("tags", fmt.Sprintf("swan_experiment:%s,swan_phase:%s,swan_repetition:%d",
+		phaseSession.ExperimentID,
+		phaseSession.PhaseID,
+		phaseSession.RepetitionID,
+	))
+
+	// Add specified publisher to workflow as well.
 	pr.Add(s.Publisher)
 	wf.CollectNode.Add(pr)
 
