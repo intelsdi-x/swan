@@ -2,33 +2,41 @@ package cassandra
 
 import (
 	"testing"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"io/ioutil"
+	//"github.com/intelsdi-x/swan/pkg/executor"
+	//"io/ioutil"
 	"time"
-	"strings"
-	"regexp"
+	//"strings"
+	//"regexp"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocql/gocql"
-	"github.com/vektra/errors"
+	//"github.com/vektra/errors"
 	"os"
 	"path"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 )
 
 
 func TestCassandraPublisher(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	err := loadSnapPlugins()
-	Convey("When loading snap plugins.", t, func() {
+	snapClient, err := client.New("http://127.0.0.1:8181", "v1", true)
+	Convey("When connecting to snap client", t, func() {
 		So(err, ShouldBeNil)
 	})
 
-	err = runCassandraPublisherWorkflow()
-	Convey("When running Cassadndra workflow.", t, func() {
+
+	err = loadSnapPlugins(snapClient)
+	Convey("When loading snap plugins", t, func() {
+		So(err, ShouldBeNil)
+	})
+
+	err = runCassandraPublisherWorkflow(snapClient)
+	Convey("When running Cassadndra workflow", t, func() {
 		So(err, ShouldBeNil)
 	})
 
@@ -41,6 +49,7 @@ func TestCassandraPublisher(t *testing.T) {
 		Convey("Tags should be approprierate", func() {
 			So(tags["swan_experiment"], ShouldEqual, "example-experiment")
 			So(tags["swan_phase"], ShouldEqual, "example-phase")
+			So(tags["swan_repetition"], ShouldEqual, "42")
 		})
 	})
 }
@@ -51,18 +60,14 @@ type snapPluginInfo struct {
 	pluginPath string
 }
 
-func loadSnapPlugins() (err error) {
+func loadSnapPlugins(snapClient *client.Client) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("Recovered from panic: %v\n", r)
 			err = r.(error)
 		}
 	}()
-	snapClient, err := client.New("http://127.0.0.1:8181", "v1", true)
-	if err != nil {
-		return fmt.Errorf("loadSnapPlugins: error connecting to snap: %s\n",
-				   err.Error())
-	}
+
 	pluginClient := snap.NewPlugins(snapClient)
 	requiredPlugins := getRequiredPlugins()
 
@@ -94,27 +99,18 @@ func loadPlugin(pluginClient *snap.Plugins, pluginPath string) {
 
 func getRequiredPlugins() (plugins []snapPluginInfo) {
 	goPath := os.Getenv("GOPATH")
-	plugins = make([]snapPluginInfo, 0, 3)
+	plugins = make([]snapPluginInfo, 0, 2)
 	plugins = append(plugins, snapPluginInfo{
 		pluginName: "mock",
 		pluginType: "collector",
 		pluginPath: path.Join(goPath,
-			"src", "github.com", "intelsdi-x",
-			"snap", "build", "plugin", "snap-collector-mock1"),
+			goPath, "src", "github.com", "intelsdi-x", "swan",
+			"build", "snap-plugin-collector-session-test"),
 		})
-	plugins = append(plugins, snapPluginInfo{
-		pluginName: "session-processor",
-		pluginType: "processor",
-		pluginPath: path.Join(goPath,
-			"src", "github.com", "intelsdi-x",
-			"swan", "build", "snap-plugin-processor-session-tagging"),
-	})
 	plugins = append(plugins, snapPluginInfo{
 		pluginName: "cassandra",
 		pluginType: "publisher",
-		pluginPath: path.Join(goPath,
-			"src", "github.com", "intelsdi-x",
-			"snap-plugin-publisher-cassandra","build","rootfs",
+		pluginPath: path.Join(goPath, "bin",
 			"snap-plugin-publisher-cassandra"),
 	})
 	return plugins
@@ -128,144 +124,45 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 	session, _ := cluster.CreateSession()
 	defer session.Close()
 
-	// cqlsh> select doubleval, tags from snap.metrics where ns='/intel/mock/host6/baz' AND ver=0 AND host='' ORDER BY time ASC limit 1;
-	//ns                    | ver | host | time                            | boolval | doubleval | strval | tags                                                                     | valtype
-	//-----------------------+-----+------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------+-----------
-	///intel/mock/host6/baz |   0 |      | 2016-05-13 14:05:31.194000+0000 |    null |        89 |   null | {'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase'} | doubleval
+	//cqlsh> select * from snap.metrics where ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;
+	//ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
+	//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
+	///intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
+
 
 	session.Query(`SELECT doubleval, tags FROM snap.metrics
 			WHERE ns = ? AND ver = ? AND host = ? LIMIT 1`,
-				"/intel/mock/host6/baz", 0, "").
+				"/intel/swan/session/metric1", -1, "fedorowicz").
 			Consistency(gocql.One).Scan(&value, &tags)
 	return value, tags, err
 }
 
-func runCassandraPublisherWorkflow() (err error) {
-	var errorStrings []string
-	taskID, err := createSnapTaskAndGetTaskID()
+func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
+	//dummyMetricNS := "/intel/swan/session/metric1"
+	cassandraPublisher := wmap.NewPublishNode("cassandra", 2)
+	cassandraPublisher.AddConfigItem("server", "localhost")
+
+	snapSession := snap.NewSession(
+		[]string{"/intel/swan/session/metric1"},
+		1*time.Second,
+		snapClient,
+		cassandraPublisher)
+
+	examplePhase := phase.Session{
+		ExperimentID: "example-experiment",
+		PhaseID     : "example-phase",
+		RepetitionID: 42,
+	}
+	err = snapSession.Start(examplePhase)
 	if err != nil {
-		return err
+		return fmt.Errorf("Snap session start failed: %s\n", err.Error())
 	}
 
-	runCommand("snapctl task start " + taskID)
+	time.Sleep(2 * time.Second)
+
+	err = snapSession.Stop()
 	if err != nil {
-		errorStrings = append(errorStrings, err.Error())
-	} else {
-		time.Sleep(2 * time.Second)
-	}
-
-	runCommand("snapctl task stop " + taskID)
-	if err != nil {
-		errorStrings = append(errorStrings, err.Error())
-	}
-	runCommand("snapctl task remove " + taskID)
-	if err != nil {
-		errorStrings = append(errorStrings, err.Error())
-	}
-
-	if len(errorStrings) > 0 {
-		return errors.New(strings.Join(errorStrings, "\n"))
-	}
-	return err
-}
-
-func createSnapTaskAndGetTaskID() (taskID string, err error) {
-	goPath := os.Getenv("GOPATH")
-	taskPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan",
-		"integration_tests", "snap-plugins", "cassandra-publisher", "task.yml")
-
-	_, err = os.Stat(taskPath)
-	if err != nil {
-		return taskID, fmt.Errorf("Stat on task file in location %s returned error %s",
-			taskPath, err)
-	}
-
-	e := executor.NewLocal()
-	createTask, err := e.Execute("snapctl task create -t " + taskPath)
-	if err != nil {
-		log.Errorf("Load task execution failed: %s\n", err.Error())
-		return taskID, err
-	}
-	defer createTask.Clean()
-	defer createTask.EraseOutput()
-	createTask.Wait(0)
-
-	exitCode, err := createTask.ExitCode()
-	if exitCode != 0 {
-	 	return taskID, fmt.Errorf("Create task execution returned code %d\n", exitCode)
-	}
-
-	taskID, err = getTaskIDFromTaskHandle(createTask)
-	if err != nil {
-		log.Errorf("Load task execution failed: %s\n", err.Error())
-		return taskID, err
-	}
-
-	return taskID, err
-}
-
-func getTaskIDFromTaskHandle(loadTaskHandle executor.TaskHandle) (string, error) {
-	outputFile, err := loadTaskHandle.StdoutFile()
-	if err != nil {
-		return "", err
-	}
-
-	output, err := ioutil.ReadAll(outputFile)
-	if err != nil {
-		return "", err
-	}
-
-	return getTaskIDFromSnapOutput(string(output))
-}
-
-
-/**
-Output example:
-$ snapctl task create -t task.yml
-Using task manifest to create task
-Task created
-ID: cbf7d3f5-c4b5-4deb-a720-6212c83d3db5
-Name: Task-cbf7d3f5-c4b5-4deb-a720-6212c83d3db5
-State: Running
- */
-func getTaskIDFromSnapOutput(snapctlOutput string) (string, error) {
-	lines := strings.Split(snapctlOutput, "\n")
-	getTaskIDRegex := regexp.MustCompile(`ID:\s(.*)$`)
-
-	for _, line := range lines {
-		match := getTaskIDRegex.FindStringSubmatch(line)
-		if matchNotFound(match) {
-			continue
-		} else {
-			return match[1], nil
-		}
-	}
-
-	return "", fmt.Errorf("Could not find task id in string: %s\n", snapctlOutput)
-}
-
-func matchNotFound(match []string) bool {
-	return match == nil || len(match) < 2 || len(match[1]) == 0
-}
-
-
-func runCommand(command string) (err error) {
-	e := executor.NewLocal()
-	commandTask, err := e.Execute(command)
-	if err != nil {
-		log.Errorf("Command \"%s\" invocation failed: %s\n", command, err.Error())
-		return err
-	}
-	defer commandTask.Clean()
-	defer commandTask.EraseOutput()
-
-	commandTask.Wait(0)
-
-	exitCode, err := commandTask.ExitCode()
-	if err != nil || exitCode != 0 {
-		log.Errorf("Command \"%s\" failed, err: %s; exit_code: %d\n",
-			command, err.Error(), exitCode)
-		return err
+		return fmt.Errorf("Snap session stop failed: %s\n", err.Error())
 	}
 
 	return err
