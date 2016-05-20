@@ -9,7 +9,8 @@ import (
 )
 
 func TestDiscover(t *testing.T) {
-	cpuTopo := CPUInfo{physicalCores: 4, threadsPerCore: 2, cacheL1i: 8192, cacheL1d: 8192, cacheL2: 262144, cacheL3: 8388608}
+	//	cpuTopo := CPUInfo{Sockets: 2, PhysicalCores: 4, ThreadsPerCore: 2, CacheL1i: 8192, CacheL1d: 8192, CacheL2: 262144, CacheL3: 8388608}
+	cpuTopo := CPUInfo{Sockets: 1, PhysicalCores: 1, ThreadsPerCore: 1, CacheL1i: 1, CacheL1d: 1, CacheL2: 1, CacheL3: 1}
 
 	Convey("Should provide Discover() to return and correct cpu topology", t, func() {
 		So(cpuTopo.Discover(), ShouldBeNil)
@@ -44,8 +45,8 @@ func TestDiscover(t *testing.T) {
 
 			}
 			So(err, ShouldBeNil)
-			So(cpuTopo.sockets, ShouldEqual, numaNodes)
-			So(cpuTopo.physicalCores*cpuTopo.sockets*cpuTopo.threadsPerCore, ShouldEqual, numCPUs)
+			So(cpuTopo.Sockets, ShouldEqual, numaNodes)
+			So(cpuTopo.PhysicalCores*cpuTopo.Sockets*cpuTopo.ThreadsPerCore, ShouldEqual, numCPUs)
 		})
 	})
 
