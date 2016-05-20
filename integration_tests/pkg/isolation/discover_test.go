@@ -9,7 +9,6 @@ import (
 )
 
 func TestDiscover(t *testing.T) {
-	//	cpuTopo := CPUInfo{Sockets: 2, PhysicalCores: 4, ThreadsPerCore: 2, CacheL1i: 8192, CacheL1d: 8192, CacheL2: 262144, CacheL3: 8388608}
 	cpuTopo := CPUInfo{Sockets: 1, PhysicalCores: 1, ThreadsPerCore: 1, CacheL1i: 1, CacheL1d: 1, CacheL2: 1, CacheL3: 1}
 
 	Convey("Should provide Discover() to return and correct cpu topology", t, func() {
