@@ -21,9 +21,9 @@ func NewMemorySize(name string, size int) Isolation {
 	}
 }
 
-// Prefix returns the command prefix to run with this isolation mechanism.
-func (memorySize *MemorySize) Prefix() string {
-	return "cgexec -g memory:" + memorySize.name
+// Decorate implements Decorator interface.
+func (memorySize *MemorySize) Decorate(command string) string {
+	return "cgexec -g memory:" + memorySize.name + " " + command
 }
 
 // Clean removes specified cgroup.

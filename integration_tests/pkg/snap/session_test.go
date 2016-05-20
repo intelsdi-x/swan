@@ -2,17 +2,19 @@ package snap
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
 
 const (
@@ -114,9 +116,7 @@ func TestSnap(t *testing.T) {
 
 						Convey("Contacting snap to get the task status", func() {
 							status, err := s.Status()
-
 							So(err, ShouldBeNil)
-
 							So(status, ShouldEqual, "Running")
 
 							Convey("Reading samples from file", func() {
