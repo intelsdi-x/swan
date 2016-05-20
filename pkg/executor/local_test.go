@@ -1,12 +1,15 @@
 package executor
 
 import (
+	"fmt"
+	"os/exec"
+	"os/user"
+	"testing"
+
 	log "github.com/Sirupsen/logrus"
 	isolation "github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
-	"os/user"
-	"testing"
 )
 
 // TestLocal tests the execution of process on local machine.
@@ -14,7 +17,9 @@ func TestLocal(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("While using Local Shell", t, func() {
+
 		l := NewLocal()
+		fmt.Printf("\n%q\n", l)
 
 		Convey("The generic Executor test should pass", func() {
 			testExecutor(t, l)
@@ -31,12 +36,18 @@ func TestLocal(t *testing.T) {
 			t.Skipf("Need to be privileged user to run cgroups tests")
 		}
 
+		cmd := exec.Command("cgexec")
+		err = cmd.Run()
+		if err != nil {
+			t.Skipf("%s", err)
+		}
+
 		Convey("Creating a single cgroup with cpu set for core 0 numa node 0", func() {
 			cpuset := isolation.NewCPUSet("/A", isolation.NewSet(0), isolation.NewSet(0))
 			cpuset.Create()
 			defer cpuset.Clean()
 
-			l := NewIsolatedLocal([]isolation.Isolation{cpuset})
+			l := NewLocalIsolated(cpuset)
 			task, err := l.Execute("/bin/echo foobar")
 			So(err, ShouldBeNil)
 			defer task.EraseOutput()
@@ -63,7 +74,7 @@ func TestLocal(t *testing.T) {
 			memory.Create()
 			defer memory.Clean()
 
-			l := NewIsolatedLocal([]isolation.Isolation{shares, memory})
+			l := NewLocalIsolated(isolation.Decorators{shares, memory})
 			task, err := l.Execute("/bin/echo foobar")
 			So(err, ShouldBeNil)
 			defer task.EraseOutput()
@@ -95,7 +106,7 @@ func TestLocal(t *testing.T) {
 			defer sharesC.Clean()
 
 			// First command.
-			l1 := NewIsolatedLocal([]isolation.Isolation{sharesB})
+			l1 := NewLocalIsolated(sharesB)
 			task1, err := l1.Execute("/bin/echo foobar")
 			So(err, ShouldBeNil)
 			defer task1.EraseOutput()
@@ -113,7 +124,7 @@ func TestLocal(t *testing.T) {
 			So(exitcode1, ShouldEqual, 0)
 
 			// Second command.
-			l2 := NewIsolatedLocal([]isolation.Isolation{sharesC})
+			l2 := NewLocalIsolated(sharesC)
 			task2, err := l2.Execute("/bin/echo foobar")
 			So(err, ShouldBeNil)
 			defer task2.EraseOutput()

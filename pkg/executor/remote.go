@@ -8,19 +8,22 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
 )
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
-	sshConfig SSHConfig
+	sshConfig         SSHConfig
+	commandDecorators isolation.Decorator
 }
 
 // NewRemote returns a Local instance.
-func NewRemote(sshConfig SSHConfig) *Remote {
+func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
 	return &Remote{
 		sshConfig,
+		decorator,
 	}
 }
 
@@ -65,7 +68,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	err = session.Start(command)
+	err = session.Start(remote.commandDecorators.Decorate(command))
 	if err != nil {
 		return nil, err
 	}
