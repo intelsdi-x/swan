@@ -164,7 +164,6 @@ func TestSnap(t *testing.T) {
 								So(found, ShouldBeTrue)
 							})
 						})
-
 					})
 				})
 			})

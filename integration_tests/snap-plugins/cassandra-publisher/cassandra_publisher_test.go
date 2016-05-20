@@ -22,28 +22,31 @@ func TestCassandraPublisher(t *testing.T) {
 
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
-	Convey("Snapd should start successfully", t, func() {
-		So(err, ShouldBeNil)
-		So(snapd.Connected(), ShouldBeTrue)
-	})
+	if err != nil {
+		t.Error(err)
+	}
 	defer snapd.Stop()
 	defer snapd.CleanAndEraseOutput()
 
+	if !snapd.Connected() {
+		t.Error("Could not connect to snapd")
+	}
+
 	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
 	snapClient, err := client.New(snapdAddress, "v1", true)
-	Convey("Snap client should connect successfully", t, func() {
-		So(err, ShouldBeNil)
-	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	err = loadSnapPlugins(snapClient)
-	Convey("Snap plugins loading is successfull", t, func() {
-		So(err, ShouldBeNil)
-	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	err = runCassandraPublisherWorkflow(snapClient)
-	Convey("Cassadndra workflow runs successfully", t, func() {
-		So(err, ShouldBeNil)
-	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	value, tags, err := getValueAndTagsFromCassandra()
 	Convey("When getting values from Cassadndra", t, func() {
