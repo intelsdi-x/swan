@@ -6,9 +6,9 @@ sudo: required
 go:
 - 1.6
 before_install:
+- go get golang.org/x/sys/unix
 - make deps
 script:
-- go get golang.org/x/sys/unix
 - make lint
 - make unit_test
 - docker run --name cassandra -p 127.0.0.1:9042:9042 -p 127.0.0.1:9160 -d cassandra
