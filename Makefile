@@ -30,7 +30,6 @@ unit_test:
 plugins:
 	mkdir -p build
 	(cd build; go build ../misc/snap-plugin-collector-session-test)
-	(cd build; go build ../misc/snap-plugin-processor-session-tagging)
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(cd build; go build ../misc/snap-plugin-collector-mutilate)
 
