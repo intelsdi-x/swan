@@ -25,8 +25,6 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
 	So(len(tagsSplitted), ShouldBeGreaterThan, 2)
-
-	// Unfortunately we are not sure about the order in this slice.
 	So("swan_experiment=foobar", ShouldBeIn, tagsSplitted)
 	So("swan_phase=barbaz", ShouldBeIn, tagsSplitted)
 	So("swan_repetition=1", ShouldBeIn, tagsSplitted)
@@ -55,9 +53,6 @@ func TestSnapMutilateSession(t *testing.T) {
 		err := snapd.Execute()
 		So(err, ShouldBeNil)
 
-		// Wait until snap is up.
-		So(snapd.Connected(), ShouldBeTrue)
-
 		defer func() {
 			if snapd != nil {
 				err := snapd.Stop()
@@ -67,6 +62,9 @@ func TestSnapMutilateSession(t *testing.T) {
 				So(err2, ShouldBeNil)
 			}
 		}()
+
+		// Wait until snap is up.
+		So(snapd.Connected(), ShouldBeTrue)
 
 		Convey("We are able to connect with snapd", func() {
 			c, err := client.New(
