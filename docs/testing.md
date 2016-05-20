@@ -76,14 +76,14 @@ docker run --privileged -i -t -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*ta
 ```
 where:
 - `your_git_token` - per git account token for access to private repositories (if you don't provide it, you will be asked for GitHub credentials during tests)
-- `path_to_repo` - absolute path to swan source code
+- `path_to_repo` - absolute path to swan source code (optional)
 - `target_branch` - select swan branch for test(s). (default: master)
 - `image_name` - image tag which was given during building
-- `target` - list of targets, which should be run by docker
+- `target` - list of targets, which should be run by docker (default: integration_test)
 
 *Note: If you pass repository as a volume into container then cloning source code from GitHub will be skipped*
 
 ***Warning: Your docker container should be run with following flags:***
 - `-v /sys/fs/cgroup:/sys/fs/cgroup/:rw` - this option provides access to cgroups inside container
 - `--privileged` - this option provides access to pid namespaces 
-- `-t` - required by integration tests on `Coreos` based image
+- `-t` - required by integration tests on `Centos` based image
