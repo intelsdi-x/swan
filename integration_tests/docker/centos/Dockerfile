@@ -1,0 +1,31 @@
+FROM centos:7
+
+MAINTAINER https://github.com/intelsdi-x/swan
+
+ENV GOPATH=/opt/gopath \
+    PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
+    GIT_TERMINAL_PROMPT=1
+
+RUN yum install -y epel-release && \
+    yum groupinstall -y 'Development Tools' && \
+    yum install -y \
+        gengetopt \
+        git \
+        libevent-devel \
+        libcgroup \
+        libcgroup-tools \
+        nc \
+        scons \
+        sudo \
+        wget \
+        which && \
+    wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
+    cd /usr/local/ && \
+    tar xfvv go.tar.gz && \
+    mkdir /opt/gopath
+
+WORKDIR /opt/gopath/src/github.com/intelsdi-x
+ADD start.sh /start.sh
+
+ENTRYPOINT ["/start.sh"]
+CMD ["integration_test"]
