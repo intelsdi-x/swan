@@ -1,15 +1,17 @@
 package isolation
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
+	"fmt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSet(t *testing.T) {
+func TestIntSet(t *testing.T) {
 	Convey("When testing sets", t, func() {
 
 		Convey("When creating an empty set", func() {
-			s1 := NewSet()
+			s1 := NewIntSet()
 
 			Convey("Should have length 0", func() {
 				So(s1, ShouldHaveLength, 0)
@@ -20,8 +22,68 @@ func TestSet(t *testing.T) {
 			})
 		})
 
+		Convey("After adding elements to a set", func() {
+			s := NewIntSet()
+			numItems := 1024
+			for i := 0; i < numItems; i++ {
+				s.Add(i)
+			}
+
+			Convey(fmt.Sprintf("It should have length %d", numItems), func() {
+				So(s, ShouldHaveLength, numItems)
+			})
+
+			Convey("It should contain all added elements", func() {
+				for i := 0; i < numItems; i++ {
+					So(s.Contains(i), ShouldBeTrue)
+				}
+			})
+		})
+
+		Convey("When removing elements from a set", func() {
+			s := NewIntSet()
+			numItems := 1024
+			for i := 0; i < numItems; i++ {
+				s.Add(i)
+			}
+
+			Convey(fmt.Sprintf("After adding %d elements", numItems), func() {
+				Convey(fmt.Sprintf("It should have length %d", numItems), func() {
+					So(s, ShouldHaveLength, numItems)
+				})
+
+				Convey(fmt.Sprintf("After removing %d elements", numItems/2), func() {
+					for i := 0; i < numItems; i++ {
+						if i%2 == 0 {
+							s.Remove(i)
+						}
+					}
+
+					Convey(fmt.Sprintf("It should have length %d", numItems/2), func() {
+						So(s, ShouldHaveLength, numItems/2)
+					})
+
+					Convey("It should not contain any removed elements", func() {
+						for i := 0; i < numItems; i++ {
+							if i%2 == 0 {
+								So(s.Contains(i), ShouldBeFalse)
+							}
+						}
+					})
+
+					Convey("It should contain all expected remaining elements", func() {
+						for i := 0; i < numItems; i++ {
+							if i%2 != 0 {
+								So(s.Contains(i), ShouldBeTrue)
+							}
+						}
+					})
+				})
+			})
+		})
+
 		Convey("Creating a set with three elements", func() {
-			s1 := NewSet(1, 5, 7)
+			s1 := NewIntSet(1, 5, 7)
 
 			Convey("Should not be empty", func() {
 				So(s1.Empty(), ShouldBeFalse)
@@ -45,8 +107,8 @@ func TestSet(t *testing.T) {
 		})
 
 		Convey("Creating two sets that share only one element", func() {
-			s1 := NewSet(1, 3, 5, 7)
-			s2 := NewSet(2, 4, 6, 7)
+			s1 := NewIntSet(1, 3, 5, 7)
+			s2 := NewIntSet(2, 4, 6, 7)
 
 			Convey("Each set should equal itself", func() {
 				So(s1.Equals(s1), ShouldBeTrue)
@@ -102,10 +164,15 @@ func TestSet(t *testing.T) {
 				So(len(intersection), ShouldEqual, 1)
 				So(intersection.Contains(7), ShouldBeTrue)
 			})
+
+			Convey("The union of difference and intersection should equal the original", func() {
+				So(s1.Difference(s2).Union(s1.Intersection(s2)).Equals(s1), ShouldBeTrue)
+				So(s2.Difference(s1).Union(s2.Intersection(s1)).Equals(s2), ShouldBeTrue)
+			})
 		})
 
 		Convey("Creating a set with from range string \"0-5,34,46-48\"", func() {
-			s1, err := NewSetFromRange("0-5,34,46-48")
+			s1, err := NewIntSetFromRange("0-5,34,46-48")
 			So(err, ShouldBeNil)
 
 			Convey("Should have length 10", func() {

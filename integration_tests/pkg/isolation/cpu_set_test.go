@@ -22,8 +22,8 @@ func TestCpuSet(t *testing.T) {
 	}
 
 	cpusetName := "M"
-	cpus := isolation.NewSet(0, 1)
-	mems := isolation.NewSet(0)
+	cpus := isolation.NewIntSet(0, 1)
+	mems := isolation.NewIntSet(0)
 
 	cpuset := isolation.NewCPUSet(cpusetName, cpus, mems)
 	cmd := exec.Command("sleep", "1h")
@@ -46,7 +46,7 @@ func TestCpuSet(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		inputFmt := string(data[:len(data)-1])
-		set, err := isolation.NewSetFromRange(inputFmt)
+		set, err := isolation.NewIntSetFromRange(inputFmt)
 		So(err, ShouldBeNil)
 		So(set, ShouldResemble, cpus)
 	})
