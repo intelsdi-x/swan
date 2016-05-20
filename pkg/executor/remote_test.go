@@ -1,13 +1,16 @@
 package executor
 
 import (
-	log "github.com/Sirupsen/logrus"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"regexp"
+	"syscall"
 	"testing"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // This tests required following setup:
@@ -70,9 +73,11 @@ func TestRemote(t *testing.T) {
 
 			Convey("And while using Remote Shell and connection to localhost", func() {
 				sshConfig := NewSSHConfig(clientConfig, "localhost", 22)
+				isolationPid, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
+				So(err, ShouldBeNil)
 
 				Convey("The generic Executor test should pass", func() {
-					testExecutor(t, NewRemote(*sshConfig))
+					testExecutor(t, NewRemote(*sshConfig, isolationPid))
 				})
 			})
 		})

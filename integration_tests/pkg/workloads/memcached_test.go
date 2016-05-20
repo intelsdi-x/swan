@@ -1,15 +1,16 @@
 package workloads
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -39,6 +40,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 		Convey("When memcached is launched", func() {
 			// NOTE: It is needed for memcached to have default port available.
 			taskHandle, err := memcachedLauncher.Launch()
+			So(err, ShouldBeNil)
 			So(taskHandle, ShouldNotBeNil)
 			defer taskHandle.Stop()
 			defer taskHandle.Clean()
@@ -65,7 +67,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 				})
 
 				Convey("When we check the memcached endpoint for stats after 1 second", func() {
-
 					netstatTaskHandle, netstatErr := l.Execute(netstatCommand)
 					if netstatTaskHandle != nil {
 						defer netstatTaskHandle.Stop()

@@ -1,15 +1,16 @@
 package main
 
 import (
+	"os"
+	"path"
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"os"
-	"path"
-	"time"
 )
 
 const (

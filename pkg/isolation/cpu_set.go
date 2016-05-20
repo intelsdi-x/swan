@@ -24,9 +24,9 @@ func NewCPUSet(name string, cpus Set, mems Set) Isolation {
 	}
 }
 
-// Prefix returns the command prefix to run with this isolation mechanism.
-func (cpuSet *CPUSet) Prefix() string {
-	return "cgexec -g cpuset:" + cpuSet.name
+// Decorate implements Decorator interface
+func (cpuSet *CPUSet) Decorate(command string) string {
+	return "cgexec -g cpuset:" + cpuSet.name + " " + command
 }
 
 // Clean removes specified cgroup.

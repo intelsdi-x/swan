@@ -33,6 +33,7 @@ plugins:
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(cd build; go build ../misc/snap-plugin-collector-mutilate)
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
+	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
 
 integration_test: plugins unit_test build_workloads
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
