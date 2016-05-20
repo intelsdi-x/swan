@@ -20,7 +20,6 @@ import (
 func TestCassandraPublisher(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	//port := 5055
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
 	Convey("Snapd should start successfully", t, func() {
@@ -31,7 +30,6 @@ func TestCassandraPublisher(t *testing.T) {
 	defer snapd.CleanAndEraseOutput()
 
 	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
-	//snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", 8181)
 	snapClient, err := client.New(snapdAddress, "v1", true)
 	Convey("Snap client should connect successfully", t, func() {
 		So(err, ShouldBeNil)
@@ -137,7 +135,6 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 	//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
 	///intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
 
-
 	session.Query(`SELECT doubleval, tags FROM snap.metrics
 			WHERE ns = ? AND ver = ? AND host = ? LIMIT 1`,
 				"/intel/swan/session/metric1", -1, "fedorowicz").
@@ -146,7 +143,6 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 }
 
 func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
-	//dummyMetricNS := "/intel/swan/session/metric1"
 	cassandraPublisher := wmap.NewPublishNode("cassandra", 2)
 	cassandraPublisher.AddConfigItem("server", "localhost")
 
