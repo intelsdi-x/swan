@@ -1,4 +1,4 @@
-sudo: required
+gudo: required
 services:
 - docker
 language: go
@@ -8,6 +8,7 @@ go:
 before_install:
 - make deps
 script:
+- go get golang.org/x/sys/unix
 - make lint
 - make unit_test
 - docker run --name cassandra -p 127.0.0.1:9042:9042 -p 127.0.0.1:9160 -d cassandra
