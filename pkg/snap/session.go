@@ -142,6 +142,15 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	return nil
 }
 
+// IsRunning checks if Snap task is running
+func (s *Session) IsRunning() bool {
+	status, err := s.Status()
+	if err != nil {
+		return false
+	}
+	return status == "Running"
+}
+
 // Status connects to snap to verify the current state of the task.
 func (s *Session) Status() (string, error) {
 	if s.task == nil {
@@ -156,16 +165,20 @@ func (s *Session) Status() (string, error) {
 	return task.State, nil
 }
 
-// Stop an experiment session.
+// Stop terminates an experiment session. This function blocks until task is executed successfully
+// at least once.
 func (s *Session) Stop() error {
 	if s.task == nil {
 		return errors.New("snap task not running or not found")
 	}
 
-	// TODO(bp): Make sure Test completed its work. (!IMPORTANT)
-	// Hint from @Iwan: To achieve that look on:
-	// https://github.com/intelsdi-x/swan/blob/iwan/sprint-17-demo/misc/snap-plugin-collector-mutilate/snap-with-mutilate/test.sh
-	// It is convenient to just check how many successful task runs has been.
+	for {
+		t := s.pClient.GetTask(s.task.ID)
+		if t.HitCount > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
 		return rs.Err
