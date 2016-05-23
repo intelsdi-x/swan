@@ -50,6 +50,12 @@ To run all tests including integration tests:
 
 `make test`
 
+To run integration tests inside Docker containers:
+
+`make integration_test_on_docker`
+
+**Note:** Optionally, you can set GIT_TOKEN variable to get private GitHub repositories used in this test (variable will be passed into containers automatically).
+
 # Integration tests in Docker Container
 
 ## Building
