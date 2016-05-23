@@ -1,5 +1,5 @@
 #!/bin/bash
-set -o nounset -o pipefail
+set -o pipefail
 
 REPOSITORY_URL=github.com/intelsdi-x/swan
 
@@ -22,6 +22,14 @@ function verifyStatus() {
     fi
 }
 
+function setGitHubCredentials() {
+    printStep "Set GitHub credentials"
+    if [[ $GIT_TOKEN != "" ]]; then
+        git config --global url."https://$GIT_TOKEN:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+        printInfo "Token for GitHub has been set"
+    fi
+}
+
 function buildSnap() {
     printStep "Build snap"
     git clone https://github.com/intelsdi-x/snap
@@ -41,10 +49,6 @@ function cloneCode() {
     fi
 
     printInfo "Selected branch: $GIT_BRANCH"
-    if [[ $GIT_TOKEN != "" ]]; then
-        REPOSITORY_URL="$GIT_TOKEN:x-oauth-basic@$REPOSITORY_URL"
-    fi
-
     git clone -b $GIT_BRANCH  https://$REPOSITORY_URL
 
     verifyStatus
@@ -88,6 +92,7 @@ function getCode() {
 }
 
 function main() {
+    setGitHubCredentials
     buildSnap
     getCode
     cd swan
