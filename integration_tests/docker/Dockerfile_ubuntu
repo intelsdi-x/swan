@@ -32,8 +32,8 @@ RUN apt-get update && \
     tar xfvv go.tar.gz && \
     mkdir /opt/gopath
 
-WORKDIR /opt/gopath/src/github.com/intelsdi-x
+WORKDIR /opt/
 ADD start.sh /start.sh
 
 ENTRYPOINT ["/start.sh"]
-CMD ["integration_test"]
+CMD ["lint integration_test"]

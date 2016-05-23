@@ -1,7 +1,7 @@
 #!/bin/bash
-set -o pipefail
 
 REPOSITORY_URL=github.com/intelsdi-x/swan
+TARGET_PATH="/opt/gopath/src/github.com/intelsdi-x"
 
 function printError() {
     echo -e "\033[0;31m### $1 ###\033[0m"
@@ -18,8 +18,13 @@ function printInfo() {
 function verifyStatus() {
     if [[ !$? -eq 0 ]]; then
         printError "Step doesn't exit with exit code 0"
+        cleanUp
         exit 1
     fi
+}
+
+function cleanUp() {
+    rm -rf $(ls $TARGET_PATH | grep -v swan)
 }
 
 function setGitHubCredentials() {
@@ -38,11 +43,11 @@ function buildSnap() {
     make all
     verifyStatus
     printInfo "Snap has been build"
-    cd ..
+    cd $TARGET_PATH
 }
 
 function cloneCode() {
-    printStep "Clone source code from github"
+    printStep "Clone source code from GitHub"
 
     if [[ $GIT_BRANCH == "" ]]; then
         GIT_BRANCH="master"
@@ -91,13 +96,26 @@ function getCode() {
     fi
 }
 
+function createDirs() {
+    printStep "Creating required dirs"
+
+    if [[ ! -d ${TARGET_PATH} ]]; then
+        mkdir -p ${TARGET_PATH}
+    fi
+    cd ${TARGET_PATH}
+
+    printInfo "Enter into: $(pwd)"
+}
+
 function main() {
+    createDirs
     setGitHubCredentials
     buildSnap
     getCode
     cd swan
     prepareEnvironment
     runTests "$@"
+    cleanUp
 }
 
 main "$@"
