@@ -7,6 +7,12 @@ if [[ $(which docker) == "" ]]; then
     exit 0
 fi
 
+CACHE_GO=""
+if [[ -d ".cache" ]]; then
+    mkdir $(pwd)/../../.cache/gopath
+    CACHE_GO="-v $(pwd)/../../.cache/gopath/:/opt/gopath"
+fi
+
 GIT_TOKEN_ENV=""
 if [[ ${GIT_TOKEN} != "" ]]; then
     GIT_TOKEN_ENV="-e GIT_TOKEN=${GIT_TOKEN}"
@@ -21,7 +27,7 @@ docker build -t swan_ubuntu_tests -f Dockerfile_centos . > /dev/null
 
 echo "Running up tests"
 echo "* Running Centos based image"
-docker run --privileged $GIT_TOKEN_ENV -t -v $(pwd)/../../:/swan -v /sys/fs/cgroup:/sys/fs/cgroup:rw --net=host swan_centos_tests
+docker run --privileged $GIT_TOKEN_ENV $CACHE_GO -t -v $(pwd)/../../:/swan -v /sys/fs/cgroup:/sys/fs/cgroup:rw --net=host swan_centos_tests
 echo "* Running Ubuntu based image"
-docker run --privileged $GIT_TOKEN_ENV -t -v $(pwd)/../../:/swan -v /sys/fs/cgroup:/sys/fs/cgroup:rw --net=host swan_ubuntu_tests
+docker run --privileged $GIT_TOKEN_ENV $CACHE_GO -t -v $(pwd)/../../:/swan -v /sys/fs/cgroup:/sys/fs/cgroup:rw --net=host swan_ubuntu_tests
 
