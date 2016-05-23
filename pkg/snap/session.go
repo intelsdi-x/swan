@@ -166,23 +166,19 @@ func (s *Session) Status() (string, error) {
 }
 
 // Stop terminates an experiment session. This function blocks until task is executed successfully
-// at least once.
+// at least once and stopped.
 func (s *Session) Stop() error {
 	if s.task == nil {
 		return errors.New("snap task not running or not found")
 	}
 
-	for {
-		t := s.pClient.GetTask(s.task.ID)
-		if t.HitCount > 0 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	s.waitForHit()
+
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
 		return rs.Err
 	}
+	s.waitForStop()
 
 	rr := s.pClient.RemoveTask(s.task.ID)
 	if rr.Err != nil {
@@ -192,4 +188,24 @@ func (s *Session) Stop() error {
 	s.task = nil
 
 	return nil
+}
+
+func (s *Session) waitForHit() {
+	for {
+		t := s.pClient.GetTask(s.task.ID)
+		if t.HitCount > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (s *Session) waitForStop() {
+	for {
+		t := s.pClient.GetTask(s.task.ID)
+		if t.State == "Stopped" {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
