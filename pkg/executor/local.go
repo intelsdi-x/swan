@@ -4,21 +4,30 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // Local provisioning is responsible for providing the execution environment
 // on local machine via exec.Command.
 // It runs command as current user.
-type Local struct{}
+type Local struct {
+	commandDecorators isolation.Decorator
+}
 
-// NewLocal returns a Local instance.
+// NewLocal returns instance of local executors without any isolators.
 func NewLocal() Local {
-	return Local{}
+	return NewLocalIsolated(isolation.Decorators{})
+}
+
+// NewLocalIsolated returns a Local instance with some isolators set.
+func NewLocalIsolated(decorator isolation.Decorator) Local {
+	return Local{decorator}
 }
 
 // Execute runs the command given as input.
@@ -26,9 +35,9 @@ func NewLocal() Local {
 func (l Local) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting ", command, "' locally ")
 
-	cmd := exec.Command("sh", "-c", command)
-	// It is important to set additional Process Group ID for parent process and his children
-	// to have ability to kill all the children processes.
+	cmd := exec.Command("/bin/sh", "-c", l.commandDecorators.Decorate(command))
+
+	// TODO: delete this as we use PID namespace instead
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
@@ -205,16 +214,12 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	// Remove stdout file.
-	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
+	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+
+	// Remove temporary directory created for stdout and stderr.
+	if err := os.RemoveAll(outputDir); err != nil {
 		return err
 	}
-
-	// Remove stderr file.
-	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -239,4 +244,8 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 		// If timeout time exceeded return then task did not terminate yet.
 		return false
 	}
+}
+
+func (taskHandle *localTaskHandle) Address() string {
+	return "127.0.0.1"
 }

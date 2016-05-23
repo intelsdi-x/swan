@@ -3,11 +3,13 @@ package snap
 import (
 	"errors"
 	"fmt"
+	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"time"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"os"
 	"path"
+	"time"
 )
 
 type task struct {
@@ -20,20 +22,24 @@ type task struct {
 	State    string
 }
 
+// CollectNodeConfigItem represents ConfigItem in CollectWorkflowMapNode.
+type CollectNodeConfigItem struct {
+	Ns    string
+	Key   string
+	Value interface{}
+}
+
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	// Experiment is the **unique** experiment id. For example 'foobar-13a1b0bb-4467-4476-9818-986effe5c963'.
-	Experiment string
-
-	// Phase is the **unique** phase id. For example 'barbaz-13a1b0bb-4467-4476-9818-986effe5c963'.
-	Phase string
-
 	// Interval defines the sample interval for the listed metrics.
 	Interval time.Duration
 
 	// Metrics to tag in session.
 	Metrics []string
+
+	// CollectNodeConfigItems represent ConfigItems for CollectNode.
+	CollectNodeConfigItems []CollectNodeConfigItem
 
 	// Active task.
 	task *task
@@ -51,19 +57,19 @@ func NewSession(
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
-	publisher *wmap.PublishWorkflowMapNode) *Session {
 
+	publisher *wmap.PublishWorkflowMapNode) *Session {
 	return &Session{
-		Metrics:   metrics,
-		Interval:  interval,
-		pClient:   pClient,
-		Publisher: publisher, // TODO(niklas): Replace with cassandra publisher.
+		Metrics:                metrics,
+		Interval:               interval,
+		pClient:                pClient,
+		Publisher:              publisher, // TODO(niklas): Replace with cassandra publisher.
+		CollectNodeConfigItems: []CollectNodeConfigItem{},
 	}
 }
 
 // Start an experiment session.
-// NOTE: The 'run' and 'permutation' for a configuration space may have to be encoded here.
-func (s *Session) Start(experiment string, phase string) error {
+func (s *Session) Start(phaseSession phase.Session) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -85,29 +91,39 @@ func (s *Session) Start(experiment string, phase string) error {
 		wf.CollectNode.AddMetric(metric, -1)
 	}
 
-	// Check if plugins are loaded.
+	for _, configItem := range s.CollectNodeConfigItems {
+		wf.CollectNode.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
+	}
+
+	// Check if `processor-tag` plugins is loaded.
+	// Get the Name of the processor-tag plugin from its Meta.
 	plugins := NewPlugins(s.pClient)
-	loaded, err := plugins.IsLoaded("processor", "session-processor")
+	loaded, err := plugins.IsLoaded("processor", snapProcessorTag.Meta().Name)
 	if err != nil {
 		return err
 	}
 
 	if !loaded {
-		// TODO(skonefal): Remove loading this plugin from code.
 		goPath := os.Getenv("GOPATH")
-		buildPath := path.Join(goPath, "src", "github.com",
-			"intelsdi-x", "swan", "build")
 		pluginPath := []string{path.Join(
-			buildPath, "snap-plugin-processor-session-tagging")}
+			goPath, "bin", "snap-plugin-processor-tag")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	pr := wmap.NewProcessNode("session-processor", 1)
-	pr.AddConfigItem("swan_experiment", experiment)
-	pr.AddConfigItem("swan_phase", phase)
+	pr := wmap.NewProcessNode(snapProcessorTag.Meta().Name, 3)
+
+	// Constructing Tags config item as stated in
+	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
+	pr.AddConfigItem("tags", fmt.Sprintf("swan_experiment:%s,swan_phase:%s,swan_repetition:%d",
+		phaseSession.ExperimentID,
+		phaseSession.PhaseID,
+		phaseSession.RepetitionID,
+	))
+
+	// Add specified publisher to workflow as well.
 	pr.Add(s.Publisher)
 	wf.CollectNode.Add(pr)
 
@@ -122,10 +138,6 @@ func (s *Session) Start(experiment string, phase string) error {
 	t.ID = r.ID
 	t.State = r.State
 	s.task = t
-
-	// Save experiment and phase to the session
-	s.Experiment = experiment
-	s.Phase = phase
 
 	return nil
 }
@@ -150,6 +162,10 @@ func (s *Session) Stop() error {
 		return errors.New("snap task not running or not found")
 	}
 
+	// TODO(bp): Make sure Test completed its work. (!IMPORTANT)
+	// Hint from @Iwan: To achieve that look on:
+	// https://github.com/intelsdi-x/swan/blob/iwan/sprint-17-demo/misc/snap-plugin-collector-mutilate/snap-with-mutilate/test.sh
+	// It is convenient to just check how many successful task runs has been.
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
 		return rs.Err
@@ -161,8 +177,6 @@ func (s *Session) Stop() error {
 	}
 
 	s.task = nil
-	s.Experiment = ""
-	s.Phase = ""
 
 	return nil
 }

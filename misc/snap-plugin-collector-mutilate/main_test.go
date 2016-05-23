@@ -13,4 +13,3 @@ func TestMutilatePluginLaunch(t *testing.T) {
 		So(func() { main() }, ShouldNotPanic)
 	})
 }
-

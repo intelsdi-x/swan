@@ -4,22 +4,26 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
 )
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
-	sshConfig SSHConfig
+	sshConfig         SSHConfig
+	commandDecorators isolation.Decorator
 }
 
 // NewRemote returns a Local instance.
-func NewRemote(sshConfig SSHConfig) *Remote {
+func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
 	return &Remote{
 		sshConfig,
+		decorator,
 	}
 }
 
@@ -64,7 +68,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	err = session.Start(command)
+	err = session.Start(remote.commandDecorators.Decorate(command))
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +113,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			" with status code: ", *exitCode)
 	}()
 
-	return newRemoteTaskHandle(session, stdoutFile, stderrFile, waitEndChannel, exitCode), nil
+	return newRemoteTaskHandle(session, stdoutFile, stderrFile,
+		remote.sshConfig.host, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
@@ -119,17 +124,19 @@ type remoteTaskHandle struct {
 	session        *ssh.Session
 	stdoutFile     *os.File
 	stderrFile     *os.File
+	host           string
 	waitEndChannel chan struct{}
 	exitCode       *int
 }
 
 // newRemoteTaskHandle returns a remoteTaskHandle instance.
 func newRemoteTaskHandle(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
+	host string, waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
 	return &remoteTaskHandle{
 		session:        session,
 		stdoutFile:     stdoutFile,
 		stderrFile:     stderrFile,
+		host:           host,
 		waitEndChannel: waitEndChannel,
 		exitCode:       exitCode,
 	}
@@ -236,16 +243,12 @@ func (taskHandle *remoteTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
-	// Remove stdout file.
-	if err := os.Remove(taskHandle.stdoutFile.Name()); err != nil {
+	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+
+	// Remove temporary directory created for stdout and stderr.
+	if err := os.RemoveAll(outputDir); err != nil {
 		return err
 	}
-
-	// Remove stderr file.
-	if err := os.Remove(taskHandle.stderrFile.Name()); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -270,4 +273,8 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 		// If timeout time exceeded return then task did not terminate yet.
 		return false
 	}
+}
+
+func (taskHandle *remoteTaskHandle) Address() string {
+	return taskHandle.host
 }

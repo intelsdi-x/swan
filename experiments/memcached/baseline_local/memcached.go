@@ -1,16 +1,16 @@
 package main
 
 import (
-	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"github.com/shopspring/decimal"
 	"os"
 	"path"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -63,7 +63,7 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	mutilateLauncher := mutilate.New(local, mutilateConfig)
+	mutilateLoadGenerator := mutilate.New(local, mutilateConfig)
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
@@ -74,12 +74,12 @@ func main() {
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
-		"MemcachedWithLocalMutilate",
+		"MemcachedWithLocalMutilateNoCollection",
 		logLevel,
 		configuration,
-		memcachedLauncher,
-		mutilateLauncher,
-		[]workloads.Launcher{},
+		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
+		sensitivity.NewLoadGeneratorWithoutSession(mutilateLoadGenerator),
+		[]sensitivity.LauncherSessionPair{},
 	)
 
 	// Run Experiment.

@@ -28,16 +28,25 @@ unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 plugins:
+	mkdir -p build
 	(cd build; go build ../misc/snap-plugin-collector-session-test)
-	(cd build; go build ../misc/snap-plugin-processor-session-tagging)
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
-	(cd misc/snap-plugin-collector-mutilate; go build)
+	(cd build; go build ../misc/snap-plugin-collector-mutilate)
+	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
 
-integration_test: plugins unit_test
+integration_test: plugins unit_test build_workloads
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 #	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
+
+# For development purposes we need to do integration test faster on already built components.
+integration_test_no_build: unit_test
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
+
+integration_test_on_docker:
+	(cd integration_tests/docker; ./inside-docker-tests.sh)
 
 # building
 build:
@@ -46,8 +55,11 @@ build:
 
 build_workloads:
 	(cd workloads/data_caching/memcached; ./build.sh)
+	(cd workloads/low-level-aggressors; make)
 
 cleanup:
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.test.log
 	rm -f misc/snap-plugin-collector-mutilate/mutilate/????-??-??_mutilate.test.log
+	rm -rf integration_tests/pkg/executor/remote_memcached_*
+	rm -fr integration_tests/pkg/snap/local_snapd_*

@@ -1,13 +1,15 @@
 package executor
 
 import (
-	log "github.com/Sirupsen/logrus"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 	"testing"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testExecutor tests the execution of process for given executor.
@@ -171,7 +173,7 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When command which does not exists is executed", func() {
-		taskHandle, err := executor.Execute("commandThatDoesNotExists")
+		taskHandle, err := executor.Execute("/bin/sh -c commandThatDoesNotExists")
 		So(err, ShouldBeNil)
 
 		defer taskHandle.Stop()
@@ -304,6 +306,42 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(err, ShouldBeNil)
 				So(exitcode, ShouldEqual, 0)
 			})
+
+			Convey("And the output files shall remain", func() {
+				stdoutFile, err := taskHandle.StdoutFile()
+				So(err, ShouldBeNil)
+				stderrFile, err := taskHandle.StderrFile()
+				So(err, ShouldBeNil)
+				stdoutStat, stdoutErr := os.Stat(stdoutFile.Name())
+				stderrStat, stderrErr := os.Stat(stderrFile.Name())
+				So(stdoutErr, ShouldBeNil)
+				So(stderrErr, ShouldBeNil)
+				So(stdoutStat.Mode().IsRegular(), ShouldBeTrue)
+				So(stderrStat.Mode().IsRegular(), ShouldBeTrue)
+			})
 		})
+	})
+	Convey("When command `sleep 0` is executed and EraseOutput is called output files shall be removed", func() {
+		taskHandle, err := executor.Execute("sleep 0")
+		So(err, ShouldBeNil)
+
+		taskHandle.Wait(1 * time.Second)
+
+		stdoutFile, _ := taskHandle.StdoutFile()
+		stderrFile, _ := taskHandle.StderrFile()
+
+		outputDir, _ := path.Split(stdoutFile.Name())
+
+		taskHandle.Stop()
+		taskHandle.Clean()
+		taskHandle.EraseOutput()
+
+		_, stdoutErr := os.Stat(stdoutFile.Name())
+		_, stderrErr := os.Stat(stderrFile.Name())
+		_, outputDirErr := os.Stat(outputDir)
+
+		So(stdoutErr, ShouldNotBeNil)
+		So(stderrErr, ShouldNotBeNil)
+		So(outputDirErr, ShouldNotBeNil)
 	})
 }
