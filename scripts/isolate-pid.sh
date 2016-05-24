@@ -9,10 +9,9 @@ function display_error {
 	exit 255
 }
 
-echo -e "\e[32mChecking unshare capabilities...\e[0m"
 HAS_PID=`unshare -h | grep "\-\-pid"`
 if [ "$HAS_PID" == "" ]; then
-	echo -e "\e[32mRunning \e[7m$@\e[27m due to lack of PID namespace support in unshare\e[0m"	
+	echo -e "\e[32mRunning \e[7m$@\e[27m due to lack of PID namespace support in unshare\e[0m"
 	$@
 	exit $?
 fi
@@ -45,6 +44,6 @@ ARGS[0]=$BINARY
 EXEC="sudo -E unshare --pid --fork --mount-proc ${ARGS[*]}"
 
 echo -e "\e[32mRunning \e[7m$EXEC\e[27m\e[0m"
-$EXEC 
+$EXEC
 
 exit $?
