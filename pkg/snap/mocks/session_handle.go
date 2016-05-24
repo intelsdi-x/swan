@@ -2,6 +2,7 @@ package mocks
 
 import "github.com/stretchr/testify/mock"
 
+// SessionHandle is a mock of snap.SessionHandle
 type SessionHandle struct {
 	mock.Mock
 }
