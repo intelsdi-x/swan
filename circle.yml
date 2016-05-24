@@ -1,0 +1,22 @@
+## Customize the test machine
+machine:
+  services:
+    - docker
+
+  # Override /etc/hosts
+  hosts:
+    circlehost: 127.0.0.1
+
+  # Add some environment variables
+  environment:
+    DATABASE_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
+
+## Customize dependencies
+dependencies:
+  pre:
+    - docker run --name cassandra --net=host -d cassandra
+
+## Customize test commands
+test:
+  override:
+    - make integration_test_on_docker
