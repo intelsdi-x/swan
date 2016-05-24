@@ -32,6 +32,7 @@ plugins:
 	(cd build; go build ../misc/snap-plugin-collector-session-test)
 	(cd build; go build ../misc/snap-plugin-publisher-session-test)
 	(cd build; go build ../misc/snap-plugin-collector-mutilate)
+	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
 
 integration_test: plugins unit_test build_workloads
@@ -61,5 +62,3 @@ cleanup:
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
 	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.test.log
 	rm -f misc/snap-plugin-collector-mutilate/mutilate/????-??-??_mutilate.test.log
-	rm -rf integration_tests/pkg/executor/remote_memcached_*
-	rm -fr integration_tests/pkg/snap/local_snapd_*
