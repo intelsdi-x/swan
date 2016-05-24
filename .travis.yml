@@ -10,7 +10,6 @@ before_install:
 script:
 - make lint
 - make unit_test
-- make integration_test_on_docker
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
 
