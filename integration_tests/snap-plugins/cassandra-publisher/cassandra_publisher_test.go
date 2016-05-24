@@ -1,21 +1,20 @@
 package cassandra
 
 import (
-	"testing"
-	"time"
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocql/gocql"
-	"os"
-	"path"
-	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	. "github.com/smartystreets/goconvey/convey"
+	"os"
+	"path"
+	"testing"
+	"time"
 )
-
 
 func TestCassandraPublisher(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
@@ -82,7 +81,7 @@ func loadSnapPlugins(snapClient *client.Client) (err error) {
 	return err
 }
 
-func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded bool){
+func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded bool) {
 	isLoaded, err := pluginClient.IsLoaded(pi.pluginType, pi.pluginName)
 	if err != nil {
 		panic(fmt.Errorf("Error while checking if plugin %s:%s is loaded: %s\n",
@@ -115,7 +114,7 @@ func getRequiredPlugins() (plugins []snapPluginInfo) {
 		pluginPath: path.Join(
 			goPath, "src", "github.com", "intelsdi-x", "swan",
 			"build", "snap-plugin-collector-session-test"),
-		})
+	})
 	plugins = append(plugins, snapPluginInfo{
 		pluginName: "cassandra",
 		pluginType: "publisher",
@@ -125,7 +124,7 @@ func getRequiredPlugins() (plugins []snapPluginInfo) {
 	return plugins
 }
 
-func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error){
+func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = "snap"
@@ -140,8 +139,8 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 
 	session.Query(`SELECT doubleval, tags FROM snap.metrics
 			WHERE ns = ? AND ver = ? AND host = ? LIMIT 1`,
-				"/intel/swan/session/metric1", -1, "fedorowicz").
-			Consistency(gocql.One).Scan(&value, &tags)
+		"/intel/swan/session/metric1", -1, "fedorowicz").
+		Consistency(gocql.One).Scan(&value, &tags)
 	return value, tags, err
 }
 
@@ -157,7 +156,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 
 	examplePhase := phase.Session{
 		ExperimentID: "example-experiment",
-		PhaseID     : "example-phase",
+		PhaseID:      "example-phase",
 		RepetitionID: 42,
 	}
 	err = snapSession.Start(examplePhase)

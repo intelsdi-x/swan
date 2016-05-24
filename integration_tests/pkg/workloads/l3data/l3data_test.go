@@ -1,8 +1,6 @@
 package integration
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,21 +9,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	swanPkg           = "github.com/intelsdi-x/swan"
-	defaultL3dataPath = "workloads/low-level-aggressors/l3"
-)
-
 // TestL3dataWithExecutor is an integration test with local executor
 // You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
 func TestL3dataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	l3dataPath := path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultL3dataPath)
-
 	Convey("While using Local Shell in L3Data launcher", t, func() {
 		l := executor.NewLocal()
-		l3dataLauncher := l3data.New(l, l3data.DefaultL3Config(l3dataPath))
+		l3dataLauncher := l3data.New(
+			l, l3data.DefaultL3Config())
 
 		Convey("When l3d binary is launched", func() {
 			taskHandle, err := l3dataLauncher.Launch()
