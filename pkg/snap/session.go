@@ -142,7 +142,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	return nil
 }
 
-// IsRunning checks if Snap task is running
+// IsRunning checks if Snap task is running.
 func (s *Session) IsRunning() bool {
 	status, err := s.Status()
 	if err != nil {
