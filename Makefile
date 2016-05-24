@@ -59,6 +59,7 @@ build_workloads:
 	(cd workloads/low-level-aggressors; make)
 
 cleanup:
-	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.log
-	rm -f misc/snap-plugin-collector-mutilate/????-??-??_snap-plugin-collector-mutilate.test.log
-	rm -f misc/snap-plugin-collector-mutilate/mutilate/????-??-??_mutilate.test.log
+	rm -fr misc/**/*log
+	rm -fr integration_tests/**/*log
+	rm -fr integration_tests/**/remote_memcached_*
+	rm -fr integration_tests/**/local_snapd_*
