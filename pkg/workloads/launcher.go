@@ -1,6 +1,8 @@
 package workloads
 
-import "github.com/intelsdi-x/swan/pkg/executor"
+import (
+	"github.com/intelsdi-x/swan/pkg/executor"
+)
 
 // Launcher responsibility is to launch previously configured job.
 type Launcher interface {

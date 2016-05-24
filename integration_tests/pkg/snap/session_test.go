@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/swan"
+	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 const (
@@ -52,9 +53,6 @@ func TestSnap(t *testing.T) {
 		So("plugin_running_on="+host, ShouldBeIn, tags)
 	}
 
-	goPath := os.Getenv("GOPATH")
-	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
-
 	Convey("While having Snapd running", t, func() {
 		snapd = testhelpers.NewSnapdOnPort(snapSessionTestAPIPort)
 		err := snapd.Start()
@@ -81,7 +79,9 @@ func TestSnap(t *testing.T) {
 				plugins := snap.NewPlugins(c)
 				So(plugins, ShouldNotBeNil)
 
-				pluginPath := []string{path.Join(buildPath, "snap-plugin-collector-session-test")}
+				pluginPath := []string{
+					path.Join(swan.GetSwanBuildPath(), "snap-plugin-collector-session-test"),
+				}
 				err := plugins.Load(pluginPath)
 				So(err, ShouldBeNil)
 
@@ -106,7 +106,7 @@ func TestSnap(t *testing.T) {
 					So(plugins, ShouldNotBeNil)
 
 					pluginPath := []string{path.Join(
-						buildPath, "snap-plugin-publisher-session-test")}
+						swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
 					err := plugins.Load(pluginPath)
 					So(err, ShouldBeNil)
 
@@ -123,7 +123,12 @@ func TestSnap(t *testing.T) {
 					publisher.AddConfigItem("file", metricsFile)
 
 					Convey("While starting a Snap experiment session", func() {
-						s = snap.NewSession([]string{"/intel/swan/session/metric1"}, 1*time.Second, c, publisher)
+						s = snap.NewSession(
+							[]string{"/intel/swan/session/metric1"},
+							1*time.Second,
+							c,
+							publisher,
+						)
 						So(s, ShouldNotBeNil)
 
 						err := s.Start(phase.Session{

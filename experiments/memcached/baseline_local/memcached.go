@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"path"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -12,36 +10,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
 )
-
-const (
-	defaultMemcachedPath = "workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
-	defaultMutilatePath  = "workloads/data_caching/memcached/mutilate/mutilate"
-	swanPkg              = "github.com/intelsdi-x/swan"
-)
-
-func fetchMemcachedPath() string {
-	// Get optional custom Memcached path from MEMCACHED_PATH.
-	memcachedPath := os.Getenv("MEMCACHED_BIN")
-
-	if memcachedPath == "" {
-		// If custom path does not exists use default path for built memcached.
-		return path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMemcachedPath)
-	}
-
-	return memcachedPath
-}
-
-func fetchMutilatePath() string {
-	// Get optional custom mutilate path from MUTILATE_BIN.
-	mutilatePath := os.Getenv("MUTILATE_BIN")
-
-	if mutilatePath == "" {
-		// If custom path does not exists use default path for built memcached.
-		return path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMutilatePath)
-	}
-
-	return mutilatePath
-}
 
 // This Experiments contains:
 // - memcached as LC task on localhost
@@ -53,11 +21,12 @@ func main() {
 	local := executor.NewLocal()
 	// Init Memcached Launcher.
 	memcachedLauncher := memcached.New(local,
-		memcached.DefaultMemcachedConfig(fetchMemcachedPath()))
+		memcached.DefaultMemcachedConfig())
 	// Init Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
+
 	mutilateConfig := mutilate.Config{
-		MutilatePath:      fetchMutilatePath(),
+		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
 		MemcachedHost:     "127.0.0.1",
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,

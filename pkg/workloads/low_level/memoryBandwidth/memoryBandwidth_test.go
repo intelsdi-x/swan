@@ -23,9 +23,12 @@ func TestL3Aggressor(t *testing.T) {
 		)
 
 		Convey("Default configuration should be valid", func() {
+			config := DefaultMemBwConfig()
+			config.Path = pathToBinary
 			launcher := New(
 				mockedExecutor,
-				DefaultMemBwConfig(pathToBinary))
+				config,
+			)
 
 			Convey("When executor is able to run this command then it should return mocked taskHandle "+
 				"without error", func() {

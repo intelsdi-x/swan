@@ -1,8 +1,6 @@
 package integration
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,21 +9,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	swanPkg              = "github.com/intelsdi-x/swan"
-	defaultMemBwDataPath = "workloads/low-level-aggressors/memBw"
-)
-
 // TestMemBwDataWithExecutor is an integration test with local executor
 // You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
 func TestMemBwDataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	memBwDataPath := path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultMemBwDataPath)
-
 	Convey("While using Local Shell in Memory Bandwidth launcher", t, func() {
 		l := executor.NewLocal()
-		memBwDataLauncher := memoryBandwidth.New(l, memoryBandwidth.DefaultMemBwConfig(memBwDataPath))
+		memBwDataLauncher := memoryBandwidth.New(
+			l, memoryBandwidth.DefaultMemBwConfig())
 
 		Convey("When memBwd binary is launched", func() {
 			taskHandle, err := memBwDataLauncher.Launch()

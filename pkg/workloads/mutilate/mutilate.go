@@ -11,9 +11,27 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/osutil"
+	"github.com/intelsdi-x/swan/pkg/swan"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
+	"path"
 )
+
+const (
+	defaultMemcachedHost          = "127.0.0.1"
+	defaultMemcachedPercentile    = "99.9"
+	defaultMemcachedTuningTimeSec = 10
+	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
+	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+)
+
+// GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
+// SWAN_MUTILATE_PATH or default path in swan directory.
+func GetPathFromEnvOrDefault() string {
+	return osutil.GetEnvOrDefault(
+		mutilatePathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMutilatePath))
+}
 
 // Config contains all data for running mutilate.
 type Config struct {
@@ -21,6 +39,17 @@ type Config struct {
 	MemcachedHost     string
 	TuningTime        time.Duration
 	LatencyPercentile decimal.Decimal
+}
+
+// DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
+func DefaultMutilateConfig() Config {
+	percentile, _ := decimal.NewFromString(defaultMemcachedPercentile)
+	return Config{
+		MutilatePath:      GetPathFromEnvOrDefault(),
+		MemcachedHost:     defaultMemcachedHost,
+		LatencyPercentile: percentile,
+		TuningTime:        defaultMemcachedTuningTimeSec * time.Second,
+	}
 }
 
 type mutilate struct {

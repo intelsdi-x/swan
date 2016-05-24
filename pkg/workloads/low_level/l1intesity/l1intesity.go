@@ -4,7 +4,10 @@ import (
 	"fmt"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/osutil"
+	"github.com/intelsdi-x/swan/pkg/swan"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"path"
 )
 
 const (
@@ -12,9 +15,18 @@ const (
 	defaultIntensity  = 20
 	// {min,max}Intensity are hardcoded values in l1i binary
 	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan repository
-	minIntensity = 1
-	maxIntensity = 20
+	minIntensity   = 1
+	maxIntensity   = 20
+	defaultL1IPath = "low-level-aggressors/l1i"
+	l1IPathEnv     = "SWAN_L1I_PATH"
 )
+
+// GetPathFromEnvOrDefault fetches the l1 instructions binary path from environment variable
+// SWAN_L1I_PATH or default path in swan directory.
+func GetPathFromEnvOrDefault() string {
+	return osutil.GetEnvOrDefault(
+		l1IPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultL1IPath))
+}
 
 // Config is a struct for l1i aggressor configuration.
 type Config struct {
@@ -26,9 +38,9 @@ type Config struct {
 }
 
 // DefaultL1iConfig is a constructor for l1i aggressor Config with default parameters.
-func DefaultL1iConfig(pathToBinary string) Config {
+func DefaultL1iConfig() Config {
 	return Config{
-		Path:       pathToBinary,
+		Path:       GetPathFromEnvOrDefault(),
 		Intensity:  defaultIntensity,
 		Iterations: defaultIterations,
 	}

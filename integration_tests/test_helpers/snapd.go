@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"math/rand"
 	"net"
 	"os"
 	"path"
 	"time"
-	"math/rand"
 )
 
 // Snapd represents Snap daemon used in tests.
@@ -19,7 +19,7 @@ type Snapd struct {
 
 // NewSnapd constructs Snapd.
 func NewSnapd() *Snapd {
-	randomHighPort := rand.Intn(32768 - 10000) + 10000
+	randomHighPort := rand.Intn(32768-10000) + 10000
 	return NewSnapdOnPort(randomHighPort)
 }
 
@@ -36,7 +36,8 @@ func (s *Snapd) Start() error {
 		return errors.New("Cannot find GOPATH")
 	}
 
-	snapRoot := path.Join(gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
+	snapRoot := path.Join(
+		gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
 	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapRoot, s.apiPort)
 
 	taskHandle, err := l.Execute(snapCommand)
@@ -85,6 +86,6 @@ func (s *Snapd) Connected() bool {
 }
 
 // Port returns port Snapd is listening.
-func (s *Snapd) Port() int{
+func (s *Snapd) Port() int {
 	return s.apiPort
 }

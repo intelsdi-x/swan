@@ -11,12 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/swan"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
@@ -45,9 +46,6 @@ func TestSnapMutilateSession(t *testing.T) {
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
-	goPath := os.Getenv("GOPATH")
-	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
-
 	Convey("While having Snapd running", t, func() {
 		snapd = testhelpers.NewSnapdOnPort(snapMutilateSessionTestAPIPort)
 		err := snapd.Start()
@@ -75,7 +73,9 @@ func TestSnapMutilateSession(t *testing.T) {
 				plugins := snap.NewPlugins(c)
 				So(plugins, ShouldNotBeNil)
 
-				pluginPath := []string{path.Join(buildPath, "snap-plugin-publisher-session-test")}
+				pluginPath := []string{
+					path.Join(swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
+				}
 				plugins.Load(pluginPath)
 
 				publisher = wmap.NewPublishNode("session-test", 1)
@@ -92,11 +92,12 @@ func TestSnapMutilateSession(t *testing.T) {
 
 				Convey("While launching MutilateSnapSession", func() {
 					mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-						buildPath, 1*time.Second, c, publisher,
+						swan.GetSwanBuildPath(), 1*time.Second, c, publisher,
 					)
 
 					mockedTaskInfo := new(mocks.TaskInfo)
-					mutilateStdoutPath := path.Join(goPath, "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
+					mutilateStdoutPath := path.Join(
+						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
 
 					file, err := os.Open(mutilateStdoutPath)
 

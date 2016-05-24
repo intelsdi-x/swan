@@ -22,9 +22,12 @@ func TestL1dAggressor(t *testing.T) {
 		)
 
 		Convey("Default configuration should be valid", func() {
+			config := DefaultL1iConfig()
+			config.Path = pathToBinary
 			launcher := New(
 				mockedExecutor,
-				DefaultL1iConfig(pathToBinary))
+				config,
+			)
 
 			Convey("When executor is able to run this command then it should return mocked taskHandle "+
 				"without error", func() {
