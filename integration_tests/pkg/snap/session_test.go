@@ -1,6 +1,7 @@
 package snap
 
 import (
+	"bytes"
 	"fmt"
 
 	"io/ioutil"
@@ -26,6 +27,30 @@ func TestSnap(t *testing.T) {
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
+	testStopping := func() {
+		err := s.Stop()
+		So(err, ShouldBeNil)
+		So(s.IsRunning(), ShouldBeFalse)
+		dat, err := ioutil.ReadFile(metricsFile)
+		So(err, ShouldBeNil)
+		So(dat, ShouldNotBeEmpty)
+		dat = bytes.Trim(dat, "\n\r")
+
+		lines := strings.Split(string(dat), "\n")
+		So(len(lines), ShouldEqual, 1)
+		columns := strings.Split(lines[0], "\t")
+		So(len(columns), ShouldEqual, 3)
+		tags := strings.Split(columns[1], ",")
+		So(len(tags), ShouldEqual, 4)
+
+		So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
+		So("swan_experiment=foobar", ShouldBeIn, tags)
+		So("swan_phase=barbaz", ShouldBeIn, tags)
+		So("swan_repetition=1", ShouldBeIn, tags)
+		host, err := os.Hostname()
+		So(err, ShouldBeNil)
+		So("plugin_running_on="+host, ShouldBeIn, tags)
+	}
 
 	goPath := os.Getenv("GOPATH")
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
@@ -110,63 +135,23 @@ func TestSnap(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						defer func() {
-							err := s.Stop()
-							So(err, ShouldBeNil)
+							if s.IsRunning() {
+								err := s.Stop()
+								So(err, ShouldBeNil)
+							}
 						}()
-
 						Convey("Contacting snap to get the task status", func() {
 							status, err := s.Status()
 							So(err, ShouldBeNil)
 							So(status, ShouldEqual, "Running")
+							So(s.IsRunning(), ShouldBeTrue)
 
-							Convey("Reading samples from file", func() {
-								retries := 5
-								found := false
-								for i := 0; i < retries; i++ {
-									time.Sleep(500 * time.Millisecond)
-
-									dat, err := ioutil.ReadFile(metricsFile)
-									if err != nil {
-										continue
-									}
-
-									if len(dat) > 0 {
-										// Look for tag on metric line.
-										lines := strings.Split(string(dat), "\n")
-										if len(lines) < 1 {
-											t.Log("There should be at least one line. Checking again.")
-											continue
-										}
-
-										columns := strings.Split(lines[0], "\t")
-										if len(columns) < 2 {
-											t.Log("There should be at least 2 columns. Checking again.")
-											continue
-										}
-
-										tags := strings.Split(columns[1], ",")
-										if len(tags) < 3 {
-											t.Log("There should be at least 3 tags. Checking again.")
-											continue
-										}
-
-										So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-										So("swan_experiment=foobar", ShouldBeIn, tags)
-										So("swan_phase=barbaz", ShouldBeIn, tags)
-										So("swan_repetition=1", ShouldBeIn, tags)
-
-										found = true
-
-										break
-									}
-
-								}
-								So(found, ShouldBeTrue)
-							})
+							Convey("Reading samples from file", testStopping)
 						})
 					})
 				})
 			})
 		})
 	})
+
 }
