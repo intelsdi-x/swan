@@ -36,10 +36,12 @@ func TestValuesGatherer(t *testing.T) {
 			Convey("I should be able to insert data into cassandra", func() {
 				err := insertDataIntoCassandra(session, expectedTagsMap)
 				So(err, ShouldBeNil)
-				Convey("and I should be able to receive expected values and tags", func() {
+				Convey("and I should be able to receive expected values and tags and close session", func() {
 					valuesList, tagsList := cassandraConfig.GetValuesAndTagsForGivenExperiment(experimentName)
 					So(valuesList[0], ShouldEqual, expectedValue)
 					So(tagsList[0]["swan_experiment"], ShouldEqual, expectedTagsMap["swan_experiment"])
+					err := cassandraConfig.CloseSession()
+					So(err, ShouldBeNil)
 				})
 			})
 		})

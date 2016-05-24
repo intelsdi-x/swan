@@ -1,7 +1,7 @@
 package cassandra
 
 // GetValuesAndTagsForGivenExperiment returns list of values and list of maps for tags based on experiment name.
-func (cassandraConfig *Config) GetValuesAndTagsForGivenExperiment(experimentName string) (valuesList []float64,
+func (cassandraConfig *Connection) GetValuesAndTagsForGivenExperiment(experimentName string) (valuesList []float64,
 	tagsList []map[string]string) {
 	var value float64
 	tagsMap := make(map[string]string)
@@ -12,6 +12,5 @@ func (cassandraConfig *Config) GetValuesAndTagsForGivenExperiment(experimentName
 		valuesList = append(valuesList, value)
 		tagsList = append(tagsList, tagsMap)
 	}
-	defer session.Close()
 	return valuesList, tagsList
 }
