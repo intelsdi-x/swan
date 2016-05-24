@@ -9,11 +9,15 @@ import (
 
 func TestDbConnection(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
-	Convey("While connecting to casandra with proper parameters", t, func() {
-		session, err := cassandra.CreateSession("127.0.0.1", "snap")
-		Convey("I should receive not nil session", func() {
-			So(session, ShouldNotBeNil)
+	Convey("While creating casandra config with proper parameters", t, func() {
+		config, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
+		Convey("I should receive not nil config", func() {
+			So(config, ShouldNotBeNil)
 			So(err, ShouldBeNil)
+			Convey("Config should have not nil session", func() {
+				session := config.CassandraSession()
+				So(session, ShouldNotBeNil)
+			})
 		})
 	})
 }

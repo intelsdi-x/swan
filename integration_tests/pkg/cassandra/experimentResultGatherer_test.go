@@ -25,18 +25,22 @@ func TestValuesGatherer(t *testing.T) {
 	experimentName := fmt.Sprintf("fakeExperimentName%f", r.Float32())
 	expectedValue := 10
 	expectedTagsMap := map[string]string{"swan_experiment": experimentName, "swan_phase": "p2", "swan_repetition": "2"}
+
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While connecting to casandra with proper parameters", t, func() {
-		session, err := cassandra.CreateSession("127.0.0.1", "snap")
+		cassandraConfig, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
+		session := cassandraConfig.CassandraSession()
 		Convey("I should receive not empty session", func() {
 			So(session, ShouldNotBeNil)
 			So(err, ShouldBeNil)
-			err := insertDataIntoCassandra(session, expectedTagsMap)
-			So(err, ShouldBeNil)
-			Convey("and I should be able to receive expected values and tags", func() {
-				valuesList, tagsList := cassandra.GetValuesAndTagsForGivenExperiment(session, experimentName)
-				So(valuesList[0], ShouldEqual, expectedValue)
-				So(tagsList[0]["swan_experiment"], ShouldEqual, expectedTagsMap["swan_experiment"])
+			Convey("I should be able to insert data into cassandra", func() {
+				err := insertDataIntoCassandra(session, expectedTagsMap)
+				So(err, ShouldBeNil)
+				Convey("and I should be able to receive expected values and tags", func() {
+					valuesList, tagsList := cassandraConfig.GetValuesAndTagsForGivenExperiment(experimentName)
+					So(valuesList[0], ShouldEqual, expectedValue)
+					So(tagsList[0]["swan_experiment"], ShouldEqual, expectedTagsMap["swan_experiment"])
+				})
 			})
 		})
 

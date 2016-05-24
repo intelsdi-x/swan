@@ -1,13 +1,11 @@
 package cassandra
 
-import (
-	"github.com/gocql/gocql"
-)
-
-func GetValuesAndTagsForGivenExperiment(session *gocql.Session, experimentName string) (valuesList []float64,
+// GetValuesAndTagsForGivenExperiment returns list of values and list of maps for tags based on experiment name.
+func (cassandraConfig *Config) GetValuesAndTagsForGivenExperiment(experimentName string) (valuesList []float64,
 	tagsList []map[string]string) {
 	var value float64
 	tagsMap := make(map[string]string)
+	session := cassandraConfig.CassandraSession()
 	iter := session.Query(`SELECT doubleval, tags FROM snap.metrics WHERE tags CONTAINS '` + experimentName +
 		`'ALLOW FILTERING`).Iter()
 	for iter.Scan(&value, &tagsMap) {
