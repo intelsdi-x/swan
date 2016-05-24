@@ -2,19 +2,19 @@ package snap
 
 import (
 	"fmt"
+
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
-
+	. "github.com/smartystreets/goconvey/convey"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	. "github.com/smartystreets/goconvey/convey"
-
-	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 func TestSnap(t *testing.T) {
-	var snapd *Snapd
+	var snapd *testhelpers.Snapd
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
@@ -31,8 +31,8 @@ func TestSnap(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-		snapd = NewSnapd(snapSessionTestAPIPort)
-		err := snapd.Execute()
+		snapd = testhelpers.NewSnapdOnPort(snapSessionTestAPIPort)
+		err := snapd.Start()
 		So(err, ShouldBeNil)
 
 		defer func() {
@@ -164,7 +164,6 @@ func TestSnap(t *testing.T) {
 								So(found, ShouldBeTrue)
 							})
 						})
-
 					})
 				})
 			})

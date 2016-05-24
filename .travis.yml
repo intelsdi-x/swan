@@ -12,4 +12,3 @@ script:
 - make unit_test
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
-
