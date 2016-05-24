@@ -1,10 +1,10 @@
-package db
+package cassandra
 
 import (
 	"github.com/gocql/gocql"
 )
 
-func getValuesAndTagsForGivenExperiment(session *gocql.Session, experimentName string) (valuesList []float64,
+func GetValuesAndTagsForGivenExperiment(session *gocql.Session, experimentName string) (valuesList []float64,
 	tagsList []map[string]string) {
 	var value float64
 	tagsMap := make(map[string]string)

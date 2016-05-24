@@ -1,4 +1,4 @@
-package db
+package cassandra
 
 import "github.com/gocql/gocql"
 
@@ -10,7 +10,8 @@ func configureCluster(ip string, keyspace string) *gocql.ClusterConfig {
 	return cluster
 }
 
-func createSession(cluster *gocql.ClusterConfig) (*gocql.Session, error) {
+func CreateSession(ip string, keyspace string) (*gocql.Session, error) {
+	cluster := configureCluster(ip, keyspace)
 	session, err := cluster.CreateSession()
 	if err != nil {
 		return nil, err
