@@ -63,11 +63,11 @@ func NewSession(
 	secondString := fmt.Sprintf("%ds", int(interval.Seconds()))
 
 	return &Session{
-		Metrics: metrics,
 		Schedule: &client.Schedule{
 			Type:     "simple",
 			Interval: secondString,
 		},
+		Metrics:                metrics,
 		pClient:                pClient,
 		Publisher:              publisher, // TODO(niklas): Replace with cassandra publisher.
 		CollectNodeConfigItems: []CollectNodeConfigItem{},

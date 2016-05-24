@@ -28,10 +28,11 @@ func main() {
 	logrus.SetLevel(logLevel)
 
 	local := executor.NewLocal()
-	// Init Memcached Launcher.
-	memcachedLauncher := memcached.New(local,
-		memcached.DefaultMemcachedConfig())
-	// Init Mutilate Launcher.
+
+	// Initialize Memcached Launcher.
+	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+
+	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
@@ -80,22 +81,22 @@ func main() {
 	publisher.AddConfigItem("file", tmpFile.Name())
 	logrus.Debug("Results should be available in publisher's file: ", tmpFile.Name())
 
-	// Init Mutilate Snap Session.
+	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
 		swan.GetSwanBuildPath(),
 		1*time.Second,
 		snapConnection,
 		publisher)
 
-	// Init LLC aggressor.
+	// Initialize LLC aggressor.
 	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             1000, // TODO: make this variable precise (us?)
-		LoadDuration:    5 * time.Second,
-		LoadPointsCount: 1,
-		Repetitions:     1,
+		SLO:             500, // us
+		LoadDuration:    10 * time.Second,
+		LoadPointsCount: 10,
+		Repetitions:     3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
