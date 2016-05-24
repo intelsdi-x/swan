@@ -1,8 +1,6 @@
 package integration
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,21 +9,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	swanPkg                = "github.com/intelsdi-x/swan"
-	defaultL1IntensityPath = "workloads/low-level-aggressors/l1i"
-)
-
 // TestL1IntensityWithExecutor is an integration test with local executor
 // You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
 func TestL1IntensityWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	l1IntensityPath := path.Join(os.Getenv("GOPATH"), "src", swanPkg, defaultL1IntensityPath)
-
 	Convey("While using Local Shell in L1Intesity launcher", t, func() {
 		l := executor.NewLocal()
-		l1IntensityLauncher := l1intesity.New(l, l1intesity.DefaultL1iConfig(l1IntensityPath))
+		l1IntensityLauncher := l1intesity.New(
+			l, l1intesity.DefaultL1iConfig())
 
 		Convey("When l1i binary is launched", func() {
 			taskHandle, err := l1IntensityLauncher.Launch()

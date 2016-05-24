@@ -38,9 +38,11 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		decorators = append(decorators, unshare)
 
 		Convey("While using Memcached launcher", func() {
+			config := DefaultMemcachedConfig()
+			config.PathToBinary = "test"
 			memcachedLauncher := New(
 				mockedExecutor,
-				DefaultMemcachedConfig("test"))
+				config)
 			memcachedLauncher.tryConnect = connectTimeoutSuccess
 			Convey("While simulating proper execution", func() {
 				mockedExecutor.On("Execute", expectedCommand).Return(mockedTaskHandle, nil).Once()

@@ -5,12 +5,24 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/osutil"
+	"github.com/intelsdi-x/swan/pkg/swan"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"path"
 )
 
 const (
 	defaultDuration = 86400 * time.Second
+	defaultL3Path   = "low-level-aggressors/l3"
+	l3PathEnv       = "SWAN_L3_PATH"
 )
+
+// GetPathFromEnvOrDefault returns the l3 binary path from environment variable
+// SWAN_L3_PATH or default path in swan directory.
+func GetPathFromEnvOrDefault() string {
+	return osutil.GetEnvOrDefault(
+		l3PathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultL3Path))
+}
 
 // Config is a struct for l3 aggressor configuration.
 type Config struct {
@@ -19,9 +31,9 @@ type Config struct {
 }
 
 // DefaultL3Config is a constructor for l3 aggressor Config with default parameters.
-func DefaultL3Config(pathToBinary string) Config {
+func DefaultL3Config() Config {
 	return Config{
-		Path:     pathToBinary,
+		Path:     GetPathFromEnvOrDefault(),
 		Duration: defaultDuration,
 	}
 }

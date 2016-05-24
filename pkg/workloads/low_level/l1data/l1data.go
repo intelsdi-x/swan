@@ -5,12 +5,24 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/osutil"
+	"github.com/intelsdi-x/swan/pkg/swan"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"path"
 )
 
 const (
 	defaultDuration = 86400 * time.Second
+	defaultL1DPath  = "low-level-aggressors/l1d"
+	l1DPathEnv      = "SWAN_L1D_PATH"
 )
+
+// GetPathFromEnvOrDefault returns the l1d binary path from environment variable
+// SWAN_L1D_PATH or default path in swan directory.
+func GetPathFromEnvOrDefault() string {
+	return osutil.GetEnvOrDefault(
+		l1DPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultL1DPath))
+}
 
 // Config is a struct for l1d aggressor configuration.
 type Config struct {
@@ -19,9 +31,9 @@ type Config struct {
 }
 
 // DefaultL1dConfig is a constructor for l1d aggressor Config with default parameters.
-func DefaultL1dConfig(pathToBinary string) Config {
+func DefaultL1dConfig() Config {
 	return Config{
-		Path:     pathToBinary,
+		Path:     GetPathFromEnvOrDefault(),
 		Duration: defaultDuration,
 	}
 }
