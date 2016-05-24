@@ -11,6 +11,7 @@ func TestSensitivityProfile(t *testing.T) {
 
 	Convey("While connecting to casandra with proper parameters", t, func() {
 		cluster := configureCluster("127.0.0.1", "snap")
-		drawTable(cluster)
+		err := drawTableForExperiments(cluster)
+		So(err, ShouldBeNil)
 	})
 }

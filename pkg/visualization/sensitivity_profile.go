@@ -77,7 +77,24 @@ func calculateAverageForMeasurement(valuesList []float64) (result float64) {
 	panic(errors.New("Array length has to be longer than 0"))
 }
 
-func drawTable(cluster *gocql.ClusterConfig) error {
+func prepareDataForTable(tagsMapsList []map[string]string, cluster *gocql.ClusterConfig,
+	experimentName string) (data [][]string, headers []string, err error) {
+	rowList := []string{}
+	phasesNames := extractUniqueTagsNames(tagsMapsList, "swan_phase")
+
+	for _, phaseName := range phasesNames {
+		headers = append(headers, phaseName)
+		valuesList, err := getValuesForSpecificExperimentAndPhase(cluster, experimentName, phaseName)
+		if err != nil {
+			return nil, nil, err
+		}
+		rowList = append(rowList, fmt.Sprintf("%f", calculateAverageForMeasurement(valuesList)))
+	}
+	data = append(data, rowList)
+	return data, headers, nil
+}
+
+func drawTableForExperiments(cluster *gocql.ClusterConfig) error {
 	data := [][]string{}
 	headers := []string{}
 	tagsMapsList, err := getTags(cluster)
@@ -85,18 +102,11 @@ func drawTable(cluster *gocql.ClusterConfig) error {
 		return err
 	}
 	experimentNames := extractUniqueTagsNames(tagsMapsList, "swan_experiment")
-	phasesNames := extractUniqueTagsNames(tagsMapsList, "swan_phase")
 	for _, experimentName := range experimentNames {
-		rowList := []string{}
-		for _, phaseName := range phasesNames {
-			headers = append(headers, phaseName)
-			valuesList, err := getValuesForSpecificExperimentAndPhase(cluster, experimentName, phaseName)
-			if err != nil {
-				return err
-			}
-			rowList = append(rowList, fmt.Sprintf("%f", calculateAverageForMeasurement(valuesList)))
+		data, headers, err = prepareDataForTable(tagsMapsList, cluster, experimentName)
+		if err != nil {
+			return err
 		}
-		data = append(data, rowList)
 		fmt.Println("\n")
 		fmt.Println("Experiment name: " + experimentName)
 		table := tablewriter.NewWriter(os.Stdout)
