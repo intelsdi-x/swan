@@ -1,12 +1,12 @@
 sudo: required
 services:
 - docker
+- cassandra
 language: go
 go:
 - 1.6
 before_install:
 - make deps
-- docker run --name cassandra --net=host -d cassandra
 script:
 - make lint
 - make unit_test
