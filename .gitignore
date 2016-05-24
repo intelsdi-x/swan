@@ -19,3 +19,4 @@
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
 /experiments/memcached/baseline_local/baseline_local
+*.log

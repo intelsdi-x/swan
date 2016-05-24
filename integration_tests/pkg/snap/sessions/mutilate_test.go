@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	snapTest "github.com/intelsdi-x/swan/integration_tests/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
@@ -41,7 +41,7 @@ const (
 )
 
 func TestSnapMutilateSession(t *testing.T) {
-	var snapd *snapTest.Snapd
+	var snapd *testhelpers.Snapd
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
@@ -49,8 +49,8 @@ func TestSnapMutilateSession(t *testing.T) {
 	buildPath := path.Join(goPath, "src", "github.com", "intelsdi-x", "swan", "build")
 
 	Convey("While having Snapd running", t, func() {
-		snapd = snapTest.NewSnapd(snapMutilateSessionTestAPIPort)
-		err := snapd.Execute()
+		snapd = testhelpers.NewSnapdOnPort(snapMutilateSessionTestAPIPort)
+		err := snapd.Start()
 		So(err, ShouldBeNil)
 
 		defer func() {

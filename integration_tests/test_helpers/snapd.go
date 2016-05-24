@@ -1,4 +1,4 @@
-package snap
+package testhelpers
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"time"
+	"math/rand"
 )
 
 // Snapd represents Snap daemon used in tests.
@@ -17,14 +18,18 @@ type Snapd struct {
 }
 
 // NewSnapd constructs Snapd.
-// NOTE(bp): Since Convey test like to overlap tests it is crucial to run snapd on
-// different ports.
-func NewSnapd(apiPort int) *Snapd {
+func NewSnapd() *Snapd {
+	randomHighPort := rand.Intn(32768 - 10000) + 10000
+	return NewSnapdOnPort(randomHighPort)
+}
+
+// NewSnapdOnPort constructs Snapd on chosen port.
+func NewSnapdOnPort(apiPort int) *Snapd {
 	return &Snapd{apiPort: apiPort}
 }
 
-// Execute starts Snap daemon.
-func (s *Snapd) Execute() error {
+// Start starts Snap daemon.
+func (s *Snapd) Start() error {
 	l := executor.NewLocal()
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
@@ -77,4 +82,9 @@ func (s *Snapd) Connected() bool {
 	}
 
 	return connected
+}
+
+// Port returns port Snapd is listening.
+func (s *Snapd) Port() int{
+	return s.apiPort
 }
