@@ -29,7 +29,8 @@ func TestSnap(t *testing.T) {
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 	testStopping := func() {
-		err := s.Stop()
+		s.WaitToBeHitOnce()
+		err := s.StopAndRemove()
 		So(err, ShouldBeNil)
 		So(s.IsRunning(), ShouldBeFalse)
 		dat, err := ioutil.ReadFile(metricsFile)
@@ -141,14 +142,11 @@ func TestSnap(t *testing.T) {
 
 						defer func() {
 							if s.IsRunning() {
-								err := s.Stop()
+								err := s.StopAndRemove()
 								So(err, ShouldBeNil)
 							}
 						}()
 						Convey("Contacting snap to get the task status", func() {
-							status, err := s.Status()
-							So(err, ShouldBeNil)
-							So(status, ShouldEqual, "Running")
 							So(s.IsRunning(), ShouldBeTrue)
 
 							Convey("Reading samples from file", testStopping)

@@ -115,15 +115,12 @@ func TestSnapMutilateSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					defer func() {
-						err := handle.Stop()
+						err := handle.StopAndRemove()
 						So(err, ShouldBeNil)
 					}()
 
 					Convey("Contacting snap to get the task status", func() {
-						status, err := handle.Status()
-						So(err, ShouldBeNil)
-
-						So(status, ShouldEqual, "Running")
+						So(handle.IsRunning(), ShouldBeTrue)
 
 						// These are results from test output file
 						// in "src/github.com/intelsdi-x/swan/misc/

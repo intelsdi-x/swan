@@ -144,7 +144,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 
 // IsRunning checks if Snap task is running.
 func (s *Session) IsRunning() bool {
-	status, err := s.Status()
+	status, err := s.status()
 	if err != nil {
 		return false
 	}
@@ -152,7 +152,7 @@ func (s *Session) IsRunning() bool {
 }
 
 // Status connects to snap to verify the current state of the task.
-func (s *Session) Status() (string, error) {
+func (s *Session) status() (string, error) {
 	if s.task == nil {
 		return "", errors.New("snap task not running or not found")
 	}
@@ -165,14 +165,12 @@ func (s *Session) Status() (string, error) {
 	return task.State, nil
 }
 
-// Stop terminates an experiment session. This function blocks until task is executed successfully
-// at least once and stopped.
-func (s *Session) Stop() error {
+// StopAndRemove terminates an experiment session and removes Snap task.
+// This function blocks until task is stopped.
+func (s *Session) StopAndRemove() error {
 	if s.task == nil {
 		return errors.New("snap task not running or not found")
 	}
-
-	s.waitForSuccessfulHit()
 
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
@@ -190,7 +188,7 @@ func (s *Session) Stop() error {
 	return nil
 }
 
-func (s *Session) waitForSuccessfulHit() {
+func (s *Session) WaitToBeHitOnce() {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
