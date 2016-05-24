@@ -1,0 +1,76 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+
+  config.vm.box = "centos/7"
+  config.vm.box_check_update = false
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network "private_network", ip: "10.141.141.10"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  config.vm.synced_folder "../../../..", "/home/vagrant/go/src/github.com/intelsdi-x/swan"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+
+    vb.cpus = 2       # NOTE: integration tests fail with less than 2
+    vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+  end
+
+  $install_packages = <<SCRIPT
+    echo Adding the docker yum repository
+    tee /etc/yum.repos.d/docker.repo <<-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.dockerproject.org/gpg
+EOF
+    echo Updating package lists
+    yum update -y
+    echo Installing packages
+    yum install -y \
+      docker-engine \
+      gengetopt \
+      git \
+      libcgroup-tools \
+      libevent-devel \
+      perf \
+      scons \
+      tree \
+      vim \
+      wget
+    wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
+    tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
+SCRIPT
+
+  $configure_docker = <<SCRIPT
+    echo Configuring Docker
+    systemctl enable docker
+    gpasswd -a vagrant docker
+    systemctl restart docker
+SCRIPT
+
+  $setup_user_env = <<SCRIPT
+    echo Setting up user environment
+    chown -R vagrant:vagrant /home/vagrant/go
+    ln -s /home/vagrant/go/src/github.com/intelsdi-x/swan /home/vagrant/
+    echo 'export GOPATH="/home/vagrant/go"' >> /home/vagrant/.bash_profile
+    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> /home/vagrant/.bash_profile
+SCRIPT
+
+  config.vm.provision "shell", inline: $install_packages
+  config.vm.provision "shell", inline: $configure_docker
+  config.vm.provision "shell", inline: $setup_user_env
+end
