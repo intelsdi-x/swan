@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v62",
+	"GodepVersion": "v71",
 	"Packages": [
 		"./..."
 	],
@@ -10,6 +10,18 @@
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.10.0-14-g081307d",
 			"Rev": "081307d9bc1364753142d5962fc1d795c742baaf"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template",
+			"Rev": "a0175ee3bccc567396460bf5acd36800cb10c49c"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template/parse",
+			"Rev": "a0175ee3bccc567396460bf5acd36800cb10c49c"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/units",
+			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 		},
 		{
 			"ImportPath": "github.com/appc/spec/Godeps/_workspace/src/github.com/camlistore/go4/errorutil",
@@ -343,6 +355,10 @@
 			"Rev": "c5d7a69bf8a2c9c374798160849c071093e41dd1"
 		},
 		{
+			"ImportPath": "github.com/vektra/errors",
+			"Rev": "c64d83aba85aa4392895aadeefabbd24e89f3580"
+		},
+		{
 			"ImportPath": "github.com/vrischmann/jsonutil",
 			"Rev": "694784f9315ee9fc763c1d30f28753cba21307aa"
 		},
@@ -353,10 +369,6 @@
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
 			"Rev": "1777f3ba8c1fed80fcaec3317e3aaa4f627764d2"
-		},
-		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "f64b50fbea64174967a8882830d621a18ee1548e"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/openpgp",
@@ -391,7 +403,17 @@
 			"Rev": "5916dcb167ed985a5b9e6871fbfd74848a4c170b"
 		},
 		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "f64b50fbea64174967a8882830d621a18ee1548e"
+		},
+		{
+			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
+			"Comment": "v2.1.11",
+			"Rev": "8cccfa8eb2e3183254457fb1749b2667fbc364c7"
+		},
+		{
 			"ImportPath": "gopkg.in/inf.v0",
+			"Comment": "v0.9.0",
 			"Rev": "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
 		},
 		{
