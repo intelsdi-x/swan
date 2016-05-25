@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	name                  = "Memcached"
 	defaultPort           = 11211
 	defaultUser           = "memcached"
 	defaultNumThreads     = 4
@@ -133,4 +134,9 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 	return task, nil
+}
+
+// Name returns human readable name for job.
+func (m Memcached) Name() string {
+	return name
 }
