@@ -43,7 +43,7 @@ func TestSnap(t *testing.T) {
 		columns := strings.Split(lines[0], "\t")
 		So(len(columns), ShouldEqual, 3)
 		tags := strings.Split(columns[1], ",")
-		So(len(tags), ShouldEqual, 4)
+		So(len(tags), ShouldEqual, 6)
 
 		So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
 		So("swan_experiment=foobar", ShouldBeIn, tags)
