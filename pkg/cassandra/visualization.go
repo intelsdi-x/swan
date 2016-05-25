@@ -7,11 +7,12 @@ import (
 	"strings"
 )
 
-func DrawTable(experimentID string) error {
+// DrawTable draws table for given experiment Id.
+func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
 	headers := []string{"namespace", "version", "host", "time", "boolval", "doubleval", "labels", "strval", "tags", "valtype"}
 
-	cassandraConfig, err := CreateConfigWithSession("127.0.0.1", "snap")
+	cassandraConfig, err := CreateConfigWithSession(host, "snap")
 	if err != nil {
 		return err
 	}
@@ -39,5 +40,43 @@ func DrawTable(experimentID string) error {
 	}
 	table.Render()
 
+	return nil
+}
+
+func getTags(host string) (tagsMapsList []map[string]string, err error) {
+	var tagsMap map[string]string
+	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	iter := cassandraConfig.session.Query(`SELECT tags FROM snap.metrics`).Iter()
+	for iter.Scan(&tagsMap) {
+		tagsMapsList = append(tagsMapsList, tagsMap)
+	}
+
+	return tagsMapsList, err
+}
+
+func isValueInSlice(value string, slice []string) bool {
+	for _, elem := range slice {
+		if elem == value {
+			return true
+		}
+	}
+	return false
+}
+
+// DrawList returns list of experimentIds.
+func DrawList(host string) (err error) {
+	var uniqueNames []string
+	tagsMapsList, err := getTags(host)
+	if err != nil {
+		return err
+	}
+	for _, elem := range tagsMapsList {
+		for k, value := range elem {
+			if k == "swan_experiment" && !isValueInSlice(value, uniqueNames) {
+				uniqueNames = append(uniqueNames, value)
+				fmt.Println(value)
+			}
+		}
+	}
 	return nil
 }
