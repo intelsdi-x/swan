@@ -11,7 +11,7 @@ import (
 type SessionHandle interface {
 	IsRunning() bool
 	StopAndRemove() error
-	WaitToBeHitOnce()
+	WaitForSuccessfulHit()
 }
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.

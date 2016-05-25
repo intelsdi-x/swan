@@ -35,7 +35,7 @@ func (_m *SessionHandle) StopAndRemove() error {
 	return r0
 }
 
-// WaitToBeHitOnce provides a mock function with given fields:
-func (_m *SessionHandle) WaitToBeHitOnce() {
+// WaitForSuccessfulHit provides a mock function with given fields:
+func (_m *SessionHandle) WaitForSuccessfulHit() {
 	_m.Called()
 }

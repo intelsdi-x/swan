@@ -111,7 +111,7 @@ func TestSnapMutilateSession(t *testing.T) {
 						RepetitionID: 1,
 					}
 
-					handle, err := mutilateSnapSession.Launch(mockedTaskInfo, session)
+					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, session)
 					So(err, ShouldBeNil)
 
 					defer func() {

@@ -188,9 +188,9 @@ func (s *Session) StopAndRemove() error {
 	return nil
 }
 
-// WaitToBeHitOnce blocks until the task is executed at least once
+// WaitForSuccessfulHit blocks until the task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) WaitToBeHitOnce() {
+func (s *Session) WaitForSuccessfulHit() {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {

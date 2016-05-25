@@ -29,7 +29,7 @@ func TestSnap(t *testing.T) {
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 	testStopping := func() {
-		s.WaitToBeHitOnce()
+		s.WaitForSuccessfulHit()
 		err := s.StopAndRemove()
 		So(err, ShouldBeNil)
 		So(s.IsRunning(), ShouldBeFalse)
