@@ -8,12 +8,12 @@ const (
 	// RepetitionKey defines the key for Snap tag.
 	RepetitionKey = "swan_repetition"
 
-	// TODO: Remove these below when completing SCE-376
+	// TODO(bp): Remove these below when completing SCE-376
 
 	// LoadPointQPSKey defines the key for Snap tag.
 	LoadPointQPSKey = "swan_loadpoint_qps"
 	// AggressorNameKey defines the key for Snap tag.
-	AggressorNameKey = "swan_aggressorname"
+	AggressorNameKey = "swan_aggressor_name"
 )
 
 // Session consists of data which make each phase unique.
@@ -23,7 +23,7 @@ type Session struct {
 	RepetitionID int
 
 	// NOTE: These items below are temporary Sensitivity experiment data.
-	// TODO: Remove that when completing SCE-376
+	// TODO(bp): Remove that when completing SCE-376
 	LoadPointQPS  int
 	AggressorName string
 }

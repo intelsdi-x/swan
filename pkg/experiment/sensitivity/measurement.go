@@ -42,7 +42,7 @@ type measurementPhase struct {
 }
 
 // Returns measurement name.
-// TODO: Change to UUID when completing SCE-376.
+// TODO(bp): Change to UUID when completing SCE-376.
 func (m *measurementPhase) Name() string {
 	return m.namePrefix + "_measurement_for_loadpoint_id_" +
 		strconv.Itoa(m.currentLoadPointIndex)
@@ -114,11 +114,14 @@ func (m *measurementPhase) Run(session phase.Session) error {
 		return errors.New("Target QPS for measurement was not given.")
 	}
 
-	// TODO: Remove that when completing SCE-376
+	// TODO(bp): Remove that when completing SCE-376
 	session.LoadPointQPS = m.getLoadPoint()
 	if len(m.bes) > 0 {
 		session.AggressorName = ""
-		for _, be := range m.bes {
+		for i, be := range m.bes {
+			if i > 0 {
+				session.AggressorName += "And"
+			}
 			session.AggressorName += be.Launcher.Name()
 		}
 	} else {
@@ -163,7 +166,7 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 }
 
 func (m *measurementPhase) run(session phase.Session) error {
-	// TODO:(bplotka): Here trigger Snap session for gathering platform metrics.
+	// TODO(bp): Here trigger Snap session for gathering platform metrics.
 
 	// Launch Latency Sensitive workload.
 	prTask, err := m.pr.Launcher.Launch()
