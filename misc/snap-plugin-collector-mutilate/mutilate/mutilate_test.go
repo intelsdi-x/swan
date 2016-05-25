@@ -85,21 +85,21 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
 				{"/percentile/99_999th/custom", 1777.887805, now},
+				{"/qps/total", 100, now},
+				{"/qps/peak", 200, now},
 			}
 
 			for i := range metrics {
 				containsMetric := false
 				for _, expectedMetric := range expectedMetricsValues {
 					if strings.Contains(metrics[i].Namespace().String(), expectedMetric.namespace) {
-						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value,
-							expectedMetric.date)
+						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value, expectedMetric.date)
 						containsMetric = true
 						break
 					}
 				}
 				if !containsMetric {
-					t.Error("Expected metrics do not contain given metric " +
-						metrics[i].Namespace().String())
+					t.Errorf("Expected metrics do not contain given metric %s", metrics[i].Namespace().String())
 				}
 			}
 
@@ -153,6 +153,8 @@ func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value f
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
 	So(metric.Unit(), ShouldEqual, "ns")
 	So(metric.Tags(), ShouldHaveLength, 0)
-	So(metric.Data().(float64), ShouldEqual, value)
+	data, typeFound := metric.Data().(float64)
+	So(typeFound, ShouldBeTrue)
+	So(data, ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
 }
