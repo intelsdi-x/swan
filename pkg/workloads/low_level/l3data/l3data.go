@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	name            = "L3 Data"
 	defaultDuration = 86400 * time.Second
 	defaultL3Path   = "low-level-aggressors/l3"
 	l3PathEnv       = "SWAN_L3_PATH"
@@ -72,4 +73,9 @@ func (l l3) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 	return l.exec.Execute(l.buildCommand())
+}
+
+// Name returns human readable name for job.
+func (l l3) Name() string {
+	return name
 }

@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	name            = "L1 Data"
 	defaultDuration = 86400 * time.Second
 	defaultL1DPath  = "low-level-aggressors/l1d"
 	l1DPathEnv      = "SWAN_L1D_PATH"
@@ -72,4 +73,9 @@ func (l l1d) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 	return l.exec.Execute(l.buildCommand())
+}
+
+// Name returns human readable name for job.
+func (l l1d) Name() string {
+	return name
 }

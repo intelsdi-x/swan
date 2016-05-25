@@ -106,6 +106,7 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadNoWait(loadPoint int) 
 
 func (s *SensitivityTestSuite) mockSingleAggressorWorkloadExecution() {
 	s.mockedAggressor.On("Launch").Return(s.mockedAggressorTask, nil).Once()
+	s.mockedAggressor.On("Name").Return("testName").Once()
 	s.mockedAggressorTask.On("Stop").Return(nil).Once()
 	s.mockedAggressorTask.On("Clean").Return(nil).Once()
 }
@@ -235,6 +236,7 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 						s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
 
 						// Make next measurement fail.
+						s.mockedAggressor.On("Name").Return("testName").Once()
 						s.mockedLcLauncher.On("Launch").Return(nil,
 							errors.New(
 								"Production task can't be launched for aggressor phase")).Once()
@@ -280,6 +282,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 
 			Convey("But production task can't be launched during aggressor phase, "+
 				"we expect error", func() {
+				s.mockedAggressor.On("Name").Return("testName").Once()
 				s.mockedLcLauncher.On("Launch").Return(nil,
 					errors.New(
 						"Production task can't be launched during aggressor phase")).Once()
@@ -296,6 +299,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 				Convey("But aggressor fails, we expect error", func() {
 					s.mockedAggressor.On("Launch").
 						Return(nil, errors.New("Agressor failed")).Once()
+					s.mockedAggressor.On("Name").Return("testName").Once()
 
 					err := s.sensitivityExperiment.Run()
 					So(err, ShouldNotBeNil)
@@ -403,6 +407,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 			s.mockSingleLcWorkloadExecution()
 			Convey("When production task's Snap session can't be launched we expect error",
 				func() {
+					s.mockedAggressor.On("Name").Return("testName").Once()
 					s.mockedLcSessionLauncher.On(
 						"LaunchSession",
 						s.mockedLcTask,

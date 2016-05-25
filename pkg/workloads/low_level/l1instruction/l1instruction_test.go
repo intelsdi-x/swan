@@ -1,4 +1,4 @@
-package l1intesity
+package l1instruction
 
 import (
 	"errors"
