@@ -111,7 +111,7 @@ func TestSnapMutilateSession(t *testing.T) {
 						RepetitionID: 1,
 					}
 
-					handle, err := mutilateSnapSession.Launch(mockedTaskInfo, session)
+					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, session)
 					So(err, ShouldBeNil)
 
 					defer func() {
@@ -120,10 +120,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					}()
 
 					Convey("Contacting snap to get the task status", func() {
-						status, err := handle.Status()
-						So(err, ShouldBeNil)
-
-						So(status, ShouldEqual, "Running")
+						So(handle.IsRunning(), ShouldBeTrue)
 
 						// These are results from test output file
 						// in "src/github.com/intelsdi-x/swan/misc/

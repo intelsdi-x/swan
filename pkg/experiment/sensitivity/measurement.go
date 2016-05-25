@@ -92,7 +92,7 @@ func (m *measurementPhase) clean() error {
 
 	// Stopping only active Snap sessions.
 	for _, snapSession := range m.activeSnapSessions {
-		// NOTE: snapSession needs to ensure inside if it completed its work.
+		snapSession.Wait()
 		err = snapSession.Stop()
 		if err != nil {
 			errMsg += " Error while stopping Snap session: " + err.Error()
