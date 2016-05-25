@@ -17,11 +17,17 @@ var (
 )
 
 func listExperiments() {
-	cassandra.DrawList(*cassandraServer)
+	err := cassandra.DrawList(*cassandraServer)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func showExperiment() {
-	cassandra.DrawTable(*experimentID, *cassandraServer)
+	err := cassandra.DrawTable(*experimentID, *cassandraServer)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Run via: go run scripts/sensitivity_viewer/main.go
