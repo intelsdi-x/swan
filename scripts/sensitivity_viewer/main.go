@@ -8,7 +8,7 @@ import (
 
 var (
 	viewer          = kingpin.New("SensitivityViewer", "Simple command-line tool for viewing Sensitivity experiment results.")
-	cassandraServer = viewer.Flag("cassandra_host", "IP and Port of Cassandra DB with results.").Default("127.0.0.1").String()
+	cassandraServer = viewer.Flag("cassandra_host", "host for Cassandra DB with results.").Default("127.0.0.1").String()
 
 	listExperimentsCmd = viewer.Command("list", "List all experiment UUIDs")
 
