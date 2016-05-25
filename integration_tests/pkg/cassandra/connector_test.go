@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestDbConnection(t *testing.T) {
+func TestCassandraConnection(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While creating casandra config with proper parameters", t, func() {
 		config, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
