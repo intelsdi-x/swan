@@ -165,9 +165,9 @@ func (s *Session) status() (string, error) {
 	return task.State, nil
 }
 
-// StopAndRemove terminates an experiment session and removes Snap task.
+// Stop terminates an experiment session and removes Snap task.
 // This function blocks until task is stopped.
-func (s *Session) StopAndRemove() error {
+func (s *Session) Stop() error {
 	if s.task == nil {
 		return errors.New("snap task not running or not found")
 	}
@@ -188,9 +188,9 @@ func (s *Session) StopAndRemove() error {
 	return nil
 }
 
-// WaitForSuccessfulHit blocks until the task is executed at least once
+// Wait blocks until the task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) WaitForSuccessfulHit() {
+func (s *Session) Wait() {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {

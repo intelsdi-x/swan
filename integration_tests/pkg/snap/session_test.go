@@ -29,8 +29,8 @@ func TestSnap(t *testing.T) {
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 	testStopping := func() {
-		s.WaitForSuccessfulHit()
-		err := s.StopAndRemove()
+		s.Wait()
+		err := s.Stop()
 		So(err, ShouldBeNil)
 		So(s.IsRunning(), ShouldBeFalse)
 		dat, err := ioutil.ReadFile(metricsFile)
@@ -142,7 +142,7 @@ func TestSnap(t *testing.T) {
 
 						defer func() {
 							if s.IsRunning() {
-								err := s.StopAndRemove()
+								err := s.Stop()
 								So(err, ShouldBeNil)
 							}
 						}()

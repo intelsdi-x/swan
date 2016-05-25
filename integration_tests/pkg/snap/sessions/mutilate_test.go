@@ -115,7 +115,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					defer func() {
-						err := handle.StopAndRemove()
+						err := handle.Stop()
 						So(err, ShouldBeNil)
 					}()
 

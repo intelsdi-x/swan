@@ -10,8 +10,8 @@ import (
 // We can move that to generic collection in future - for now we only use snap.
 type SessionHandle interface {
 	IsRunning() bool
-	StopAndRemove() error
-	WaitForSuccessfulHit()
+	Stop() error
+	Wait()
 }
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.

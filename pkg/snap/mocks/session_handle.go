@@ -21,8 +21,8 @@ func (_m *SessionHandle) IsRunning() bool {
 	return r0
 }
 
-// StopAndRemove provides a mock function with given fields:
-func (_m *SessionHandle) StopAndRemove() error {
+// Stop provides a mock function with given fields:
+func (_m *SessionHandle) Stop() error {
 	ret := _m.Called()
 
 	var r0 error
@@ -35,7 +35,7 @@ func (_m *SessionHandle) StopAndRemove() error {
 	return r0
 }
 
-// WaitForSuccessfulHit provides a mock function with given fields:
-func (_m *SessionHandle) WaitForSuccessfulHit() {
+// Wait provides a mock function with given fields:
+func (_m *SessionHandle) Wait() {
 	_m.Called()
 }

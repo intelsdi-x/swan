@@ -164,8 +164,8 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		return fmt.Errorf("Snap session start failed: %s\n", err.Error())
 	}
 
-	snapSession.WaitForSuccessfulHit()
-	err = snapSession.StopAndRemove()
+	snapSession.Wait()
+	err = snapSession.Stop()
 	if err != nil {
 		return fmt.Errorf("Snap session stop failed: %s\n", err.Error())
 	}

@@ -342,24 +342,24 @@ func (s *SensitivityTestSuite) mockSingleLcSessionExecution() {
 	s.mockedLcSessionLauncher.On(
 		"LaunchSession", s.mockedLcTask, mock.AnythingOfType("phase.Session")).Return(
 		s.mockedLcSessionHandle, nil).Once()
-	s.mockedLcSessionHandle.On("StopAndRemove").Return(nil).Once()
-	s.mockedLcSessionHandle.On("WaitForSuccessfulHit").Return(nil).Once()
+	s.mockedLcSessionHandle.On("Stop").Return(nil).Once()
+	s.mockedLcSessionHandle.On("Wait").Return(nil).Once()
 }
 
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorSessionExecution() {
 	s.mockedLoadGeneratorSessionLauncher.On(
 		"LaunchSession", s.mockedLoadGeneratorTask, mock.AnythingOfType("phase.Session")).Return(
 		s.mockedLoadGeneratorSessionHandle, nil).Once()
-	s.mockedLoadGeneratorSessionHandle.On("StopAndRemove").Return(nil).Once()
-	s.mockedLoadGeneratorSessionHandle.On("WaitForSuccessfulHit").Return(nil).Once()
+	s.mockedLoadGeneratorSessionHandle.On("Stop").Return(nil).Once()
+	s.mockedLoadGeneratorSessionHandle.On("Wait").Return(nil).Once()
 }
 
 func (s *SensitivityTestSuite) mockSingleAggressorSessionExecution() {
 	s.mockedAggressorSessionLauncher.On(
 		"LaunchSession", s.mockedAggressorTask, mock.AnythingOfType("phase.Session")).Return(
 		s.mockedAggressorSessionHandle, nil).Once()
-	s.mockedAggressorSessionHandle.On("StopAndRemove").Return(nil).Once()
-	s.mockedAggressorSessionHandle.On("WaitForSuccessfulHit").Return(nil).Once()
+	s.mockedAggressorSessionHandle.On("Stop").Return(nil).Once()
+	s.mockedAggressorSessionHandle.On("Wait").Return(nil).Once()
 }
 
 func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
