@@ -43,8 +43,9 @@ func TestValuesGatherer(t *testing.T) {
 				err := insertDataIntoCassandra(session, metrics)
 				So(err, ShouldBeNil)
 				Convey("and I should be able to receive expected values and close session", func() {
-					metricsList := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+					metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
 					So(len(metricsList), ShouldBeGreaterThan, 0)
+					So(err, ShouldBeNil)
 					resultedMetrics := metricsList[0]
 
 					// Check values of metrics.
@@ -65,7 +66,7 @@ func TestValuesGatherer(t *testing.T) {
 						metrics.Tags()["swan_repetition"])
 					So(resultedMetrics.Valtype(), ShouldEqual, metrics.Valtype())
 
-					err := cassandraConfig.CloseSession()
+					err = cassandraConfig.CloseSession()
 					So(err, ShouldBeNil)
 				})
 			})

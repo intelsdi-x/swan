@@ -1,9 +1,12 @@
 package cassandra
 
-import "time"
+import (
+	"github.com/vektra/errors"
+	"time"
+)
 
 // GetValuesForGivenExperiment returns list of Metrics structs based on experiment ID.
-func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID string) []*Metrics {
+func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID string) (metrics []*Metrics, err error) {
 	metricsList := []*Metrics{}
 	// We look for following values for each Metric.
 	var doubleval float64
@@ -18,10 +21,13 @@ func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID stri
 	iter := session.Query(`SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype FROM snap.metrics
 	WHERE tags CONTAINS '` + experimentID + `'ALLOW FILTERING`).Iter()
 
-	// Iterate through all gathered row, create Metrics struct for each row and add it to a list.
-	for iter.Scan(&namespace, &version, &host, &time, &boolval, &doubleval, &strval, &tags, &valtype) {
-		metric := NewMetrics(namespace, version, host, time, boolval, doubleval, strval, tags, valtype)
-		metricsList = append(metricsList, metric)
+	if len(iter.Columns()) > 0 {
+		// Iterate through all gathered row, create Metrics struct for each row and add it to a list.
+		for iter.Scan(&namespace, &version, &host, &time, &boolval, &doubleval, &strval, &tags, &valtype) {
+			metric := NewMetrics(namespace, version, host, time, boolval, doubleval, strval, tags, valtype)
+			metricsList = append(metricsList, metric)
+		}
+		return metricsList, nil
 	}
-	return metricsList
+	return nil, errors.New("Bad columns names")
 }
