@@ -1,4 +1,4 @@
-package l1intesity
+package l1instruction
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	name              = "L1 Instruction"
 	defaultIterations = 10
 	defaultIntensity  = 20
 	// {min,max}Intensity are hardcoded values in l1i binary
@@ -85,4 +86,9 @@ func (l l1i) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 	return l.exec.Execute(l.buildCommand())
+}
+
+// Name returns human readable name for job.
+func (l l1i) Name() string {
+	return name
 }
