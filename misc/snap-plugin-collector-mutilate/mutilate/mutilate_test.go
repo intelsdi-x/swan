@@ -38,22 +38,18 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypesError, ShouldBeNil)
-			So(metricTypes, ShouldHaveLength, 9)
+			So(metricTypes, ShouldHaveLength, 11)
 			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns")
 			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns")
 			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns")
-			soValidMetricType(metricTypes[3],
-				"/intel/swan/mutilate/*/percentile/5th", "ns")
-			soValidMetricType(metricTypes[4],
-				"/intel/swan/mutilate/*/percentile/10th", "ns")
-			soValidMetricType(metricTypes[5],
-				"/intel/swan/mutilate/*/percentile/90th", "ns")
-			soValidMetricType(metricTypes[6],
-				"/intel/swan/mutilate/*/percentile/95th", "ns")
-			soValidMetricType(metricTypes[7],
-				"/intel/swan/mutilate/*/percentile/99th", "ns")
-			soValidMetricType(metricTypes[8],
-				"/intel/swan/mutilate/*/percentile/*/custom", "ns")
+			soValidMetricType(metricTypes[3], "/intel/swan/mutilate/*/percentile/5th", "ns")
+			soValidMetricType(metricTypes[4], "/intel/swan/mutilate/*/percentile/10th", "ns")
+			soValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns")
+			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
+			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
+			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps/total", "ns")
+			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/qps/peak", "ns")
+			soValidMetricType(metricTypes[10], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
 
 		})
 
@@ -71,7 +67,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(err, ShouldBeNil)
-			So(metrics, ShouldHaveLength, 9)
+			So(metrics, ShouldHaveLength, 11)
 
 			type metric struct {
 				namespace string
@@ -122,9 +118,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(metrics, ShouldHaveLength, 0)
-			So(err.Error(), ShouldEqual,
-				"No file path set - no metrics are collected")
-
+			So(err.Error(), ShouldContainSubstring, "No file path set - no metrics are collected")
 		})
 
 		Convey("I should receive no metrics and error when mutilate results parsing fails",

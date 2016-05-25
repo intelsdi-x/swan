@@ -34,27 +34,22 @@ func NewMutilate(now time.Time) snapPlugin.CollectorPlugin {
 // GetMetricTypes implements plugin.PluginCollector interface.
 func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("avg"),
-		Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("std"),
-		Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("min"),
-		Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "5th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "10th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "90th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "95th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(
-		"percentile", "99th"), Unit_: UNIT, Version_: VERSION})
+
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("avg"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("std"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("min"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "5th"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "10th"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "90th"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("qps", "total"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("qps", "peak"), Unit_: UNIT, Version_: VERSION})
+
 	customNamespace := createNewMetricNamespace("percentile")
-	customNamespace = customNamespace.AddDynamicElement("percentile",
-		"Custom percentile from mutilate").AddStaticElement("custom")
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: customNamespace,
-		Unit_: UNIT, Version_: VERSION})
+	customNamespace = customNamespace.AddDynamicElement("percentile", "Custom percentile from mutilate").AddStaticElement("custom")
+
+	metrics = append(metrics, snapPlugin.MetricType{Namespace_: customNamespace, Unit_: UNIT, Version_: VERSION})
 
 	return metrics, nil
 }
@@ -73,39 +68,57 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 // CollectMetrics implements plugin.PluginCollector interface.
 func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
-	sourceFilePath, sFPErr := config.GetConfigItem(metricTypes[0], "stdout_file")
-	if sFPErr != nil {
-		logger.LogError("No file path set - no metrics are collected", sFPErr)
-		return metrics, errors.New("No file path set - no metrics are collected")
-	}
-	rawMetrics, rMErr := parseMutilateStdout(sourceFilePath.(string))
-	if rMErr != nil {
-		logger.LogError(fmt.Sprintf("Mutilate output parsing failed: %s", rMErr.Error()), rMErr)
-		return metrics, fmt.Errorf("Mutilate output parsing failed: %s", rMErr.Error())
-	}
-	hostname, hErr := os.Hostname()
-	if hErr != nil {
-		logger.LogError("Can not determine hostname", hErr)
-		return metrics, fmt.Errorf("Can not determine hostname: %s", hErr.Error())
+
+	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
+	if err != nil {
+		msg := fmt.Sprintf("No file path set - no metrics are collected: %s", err.Error())
+		logger.LogError(msg)
+		return metrics, errors.New(msg)
 	}
 
+	rawMetrics, err := parseMutilateStdout(sourceFilePath.(string))
+	if err != nil {
+		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
+		logger.LogError(msg)
+		return metrics, errors.New(msg)
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		msg := fmt.Sprintf("Cannot determine hostname: %s", err.Error())
+		logger.LogError(msg)
+		return metrics, errors.New(msg)
+	}
+
+	// TODO: Refactor population below. It is hard to figure out what is going on.
 	for key, metricType := range metricTypes {
-		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_,
-			Unit_: metricType.Unit_, Version_: metricType.Version_}
+		logger.LogError("key: %s", key)
+		logger.LogError("metricType: %v", metricType)
+
+		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
 		metric.Namespace_[3].Value = hostname
 		metric.Timestamp_ = mutilate.now
+
 		for _, m := range rawMetrics {
 			// Assign value to metric for proper name.
 			if strings.Contains(metricType.Namespace().String(), m.name) {
 				metric.Data_ = m.value
 			}
 		}
-		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
-		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
-			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
+
+		// Why -2??
+		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-4]
+		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" && key < len(rawMetrics) {
+			logger.LogError("rawMetrics: %v", rawMetrics)
+			logger.LogError("metric.Namespace_ len: %d '%s'", len(metric.Namespace_), rawMetrics[key].name)
+
+			val := strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
+			metric.Namespace_[len(metric.Namespace_)-4].Value = val
+
 			// Assign value for custom metric - always last item in rawMetrics.
 			metric.Data_ = rawMetrics[len(rawMetrics)-1].value
 		}
+
 		metrics = append(metrics, metric)
 	}
 
