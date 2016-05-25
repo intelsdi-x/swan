@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"os"
-	"strings"
 )
 
 // DrawTable draws table for given experiment Id.
 func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
-	headers := []string{"namespace", "version", "host", "time", "boolval", "doubleval", "labels", "strval", "tags", "valtype"}
+	headers := []string{"namespace", "version", "host", "time", "boolval", "doubleval", "strval", "tags", "valtype"}
 
 	cassandraConfig, err := CreateConfigWithSession(host, "snap")
 	if err != nil {
@@ -27,7 +26,6 @@ func DrawTable(experimentID string, host string) error {
 		rowList = append(rowList, metrics.Time().String())
 		rowList = append(rowList, fmt.Sprintf("%t", metrics.Boolval()))
 		rowList = append(rowList, fmt.Sprintf("%f", metrics.Doubleval()))
-		rowList = append(rowList, strings.Join(metrics.Labels()[:], ","))
 		rowList = append(rowList, metrics.Strval())
 		rowList = append(rowList, fmt.Sprintf("%+v", metrics.Tags()))
 		rowList = append(rowList, metrics.Valtype())
