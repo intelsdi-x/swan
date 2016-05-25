@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	name             = "memBW"
 	defaultDuration  = 86400 * time.Second
 	defaultMemBwPath = "low-level-aggressors/memBw"
 	memBwPathEnv     = "SWAN_MEMBW_PATH"
@@ -72,4 +73,9 @@ func (m memBw) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 	return m.exec.Execute(m.buildCommand())
+}
+
+// Name returns human readable name for job.
+func (m memBw) Name() string {
+	return name
 }
