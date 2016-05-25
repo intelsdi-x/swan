@@ -106,14 +106,12 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 			}
 		}
 
-		// Why -2??
-		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-4]
-		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" && key < len(rawMetrics) {
-			logger.LogError("rawMetrics: %v", rawMetrics)
-			logger.LogError("metric.Namespace_ len: %d '%s'", len(metric.Namespace_), rawMetrics[key].name)
-
-			val := strings.Replace(strings.Split(rawMetrics[key].name, "/")[1], ".", "_", -1)
-			metric.Namespace_[len(metric.Namespace_)-4].Value = val
+		// Namespace: ['percentile', *, 'custom']
+		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
+		logger.LogError("dynamicNamespace: %v", dynamicNamespace)
+		logger.LogError("rawMetrics: %v", rawMetrics)
+		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
+			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[7].name, "/")[1], ".", "_", -1)
 
 			// Assign value for custom metric - always last item in rawMetrics.
 			metric.Data_ = rawMetrics[len(rawMetrics)-1].value
