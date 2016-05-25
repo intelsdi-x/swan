@@ -56,6 +56,8 @@ To generate mocks go to desired package and ```mockery -name ".*" -case undersco
 In case of error: `could not import <pkg> (can't find import: <pkg>)`
 Do the `go install <pkg>`
 
+In some cases `go install` won't help (eg. you do not want to install the project that you are working on). In such a scenario you should follow instructions from [know mockery issue](https://github.com/vektra/mockery/issues/81).
+
 ## Submitting Pull Requests
 
 ### Naming
