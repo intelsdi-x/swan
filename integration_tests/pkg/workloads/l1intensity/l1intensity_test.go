@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1intesity"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -14,10 +14,10 @@ import (
 func TestL1IntensityWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	Convey("While using Local Shell in L1Intesity launcher", t, func() {
+	Convey("While using Local Shell in l1instruction launcher", t, func() {
 		l := executor.NewLocal()
-		l1IntensityLauncher := l1intesity.New(
-			l, l1intesity.DefaultL1iConfig())
+		l1IntensityLauncher := l1instruction.New(
+			l, l1instruction.DefaultL1iConfig())
 
 		Convey("When l1i binary is launched", func() {
 			taskHandle, err := l1IntensityLauncher.Launch()
