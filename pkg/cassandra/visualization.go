@@ -6,6 +6,13 @@ import (
 	"os"
 )
 
+func mapToString(m map[string]string) (result string) {
+	for key, value := range m {
+		result += fmt.Sprintf("%s:%s\n ", key, value)
+	}
+	return result
+}
+
 // DrawTable draws table for given experiment Id.
 func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
@@ -15,7 +22,10 @@ func DrawTable(experimentID string, host string) error {
 	if err != nil {
 		return err
 	}
-	metricsList := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+	metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+	if err != nil {
+		return err
+	}
 	fmt.Println("\n")
 	fmt.Println("Experiment id: " + experimentID)
 	for _, metrics := range metricsList {
@@ -27,7 +37,7 @@ func DrawTable(experimentID string, host string) error {
 		rowList = append(rowList, fmt.Sprintf("%t", metrics.Boolval()))
 		rowList = append(rowList, fmt.Sprintf("%f", metrics.Doubleval()))
 		rowList = append(rowList, metrics.Strval())
-		rowList = append(rowList, fmt.Sprintf("%+v", metrics.Tags()))
+		rowList = append(rowList, mapToString(metrics.Tags()))
 		rowList = append(rowList, metrics.Valtype())
 		data = append(data, rowList)
 	}

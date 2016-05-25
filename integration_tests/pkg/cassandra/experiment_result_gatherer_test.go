@@ -12,10 +12,10 @@ import (
 )
 
 func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics) error {
-	err := session.Query(`insert into snap.metrics(ns, ver, host, time, boolval, doubleval, labels, strval, tags,
+	err := session.Query(`insert into snap.metrics(ns, ver, host, time, boolval, doubleval, strval, tags,
 	valtype) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		metrics.Namespace(), metrics.Version(), metrics.Host(), metrics.Time(), metrics.Boolval(),
-		metrics.Doubleval(), metrics.Labels(), metrics.Strval(), metrics.Tags(), metrics.Valtype()).Exec()
+		metrics.Doubleval(), metrics.Strval(), metrics.Tags(), metrics.Valtype()).Exec()
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func TestValuesGatherer(t *testing.T) {
 	expectedTagsMap := map[string]string{"swan_experiment": experimentID, "swan_phase": "p2", "swan_repetition": "2"}
 
 	//Create Metrics struct that will be inserted into cassandra.
-	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, []string{"b"}, "c", expectedTagsMap, "boolean")
+	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolean")
 
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While connecting to casandra with proper parameters", t, func() {
@@ -43,7 +43,8 @@ func TestValuesGatherer(t *testing.T) {
 				err := insertDataIntoCassandra(session, metrics)
 				So(err, ShouldBeNil)
 				Convey("and I should be able to receive expected values and close session", func() {
-					metricsList := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+					metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+					So(err, ShouldBeNil)
 					resultedMetrics := metricsList[0]
 
 					// Check values of metrics.
@@ -55,7 +56,6 @@ func TestValuesGatherer(t *testing.T) {
 					So(resultedDay, ShouldEqual, expectedDay)
 					So(resultedMetrics.Boolval(), ShouldEqual, metrics.Boolval())
 					So(resultedMetrics.Doubleval(), ShouldEqual, metrics.Doubleval())
-					So(resultedMetrics.Labels()[0], ShouldEqual, metrics.Labels()[0])
 					So(resultedMetrics.Strval(), ShouldEqual, metrics.Strval())
 					So(resultedMetrics.Tags()["swan_experiment"], ShouldEqual,
 						metrics.Tags()["swan_experiment"])
@@ -65,7 +65,7 @@ func TestValuesGatherer(t *testing.T) {
 						metrics.Tags()["swan_repetition"])
 					So(resultedMetrics.Valtype(), ShouldEqual, metrics.Valtype())
 
-					err := cassandraConfig.CloseSession()
+					err = cassandraConfig.CloseSession()
 					So(err, ShouldBeNil)
 				})
 			})
