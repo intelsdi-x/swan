@@ -13,7 +13,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -91,14 +90,14 @@ func main() {
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             500,             // us
-		LoadDuration:    1 * time.Second, //10 * time.Second,
-		LoadPointsCount: 1,               //10,
-		Repetitions:     1,               //3,
+		SLO:             500, // us
+		LoadDuration:    10 * time.Second,
+		LoadPointsCount: 10,
+		Repetitions:     3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
-		"MemcachedWithLocalMutilateToCSV",
+		"MemcachedWithLocalMutilateToCassandra",
 		logLevel,
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
