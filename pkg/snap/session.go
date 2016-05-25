@@ -32,8 +32,8 @@ type CollectNodeConfigItem struct {
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	// Interval defines the sample interval for the listed metrics.
-	Interval time.Duration
+	// Schedule defines the schedule type and interval for the listed metrics.
+	Schedule *client.Schedule
 
 	// Metrics to tag in session.
 	Metrics []string
@@ -57,11 +57,17 @@ func NewSession(
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
-
 	publisher *wmap.PublishWorkflowMapNode) *Session {
+
+	// Convert from duration to "Xs" string.
+	secondString := fmt.Sprintf("%ds", int(interval.Seconds()))
+
 	return &Session{
+		Schedule: &client.Schedule{
+			Type:     "simple",
+			Interval: secondString,
+		},
 		Metrics:                metrics,
-		Interval:               interval,
 		pClient:                pClient,
 		Publisher:              publisher, // TODO(niklas): Replace with cassandra publisher.
 		CollectNodeConfigItems: []CollectNodeConfigItem{},
@@ -74,15 +80,9 @@ func (s *Session) Start(phaseSession phase.Session) error {
 		return errors.New("task already running")
 	}
 
-	// Convert from duration to "Xs" string.
-	secondString := fmt.Sprintf("%ds", int(s.Interval.Seconds()))
-
 	t := &task{
-		Version: 1,
-		Schedule: &client.Schedule{
-			Type:     "simple",
-			Interval: secondString,
-		},
+		Version:  1,
+		Schedule: s.Schedule,
 	}
 
 	wf := wmap.NewWorkflowMap()
@@ -172,7 +172,7 @@ func (s *Session) Stop() error {
 		return errors.New("snap task not running or not found")
 	}
 
-	s.waitForHit()
+	s.waitForSuccessfulHit()
 
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
@@ -190,10 +190,10 @@ func (s *Session) Stop() error {
 	return nil
 }
 
-func (s *Session) waitForHit() {
+func (s *Session) waitForSuccessfulHit() {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
-		if t.HitCount > 0 {
+		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
