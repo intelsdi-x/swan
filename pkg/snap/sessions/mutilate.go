@@ -49,8 +49,8 @@ func NewMutilateSnapSessionLauncher(
 	}
 }
 
-// Launch starts Snap Collection session and returns handle to that session.
-func (s *MutilateSnapSessionLauncher) Launch(
+// LaunchSession starts Snap Collection session and returns handle to that session.
+func (s *MutilateSnapSessionLauncher) LaunchSession(
 	task executor.TaskInfo, phaseSession phase.Session) (snap.SessionHandle, error) {
 
 	// Check if Mutilate collector plugin is loaded.
