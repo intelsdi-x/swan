@@ -13,6 +13,8 @@ const (
 	RUNNING TaskState = iota
 	// TERMINATED task state means that task completed or stopped.
 	TERMINATED
+	// STARTING task state means that the task has not yet started.
+	STARTING
 )
 
 // TaskInfo represents process from which information like Stdout can be retrieved.
