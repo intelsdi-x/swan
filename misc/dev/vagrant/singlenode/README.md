@@ -5,6 +5,7 @@
 ```sh
 $ git clone git@github.com:intelsdi-x/swan.git
 $ cd swan/misc/dev/vagrant/singlenode
+$ ssh-add ~/.ssh/id_rsa  # if not already added to host ssh agent
 $ vagrant plugin install vagrant-vbguest  # automatic guest additions
 $ vagrant box update
 $ vagrant up  # takes a few minutes
@@ -38,6 +39,16 @@ $ vagrant ssh
 
 - The project directory is mounted in the guest file system: edit with your
   preferred tools in the host OS!
+
+## Running the integration tests
+
+1. SSH into the VM: `vagrant ssh`
+1. Change to the swan directory: `cd ~/swan`
+1. Fetch swan dependencies: `make deps`
+1. Build snap:
+  - `cd $GOPATH/src/github.com/intelsdi-x/snap`
+  - `make`
+1. Run the integration tests: `~/scripts/run-integration-tests.sh`
 
 ## Troubleshooting
 

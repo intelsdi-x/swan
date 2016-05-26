@@ -12,10 +12,30 @@ import (
 )
 
 func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics) error {
-	err := session.Query(`insert into snap.metrics(ns, ver, host, time, boolval, doubleval, strval, tags,
-	valtype) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	// TODO(CD): Consider getting schema from the cassandra publisher plugin
+	session.Query(`CREATE TABLE IF NOT EXISTS snap.metrics (
+		ns  text,
+		ver int,
+		host text,
+		time timestamp,
+		valtype text,
+		doubleVal double,
+		boolVal boolean,
+		strVal text,
+		labels list<text>,
+		tags map<text,text>,
+		PRIMARY KEY ((ns, ver, host), time)
+	) WITH CLUSTERING ORDER BY (time DESC);`,
+	).Exec()
+
+	err := session.Query(`insert into snap.metrics(
+		ns, ver, host, time, boolval,
+		doubleval, strval, tags, valtype) values
+		(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		metrics.Namespace(), metrics.Version(), metrics.Host(), metrics.Time(), metrics.Boolval(),
-		metrics.Doubleval(), metrics.Strval(), metrics.Tags(), metrics.Valtype()).Exec()
+		metrics.Doubleval(), metrics.Strval(), metrics.Tags(), metrics.Valtype(),
+	).Exec()
+
 	if err != nil {
 		return err
 	}

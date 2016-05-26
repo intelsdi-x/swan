@@ -7,6 +7,9 @@
 # you're doing.
 Vagrant.configure(2) do |config|
 
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
+
   config.vm.box = "centos/7"
   config.vm.box_check_update = false
 
@@ -39,6 +42,8 @@ gpgkey=https://yum.dockerproject.org/gpg
 EOF
     echo Updating package lists
     yum update -y
+    yum install epel-release  # Enables EPEL repo
+    yum clean all
     echo Installing packages
     yum install -y \
       docker-engine \
@@ -46,6 +51,7 @@ EOF
       git \
       libcgroup-tools \
       libevent-devel \
+      nmap-ncat \
       perf \
       scons \
       tree \
@@ -64,8 +70,15 @@ SCRIPT
 
   $setup_user_env = <<SCRIPT
     echo Setting up user environment
+    # Vagrant user owns $GOPATH
     chown -R vagrant:vagrant /home/vagrant/go
+    # Create convenient symlinks in the home directory
     ln -s /home/vagrant/go/src/github.com/intelsdi-x/swan /home/vagrant/
+    ln -s /home/vagrant/go/src/github.com/intelsdi-x/swan/misc/dev/vagrant/singlenode/scripts /home/vagrant/
+    # Set up Cassandra data directory
+    mkdir -p /var/data/cassandra
+    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
+    # Add GOPATH and Go binaries to PATH in profile
     echo 'export GOPATH="/home/vagrant/go"' >> /home/vagrant/.bash_profile
     echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> /home/vagrant/.bash_profile
 SCRIPT
