@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/osutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -21,8 +22,11 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 	Convey("While using Local Shell in Memcached launcher", t, func() {
 		l := executor.NewLocal()
-		memcachedLauncher := memcached.New(
-			l, memcached.DefaultMemcachedConfig())
+		config := memcached.DefaultMemcachedConfig()
+		// Prefer to run memcached locally using the current user,
+		// if it can be determined from the environment.
+		config.User = osutil.GetEnvOrDefault("USER", config.User)
+		memcachedLauncher := memcached.New(l, config)
 
 		Convey("When memcached is launched", func() {
 			// NOTE: It is needed for memcached to have default port available.
