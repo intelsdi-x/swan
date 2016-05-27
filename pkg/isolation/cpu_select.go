@@ -5,20 +5,26 @@ import (
 )
 
 // ShareLLCButNotL1L2 filter for selecting cpu.
-const ShareLLCButNotL1L2 uint = 1
+const ShareLLCButNotL1L2 = 1 << iota
 
 // CPUSelect with the desired criterion.
 // Select cores that share LLC but do not share L1, L2 cache.
 // Return error if we can not provide cores meeting criterion.
 // Scan all the sockets for set of core ids meeting filter
-func (threadset *IntSet) CPUSelect(count int, filters uint) error {
+func CPUSelect(countRequested int, filters uint) (IntSet, error) {
+
+	threadSet := NewIntSet()
+	// If countRequested is zero then return error.
+	if countRequested == 0 {
+		return nil, errors.New("Error - CPUSelect- number of core requested is zero")
+	}
 
 	// cpuDiscovered collect CPU topology.
 	var cpuDiscovered CPUInfo
 
 	err := cpuDiscovered.Discover()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	corecount := 0
@@ -27,33 +33,29 @@ func (threadset *IntSet) CPUSelect(count int, filters uint) error {
 	if filters == ShareLLCButNotL1L2 {
 
 		// Return error if we can not provide cores meeting criterion.
-		// If count is more than cores per socket return error.
-		if count > cpuDiscovered.PhysicalCores {
-			return errors.New("Error - CPUSelect - insufficient cores")
+		// If countRequested is more than cores per socket return error.
+		if countRequested > cpuDiscovered.PhysicalCores {
+			return nil, errors.New("Error - CPUSelect - insufficient cores")
 		}
-		// If count is more than cores per socket return error.
-		if count == 0 {
-			return errors.New("Error - CPUSelect- number of core requested is zero")
-		}
-		// Loop through all the sockets
+		// Loop through all the sockets first regular HW threads (lower ids) then Hyperthreads(upper ids)
 		for socketid := 0; socketid < cpuDiscovered.Sockets*2; socketid++ {
 			corecount = 0
 			// Loop through all the cores to find available core ids meeting filter
 			for cores := 0; cores < cpuDiscovered.PhysicalCores; cores++ {
-				threadset.Add(socketid*cpuDiscovered.PhysicalCores + cores)
+				threadSet.Add(socketid*cpuDiscovered.PhysicalCores + cores)
 				corecount++
 
-				if corecount == count {
+				if corecount == countRequested {
 					break
 				}
 			}
-			if corecount == count {
+			if corecount == countRequested {
 				break
 			}
 		}
 	}
-	if corecount < count {
-		return errors.New("Error - CPUSelect - Insufficient cores to meet selection criteria")
+	if corecount < countRequested {
+		return nil, errors.New("Error - CPUSelect - Insufficient cores to meet selection criteria")
 	}
-	return nil
+	return threadSet, nil
 }
