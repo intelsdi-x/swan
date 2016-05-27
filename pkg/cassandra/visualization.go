@@ -22,13 +22,16 @@ func DrawTable(experimentID string, host string) error {
 	if err != nil {
 		return err
 	}
+
 	metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
 	if err != nil {
 		return err
 	}
+
 	fmt.Println("\n")
 	fmt.Println("Experiment id: " + experimentID)
 	for _, metrics := range metricsList {
+		// TODO(akwasnie) filter columns to show only some of them
 		rowList := []string{}
 		rowList = append(rowList, metrics.Namespace())
 		rowList = append(rowList, fmt.Sprintf("%d", metrics.Version()))
@@ -54,14 +57,23 @@ func DrawTable(experimentID string, host string) error {
 func getTags(host string) (tagsMapsList []map[string]string, err error) {
 	var tagsMap map[string]string
 	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	if err != nil {
+		return nil, err
+	}
+
 	iter := cassandraConfig.session.Query(`SELECT tags FROM snap.metrics`).Iter()
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
 	for iter.Scan(&tagsMap) {
 		tagsMapsList = append(tagsMapsList, tagsMap)
 	}
 
-	return tagsMapsList, err
+	return tagsMapsList, nil
 }
 
+// isValueInSlice is used to check whether given string already exists in given slice.
 func isValueInSlice(value string, slice []string) bool {
 	for _, elem := range slice {
 		if elem == value {
@@ -78,6 +90,7 @@ func DrawList(host string) (err error) {
 	if err != nil {
 		return err
 	}
+
 	for _, elem := range tagsMapsList {
 		for k, value := range elem {
 			if k == "swan_experiment" && !isValueInSlice(value, uniqueNames) {

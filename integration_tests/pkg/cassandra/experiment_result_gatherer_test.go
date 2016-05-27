@@ -33,7 +33,7 @@ func TestValuesGatherer(t *testing.T) {
 	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolean")
 
 	logrus.SetLevel(logrus.ErrorLevel)
-	Convey("While connecting to casandra with proper parameters", t, func() {
+	Convey("While connecting to Cassandra with proper parameters", t, func() {
 		cassandraConfig, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
 		session := cassandraConfig.CassandraSession()
 		Convey("I should receive not empty session", func() {
