@@ -10,15 +10,17 @@ import (
 // Metrics is a type alias for a float map indexed by a name.
 type Metrics map[string]float64
 
+// parse takes a file path to a mutilate standard output file and returns a
+// metrics map (float64 map indexed by metric name).
 func parse(path string) (Metrics, error) {
-	csvFile, err := os.Open(path)
-	defer csvFile.Close()
+	file, err := os.Open(path)
+	defer file.Close()
 	if err != nil {
 		return Metrics{}, err
 	}
 
 	metrics := Metrics{}
-	scanner := bufio.NewScanner(csvFile)
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return Metrics{}, err
@@ -38,7 +40,7 @@ func parse(path string) (Metrics, error) {
 			metrics = latencies
 
 		} else if strings.HasPrefix(line, "Swan latency for percentile") {
-			name, latency, err := parseCustomPercentile(line)
+			name, latency, err := parseCustomPercentileLatency(line)
 			if err != nil {
 				return Metrics{}, err
 			}
@@ -58,6 +60,9 @@ func parse(path string) (Metrics, error) {
 	return metrics, nil
 }
 
+// Parse line from Mutilate with read latencies. For example:
+// "read       20.8    23.1    11.9    13.3    13.4    33.4    43.1    59.5"
+// Returns a metrics map of {"avg": 20.8, "std": 23.1, ...}.
 func parseReadLatencies(line string) (Metrics, error) {
 	var (
 		avg float64
@@ -92,7 +97,10 @@ func parseReadLatencies(line string) (Metrics, error) {
 	}, nil
 }
 
-func parseCustomPercentile(line string) (string, float64, error) {
+// Mutilate in the Swan repo has been patched to provide a custom percentile latency measurement.
+// For example: "Swan latency for percentile 99.999000: 1777.887805"
+// Returns a pair of metric name and value. For example ('percentile/99.999th/custom', 1777.887805).
+func parseCustomPercentileLatency(line string) (string, float64, error) {
 	var (
 		percentile float64
 		latency    float64
@@ -111,6 +119,9 @@ func parseCustomPercentile(line string) (string, float64, error) {
 	return fmt.Sprintf("percentile/%2.3fth/custom", percentile), latency, nil
 }
 
+// Parse the measured number of queries per second for latency measurement.
+// For example: "Total QPS = 4993.1 (149793 / 30.0s)".
+// Returns a pair of metric name and value. For example ('qps/total', 4993.1).
 func parseQPS(line string) (string, float64, error) {
 	var (
 		qps      float64

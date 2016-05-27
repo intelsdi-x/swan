@@ -88,12 +88,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	swanNamespacePrefix := []string{"intel", "swan", "mutilate", "hostname"}
-
-	const (
-		namespaceHostnameIndex = 3
-	)
-
 	// Swan provides a patched version of mutilate, which let's a user provide
 	// a custom percentile value for mutilate to report. By default, Mutilate
 	// reports p5, p10, p90, p95 and p99.
@@ -105,6 +99,9 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 			break
 		}
 	}
+
+	const namespaceHostnameIndex = 3
+	swanNamespacePrefix := []string{"intel", "swan", "mutilate", "hostname"}
 
 	for _, metricType := range metricTypes {
 		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
@@ -136,18 +133,23 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 				metricPostfix[1].Name == "percentile" && metricPostfix[1].Value == "*" &&
 				metricPostfix[2].Value == "custom" {
 
-				// Warning: This namespace change is kept temporarily.
-				// It is not recommended to change the namespace of a metric which is made
-				// available to the metrics catalog.
-				percentileString := fmt.Sprintf("%2.3fth", customPercentile)
+				customPercentileKey := fmt.Sprintf("percentile/%2.3fth/custom", customPercentile)
+				if value, ok := rawMetrics[customPercentileKey]; ok {
+					// Warning: This namespace transformation is kept temporarily.
+					// It is not recommended to change the namespace of a metric which is made
+					// available to the metrics catalog.
+					percentileString := fmt.Sprintf("%2.3fth", customPercentile)
 
-				// Snap namespaces may not have '.' so we have to replace with "_".
-				percentileStringSanitized := strings.Replace(percentileString, ".", "_", 1)
+					// Snap namespaces may not have '.' so we have to replace with "_".
+					percentileStringSanitized := strings.Replace(percentileString, ".", "_", 1)
 
-				// Specialize '*' to for example '99_999th'.
-				metricPostfix[1].Value = percentileStringSanitized
+					// Specialize '*' to for example '99_999th'.
+					metricPostfix[1].Value = percentileStringSanitized
 
-				metric.Data_ = rawMetrics[fmt.Sprintf("percentile/%2.3fth/custom", customPercentile)]
+					metric.Data_ = value
+				} else {
+					logger.LogError("Could not find raw metric for key '%s': skipping metric", customPercentileKey)
+				}
 			}
 		}
 
