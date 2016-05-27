@@ -18,13 +18,9 @@ import (
 	"time"
 )
 
-// This Experiments contains:
-// - memcached as LC task on localhost
-// - mutilate as loadGenerator on localhost
-// - Snap Session: Mutilate -> CSV Publisher
-// - LLC aggressor
+// Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.DebugLevel
+	logLevel := logrus.ErrorLevel
 	logrus.SetLevel(logLevel)
 
 	local := executor.NewLocal()

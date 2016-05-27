@@ -18,13 +18,9 @@ import (
 	"time"
 )
 
-// This Experiments contains:
-// - memcached as LC task on localhost
-// - mutilate as loadGenerator on localhost
-// - Snap Session: Mutilate -> Cassandra Publisher
-// - LLC aggressor
+// Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.DebugLevel
+	logLevel := logrus.InfoLevel
 	logrus.SetLevel(logLevel)
 
 	local := executor.NewLocal()
@@ -45,6 +41,7 @@ func main() {
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
+	// TODO(bp): Fetch the host of Snap from cmd line. (SCE-391)
 	snapConnection, err := client.New("http://127.0.0.1:8181", "v1", true)
 	if err != nil {
 		panic(err)
@@ -90,10 +87,10 @@ func main() {
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             500, // us
-		LoadDuration:    10 * time.Second,
-		LoadPointsCount: 10,
-		Repetitions:     3,
+		SLO:             500,             // us
+		LoadDuration:    1 * time.Second, //10 * time.Second,
+		LoadPointsCount: 1,               //10,
+		Repetitions:     1,               //3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(

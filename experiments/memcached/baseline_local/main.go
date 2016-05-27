@@ -11,12 +11,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// This Experiments contains:
-// - memcached as LC task on localhost
-// - mutilate as loadGenerator on localhost
-// - no aggressors so far
+// Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.DebugLevel
+	logLevel := logrus.ErrorLevel
+	logrus.SetLevel(logLevel)
 
 	local := executor.NewLocal()
 	// Init Memcached Launcher.
