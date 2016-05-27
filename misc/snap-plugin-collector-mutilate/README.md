@@ -1,7 +1,7 @@
 # snap-plugin-collector-mutilate
 
 This is a collector plugin for swan which parses a
-(mutilate)[https://github.com/leverich/mutilate] standard output file and
+[mutilate](https://github.com/leverich/mutilate) standard output file and
 collects available latency and load metrics.
 
 The mutilate standard output file is simply a mutilate run with it's output
