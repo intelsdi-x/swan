@@ -30,6 +30,6 @@ NOTE: It is recommended to ensure that all integration test are working on your 
 
 ## Cassandra Result Viewer
 
-After test running you can see the results using following script:
+After test execution, you can see the results using following script:
 
 `go run ./script/sensitivity_viewer/main.go `
