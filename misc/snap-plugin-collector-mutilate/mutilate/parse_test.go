@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"fmt"
 )
 
 func TestStdoutParser(t *testing.T) {
@@ -18,8 +17,6 @@ func TestStdoutParser(t *testing.T) {
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
 		data, err := parse(GetCurrentDirFilePath("/mutilate.stdout"))
-
-		fmt.Printf("data: %v\n", data)
 
 		So(err, ShouldBeNil)
 		So(data, ShouldHaveLength, 10)
