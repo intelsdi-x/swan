@@ -44,7 +44,6 @@ func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snap
 	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Unit_: UNIT, Version_: VERSION})
 	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Unit_: UNIT, Version_: VERSION})
 	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("qps", "total"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("qps", "peak"), Unit_: UNIT, Version_: VERSION})
 
 	customNamespace := createNewMetricNamespace("percentile")
 	customNamespace = customNamespace.AddDynamicElement("percentile", "Custom percentile from mutilate").AddStaticElement("custom")
@@ -56,8 +55,7 @@ func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snap
 
 func createNewMetricNamespace(metricName ...string) core.Namespace {
 	namespace := core.NewNamespace("intel", "swan", "mutilate")
-	namespace = namespace.AddDynamicElement("hostname",
-		"Name of the host that reports the metric")
+	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	for _, value := range metricName {
 		namespace = namespace.AddStaticElement(value)
 	}
@@ -76,7 +74,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	rawMetrics, err := parseMutilateStdout(sourceFilePath.(string))
+	rawMetrics, err := parse(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
 		logger.LogError(msg)
@@ -90,31 +88,67 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	// TODO: Refactor population below. It is hard to figure out what is going on.
-	for key, metricType := range metricTypes {
-		logger.LogError("key: %s", key)
-		logger.LogError("metricType: %v", metricType)
+	swanNamespacePrefix := []string{"intel", "swan", "mutilate", "hostname"}
 
+	const (
+		namespaceHostnameIndex = 3
+	)
+
+	// Swan provides a patched version of mutilate, which let's a user provide
+	// a custom percentile value for mutilate to report. By default, Mutilate
+	// reports p5, p10, p90, p95 and p99.
+	customPercentile := 0.0
+	for metric := range rawMetrics {
+		var percentile float64
+		if n, err := fmt.Sscanf(metric, "percentile/%fth/custom", &percentile); err == nil && n == 1 {
+			customPercentile = percentile
+			break
+		}
+	}
+
+	for _, metricType := range metricTypes {
 		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
-		metric.Namespace_[3].Value = hostname
+		metric.Namespace_[namespaceHostnameIndex].Value = hostname
 		metric.Timestamp_ = mutilate.now
 
-		for _, m := range rawMetrics {
-			// Assign value to metric for proper name.
-			if strings.Contains(metricType.Namespace().String(), m.name) {
-				metric.Data_ = m.value
-			}
+		// Strips prefix. For example: '/intel/swan/mutilate/<hostname>/avg' to '/avg'.
+		metricPostfix := metric.Namespace_[len(swanNamespacePrefix):]
+
+		// Convert slice of namespace elements to slice of strings.
+		metricPostfixStrings := []string{}
+		for _, namespace := range metricPostfix {
+			metricPostfixStrings = append(metricPostfixStrings, namespace.Value)
 		}
 
-		// Namespace: ['percentile', *, 'custom']
-		dynamicNamespace := metric.Namespace_[len(metric.Namespace_)-2]
-		logger.LogError("dynamicNamespace: %v", dynamicNamespace)
-		logger.LogError("rawMetrics: %v", rawMetrics)
-		if dynamicNamespace.Name == "percentile" && dynamicNamespace.Value == "*" {
-			metric.Namespace_[len(metric.Namespace_)-2].Value = strings.Replace(strings.Split(rawMetrics[7].name, "/")[1], ".", "_", -1)
+		// Flatten to string so ['percentile', '5th'] becomes '/percentile/5th'.
+		metricName := strings.Join(metricPostfixStrings, "/")
 
-			// Assign value for custom metric - always last item in rawMetrics.
-			metric.Data_ = rawMetrics[len(rawMetrics)-1].value
+		if value, ok := rawMetrics[metricName]; ok {
+			metric.Data_ = value
+		} else {
+			// If metric wasn't found directly in raw metrics map, it may be a custom
+			// percentile latency. For example, 'percentile/*/custom'.
+			// If the rawMetrics gathered contains, for example 'percentile/99.999th',
+			// we provide it here.
+			if customPercentile > 0.0 &&
+				len(metricPostfix) == 3 &&
+				metricPostfix[0].Value == "percentile" &&
+				metricPostfix[1].Name == "percentile" && metricPostfix[1].Value == "*" &&
+				metricPostfix[2].Value == "custom" {
+
+				// Warning: This namespace change is kept temporarily.
+				// It is not recommended to change the namespace of a metric which is made
+				// available to the metrics catalog.
+				percentileString := fmt.Sprintf("%2.3fth", customPercentile)
+
+				// Snap namespaces may not have '.' so we have to replace with "_".
+				percentileStringSanitized := strings.Replace(percentileString, ".", "_", 1)
+
+				// Specialize '*' to for example '99_999th'.
+				metricPostfix[1].Value = percentileStringSanitized
+
+				metric.Data_ = rawMetrics[fmt.Sprintf("percentile/%2.3fth/custom", customPercentile)]
+			}
 		}
 
 		metrics = append(metrics, metric)
