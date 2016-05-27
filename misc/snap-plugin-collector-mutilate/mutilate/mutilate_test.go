@@ -11,6 +11,8 @@ import (
 )
 
 func TestMutilatePlugin(t *testing.T) {
+	const expectedMetricsCount = 10
+
 	Convey("When I create mutilate plugin object", t, func() {
 		now := time.Now()
 		mutilatePlugin := NewMutilate(now)
@@ -38,7 +40,7 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypesError, ShouldBeNil)
-			So(metricTypes, ShouldHaveLength, 10)
+			So(metricTypes, ShouldHaveLength, expectedMetricsCount)
 			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns")
 			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns")
 			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns")
@@ -47,9 +49,8 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns")
 			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
 			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
-			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps/total", "ns")
+			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps", "ns")
 			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
-
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -66,7 +67,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(err, ShouldBeNil)
-			So(metrics, ShouldHaveLength, 10)
+			So(metrics, ShouldHaveLength, expectedMetricsCount)
 
 			type metric struct {
 				namespace string
@@ -84,7 +85,7 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
 				{"/percentile/99_999th/custom", 1777.887805, now},
-				{"/qps/total", 4993.1, now},
+				{"/qps", 4993.1, now},
 			}
 
 			for i := range metrics {

@@ -10,9 +10,7 @@ import (
 // Metrics is a type alias for a float map indexed by a name.
 type Metrics map[string]float64
 
-// parse takes a file path to a mutilate standard output file and returns a
-// metrics map (float64 map indexed by metric name).
-func parse(path string) (Metrics, error) {
+func parseOutput(path string) (Metrics, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {
@@ -121,7 +119,7 @@ func parseCustomPercentileLatency(line string) (string, float64, error) {
 
 // Parse the measured number of queries per second for latency measurement.
 // For example: "Total QPS = 4993.1 (149793 / 30.0s)".
-// Returns a pair of metric name and value. For example ('qps/total', 4993.1).
+// Returns a pair of metric name and value. For example ('qps', 4993.1).
 func parseQPS(line string) (string, float64, error) {
 	var (
 		qps      float64
@@ -139,5 +137,5 @@ func parseQPS(line string) (string, float64, error) {
 		return "", 0.0, err
 	}
 
-	return "qps/total", qps, nil
+	return "qps", qps, nil
 }
