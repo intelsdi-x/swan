@@ -1,7 +1,8 @@
 # snap-plugin-collector-mutilate
 
-This is a collector plugin for swan which parses a mutilate standard output file
-and collects available latency and load metrics.
+This is a collector plugin for swan which parses a
+(mutilate)[https://github.com/leverich/mutilate] standard output file and
+collects available latency and load metrics.
 
 The mutilate standard output file is simply a mutilate run with it's output
 piped to a file. For example:
@@ -59,7 +60,7 @@ The current available metrics from the collector are:
 | Name  | Type  | Description | Example value |
 | :---- | :---- | :---------- | :--- |
 | `/intel/swan/mutilate/*/avg` | float64 | Average read latency (in microseconds) | 20.8us |
-| `/intel/swan/mutilate/*/std` | float64 | Standard derivation for read latency (in microseconds) | 23.1us |
+| `/intel/swan/mutilate/*/std` | float64 | Standard deviation for read latency (in microseconds) | 23.1us |
 |`/intel/swan/mutilate/*/min` | float64 | Minimum read latency (in microseconds) | 11.9us |
 |`/intel/swan/mutilate/*/percentile/5th`| float64 | The 5th percentile read latency (in microseconds) | 13.3us |
 |`/intel/swan/mutilate/*/percentile/10th`| float64 | The 5th percentile read latency (in microseconds) | 13.4us |
