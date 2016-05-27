@@ -55,6 +55,7 @@ snapctl task create -t task.json
 ```
 
 The current available metrics from the collector are:
+
 | Name  | Type  | Description | Example value |
 | :---- | :---- | :---------- | :--- |
 | `/intel/swan/mutilate/*/avg` | float64 | Average read latency (in microseconds) | 20.8us |
