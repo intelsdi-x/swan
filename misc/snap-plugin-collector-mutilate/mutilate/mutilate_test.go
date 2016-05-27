@@ -153,9 +153,6 @@ func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value f
 	So(metric.Unit(), ShouldEqual, "ns")
 	So(metric.Tags(), ShouldHaveLength, 0)
 	data, typeFound := metric.Data().(float64)
-	if !typeFound {
-			fmt.Printf("%s Metric type: %v\n", metric.Namespace().String(), metric.Data())
-	}
 	So(typeFound, ShouldBeTrue)
 	So(data, ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
