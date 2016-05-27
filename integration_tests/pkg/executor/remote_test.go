@@ -104,6 +104,10 @@ type multipleMemcached struct {
 	executor executor.Executor
 }
 
+func (m multipleMemcached) Name() string {
+	return "remote memcached"
+}
+
 func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
 	bin := os.Getenv(EnvMemcachedPath)
 	username := os.Getenv(EnvMemcachedUser)

@@ -10,15 +10,13 @@ type Metrics struct {
 	time      time.Time
 	boolval   bool
 	doubleval float64
-	labels    []string
 	strval    string
 	tags      map[string]string
 	valtype   string
 }
 
 // NewMetrics returns a new Metrics struct.
-func NewMetrics(namespace string, version int, host string, time time.Time, boolval bool, doubleval float64,
-	labels []string, strval string, tags map[string]string, valtype string) *Metrics {
+func NewMetrics(namespace string, version int, host string, time time.Time, boolval bool, doubleval float64, strval string, tags map[string]string, valtype string) *Metrics {
 	return &Metrics{
 		namespace,
 		version,
@@ -26,7 +24,6 @@ func NewMetrics(namespace string, version int, host string, time time.Time, bool
 		time,
 		boolval,
 		doubleval,
-		labels,
 		strval,
 		tags,
 		valtype,
@@ -61,11 +58,6 @@ func (metric *Metrics) Boolval() bool {
 // Doubleval returns doubleval from given Metrics struct.
 func (metric *Metrics) Doubleval() float64 {
 	return metric.doubleval
-}
-
-// Labels returns labels from given Metrics struct.
-func (metric *Metrics) Labels() []string {
-	return metric.labels
 }
 
 // Strval returns strval from given Metrics struct.
