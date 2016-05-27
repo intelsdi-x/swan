@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"fmt"
 )
 
 func TestMutilatePlugin(t *testing.T) {
