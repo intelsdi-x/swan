@@ -9,14 +9,18 @@ import (
 
 func TestStdoutParser(t *testing.T) {
 	Convey("Opening non-existing file should fail", t, func() {
-		data, err := parse("/non/existing/file")
+		data, err := parseOutput("/non/existing/file")
 
 		So(data, ShouldBeEmpty)
+		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
 	})
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(err, ShouldBeNil)
 		So(data, ShouldHaveLength, 10)
@@ -29,18 +33,25 @@ func TestStdoutParser(t *testing.T) {
 		So(data["percentile/95th"], ShouldResemble, 43.1)
 		So(data["percentile/99th"], ShouldResemble, 59.5)
 		So(data["percentile/99.999th/custom"], ShouldResemble, 1777.887805)
-		So(data["qps/total"], ShouldResemble, 4993.1)
+		So(data["qps"], ShouldResemble, 4993.1)
 	})
 
 	Convey("Attempting to read file with wrong number of read columns should return an error and no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_incorrect_count_of_columns.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_incorrect_count_of_columns.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(data, ShouldHaveLength, 0)
+		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 8 but got 2")
 	})
 
 	Convey("Attempting to read a file with no read row at all should return no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_missing_read_row.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_missing_read_row.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 		So(err, ShouldBeNil)
 
 		// QPS and custom percentile latency are still available, thus 2.
@@ -57,7 +68,10 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Attempting to read a file with no swan-specific row at all should return an error and no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_missing_swan_row.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_missing_swan_row.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 		So(err, ShouldBeNil)
 
 		// QPS and read latencies are still available, thus 9.
@@ -67,35 +81,51 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Attempting to read a file with malformed swan-specific row should return an error and no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_malformed_swan_row.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_malformed_swan_row.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
 	})
 
 	Convey("Attempting to read a file with swan-specific row missing metric value should return an error and no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_missing_metric_in_swan_row.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_missing_metric_in_swan_row.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
 	})
 
 	Convey("Attempting to read a file with swan-specific row missing percentile value should return an error and no metrics", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_swan_row_missing_percentile_in_description.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_swan_row_missing_percentile_in_description.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 0")
 	})
 
 	Convey("Attempting to read a file with read row containing incorrect values should return an error and no results", t, func() {
-		data, err := parse(GetCurrentDirFilePath("/mutilate_non_numeric_default_metric_value.stdout"))
+		path, err := getCurrentDirFilePath("/mutilate_non_numeric_default_metric_value.stdout")
+		So(err, ShouldBeNil)
+
+		data, err := parseOutput(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 8 but got 3")
 	})
 }
 
-func GetCurrentDirFilePath(name string) string {
-	gwd, _ := os.Getwd()
-	return path.Join(gwd, name)
+func getCurrentDirFilePath(name string) (string, error) {
+	gwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(gwd, name), nil
 }

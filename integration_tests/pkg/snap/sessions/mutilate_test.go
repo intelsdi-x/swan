@@ -134,7 +134,7 @@ func TestSnapMutilateSession(t *testing.T) {
 							"90th":  "33.40000",
 							"95th":  "43.10000",
 							"99th":  "59.50000",
-							"total": "4993.10000", // qps/total
+							"qps": "4993.10000",
 						}
 
 						Convey("Reading samples from file", func() {
