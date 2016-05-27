@@ -9,18 +9,18 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TestL1IntensityWithExecutor is an integration test with local executor
+// TestL1InstructionWithExecutor is an integration test with local executor
 // You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
-func TestL1IntensityWithExecutor(t *testing.T) {
+func TestL1InstructionWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("While using Local Shell in l1instruction launcher", t, func() {
 		l := executor.NewLocal()
-		l1IntensityLauncher := l1instruction.New(
+		l1InstructionLauncher := l1instruction.New(
 			l, l1instruction.DefaultL1iConfig())
 
 		Convey("When l1i binary is launched", func() {
-			taskHandle, err := l1IntensityLauncher.Launch()
+			taskHandle, err := l1InstructionLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
 				defer taskHandle.Clean()
@@ -34,7 +34,7 @@ func TestL1IntensityWithExecutor(t *testing.T) {
 				So(stopErr, ShouldBeNil)
 			})
 
-			Convey("L1Intensity should be running", func() {
+			Convey("L1Instruction should be running", func() {
 				So(taskHandle.Status(), ShouldEqual, executor.RUNNING)
 			})
 
