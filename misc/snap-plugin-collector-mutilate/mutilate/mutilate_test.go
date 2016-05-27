@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"fmt"
 )
 
 func TestMutilatePlugin(t *testing.T) {
@@ -38,7 +39,7 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypesError, ShouldBeNil)
-			So(metricTypes, ShouldHaveLength, 11)
+			So(metricTypes, ShouldHaveLength, 10)
 			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns")
 			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns")
 			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns")
@@ -48,8 +49,7 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
 			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
 			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps/total", "ns")
-			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/qps/peak", "ns")
-			soValidMetricType(metricTypes[10], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
+			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
 
 		})
 
@@ -67,7 +67,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(err, ShouldBeNil)
-			So(metrics, ShouldHaveLength, 11)
+			So(metrics, ShouldHaveLength, 10)
 
 			type metric struct {
 				namespace string
@@ -85,8 +85,7 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
 				{"/percentile/99_999th/custom", 1777.887805, now},
-				{"/qps/total", 100, now},
-				{"/qps/peak", 200, now},
+				{"/qps/total", 4993.1, now},
 			}
 
 			for i := range metrics {
@@ -154,6 +153,9 @@ func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value f
 	So(metric.Unit(), ShouldEqual, "ns")
 	So(metric.Tags(), ShouldHaveLength, 0)
 	data, typeFound := metric.Data().(float64)
+	if !typeFound {
+			fmt.Printf("%s Metric type: %v\n", metric.Namespace().String(), metric.Data())
+	}
 	So(typeFound, ShouldBeTrue)
 	So(data, ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
