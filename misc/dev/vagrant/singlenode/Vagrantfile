@@ -1,4 +1,4 @@
-# -*- mode: ruby -*-
+# q -*- mode: ruby -*-
 # vi: set ft=ruby :
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
@@ -6,6 +6,9 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure(2) do |config|
+
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
 
   config.vm.box = "centos/7"
   config.vm.box_check_update = false
@@ -39,6 +42,8 @@ gpgkey=https://yum.dockerproject.org/gpg
 EOF
     echo Updating package lists
     yum update -y
+    yum install -y epel-release  # Enables EPEL repo
+    yum clean all
     echo Installing packages
     yum install -y \
       docker-engine \
@@ -46,6 +51,7 @@ EOF
       git \
       libcgroup-tools \
       libevent-devel \
+      nmap-ncat \
       perf \
       scons \
       tree \
@@ -58,19 +64,40 @@ SCRIPT
   $configure_docker = <<SCRIPT
     echo Configuring Docker
     systemctl enable docker
+    # Add the vagrant user to the docker group
     gpasswd -a vagrant docker
     systemctl restart docker
 SCRIPT
 
   $setup_user_env = <<SCRIPT
     echo Setting up user environment
+    # Vagrant user owns $GOPATH
     chown -R vagrant:vagrant /home/vagrant/go
+    # Create convenient symlinks in the home directory
     ln -s /home/vagrant/go/src/github.com/intelsdi-x/swan /home/vagrant/
+    # Add GOPATH and Go binaries to PATH in profile
     echo 'export GOPATH="/home/vagrant/go"' >> /home/vagrant/.bash_profile
     echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> /home/vagrant/.bash_profile
+    # Add key to SSH agent
+    ssh-add -l
+    # Rewrite github URLs for fetching private repos
+    sudo -u vagrant git config --global url."git@github.com:".insteadOf "https://github.com/"
 SCRIPT
+
+  $configure_cassandra = <<SCRIPT
+    # Set up data directory
+    mkdir -p /var/data/cassandra
+    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
+    # Create and enable systemd unit
+    cp /home/vagrant/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
+    systemctl daemon-reload
+    systemctl enable cassandra.service
+    systemctl restart cassandra.service
+SCRIPT
+
 
   config.vm.provision "shell", inline: $install_packages
   config.vm.provision "shell", inline: $configure_docker
   config.vm.provision "shell", inline: $setup_user_env
+  config.vm.provision "shell", inline: $configure_cassandra
 end
