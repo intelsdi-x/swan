@@ -12,10 +12,29 @@ import (
 )
 
 func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics) error {
-	err := session.Query(`insert into snap.metrics(ns, ver, host, time, boolval, doubleval, strval, tags,
-	valtype) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	// TODO(CD): Consider getting schema from the cassandra publisher plugin
+	session.Query(`CREATE TABLE IF NOT EXISTS snap.metrics (
+		ns  text,
+		ver int,
+		host text,
+		time timestamp,
+		valtype text,
+		doubleVal double,
+		boolVal boolean,
+		strVal text,
+		tags map<text,text>,
+		PRIMARY KEY ((ns, ver, host), time)
+	) WITH CLUSTERING ORDER BY (time DESC);`,
+	).Exec()
+
+	err := session.Query(`insert into snap.metrics(
+		ns, ver, host, time, boolval,
+		doubleval, strval, tags, valtype) values
+		(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		metrics.Namespace(), metrics.Version(), metrics.Host(), metrics.Time(), metrics.Boolval(),
-		metrics.Doubleval(), metrics.Strval(), metrics.Tags(), metrics.Valtype()).Exec()
+		metrics.Doubleval(), metrics.Strval(), metrics.Tags(), metrics.Valtype(),
+	).Exec()
+
 	if err != nil {
 		return err
 	}
@@ -51,8 +70,16 @@ func TestValuesGatherer(t *testing.T) {
 					So(resultedMetrics.Namespace(), ShouldEqual, metrics.Namespace())
 					So(resultedMetrics.Version(), ShouldEqual, metrics.Version())
 					So(resultedMetrics.Host(), ShouldEqual, metrics.Host())
-					_, _, resultedDay := resultedMetrics.Time().Date()
-					_, _, expectedDay := metrics.Time().Date()
+
+					// Cassandra stores time values in UTC by default. So, we
+					// convert the expected time value to UTC to avoid discrepancies
+					// in the interpreted calendar date and the test flakiness
+					// that could cause. For completeness, we also pre-emptively
+					// convert the result time to UTC in case the database is
+					// configured to use a non-default TZ.
+					_, _, resultedDay := resultedMetrics.Time().UTC().Date()
+					_, _, expectedDay := metrics.Time().UTC().Date()
+
 					So(resultedDay, ShouldEqual, expectedDay)
 					So(resultedMetrics.Boolval(), ShouldEqual, metrics.Boolval())
 					So(resultedMetrics.Doubleval(), ShouldEqual, metrics.Doubleval())
