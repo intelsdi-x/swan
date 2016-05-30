@@ -8,7 +8,7 @@ import (
 
 func mapToString(m map[string]string) (result string) {
 	for key, value := range m {
-		result += fmt.Sprintf("%s:%s\n ", key, value)
+		result += fmt.Sprintf("%s:%s\n", key, value)
 	}
 	return result
 }
