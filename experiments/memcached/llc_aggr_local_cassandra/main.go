@@ -13,14 +13,14 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"io/ioutil"
+	"os"
 	"path"
 	"time"
 )
 
 // Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.ErrorLevel
+	logLevel := logrus.InfoLevel
 	logrus.SetLevel(logLevel)
 
 	local := executor.NewLocal()
@@ -41,23 +41,24 @@ func main() {
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
+	// TODO(bp): Fetch the host of Snap from cmd line. (SCE-391)
 	snapConnection, err := client.New("http://127.0.0.1:8181", "v1", true)
 	if err != nil {
 		panic(err)
 	}
 
-	// Load the snap session test plugin if not yet loaded.
+	// Load the snap cassandra publisher plugin if not yet loaded.
 	// TODO(bp): Make helper for that.
-	logrus.Debug("Checking if publisher session test is loaded.")
+	logrus.Debug("Checking if publisher cassandra is loaded.")
 	plugins := snap.NewPlugins(snapConnection)
-	loaded, err := plugins.IsLoaded("publisher", "session-test")
+	loaded, err := plugins.IsLoaded("publisher", "cassandra")
 	if err != nil {
 		panic(err)
 	}
 
 	if !loaded {
 		pluginPath := []string{path.Join(
-			swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
+			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
 			panic(err)
@@ -65,17 +66,14 @@ func main() {
 	}
 
 	// Define publisher.
-	publisher := wmap.NewPublishNode("session-test", 1)
+	publisher := wmap.NewPublishNode("cassandra", 2)
 	if publisher == nil {
-		panic("Failed to create Publish Node for session-test")
+		panic("Failed to create Publish Node for cassandra")
 	}
-	tmpFile, err := ioutil.TempFile("", "MemcachedWithLocalMutilateWithLLCAggr")
-	if err != nil {
-		panic(err)
-	}
-	tmpFile.Close()
-	publisher.AddConfigItem("file", tmpFile.Name())
-	logrus.Debug("Results should be available in publisher's file: ", tmpFile.Name())
+
+	// TODO(bp): Get cassandra host from cmdLine.
+	cassandraHostName := "127.0.0.1"
+	publisher.AddConfigItem("server", cassandraHostName)
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
@@ -89,14 +87,14 @@ func main() {
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             500, // us
-		LoadDuration:    10 * time.Second,
-		LoadPointsCount: 10,
-		Repetitions:     3,
+		SLO:             500,             // us
+		LoadDuration:    1 * time.Second, //10 * time.Second,
+		LoadPointsCount: 1,               //10,
+		Repetitions:     1,               //3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
-		"MemcachedWithLocalMutilateToCSV",
+		"MemcachedWithLocalMutilateToCassandra",
 		logLevel,
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
