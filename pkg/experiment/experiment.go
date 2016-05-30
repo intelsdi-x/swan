@@ -144,8 +144,6 @@ func (e *Experiment) createExperimentDir() error {
 
 // Finalize closes log file and returns to the previous working directory.
 func (e *Experiment) Finalize() {
-	e.logClose()
-
 	// Exit experiment directory
 	os.Chdir(e.startingDirectory)
 }
@@ -182,8 +180,4 @@ func (e *Experiment) logInitialize() error {
 	log.SetOutput(io.MultiWriter(e.logFile, os.Stdout))
 
 	return err
-}
-
-func (e *Experiment) logClose() {
-	e.logFile.Close()
 }
