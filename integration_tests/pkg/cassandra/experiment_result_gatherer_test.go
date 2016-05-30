@@ -49,7 +49,7 @@ func TestValuesGatherer(t *testing.T) {
 	expectedTagsMap := map[string]string{"swan_experiment": experimentID, "swan_phase": "p2", "swan_repetition": "2"}
 
 	//Create Metrics struct that will be inserted into cassandra.
-	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolean")
+	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolval")
 
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While connecting to Cassandra with proper parameters", t, func() {

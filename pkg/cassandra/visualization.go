@@ -13,10 +13,22 @@ func mapToString(m map[string]string) (result string) {
 	return result
 }
 
+func getMetricForValtype(valtype string, metrics *Metrics) (result string) {
+	switch valtype {
+	case "boolval":
+		result = fmt.Sprintf("%f", metrics.Doubleval())
+	case "strval":
+		result = metrics.Strval()
+	case "doubleval":
+		result = fmt.Sprintf("%t", metrics.Boolval())
+	}
+	return result
+}
+
 // DrawTable draws table for given experiment Id.
 func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
-	headers := []string{"namespace", "version", "host", "time", "boolval", "doubleval", "strval", "tags", "valtype"}
+	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
 
 	cassandraConfig, err := CreateConfigWithSession(host, "snap")
 	if err != nil {
@@ -37,11 +49,8 @@ func DrawTable(experimentID string, host string) error {
 		rowList = append(rowList, fmt.Sprintf("%d", metrics.Version()))
 		rowList = append(rowList, metrics.Host())
 		rowList = append(rowList, metrics.Time().String())
-		rowList = append(rowList, fmt.Sprintf("%t", metrics.Boolval()))
-		rowList = append(rowList, fmt.Sprintf("%f", metrics.Doubleval()))
-		rowList = append(rowList, metrics.Strval())
+		rowList = append(rowList, getMetricForValtype(metrics.Valtype(), metrics))
 		rowList = append(rowList, mapToString(metrics.Tags()))
-		rowList = append(rowList, metrics.Valtype())
 		data = append(data, rowList)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
@@ -62,12 +71,13 @@ func getTags(host string) (tagsMapsList []map[string]string, err error) {
 	}
 
 	iter := cassandraConfig.session.Query(`SELECT tags FROM snap.metrics`).Iter()
-	if err := iter.Close(); err != nil {
-		return nil, err
-	}
 
 	for iter.Scan(&tagsMap) {
 		tagsMapsList = append(tagsMapsList, tagsMap)
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, err
 	}
 
 	return tagsMapsList, nil
