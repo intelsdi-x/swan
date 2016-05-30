@@ -14,6 +14,12 @@ deps:
 	go get github.com/vektra/mockery/.../
 	godep restore -v
 
+	# Prepare Caffe workload.
+	git submodule update --init --recursive # Init workloads submodules
+	cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/
+	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 -f < caffe_cpu_solver.patch
+	cd ./workloads/deep_learning/caffe && cp Makefile.config.centos ./caffe_src/Makefile.config
+
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 lint:
@@ -57,8 +63,9 @@ build:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_to_csv)
 
 build_workloads:
-	(cd workloads/data_caching/memcached; ./build.sh)
-	(cd workloads/low-level-aggressors; make)
+	(cd workloads/data_caching/memcached && ./build.sh)
+	(cd workloads/low-level-aggressors && make -j4)
+	(cd workloads/deep_learning/caffe/caffe_src && make -j4 all)
 
 cleanup:
 	rm -fr misc/**/*log
