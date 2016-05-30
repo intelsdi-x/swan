@@ -16,7 +16,8 @@ type Metrics struct {
 }
 
 // NewMetrics returns a new Metrics struct.
-func NewMetrics(namespace string, version int, host string, time time.Time, boolval bool, doubleval float64, strval string, tags map[string]string, valtype string) *Metrics {
+func NewMetrics(namespace string, version int, host string, time time.Time, boolval bool, doubleval float64,
+	strval string, tags map[string]string, valtype string) *Metrics {
 	return &Metrics{
 		namespace,
 		version,

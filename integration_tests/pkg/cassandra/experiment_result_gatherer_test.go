@@ -49,10 +49,10 @@ func TestValuesGatherer(t *testing.T) {
 	expectedTagsMap := map[string]string{"swan_experiment": experimentID, "swan_phase": "p2", "swan_repetition": "2"}
 
 	//Create Metrics struct that will be inserted into cassandra.
-	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolean")
+	metrics := cassandra.NewMetrics(experimentID, 1, "abc", time.Now(), false, 10, "c", expectedTagsMap, "boolval")
 
 	logrus.SetLevel(logrus.ErrorLevel)
-	Convey("While connecting to casandra with proper parameters", t, func() {
+	Convey("While connecting to Cassandra with proper parameters", t, func() {
 		cassandraConfig, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
 		session := cassandraConfig.CassandraSession()
 		Convey("I should receive not empty session", func() {
@@ -62,8 +62,9 @@ func TestValuesGatherer(t *testing.T) {
 				err := insertDataIntoCassandra(session, metrics)
 				So(err, ShouldBeNil)
 				Convey("and I should be able to receive expected values and close session", func() {
-					metricsList := cassandraConfig.GetValuesForGivenExperiment(experimentID)
+					metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
 					So(len(metricsList), ShouldBeGreaterThan, 0)
+					So(err, ShouldBeNil)
 					resultedMetrics := metricsList[0]
 
 					// Check values of metrics.
@@ -92,7 +93,7 @@ func TestValuesGatherer(t *testing.T) {
 						metrics.Tags()["swan_repetition"])
 					So(resultedMetrics.Valtype(), ShouldEqual, metrics.Valtype())
 
-					err := cassandraConfig.CloseSession()
+					err = cassandraConfig.CloseSession()
 					So(err, ShouldBeNil)
 				})
 			})
