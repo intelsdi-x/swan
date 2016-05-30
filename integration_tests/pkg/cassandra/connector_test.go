@@ -9,7 +9,7 @@ import (
 
 func TestCassandraConnection(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
-	Convey("While creating casandra config with proper parameters", t, func() {
+	Convey("While creating Cassandra config with proper parameters", t, func() {
 		config, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
 		Convey("I should receive not nil config", func() {
 			So(config, ShouldNotBeNil)
