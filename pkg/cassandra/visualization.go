@@ -16,11 +16,11 @@ func mapToString(m map[string]string) (result string) {
 func getMetricForValtype(valtype string, metrics *Metrics) (result string) {
 	switch valtype {
 	case "boolval":
-		result = fmt.Sprintf("%f", metrics.Doubleval())
+		result = fmt.Sprintf("%t", metrics.Boolval())
 	case "strval":
 		result = metrics.Strval()
 	case "doubleval":
-		result = fmt.Sprintf("%t", metrics.Boolval())
+		result = fmt.Sprintf("%f", metrics.Doubleval())
 	}
 	return result
 }
