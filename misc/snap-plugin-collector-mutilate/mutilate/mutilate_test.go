@@ -11,6 +11,8 @@ import (
 )
 
 func TestMutilatePlugin(t *testing.T) {
+	const expectedMetricsCount = 10
+
 	Convey("When I create mutilate plugin object", t, func() {
 		now := time.Now()
 		mutilatePlugin := NewMutilate(now)
@@ -38,23 +40,17 @@ func TestMutilatePlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypesError, ShouldBeNil)
-			So(metricTypes, ShouldHaveLength, 9)
+			So(metricTypes, ShouldHaveLength, expectedMetricsCount)
 			soValidMetricType(metricTypes[0], "/intel/swan/mutilate/*/avg", "ns")
 			soValidMetricType(metricTypes[1], "/intel/swan/mutilate/*/std", "ns")
 			soValidMetricType(metricTypes[2], "/intel/swan/mutilate/*/min", "ns")
-			soValidMetricType(metricTypes[3],
-				"/intel/swan/mutilate/*/percentile/5th", "ns")
-			soValidMetricType(metricTypes[4],
-				"/intel/swan/mutilate/*/percentile/10th", "ns")
-			soValidMetricType(metricTypes[5],
-				"/intel/swan/mutilate/*/percentile/90th", "ns")
-			soValidMetricType(metricTypes[6],
-				"/intel/swan/mutilate/*/percentile/95th", "ns")
-			soValidMetricType(metricTypes[7],
-				"/intel/swan/mutilate/*/percentile/99th", "ns")
-			soValidMetricType(metricTypes[8],
-				"/intel/swan/mutilate/*/percentile/*/custom", "ns")
-
+			soValidMetricType(metricTypes[3], "/intel/swan/mutilate/*/percentile/5th", "ns")
+			soValidMetricType(metricTypes[4], "/intel/swan/mutilate/*/percentile/10th", "ns")
+			soValidMetricType(metricTypes[5], "/intel/swan/mutilate/*/percentile/90th", "ns")
+			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
+			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
+			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps", "ns")
+			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -71,7 +67,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(err, ShouldBeNil)
-			So(metrics, ShouldHaveLength, 9)
+			So(metrics, ShouldHaveLength, expectedMetricsCount)
 
 			type metric struct {
 				namespace string
@@ -89,21 +85,20 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
 				{"/percentile/99_999th/custom", 1777.887805, now},
+				{"/qps", 4993.1, now},
 			}
 
 			for i := range metrics {
 				containsMetric := false
 				for _, expectedMetric := range expectedMetricsValues {
 					if strings.Contains(metrics[i].Namespace().String(), expectedMetric.namespace) {
-						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value,
-							expectedMetric.date)
+						soValidMetric(metrics[i], expectedMetric.namespace, expectedMetric.value, expectedMetric.date)
 						containsMetric = true
 						break
 					}
 				}
 				if !containsMetric {
-					t.Error("Expected metrics do not contain given metric " +
-						metrics[i].Namespace().String())
+					t.Errorf("Expected metrics do not contain given metric %s", metrics[i].Namespace().String())
 				}
 			}
 
@@ -122,9 +117,7 @@ func TestMutilatePlugin(t *testing.T) {
 			metrics, err := mutilatePlugin.CollectMetrics(metricTypes)
 
 			So(metrics, ShouldHaveLength, 0)
-			So(err.Error(), ShouldEqual,
-				"No file path set - no metrics are collected")
-
+			So(err.Error(), ShouldContainSubstring, "No file path set - no metrics are collected")
 		})
 
 		Convey("I should receive no metrics and error when mutilate results parsing fails",
@@ -159,6 +152,8 @@ func soValidMetric(metric snapPlugin.MetricType, namespaceSuffix string, value f
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
 	So(metric.Unit(), ShouldEqual, "ns")
 	So(metric.Tags(), ShouldHaveLength, 0)
-	So(metric.Data().(float64), ShouldEqual, value)
+	data, typeFound := metric.Data().(float64)
+	So(typeFound, ShouldBeTrue)
+	So(data, ShouldEqual, value)
 	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
 }

@@ -5,6 +5,7 @@
 ```sh
 $ git clone git@github.com:intelsdi-x/swan.git
 $ cd swan/misc/dev/vagrant/singlenode
+$ ssh-add ~/.ssh/id_rsa  # if not already added to host ssh agent
 $ vagrant plugin install vagrant-vbguest  # automatic guest additions
 $ vagrant box update
 $ vagrant up  # takes a few minutes
@@ -18,6 +19,9 @@ $ vagrant ssh
 
 - [Vagrant](https://vagrantup.com)
 - [Virtualbox](https://www.virtualbox.org/wiki/Downloads)
+- Read access to the
+  [snap-plugin-publisher-cassandra](https://github.com/intelsdi-x/snap-plugin-publisher-cassandra)
+  repository.
 
 ## What's provided "out of the box"
 
@@ -28,6 +32,7 @@ $ vagrant ssh
   - golang 1.6
   - libcgroup-tools
   - libevent-devel
+  - nmap-ncat
   - perf
   - scons
   - tree
@@ -39,8 +44,25 @@ $ vagrant ssh
 - The project directory is mounted in the guest file system: edit with your
   preferred tools in the host OS!
 
+## Running the integration tests
+
+1. SSH into the VM: `vagrant ssh`
+1. Change to the swan directory: `cd ~/swan`
+1. Fetch swan dependencies: `make deps`
+1. Change to the snap directory:
+   `cd $GOPATH/src/github.com/intelsdi-x/snap`
+1. Build snap: `make deps && make`
+1. Change to the swan directory: `cd ~/swan`
+1. Run the integration tests: `make integration_test`
+
 ## Troubleshooting
 
+- The integration tests require cassandra to be running. In this
+  environment, systemd is responsible for keeping it alive. You can see
+  how it's doing by running `systemctl status cassandra` and
+  `journalctl -fu cassandra`
+- If you get permission errors when trying to run the integration tests,
+  you may need to remove build artifacts first by running `make clean`.
 - If you get a connection error when attempting to SSH into the guest
   VM and you're behind a proxy you may need to add an override rule to ignore
   SSH traffic to localhost.
