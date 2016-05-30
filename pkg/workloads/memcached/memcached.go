@@ -7,8 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"path"
 )
 
@@ -26,8 +25,8 @@ const (
 // GetPathFromEnvOrDefault returns the memcached binary path from environment variable
 // SWAN_MEMCACHED_PATH or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		memcachedPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMemcachedPath))
+	return utils.GetEnvOrDefault(
+		memcachedPathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultMemcachedPath))
 }
 
 // Config is a config for the memcached data caching application v 1.4.25.

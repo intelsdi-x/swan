@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
 	"path"
@@ -29,8 +28,8 @@ const (
 // GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
 // SWAN_MUTILATE_PATH or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		mutilatePathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMutilatePath))
+	return utils.GetEnvOrDefault(
+		mutilatePathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultMutilatePath))
 }
 
 // Config contains all data for running mutilate.
@@ -176,6 +175,7 @@ func matchNotFound(match []string) bool {
 	return match == nil || len(match) < 2 || len(match[1]) == 0
 }
 
+// TODO(bp): Reuse the parser from mutilate collector.
 func getQPSAndLatencyFrom(outputReader io.Reader) (qps int, latency int, err error) {
 
 	buff, err := ioutil.ReadAll(outputReader)

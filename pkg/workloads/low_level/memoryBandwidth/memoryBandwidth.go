@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
@@ -21,8 +20,8 @@ const (
 // GetPathFromEnvOrDefault fetches the memoryBandwidth binary path from environment variable
 // SWAN_MEMBW_PATH or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		memBwPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMemBwPath))
+	return utils.GetEnvOrDefault(
+		memBwPathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultMemBwPath))
 }
 
 // Config is a struct for MemBw aggressor configuration.

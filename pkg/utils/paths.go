@@ -1,4 +1,4 @@
-package swan
+package utils
 
 import (
 	"os"

@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
@@ -25,8 +24,8 @@ const (
 // GetPathFromEnvOrDefault fetches the l1 instructions binary path from environment variable
 // SWAN_L1I_PATH or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		l1IPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultL1IPath))
+	return utils.GetEnvOrDefault(
+		l1IPathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultL1IPath))
 }
 
 // Config is a struct for l1i aggressor configuration.

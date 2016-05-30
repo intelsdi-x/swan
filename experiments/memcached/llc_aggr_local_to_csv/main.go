@@ -8,7 +8,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
@@ -57,7 +57,7 @@ func main() {
 
 	if !loaded {
 		pluginPath := []string{path.Join(
-			swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
+			utils.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
 			panic(err)
@@ -79,7 +79,7 @@ func main() {
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-		swan.GetSwanBuildPath(),
+		utils.GetSwanBuildPath(),
 		1*time.Second,
 		snapConnection,
 		publisher)

@@ -1,28 +1,53 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
+	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
 	"os"
+	"os/user"
 	"path"
+	"syscall"
 	"time"
 )
 
+func createRemoteExecutor(host string) executor.Executor {
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	clientConfig, err := executor.NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
+	sshConfig := executor.NewSSHConfig(clientConfig, host, 22)
+	isolationPid, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	if err != nil {
+		panic(err)
+	}
+
+	return executor.NewRemote(*sshConfig, isolationPid)
+}
+
 // Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.InfoLevel
-	logrus.SetLevel(logLevel)
+	cli := utils.NewCliWithReadme("MemcachedWithLocalMutilateToCassandra", "todo").
+		AddCassandraHostArg().
+		AddLoadGeneratorHostArg().
+		AddSnapHostArg().
+		MustParse()
 
+	logrus.SetLevel(cli.LogLevel())
 	local := executor.NewLocal()
 
 	// Initialize Memcached Launcher.
@@ -37,12 +62,18 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	mutilateLoadGenerator := mutilate.New(local, mutilateConfig)
+	var mutilateLoadGenerator workloads.LoadGenerator
+	if utils.IsLocalAddress(cli.Get(utils.LoadGeneratorHostArg)) {
+		mutilateLoadGenerator = mutilate.New(local, mutilateConfig)
+	} else {
+		mutilateLoadGenerator = mutilate.New(
+			createRemoteExecutor(cli.Get(utils.LoadGeneratorHostArg)), mutilateConfig)
+	}
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
-	// TODO(bp): Fetch the host of Snap from cmd line. (SCE-391)
-	snapConnection, err := client.New("http://127.0.0.1:8181", "v1", true)
+	snapConnection, err :=
+		client.New(fmt.Sprintf("http://%s:8181", cli.Get(utils.SnapHostArg)), "v1", true)
 	if err != nil {
 		panic(err)
 	}
@@ -71,13 +102,11 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	// TODO(bp): Get cassandra host from cmdLine.
-	cassandraHostName := "127.0.0.1"
-	publisher.AddConfigItem("server", cassandraHostName)
+	publisher.AddConfigItem("server", cli.Get(utils.CassandraHostArg))
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-		swan.GetSwanBuildPath(),
+		utils.GetSwanBuildPath(),
 		1*time.Second,
 		snapConnection,
 		publisher)
@@ -94,8 +123,8 @@ func main() {
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
-		"MemcachedWithLocalMutilateToCassandra",
-		logLevel,
+		cli.AppName,
+		cli.LogLevel(),
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
