@@ -5,7 +5,7 @@ import (
 )
 
 // GetValuesForGivenExperiment returns list of Metrics structs based on experiment ID.
-func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID string) (metrics []*Metrics, err error) {
+func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID string) ([]*Metrics, error) {
 	metricsList := []*Metrics{}
 	// We look for following values for each Metric.
 	var doubleval float64

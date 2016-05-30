@@ -25,7 +25,7 @@ func getMetricForValtype(valtype string, metrics *Metrics) (result string) {
 	return result
 }
 
-// DrawTable draws table for given experiment Id.
+// DrawTable draws table for given experiment ID.
 func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
 	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
@@ -43,7 +43,7 @@ func DrawTable(experimentID string, host string) error {
 	fmt.Println("\n")
 	fmt.Println("Experiment id: " + experimentID)
 	for _, metrics := range metricsList {
-		// TODO(akwasnie) filter columns to show only some of them
+		// TODO(akwasnie) filter columns to show only some of them.
 		rowList := []string{}
 		rowList = append(rowList, metrics.Namespace())
 		rowList = append(rowList, fmt.Sprintf("%d", metrics.Version()))
