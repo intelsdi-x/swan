@@ -38,6 +38,10 @@ func NewRemoteWithDefaultConfig(host string) (*Remote, error) {
 	}
 
 	clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
+	if err != nil {
+		return nil, err
+	}
+
 	sshConfig := NewSSHConfig(clientConfig, host, 22)
 	isolationPid, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
 	if err != nil {
@@ -45,8 +49,8 @@ func NewRemoteWithDefaultConfig(host string) (*Remote, error) {
 	}
 
 	return &Remote{
-		*sshConfig,
-		isolationPid,
+		sshConfig:         *sshConfig,
+		commandDecorators: isolationPid,
 	}, nil
 }
 
