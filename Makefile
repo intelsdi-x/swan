@@ -17,7 +17,7 @@ deps:
 	# Prepare Caffe workload.
 	git submodule update --init --recursive # Init workloads submodules
 	cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/
-	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge< caffe_cpu_solver.patch
+	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch
 	cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/
 	cd ./workloads/deep_learning/caffe && preare_ciphar10_dataset.sh
 
