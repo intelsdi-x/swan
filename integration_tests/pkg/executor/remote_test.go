@@ -43,25 +43,24 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 }
 
 func isEnvironmentReady() bool {
-	ready := true
 	if value := os.Getenv(EnvHost); value == "" {
-		ready = false
+		return false
 	}
 	if value := os.Getenv(EnvUser); value == "" {
-		ready = false
+		return false
 	}
 
 	if value := os.Getenv(EnvKey); value == "" {
-		ready = false
+		return false
 	}
 	if value := os.Getenv(EnvMemcachedPath); value == "" {
-		ready = false
+		return false
 	}
 	if value := os.Getenv(EnvMemcachedUser); value == "" {
-		ready = false
+		return false
 	}
 
-	return ready
+	return true
 }
 
 func testRemoteProcessPidIsolation() {
