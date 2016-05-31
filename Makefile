@@ -19,7 +19,7 @@ deps:
 	cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/
 	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch
 	cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/
-	cd ./workloads/deep_learning/caffe && preare_ciphar10_dataset.sh
+	cd ./workloads/deep_learning/caffe && ./prepare_ciphar10_dataset.sh
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
