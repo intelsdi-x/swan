@@ -35,7 +35,9 @@ func main() {
 
 	// Initialize Memcached Launcher.
 	local := executor.NewLocal()
-	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig.ServerIP = cli.MyIP()
+	memcachedLauncher := memcached.New(local, memcachedConfig)
 
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")

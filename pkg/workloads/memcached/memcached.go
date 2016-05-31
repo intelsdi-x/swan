@@ -19,6 +19,7 @@ const (
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
 	defaultMemcachedPath  = "data_caching/memcached/memcached-1.4.25/build/memcached"
+	defaultServerIP       = "127.0.0.1"
 	memcachedPathEnv      = "SWAN_MEMCACHED_PATH"
 )
 
@@ -47,6 +48,7 @@ type Config struct {
 	NumThreads     int
 	MaxMemoryMB    int
 	NumConnections int
+	ServerIP       string
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
@@ -58,6 +60,7 @@ func DefaultMemcachedConfig() Config {
 		NumThreads:     defaultNumThreads,
 		MaxMemoryMB:    defaultMaxMemoryMB,
 		NumConnections: defaultNumConnections,
+		ServerIP:       defaultServerIP,
 	}
 }
 
@@ -100,6 +103,7 @@ func New(exec executor.Executor, config Config) Memcached {
 
 func (m Memcached) buildCommand() string {
 	return fmt.Sprint(m.conf.PathToBinary,
+		" -l ", m.conf.ServerIP,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
 		" -t ", m.conf.NumThreads,
