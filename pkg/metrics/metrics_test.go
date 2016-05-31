@@ -10,35 +10,31 @@ import (
 func TestSwanMetrics(t *testing.T) {
 	tagUUID, _ := uuid.NewV4()
 	phaseName := "SimplePhaseName"
-	loadPoint := 2
 	repetition := 123
 
-	Convey("When I want to fulfill my SwanMetrics object", t, func() {
+	Convey("When I want to fulfill my Swan object", t, func() {
 		Convey("I need to prepare a Tags structure", func() {
 			tags := &Tags{
 				ExperimentID: tagUUID.String(),
 				PhaseID:      phaseName,
-				LoadPoint:    loadPoint,
 				RepetitionID: repetition,
 			}
 			So(tags, ShouldNotBeNil)
 
-			Convey("Which should be comperable to itself", func() {
+			Convey("Which should be comperable to other Tags instance with same values in fields", func() {
 				sameTags := &Tags{
 					ExperimentID: tagUUID.String(),
 					PhaseID:      phaseName,
-					LoadPoint:    loadPoint,
 					RepetitionID: repetition,
 				}
 				So(tags.Compare(*sameTags), ShouldBeTrue)
 				So(tags, ShouldResemble, tags)
 
-				Convey("And it shouldn't be the same with some other Tag", func() {
+				Convey("And it shouldn't be comperable with some other different Tags instance", func() {
 					otherUUID, _ := uuid.NewV4()
 					newTags := &Tags{
 						ExperimentID: otherUUID.String(),
 						PhaseID:      "Other task",
-						LoadPoint:    10,
 						RepetitionID: 321,
 					}
 					So(tags.Compare(*newTags), ShouldBeFalse)

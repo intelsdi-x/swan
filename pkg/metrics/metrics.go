@@ -10,22 +10,22 @@ import (
 type Tags struct {
 	ExperimentID string
 	PhaseID      string
-	LoadPoint    int
 	RepetitionID int
 }
 
 // Compare is compering current instance of Tags structure with another one.
 func (t *Tags) Compare(tag Tags) bool {
-	areExperimentsIDSame := strings.Compare(t.ExperimentID, tag.ExperimentID) == 0
-	arePhaseIDSame := strings.Compare(t.PhaseID, tag.PhaseID) == 0
-	areLoadPointSame := t.LoadPoint == tag.LoadPoint
-	areRepetitionIDSame := t.RepetitionID == tag.RepetitionID
-
-	if areExperimentsIDSame && arePhaseIDSame && areLoadPointSame && areRepetitionIDSame {
-		return true
+	if strings.Compare(t.ExperimentID, tag.ExperimentID) != 0 {
+		return false
+	}
+	if strings.Compare(t.PhaseID, tag.PhaseID) != 0 {
+		return false
+	}
+	if t.RepetitionID != tag.RepetitionID {
+		return false
 	}
 
-	return false
+	return true
 }
 
 // Metadata swan runtime metrics.
