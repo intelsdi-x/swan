@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	CassandraHostArg     = "cassandra_host"
-	LoadGeneratorHostArg = "load_generator_host"
-	SnapdHostArg         = "snapd_host"
-	logLevelArg          = "log" // short 'l'
+	CassandraIPArg     = "cassandra_ip"
+	LoadGeneratorIPArg = "load_generator_ip"
+	SnapdIPArg         = "snapd_ip"
+	logLevelArg        = "log" // short 'l'
+	ipArg              = "ip"  // short 'i'
 )
 
 type Cli struct {
@@ -21,6 +22,7 @@ type Cli struct {
 	app        *kingpin.Application
 	stringArgs map[string]*string
 	logLevel   *int
+	myIP       *string
 }
 
 // Environment variable from "cassandra_host" will be "SWAN_CASSANDRA_HOST"
@@ -38,16 +40,20 @@ func NewCliWithReadme(appName string, readmePath string) *Cli {
 	logLevel := app.Flag(
 		logLevelArg, "Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
 	).OverrideDefaultFromEnvar(changeToEnvName(logLevelArg)).Default("3").Short('l').Int()
+	myIP := app.Flag(
+		ipArg, "IP for remote interface of local machine",
+	).OverrideDefaultFromEnvar(changeToEnvName(ipArg)).Default("127.0.0.1").Short('i').String()
 
 	return &Cli{
 		AppName:    appName,
 		app:        app,
 		stringArgs: make(map[string]*string),
 		logLevel:   logLevel,
+		myIP:       myIP,
 	}
 }
 
-func (c *Cli) addRequiredArgWithEnv(name string, help string, defaultVal string) {
+func (c *Cli) addArgWithEnv(name string, help string, defaultVal string) {
 	c.stringArgs[name] = c.app.Flag(
 		name, help).Default(defaultVal).OverrideDefaultFromEnvar(changeToEnvName(name)).String()
 }
@@ -73,18 +79,22 @@ func (c *Cli) LogLevel() logrus.Level {
 	return logrus.AllLevels[len(logrus.AllLevels)-(*c.logLevel+1)]
 }
 
-func (c *Cli) AddCassandraHostArg() *Cli {
-	c.addRequiredArgWithEnv(CassandraHostArg, "Host for Cassandra DB", "127.0.0.1")
+func (c *Cli) MyIP() string {
+	return *c.myIP
+}
+
+func (c *Cli) AddCassandraIPArg() *Cli {
+	c.addArgWithEnv(CassandraIPArg, "IP address of Cassandra DB", "127.0.0.1")
 	return c
 }
 
-func (c *Cli) AddLoadGeneratorHostArg() *Cli {
-	c.addRequiredArgWithEnv(LoadGeneratorHostArg, "Host for Load Generator", "127.0.0.1")
+func (c *Cli) AddLoadGeneratorIPArg() *Cli {
+	c.addArgWithEnv(LoadGeneratorIPArg, "IP address of host for Load Generator", "127.0.0.1")
 	return c
 }
 
-func (c *Cli) AddSnapHostArg() *Cli {
-	c.addRequiredArgWithEnv(SnapdHostArg, "Host for Snap daemon", "127.0.0.1")
+func (c *Cli) AddSnapIPArg() *Cli {
+	c.addArgWithEnv(SnapdIPArg, "IP address of Snap daemon", "127.0.0.1")
 	return c
 }
 

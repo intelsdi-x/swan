@@ -21,36 +21,33 @@ import (
 
 // Check README.md for details of this experiment.
 func main() {
-
 	cli := utils.NewCliWithReadme(
 		"MemcachedWithMutilateToCassandra",
 		path.Join(utils.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md")).
-		AddCassandraHostArg().
-		AddLoadGeneratorHostArg().
-		AddSnapHostArg().
+		AddCassandraIPArg().
+		AddLoadGeneratorIPArg().
+		AddSnapIPArg().
 		MustParse()
 
 	logrus.SetLevel(cli.LogLevel())
-	local := executor.NewLocal()
+
+	// Initialize
 
 	// Initialize Memcached Launcher.
+	local := executor.NewLocal()
 	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
 
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
-	localIP, err := utils.GetLocalIPAddr()
-	if err != nil {
-		panic(err)
-	}
 
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
-		MemcachedHost:     localIP.String(),
+		MemcachedHost:     cli.MyIP(),
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,
 	}
 
-	remote, err := executor.NewRemoteWithDefaultConfig(cli.Get(utils.LoadGeneratorHostArg))
+	remote, err := executor.NewRemoteWithDefaultConfig(cli.Get(utils.LoadGeneratorIPArg))
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +56,7 @@ func main() {
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
 	snapConnection, err :=
-		client.New(fmt.Sprintf("http://%s:8181", cli.Get(utils.SnapdHostArg)), "v1", true)
+		client.New(fmt.Sprintf("http://%s:8181", cli.Get(utils.SnapdIPArg)), "v1", true)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +85,7 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	publisher.AddConfigItem("server", cli.Get(utils.CassandraHostArg))
+	publisher.AddConfigItem("server", cli.Get(utils.CassandraIPArg))
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
