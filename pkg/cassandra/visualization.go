@@ -97,6 +97,7 @@ func isValueInSlice(value string, slice []string) bool {
 }
 
 func createUniqueList(key string, elem map[string]string, uniqueNames []string) (returnedNames []string) {
+	// Add new value from map to uniqueNames if it does not exist in given uniqueNames.
 	for k, value := range elem {
 		if k == key && !isValueInSlice(value, uniqueNames) {
 			returnedNames = append(returnedNames, value)
@@ -126,6 +127,7 @@ func createHeadersForSensitivityProfile() (headers []string) {
 	// TODO(Ala) Get number of load points from cassandra when they will be available there.
 	// loadPointsNumber := getLoadPointNumber()
 	loadPointsNumber := 10
+	// Calculate percentage for each load point - from 5% to 95 %.
 	for loadPoint := 0; loadPoint < loadPointsNumber; loadPoint++ {
 		percentage := 5 + 90*loadPoint/(loadPointsNumber-1)
 		headers = append(headers, fmt.Sprintf("load point %d%%", percentage))
@@ -149,32 +151,48 @@ func calculateAverage(valuesList []string) (*float64, error) {
 	return &result, nil
 }
 
+func getLoadPointNumber(phase string) (*int, error) {
+	// Load point ID is last digit in given phase ID, extract it and return.
+	re := regexp.MustCompile(`([0-9]+)$`)
+	match := re.FindStringSubmatch(phase)
+	if len(match[1]) == 0 {
+		errorMsg := fmt.Sprintf(
+			"Could not retrieve load point number from phase: %s", phase)
+		return nil, errors.New(errorMsg)
+	}
+	number, err := strconv.Atoi(match[1])
+	if err != nil {
+		return nil, err
+	}
+	return &number, nil
+}
+
 func getValuesForLoadPoints(metricsList []*Metrics, aggressor string) (map[int]string, error) {
 	loadPointValues := make(map[int]string)
 	allLoadPointValues := make(map[int][]string)
 
 	for _, metrics := range metricsList {
+		// In sensitivity profile we accept only double values.
+		if metrics.Valtype() != "doubleval" {
+			return nil, errors.New("Values for sensitivity profile should have double type.")
+		}
 		if metrics.Tags()["swan_aggressor_name"] == aggressor {
+			// Find metric with phase ID and extract load point ID from it.
+			// Add to map all values for key equals each load point ID.
 			for key, value := range metrics.Tags() {
 				if key == "swan_phase" {
-					re := regexp.MustCompile(`([0-9]+)$`)
-					match := re.FindStringSubmatch(value)
-					if len(match[1]) == 0 {
-						errorMsg := fmt.Sprintf(
-							"Could not retrieve load point number from phase: %s", value)
-						return nil, errors.New(errorMsg)
-					}
-					number, err := strconv.Atoi(match[1])
+					number, err := getLoadPointNumber(value)
 					if err != nil {
 						return nil, err
 					}
-					allLoadPointValues[number] = append(allLoadPointValues[number],
+					allLoadPointValues[*number] = append(allLoadPointValues[*number],
 						getMetricForValtype(metrics.Valtype(), metrics))
 				}
 			}
 		}
 	}
 
+	// From all values for each load point calculate average value.
 	for key, list := range allLoadPointValues {
 		value, err := calculateAverage(list)
 		if err != nil {
@@ -188,7 +206,9 @@ func getValuesForLoadPoints(metricsList []*Metrics, aggressor string) (map[int]s
 
 // DrawSensitivityProfile draws table with values for each aggressor and load point for given experiment ID.
 func DrawSensitivityProfile(experimentID string, host string) error {
+	// All table data.
 	data := [][]string{}
+	// List of unique aggressors names for given experiment ID.
 	aggressors := []string{}
 	headers := createHeadersForSensitivityProfile()
 
@@ -209,14 +229,17 @@ func DrawSensitivityProfile(experimentID string, host string) error {
 		aggressors = append(aggressors, createUniqueList("swan_aggressor_name", metrics.Tags(), aggressors)...)
 	}
 
+	// Create each row for aggressor.
 	for _, aggressor := range aggressors {
 		loadPointValues := map[int]string{}
+		// Get all values for each aggressor from metrics.
 		loadPointValues, err = getValuesForLoadPoints(metricsList, aggressor)
 		if err != nil {
 			return err
 		}
 		rowList := []string{}
 		rowList = append(rowList, aggressor)
+		// Append values to row in correct order based on load point ID.
 		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
 			rowList = append(rowList, loadPointValues[loadPoint])
 		}

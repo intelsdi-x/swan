@@ -14,9 +14,8 @@ var (
 
 	showExperimentDataCmd     = viewer.Command("show", "Get Experiment Results for specific experiment UUID")
 	showSensitivityProfileCmd = viewer.Command("sensitivity", "Draw sensitivity profile for specific experiment UUID")
-	experimentID              = showExperimentDataCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
-	// TODO(Ala) use the same experimentID.
-	experiment = showSensitivityProfileCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
+	showExperimentID          = showExperimentDataCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
+	sensitivityExperimentID   = showSensitivityProfileCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
 )
 
 func listExperiments() {
@@ -27,14 +26,14 @@ func listExperiments() {
 }
 
 func showExperiment() {
-	err := cassandra.DrawTable(*experimentID, *cassandraServer)
+	err := cassandra.DrawTable(*showExperimentID, *cassandraServer)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func showSensitivityProfile() {
-	err := cassandra.DrawSensitivityProfile(*experiment, *cassandraServer)
+	err := cassandra.DrawSensitivityProfile(*sensitivityExperimentID, *cassandraServer)
 	if err != nil {
 		panic(err)
 	}
