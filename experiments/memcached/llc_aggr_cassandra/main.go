@@ -38,9 +38,14 @@ func main() {
 
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
+	localIP, err := utils.GetLocalIPAddr()
+	if err != nil {
+		panic(err)
+	}
+
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
-		MemcachedHost:     "127.0.0.1",
+		MemcachedHost:     localIP.String(),
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,
 	}
