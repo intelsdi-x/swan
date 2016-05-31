@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -11,7 +12,7 @@ import (
 var (
 	CassandraHostArg     = "cassandra_host"
 	LoadGeneratorHostArg = "load_generator_host"
-	SnapHostArg          = "snap_host"
+	SnapdHostArg         = "snapd_host"
 	logLevelArg          = "log" // short 'l'
 )
 
@@ -27,8 +28,13 @@ func changeToEnvName(name string) string {
 	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(name))
 }
 
-func NewCliWithReadme(appName string, readme string) *Cli {
-	app := kingpin.New(appName, readme)
+func NewCliWithReadme(appName string, readmePath string) *Cli {
+	readmeData, err := ioutil.ReadFile(readmePath)
+	if err != nil {
+		panic(err)
+	}
+
+	app := kingpin.New(appName, string(readmeData)[:])
 	logLevel := app.Flag(
 		logLevelArg, "Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
 	).OverrideDefaultFromEnvar(changeToEnvName(logLevelArg)).Default("3").Short('l').Int()
@@ -78,7 +84,7 @@ func (c *Cli) AddLoadGeneratorHostArg() *Cli {
 }
 
 func (c *Cli) AddSnapHostArg() *Cli {
-	c.addRequiredArgWithEnv(SnapHostArg, "Host for Snap", "127.0.0.1")
+	c.addRequiredArgWithEnv(SnapdHostArg, "Host for Snap daemon", "127.0.0.1")
 	return c
 }
 
