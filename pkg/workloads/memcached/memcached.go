@@ -120,7 +120,7 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 
-	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.Port)
+	address := fmt.Sprintf("%s:%d", m.conf.ServerIP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
 		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
 			address)
