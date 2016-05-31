@@ -57,7 +57,7 @@ func NewRemoteWithDefaultConfig(host string) (*Remote, error) {
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting %s remotely", command)
+	log.Debug("Starting ", command, "remotely")
 
 	connection, err := ssh.Dial(
 		"tcp",
