@@ -32,3 +32,24 @@ func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID stri
 
 	return metricsList, nil
 }
+
+// GetTags selects all tags for all experiments for given host on which Cassandra runs.
+func GetTags(host string) (tagsMapsList []map[string]string, err error) {
+	var tagsMap map[string]string
+	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	if err != nil {
+		return nil, err
+	}
+
+	iter := cassandraConfig.CassandraSession().Query(`SELECT tags FROM snap.metrics`).Iter()
+
+	for iter.Scan(&tagsMap) {
+		tagsMapsList = append(tagsMapsList, tagsMap)
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
+	return tagsMapsList, nil
+}

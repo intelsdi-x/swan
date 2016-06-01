@@ -1,11 +1,10 @@
-package visualization
+package sensitivity
 
 import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/cassandra"
-	"github.com/olekukonko/tablewriter"
-	"os"
+	"github.com/intelsdi-x/swan/pkg/visualization"
 	"regexp"
 	"strconv"
 )
@@ -29,8 +28,8 @@ func getMetricForValtype(valtype string, metrics *cassandra.Metrics) (result str
 	return result
 }
 
-// DrawTable draws table for given experiment ID.
-func DrawTable(experimentID string, host string) error {
+// ExperimentTable draws table for given experiment ID.
+func ExperimentTable(experimentID string, host string) error {
 	data := [][]string{}
 	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
 
@@ -44,8 +43,6 @@ func DrawTable(experimentID string, host string) error {
 		return err
 	}
 
-	fmt.Println("\n")
-	fmt.Println("Experiment id: " + experimentID)
 	for _, metrics := range metricsList {
 		// TODO(akwasnie) filter columns to show only some of them.
 		rowList := []string{}
@@ -57,34 +54,10 @@ func DrawTable(experimentID string, host string) error {
 		rowList = append(rowList, mapToString(metrics.Tags()))
 		data = append(data, rowList)
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(headers)
-	for _, v := range data {
-		table.Append(v)
-	}
-	table.Render()
-
+	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
+	table := visualization.NewTable(headers, data)
+	visualization.DrawTable(table)
 	return nil
-}
-
-func getTags(host string) (tagsMapsList []map[string]string, err error) {
-	var tagsMap map[string]string
-	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
-	if err != nil {
-		return nil, err
-	}
-
-	iter := cassandraConfig.CassandraSession().Query(`SELECT tags FROM snap.metrics`).Iter()
-
-	for iter.Scan(&tagsMap) {
-		tagsMapsList = append(tagsMapsList, tagsMap)
-	}
-
-	if err := iter.Close(); err != nil {
-		return nil, err
-	}
-
-	return tagsMapsList, nil
 }
 
 // isValueInSlice is used to check whether given string already exists in given slice.
@@ -107,27 +80,22 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 	return returnedNames
 }
 
-// DrawList prints list of experimentIds on stdout.
-func DrawList(host string) (err error) {
+// List prints list of experimentIds on stdout.
+func List(host string) (err error) {
 	uniqueNames := []string{}
-	tagsMapsList, err := getTags(host)
+	tagsMapsList, err := cassandra.GetTags(host)
 	if err != nil {
 		return err
 	}
 	for _, elem := range tagsMapsList {
 		uniqueNames = append(uniqueNames, createUniqueList("swan_experiment", elem, uniqueNames)...)
 	}
-	for _, value := range uniqueNames {
-		fmt.Println(value)
-	}
+	visualization.PrintList(uniqueNames)
 	return nil
 }
 
-func createHeadersForSensitivityProfile() (headers []string) {
+func createHeadersForSensitivityProfile(loadPointsNumber int) (headers []string) {
 	headers = append(headers, "Scenario/Load")
-	// TODO(Ala) Get number of load points from cassandra when they will be available there.
-	// loadPointsNumber := getLoadPointNumber()
-	loadPointsNumber := 10
 	// Calculate percentage for each load point - from 5% to 95 %.
 	for loadPoint := 0; loadPoint < loadPointsNumber; loadPoint++ {
 		percentage := 5 + 90*loadPoint/(loadPointsNumber-1)
@@ -205,17 +173,17 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 	return loadPointValues, nil
 }
 
-// DrawSensitivityProfile draws table with values for each aggressor and load point for given experiment ID.
-func DrawSensitivityProfile(experimentID string, host string) error {
+// Profile draws sensitivity table with values for each aggressor and load point for given experiment ID.
+func Profile(experimentID string, host string) error {
 	// All table data.
 	data := [][]string{}
 	// List of unique aggressors names for given experiment ID.
 	aggressors := []string{}
-	headers := createHeadersForSensitivityProfile()
 
 	// TODO(Ala) Get number of load points from cassandra when they will be available there.
 	// loadPointsNumber := getLoadPointNumber()
 	loadPointsNumber := 10
+	headers := createHeadersForSensitivityProfile(loadPointsNumber)
 
 	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
 	if err != nil {
@@ -246,14 +214,8 @@ func DrawSensitivityProfile(experimentID string, host string) error {
 		}
 		data = append(data, rowList)
 	}
-
-	fmt.Println("\n")
-	fmt.Println("Experiment id: " + experimentID)
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(headers)
-	for _, v := range data {
-		table.Append(v)
-	}
-	table.Render()
+	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
+	table := visualization.NewTable(headers, data)
+	visualization.DrawTable(table)
 	return nil
 }
