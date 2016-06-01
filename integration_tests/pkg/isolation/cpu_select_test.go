@@ -13,7 +13,7 @@ func TestCPUSelect(t *testing.T) {
 
 	cpus.Discover()
 
-	Convey("Should provide CPUSelect() to not return nil when requesting zero cpu", t, func() {
+	Convey("Should provide CPUSelect() to return an error when requesting zero cpus", t, func() {
 
 		threadset, err := isolation.CPUSelect(0, isolation.ShareLLCButNotL1L2)
 		So(err, ShouldNotBeNil)
