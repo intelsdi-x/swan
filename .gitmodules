@@ -1,0 +1,3 @@
+[submodule "workloads/deep_learning/caffe/caffe_src"]
+	path = workloads/deep_learning/caffe/caffe_src
+	url = https://github.com/BVLC/caffe

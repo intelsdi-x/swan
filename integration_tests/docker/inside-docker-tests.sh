@@ -17,7 +17,7 @@ echo "Building up docker images"
 echo "* Building up Centos based image"
 docker build -t swan_centos_tests -f Dockerfile_centos . > /dev/null
 echo "* Building up Ubuntu based image"
-docker build -t swan_ubuntu_tests -f Dockerfile_centos . > /dev/null
+docker build -t swan_ubuntu_tests -f Dockerfile_ubuntu . > /dev/null
 
 echo "Running up tests"
 echo "* Running Centos based image"
