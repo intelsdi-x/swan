@@ -18,6 +18,10 @@ type Connection struct {
 	session *gocql.Session
 }
 
+func (connection *Connection) Session() *gocql.Session {
+	return connection.session
+}
+
 func newConnection(session *gocql.Session) *Connection {
 	return &Connection{session}
 }

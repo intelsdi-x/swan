@@ -3,6 +3,7 @@ package cassandra
 import (
 	"errors"
 	"fmt"
+	. "github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/olekukonko/tablewriter"
 	"os"
 	"regexp"
@@ -73,7 +74,7 @@ func getTags(host string) (tagsMapsList []map[string]string, err error) {
 		return nil, err
 	}
 
-	iter := cassandraConfig.session.Query(`SELECT tags FROM snap.metrics`).Iter()
+	iter := cassandraConfig.Session().Query(`SELECT tags FROM snap.metrics`).Iter()
 
 	for iter.Scan(&tagsMap) {
 		tagsMapsList = append(tagsMapsList, tagsMap)
@@ -106,7 +107,7 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 	return returnedNames
 }
 
-// DrawList returns list of experimentIds.
+// DrawList prints list of experimentIds on stdout.
 func DrawList(host string) (err error) {
 	uniqueNames := []string{}
 	tagsMapsList, err := getTags(host)
@@ -123,14 +124,14 @@ func DrawList(host string) (err error) {
 }
 
 func createHeadersForSensitivityProfile() (headers []string) {
-	headers = append(headers, "Aggressor name")
+	headers = append(headers, "Scenario/Load")
 	// TODO(Ala) Get number of load points from cassandra when they will be available there.
 	// loadPointsNumber := getLoadPointNumber()
 	loadPointsNumber := 10
 	// Calculate percentage for each load point - from 5% to 95 %.
 	for loadPoint := 0; loadPoint < loadPointsNumber; loadPoint++ {
 		percentage := 5 + 90*loadPoint/(loadPointsNumber-1)
-		headers = append(headers, fmt.Sprintf("load point %d%%", percentage))
+		headers = append(headers, fmt.Sprintf("%d%%", percentage))
 	}
 	return headers
 }
