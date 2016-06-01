@@ -38,7 +38,7 @@ func CPUSelect(countRequested int, filters uint) (IntSet, error) {
 			return nil, errors.New("Error - CPUSelect - insufficient cores")
 		}
 		// Loop through all the sockets first regular HW threads (lower ids) then Hyperthreads(upper ids)
-		for socketid := 0; socketid < cpuDiscovered.Sockets*2; socketid++ {
+		for socketid := 0; socketid < cpuDiscovered.Sockets*cpuDiscovered.ThreadsPerCore; socketid++ {
 			corecount = 0
 			// Loop through all the cores to find available core ids meeting filter
 			for cores := 0; cores < cpuDiscovered.PhysicalCores; cores++ {
