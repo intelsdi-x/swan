@@ -1,9 +1,9 @@
-package cassandra
+package visualization
 
 import (
 	"errors"
 	"fmt"
-	. "github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/olekukonko/tablewriter"
 	"os"
 	"regexp"
@@ -17,7 +17,7 @@ func mapToString(m map[string]string) (result string) {
 	return result
 }
 
-func getMetricForValtype(valtype string, metrics *Metrics) (result string) {
+func getMetricForValtype(valtype string, metrics *cassandra.Metrics) (result string) {
 	switch valtype {
 	case "boolval":
 		result = fmt.Sprintf("%t", metrics.Boolval())
@@ -34,7 +34,7 @@ func DrawTable(experimentID string, host string) error {
 	data := [][]string{}
 	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
 
-	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
 	if err != nil {
 		return err
 	}
@@ -69,12 +69,12 @@ func DrawTable(experimentID string, host string) error {
 
 func getTags(host string) (tagsMapsList []map[string]string, err error) {
 	var tagsMap map[string]string
-	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
 	if err != nil {
 		return nil, err
 	}
 
-	iter := cassandraConfig.Session().Query(`SELECT tags FROM snap.metrics`).Iter()
+	iter := cassandraConfig.CassandraSession().Query(`SELECT tags FROM snap.metrics`).Iter()
 
 	for iter.Scan(&tagsMap) {
 		tagsMapsList = append(tagsMapsList, tagsMap)
@@ -168,7 +168,7 @@ func getLoadPointNumber(phase string) (*int, error) {
 	return &number, nil
 }
 
-func getValuesForLoadPoints(metricsList []*Metrics, aggressor string) (map[int]string, error) {
+func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) (map[int]string, error) {
 	loadPointValues := make(map[int]string)
 	allLoadPointValues := make(map[int][]string)
 
@@ -217,7 +217,7 @@ func DrawSensitivityProfile(experimentID string, host string) error {
 	// loadPointsNumber := getLoadPointNumber()
 	loadPointsNumber := 10
 
-	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
 	if err != nil {
 		return err
 	}
