@@ -81,6 +81,10 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
+		// Flush write buffers to disk to prevent a race with the caller.
+		stdoutFile.Sync()
+		stderrFile.Sync()
+
 		log.Debug(
 			"Ended ", strings.Join(cmd.Args, " "),
 			" with output in file: ", stdoutFile.Name(),
