@@ -19,7 +19,10 @@ const (
 
 func StartServer() {
 	http.HandleFunc("/", getRequestContent)
-	http.ListenAndServe(fmt.Sprintf(":%d", collectorPort), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", collectorPort), nil)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 }
 
 func getRequestContent(w http.ResponseWriter, r *http.Request) {

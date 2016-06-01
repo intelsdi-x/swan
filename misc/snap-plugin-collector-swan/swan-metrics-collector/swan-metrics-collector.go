@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"time"
 
+	"fmt"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/swan/pkg/metrics"
-	"fmt"
 )
 
 // SessionCollector is a plugin which provides a Swan hosted mock collector
@@ -23,72 +23,75 @@ const (
 
 var _ plugin.CollectorPlugin = (*SessionCollector)(nil)
 
-var storedMetrics []metrics.SwanMetrics
+type storedMetric struct {
+	metric     metrics.Swan
+	updateDate time.Time
+}
+
+var updateChannel = make(chan storedMetric)
 
 func updateMetrics(rawMetrics []byte) error {
-	var metricsToStore metrics.SwanMetrics
+	var metricsToStore metrics.Swan
+
 	if err := json.Unmarshal(rawMetrics, &metricsToStore); err != nil {
 		return err
 	}
 
-	if i := detectMetricIndex(metricsToStore.Tags); i > -1 {
-		storedMetrics[i] = metricsToStore
-	} else {
-		storedMetrics = append(storedMetrics, metricsToStore)
-	}
+	metricObject := storedMetric{metric: metricsToStore, updateDate: time.Now()}
+	updateChannel <- metricObject
 
 	return nil
 }
 
-func addDynamicNamespace() []plugin.MetricType {
-	var mts []plugin.MetricType
-	for i, _ := range storedMetrics {
-		mts = append(mts, registerNewExperiment(i)...)
-	}
-
-	return mts
+type swanMetadataNamespace struct {
+	namespace []string
+	update    time.Time
 }
 
-func registerNewExperiment(i int) []plugin.MetricType {
-	var mts []plugin.MetricType
-	for _, key := range metrics.GetMetricKeys() {
-		mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace(generateNamespace(i, key)...)})
+func unpackStoredMetrics(swanMetrics storedMetric) (metrics []plugin.MetricType) {
+
+	namespace := swanMetadataNamespace{
+		namespace: generateNamespace(swanMetrics.metric.Tags),
+		update:    swanMetrics.updateDate,
 	}
-	return mts
+
+	metrics = append(metrics, namespace.fulfillMetricObject("AggressorName", swanMetrics.metric.Metrics.AggressorName))
+	metrics = append(metrics, namespace.fulfillMetricObject("AggressorParameters", swanMetrics.metric.Metrics.AggressorParameters))
+	metrics = append(metrics, namespace.fulfillMetricObject("LCIsolation", swanMetrics.metric.Metrics.LCIsolation))
+	metrics = append(metrics, namespace.fulfillMetricObject("LCName", swanMetrics.metric.Metrics.LCName))
+	metrics = append(metrics, namespace.fulfillMetricObject("LCParameters", swanMetrics.metric.Metrics.LCParameters))
+	metrics = append(metrics, namespace.fulfillMetricObject("LGIsolation", swanMetrics.metric.Metrics.LGIsolation))
+	metrics = append(metrics, namespace.fulfillMetricObject("LGName", swanMetrics.metric.Metrics.LGName))
+	metrics = append(metrics, namespace.fulfillMetricObject("LCParameters", swanMetrics.metric.Metrics.LCParameters))
+	metrics = append(metrics, namespace.fulfillMetricObject("LoadDuration", swanMetrics.metric.Metrics.LoadDuration))
+	metrics = append(metrics, namespace.fulfillMetricObject("TuningDuration", swanMetrics.metric.Metrics.TuningDuration))
+	metrics = append(metrics, namespace.fulfillMetricObject("LoadPointsNumber", swanMetrics.metric.Metrics.LoadPointsNumber))
+	metrics = append(metrics, namespace.fulfillMetricObject("RepetitionsNumber", swanMetrics.metric.Metrics.RepetitionsNumber))
+	metrics = append(metrics, namespace.fulfillMetricObject("QPS", swanMetrics.metric.Metrics.QPS))
+	metrics = append(metrics, namespace.fulfillMetricObject("SLO", swanMetrics.metric.Metrics.SLO))
+	metrics = append(metrics, namespace.fulfillMetricObject("TargetLoad", swanMetrics.metric.Metrics.TargetLoad))
+
+	return metrics
 }
 
-func detectMetricIndex(tag metrics.Tags) int {
-	for i, _ := range storedMetrics {
-		if storedMetrics[i].Tags.Compare(tag) {
-			return i
-		}
+func (n swanMetadataNamespace) fulfillMetricObject(metricName string, value interface{}) plugin.MetricType {
+	return plugin.MetricType{
+		Namespace_: core.NewNamespace(append(n.namespace, metricName)...),
+		Data_:      value,
+		Timestamp_: n.update,
 	}
-	return -1
 }
 
 // CollectMetrics is an implementation needed for the Collector interface
 // which returns all available metrics on demand.
-func (f *SessionCollector) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
-	var metrics []plugin.MetricType
+func (f *SessionCollector) CollectMetrics(mts []plugin.MetricType) (metrics []plugin.MetricType, err error) {
 
-	mts = append(mts, addDynamicNamespace()...)
-
-	for i, _ := range mts {
-		ind, nsKey := getKeyFromNs(mts[i].Namespace())
-		if ind < 0 {
-			continue
-		}
-
-		val := getValue(ind, nsKey)
-		if val == nil {
-			continue
-		}
-		mts[i].Data_ = val
-		mts[i].Timestamp_ = time.Now()
-		metrics = append(metrics, mts[i])
+	select {
+	case data := <-updateChannel:
+		return append(metrics, unpackStoredMetrics(data)...), err
+	default:
+		return metrics, err
 	}
-
-	return metrics, nil
 }
 
 // GetMetricTypes is an implementation needed for the Collector interface.
@@ -100,31 +103,18 @@ func (f *SessionCollector) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.Metri
 	return mts, nil
 }
 
-func generateNamespace(i int, key string) []string {
-	return []string{"intel",
-		"swan",
-		storedMetrics[i].Tags.ExperimentID(),
-		storedMetrics[i].Tags.PhaseID(),
-		storedMetrics[i].Tags.RepetitionID(),
-		key}
-}
-
-func getValue(i int, key string) interface{} {
-	val := storedMetrics[i].Metrics.GetValue(key)
-	if val == nil || val == 0 || val == "" {
-		return nil
+func generateNamespace(swanTag metrics.Tags) (namespace []string) {
+	namespace = append(namespace, []string{"intel", "swan"}...)
+	if swanTag.ExperimentID != "" {
+		namespace = append(namespace, swanTag.ExperimentID)
 	}
-	return val
-}
-
-func getKeyFromNs(ns core.Namespace) (int, string) {
-	nsPath := ns.Strings()
-	// 4 means: experimentId, phaseId, repetitionId, metricName
-	if len(nsPath) < 4 {
-		return -1, ""
+	if swanTag.PhaseID != "" {
+		namespace = append(namespace, swanTag.PhaseID)
 	}
-	tag := metrics.NewTags(nsPath[len(nsPath)-4], nsPath[len(nsPath)-3], nsPath[len(nsPath)-2])
-	return detectMetricIndex(tag), nsPath[len(nsPath)-1]
+	if swanTag.RepetitionID > 0 {
+		namespace = append(namespace, fmt.Sprintf("%d", swanTag.RepetitionID))
+	}
+	return namespace
 }
 
 // GetConfigPolicy is an implementation needed for the Collector interface and here,
