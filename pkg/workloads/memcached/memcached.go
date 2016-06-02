@@ -18,16 +18,27 @@ const (
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
-	defaultMemcachedPath  = "data_caching/memcached/memcached-1.4.25/build/memcached"
+	defaultPath           = "data_caching/memcached/memcached-1.4.25/build/memcached"
 	defaultServerIP       = "0.0.0.0"
-	memcachedPathEnv      = "SWAN_MEMCACHED_PATH"
+	// memcachedPathArg represents key for CLI option. It also is base for env name.
+	// (uppercase + SWAN prefix)
+	memcachedPathArg = "memcached_path"
 )
 
-// GetPathFromEnvOrDefault returns the memcached binary path from environment variable
-// SWAN_MEMCACHED_PATH or default path in swan directory.
+// GetAbsDefaultPath returns default, absolute path to binary.
+func GetAbsDefaultPath() string {
+	return path.Join(utils.GetSwanWorkloadsPath(), defaultPath)
+}
+
+// GetPathFromEnvOrDefault returns the binary path from environment variable
+// or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return utils.GetEnvOrDefault(
-		memcachedPathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultMemcachedPath))
+	return utils.GetEnvOrDefault(utils.ChangeToEnvName(memcachedPathArg), GetAbsDefaultPath())
+}
+
+// PathArg returns CLI argument for binary path.
+func PathArg() (string, string, string) {
+	return memcachedPathArg, "Absolute path to memcached binary", GetAbsDefaultPath()
 }
 
 // Config is a config for the memcached data caching application v 1.4.25.

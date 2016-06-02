@@ -10,9 +10,17 @@ import (
 )
 
 var (
-	logLevelArg  = "log" // short 'l'
-	ipAddressArg = "ip"  // short 'i'
+	logLevelArg      = "log" // Short 'l'.
+	ipAddressArg     = "ip"  // Short 'i'.
+	defaultLogLevel  = "3"   // Error log level.
+	defaultIPAddress = "127.0.0.1"
 )
+
+// ChangeToEnvName creates environment variable name by making it uppercase and adding SWAN prefix.
+// For instance: "cassandra_host" will be "SWAN_CASSANDRA_HOST".
+func ChangeToEnvName(name string) string {
+	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(name))
+}
 
 // Cli is a helper for SWAN command line interface.
 // It gives ability to register arguments which will be fetched from
@@ -28,11 +36,6 @@ type Cli struct {
 	iPAddress *string
 }
 
-// Environment variable from "cassandra_host" will be "SWAN_CASSANDRA_HOST".
-func changeToEnvName(name string) string {
-	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(name))
-}
-
 // NewCliWithReadme constructs CLI where help will print README file in raw format.
 // It also defines two important, default options like logLevel and IP of remote interface.
 // TODO(bp): Decide if we want specifying IP vs hostnames and deploy proper hosts into /etc/hosts.
@@ -45,13 +48,13 @@ func NewCliWithReadme(appName string, readmePath string) *Cli {
 	app := kingpin.New(appName, string(readmeData)[:])
 	logLevel := app.Flag(
 		logLevelArg, "Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
-	).OverrideDefaultFromEnvar(changeToEnvName(logLevelArg)).Default("3").Short('l').Int()
+	).OverrideDefaultFromEnvar(ChangeToEnvName(logLevelArg)).Default(defaultLogLevel).Short('l').Int()
 
 	// TODO(bp): Decide if we want specifying IP vs
 	// hostnames and deploy proper hosts into /etc/hosts.
 	iPAddress := app.Flag(
 		ipAddressArg, "IP of interface for Swan workloads services to listen on",
-	).OverrideDefaultFromEnvar(changeToEnvName(ipAddressArg)).Default("127.0.0.1").Short('i').String()
+	).OverrideDefaultFromEnvar(ChangeToEnvName(ipAddressArg)).Default(defaultIPAddress).Short('i').String()
 
 	return &Cli{
 		AppName:   appName,
@@ -66,7 +69,7 @@ func NewCliWithReadme(appName string, readmePath string) *Cli {
 // argument.
 func (c *Cli) RegisterStringArgWithEnv(name string, help string, defaultVal string) *string {
 	return c.app.Flag(
-		name, help).Default(defaultVal).OverrideDefaultFromEnvar(changeToEnvName(name)).String()
+		name, help).Default(defaultVal).OverrideDefaultFromEnvar(ChangeToEnvName(name)).String()
 }
 
 // LogLevel returns configured logLevel from input arg or env variable.

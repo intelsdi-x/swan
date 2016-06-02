@@ -18,7 +18,8 @@ const (
 	minIntensity   = 1
 	maxIntensity   = 20
 	defaultL1IPath = "low-level-aggressors/l1i"
-	l1IPathEnv     = "SWAN_L1I_PATH"
+	// TODO(bp): Move as CLI & env argument.
+	l1IPathEnv = "SWAN_L1I_PATH"
 )
 
 // GetPathFromEnvOrDefault fetches the l1 instructions binary path from environment variable

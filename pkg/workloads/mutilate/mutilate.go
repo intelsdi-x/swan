@@ -21,15 +21,28 @@ const (
 	defaultMemcachedHost          = "127.0.0.1"
 	defaultMemcachedPercentile    = "99.9"
 	defaultMemcachedTuningTimeSec = 10
-	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
-	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+	defaultPath                   = "data_caching/memcached/mutilate/mutilate"
+	// mutilatePathArg represents key for CLI option. It is also base for env name.
+	// (uppercase + SWAN prefix)
+	mutilatePathArg = "mutilate_path"
 )
 
-// GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
-// SWAN_MUTILATE_PATH or default path in swan directory.
+// GetAbsDefaultPath returns default, absolute path to binary.
+func GetAbsDefaultPath() string {
+	return path.Join(utils.GetSwanWorkloadsPath(), defaultPath)
+}
+
+// GetPathFromEnvOrDefault returns the binary path from environment variable
+// or default path in swan directory.
+// Used in tests. For experiments the utils/cli is recommended, which enables configuration from
+// both env vars and CLI .
 func GetPathFromEnvOrDefault() string {
-	return utils.GetEnvOrDefault(
-		mutilatePathEnv, path.Join(utils.GetSwanWorkloadsPath(), defaultMutilatePath))
+	return utils.GetEnvOrDefault(utils.ChangeToEnvName(mutilatePathArg), GetAbsDefaultPath())
+}
+
+// PathArg returns CLI argument for binary path.
+func PathArg() (string, string, string) {
+	return mutilatePathArg, "Absolute path to mutilate binary", GetAbsDefaultPath()
 }
 
 // Config contains all data for running mutilate.
@@ -41,6 +54,7 @@ type Config struct {
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
+// It is used for test purposes.
 func DefaultMutilateConfig() Config {
 	percentile, _ := decimal.NewFromString(defaultMemcachedPercentile)
 	return Config{

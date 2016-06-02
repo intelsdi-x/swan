@@ -5,11 +5,13 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils"
+	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
@@ -19,34 +21,20 @@ import (
 	"time"
 )
 
-// TODO(bp): Move these definitions to appropriate dir e.g CassandraAddr to cassandra pkg.
-var (
-	cassandraAddressArg     = "cassandra_addr"
-	loadGeneratorAddressArg = "load_generator_addr"
-	snapAddressArg          = "snapd_addr"
-)
-
-func argCassandraAddr() (string, string, string) {
-	return cassandraAddressArg, "IP address of Cassandra DB", "127.0.0.1"
-}
-
-func argLoadGeneratorAddr() (string, string, string) {
-	return loadGeneratorAddressArg, "IP address of host for Load Generator", "127.0.0.1"
-}
-
-func argSnapAddr() (string, string, string) {
-	return snapAddressArg, "IP address of Snap daemon", "127.0.0.1"
-}
-
 // Check README.md for details of this experiment.
 func main() {
 	// CLI argument registration.
 	cli := utils.NewCliWithReadme(
 		"MemcachedWithMutilateToCassandra",
 		path.Join(utils.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
-	cassandraAddr := cli.RegisterStringArgWithEnv(argCassandraAddr())
-	lgAddr := cli.RegisterStringArgWithEnv(argLoadGeneratorAddr())
-	snapAddr := cli.RegisterStringArgWithEnv(argSnapAddr())
+	cassandraAddr := cli.RegisterStringArgWithEnv(cassandra.AddressArg())
+	lgAddr := cli.RegisterStringArgWithEnv(workloads.LoadGeneratorAddressArg())
+	snapAddr := cli.RegisterStringArgWithEnv(snap.AddressArg())
+	// Binaries paths.
+	memcachedPath := cli.RegisterStringArgWithEnv(memcached.PathArg())
+	mutilatePath := cli.RegisterStringArgWithEnv(mutilate.PathArg())
+	l3Path := cli.RegisterStringArgWithEnv(l3data.PathArg())
+
 	cli.MustParse()
 
 	logrus.SetLevel(cli.LogLevel())
@@ -54,6 +42,7 @@ func main() {
 	// Initialize Memcached Launcher.
 	local := executor.NewLocal()
 	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig.PathToBinary = *memcachedPath
 	memcachedConfig.ServerIP = cli.IPAddress()
 	memcachedLauncher := memcached.New(local, memcachedConfig)
 
@@ -61,7 +50,7 @@ func main() {
 	percentile, _ := decimal.NewFromString("99.9")
 
 	mutilateConfig := mutilate.Config{
-		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
+		MutilatePath:      *mutilatePath,
 		MemcachedHost:     cli.IPAddress(),
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,
@@ -126,6 +115,8 @@ func main() {
 		publisher)
 
 	// Initialize LLC aggressor.
+	l3Configuration := l3data.DefaultL3Config()
+	l3Configuration.Path = *l3Path
 	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
 
 	// Create Experiment configuration.

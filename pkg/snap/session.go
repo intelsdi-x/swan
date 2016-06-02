@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+const (
+	addressArg     = "snapd_addr"
+	defaultAddress = "127.0.0.1"
+)
+
+// AddressArg returns CLI argument for Snap daemon address.
+func AddressArg() (string, string, string) {
+	return addressArg,
+		"IP address of Snap daemon",
+		defaultAddress
+}
+
 type task struct {
 	Version  int
 	Schedule *client.Schedule

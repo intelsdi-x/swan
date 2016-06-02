@@ -14,7 +14,8 @@ const (
 	name            = "L1 Data"
 	defaultDuration = 86400 * time.Second
 	defaultL1DPath  = "low-level-aggressors/l1d"
-	l1DPathEnv      = "SWAN_L1D_PATH"
+	// TODO(bp): Move as CLI & env argument.
+	l1DPathEnv = "SWAN_L1D_PATH"
 )
 
 // GetPathFromEnvOrDefault returns the l1d binary path from environment variable

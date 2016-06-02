@@ -14,7 +14,8 @@ const (
 	name             = "memBW"
 	defaultDuration  = 86400 * time.Second
 	defaultMemBwPath = "low-level-aggressors/memBw"
-	memBwPathEnv     = "SWAN_MEMBW_PATH"
+	// TODO(bp): Move as CLI & env argument.
+	memBwPathEnv = "SWAN_MEMBW_PATH"
 )
 
 // GetPathFromEnvOrDefault fetches the memoryBandwidth binary path from environment variable

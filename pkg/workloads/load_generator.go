@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+const (
+	loadGeneratorAddressArg     = "load_generator_addr"
+	defaultLoadGeneratorAddress = "127.0.0.1"
+)
+
+// LoadGeneratorAddressArg returns CLI argument for load generator target address.
+func LoadGeneratorAddressArg() (string, string, string) {
+	return loadGeneratorAddressArg,
+		"IP address of host for Load Generator",
+		defaultLoadGeneratorAddress
+}
+
 // LoadGenerator launches stresser which generates load on specified workload.
 type LoadGenerator interface {
 	// Populate inserts initial data.
