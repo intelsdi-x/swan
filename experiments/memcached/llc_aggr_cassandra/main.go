@@ -67,11 +67,20 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	remote, err := executor.NewRemoteWithDefaultConfig(*lgAddr)
-	if err != nil {
-		panic(err)
+	var lgExecutor executor.Executor
+	var err error
+	// NOTE: We don't want to ssh on localhost if not needed - this enables ease of use inside
+	// docker with net=host flag.
+	if utils.IsAddrLocal(*lgAddr) {
+		lgExecutor = local
+	} else {
+		lgExecutor, err = executor.NewRemoteWithDefaultConfig(*lgAddr)
+		if err != nil {
+			panic(err)
+		}
 	}
-	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
+
+	mutilateLoadGenerator := mutilate.New(lgExecutor, mutilateConfig)
 
 	// Create connection with Snap.
 	// TODO(bp): Make Snap connection arg able to be specified as <host:port> or <host> and
