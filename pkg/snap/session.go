@@ -196,11 +196,15 @@ func (s *Session) Stop() error {
 
 // Wait blocks until the task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) Wait() {
+func (s *Session) Wait() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
+		if t.Err != nil {
+			return t.Err
+		}
+
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
-			break
+			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
 	}

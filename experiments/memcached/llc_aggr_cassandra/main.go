@@ -19,24 +19,42 @@ import (
 	"time"
 )
 
+// TODO(bp): Move these definitions to appropriate dir e.g CassandraAddr to cassandra pkg.
+var (
+	cassandraAddressArg     = "cassandra_addr"
+	loadGeneratorAddressArg = "load_generator_addr"
+	snapAddressArg          = "snapd_addr"
+)
+
+func argCassandraAddr() (string, string, string) {
+	return cassandraAddressArg, "IP address of Cassandra DB", "127.0.0.1"
+}
+
+func argLoadGeneratorAddr() (string, string, string) {
+	return loadGeneratorAddressArg, "IP address of host for Load Generator", "127.0.0.1"
+}
+
+func argSnapAddr() (string, string, string) {
+	return snapAddressArg, "IP address of Snap daemon", "127.0.0.1"
+}
+
 // Check README.md for details of this experiment.
 func main() {
+	// CLI argument registration.
 	cli := utils.NewCliWithReadme(
 		"MemcachedWithMutilateToCassandra",
-		path.Join(utils.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md")).
-		AddCassandraIPArg().
-		AddLoadGeneratorIPArg().
-		AddSnapIPArg().
-		MustParse()
+		path.Join(utils.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
+	cassandraAddr := cli.RegisterStringArgWithEnv(argCassandraAddr())
+	lgAddr := cli.RegisterStringArgWithEnv(argLoadGeneratorAddr())
+	snapAddr := cli.RegisterStringArgWithEnv(argSnapAddr())
+	cli.MustParse()
 
 	logrus.SetLevel(cli.LogLevel())
-
-	// Initialize
 
 	// Initialize Memcached Launcher.
 	local := executor.NewLocal()
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedConfig.ServerIP = cli.MyIP()
+	memcachedConfig.ServerIP = cli.IPAddress()
 	memcachedLauncher := memcached.New(local, memcachedConfig)
 
 	// Initialize Mutilate Launcher.
@@ -44,21 +62,23 @@ func main() {
 
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
-		MemcachedHost:     cli.MyIP(),
+		MemcachedHost:     cli.IPAddress(),
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,
 	}
 
-	remote, err := executor.NewRemoteWithDefaultConfig(cli.Get(utils.LoadGeneratorIPArg))
+	remote, err := executor.NewRemoteWithDefaultConfig(*lgAddr)
 	if err != nil {
 		panic(err)
 	}
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
 	// Create connection with Snap.
+	// TODO(bp): Make Snap connection arg able to be specified as <host:port> or <host> and
+	// default port will be added.
 	logrus.Debug("Connecting to Snap")
 	snapConnection, err :=
-		client.New(fmt.Sprintf("http://%s:8181", cli.Get(utils.SnapdIPArg)), "v1", true)
+		client.New(fmt.Sprintf("http://%s:8181", *snapAddr), "v1", true)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +107,7 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	publisher.AddConfigItem("server", cli.Get(utils.CassandraIPArg))
+	publisher.AddConfigItem("server", *cassandraAddr)
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(

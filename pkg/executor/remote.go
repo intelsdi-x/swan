@@ -29,8 +29,8 @@ func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
 	}
 }
 
-// NewRemote returns a Remote instance with default SSH configuration for specified host and
-// PID namespace enabled.
+// NewRemoteWithDefaultConfig returns a Remote instance with default SSH configuration for
+// specified host and PID namespace enabled.
 func NewRemoteWithDefaultConfig(host string) (*Remote, error) {
 	user, err := user.Current()
 	if err != nil {

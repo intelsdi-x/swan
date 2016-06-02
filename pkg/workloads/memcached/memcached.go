@@ -19,7 +19,7 @@ const (
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
 	defaultMemcachedPath  = "data_caching/memcached/memcached-1.4.25/build/memcached"
-	defaultServerIP       = "127.0.0.1"
+	defaultServerIP       = "0.0.0.0"
 	memcachedPathEnv      = "SWAN_MEMCACHED_PATH"
 )
 
