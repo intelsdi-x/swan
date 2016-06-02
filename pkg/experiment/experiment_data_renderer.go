@@ -55,7 +55,7 @@ func mapToString(m map[string]string) (result string) {
 	return result
 }
 
-func getMetricForValtype(valtype string, metrics *cassandra.Metrics) (result string) {
+func getStringFromMetricValue(valtype string, metrics *cassandra.Metrics) (result string) {
 	switch valtype {
 	case "boolval":
 		result = fmt.Sprintf("%t", metrics.Boolval())
@@ -74,7 +74,7 @@ func prepareData(metricsList []*cassandra.Metrics) (data [][]string) {
 		rowList = append(rowList, fmt.Sprintf("%d", metrics.Version()))
 		rowList = append(rowList, metrics.Host())
 		rowList = append(rowList, metrics.Time().String())
-		rowList = append(rowList, getMetricForValtype(metrics.Valtype(), metrics))
+		rowList = append(rowList, getStringFromMetricValue(metrics.Valtype(), metrics))
 		rowList = append(rowList, mapToString(metrics.Tags()))
 		data = append(data, rowList)
 	}

@@ -15,21 +15,21 @@ func TestExperimentDataRenderer(t *testing.T) {
 		doubleval := 10.000000
 		metrics := cassandra.NewMetrics("fakeID", 1, "abc", time.Now(), false, doubleval, "c", tagsMap, "doubleval")
 		Convey("I should receive string value of given doubleval", func() {
-			So(getMetricForValtype(metrics.Valtype(), metrics), ShouldEqual, "10.000000")
+			So(getStringFromMetricValue(metrics.Valtype(), metrics), ShouldEqual, "10.000000")
 		})
 	})
 	Convey("While getting metric for string type", t, func() {
 		stringval := "abc"
 		metrics := cassandra.NewMetrics("fakeID", 1, "abc", time.Now(), false, 10, stringval, tagsMap, "strval")
 		Convey("I should receive string value of given string", func() {
-			So(getMetricForValtype(metrics.Valtype(), metrics), ShouldEqual, "abc")
+			So(getStringFromMetricValue(metrics.Valtype(), metrics), ShouldEqual, "abc")
 		})
 	})
 	Convey("While getting metric for boolval type", t, func() {
 		boolval := true
 		metrics := cassandra.NewMetrics("fakeID", 1, "abc", time.Now(), boolval, 10, "c", tagsMap, "boolval")
 		Convey("I should receive string value of given bool", func() {
-			So(getMetricForValtype(metrics.Valtype(), metrics), ShouldEqual, "true")
+			So(getStringFromMetricValue(metrics.Valtype(), metrics), ShouldEqual, "true")
 		})
 	})
 	Convey("While checking value in slice", t, func() {
