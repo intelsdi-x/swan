@@ -6,13 +6,13 @@ import (
 	"github.com/intelsdi-x/swan/pkg/visualization"
 )
 
-// Draw prepares data for given experiment ID and IP where Cassandra is running.
+// Draw prepares data for given experiment ID and address where Cassandra is running.
 // It creates model of data in a form of table and asks view to draw it.
-func Draw(experimentID string, cassandraIP string) error {
+func Draw(experimentID string, cassandraAddr string) error {
 	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
 
 	// Configure Cassandra connection.
-	cassandraConfig, err := cassandra.CreateConfigWithSession(cassandraIP, "snap")
+	cassandraConfig, err := cassandra.CreateConfigWithSession(cassandraAddr, "snap")
 	if err != nil {
 		return err
 	}

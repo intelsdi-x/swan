@@ -12,9 +12,9 @@ import (
 // Draw prepares data for sensitivity table with values for each aggressor and load point for given experiment ID and
 // Cassandra running on given IP.
 // It creates model of data in a form of table and asks view to draw it.
-func Draw(experimentID string, cassandraIP string) error {
+func Draw(experimentID string, cassandraAddr string) error {
 	// Configure Cassandra connection.
-	cassandraConfig, err := cassandra.CreateConfigWithSession(cassandraIP, "snap")
+	cassandraConfig, err := cassandra.CreateConfigWithSession(cassandraAddr, "snap")
 	if err != nil {
 		return err
 	}
@@ -117,6 +117,7 @@ func calculateAverage(valuesList []string) (*float64, error) {
 	return &result, nil
 }
 
+// TODO(ala) Replace with id gathered directly from metrics, when we add loadPointID there.
 func getLoadPointNumber(phase string) (*int, error) {
 	// Load point ID is last digit in given phase ID, extract it and return.
 	re := regexp.MustCompile(`([0-9]+)$`)

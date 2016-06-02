@@ -13,7 +13,7 @@ var (
 
 	listExperimentsCmd = viewer.Command("list", "List all experiment UUIDs")
 
-	showExperimentDataCmd     = viewer.Command("show", "Get Experiment Results for specific experiment UUID")
+	showExperimentDataCmd     = viewer.Command("show", "Get experiment results for specific experiment UUID")
 	showSensitivityProfileCmd = viewer.Command("sensitivity", "Draw sensitivity profile for specific experiment UUID")
 	showExperimentID          = showExperimentDataCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
 	sensitivityExperimentID   = showSensitivityProfileCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
@@ -51,7 +51,7 @@ func main() {
 	case showExperimentDataCmd.FullCommand():
 		showExperiment()
 
-	//
+	// Show sensitivity profile for specific experimentID.
 	case showSensitivityProfileCmd.FullCommand():
 		showSensitivityProfile()
 	}
