@@ -2,6 +2,7 @@ package isolation
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -171,6 +172,21 @@ func TestIntSet(t *testing.T) {
 			})
 		})
 
+		Convey("IntSet correctly converts to a slice of integers", func() {
+			s1 := NewIntSet()
+			s2 := NewIntSet(1, 3, 5, 7)
+
+			So(s1.AsSlice(), ShouldResemble, []int{})
+
+			s2slice := s2.AsSlice()
+			sort.Ints(s2slice)
+			So(len(s2slice), ShouldEqual, len(s2))
+			So(s2slice, ShouldResemble, []int{1, 3, 5, 7})
+			for _, elem := range s2slice {
+				So(s2.Contains(elem), ShouldBeTrue)
+			}
+		})
+
 		Convey("Creating a set with from range string \"0-5,34,46-48\"", func() {
 			s1, err := NewIntSetFromRange("0-5,34,46-48")
 			So(err, ShouldBeNil)
@@ -199,6 +215,24 @@ func TestIntSet(t *testing.T) {
 					So(s1.Contains(50), ShouldBeFalse)
 				})
 			})
+		})
+
+		Convey("IntSet correctly converts to a range string", func() {
+			s1 := NewIntSet()
+			s2 := NewIntSet(1, 3, 5, 7)
+
+			So(s1.AsRangeString(), ShouldEqual, "")
+			parsed, err := NewIntSetFromRange(s1.AsRangeString())
+			So(err, ShouldBeNil)
+			So(parsed.Equals(s1), ShouldBeTrue)
+
+			// Test against the result string's length because there
+			// is no ordering guarantee. The result must be some permutation
+			// of 1,2,5,7 but always seven characters long.
+			So(len(s2.AsRangeString()), ShouldEqual, 7)
+			parsed, err = NewIntSetFromRange(s2.AsRangeString())
+			So(err, ShouldBeNil)
+			So(parsed.Equals(s2), ShouldBeTrue)
 		})
 	})
 }

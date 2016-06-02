@@ -77,6 +77,26 @@ func (s IntSet) Difference(t IntSet) IntSet {
 	return result
 }
 
+// AsSlice returns a slice of integers that contains all elements from
+// this set.
+func (s IntSet) AsSlice() []int {
+	result := []int{}
+	for elem := range s {
+		result = append(result, elem)
+	}
+	return result
+}
+
+// AsRangeString returns a traditional cgroup set representation.
+// For example, "0,1,2,3,4,5,34,46,47,48"
+func (s IntSet) AsRangeString() string {
+	elemStrs := []string{}
+	for elem := range s {
+		elemStrs = append(elemStrs, strconv.Itoa(elem))
+	}
+	return strings.Join(elemStrs, ",")
+}
+
 // NewIntSet returns a new set containing all of the supplied elements.
 func NewIntSet(elems ...int) IntSet {
 	result := IntSet{}
@@ -89,7 +109,11 @@ func NewIntSet(elems ...int) IntSet {
 // NewIntSetFromRange creates a set from traditional cgroup set representation.
 // For example, "0-5,34,46-48"
 func NewIntSetFromRange(rangesString string) (IntSet, error) {
-	result := IntSet{}
+	result := NewIntSet()
+
+	if rangesString == "" {
+		return result, nil
+	}
 
 	// Split ranges string:
 	// "0-5,34,46-48" becomes ["0-5", "34", "46-48"]
