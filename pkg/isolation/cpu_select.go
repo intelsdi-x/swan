@@ -2,60 +2,94 @@ package isolation
 
 import (
 	"errors"
+	"fmt"
+	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // ShareLLCButNotL1L2 filter for selecting cpu.
 const ShareLLCButNotL1L2 = 1 << iota
 
-// CPUSelect with the desired criterion.
-// Select cores that share LLC but do not share L1, L2 cache.
-// Return error if we can not provide cores meeting criterion.
-// Scan all the sockets for set of core ids meeting filter
-func CPUSelect(countRequested int, filters uint) (IntSet, error) {
+// Implements round-robin allocation of cores.
+// TODO: Improve this, potentially keeping track of allocations
+//       on the system.
+var allocationSocket = 0
+var allocationSocketMutex sync.Mutex
 
-	threadSet := NewIntSet()
-	// If countRequested is zero then return error.
+func nextSocket() int {
+	allocationSocketMutex.Lock()
+	defer allocationSocketMutex.Unlock()
+
+	var info CPUInfo
+	err := info.Discover()
+	if err != nil {
+		return allocationSocket
+	}
+	next := allocationSocket
+	allocationSocket = (allocationSocket + 1) % info.Sockets
+	return next
+}
+
+// CPUSelect returns a set of logical cpu ids that match the supplied
+// criteria.
+//
+// For now, the only supported filter is to select cores that share LLC
+// but do not share L1 or L2 cache.
+//
+// Returns an error if the request cannot be satisfied.
+func CPUSelect(countRequested int, filters uint) (IntSet, error) {
 	if countRequested == 0 {
-		return nil, errors.New("Error - CPUSelect- number of core requested is zero")
+		return nil, errors.New("Number of core requested is zero")
 	}
 
-	// cpuDiscovered collect CPU topology.
-	var cpuDiscovered CPUInfo
-
-	err := cpuDiscovered.Discover()
+	// info collect CPU topology.
+	var info CPUInfo
+	err := info.Discover()
 	if err != nil {
 		return nil, err
 	}
 
-	corecount := 0
-
-	// Scan all the sockets for set of core ids meeting filter
 	if filters == ShareLLCButNotL1L2 {
-
-		// Return error if we can not provide cores meeting criterion.
-		// If countRequested is more than cores per socket return error.
-		if countRequested > cpuDiscovered.PhysicalCores {
-			return nil, errors.New("Error - CPUSelect - insufficient cores")
-		}
-		// Loop through all the sockets first regular HW threads (lower ids) then Hyperthreads(upper ids)
-		for socketid := 0; socketid < cpuDiscovered.Sockets*cpuDiscovered.ThreadsPerCore; socketid++ {
-			corecount = 0
-			// Loop through all the cores to find available core ids meeting filter
-			for cores := 0; cores < cpuDiscovered.PhysicalCores; cores++ {
-				threadSet.Add(socketid*cpuDiscovered.PhysicalCores + cores)
-				corecount++
-
-				if corecount == countRequested {
-					break
+		for i := 0; i < info.Sockets; i++ {
+			result, err := searchSocket(info, countRequested, i)
+			if err == nil {
+				if len(result) == countRequested {
+					log.Debug("Answering CPUSelect query for %d cpus with %v", countRequested, result)
+					return result, nil
 				}
 			}
-			if corecount == countRequested {
-				break
-			}
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("Unsatisfiable request")
+	}
+
+	return nil, fmt.Errorf("Unknown filter supplied (%d)", filters)
+}
+
+func searchSocket(info CPUInfo, countRequested, socket int) (IntSet, error) {
+	result := NewIntSet()
+	cores := info.SocketCores[socket]
+
+	if countRequested > len(cores) {
+		return nil, fmt.Errorf("Unsatisfiable request: need %d cores but only have %d", countRequested, len(cores))
+	}
+
+	for c := range cores {
+		if len(result) == countRequested {
+			break
+		}
+		cpus := info.CoreCpus[c]
+		// NOTE: Go map iteration order is intentionally randomized
+		//       to prevent depending on any implied order.
+		for cpu := range cpus {
+			// Add at most one logical cpu from each physical core
+			result.Add(cpu)
+			break
 		}
 	}
-	if corecount < countRequested {
-		return nil, errors.New("Error - CPUSelect - Insufficient cores to meet selection criteria")
-	}
-	return threadSet, nil
+	return result, nil
 }

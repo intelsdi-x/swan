@@ -13,6 +13,17 @@ func TestCPUSelect(t *testing.T) {
 
 	cpus.Discover()
 
+	Convey("Should build reasonable topology mappings", t, func() {
+		So(len(cpus.SocketCores), ShouldEqual, cpus.Sockets)
+		So(len(cpus.CoreCpus), ShouldEqual, cpus.PhysicalCores)
+
+		numCpus := 0
+		for _, cpus := range cpus.CoreCpus {
+			numCpus += len(cpus)
+		}
+		So(numCpus, ShouldEqual, cpus.PhysicalCores*cpus.ThreadsPerCore)
+	})
+
 	Convey("Should provide CPUSelect() to return an error when requesting zero cpus", t, func() {
 
 		threadset, err := isolation.CPUSelect(0, isolation.ShareLLCButNotL1L2)
