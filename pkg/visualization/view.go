@@ -18,9 +18,9 @@ func DrawTable(table *Table) error {
 }
 
 // PrintList prints elements from list.
-func PrintList(list []string) {
-	for _, value := range list {
-		fmt.Println(value)
+func PrintList(list *List) {
+	for _, value := range list.elements {
+		fmt.Println(list.label + value)
 	}
 }
 

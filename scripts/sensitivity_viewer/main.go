@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
@@ -19,21 +20,21 @@ var (
 )
 
 func listExperiments() {
-	err := sensitivity.List(*cassandraServer)
+	err := experiment.List(*cassandraServer)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func showExperiment() {
-	err := sensitivity.ExperimentTable(*showExperimentID, *cassandraServer)
+	err := experiment.Draw(*showExperimentID, *cassandraServer)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func showSensitivityProfile() {
-	err := sensitivity.Profile(*sensitivityExperimentID, *cassandraServer)
+	err := sensitivity.Draw(*sensitivityExperimentID, *cassandraServer)
 	if err != nil {
 		panic(err)
 	}

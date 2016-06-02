@@ -17,12 +17,14 @@ func NewTable(headers []string, data [][]string) *Table {
 // List is a model for data.
 type List struct {
 	elements []string
+	label    string
 }
 
 // NewList creates new model of data representation.
-func NewList(elements []string) *List {
+func NewList(elements []string, label string) *List {
 	return &List{
 		elements,
+		label,
 	}
 }
 

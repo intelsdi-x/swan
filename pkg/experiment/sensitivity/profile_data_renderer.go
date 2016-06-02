@@ -9,55 +9,66 @@ import (
 	"strconv"
 )
 
-func mapToString(m map[string]string) (result string) {
-	for key, value := range m {
-		result += fmt.Sprintf("%s:%s\n", key, value)
-	}
-	return result
-}
-
-func getMetricForValtype(valtype string, metrics *cassandra.Metrics) (result string) {
-	switch valtype {
-	case "boolval":
-		result = fmt.Sprintf("%t", metrics.Boolval())
-	case "strval":
-		result = metrics.Strval()
-	case "doubleval":
-		result = fmt.Sprintf("%f", metrics.Doubleval())
-	}
-	return result
-}
-
-// ExperimentTable draws table for given experiment ID.
-func ExperimentTable(experimentID string, host string) error {
-	data := [][]string{}
-	headers := []string{"namespace", "version", "host", "time", "value", "tags"}
-
-	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
+// Draw prepares data for sensitivity table with values for each aggressor and load point for given experiment ID and
+// Cassandra running on given IP.
+// It creates model of data in a form of table and asks view to draw it.
+func Draw(experimentID string, cassandraIP string) error {
+	// Configure Cassandra connection.
+	cassandraConfig, err := cassandra.CreateConfigWithSession(cassandraIP, "snap")
 	if err != nil {
 		return err
 	}
 
+	// Get data from Cassandra.
 	metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
 	if err != nil {
 		return err
 	}
 
-	for _, metrics := range metricsList {
-		// TODO(akwasnie) filter columns to show only some of them.
-		rowList := []string{}
-		rowList = append(rowList, metrics.Namespace())
-		rowList = append(rowList, fmt.Sprintf("%d", metrics.Version()))
-		rowList = append(rowList, metrics.Host())
-		rowList = append(rowList, metrics.Time().String())
-		rowList = append(rowList, getMetricForValtype(metrics.Valtype(), metrics))
-		rowList = append(rowList, mapToString(metrics.Tags()))
-		data = append(data, rowList)
+	// Prepare headers for view.
+	// TODO(Ala) Get number of load points from cassandra when they will be available there.
+	// loadPointsNumber := getLoadPointNumber()
+	loadPointsNumber := 10
+	headers := createHeadersForSensitivityProfile(loadPointsNumber)
+
+	// Prepare data for view.
+	data, err := prepareData(metricsList, loadPointsNumber)
+	if err != nil {
+		return err
 	}
+
+	// View table.
 	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
 	table := visualization.NewTable(headers, data)
 	visualization.DrawTable(table)
 	return nil
+}
+
+func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [][]string, err error) {
+	// List of unique aggressors names for given experiment ID.
+	aggressors := []string{}
+
+	for _, metrics := range metricsList {
+		aggressors = append(aggressors, createUniqueList("swan_aggressor_name", metrics.Tags(), aggressors)...)
+	}
+
+	// Create each row for aggressor.
+	for _, aggressor := range aggressors {
+		loadPointValues := map[int]string{}
+		// Get all values for each aggressor from metrics.
+		loadPointValues, err = getValuesForLoadPoints(metricsList, aggressor)
+		if err != nil {
+			return nil, err
+		}
+		rowList := []string{}
+		rowList = append(rowList, aggressor)
+		// Append values to row in correct order based on load point ID.
+		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
+			rowList = append(rowList, loadPointValues[loadPoint])
+		}
+		data = append(data, rowList)
+	}
+	return data, err
 }
 
 // isValueInSlice is used to check whether given string already exists in given slice.
@@ -78,20 +89,6 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 		}
 	}
 	return returnedNames
-}
-
-// List prints list of experimentIds on stdout.
-func List(host string) (err error) {
-	uniqueNames := []string{}
-	tagsMapsList, err := cassandra.GetTags(host)
-	if err != nil {
-		return err
-	}
-	for _, elem := range tagsMapsList {
-		uniqueNames = append(uniqueNames, createUniqueList("swan_experiment", elem, uniqueNames)...)
-	}
-	visualization.PrintList(uniqueNames)
-	return nil
 }
 
 func createHeadersForSensitivityProfile(loadPointsNumber int) (headers []string) {
@@ -124,7 +121,7 @@ func getLoadPointNumber(phase string) (*int, error) {
 	// Load point ID is last digit in given phase ID, extract it and return.
 	re := regexp.MustCompile(`([0-9]+)$`)
 	match := re.FindStringSubmatch(phase)
-	if len(match[1]) == 0 {
+	if len(match) == 0 {
 		errorMsg := fmt.Sprintf(
 			"Could not retrieve load point number from phase: %s", phase)
 		return nil, errors.New(errorMsg)
@@ -155,7 +152,7 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 						return nil, err
 					}
 					allLoadPointValues[*number] = append(allLoadPointValues[*number],
-						getMetricForValtype(metrics.Valtype(), metrics))
+						fmt.Sprintf("%f", metrics.Doubleval()))
 				}
 			}
 		}
@@ -171,51 +168,4 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 	}
 
 	return loadPointValues, nil
-}
-
-// Profile draws sensitivity table with values for each aggressor and load point for given experiment ID.
-func Profile(experimentID string, host string) error {
-	// All table data.
-	data := [][]string{}
-	// List of unique aggressors names for given experiment ID.
-	aggressors := []string{}
-
-	// TODO(Ala) Get number of load points from cassandra when they will be available there.
-	// loadPointsNumber := getLoadPointNumber()
-	loadPointsNumber := 10
-	headers := createHeadersForSensitivityProfile(loadPointsNumber)
-
-	cassandraConfig, err := cassandra.CreateConfigWithSession(host, "snap")
-	if err != nil {
-		return err
-	}
-	metricsList, err := cassandraConfig.GetValuesForGivenExperiment(experimentID)
-	if err != nil {
-		return err
-	}
-
-	for _, metrics := range metricsList {
-		aggressors = append(aggressors, createUniqueList("swan_aggressor_name", metrics.Tags(), aggressors)...)
-	}
-
-	// Create each row for aggressor.
-	for _, aggressor := range aggressors {
-		loadPointValues := map[int]string{}
-		// Get all values for each aggressor from metrics.
-		loadPointValues, err = getValuesForLoadPoints(metricsList, aggressor)
-		if err != nil {
-			return err
-		}
-		rowList := []string{}
-		rowList = append(rowList, aggressor)
-		// Append values to row in correct order based on load point ID.
-		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
-			rowList = append(rowList, loadPointValues[loadPoint])
-		}
-		data = append(data, rowList)
-	}
-	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
-	table := visualization.NewTable(headers, data)
-	visualization.DrawTable(table)
-	return nil
 }
