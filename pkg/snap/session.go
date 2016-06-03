@@ -233,7 +233,7 @@ func (s *Session) waitForStop() error {
 			return t.Err
 		}
 
-		if t.State == "Stopped" && t.State == "Disabled" {
+		if t.State == "Stopped" || t.State == "Disabled" {
 			return nil
 		}
 
