@@ -43,9 +43,9 @@ func TestCPUSelect(t *testing.T) {
 			So(threadset, ShouldHaveLength, cpus.PhysicalCores)
 		})
 
-		Convey("It should contain all core ids", func() {
-			for i := 0; i < cpus.PhysicalCores; i++ {
-				So(threadset.Contains(i), ShouldBeTrue)
+		Convey("It should contain exactly one CPU from each physical core", func() {
+			for core := range cpus.CoreCpus {
+				So(len(threadset.Intersection(cpus.CoreCpus[core])), ShouldEqual, 1)
 			}
 		})
 	})
