@@ -52,8 +52,9 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 		scenarios = append(scenarios, createUniqueList("swan_aggressor_name", metrics.Tags(), scenarios)...)
 	}
 
-	// Create each row for aggressor.
+	// Create each row for scenario.
 	for _, scenario := range scenarios {
+
 		loadPointValues := map[int]string{}
 		// Get all values for each aggressor from metrics.
 		loadPointValues, err = getValuesForLoadPoints(metricsList, scenario)
@@ -61,18 +62,21 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 			return nil, err
 		}
 
-		// For None aggressor display Baseline.
-		rowList := []string{}
-		if scenario == "None" {
-			scenario = "Baseline"
+		row := []string{}
+		// Append values to row in correct order based on load point ID.
+		for loadPoint := 1; loadPoint <= loadPointsNumber; loadPoint++ {
+			row = append(row, loadPointValues[loadPoint])
 		}
 
-		rowList = append(rowList, scenario)
-		// Append values to row in correct order based on load point ID.
-		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
-			rowList = append(rowList, loadPointValues[loadPoint])
+		// Append labels to rows, if aggressor is None change label to Baseline.
+		// Append rows to table data, Baseline in a first row.
+		if scenario == "None" {
+			row = append([]string{"Baseline"}, row...)
+			data = append([][]string{row}, data...)
+		} else {
+			row = append([]string{scenario}, row...)
+			data = append(data, row)
 		}
-		data = append(data, rowList)
 	}
 	return data, err
 }
