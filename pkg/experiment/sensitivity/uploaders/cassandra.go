@@ -82,18 +82,18 @@ func NewCassandra(config Config) (sensitivity.Uploader, error) {
 }
 
 //SendMetrics implements metrics.Uploader interface
-func (c cassandra) SendMetrics(metrics sensitivity.Metadata) error {
-	experimentMetrics := c.buildExperimentMetadata(metrics)
+func (c cassandra) SendMetadata(metadata sensitivity.Metadata) error {
+	experimentMetrics := c.buildExperimentMetadata(metadata)
 	err := c.experiment.Set(experimentMetrics).Run()
 	if err != nil {
 		return fmt.Errorf("Experiment metrics saving failed: %s", err.Error())
 	}
-	phaseMetrics := c.buildPhaseMetadata(metrics)
+	phaseMetrics := c.buildPhaseMetadata(metadata)
 	err = c.phase.Set(phaseMetrics).Run()
 	if err != nil {
 		return fmt.Errorf("Phase metrics saving failed: %s", err.Error())
 	}
-	measurementMetrics := c.buildMeasurementMetadata(metrics)
+	measurementMetrics := c.buildMeasurementMetadata(metadata)
 	err = c.measurement.Set(measurementMetrics).Run()
 	if err != nil {
 		return fmt.Errorf("Measurement metrics saving failed: %s", err.Error())
