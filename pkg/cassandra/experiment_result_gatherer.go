@@ -34,9 +34,9 @@ func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID stri
 }
 
 // GetTags selects all tags for all experiments for given host on which Cassandra runs.
-func GetTags(host string) (tagsMapsList []map[string]string, err error) {
+func GetTags(cassandraAddress string) (tagsMapsList []map[string]string, err error) {
 	var tagsMap map[string]string
-	cassandraConfig, err := CreateConfigWithSession(host, "snap")
+	cassandraConfig, err := CreateConfigWithSession(cassandraAddress, "snap")
 	if err != nil {
 		return nil, err
 	}
