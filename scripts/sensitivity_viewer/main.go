@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 )
@@ -12,19 +13,30 @@ var (
 
 	listExperimentsCmd = viewer.Command("list", "List all experiment UUIDs")
 
-	showExperimentDataCmd = viewer.Command("show", "Get Experiment Results for specific experiment UUID")
-	experimentID          = showExperimentDataCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
+	showExperimentDataCmd     = viewer.Command("show", "Get experiment results for specific experiment UUID")
+	showSensitivityProfileCmd = viewer.Command("sensitivity", "Draw sensitivity profile for specific experiment UUID")
+	showExperimentID          = showExperimentDataCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
+	sensitivityExperimentID   = showSensitivityProfileCmd.Arg("experiment_uuid", "Experiment UUID").Required().String()
 )
 
 func listExperiments() {
-	err := cassandra.DrawList(*cassandraServer)
+	err := experiment.List(*cassandraServer)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// TODO(ala) sort table based on timestamp.
 func showExperiment() {
-	err := cassandra.DrawTable(*experimentID, *cassandraServer)
+	err := experiment.Draw(*showExperimentID, *cassandraServer)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// TODO(ala) create also CSV exporter of Sensitivity Profile.
+func showSensitivityProfile() {
+	err := sensitivity.Draw(*sensitivityExperimentID, *cassandraServer)
 	if err != nil {
 		panic(err)
 	}
@@ -40,5 +52,9 @@ func main() {
 	// Show experiment data for specified experimentID.
 	case showExperimentDataCmd.FullCommand():
 		showExperiment()
+
+	// Show sensitivity profile for specific experimentID.
+	case showSensitivityProfileCmd.FullCommand():
+		showSensitivityProfile()
 	}
 }
