@@ -194,7 +194,11 @@ func (s *Session) Stop() error {
 	if rs.Err != nil {
 		return rs.Err
 	}
-	s.waitForStop()
+
+	err := s.waitForStop()
+	if err != nil {
+		return err
+	}
 
 	rr := s.pClient.RemoveTask(s.task.ID)
 	if rr.Err != nil {
@@ -222,12 +226,17 @@ func (s *Session) Wait() error {
 	}
 }
 
-func (s *Session) waitForStop() {
+func (s *Session) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
-		if t.State == "Stopped" {
-			break
+		if t.Err != nil {
+			return t.Err
 		}
+
+		if t.State == "Stopped" && t.State == "Disabled" {
+			return nil
+		}
+
 		time.Sleep(100 * time.Millisecond)
 	}
 }
