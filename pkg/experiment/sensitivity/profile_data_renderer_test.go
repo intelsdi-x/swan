@@ -42,19 +42,7 @@ func TestProfileDataRenderer(t *testing.T) {
 		})
 
 	})
-	Convey("While creating headers for sensitivity profile", t, func() {
-		loadPointNumbers := 10
-		expectedSlice := []string{"Scenario/Load", "5%", "15%", "25%", "35%", "45%", "55%", "65%", "75%", "85%", "95%"}
-		headers := createHeadersForSensitivityProfile(loadPointNumbers)
-		Convey("I should receive list of headers with proper values and length equals given load points number "+
-			"+ 1 for table title",
-			func() {
-				So(len(headers), ShouldEqual, loadPointNumbers+1)
-				for index := range headers {
-					So(headers[index], ShouldEqual, expectedSlice[index])
-				}
-			})
-	})
+
 	Convey("While calculating average of string values", t, func() {
 		Convey("from empty slice, I should receive error", func() {
 			slice := []string{}

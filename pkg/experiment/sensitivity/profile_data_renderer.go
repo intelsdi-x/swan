@@ -25,11 +25,16 @@ func Draw(experimentID string, cassandraAddr string) error {
 		return err
 	}
 
+	qpsMap, err := getQPS(metricsList)
+	if err != nil {
+		return err
+	}
+
 	// Prepare headers for view.
 	// TODO(Ala) Get number of load points from cassandra when they will be available there.
 	// loadPointsNumber := getLoadPointNumber()
 	loadPointsNumber := 10
-	headers := createHeadersForSensitivityProfile(loadPointsNumber)
+	headers := createHeadersForSensitivityProfile(loadPointsNumber, qpsMap)
 
 	// Prepare data for view.
 	data, err := prepareData(metricsList, loadPointsNumber)
@@ -101,12 +106,18 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 	return returnedNames
 }
 
-func createHeadersForSensitivityProfile(loadPointsNumber int) (headers []string) {
+func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]string) (headers []string) {
+	var qps string
 	headers = append(headers, "Scenario/Load")
 	// Calculate percentage for each load point - from 5% to 95 %.
 	for loadPoint := 0; loadPoint < loadPointsNumber; loadPoint++ {
+		if len(qpsMap[loadPoint]) > 0 {
+			qps = qpsMap[loadPoint]
+		} else {
+			qps = ""
+		}
 		percentage := 5 + 90*loadPoint/(loadPointsNumber-1)
-		headers = append(headers, fmt.Sprintf("%d%%", percentage))
+		headers = append(headers, (fmt.Sprintf("%d%% ", percentage) + "(" + qps + ")"))
 	}
 	return headers
 }
@@ -142,6 +153,45 @@ func getLoadPointNumber(phase string) (*int, error) {
 		return nil, err
 	}
 	return &number, nil
+}
+
+func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
+	qpsMap := make(map[int]string)
+	var number int
+	var qps string
+	var aggressor string
+
+	// Get one scenario and find all qps values for it,
+	// as qps values are the same for all scenarios,
+	// they only vary for load points.
+	if len(metricsList) > 0 {
+		metric := metricsList[0]
+		for key, value := range metric.Tags() {
+			if key == "swan_aggressor_name" {
+				aggressor = value
+				break
+			}
+		}
+	}
+
+	for _, metrics := range metricsList {
+		if metrics.Tags()["swan_aggressor_name"] == aggressor {
+			for key, value := range metrics.Tags() {
+				if key == "swan_phase" {
+					resultedNumber, err := getLoadPointNumber(value)
+					if err != nil {
+						return nil, err
+					}
+					number = *resultedNumber
+				}
+				if key == "swan_loadpoint_qps" {
+					qps = value
+				}
+			}
+			qpsMap[number] = qps
+		}
+	}
+	return qpsMap, nil
 }
 
 func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) (map[int]string, error) {
