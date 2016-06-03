@@ -60,7 +60,13 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 		if err != nil {
 			return nil, err
 		}
+
+		// For None aggressor display Baseline.
 		rowList := []string{}
+		if aggressor == "None" {
+			aggressor = "Baseline"
+		}
+
 		rowList = append(rowList, aggressor)
 		// Append values to row in correct order based on load point ID.
 		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
