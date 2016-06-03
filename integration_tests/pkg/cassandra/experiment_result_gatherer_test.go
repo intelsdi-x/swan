@@ -54,6 +54,7 @@ func TestValuesGatherer(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While connecting to Cassandra with proper parameters", t, func() {
 		cassandraConfig, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
+		So(err, ShouldBeNil)
 		session := cassandraConfig.CassandraSession()
 		Convey("I should receive not empty session", func() {
 			So(session, ShouldNotBeNil)
