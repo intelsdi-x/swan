@@ -26,6 +26,7 @@ func listExperiments() {
 	}
 }
 
+// TODO(ala) sort table based on timestamp.
 func showExperiment() {
 	err := experiment.Draw(*showExperimentID, *cassandraServer)
 	if err != nil {
@@ -33,6 +34,7 @@ func showExperiment() {
 	}
 }
 
+// TODO(ala) create also CSV exporter of Sensitivity Profile.
 func showSensitivityProfile() {
 	err := sensitivity.Draw(*sensitivityExperimentID, *cassandraServer)
 	if err != nil {
