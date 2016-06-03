@@ -121,10 +121,10 @@ func main() {
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             500,             // us
-		LoadDuration:    1 * time.Second, //10 * time.Second,
-		LoadPointsCount: 1,               //10,
-		Repetitions:     1,               //3,
+		SLO:             500, // us
+		LoadDuration:    10 * time.Second,
+		LoadPointsCount: 10,
+		Repetitions:     3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
