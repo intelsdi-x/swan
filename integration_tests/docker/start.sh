@@ -108,14 +108,31 @@ function createDirs() {
 }
 
 function main() {
+    echo "createDirs\n"
+    date
     createDirs
+    echo "\n\nsetGitHubCredentials"
+    date
     setGitHubCredentials
+    echo "\n\nbuildSnap"
+    date
     buildSnap
+    date
+    echo "\n\ngetCode"
     getCode
+    echo "\n\ncd swan"
+    date
     cd swan
+    echo "\n\nprepareEnvironment"
+    date
     prepareEnvironment
+    date
+    echo "\n\nrunTests"
     runTests "$@"
+    echo "\n\ncleanUp"
+    date
     cleanUp
+    date
 }
 
 main "$@"
