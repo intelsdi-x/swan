@@ -111,8 +111,8 @@ func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]str
 	headers = append(headers, "Scenario/Load")
 	// Calculate percentage for each load point - from 5% to 95 %.
 	for loadPoint := 0; loadPoint < loadPointsNumber; loadPoint++ {
-		if len(qpsMap[loadPoint]) > 0 {
-			qps = qpsMap[loadPoint]
+		if len(qpsMap[loadPoint+1]) > 0 {
+			qps = qpsMap[loadPoint+1]
 		} else {
 			qps = ""
 		}
@@ -177,15 +177,15 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	for _, metrics := range metricsList {
 		if metrics.Tags()["swan_aggressor_name"] == aggressor {
 			for key, value := range metrics.Tags() {
+				if key == "swan_loadpoint_qps" {
+					qps = value
+				}
 				if key == "swan_phase" {
 					resultedNumber, err := getLoadPointNumber(value)
 					if err != nil {
 						return nil, err
 					}
 					number = *resultedNumber
-				}
-				if key == "swan_loadpoint_qps" {
-					qps = value
 				}
 			}
 			qpsMap[number] = qps
