@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	pth "path"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,15 @@ import (
 )
 
 const (
+	// CPUSetController is the canonical name of the cgroups cpuset controller.
+	CPUSetController = "cpuset"
+
+	// CPUController is the canonical name of the cgroups cpu controller.
+	CPUController = "cpu"
+
+	// MemoryController is the canonical name of the cgroups memory controller.
+	MemoryController = "memory"
+
 	// DefaultCommandTimeout is the default amount of time to wait for
 	// dispatched commands to finish executing.
 	DefaultCommandTimeout = 1 * time.Second
@@ -28,13 +38,40 @@ const (
 // utility programs like `cgcreate`, `cgexec`, `cgget` and friends.
 type Cgroup interface {
 	isolation.Isolation
+	Metadata
+	Filesystem
+}
 
-	// Path returns this cgroup's controllers.
+// Metadata represents a Linux control group's metadata.
+// These methods do not shell out to external libcgroup-tools
+// programs.
+type Metadata interface {
+	// Controllers returns this cgroup's controllers.
 	Controllers() []string
 
 	// Path returns this cgroup's path in the hierarchy.
 	Path() string
 
+	// IsRoot returns true if this cgroup is the root of the hierarchy.
+	IsRoot() bool
+
+	// Parent returns the direct ancestor of this cgroup, or nil if this
+	// is the root.
+	Parent() Cgroup
+
+	// Ancestors returns all ancestors of this cgroup, in depth order
+	// beginning with the root of the hierarchy. The result does not
+	// contain this cgroup.
+	Ancestors() []Cgroup
+
+	// Spec returns an identifier compatible with libcgroup-tools.
+	// Returns a string like 'cpu,cpuset:/my/cool/group'.
+	Spec() string
+}
+
+// Filesystem represents Linux control group's backing virtual file system.
+// These methods shell out to external libcgroup-tools programs.
+type Filesystem interface {
 	// AbsPath returns the absolute path to this cgroup within the
 	// VFS mount for the specified controller.
 	// Returns the empty string if the controller is not a member of
@@ -53,10 +90,6 @@ type Cgroup interface {
 	// Returns an error if this cgroup cannot be destroyed.
 	Destroy(recursive bool) error
 
-	// Parent returns the direct ancestor of this cgroup, or nil if this
-	// is the root.
-	Parent() Cgroup
-
 	// Tasks returns the pids for this cgroup and the supplied controller.
 	// Returns an error if the controller is not a member of
 	// this cgroup's controllers.
@@ -69,6 +102,36 @@ type Cgroup interface {
 
 	// Set overwrites the value of an attribute for this Cgroup.
 	Set(name string, value string) error
+
+	// SetAndCheck overwrites the value of an attribute for this Cgroup and
+	// returns an error if a subsequent read of the same attribute does
+	// not exactly match the written value.
+	SetAndCheck(name string, value string) error
+}
+
+// ByPathLength implements sort.Interface for []Cgroup.
+// We define a partial order on Cgroups based on path length.
+// For a slice of Cgroups in an ancestry chain this yields a topological
+// sort beginning with the root of the Cgroup hierarchy.
+type ByPathLength []Cgroup
+
+// Len returns the length of the Cgroup slice.
+// This method satisfies part of sort.Interface.
+func (b ByPathLength) Len() int {
+	return len(b)
+}
+
+// Swap swaps two elements in the Cgroup slice.
+// This method satisfies part of sort.Interface.
+func (b ByPathLength) Swap(i int, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+// Less returns true if the Cgroup at index i has a shorter path
+// than the Cgroup at index j..
+// This method satisfies part of sort.Interface.
+func (b ByPathLength) Less(i, j int) bool {
+	return len(b[i].Path()) < len(b[j].Path())
 }
 
 // NewCgroup returns a new Cgroup with the supplied controllers and path.
@@ -116,6 +179,10 @@ func (cg *cgroup) Path() string {
 	return cg.path
 }
 
+func (cg *cgroup) IsRoot() bool {
+	return cg.Path() == "/"
+}
+
 func (cg *cgroup) AbsPath(controller string) string {
 	p, err := SubsysPath(controller, cg.executor, cg.cmdTimeout)
 	if err != nil {
@@ -138,16 +205,16 @@ func (cg *cgroup) Exists() (bool, error) {
 }
 
 func (cg *cgroup) Create() error {
-	_, err := cg.cmdOutput("cgcreate", "-g", cg.spec())
+	_, err := cg.cmdOutput("cgcreate", "-g", cg.Spec())
 	return err
 }
 
 func (cg *cgroup) Destroy(recursive bool) error {
 	if recursive {
-		_, err := cg.cmdOutput("cgdelete", "--recursive", "-g", cg.spec())
+		_, err := cg.cmdOutput("cgdelete", "--recursive", "-g", cg.Spec())
 		return err
 	}
-	_, err := cg.cmdOutput("cgdelete", "-g", cg.spec())
+	_, err := cg.cmdOutput("cgdelete", "-g", cg.Spec())
 	return err
 }
 
@@ -160,6 +227,21 @@ func (cg *cgroup) Parent() Cgroup {
 	// guaranteed to be non-empty.
 	p, _ := NewCgroup(cg.controllers, parentPath)
 	return p
+}
+
+func (cg *cgroup) Ancestors() []Cgroup {
+	result := []Cgroup{}
+	current := cg.Parent()
+	for {
+		result = append(result, current)
+		if current.IsRoot() {
+			break
+		}
+		current = current.Parent()
+	}
+	// Sort the slice in topological order starting with the root.
+	sort.Sort(ByPathLength(result))
+	return result
 }
 
 func (cg *cgroup) Tasks(controller string) (isolation.IntSet, error) {
@@ -209,16 +291,31 @@ func (cg *cgroup) Set(name string, value string) error {
 	return nil
 }
 
+func (cg *cgroup) SetAndCheck(name string, value string) error {
+	err := cg.Set(name, value)
+	if err != nil {
+		return err
+	}
+	result, err := cg.Get(name)
+	if err != nil {
+		return err
+	}
+	if result != value {
+		return fmt.Errorf("Failed to set attribute '%s' to '%s' in cgroup '%s' (value is %s)", name, value, cg.Spec(), result)
+	}
+	return nil
+}
+
 func (cg *cgroup) Clean() error {
 	return cg.Destroy(true)
 }
 
 func (cg *cgroup) Decorate(command string) string {
-	return fmt.Sprintf("cgexec -g %s %s", cg.spec(), command)
+	return fmt.Sprintf("cgexec -g %s %s", cg.Spec(), command)
 }
 
 func (cg *cgroup) Isolate(PID int) error {
-	_, err := cg.cmdOutput("cgclassify", "-g", cg.spec(), strconv.Itoa(PID))
+	_, err := cg.cmdOutput("cgclassify", "-g", cg.Spec(), strconv.Itoa(PID))
 	return err
 }
 
@@ -251,12 +348,10 @@ func cmdOutput(executor executor.Executor, cmdTimeout time.Duration, argv ...str
 	return string(bytes), nil
 }
 
-func (cg *cgroup) cmdOutput(argv ...string) (string, error) {
-	return cmdOutput(cg.executor, cg.cmdTimeout, argv...)
+func (cg *cgroup) Spec() string {
+	return fmt.Sprintf("%s:%s", strings.Join(cg.controllers, ","), cg.path)
 }
 
-// Internal helper for creating libcgroup-tools compatible args.
-// Returns a string like 'cpu,cpuset:/my/cool/group'.
-func (cg *cgroup) spec() string {
-	return fmt.Sprintf("%s:%s", strings.Join(cg.controllers, ","), cg.path)
+func (cg *cgroup) cmdOutput(argv ...string) (string, error) {
+	return cmdOutput(cg.executor, cg.cmdTimeout, argv...)
 }

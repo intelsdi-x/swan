@@ -64,3 +64,38 @@ func TestCgroupPath(t *testing.T) {
 		})
 	})
 }
+
+// IsRoot() string
+func TestCgroupIsRoot(t *testing.T) {
+	Convey("After constructing a top-level cgroup", t, func() {
+		path := "foo"
+		cg, _ := NewCgroup([]string{"cpuset"}, path)
+
+		Convey("It should not be the root cgroup", func() {
+			So(cg.IsRoot(), ShouldBeFalse)
+		})
+		Convey("Its parent should be the root cgroup", func() {
+			So(cg.Parent().IsRoot(), ShouldBeTrue)
+		})
+	})
+}
+
+// Ancestors() string
+func TestCgroupAncestors(t *testing.T) {
+	Convey("After constructing a nested cgroup", t, func() {
+		path := "foo/bar/baz"
+		cg, _ := NewCgroup([]string{"cpuset"}, path)
+
+		Convey("There should be exactly three cgroups in the ancestor list", func() {
+			So(len(cg.Ancestors()), ShouldEqual, 3)
+		})
+
+		Convey("And the first ancestor should be the root of the cgroup hierarchy", func() {
+			So(cg.Ancestors()[0].IsRoot(), ShouldBeTrue)
+		})
+
+		Convey("And the last ancestor should have the same path as the original's parent", func() {
+			So(cg.Ancestors()[2].Path(), ShouldEqual, cg.Parent().Path())
+		})
+	})
+}
