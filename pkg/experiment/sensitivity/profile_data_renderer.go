@@ -46,28 +46,28 @@ func Draw(experimentID string, cassandraAddr string) error {
 
 func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [][]string, err error) {
 	// List of unique aggressors names for given experiment ID.
-	aggressors := []string{}
+	scenarios := []string{}
 
 	for _, metrics := range metricsList {
-		aggressors = append(aggressors, createUniqueList("swan_aggressor_name", metrics.Tags(), aggressors)...)
+		scenarios = append(scenarios, createUniqueList("swan_aggressor_name", metrics.Tags(), scenarios)...)
 	}
 
 	// Create each row for aggressor.
-	for _, aggressor := range aggressors {
+	for _, scenario := range scenarios {
 		loadPointValues := map[int]string{}
 		// Get all values for each aggressor from metrics.
-		loadPointValues, err = getValuesForLoadPoints(metricsList, aggressor)
+		loadPointValues, err = getValuesForLoadPoints(metricsList, scenario)
 		if err != nil {
 			return nil, err
 		}
 
 		// For None aggressor display Baseline.
 		rowList := []string{}
-		if aggressor == "None" {
-			aggressor = "Baseline"
+		if scenario == "None" {
+			scenario = "Baseline"
 		}
 
-		rowList = append(rowList, aggressor)
+		rowList = append(rowList, scenario)
 		// Append values to row in correct order based on load point ID.
 		for loadPoint := 1; loadPoint < loadPointsNumber; loadPoint++ {
 			rowList = append(rowList, loadPointValues[loadPoint])
