@@ -27,19 +27,19 @@ function setGitToken() {
 }
 
 function setUp() {
-    printf "\t\tdetectDocker\t%s\n" `date +%X`
+    printf "\t\t----------\t\tdetectDocker\t%s\n" `date +%X`
     detectDocker
-    printf "\t\tsetCache\t%s\n" `date +%X`
+    printf "\t\t----------\t\tsetCache\t%s\n" `date +%X`
     setCache
-    printf "\t\tsetGitToken\t%s\n" `date +%X`
+    printf "\t\t----------\t\tsetGitToken\t%s\n" `date +%X`
     setGitToken
-    printf "\t\tsetUp done\t%s\n" `date +%X`
+    printf "\t\t----------\t\tsetUp done\t%s\n" `date +%X`
 }
 
 function buildingUp() {
     # Skip showing output for clean output on CI
     echo "* Building up ${1} based image"
-    docker build -t "swan_${1}_tests" -f Dockerfile_${1} . 
+    docker build -t "swan_${1}_tests" -f Dockerfile_${1} . > /dev/null
 }
 
 function running() {
@@ -68,11 +68,11 @@ function runBuild() {
 }
 
 function main() {
-    printf "\t\tsetUp start\t%s\n" `date +%X`
+    printf "\t\t----------\t\tsetUp start\t%s\n" `date +%X`
     setUp
-    printf "\t\trunBuild\t%s\n" `date +%X`
+    printf "\t\t----------\t\trunBuild\t%s\n" `date +%X`
     runBuild "$1"
-    printf "\t\tmain done\t%s\n" `date +%X`
+    printf "\t\t----------\t\tmain done\t%s\n" `date +%X`
 }
 
 main $1

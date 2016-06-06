@@ -108,22 +108,22 @@ function createDirs() {
 }
 
 function main() {
-    printf "\t\tcreateDirs\t%s\n" `date +%X`
+    printf "\t\t----------\t\tcreateDirs\t%s\n" `date +%X`
     createDirs
-    printf "\t\tsetGitHubCredentials\t%s\n" `date +%X`
+    printf "\t\t----------\t\tsetGitHubCredentials\t%s\n" `date +%X`
     setGitHubCredentials
-    printf "\t\tbuildSnap\t%s\n" `date +%X`
+    printf "\t\t----------\t\tbuildSnap\t%s\n" `date +%X`
     buildSnap
-    printf "\t\tgetCode\t%s\n" `date +%X`
+    printf "\t\t----------\t\tgetCode\t%s\n" `date +%X`
     getCode
     cd swan
-    printf "\t\tprepareEnvironment\t%s\n" `date +%X`
+    printf "\t\t----------\t\tprepareEnvironment\t%s\n" `date +%X`
     prepareEnvironment
-    printf "\t\trunTests\t%s\n" `date +%X`
+    printf "\t\t----------\t\trunTests\t%s\n" `date +%X`
     runTests "$@"
-    printf "\t\tcleanUp\t%s\n" `date +%X`
+    printf "\t\t----------\t\tcleanUp\t%s\n" `date +%X`
     cleanUp
-    printf "\t\tmain done\t%s\n" `date +%X`
+    printf "\t\t----------\t\tmain done\t%s\n" `date +%X`
 }
 
 main "$@"
