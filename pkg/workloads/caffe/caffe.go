@@ -71,6 +71,7 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	if err != nil {
 		return nil, err
 	}
+	defer popWorkingDir(currentWorkingDir)
 
 	err = os.Chdir(c.conf.WorkdirPath)
 	if err != nil {
@@ -82,15 +83,11 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 		return nil, err
 	}
 
-	err = os.Chdir(currentWorkingDir)
-	if err != nil {
-		task.Stop()
-		task.Clean()
-		task.EraseOutput()
-		return nil, err
-	}
-
 	return task, err
+}
+
+func popWorkingDir(workdir string) {
+	os.Chdir(currentWorkingDir)
 }
 
 // Name returns human readable name for job.
