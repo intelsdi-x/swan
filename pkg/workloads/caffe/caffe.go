@@ -87,7 +87,7 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 }
 
 func popWorkingDir(workdir string) {
-	os.Chdir(currentWorkingDir)
+	os.Chdir(workdir)
 }
 
 // Name returns human readable name for job.
