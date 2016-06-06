@@ -10,7 +10,43 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
+	"io/ioutil"
+	"os/user"
+	"regexp"
+	"syscall"
 )
+
+// CheckDefaultRemoteConfigRequirements checks if default Config is possible.
+// Return error if it is not able.
+func CheckDefaultRemoteConfigRequirements(user *user.User) error {
+	if _, err := os.Stat(user.HomeDir + "/.ssh/id_rsa"); os.IsNotExist(err) {
+		return errors.New("skipping test: ssh keys not found in " + user.HomeDir + "/.ssh/id_rsa")
+	}
+
+	// Check if localhost is self-authorized.
+	hostname, err := os.Hostname()
+	if err != nil {
+		return errors.New("Skipping test: cannot figure out if localhost is self-authorized")
+	}
+
+	authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
+	if err != nil {
+		return errors.New("Skipping test: cannot figure out if localhost is self-authorized: " + err.Error())
+	}
+	authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
+	if err != nil {
+		return errors.New("Skipping test: cannot figure out if localhost is self-authorized: " + err.Error())
+	}
+
+	re := regexp.MustCompile(hostname)
+	match := re.Find(authorizedHosts)
+
+	if match == nil {
+		return errors.New("Skipping test: localhost (" + hostname + ") is not self-authorized")
+	}
+
+	return nil
+}
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
@@ -19,7 +55,7 @@ type Remote struct {
 	commandDecorators isolation.Decorator
 }
 
-// NewRemote returns a Local instance.
+// NewRemote returns a Remote instance.
 func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
 	return &Remote{
 		sshConfig,
@@ -27,10 +63,35 @@ func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
 	}
 }
 
+// NewRemoteWithDefaultConfig returns a Remote instance with default SSH configuration for
+// specified host and PID namespace enabled.
+func NewRemoteWithDefaultConfig(host string) (*Remote, error) {
+	user, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+
+	clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
+	if err != nil {
+		return nil, err
+	}
+
+	sshConfig := NewSSHConfig(clientConfig, host, 22)
+	isolationPid, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Remote{
+		sshConfig:         *sshConfig,
+		commandDecorators: isolationPid,
+	}, nil
+}
+
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting %s remotely", command)
+	log.Debug("Starting '", command, "' remotely")
 
 	connection, err := ssh.Dial(
 		"tcp",

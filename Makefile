@@ -56,6 +56,8 @@ build:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/baseline_local)
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_cassandra)
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_to_csv)
+	mkdir -p build/viewer
+	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
 
 build_workloads:
 	(cd workloads/data_caching/memcached && ./build.sh)

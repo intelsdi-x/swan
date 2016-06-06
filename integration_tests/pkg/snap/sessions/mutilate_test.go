@@ -14,9 +14,9 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/fs"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/swan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -74,7 +74,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				So(plugins, ShouldNotBeNil)
 
 				pluginPath := []string{
-					path.Join(swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
+					path.Join(fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
 				}
 				plugins.Load(pluginPath)
 
@@ -92,7 +92,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 				Convey("While launching MutilateSnapSession", func() {
 					mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-						swan.GetSwanBuildPath(), 1*time.Second, c, publisher,
+						fs.GetSwanBuildPath(), 1*time.Second, c, publisher,
 					)
 
 					mockedTaskInfo := new(mocks.TaskInfo)

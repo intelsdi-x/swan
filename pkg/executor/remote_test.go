@@ -1,10 +1,7 @@
 package executor_test
 
 import (
-	"io/ioutil"
-	"os"
 	"os/user"
-	"regexp"
 	"syscall"
 	"testing"
 
@@ -40,30 +37,8 @@ func TestRemote(t *testing.T) {
 		})
 
 		Convey("When creating client configuration with proper configuration", func() {
-			if _, err := os.Stat(user.HomeDir + "/.ssh/id_rsa"); os.IsNotExist(err) {
-				t.Skip("skipping test: ssh keys not found in " + user.HomeDir + "/.ssh/id_rsa")
-			}
-
-			// Check if localhost is self-authorized.
-			hostname, err := os.Hostname()
-			if err != nil {
-				t.Skip("Skipping test: cannot figure out if localhost is self-authorized")
-			}
-
-			authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
-			if err != nil {
-				t.Skip("Skipping test: cannot figure out if localhost is self-authorized", err)
-			}
-			authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
-			if err != nil {
-				t.Skip("Skipping test: cannot figure out if localhost is self-authorized", err)
-			}
-
-			re := regexp.MustCompile(hostname)
-			match := re.Find(authorizedHosts)
-
-			if match == nil {
-				t.Skip("Skipping test: localhost (" + hostname + ") is not self-authorized")
+			if err := CheckDefaultRemoteConfigRequirements(user); err != nil {
+				t.Skip(err)
 			}
 
 			clientConfig, err := NewClientConfig(user.Username, user.HomeDir+"/.ssh/id_rsa")
