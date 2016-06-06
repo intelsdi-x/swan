@@ -4,6 +4,7 @@ set -e -o pipefail
 
 CACHE_GO=""
 GIT_TOKEN_ENV=""
+DATE=`date`
 
 
 function detectDocker() {
@@ -26,9 +27,13 @@ function setGitToken() {
 }
 
 function setUp() {
+    printf "\t\tdetectDocker\t%s\n" `date +%X`
     detectDocker
+    printf "\t\tsetCache\t%s\n" `date +%X`
     setCache
+    printf "\t\tsetGitToken\t%s\n" `date +%X`
     setGitToken
+    printf "\t\tsetUp done\t%s\n" `date +%X`
 }
 
 function buildingUp() {
@@ -63,8 +68,11 @@ function runBuild() {
 }
 
 function main() {
+    printf "\t\tsetUp start\t%s\n" `date +%X`
     setUp
+    printf "\t\trunBuild\t%s\n" `date +%X`
     runBuild "$1"
+    printf "\t\tmain done\t%s\n" `date +%X`
 }
 
 main $1

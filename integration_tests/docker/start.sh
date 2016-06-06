@@ -108,31 +108,22 @@ function createDirs() {
 }
 
 function main() {
-    echo "createDirs\n"
-    date
+    printf "\t\tcreateDirs\t%s\n" `date +%X`
     createDirs
-    echo "\n\nsetGitHubCredentials"
-    date
+    printf "\t\tsetGitHubCredentials\t%s\n" `date +%X`
     setGitHubCredentials
-    echo "\n\nbuildSnap"
-    date
+    printf "\t\tbuildSnap\t%s\n" `date +%X`
     buildSnap
-    date
-    echo "\n\ngetCode"
+    printf "\t\tgetCode\t%s\n" `date +%X`
     getCode
-    echo "\n\ncd swan"
-    date
     cd swan
-    echo "\n\nprepareEnvironment"
-    date
+    printf "\t\tprepareEnvironment\t%s\n" `date +%X`
     prepareEnvironment
-    date
-    echo "\n\nrunTests"
+    printf "\t\trunTests\t%s\n" `date +%X`
     runTests "$@"
-    echo "\n\ncleanUp"
-    date
+    printf "\t\tcleanUp\t%s\n" `date +%X`
     cleanUp
-    date
+    printf "\t\tmain done\t%s\n" `date +%X`
 }
 
 main "$@"
