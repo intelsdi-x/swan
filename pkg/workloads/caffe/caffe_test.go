@@ -3,9 +3,11 @@ package caffe
 import (
 	"testing"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/vektra/errors"
 )
 
 // TestMemcachedWithMockedExecutor runs a Memcached launcher with the mocked executor to simulate
@@ -18,20 +20,32 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 		mHandle := new(mocks.TaskHandle)
 
 		c := New(mExecutor, DefaultConfig())
+		expectedCommand := fmt.Sprintf("%s train --solver=%s",
+			DefaultConfig().PathToBinary,
+			DefaultConfig().PathToSolver)
 
-		Convey("I launch the workload", func() {
+		Convey("When I launch the workload with success", func() {
+			mExecutor.On("Execute", expectedCommand).Return(mHandle, nil).Once()
 			handle, err := c.Launch()
 			Convey("Proper handle is returned", func() {
 				So(handle, ShouldEqual, mHandle)
 			})
 			Convey("Error is nil", func() {
-				So(err, ShouldNotBeNil)
+				So(err, ShouldBeNil)
 			})
-
 		})
 
-		_ = mExecutor
-		_ = mHandle
+		Convey("When I launch the workload with failure", func() {
+			expectedErr := errors.New("example error")
+			mExecutor.On("Execute", expectedCommand).Return(nil, expectedErr).Once()
+			handle, err := c.Launch()
+			Convey("Proper handle is returned", func() {
+				So(handle, ShouldBeNil)
+			})
+			Convey("Error is nil", func() {
+				So(err, ShouldEqual, expectedErr)
+			})
+		})
 	})
 }
 
