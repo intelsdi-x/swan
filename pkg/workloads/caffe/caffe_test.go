@@ -10,8 +10,6 @@ import (
 	"github.com/vektra/errors"
 )
 
-// TestMemcachedWithMockedExecutor runs a Memcached launcher with the mocked executor to simulate
-// different cases like proper process execution and error case.
 func TestCaffeWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
@@ -21,8 +19,8 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 
 		c := New(mExecutor, DefaultConfig())
 		expectedCommand := fmt.Sprintf("%s train --solver=%s",
-			DefaultConfig().PathToBinary,
-			DefaultConfig().PathToSolver)
+			DefaultConfig().BinaryPath,
+			DefaultConfig().SolverPath)
 
 		Convey("When I launch the workload with success", func() {
 			mExecutor.On("Execute", expectedCommand).Return(mHandle, nil).Once()
@@ -53,10 +51,10 @@ func TestCaffeDefaultConfig(t *testing.T) {
 	Convey("When I create default config for Caffe", t, func() {
 		config := DefaultConfig()
 		Convey("Binary field is not blank", func() {
-			So(config.PathToBinary, ShouldNotBeBlank)
+			So(config.BinaryPath, ShouldNotBeBlank)
 		})
 		Convey("Solver field is not blank", func() {
-			So(config.PathToSolver, ShouldNotBeBlank)
+			So(config.SolverPath, ShouldNotBeBlank)
 		})
 	})
 }

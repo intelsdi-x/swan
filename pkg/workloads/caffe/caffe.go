@@ -6,28 +6,19 @@ import (
 	"github.com/intelsdi-x/swan/pkg/osutil"
 	"github.com/intelsdi-x/swan/pkg/swan"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"os"
 	"path"
 )
 
 const (
-	binaryEnvKey = "SWAN_CAFFE_PATH"
-	solverEnvKey = "SWAN_CAFFE_SOLVER_PATH"
+	binaryEnvKey  = "SWAN_CAFFE_BINARY_PATH"
+	solverEnvKey  = "SWAN_CAFFE_SOLVER_PATH"
+	workdirEnvKey = "SWAN_CAFFE_WORKING_DIR_PATH"
 
-	defaultBinaryRelativePath = "tools/caffe"
-	defaultSolverRelativePath = "examples/cifar10/cifar10_quick_solver.prototxt"
+	defaultBinaryRelativePath  = "deep_learning/caffe/caffe_src/build/tools/caffe"
+	defaultSolverRelativePath  = "deep_learning/caffe/caffe_src/examples/cifar10/cifar10_quick_solver.prototxt"
+	defaultWorkdirRelativePath = "deep_learning/caffe/caffe_src/"
 )
-
-//#!/usr/bin/env sh
-//
-//TOOLS=./build/tools
-//
-//$TOOLS/caffe train \
-//--solver=examples/cifar10/cifar10_quick_solver.prototxt
-//
-//# reduce learning rate by factor of 10 after 8 epochs
-//$TOOLS/caffe train \
-//--solver=examples/cifar10/cifar10_quick_solver_lr1.prototxt \
-//--snapshot=examples/cifar10/cifar10_quick_iter_4000.solverstate.h5
 
 func getPathFromEnvOrDefault(envkey string, relativePath string) string {
 	return osutil.GetEnvOrDefault(
@@ -36,25 +27,28 @@ func getPathFromEnvOrDefault(envkey string, relativePath string) string {
 
 // Config is a config for the Caffe
 type Config struct {
-	PathToBinary string
-	PathToSolver string
+	BinaryPath  string
+	SolverPath  string
+	WorkdirPath string
 }
 
 // DefaultCaffeConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		PathToBinary: getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
-		PathToSolver: getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
+		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
+		SolverPath:  getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
+		WorkdirPath: getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
 	}
 }
 
-// Caffe ...
+// Caffe is a deep learning framework
+// It utiliz
 type Caffe struct {
 	exec executor.Executor
 	conf Config
 }
 
-// New is a constructor for Memcached.
+// New is a constructor for Caffe.
 func New(exec executor.Executor, config Config) workloads.Launcher {
 	return Caffe{
 		exec: exec,
@@ -65,16 +59,34 @@ func New(exec executor.Executor, config Config) workloads.Launcher {
 
 func (c Caffe) buildCommand() string {
 	return fmt.Sprintf("%s train --solver=%s",
-		c.conf.PathToBinary,
-		c.conf.PathToSolver)
+		c.conf.BinaryPath,
+		c.conf.SolverPath)
 }
 
 // Launch starts the workload (process or group of processes). It returns a workload
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
+	currentWorkingDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Chdir(c.conf.WorkdirPath)
+	if err != nil {
+		return nil, err
+	}
+
 	task, err = c.exec.Execute(c.buildCommand())
 	if err != nil {
+		return nil, err
+	}
+
+	err = os.Chdir(currentWorkingDir)
+	if err != nil {
+		task.Stop()
+		task.Clean()
+		task.EraseOutput()
 		return nil, err
 	}
 
