@@ -32,7 +32,7 @@ type Config struct {
 	WorkdirPath string
 }
 
-// DefaultCaffeConfig is a constructor for caffe.Config with default parameters.
+// DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
 		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
@@ -42,7 +42,6 @@ func DefaultConfig() Config {
 }
 
 // Caffe is a deep learning framework
-// It utiliz
 type Caffe struct {
 	exec executor.Executor
 	conf Config
@@ -63,9 +62,10 @@ func (c Caffe) buildCommand() string {
 		c.conf.SolverPath)
 }
 
-// Launch starts the workload (process or group of processes). It returns a workload
-// represented as a Task Handle instance.
-// Error is returned when Launcher is unable to start a job.
+// Launch launches Caffe workload
+// Caffe needs to run from it's own working directory, because
+// solver look for relative paths when dealing with training and testing
+// sets.
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	currentWorkingDir, err := os.Getwd()
 	if err != nil {
@@ -94,6 +94,6 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 }
 
 // Name returns human readable name for job.
-func (m Caffe) Name() string {
+func (c Caffe) Name() string {
 	return "Caffe"
 }
