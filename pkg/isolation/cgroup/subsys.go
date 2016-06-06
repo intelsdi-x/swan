@@ -26,7 +26,11 @@ func SubsysPath(name string, executor executor.Executor, timeout time.Duration) 
 	if err != nil {
 		return "", err
 	}
-	return mounts[name], nil
+	mount, mounted := mounts[name]
+	if !mounted {
+		return "", fmt.Errorf("Subsystem '%s' is not mounted", name)
+	}
+	return mount, nil
 }
 
 // SubsysMounts returns a map of cgroup subsystem controller names to
