@@ -16,7 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -74,7 +74,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				So(plugins, ShouldNotBeNil)
 
 				pluginPath := []string{
-					path.Join(swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
+					path.Join(utils.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
 				}
 				plugins.Load(pluginPath)
 
@@ -92,7 +92,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 				Convey("While launching MutilateSnapSession", func() {
 					mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-						swan.GetSwanBuildPath(), 1*time.Second, c, publisher,
+						utils.GetSwanBuildPath(), 1*time.Second, c, publisher,
 					)
 
 					mockedTaskInfo := new(mocks.TaskInfo)
@@ -126,15 +126,15 @@ func TestSnapMutilateSession(t *testing.T) {
 						// in "src/github.com/intelsdi-x/swan/misc/
 						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
 						expectedMetrics := map[string]string{
-							"avg":   "20.80000",
-							"std":   "23.10000",
-							"min":   "11.90000",
-							"5th":   "13.30000",
-							"10th":  "13.40000",
-							"90th":  "33.40000",
-							"95th":  "43.10000",
-							"99th":  "59.50000",
-							"qps": "4993.10000",
+							"avg":  "20.80000",
+							"std":  "23.10000",
+							"min":  "11.90000",
+							"5th":  "13.30000",
+							"10th": "13.40000",
+							"90th": "33.40000",
+							"95th": "43.10000",
+							"99th": "59.50000",
+							"qps":  "4993.10000",
 						}
 
 						Convey("Reading samples from file", func() {

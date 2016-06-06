@@ -33,7 +33,7 @@ func NewLocalIsolated(decorator isolation.Decorator) Local {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting ", command, "' locally ")
+	log.Debug("Starting '", command, "' locally ")
 
 	cmd := exec.Command("/bin/sh", "-c", l.commandDecorators.Decorate(command))
 

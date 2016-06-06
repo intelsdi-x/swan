@@ -14,6 +14,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	. "github.com/smartystreets/goconvey/convey"
+	"time"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 	EnvKey           = "REMOTE_EXECUTOR_SSH_KEY"
 	EnvMemcachedPath = "REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
 	EnvMemcachedUser = "REMOTE_EXECUTOR_MEMCACHED_USER"
+	EnvCmd           = "REMOTE_EXECUTOR_CMD"
 )
 
 var terminal ssh.TerminalModes
@@ -34,37 +36,60 @@ func init() {
 	}
 }
 
-func TestRemoteProcessPidIsolation(t *testing.T) {
-	if isEnvironmentReady() {
-		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+func isMemcachedEnvironmentReady() bool {
+	if os.Getenv(EnvHost) == "" {
+		return false
+	}
+	if os.Getenv(EnvUser) == "" {
+		return false
+	}
+	if os.Getenv(EnvKey) == "" {
+		return false
+	}
+	if os.Getenv(EnvMemcachedPath) == "" {
+		return false
+	}
+	if os.Getenv(EnvMemcachedUser) == "" {
+		return false
+	}
+
+	return true
+}
+
+func TestMemcachedRemoteProcessPidIsolation(t *testing.T) {
+	if isMemcachedEnvironmentReady() {
+		Convey("When I create remote executor for memcached", t, testMemcachedRemoteProcessPidIsolation)
 	} else {
-		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+		SkipConvey("When I create remote executor for memcached", t, testMemcachedRemoteProcessPidIsolation)
 	}
 }
 
 func isEnvironmentReady() bool {
-	ready := true
-	if value := os.Getenv(EnvHost); value == "" {
-		ready = false
+	if os.Getenv(EnvHost) == "" {
+		return false
 	}
-	if value := os.Getenv(EnvUser); value == "" {
-		ready = false
+	if os.Getenv(EnvUser) == "" {
+		return false
 	}
-
-	if value := os.Getenv(EnvKey); value == "" {
-		ready = false
+	if os.Getenv(EnvKey) == "" {
+		return false
 	}
-	if value := os.Getenv(EnvMemcachedPath); value == "" {
-		ready = false
-	}
-	if value := os.Getenv(EnvMemcachedUser); value == "" {
-		ready = false
+	if os.Getenv(EnvCmd) == "" {
+		return false
 	}
 
-	return ready
+	return true
 }
 
-func testRemoteProcessPidIsolation() {
+func TestCustomRemoteProcess(t *testing.T) {
+	if isEnvironmentReady() {
+		Convey("When I create remote executor", t, testCustomRemoteProcess)
+	} else {
+		SkipConvey("When I create remote executor", t, testCustomRemoteProcess)
+	}
+}
+
+func testMemcachedRemoteProcessPidIsolation() {
 	clientConfig, cErr := executor.NewClientConfig(os.Getenv(EnvUser), os.Getenv(EnvKey))
 	So(cErr, ShouldBeNil)
 	sshConfig := executor.NewSSHConfig(clientConfig, os.Getenv(EnvHost), 22)
@@ -147,5 +172,30 @@ func soProcessIsNotRunning(client *ssh.Client, pid string) {
 	_, err = session.Output("sudo cat /proc/" + pid + "/cmdline")
 	So(err, ShouldNotBeNil)
 	So(err.Error(), ShouldStartWith, "Process exited with: 1")
+
+}
+
+func testCustomRemoteProcess() {
+	clientConfig, cErr := executor.NewClientConfig(os.Getenv(EnvUser), os.Getenv(EnvKey))
+	So(cErr, ShouldBeNil)
+	sshConfig := executor.NewSSHConfig(clientConfig, os.Getenv(EnvHost), 22)
+
+	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	remote := executor.NewRemote(*sshConfig, isolation.Decorators{unshare})
+
+	Convey("I should be able to execute remote command and see the processes running", func() {
+		task, err := remote.Execute(os.Getenv(EnvCmd))
+		So(err, ShouldBeNil)
+		defer func() {
+			err := task.Stop()
+			So(err, ShouldBeNil)
+			_, err = task.ExitCode()
+			So(err, ShouldBeNil)
+			task.Clean()
+			task.EraseOutput()
+		}()
+
+		task.Wait(500 * time.Millisecond)
+	})
 
 }

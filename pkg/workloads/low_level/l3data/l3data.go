@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
@@ -14,15 +13,26 @@ import (
 const (
 	name            = "L3 Data"
 	defaultDuration = 86400 * time.Second
-	defaultL3Path   = "low-level-aggressors/l3"
-	l3PathEnv       = "SWAN_L3_PATH"
+	defaultPath     = "low-level-aggressors/l3"
+	// l3PathArg represents key for CLI option. It also is base for env name.
+	// (uppercase + SWAN prefix)
+	l3PathArg = "l3_path"
 )
 
-// GetPathFromEnvOrDefault returns the l3 binary path from environment variable
-// SWAN_L3_PATH or default path in swan directory.
+// GetAbsDefaultPath returns default, absolute path to binary.
+func GetAbsDefaultPath() string {
+	return path.Join(utils.GetSwanWorkloadsPath(), defaultPath)
+}
+
+// GetPathFromEnvOrDefault returns the binary path from environment variable
+// or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		l3PathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultL3Path))
+	return utils.GetEnvOrDefault(utils.ChangeToEnvName(l3PathArg), GetAbsDefaultPath())
+}
+
+// PathArg returns CLI argument for binary path.
+func PathArg() (string, string, string) {
+	return l3PathArg, "Absolute path to L3 binary", GetAbsDefaultPath()
 }
 
 // Config is a struct for l3 aggressor configuration.

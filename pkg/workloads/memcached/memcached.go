@@ -7,8 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils"
 	"path"
 )
 
@@ -19,15 +18,27 @@ const (
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
-	defaultMemcachedPath  = "data_caching/memcached/memcached-1.4.25/build/memcached"
-	memcachedPathEnv      = "SWAN_MEMCACHED_PATH"
+	defaultPath           = "data_caching/memcached/memcached-1.4.25/build/memcached"
+	defaultServerIP       = "0.0.0.0"
+	// memcachedPathArg represents key for CLI option. It also is base for env name.
+	// (uppercase + SWAN prefix)
+	memcachedPathArg = "memcached_path"
 )
 
-// GetPathFromEnvOrDefault returns the memcached binary path from environment variable
-// SWAN_MEMCACHED_PATH or default path in swan directory.
+// GetAbsDefaultPath returns default, absolute path to binary.
+func GetAbsDefaultPath() string {
+	return path.Join(utils.GetSwanWorkloadsPath(), defaultPath)
+}
+
+// GetPathFromEnvOrDefault returns the binary path from environment variable
+// or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		memcachedPathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMemcachedPath))
+	return utils.GetEnvOrDefault(utils.ChangeToEnvName(memcachedPathArg), GetAbsDefaultPath())
+}
+
+// PathArg returns CLI argument for binary path.
+func PathArg() (string, string, string) {
+	return memcachedPathArg, "Absolute path to memcached binary", GetAbsDefaultPath()
 }
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -48,6 +59,7 @@ type Config struct {
 	NumThreads     int
 	MaxMemoryMB    int
 	NumConnections int
+	ServerIP       string
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
@@ -59,6 +71,7 @@ func DefaultMemcachedConfig() Config {
 		NumThreads:     defaultNumThreads,
 		MaxMemoryMB:    defaultMaxMemoryMB,
 		NumConnections: defaultNumConnections,
+		ServerIP:       defaultServerIP,
 	}
 }
 
@@ -101,6 +114,7 @@ func New(exec executor.Executor, config Config) Memcached {
 
 func (m Memcached) buildCommand() string {
 	return fmt.Sprint(m.conf.PathToBinary,
+		" -l ", m.conf.ServerIP,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
 		" -t ", m.conf.NumThreads,
@@ -117,7 +131,7 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 
-	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.Port)
+	address := fmt.Sprintf("%s:%d", m.conf.ServerIP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
 		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
 			address)

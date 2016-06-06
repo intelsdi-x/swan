@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+const (
+	addressArg     = "snapd_addr"
+	defaultAddress = "127.0.0.1"
+)
+
+// AddressArg returns CLI argument for Snap daemon address.
+func AddressArg() (string, string, string) {
+	return addressArg,
+		"IP address of Snap daemon",
+		defaultAddress
+}
+
 type task struct {
 	Version  int
 	Schedule *client.Schedule
@@ -182,7 +194,11 @@ func (s *Session) Stop() error {
 	if rs.Err != nil {
 		return rs.Err
 	}
-	s.waitForStop()
+
+	err := s.waitForStop()
+	if err != nil {
+		return err
+	}
 
 	rr := s.pClient.RemoveTask(s.task.ID)
 	if rr.Err != nil {
@@ -196,22 +212,31 @@ func (s *Session) Stop() error {
 
 // Wait blocks until the task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) Wait() {
+func (s *Session) Wait() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
+		if t.Err != nil {
+			return t.Err
+		}
+
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
-			break
+			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func (s *Session) waitForStop() {
+func (s *Session) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
-		if t.State == "Stopped" {
-			break
+		if t.Err != nil {
+			return t.Err
 		}
+
+		if t.State == "Stopped" || t.State == "Disabled" {
+			return nil
+		}
+
 		time.Sleep(100 * time.Millisecond)
 	}
 }

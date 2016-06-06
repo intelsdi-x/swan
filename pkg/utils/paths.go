@@ -1,4 +1,4 @@
-package swan
+package utils
 
 import (
 	"os"
@@ -22,4 +22,9 @@ func GetSwanBuildPath() string {
 // GetSwanWorkloadsPath returns absolute path to Swan workloads directory.
 func GetSwanWorkloadsPath() string {
 	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "workloads")
+}
+
+// GetSwanExperimentPath returns absolute path to Swan experiment directory.
+func GetSwanExperimentPath() string {
+	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "experiments")
 }

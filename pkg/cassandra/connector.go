@@ -5,6 +5,18 @@ import (
 	"github.com/vektra/errors"
 )
 
+const (
+	addressArg     = "cassandra_addr"
+	defaultAddress = "127.0.0.1"
+)
+
+// AddressArg returns CLI argument for Cassandra DB address.
+func AddressArg() (string, string, string) {
+	return addressArg,
+		"IP address of Cassandra DB",
+		defaultAddress
+}
+
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {
 	cluster := gocql.NewCluster(ip)
 	cluster.Keyspace = keyspace

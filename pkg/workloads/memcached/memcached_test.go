@@ -26,7 +26,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	const (
-		expectedCommand = "test -p 11211 -u memcached -t 4 -m 64 -c 1024"
+		expectedCommand = "test -l 0.0.0.0 -p 11211 -u memcached -t 4 -m 64 -c 1024"
 		expectedHost    = "127.0.0.1"
 	)
 	Convey("When I create PID namespace isolation", t, func() {
