@@ -19,6 +19,7 @@
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
 /experiments/memcached/baseline_local/baseline_local
+/experiments/memcached/synthetics_caffe/synthetics_caffe
 /misc/**/*log
 /integration_tests/**/*log
 /integration_tests/**/remote_memcached_*
