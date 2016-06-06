@@ -39,7 +39,7 @@ function setUp() {
 function buildingUp() {
     # Skip showing output for clean output on CI
     echo "* Building up ${1} based image"
-    docker build -t "swan_${1}_tests" -f Dockerfile_${1} . > /dev/null
+    docker build -t "swan_${1}_tests" -f Dockerfile_${1} . 
 }
 
 function running() {
