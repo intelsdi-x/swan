@@ -56,7 +56,8 @@ EOF
       scons \
       tree \
       vim \
-      wget
+      wget 
+    . /home/vagrant/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
     wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
     tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
 SCRIPT
