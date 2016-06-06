@@ -53,5 +53,10 @@ func TestCgroupSubsysPath(t *testing.T) {
 			So(info, ShouldNotBeNil)
 			So(info.IsDir(), ShouldBeTrue)
 		})
+		Convey("And the foobar subsystem mount should not exist", func() {
+			mount, err := SubsysPath("foobar", executor.NewLocal(), DefaultCommandTimeout)
+			So(err, ShouldNotBeNil)
+			So(mount, ShouldEqual, "")
+		})
 	})
 }
