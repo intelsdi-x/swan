@@ -21,6 +21,8 @@ import (
 	//"os"
 	//"path"
 	//"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"time"
 )
 
@@ -29,19 +31,27 @@ func main() {
 	logLevel := logrus.InfoLevel
 	logrus.SetLevel(logLevel)
 
-	//numaZero := isolation.IntSet{0}
-	//hpCpus := isolation.IntSet{1, 2, 3, 4}
-	//beCpus := isolation.IntSet{5, 6, 7, 8}
+	numaZero := isolation.NewIntSet(0)
+	hpCpus := isolation.NewIntSet(1, 2, 3, 4)
+	beCpus := isolation.NewIntSet(5, 6, 7, 8)
 	//
-	//hpIsolation, err := NewCPUSet("hp", numaZero, []string{"cpuset"})
-	//beIsolation, err := NewCPUSet("be", numaZero, []string{"cpuset"}, "be")
+	hpIsolation, err := cgroup.NewCPUSet("hp", numaZero, hpCpus, true, false)
+	beIsolation, err := cgroup.NewCPUSet("be", numaZero, beCpus, true, false)
 	//
 	//hpIsolation, err := NewCPUSetWithExecutor()
+
+	hpIsolation.Create()
+	defer hpIsolation.Clean()
+	localHPIsolated := executor.NewLocalIsolated(hpIsolation)
+
+	beIsolation.Create()
+	defer beIsolation.Clean()
+	localBEIsolated := executor.NewLocalIsolated(beIsolation)
 
 	local := executor.NewLocal()
 
 	// Initialize Memcached Launcher.
-	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+	memcachedLauncher := memcached.New(localHPIsolated, memcached.DefaultMemcachedConfig())
 
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
@@ -101,11 +111,11 @@ func main() {
 		publisher)
 
 	// Initialize aggressors.
-	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
-	memBwAggressorLauncher := memoryBandwidth.New(local, memoryBandwidth.DefaultMemBwConfig())
-	l1iAggressorLauncher := l1instruction.New(local, l1instruction.DefaultL1iConfig())
-	lidAggressorLauncher := l1data.New(local, l1data.DefaultL1dConfig())
-	caffeAggressorLauncher := caffe.New(local, caffe.DefaultConfig())
+	llcAggressorLauncher := l3data.New(localBEIsolated, l3data.DefaultL3Config())
+	memBwAggressorLauncher := memoryBandwidth.New(localBEIsolated, memoryBandwidth.DefaultMemBwConfig())
+	l1iAggressorLauncher := l1instruction.New(localBEIsolated, l1instruction.DefaultL1iConfig())
+	lidAggressorLauncher := l1data.New(localBEIsolated, l1data.DefaultL1dConfig())
+	caffeAggressorLauncher := caffe.New(localBEIsolated, caffe.DefaultConfig())
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
