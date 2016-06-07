@@ -207,6 +207,7 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		if err != nil {
 			return nil, err
 		}
+		// Currently we want to show 99th percentile, we can change it here in future.
 		if *percentile == 99 {
 			if metrics.Tags()["swan_aggressor_name"] == aggressor {
 				// Find metric with phase ID and extract load point ID from it.
