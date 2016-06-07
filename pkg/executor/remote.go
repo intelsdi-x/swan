@@ -10,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
+	"syscall"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -19,23 +20,33 @@ type Remote struct {
 	commandDecorators isolation.Decorator
 }
 
-// NewRemote returns a Local instance.
-func NewRemote(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
+// NewRemote returns a Remote instance with default PID namespace isolation.
+func NewRemote(sshConfig SSHConfig) *Remote {
+	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+
 	return &Remote{
-		sshConfig,
-		decorator,
+		sshConfig:         sshConfig,
+		commandDecorators: isolationPid,
+	}
+}
+
+// NewRemoteIsolated returns a Remote instance.
+func NewRemoteIsolated(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
+	return &Remote{
+		sshConfig:         sshConfig,
+		commandDecorators: decorator,
 	}
 }
 
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting %s remotely", command)
+	log.Debug("Starting '", command, "' remotely")
 
 	connection, err := ssh.Dial(
 		"tcp",
-		fmt.Sprintf("%s:%d", remote.sshConfig.host, remote.sshConfig.port),
-		remote.sshConfig.clientConfig)
+		fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port),
+		remote.sshConfig.ClientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +125,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	}()
 
 	return newRemoteTaskHandle(session, stdoutFile, stderrFile,
-		remote.sshConfig.host, waitEndChannel, exitCode), nil
+		remote.sshConfig.Host, waitEndChannel, exitCode), nil
 }
 
 const killTimeout = 5 * time.Second
