@@ -5,6 +5,7 @@ import (
 
 	"errors"
 	"fmt"
+	"github.com/intelsdi-x/swan/pkg/net"
 	"golang.org/x/crypto/ssh"
 	"os"
 	"os/user"
@@ -47,14 +48,15 @@ func validateConfig(host string, user *user.User) error {
 	}
 
 	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
-	if host == "127.0.0.1" || host == "localhost" {
+	if net.IsAddrLocal(host) {
 		var err error
 		host, err = os.Hostname()
 		if err != nil {
 			return errors.New("Cannot figure out if localhost is self-authorized")
 		}
 
-		// TODO(bp): Make this for remote hosts as well, when we have /etc/hosts propagated on our hosts.
+		// TODO(bp): [SCE-423] Make this for remote hosts as well, when we have /etc/hosts
+		// propagated on our hosts.
 		// Currently we don't have /etc/hosts propagated and ssh cannot resolve the host.
 		// Even if we authorize the IP of remote machine it is saved using hostname in
 		// authorized keys file.

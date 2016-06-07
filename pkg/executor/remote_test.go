@@ -34,7 +34,7 @@ func TestRemote(t *testing.T) {
 			})
 
 			Convey("And while using Remote Shell, the generic Executor test should pass", func() {
-				testExecutor(t, NewRemote(*sshConfig))
+				testExecutor(t, NewRemote(sshConfig))
 			})
 		})
 	})

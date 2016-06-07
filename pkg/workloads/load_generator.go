@@ -1,9 +1,21 @@
 package workloads
 
 import (
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"time"
 )
+
+const (
+	loadGeneratorAddrKey     = "load_generator_addr"
+	defaultLoadGeneratorAddr = "127.0.0.1"
+	loadGeneratorAddrHelp    = "IP of the target machine for the load generator"
+)
+
+// FlagLoadGeneratorAddr registers arg for env and CLI for load generator addr and gives the promise.
+func FlagLoadGeneratorAddr() *string {
+	return conf.RegisterStringArg(loadGeneratorAddrKey, defaultLoadGeneratorAddr, loadGeneratorAddrHelp)
+}
 
 // LoadGenerator launches stresser which generates load on specified workload.
 type LoadGenerator interface {

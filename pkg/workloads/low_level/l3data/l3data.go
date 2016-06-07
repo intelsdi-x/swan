@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
@@ -14,27 +14,26 @@ import (
 const (
 	name            = "L3 Data"
 	defaultDuration = 86400 * time.Second
-	defaultL3Path   = "low-level-aggressors/l3"
-	l3PathEnv       = "SWAN_L3_PATH"
+	pathArgKey      = "l3_path"
+	pathArgHelp     = "Path to L3 Data binary"
+	defaultPath     = "low-level-aggressors/l3"
 )
-
-// GetPathFromEnvOrDefault returns the l3 binary path from environment variable
-// SWAN_L3_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		l3PathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultL3Path))
-}
 
 // Config is a struct for l3 aggressor configuration.
 type Config struct {
-	Path     string
+	Path     *string
 	Duration time.Duration
 }
 
 // DefaultL3Config is a constructor for l3 aggressor Config with default parameters.
 func DefaultL3Config() Config {
+	path := conf.RegisterStringArg(pathArgKey, pathArgHelp,
+		path.Join(fs.GetSwanWorkloadsPath(), defaultPath))
+	// Re-parse for environment variables.
+	conf.MustParseOnlyEnv()
+
 	return Config{
-		Path:     GetPathFromEnvOrDefault(),
+		Path:     path,
 		Duration: defaultDuration,
 	}
 }
@@ -54,7 +53,7 @@ func New(exec executor.Executor, config Config) workloads.Launcher {
 }
 
 func (l l3) buildCommand() string {
-	return fmt.Sprintf("%s %d", l.conf.Path, int(l.conf.Duration.Seconds()))
+	return fmt.Sprintf("%s %d", *l.conf.Path, int(l.conf.Duration.Seconds()))
 }
 
 func (l l3) verifyConfiguration() error {

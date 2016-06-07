@@ -39,7 +39,9 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 
 		Convey("While using Memcached launcher", func() {
 			config := DefaultMemcachedConfig()
-			config.PathToBinary = "test"
+
+			testPathBin := "test"
+			config.PathToBinary = &testPathBin
 			memcachedLauncher := New(
 				mockedExecutor,
 				config)
@@ -111,7 +113,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("Arguments passed to Executor should be a proper command", func() {
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEqual, "test")
+						So(err.Error(), ShouldEqual, testPathBin)
 
 						So(task, ShouldBeNil)
 

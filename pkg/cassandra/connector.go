@@ -2,8 +2,20 @@ package cassandra
 
 import (
 	"github.com/gocql/gocql"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/vektra/errors"
 )
+
+const (
+	cassandraAddrKey     = "cassandra_addr"
+	defaultCassandraAddr = "127.0.0.1"
+	cassandraAddrHelp    = "Address of Cassandra DB endpoint"
+)
+
+// FlagAddr registers arg for env and CLI for snapd address and gives the promise.
+func FlagAddr() *string {
+	return conf.RegisterStringArg(cassandraAddrKey, cassandraAddrHelp, defaultCassandraAddr)
+}
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {
 	cluster := gocql.NewCluster(ip)

@@ -16,23 +16,23 @@ import (
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
-	sshConfig         SSHConfig
+	sshConfig         *SSHConfig
 	commandDecorators isolation.Decorator
 }
 
 // NewRemote returns a Remote instance with default PID namespace isolation.
-func NewRemote(sshConfig SSHConfig) *Remote {
+func NewRemote(sshConfig *SSHConfig) Remote {
 	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
 
-	return &Remote{
+	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: isolationPid,
 	}
 }
 
 // NewRemoteIsolated returns a Remote instance.
-func NewRemoteIsolated(sshConfig SSHConfig, decorator isolation.Decorator) *Remote {
-	return &Remote{
+func NewRemoteIsolated(sshConfig *SSHConfig, decorator isolation.Decorator) Remote {
+	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: decorator,
 	}
