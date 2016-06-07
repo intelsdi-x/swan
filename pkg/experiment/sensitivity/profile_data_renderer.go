@@ -51,7 +51,8 @@ func Draw(experimentID string, cassandraAddr string) error {
 	return nil
 }
 
-func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [][]string, err error) {
+func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) ([][]string, error) {
+	data := [][]string{}
 	// List of unique aggressors names for given experiment ID.
 	scenarios := []string{}
 
@@ -64,7 +65,7 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 
 		loadPointValues := map[int]string{}
 		// Get all values for each aggressor from metrics.
-		loadPointValues, err = getValuesForLoadPoints(metricsList, scenario)
+		loadPointValues, err := getValuesForLoadPoints(metricsList, scenario)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +86,7 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 			data = append(data, row)
 		}
 	}
-	return data, err
+	return data, nil
 }
 
 // isValueInSlice is used to check whether given string already exists in given slice.
@@ -98,7 +99,8 @@ func isValueInSlice(value string, slice []string) bool {
 	return false
 }
 
-func createUniqueList(key string, elem map[string]string, uniqueNames []string) (returnedNames []string) {
+func createUniqueList(key string, elem map[string]string, uniqueNames []string) []string {
+	returnedNames := []string{}
 	// Add new value from map to uniqueNames if it does not exist in given uniqueNames.
 	for k, value := range elem {
 		if k == key && !isValueInSlice(value, uniqueNames) {
@@ -108,7 +110,8 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 	return returnedNames
 }
 
-func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]string) (headers []string) {
+func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]string) []string {
+	headers := []string{}
 	var qps string
 	headers = append(headers, "Scenario/Load")
 	// Calculate percentage for each load point - from 5% to 95 %.
@@ -124,7 +127,8 @@ func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]str
 	return headers
 }
 
-func calculateAverage(valuesList []string) (result float64, err error) {
+func calculateAverage(valuesList []string) (float64, error) {
+	var result float64
 	if len(valuesList) == 0 {
 		return result, errors.New("Empty list of values for given phase")
 	}
@@ -136,12 +140,12 @@ func calculateAverage(valuesList []string) (result float64, err error) {
 		}
 		sum += value
 	}
-	result = sum / float64(len(valuesList))
-	return result, nil
+	return sum / float64(len(valuesList)), nil
 }
 
 // TODO(ala) For getting LoadPointID - replace with id gathered directly from metrics, when we add loadPointID there.
-func getNumberForRegex(name string, regex string) (result int, err error) {
+func getNumberForRegex(name string, regex string) (int, error) {
+	var result int
 	re := regexp.MustCompile(regex)
 	match := re.FindStringSubmatch(name)
 	if len(match) == 0 {
