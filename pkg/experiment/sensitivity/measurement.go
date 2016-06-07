@@ -214,14 +214,18 @@ func (m *measurementPhase) run(session phase.Session) error {
 	// Defer cleaning the loadGeneratorTask.
 	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, loadGeneratorTask)
 
+	// Wait for load generation to end.
+	loadGeneratorTask.Wait(0)
+
 	// Launch Snap Session for loadGenerator if specified.
+	// NOTE: Common loadGenerators don't have HTTP and just save output to the file after
+	// completing the load generation.
+	// To have our snap task not disabled by Snap daemon because we could not read the file during
+	// load, we need to run snap session (task) only after load generation work ended.
 	err = m.launchSnapSession(loadGeneratorTask, session, m.lgForPr.SnapSessionLauncher)
 	if err != nil {
 		return err
 	}
-
-	// Wait for load generation to end.
-	loadGeneratorTask.Wait(0)
 
 	// Check status of load generation.
 	exitCode, err := loadGeneratorTask.ExitCode()
