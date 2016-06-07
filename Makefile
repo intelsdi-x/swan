@@ -58,8 +58,17 @@ build:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_to_csv)
 
 build_workloads:
-	(cd workloads/data_caching/memcached; ./build.sh)
-	(cd workloads/low-level-aggressors; make)
+	(cd workloads/data_caching/memcached && ./build.sh)
+	(cd workloads/low-level-aggressors && make -j4)
+
+	# Some workloads are Git Submodules
+	git submodule update --init --recursive
+
+	# Prepare & Build Caffe workload.
+	cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/
+	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch
+	cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/
+	(cd workloads/deep_learning/caffe/caffe_src && make -j4 all && ../prepare_ciphar10_dataset.sh)
 
 cleanup:
 	rm -fr misc/**/*log

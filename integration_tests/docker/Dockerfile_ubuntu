@@ -6,6 +6,9 @@ ENV GOPATH=/opt/gopath \
     PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
     GIT_TERMINAL_PROMPT=1
 
+ADD workload_deps_ubuntu/ /workload_deps_ubuntu/
+ADD install_deps.sh /workload_deps_ubuntu/
+
 RUN apt-get update && \
     apt-get install -y build-essential \
         automake \
@@ -18,6 +21,8 @@ RUN apt-get update && \
         scons \
         sudo \
         wget && \
+    (cd workload_deps_ubuntu && ./install_deps.sh) && \
+    apt-get clean && \
     ln -s /usr/bin/automake /usr/bin/automake-1.13 && \
     ln -s /usr/bin/aclocal /usr/bin/aclocal-1.13 && \
     ln -s /usr/bin/autoconf /usr/bin/autoconf-1.13 && \
