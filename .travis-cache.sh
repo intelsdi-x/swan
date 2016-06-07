@@ -4,7 +4,7 @@ CACHE_DIR=".cache"
 
 function createCacheDir() {
     if [[ ! -d $CACHE_DIR ]]; then
-        mkdir $CACHE_DIR
+        mkdir -p $CACHE_DIR
     fi
 }
 
@@ -32,10 +32,10 @@ function loadExportedImage()    {
 
 function main() {
     createCacheDir
-#    for distro in {"centos","ubuntu"}; do
-#        loadExportedImage $distro
-#        buildAndExportImage $distro
-#    done
+    for distro in {"centos","ubuntu"}; do
+        loadExportedImage $distro
+        buildAndExportImage $distro
+    done
 }
 
 main
