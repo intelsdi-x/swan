@@ -1,4 +1,4 @@
-package executor
+package executor_test
 
 import (
 	"io/ioutil"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	. "github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
