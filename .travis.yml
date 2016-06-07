@@ -11,7 +11,7 @@ env:
 - DISTRO=centos
 before_install:
 - ./.travis-cache.sh
-- docker run --name cassandra -p 127.0.0.1::9042 -p 127.0.0.1::9160 -d cassandra
+- docker run --name cassandra -p :9042:9042 -p :9160:9160 -d cassandra
 - docker ps
 script:
 - make integration_test_on_docker $DISTRO
