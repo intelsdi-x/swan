@@ -28,6 +28,11 @@ func main() {
 	logLevel := logrus.InfoLevel
 	logrus.SetLevel(logLevel)
 
+	hpIsolation, err := NewCgroup([]string{"cpuset"}, "hp")
+	beIsolation, err := NewCgroup([]string{"cpuset"}, "be")
+
+	//hpIsolation, err := NewCPUSetWithExecutor()
+
 	local := executor.NewLocal()
 
 	// Initialize Memcached Launcher.
