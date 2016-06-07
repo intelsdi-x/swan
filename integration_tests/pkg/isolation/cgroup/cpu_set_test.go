@@ -27,7 +27,7 @@ func TestCPUSet(t *testing.T) {
 		cpuExclusive := false
 		memExclusive := false
 
-		Convey("Creating the CPUSet should create and set the correct values for the underlying Cgroup", func() {
+		SkipConvey("Creating the CPUSet should create and set the correct values for the underlying Cgroup", func() {
 			cpuSet, err := cgroup.NewCPUSet(path, cpus, mems, cpuExclusive, memExclusive)
 			So(err, ShouldBeNil)
 
