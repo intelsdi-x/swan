@@ -60,13 +60,13 @@ func TestProfileDataRenderer(t *testing.T) {
 	Convey("While getting load point number", t, func() {
 		Convey("from correct PhaseID, I should receive proper value and no error", func() {
 			loadPoint := 1
-			value, err := getLoadPointNumber(fmt.Sprintf("loadpoint_id_%d", loadPoint))
+			value, err := getNumberForRegex(fmt.Sprintf("loadpoint_id_%d", loadPoint), `([0-9]+)$`)
 			So(*value, ShouldEqual, loadPoint)
 			So(err, ShouldBeNil)
 		})
 		Convey("from not correct PhaseID, I should receive error", func() {
 			loadPoint := 1
-			_, err := getLoadPointNumber(fmt.Sprintf("loadpoint_id", loadPoint))
+			_, err := getNumberForRegex(fmt.Sprintf("loadpoint_id", loadPoint), `([0-9]+)$`)
 			So(err, ShouldNotBeNil)
 		})
 	})
