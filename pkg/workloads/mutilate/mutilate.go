@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
 	"path"
@@ -29,8 +29,8 @@ const (
 // GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
 // SWAN_MUTILATE_PATH or default path in swan directory.
 func GetPathFromEnvOrDefault() string {
-	return osutil.GetEnvOrDefault(
-		mutilatePathEnv, path.Join(swan.GetSwanWorkloadsPath(), defaultMutilatePath))
+	return os.GetEnvOrDefault(
+		mutilatePathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultMutilatePath))
 }
 
 // Config contains all data for running mutilate.

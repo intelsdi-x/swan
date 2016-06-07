@@ -9,7 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
@@ -81,7 +81,7 @@ func TestSnap(t *testing.T) {
 				So(plugins, ShouldNotBeNil)
 
 				pluginPath := []string{
-					path.Join(swan.GetSwanBuildPath(), "snap-plugin-collector-session-test"),
+					path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-session-test"),
 				}
 				err := plugins.Load(pluginPath)
 				So(err, ShouldBeNil)
@@ -107,7 +107,7 @@ func TestSnap(t *testing.T) {
 					So(plugins, ShouldNotBeNil)
 
 					pluginPath := []string{path.Join(
-						swan.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
+						fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
 					err := plugins.Load(pluginPath)
 					So(err, ShouldBeNil)
 
