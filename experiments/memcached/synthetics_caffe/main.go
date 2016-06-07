@@ -6,10 +6,10 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/osutil"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	//"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
@@ -46,7 +46,7 @@ func main() {
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
 
-	memcachedHost := osutil.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
+	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
 	//mutilateHost := osutil.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
@@ -60,7 +60,7 @@ func main() {
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
 
-	snapAddress := osutil.GetEnvOrDefault("SWAN_SNAP_ADDRESS", "http://127.0.0.1:8181")
+	snapAddress := os.GetEnvOrDefault("SWAN_SNAP_ADDRESS", "http://127.0.0.1:8181")
 	snapConnection, err := client.New(snapAddress, "v1", true)
 	if err != nil {
 		panic(err)
@@ -90,12 +90,12 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	cassandraHostName := osutil.GetEnvOrDefault("SWAN_CASSANDRA_HOST", "127.0.0.1")
+	cassandraHostName := os.GetEnvOrDefault("SWAN_CASSANDRA_HOST", "127.0.0.1")
 	publisher.AddConfigItem("server", cassandraHostName)
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-		swan.GetSwanBuildPath(),
+		fs.GetSwanBuildPath(),
 		1*time.Second,
 		snapConnection,
 		publisher)
