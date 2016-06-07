@@ -20,7 +20,7 @@ import (
 	"github.com/shopspring/decimal"
 	//"os"
 	//"path"
-	"github.com/intelsdi-x/swan/pkg/isolation"
+	//"github.com/intelsdi-x/swan/pkg/isolation"
 	"time"
 )
 
@@ -29,14 +29,14 @@ func main() {
 	logLevel := logrus.InfoLevel
 	logrus.SetLevel(logLevel)
 
-	numaZero := isolation.IntSet{0}
-	hpCpus := CPUSelect.
-	beCpus := isolation.IntSet{}
-
-	hpIsolation, err := NewCPUSet("hp", numaZero, []string{"cpuset"})
-	beIsolation, err := NewCPUSet("be", numaZero, []string{"cpuset"}, "be")
-
-	hpIsolation, err := NewCPUSetWithExecutor()
+	//numaZero := isolation.IntSet{0}
+	//hpCpus := isolation.IntSet{1, 2, 3, 4}
+	//beCpus := isolation.IntSet{5, 6, 7, 8}
+	//
+	//hpIsolation, err := NewCPUSet("hp", numaZero, []string{"cpuset"})
+	//beIsolation, err := NewCPUSet("be", numaZero, []string{"cpuset"}, "be")
+	//
+	//hpIsolation, err := NewCPUSetWithExecutor()
 
 	local := executor.NewLocal()
 
@@ -47,7 +47,7 @@ func main() {
 	percentile, _ := decimal.NewFromString("99.9")
 
 	memcachedHost := osutil.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
-	mutilateHost := osutil.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
+	//mutilateHost := osutil.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
 		MemcachedHost:     memcachedHost,
