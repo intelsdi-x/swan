@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"
 	"regexp"
 	"strconv"
@@ -55,7 +56,7 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 	scenarios := []string{}
 
 	for _, metrics := range metricsList {
-		scenarios = append(scenarios, createUniqueList("swan_aggressor_name", metrics.Tags(), scenarios)...)
+		scenarios = append(scenarios, createUniqueList(phase.AggressorNameKey, metrics.Tags(), scenarios)...)
 	}
 
 	// Create each row for scenario.
@@ -148,7 +149,7 @@ func getNumberForRegex(name string, regex string) (result int, err error) {
 	}
 	number, err := strconv.Atoi(match[1])
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("Error while creating sensitivity profile: " + err.Error())
 	}
 	return number, nil
 }
@@ -162,16 +163,16 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	// they only vary for load points.
 	if len(metricsList) > 0 {
 		metric := metricsList[0]
-		aggressor = metric.Tags()["swan_aggressor_name"]
+		aggressor = metric.Tags()[phase.AggressorNameKey]
 	}
 	for _, metrics := range metricsList {
-		if metrics.Tags()["swan_aggressor_name"] == aggressor {
+		if metrics.Tags()[phase.AggressorNameKey] == aggressor {
 			// Load point ID is last digit in given phase ID, extract it and return.
-			key, err := getNumberForRegex(metrics.Tags()["swan_phase"], `([0-9]+)$`)
+			key, err := getNumberForRegex(metrics.Tags()[phase.PhaseKey], `([0-9]+)$`)
 			if err != nil {
 				return nil, err
 			}
-			qpsMap[key] = metrics.Tags()["swan_loadpoint_qps"]
+			qpsMap[key] = metrics.Tags()[phase.LoadPointQPSKey]
 
 		}
 	}
@@ -193,11 +194,11 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		}
 		// Currently we want to show 99th percentile, we can change it here in future.
 		if splittedNamespace[len(splittedNamespace)-1] == "99th" &&
-			metrics.Tags()["swan_aggressor_name"] == aggressor {
+			metrics.Tags()[phase.AggressorNameKey] == aggressor {
 
 			// Find metric with phase ID and extract load point ID from it.
 			// Add to map all values for key equals each load point ID.
-			number, err := getNumberForRegex(metrics.Tags()["swan_phase"], `([0-9]+)$`)
+			number, err := getNumberForRegex(metrics.Tags()[phase.PhaseKey], `([0-9]+)$`)
 			if err != nil {
 				return nil, err
 			}

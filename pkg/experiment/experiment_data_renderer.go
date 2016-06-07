@@ -3,6 +3,7 @@ package experiment
 import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"
 )
 
@@ -42,7 +43,7 @@ func List(cassandraIP string) (err error) {
 		return err
 	}
 	for _, elem := range tagsMapsList {
-		uniqueNames = append(uniqueNames, createUniqueList("swan_experiment", elem, uniqueNames)...)
+		uniqueNames = append(uniqueNames, createUniqueList(phase.ExperimentKey, elem, uniqueNames)...)
 	}
 	visualization.PrintList(visualization.NewList(uniqueNames, "experiment ID:"))
 	return nil
