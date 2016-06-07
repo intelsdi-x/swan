@@ -47,26 +47,26 @@ func TestProfileDataRenderer(t *testing.T) {
 		Convey("from empty slice, I should receive error", func() {
 			slice := []string{}
 			value, err := calculateAverage(slice)
-			So(value, ShouldBeNil)
+			So(value, ShouldEqual, 0)
 			So(err, ShouldNotBeNil)
 		})
 		Convey("from not empty slice, I should not receive error and I should receive proper value", func() {
 			slice := []string{"1", "2", "3"}
 			value, err := calculateAverage(slice)
-			So(*value, ShouldEqual, 2)
+			So(value, ShouldEqual, 2)
 			So(err, ShouldBeNil)
 		})
 	})
 	Convey("While getting load point number", t, func() {
 		Convey("from correct PhaseID, I should receive proper value and no error", func() {
 			loadPoint := 1
-			value, err := getLoadPointNumber(fmt.Sprintf("loadpoint_id_%d", loadPoint))
-			So(*value, ShouldEqual, loadPoint)
+			value, err := getNumberForRegex(fmt.Sprintf("loadpoint_id_%d", loadPoint), `([0-9]+)$`)
+			So(value, ShouldEqual, loadPoint)
 			So(err, ShouldBeNil)
 		})
 		Convey("from not correct PhaseID, I should receive error", func() {
 			loadPoint := 1
-			_, err := getLoadPointNumber(fmt.Sprintf("loadpoint_id", loadPoint))
+			_, err := getNumberForRegex(fmt.Sprintf("loadpoint_id", loadPoint), `([0-9]+)$`)
 			So(err, ShouldNotBeNil)
 		})
 	})
