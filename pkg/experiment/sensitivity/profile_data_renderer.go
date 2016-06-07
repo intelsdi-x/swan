@@ -122,36 +122,36 @@ func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]str
 	return headers
 }
 
-func calculateAverage(valuesList []string) (*float64, error) {
+func calculateAverage(valuesList []string) (result float64, err error) {
 	if len(valuesList) == 0 {
-		return nil, errors.New("Empty list of values for given phase")
+		return result, errors.New("Empty list of values for given phase")
 	}
 	var sum float64
 	for _, elem := range valuesList {
 		value, err := strconv.ParseFloat(elem, 64)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		sum += value
 	}
-	result := sum / float64(len(valuesList))
-	return &result, nil
+	result = sum / float64(len(valuesList))
+	return result, nil
 }
 
 // TODO(ala) For getting LoadPointID - replace with id gathered directly from metrics, when we add loadPointID there.
-func getNumberForRegex(name string, regex string) (*int, error) {
+func getNumberForRegex(name string, regex string) (result int, err error) {
 	re := regexp.MustCompile(regex)
 	match := re.FindStringSubmatch(name)
 	if len(match) == 0 {
 		errorMsg := fmt.Sprintf(
 			"Could not retrieve number from string: %s", name)
-		return nil, errors.New(errorMsg)
+		return result, errors.New(errorMsg)
 	}
 	number, err := strconv.Atoi(match[1])
 	if err != nil {
-		return nil, err
+		return result, err
 	}
-	return &number, nil
+	return number, nil
 }
 
 func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
@@ -185,7 +185,7 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 					if err != nil {
 						return nil, err
 					}
-					number = *resultedNumber
+					number = resultedNumber
 				}
 			}
 			qpsMap[number] = qps
@@ -208,21 +208,17 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 			return nil, err
 		}
 		// Currently we want to show 99th percentile, we can change it here in future.
-		if *percentile == 99 {
-			if metrics.Tags()["swan_aggressor_name"] == aggressor {
-				// Find metric with phase ID and extract load point ID from it.
-				// Add to map all values for key equals each load point ID.
-				for key, value := range metrics.Tags() {
-					if key == "swan_phase" {
-						number, err := getNumberForRegex(value, `([0-9]+)$`)
-						if err != nil {
-							return nil, err
-						}
-						allLoadPointValues[*number] = append(allLoadPointValues[*number],
-							fmt.Sprintf("%f", metrics.Doubleval()))
-					}
-				}
+		if percentile == 99 && metrics.Tags()["swan_aggressor_name"] == aggressor {
+
+			// Find metric with phase ID and extract load point ID from it.
+			// Add to map all values for key equals each load point ID.
+			number, err := getNumberForRegex(metrics.Tags()["swan_phase"], `([0-9]+)$`)
+			if err != nil {
+				return nil, err
 			}
+			allLoadPointValues[number] = append(allLoadPointValues[number],
+				fmt.Sprintf("%f", metrics.Doubleval()))
+
 		}
 	}
 
@@ -232,7 +228,7 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		if err != nil {
 			return nil, err
 		}
-		loadPointValues[key] = fmt.Sprintf("%f", *value)
+		loadPointValues[key] = fmt.Sprintf("%f", value)
 	}
 
 	return loadPointValues, nil
