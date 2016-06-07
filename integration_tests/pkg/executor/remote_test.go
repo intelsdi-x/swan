@@ -34,6 +34,7 @@ func init() {
 	}
 }
 
+// TODO(bp): Remove remote test from unit_test and test remote connection to localhost here.
 func TestRemoteProcessPidIsolation(t *testing.T) {
 	if isEnvironmentReady() {
 		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
