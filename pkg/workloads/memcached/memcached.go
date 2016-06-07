@@ -7,8 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/fs"
-	"github.com/intelsdi-x/swan/pkg/os"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"path"
 )
 
