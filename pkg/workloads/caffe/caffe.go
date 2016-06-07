@@ -42,6 +42,7 @@ func DefaultConfig() Config {
 }
 
 // Caffe is a deep learning framework
+// Implements workload.Launcher
 type Caffe struct {
 	exec executor.Executor
 	conf Config
@@ -62,7 +63,7 @@ func (c Caffe) buildCommand() string {
 		c.conf.SolverPath)
 }
 
-// Launch launches Caffe workload
+// Launch launches Caffe workload. It's implementation of workload.Launcher interface
 // Caffe needs to run from it's own working directory, because
 // solver look for relative paths when dealing with training and testing
 // sets.
