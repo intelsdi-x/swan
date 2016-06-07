@@ -1,4 +1,4 @@
-package executor
+package executor_test // avoids import cycle when importing from cgroup package
 
 import (
 	"fmt"
@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
+	. "github.com/intelsdi-x/swan/pkg/executor"
 	isolation "github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -43,7 +45,8 @@ func TestLocal(t *testing.T) {
 		}
 
 		Convey("Creating a single cgroup with cpu set for core 0 numa node 0", func() {
-			cpuset := isolation.NewCPUSet("/A", isolation.NewIntSet(0), isolation.NewIntSet(0))
+			cpuset, err := cgroup.NewCPUSet("/A", isolation.NewIntSet(0), isolation.NewIntSet(0), false, false)
+			So(err, ShouldBeNil)
 			cpuset.Create()
 			defer cpuset.Clean()
 
