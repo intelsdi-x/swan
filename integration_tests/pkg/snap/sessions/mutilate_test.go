@@ -126,15 +126,15 @@ func TestSnapMutilateSession(t *testing.T) {
 						// in "src/github.com/intelsdi-x/swan/misc/
 						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
 						expectedMetrics := map[string]string{
-							"avg":   "20.80000",
-							"std":   "23.10000",
-							"min":   "11.90000",
-							"5th":   "13.30000",
-							"10th":  "13.40000",
-							"90th":  "33.40000",
-							"95th":  "43.10000",
-							"99th":  "59.50000",
-							"qps": "4993.10000",
+							"avg":  "20.80000",
+							"std":  "23.10000",
+							"min":  "11.90000",
+							"5th":  "13.30000",
+							"10th": "13.40000",
+							"90th": "33.40000",
+							"95th": "43.10000",
+							"99th": "59.50000",
+							"qps":  "4993.10000",
 						}
 
 						Convey("Reading samples from file", func() {

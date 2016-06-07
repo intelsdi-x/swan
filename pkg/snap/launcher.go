@@ -11,7 +11,7 @@ import (
 type SessionHandle interface {
 	IsRunning() bool
 	Stop() error
-	Wait()
+	Wait() error
 }
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.
