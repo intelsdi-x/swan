@@ -182,7 +182,11 @@ func (s *Session) Stop() error {
 	if rs.Err != nil {
 		return rs.Err
 	}
-	s.waitForStop()
+
+	err := s.waitForStop()
+	if err != nil {
+		return err
+	}
 
 	rr := s.pClient.RemoveTask(s.task.ID)
 	if rr.Err != nil {
@@ -196,22 +200,36 @@ func (s *Session) Stop() error {
 
 // Wait blocks until the task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) Wait() {
+func (s *Session) Wait() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
+		if t.Err != nil {
+			return t.Err
+		}
+
+		if t.State == "Stopped" || t.State == "Disabled" {
+			return fmt.Errorf("Failed to wait for task: Task %s is in state %s", s.task.ID, t.State)
+
+		}
+
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
-			break
+			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func (s *Session) waitForStop() {
+func (s *Session) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
-		if t.State == "Stopped" {
-			break
+		if t.Err != nil {
+			return t.Err
 		}
+
+		if t.State == "Stopped" || t.State == "Disabled" {
+			return nil
+		}
+
 		time.Sleep(100 * time.Millisecond)
 	}
 }
