@@ -63,7 +63,7 @@ func main() {
 	logrus.Debug("Connecting to Snapd on ", *snapdAddr)
 	// TODO(bp): Make helper for passing host:port or only host option here.
 	snapConnection, err := client.New(
-		fmt.Sprint("http://%s:%s", *snapdAddr, snap.DefaultDaemonPort),
+		fmt.Sprintf("http://%s:%s", *snapdAddr, snap.DefaultDaemonPort),
 		"v1",
 		true,
 	)
