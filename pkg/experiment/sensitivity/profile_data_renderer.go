@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Draw prepares data for sensitivity table with values for each aggressor and load point for given experiment ID and
@@ -49,12 +51,13 @@ func Draw(experimentID string, cassandraAddr string) error {
 	return nil
 }
 
-func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [][]string, err error) {
+func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) ([][]string, error) {
+	data := [][]string{}
 	// List of unique aggressors names for given experiment ID.
 	scenarios := []string{}
 
 	for _, metrics := range metricsList {
-		scenarios = append(scenarios, createUniqueList("swan_aggressor_name", metrics.Tags(), scenarios)...)
+		scenarios = append(scenarios, createUniqueList(phase.AggressorNameKey, metrics.Tags(), scenarios)...)
 	}
 
 	// Create each row for scenario.
@@ -62,7 +65,7 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 
 		loadPointValues := map[int]string{}
 		// Get all values for each aggressor from metrics.
-		loadPointValues, err = getValuesForLoadPoints(metricsList, scenario)
+		loadPointValues, err := getValuesForLoadPoints(metricsList, scenario)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +86,7 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) (data [
 			data = append(data, row)
 		}
 	}
-	return data, err
+	return data, nil
 }
 
 // isValueInSlice is used to check whether given string already exists in given slice.
@@ -96,7 +99,8 @@ func isValueInSlice(value string, slice []string) bool {
 	return false
 }
 
-func createUniqueList(key string, elem map[string]string, uniqueNames []string) (returnedNames []string) {
+func createUniqueList(key string, elem map[string]string, uniqueNames []string) []string {
+	returnedNames := []string{}
 	// Add new value from map to uniqueNames if it does not exist in given uniqueNames.
 	for k, value := range elem {
 		if k == key && !isValueInSlice(value, uniqueNames) {
@@ -106,7 +110,8 @@ func createUniqueList(key string, elem map[string]string, uniqueNames []string) 
 	return returnedNames
 }
 
-func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]string) (headers []string) {
+func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]string) []string {
+	headers := []string{}
 	var qps string
 	headers = append(headers, "Scenario/Load")
 	// Calculate percentage for each load point - from 5% to 95 %.
@@ -122,43 +127,39 @@ func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]str
 	return headers
 }
 
-func calculateAverage(valuesList []string) (*float64, error) {
+func calculateAverage(valuesList []string) (float64, error) {
+	var result float64
 	if len(valuesList) == 0 {
-		return nil, errors.New("Empty list of values for given phase")
+		return result, errors.New("Empty list of values for given phase")
 	}
 	var sum float64
 	for _, elem := range valuesList {
 		value, err := strconv.ParseFloat(elem, 64)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		sum += value
 	}
-	result := sum / float64(len(valuesList))
-	return &result, nil
+	return sum / float64(len(valuesList)), nil
 }
 
-// TODO(ala) Replace with id gathered directly from metrics, when we add loadPointID there.
-func getLoadPointNumber(phase string) (*int, error) {
-	// Load point ID is last digit in given phase ID, extract it and return.
-	re := regexp.MustCompile(`([0-9]+)$`)
-	match := re.FindStringSubmatch(phase)
+// TODO(ala) For getting LoadPointID - replace with id gathered directly from metrics, when we add loadPointID there.
+func getNumberForRegex(name string, regex string) (int, error) {
+	var result int
+	re := regexp.MustCompile(regex)
+	match := re.FindStringSubmatch(name)
 	if len(match) == 0 {
-		errorMsg := fmt.Sprintf(
-			"Could not retrieve load point number from phase: %s", phase)
-		return nil, errors.New(errorMsg)
+		return result, fmt.Errorf("Could not retrieve number from string: %s", name)
 	}
 	number, err := strconv.Atoi(match[1])
 	if err != nil {
-		return nil, err
+		return result, fmt.Errorf("Error while creating sensitivity profile: " + err.Error())
 	}
-	return &number, nil
+	return number, nil
 }
 
 func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	qpsMap := make(map[int]string)
-	var number int
-	var qps string
 	var aggressor string
 
 	// Get one scenario and find all qps values for it,
@@ -166,29 +167,17 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	// they only vary for load points.
 	if len(metricsList) > 0 {
 		metric := metricsList[0]
-		for key, value := range metric.Tags() {
-			if key == "swan_aggressor_name" {
-				aggressor = value
-				break
-			}
-		}
+		aggressor = metric.Tags()[phase.AggressorNameKey]
 	}
-
 	for _, metrics := range metricsList {
-		if metrics.Tags()["swan_aggressor_name"] == aggressor {
-			for key, value := range metrics.Tags() {
-				if key == "swan_loadpoint_qps" {
-					qps = value
-				}
-				if key == "swan_phase" {
-					resultedNumber, err := getLoadPointNumber(value)
-					if err != nil {
-						return nil, err
-					}
-					number = *resultedNumber
-				}
+		if metrics.Tags()[phase.AggressorNameKey] == aggressor {
+			// Load point ID is last digit in given phase ID, extract it and return.
+			key, err := getNumberForRegex(metrics.Tags()[phase.PhaseKey], `([0-9]+)$`)
+			if err != nil {
+				return nil, err
 			}
-			qpsMap[number] = qps
+			qpsMap[key] = metrics.Tags()[phase.LoadPointQPSKey]
+
 		}
 	}
 	return qpsMap, nil
@@ -203,19 +192,23 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		if metrics.Valtype() != "doubleval" {
 			return nil, errors.New("Values for sensitivity profile should have double type.")
 		}
-		if metrics.Tags()["swan_aggressor_name"] == aggressor {
+		splittedNamespace := strings.Split(metrics.Namespace(), "/")
+		if len(splittedNamespace) == 0 {
+			return nil, fmt.Errorf("Bad namespace format: %s", metrics.Namespace())
+		}
+		// Currently we want to show 99th percentile, we can change it here in future.
+		if splittedNamespace[len(splittedNamespace)-1] == "99th" &&
+			metrics.Tags()[phase.AggressorNameKey] == aggressor {
+
 			// Find metric with phase ID and extract load point ID from it.
 			// Add to map all values for key equals each load point ID.
-			for key, value := range metrics.Tags() {
-				if key == "swan_phase" {
-					number, err := getLoadPointNumber(value)
-					if err != nil {
-						return nil, err
-					}
-					allLoadPointValues[*number] = append(allLoadPointValues[*number],
-						fmt.Sprintf("%f", metrics.Doubleval()))
-				}
+			number, err := getNumberForRegex(metrics.Tags()[phase.PhaseKey], `([0-9]+)$`)
+			if err != nil {
+				return nil, err
 			}
+			allLoadPointValues[number] = append(allLoadPointValues[number],
+				fmt.Sprintf("%f", metrics.Doubleval()))
+
 		}
 	}
 
@@ -225,7 +218,7 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		if err != nil {
 			return nil, err
 		}
-		loadPointValues[key] = fmt.Sprintf("%f", *value)
+		loadPointValues[key] = fmt.Sprintf("%f", value)
 	}
 
 	return loadPointValues, nil

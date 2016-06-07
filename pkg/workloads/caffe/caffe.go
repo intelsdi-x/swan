@@ -3,8 +3,8 @@ package caffe
 import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/osutil"
-	"github.com/intelsdi-x/swan/pkg/swan"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	swanOs "github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"os"
 	"path"
@@ -21,8 +21,8 @@ const (
 )
 
 func getPathFromEnvOrDefault(envkey string, relativePath string) string {
-	return osutil.GetEnvOrDefault(
-		envkey, path.Join(swan.GetSwanWorkloadsPath(), relativePath))
+	return swanOs.GetEnvOrDefault(
+		envkey, path.Join(fs.GetSwanWorkloadsPath(), relativePath))
 }
 
 // Config is a config for the Caffe

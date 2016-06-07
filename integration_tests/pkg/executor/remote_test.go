@@ -14,14 +14,14 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	. "github.com/smartystreets/goconvey/convey"
+	"os/user"
 )
 
 const (
-	EnvHost          = "REMOTE_EXECUTOR_TEST_HOST"
-	EnvUser          = "REMOTE_EXECUTOR_USER"
-	EnvKey           = "REMOTE_EXECUTOR_SSH_KEY"
-	EnvMemcachedPath = "REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
-	EnvMemcachedUser = "REMOTE_EXECUTOR_MEMCACHED_USER"
+	EnvHost          = "SWAN_REMOTE_EXECUTOR_TEST_HOST"
+	EnvUser          = "SWAN_REMOTE_EXECUTOR_USER"
+	EnvMemcachedPath = "SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
+	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
 )
 
 var terminal ssh.TerminalModes
@@ -34,6 +34,7 @@ func init() {
 	}
 }
 
+// TODO(bp): Remove remote test from unit_test and test remote connection to localhost here.
 func TestRemoteProcessPidIsolation(t *testing.T) {
 	if isEnvironmentReady() {
 		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
@@ -43,37 +44,35 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 }
 
 func isEnvironmentReady() bool {
-	ready := true
 	if value := os.Getenv(EnvHost); value == "" {
-		ready = false
+		return false
 	}
 	if value := os.Getenv(EnvUser); value == "" {
-		ready = false
+		return false
 	}
 
-	if value := os.Getenv(EnvKey); value == "" {
-		ready = false
-	}
 	if value := os.Getenv(EnvMemcachedPath); value == "" {
-		ready = false
+		return false
 	}
 	if value := os.Getenv(EnvMemcachedUser); value == "" {
-		ready = false
+		return false
 	}
 
-	return ready
+	return true
 }
 
 func testRemoteProcessPidIsolation() {
-	clientConfig, cErr := executor.NewClientConfig(os.Getenv(EnvUser), os.Getenv(EnvKey))
-	So(cErr, ShouldBeNil)
-	sshConfig := executor.NewSSHConfig(clientConfig, os.Getenv(EnvHost), 22)
+	user, err := user.Lookup(os.Getenv(EnvUser))
+	So(err, ShouldBeNil)
+
+	sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
+	So(err, ShouldBeNil)
 	launcher := newMultipleMemcached(*sshConfig)
 
 	Convey("I should be able to execute remote command and see the processes running", func() {
 		task, err := launcher.Launch()
 
-		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", clientConfig)
+		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
 		So(err, ShouldBeNil)
 		defer client.Close()
 		pids := soProcessesAreRunning(client, "memcached", 2)
@@ -95,7 +94,7 @@ func newMultipleMemcached(sshConfig executor.SSHConfig) workloads.Launcher {
 	decors := isolation.Decorators{}
 	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
 	decors = append(decors, unshare)
-	exec := executor.NewRemote(sshConfig, decors)
+	exec := executor.NewRemoteIsolated(sshConfig, decors)
 
 	return multipleMemcached{exec}
 }
