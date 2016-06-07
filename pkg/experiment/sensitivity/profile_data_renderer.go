@@ -143,9 +143,7 @@ func getNumberForRegex(name string, regex string) (result int, err error) {
 	re := regexp.MustCompile(regex)
 	match := re.FindStringSubmatch(name)
 	if len(match) == 0 {
-		errorMsg := fmt.Sprintf(
-			"Could not retrieve number from string: %s", name)
-		return result, errors.New(errorMsg)
+		return result, fmt.Errorf("Could not retrieve number from string: %s", name)
 	}
 	number, err := strconv.Atoi(match[1])
 	if err != nil {
@@ -156,8 +154,6 @@ func getNumberForRegex(name string, regex string) (result int, err error) {
 
 func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	qpsMap := make(map[int]string)
-	var number int
-	var qps string
 	var aggressor string
 
 	// Get one scenario and find all qps values for it,
@@ -165,30 +161,17 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	// they only vary for load points.
 	if len(metricsList) > 0 {
 		metric := metricsList[0]
-		for key, value := range metric.Tags() {
-			if key == "swan_aggressor_name" {
-				aggressor = value
-				break
-			}
-		}
+		aggressor = metric.Tags()["swan_aggressor_name"]
 	}
-
 	for _, metrics := range metricsList {
 		if metrics.Tags()["swan_aggressor_name"] == aggressor {
-			for key, value := range metrics.Tags() {
-				if key == "swan_loadpoint_qps" {
-					qps = value
-				}
-				if key == "swan_phase" {
-					// Load point ID is last digit in given phase ID, extract it and return.
-					resultedNumber, err := getNumberForRegex(value, `([0-9]+)$`)
-					if err != nil {
-						return nil, err
-					}
-					number = resultedNumber
-				}
+			// Load point ID is last digit in given phase ID, extract it and return.
+			key, err := getNumberForRegex(metrics.Tags()["swan_phase"], `([0-9]+)$`)
+			if err != nil {
+				return nil, err
 			}
-			qpsMap[number] = qps
+			qpsMap[key] = metrics.Tags()["swan_loadpoint_qps"]
+
 		}
 	}
 	return qpsMap, nil
