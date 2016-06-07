@@ -96,11 +96,13 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
 }
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is NOT
-// successful. That means Wait() and ExitCode() methods will not be triggered.
-func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadNoWait(loadPoint int) {
+// successful. That means ExitCode() methods will not be triggered.
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadExitCode(loadPoint int) {
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
+	s.mockedLoadGeneratorTask.On(
+		"Wait", 0*time.Nanosecond).Return(true).Once()
 	s.mockedLoadGeneratorTask.On("Clean").Return(nil).Once()
 }
 
@@ -444,7 +446,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 					Convey("When loadGenerator Snap session can't be launched we expect error",
 						func() {
 							// Mock first aggressors phase loadGenerator execution.
-							s.mockSingleLoadGeneratorLoadNoWait(
+							s.mockSingleLoadGeneratorLoadExitCode(
 								s.mockedPeakLoad / s.configuration.LoadPointsCount)
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
