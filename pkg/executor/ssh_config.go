@@ -49,29 +49,33 @@ func validateConfig(host string, user *user.User) error {
 		return fmt.Errorf("SSH keys not found in %s", getDefaultPrivateKeyPath(user))
 	}
 
-	// Check if host is self-authorized. If localhost we need to grab real hostname.
+	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
 	if host == "127.0.0.1" || host == "localhost" {
 		var err error
 		host, err = os.Hostname()
 		if err != nil {
 			return errors.New("Cannot figure out if localhost is self-authorized")
 		}
-	}
 
-	authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
-	if err != nil {
-		return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
-	}
-	authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
-	if err != nil {
-		return fmt.Errorf("Cannot figure out if %s is authorized: %s", host, err.Error())
-	}
+		// TODO(bp): Make this for remote hosts as well, when we have /etc/hosts propagated on our hosts.
+		// Currently we don't have /etc/hosts propagated and ssh cannot resolve the host.
+		// Even if we authorize the IP of remote machine it is saved using hostname in
+		// authorized keys file.
+		authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
+		if err != nil {
+			return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
+		}
+		authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
+		if err != nil {
+			return fmt.Errorf("Cannot figure out if %s is authorized: %s", host, err.Error())
+		}
 
-	re := regexp.MustCompile(host)
-	match := re.Find(authorizedHosts)
+		re := regexp.MustCompile(host)
+		match := re.Find(authorizedHosts)
 
-	if match == nil {
-		return fmt.Errorf("%s is not authorized", host)
+		if match == nil {
+			return fmt.Errorf("%s is not authorized", host)
+		}
 	}
 
 	return nil
