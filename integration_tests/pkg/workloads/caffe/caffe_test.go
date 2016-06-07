@@ -22,17 +22,26 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 			defer handle.Stop()
 			defer handle.Clean()
 			defer handle.EraseOutput()
-			Convey("Should work for at least one sec", func() {
-				isTerminated := handle.Wait(1 * time.Second)
-				So(isTerminated, ShouldBeFalse)
-			})
-
-			Convey("Proper handle is returned", func() {
-				So(handle, ShouldNotBeNil)
-			})
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
+
+				Convey("Proper handle is returned", func() {
+					So(handle, ShouldNotBeNil)
+
+					Convey("Should work for at least one sec", func() {
+						isTerminated := handle.Wait(1 * time.Second)
+						So(isTerminated, ShouldBeFalse)
+
+						Convey("Should be able to stop with no problem and be terminated", func() {
+							err = handle.Stop()
+							So(err, ShouldBeNil)
+
+							state := handle.Status()
+							So(state, ShouldEqual, executor.TERMINATED)
+						})
+					})
+				})
 			})
 		})
 	})
