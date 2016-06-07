@@ -13,7 +13,8 @@ import (
 
 const (
 	// DefaultSSHPort represent default port of SSH server (22).
-	DefaultSSHPort = 22
+	DefaultSSHPort    = 22
+	defaultSSHKeyPath = "/.ssh/id_rsa"
 )
 
 // SSHConfig with clientConfig, host and port to connect.
@@ -21,10 +22,6 @@ type SSHConfig struct {
 	ClientConfig *ssh.ClientConfig
 	Host         string
 	Port         int
-}
-
-func getDefaultPrivateKeyPath(user *user.User) string {
-	return user.HomeDir + "/.ssh/id_rsa"
 }
 
 // getAuthMethod which uses given key.
@@ -45,8 +42,8 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 // validateConfig checks if we are able to do remote connection using given host and user.
 // Return error if there is blocker (e.g host is not authorized).
 func validateConfig(host string, user *user.User) error {
-	if _, err := os.Stat(getDefaultPrivateKeyPath(user)); os.IsNotExist(err) {
-		return fmt.Errorf("SSH keys not found in %s", getDefaultPrivateKeyPath(user))
+	if _, err := os.Stat(user.HomeDir + defaultSSHKeyPath); os.IsNotExist(err) {
+		return fmt.Errorf("SSH keys not found in %s", user.HomeDir+defaultSSHKeyPath)
 	}
 
 	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
@@ -89,7 +86,7 @@ func NewSSHConfig(host string, port int, user *user.User) (*SSHConfig, error) {
 		return nil, err
 	}
 
-	authMethod, err := getAuthMethod(getDefaultPrivateKeyPath(user))
+	authMethod, err := getAuthMethod(user.HomeDir + defaultSSHKeyPath)
 	if err != nil {
 		return nil, err
 	}

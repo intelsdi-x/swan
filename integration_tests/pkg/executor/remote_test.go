@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	EnvHost          = "REMOTE_EXECUTOR_TEST_HOST"
-	EnvUser          = "REMOTE_EXECUTOR_USER"
-	EnvMemcachedPath = "REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
-	EnvMemcachedUser = "REMOTE_EXECUTOR_MEMCACHED_USER"
+	EnvHost          = "SWAN_REMOTE_EXECUTOR_TEST_HOST"
+	EnvUser          = "SWAN_REMOTE_EXECUTOR_USER"
+	EnvMemcachedPath = "SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
+	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
 )
 
 var terminal ssh.TerminalModes
