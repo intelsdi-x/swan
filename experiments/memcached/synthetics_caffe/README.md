@@ -13,6 +13,7 @@ Every experiment includes:
 Experiment makes use of enviroment variables:
 
 - SWAN_MEMCAHED_HOST (default: 127.0.0.1)
+- SWAN_MUTILATE_HOST (default: 127.0.0.1)
 - SWAN_CASSANDRA_HOST (default: 127.0.0.1)
 - SWAN_SNAP_ADDRESS (default: 127.0.0.1:8181)
 

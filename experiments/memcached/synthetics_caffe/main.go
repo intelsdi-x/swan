@@ -37,6 +37,7 @@ func main() {
 	percentile, _ := decimal.NewFromString("99.9")
 
 	memcachedHost := osutil.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
+	mutilateHost := osutil.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
 		MemcachedHost:     memcachedHost,
@@ -57,7 +58,7 @@ func main() {
 
 	// Load the snap cassandra publisher plugin if not yet loaded.
 	// TODO(bp): Make helper for that.
-	logrus.Debug("Checking if publisher cassandra is loaded.")
+	//logrus.Debug("Checking if publisher cassandra is loaded.")
 	//plugins := snap.NewPlugins(snapConnection)
 	//loaded, err := plugins.IsLoaded("publisher", "cassandra")
 	//if err != nil {
