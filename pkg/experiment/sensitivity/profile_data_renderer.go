@@ -7,6 +7,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/visualization"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Draw prepares data for sensitivity table with values for each aggressor and load point for given experiment ID and
@@ -186,12 +187,13 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 		if metrics.Valtype() != "doubleval" {
 			return nil, errors.New("Values for sensitivity profile should have double type.")
 		}
-		percentile, err := getNumberForRegex(metrics.Namespace(), `([0-9]+)th$`)
-		if err != nil {
-			return nil, err
+		splittedNamespace := strings.Split(metrics.Namespace(), "/")
+		if len(splittedNamespace) == 0 {
+			return nil, fmt.Errorf("Bad namespace format: %s", metrics.Namespace())
 		}
 		// Currently we want to show 99th percentile, we can change it here in future.
-		if percentile == 99 && metrics.Tags()["swan_aggressor_name"] == aggressor {
+		if splittedNamespace[len(splittedNamespace)-1] == "99th" &&
+			metrics.Tags()["swan_aggressor_name"] == aggressor {
 
 			// Find metric with phase ID and extract load point ID from it.
 			// Add to map all values for key equals each load point ID.
