@@ -6,9 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 
-	"fmt"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
-	"io/ioutil"
 	"time"
 )
 
@@ -24,25 +22,27 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 			defer handle.Stop()
 			defer handle.Clean()
 			defer handle.EraseOutput()
-			Convey("Should work for at least one sec", func() {
-				isTerminated := handle.Wait(1 * time.Second)
-				So(isTerminated, ShouldBeFalse)
+
+			Convey("Error is nil", func() {
+				So(err, ShouldBeNil)
+
+				Convey("Proper handle is returned", func() {
+					So(handle, ShouldNotBeNil)
+
+					Convey("Should work for at least one sec", func() {
+						isTerminated := handle.Wait(1 * time.Second)
+						So(isTerminated, ShouldBeFalse)
+
+						Convey("Should be able to stop with no problem and be terminated", func() {
+							err = handle.Stop()
+							So(err, ShouldBeNil)
+
+							state := handle.Status()
+							So(state, ShouldEqual, executor.TERMINATED)
+						})
+					})
+				})
 			})
-
-			//Convey("Proper handle is returned", func() {
-			//	So(handle, ShouldNotBeNil)
-			//})
-			//Convey("Error is nil", func() {
-			//	So(err, ShouldBeNil)
-			//})
-
-			_ = err
-			_ = handle
-
-			file, err := handle.StderrFile()
-			content, err := ioutil.ReadFile(file.Name())
-			log.Error(fmt.Sprintf("%s", content))
-
 		})
 	})
 }
