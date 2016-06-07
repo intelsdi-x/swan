@@ -12,8 +12,7 @@ env:
 before_install:
 - ./.travis-cache.sh
 - docker run --name cassandra -p :9042:9042 -p :9160:9160 -d cassandra
-- sleep 10
-- docker exec cassandra cqlsh -e "create keyspace snap with replication = \{'class':'SimpleStrategy','replication_factor':1\};"
+- ./integration_tests/docker/wait-for-cassandra.sh
 script:
 - make integration_test_on_docker $DISTRO
 notifications:
