@@ -59,7 +59,7 @@ func main() {
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
 
-	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
+	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCACHED_HOST", "127.0.0.1")
 	mutilateHost := os.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
