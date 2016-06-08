@@ -57,7 +57,10 @@ func main() {
 	memcachedLauncher := memcached.New(localHPIsolated, conf)
 
 	// Initialize Mutilate Launcher.
-	percentile, _ := decimal.NewFromString("99.9")
+	percentile, err := decimal.NewFromString("99")
+	if err != nil {
+		panic(err)
+	}
 
 	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCACHED_HOST", "127.0.0.1")
 	mutilateHost := os.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
