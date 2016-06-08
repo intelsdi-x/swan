@@ -6,9 +6,6 @@ ENV GOPATH=/opt/gopath \
     PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
     GIT_TERMINAL_PROMPT=1
 
-ADD workload_deps_ubuntu/ /workload_deps_ubuntu/
-ADD install_deps.sh /workload_deps_ubuntu/
-
 RUN apt-get update && \
     apt-get install -y build-essential \
         automake \
@@ -20,8 +17,19 @@ RUN apt-get update && \
         netcat \
         scons \
         sudo \
-        wget && \
-    (cd workload_deps_ubuntu && ./install_deps.sh) && \
+        wget \
+	libprotobuf-dev \
+	libleveldb-dev \
+    	libsnappy-dev \
+	libopencv-dev \
+	libhdf5-serial-dev \
+	protobuf-compiler \
+    	libboost-all-dev \
+	libgflags-dev \
+	libgoogle-glog-dev \
+	liblmdb-dev \
+    	libopenblas-base \
+	libopenblas-dev && \
     apt-get clean && \
     ln -s /usr/bin/automake /usr/bin/automake-1.13 && \
     ln -s /usr/bin/aclocal /usr/bin/aclocal-1.13 && \
@@ -32,8 +40,8 @@ RUN apt-get update && \
     tar xfvv go.tar.gz && \
     mkdir /opt/gopath
 
-WORKDIR /opt/gopath/src/github.com/intelsdi-x
+WORKDIR /opt/
 ADD start.sh /start.sh
 
 ENTRYPOINT ["/start.sh"]
-CMD ["integration_test"]
+CMD ["lint integration_test"]

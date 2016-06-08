@@ -1,14 +1,19 @@
-sudo: required
+sudo: false
 services:
 - docker
 language: go
-sudo: required
+cache:
+  directories:
+    - .cache
 go:
 - 1.6
+env:
+- DISTRO=centos
 before_install:
-- make deps
+- ./.travis-cache.sh
+- docker run --name cassandra -p :9042:9042 -p :9160:9160 -d cassandra
+- ./integration_tests/docker/wait-for-cassandra.sh
 script:
-- make lint
-- make unit_test
+- make integration_test_on_docker
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
