@@ -33,8 +33,8 @@ func main() {
 	logrus.SetLevel(logLevel)
 
 	numaZero := isolation.NewIntSet(0)
-	hpCpus := isolation.NewIntSet(1, 2, 3, 4)
-	beCpus := isolation.NewIntSet(5, 6, 7, 8)
+	hpCpus := isolation.NewIntSet(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	beCpus := isolation.NewIntSet(20, 21, 22, 23, 24, 25, 26, 27, 28, 29)
 	//
 	hpIsolation, err := cgroup.NewCPUSet("hp", hpCpus, numaZero, true, false)
 	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
@@ -52,7 +52,9 @@ func main() {
 	//local := executor.NewLocal()
 
 	// Initialize Memcached Launcher.
-	memcachedLauncher := memcached.New(localHPIsolated, memcached.DefaultMemcachedConfig())
+	conf := memcached.DefaultMemcachedConfig()
+	conf.NumThreads = 4
+	memcachedLauncher := memcached.New(localHPIsolated, conf)
 
 	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
