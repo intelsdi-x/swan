@@ -66,8 +66,8 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user.Current())
-	remote := executor.NewRemote(sshConfig)
+	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, "root")
+	remote := executor.NewRemote(*sshConfig)
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
 	// Create connection with Snap.
