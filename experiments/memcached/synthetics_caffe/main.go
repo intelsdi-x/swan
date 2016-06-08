@@ -66,7 +66,8 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, "root")
+	user, err := user.Current()
+	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user)
 	remote := executor.NewRemote(*sshConfig)
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
