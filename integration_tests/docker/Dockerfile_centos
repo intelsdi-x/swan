@@ -6,9 +6,6 @@ ENV GOPATH=/opt/gopath \
     PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
     GIT_TERMINAL_PROMPT=1
 
-ADD workload_deps_centos/ /workload_deps_centos/
-ADD install_deps.sh /workload_deps_centos/
-
 RUN yum install -y epel-release && \
     yum groupinstall -y 'Development Tools' && \
     yum install -y \
@@ -21,8 +18,27 @@ RUN yum install -y epel-release && \
         scons \
         sudo \
         wget \
-        which && \
-    (cd workload_deps_centos && ./install_deps.sh) && \
+        which \
+	protobuf \
+	protobuf-devel \
+	leveldb \
+	leveldb-devel \
+	snappy \
+    	snappy-devel \
+	opencv \
+	opencv-devel \
+	boost \
+	boost-devel \
+	hdf5 \
+	hdf5-devel \
+    	gflags \
+	glog \
+	lmdb \
+	gflags-devel \
+	glog-devel \
+	lmdb-devel 
+	openblas \
+	openblas-devel && \
     yum clean all && \
     wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
