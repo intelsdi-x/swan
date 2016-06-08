@@ -63,6 +63,7 @@ build_workloads:
 	(cd workloads/data_caching/memcached && ./build.sh)
 	(cd workloads/low-level-aggressors && make -j4)
 
+	printf "\t\t----------\t\tbuilding caffe\t%s\n" `date +%X`
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
 
@@ -71,6 +72,7 @@ build_workloads:
 	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch
 	cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/
 	(cd workloads/deep_learning/caffe/caffe_src && make -j4 all && ../prepare_ciphar10_dataset.sh)
+	printf "\t\t----------\t\tcaffe built\t%s\n" `date +%X`
 
 cleanup:
 	rm -fr misc/**/*log
