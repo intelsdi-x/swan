@@ -67,7 +67,13 @@ func main() {
 	}
 
 	user, err := user.Current()
-	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user)
+	if err != nil {
+		panic(err)
+	}
+	sshConfig, err := executor.NewSSHConfig(mutilateHost, 22, user)
+	if err != nil {
+		panic(err)
+	}
 	remote := executor.NewRemote(*sshConfig)
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
