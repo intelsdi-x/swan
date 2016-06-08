@@ -23,6 +23,7 @@ import (
 	//"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
+	"k8s.io/kubernetes/vendor/github.com/fsouza/go-dockerclient/external/github.com/opencontainers/runc/libcontainer/user"
 	"time"
 )
 
@@ -35,8 +36,8 @@ func main() {
 	hpCpus := isolation.NewIntSet(1, 2, 3, 4)
 	beCpus := isolation.NewIntSet(5, 6, 7, 8)
 	//
-	hpIsolation, err := cgroup.NewCPUSet("hp", numaZero, hpCpus, true, false)
-	beIsolation, err := cgroup.NewCPUSet("be", numaZero, beCpus, true, false)
+	hpIsolation, err := cgroup.NewCPUSet("hp", hpCpus, numaZero, true, false)
+	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
 	//
 	//hpIsolation, err := NewCPUSetWithExecutor()
 
@@ -57,7 +58,7 @@ func main() {
 	percentile, _ := decimal.NewFromString("99.9")
 
 	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCAHED_HOST", "127.0.0.1")
-	//mutilateHost := osutil.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
+	mutilateHost := os.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
 		MemcachedHost:     memcachedHost,
@@ -65,7 +66,9 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	mutilateLoadGenerator := mutilate.New(local, mutilateConfig)
+	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user.CurrentUser())
+	remote := executor.NewRemote(sshConfig)
+	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snap")
