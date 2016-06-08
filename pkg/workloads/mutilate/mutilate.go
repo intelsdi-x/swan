@@ -104,8 +104,6 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
 
-	fmt.Println(taskHandle.StdoutFile())
-	fmt.Println(taskHandle.StderrFile())
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
