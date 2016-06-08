@@ -131,8 +131,8 @@ func main() {
 	configuration := sensitivity.Configuration{
 		SLO:             500,             // us
 		LoadDuration:    1 * time.Second, //10 * time.Second,
-		LoadPointsCount: 1,               //10,
-		Repetitions:     10,              //3,
+		LoadPointsCount: 10,              //10,
+		Repetitions:     1,               //3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
