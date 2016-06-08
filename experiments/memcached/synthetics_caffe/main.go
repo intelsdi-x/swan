@@ -23,7 +23,7 @@ import (
 	//"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
-	"k8s.io/kubernetes/vendor/github.com/fsouza/go-dockerclient/external/github.com/opencontainers/runc/libcontainer/user"
+	"os/user"
 	"time"
 )
 
@@ -49,7 +49,7 @@ func main() {
 	defer beIsolation.Clean()
 	localBEIsolated := executor.NewLocalIsolated(beIsolation)
 
-	local := executor.NewLocal()
+	//local := executor.NewLocal()
 
 	// Initialize Memcached Launcher.
 	memcachedLauncher := memcached.New(localHPIsolated, memcached.DefaultMemcachedConfig())
@@ -66,7 +66,7 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user.CurrentUser())
+	sshConfig, _ := executor.NewSSHConfig(mutilateHost, 22, user.Current())
 	remote := executor.NewRemote(sshConfig)
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
