@@ -32,7 +32,7 @@ function loadExportedImage()    {
 
 function main() {
     createCacheDir
-    for distro in {"centos","ubuntu"}; do
+    for distro in {"centos"}; do
         loadExportedImage $distro
         buildAndExportImage $distro
     done
