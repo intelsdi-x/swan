@@ -36,7 +36,7 @@ RUN yum install -y epel-release && \
 	lmdb \
 	gflags-devel \
 	glog-devel \
-	lmdb-devel 
+	lmdb-devel \ 
 	openblas \
 	openblas-devel && \
     yum clean all && \
