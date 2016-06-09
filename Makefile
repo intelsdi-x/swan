@@ -71,7 +71,7 @@ build_workloads:
 	(cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch)
 	(cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/)
 	(cd ./workloads/deep_learning/caffe/caffe_src && make -j4 all)
-	(cd ./workloads/deep_learning/caffe && ./prepare_ciphar10_dataset.sh)
+	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
 
 cleanup:
 	rm -fr misc/**/*log
