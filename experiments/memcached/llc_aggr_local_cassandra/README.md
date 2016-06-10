@@ -18,7 +18,7 @@ Every experiment includes:
 
 ## Prerequisites
 - Running `snapd`
-- Running Cassandra (NOTE: Cassandra publisher is required but it's private currently)
+- Running Cassandra. If you want to run it inside a docker: `docker run -d -p :9042:9042 -p :9160:9160 cassandra` (NOTE: Cassandra publisher is required but it's private currently)
 - `make build_workloads`
 - `make build`
 
@@ -32,4 +32,4 @@ Every experiment includes:
 
 After test execution, you can see the results using following script:
 
-`go run ./script/sensitivity_viewer/main.go `
+`go run ./scripts/sensitivity_viewer/main.go `
