@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	defaultMemcachedHost          = "127.0.0.1"
-	defaultMemcachedPercentile    = "99.9"
-	defaultMemcachedTuningTimeSec = 10 * time.Second
-	defaultMemcachedWarmupTimeSec = 10 * time.Second
-	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
-	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+	defaultMemcachedHost       = "127.0.0.1"
+	defaultMemcachedPercentile = "99.9"
+	defaultMemcachedTuningTime = 10 * time.Second
+	defaultMemcachedWarmupTime = 10 * time.Second
+	defaultMutilatePath        = "data_caching/memcached/mutilate/mutilate"
+	mutilatePathEnv            = "SWAN_MUTILATE_PATH"
 )
 
 // GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
