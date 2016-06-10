@@ -7,6 +7,8 @@
 # you're doing.
 Vagrant.configure(2) do |config|
 
+  vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
+
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
 
@@ -21,7 +23,8 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "../../../..", "/home/vagrant/go/src/github.com/intelsdi-x/swan"
+  home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
+  config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan"
 
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
@@ -58,7 +61,7 @@ EOF
       tree \
       vim \
       wget 
-    . /home/vagrant/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
     wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
     tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
 SCRIPT
@@ -67,39 +70,40 @@ SCRIPT
     echo Configuring Docker
     systemctl enable docker
     # Add the vagrant user to the docker group
-    gpasswd -a vagrant docker
+    gpasswd -a $VAGRANT_USER docker
     systemctl restart docker
 SCRIPT
 
   $setup_user_env = <<SCRIPT
-    echo Setting up user environment
+    echo "Setting up user environment"
     # Vagrant user owns $GOPATH
-    chown -R vagrant:vagrant /home/vagrant/go
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR/go
     # Create convenient symlinks in the home directory
-    ln -s /home/vagrant/go/src/github.com/intelsdi-x/swan /home/vagrant/
+    ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
     # Add GOPATH and Go binaries to PATH in profile
-    echo 'export GOPATH="/home/vagrant/go"' >> /home/vagrant/.bash_profile
-    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> /home/vagrant/.bash_profile
+    echo "export GOPATH=\"$HOME_DIR/go\"" >> $HOME_DIR/.bash_profile
+    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
     # Add key to SSH agent
     ssh-add -l
     # Rewrite github URLs for fetching private repos
-    sudo -u vagrant git config --global url."git@github.com:".insteadOf "https://github.com/"
+    sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
 SCRIPT
 
   $configure_cassandra = <<SCRIPT
+    echo "Setting up cassandra"
     # Set up data directory
     mkdir -p /var/data/cassandra
-    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
+    #tchcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
     # Create and enable systemd unit
-    cp /home/vagrant/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
     systemctl daemon-reload
     systemctl enable cassandra.service
     systemctl restart cassandra.service
 SCRIPT
 
 
-  config.vm.provision "shell", inline: $install_packages
-  config.vm.provision "shell", inline: $configure_docker
-  config.vm.provision "shell", inline: $setup_user_env
-  config.vm.provision "shell", inline: $configure_cassandra
+  #config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
+  #config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  #config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
 end
