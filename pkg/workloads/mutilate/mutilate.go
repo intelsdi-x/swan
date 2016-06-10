@@ -49,8 +49,8 @@ func DefaultMutilateConfig() Config {
 		MutilatePath:      GetPathFromEnvOrDefault(),
 		MemcachedHost:     defaultMemcachedHost,
 		LatencyPercentile: percentile,
-		TuningTime:        defaultMemcachedTuningTimeSec,
-		WarmupTime:        defaultMemcachedWarmupTimeSec,
+		TuningTime:        defaultMemcachedTuningTime,
+		WarmupTime:        defaultMemcachedWarmupTime,
 	}
 }
 
@@ -98,7 +98,6 @@ func (m mutilate) Populate() (err error) {
 }
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
-// First, it populates the database.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := m.getTuneCommand(slo)
 
@@ -135,7 +134,6 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
-// First, it populates the database.
 func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
 	return m.executor.Execute(m.getLoadCommand(qps, duration))
 }
