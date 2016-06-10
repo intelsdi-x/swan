@@ -205,6 +205,13 @@ func (m *measurementPhase) run(session phase.Session) error {
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	loadPoint := m.getLoadPoint()
 
+	log.Debug("Populating memcached ", loadPoint)
+	err = m.lgForPr.LoadGenerator.Populate()
+	if err != nil {
+		return err
+	}
+	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, populateTask)
+
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.LoadGenerator.Load(loadPoint, m.loadDuration)
 	if err != nil {
