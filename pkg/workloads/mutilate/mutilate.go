@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -21,7 +20,8 @@ import (
 const (
 	defaultMemcachedHost          = "127.0.0.1"
 	defaultMemcachedPercentile    = "99.9"
-	defaultMemcachedTuningTimeSec = 10
+	defaultMemcachedTuningTimeSec = 10 * time.Second
+	defaultMemcachedWarmupTimeSec = 10 * time.Second
 	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
 	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
 )
@@ -38,6 +38,7 @@ type Config struct {
 	MutilatePath      string
 	MemcachedHost     string
 	TuningTime        time.Duration
+	WarmupTime        time.Duration
 	LatencyPercentile decimal.Decimal
 }
 
@@ -48,7 +49,8 @@ func DefaultMutilateConfig() Config {
 		MutilatePath:      GetPathFromEnvOrDefault(),
 		MemcachedHost:     defaultMemcachedHost,
 		LatencyPercentile: percentile,
-		TuningTime:        defaultMemcachedTuningTimeSec * time.Second,
+		TuningTime:        defaultMemcachedTuningTimeSec,
+		WarmupTime:        defaultMemcachedWarmupTimeSec,
 	}
 }
 
@@ -78,6 +80,8 @@ func (m mutilate) Populate() (err error) {
 	if err != nil {
 		return err
 	}
+	defer taskHandle.Clean()
+	defer taskHandle.EraseOutput()
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -94,6 +98,7 @@ func (m mutilate) Populate() (err error) {
 }
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
+// First, it populates the database.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := m.getTuneCommand(slo)
 
@@ -130,42 +135,28 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
-// Note: Results from Load needs to be fetched out of band e.g using Snap.
-func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
+// First, it populates the database.
+func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
 	return m.executor.Execute(m.getLoadCommand(qps, duration))
 }
 
-// Mutilate Search method requires percentile in an integer format
-// Transforms (decimal)999.9 to (int)9999
-func transformDecimalToIntegerWithoutDot(value decimal.Decimal) (ret int64) {
-	percentileString := value.String()
-	percentileWithoutDot := strings.Replace(percentileString, ".", "", -1)
-	tunePercentile, err := strconv.ParseInt(percentileWithoutDot, 10, 64)
-	if err != nil {
-		panic("Parsing " + percentileWithoutDot + " failed.")
-	}
-
-	return tunePercentile
-}
-
 func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
-	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
+	return fmt.Sprintf("%s -s %s -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
 		m.config.MutilatePath,
 		m.config.MemcachedHost,
 		qps,
 		int(duration.Seconds()),
+		m.config.WarmupTime,
 		m.config.LatencyPercentile.String(),
 	)
 }
 
 func (m mutilate) getTuneCommand(slo int) (command string) {
-	// Transforms (decimal)999.9 to (int)9999
-	mutilateSearchPercentile :=
-		transformDecimalToIntegerWithoutDot(m.config.LatencyPercentile)
-	command = fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
+	command = fmt.Sprintf("%s -s %s --warmup=%d --noload --search=%d:%d -t %d",
 		m.config.MutilatePath,
 		m.config.MemcachedHost,
-		mutilateSearchPercentile,
+		m.config.WarmupTime,
+		m.config.LatencyPercentile.String(),
 		slo,
 		int(m.config.TuningTime.Seconds()),
 	)

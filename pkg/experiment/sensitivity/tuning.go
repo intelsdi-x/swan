@@ -46,6 +46,11 @@ func (p *tuningPhase) Run(phase.Session) error {
 	defer prTask.Stop()
 	defer prTask.Clean()
 
+	err = p.lgForPr.Populate()
+	if err != nil {
+		return err
+	}
+
 	achievedLoad, achievedSLI, err := p.lgForPr.Tune(p.SLO)
 	if err != nil {
 		return err
