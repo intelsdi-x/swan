@@ -33,6 +33,27 @@ Vagrant.configure(2) do |config|
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
   end
 
+  config.vm.provider :aws do |aws, override|
+    require 'yaml'
+    file = "#{ENV['HOME']}/.vagrant/aws-creds"
+    if File.exists?(file)
+      data = YAML.load_file(file)
+    else
+      data = {}
+    end
+    aws.access_key_id = data['access_key_id']
+    aws.secret_access_key = data['secret_access_key']
+    # this only works with versions of vagrant-aws > 0.7 (which are currently not released)
+    override.vm.box = "aws"
+    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+    # centos7 for us-east
+    aws.ami = data['ami'] || "ami-6d1c2007"
+    aws.keypair_name = data['keypair_name'] || "snapbot-private"
+    aws.instance_type = data['instance_type'] || "m3.medium"
+    override.ssh.username = data['ssh_username'] || "centos"
+    override.ssh.private_key_path = data['ssh_private_key_path'] || "/home/jenkins/.ssh/id_rsa.snap.bot.private"
+  end
+
   $install_packages = <<SCRIPT
     echo Adding the docker yum repository
     tee /etc/yum.repos.d/docker.repo <<-'EOF'
