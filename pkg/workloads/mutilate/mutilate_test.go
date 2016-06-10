@@ -62,14 +62,15 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.mHandle = new(mocks.TaskHandle)
 }
 
+func (s *MutilateTestSuite) TestBuildLoadCommand() {
+	// TBD
+}
+
+func (s *MutilateTestSuite) TestBuildTuneCommand() {
+	// TBD
+}
+
 func (s *MutilateTestSuite) TestMutilateTuning() {
-	//mutilateTuneCommand := fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
-	//	s.config.MutilatePath,
-	//	s.config.MemcachedHost,
-	//	999, // Latency Percentile translated to "Mutilate int"
-	//	s.defaultSlo,
-	//	int(s.config.TuningTime.Seconds()),
-	//)
 	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
 	if err != nil {
 		s.Fail(err.Error())
@@ -127,15 +128,7 @@ func (s *MutilateTestSuite) TestMutilateTuningExecutorError() {
 func (s *MutilateTestSuite) TestMutilateLoad() {
 	const load = 1000
 	const duration = 10 * time.Second
-	//const percentile = "99.9"
-	//
-	//loadCmd := fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
-	//	s.config.MutilatePath,
-	//	s.config.MemcachedHost,
-	//	load,
-	//	int(duration.Seconds()),
-	//	percentile,
-	//)
+
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mHandle, nil)
