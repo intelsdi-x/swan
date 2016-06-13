@@ -34,7 +34,7 @@ func TestChangeToEnvName(t *testing.T) {
 }
 
 func TestConf(t *testing.T) {
-	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "README.md")
+	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "test_file.md")
 	Convey("While using Config", t, func() {
 		clearEnv()
 		defer clearEnv()
