@@ -44,12 +44,12 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	lgExecutor, err := executor.CreateExecutor(*workloads.FlagLoadGeneratorAddr())
+	loadGeneratorExecutor, err := executor.CreateExecutor(*workloads.FlagLoadGeneratorAddr())
 	if err != nil {
 		panic(err)
 	}
 
-	mutilateLoadGenerator := mutilate.New(lgExecutor, mutilateConfig)
+	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize LLC aggressor.
 	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
@@ -57,7 +57,7 @@ func main() {
 	// Parse CLI.
 	snapdAddr := snap.FlagDaemonAddr()
 	cassandraAddr := cassandra.FlagAddr()
-	conf.MustParseCliAndEnv()
+	conf.MustParseFlagAndEnv()
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snapd on ", *snapdAddr)

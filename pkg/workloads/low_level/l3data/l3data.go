@@ -27,7 +27,7 @@ type Config struct {
 
 // DefaultL3Config is a constructor for l3 aggressor Config with default parameters.
 func DefaultL3Config() Config {
-	path := conf.RegisterStringArg(pathArgKey, pathArgHelp,
+	path := conf.RegisterStringOption(pathArgKey, pathArgHelp,
 		path.Join(fs.GetSwanWorkloadsPath(), defaultPath))
 	// Re-parse for environment variables.
 	conf.MustParseOnlyEnv()
