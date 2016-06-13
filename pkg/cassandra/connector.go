@@ -14,7 +14,7 @@ const (
 
 // FlagAddr registers arg for env and CLI for snapd address and gives the promise.
 func FlagAddr() *string {
-	return conf.RegisterStringArg(cassandraAddrKey, cassandraAddrHelp, defaultCassandraAddr)
+	return conf.RegisterStringOption(cassandraAddrKey, cassandraAddrHelp, defaultCassandraAddr)
 }
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {

@@ -33,7 +33,7 @@ func TestChangeToEnvName(t *testing.T) {
 	})
 }
 
-func TestCli(t *testing.T) {
+func TestConf(t *testing.T) {
 	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "README.md")
 	Convey("While using Config", t, func() {
 		clearEnv()
@@ -52,12 +52,12 @@ func TestCli(t *testing.T) {
 			So(app.Help, ShouldEqual, string(readmeData)[:])
 		})
 
-		Convey("Default ip and log level can be fetched", func() {
+		Convey("Default IP and log level can be fetched", func() {
 			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
 			So(IPAddress(), ShouldEqual, testIPDefaultName)
 		})
 
-		Convey("Custom ip and log level can be fetched from env", func() {
+		Convey("Custom IP and log level can be fetched from env", func() {
 			// Default one.
 			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
 			So(IPAddress(), ShouldEqual, testIPDefaultName)
@@ -73,9 +73,9 @@ func TestCli(t *testing.T) {
 			So(IPAddress(), ShouldEqual, customIP)
 		})
 
-		Convey("When custom arg is defined", func() {
-			// Register custom Arg.
-			customArg := RegisterStringArg(customArgKey, customArgHelp, customArgDefault)
+		Convey("When some custom argument is defined", func() {
+			// Register custom Argument.
+			customArg := RegisterStringOption(customArgKey, customArgHelp, customArgDefault)
 
 			Convey("Without parse it should be empty", func() {
 				So(*customArg, ShouldEqual, "")

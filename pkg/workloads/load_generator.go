@@ -12,9 +12,9 @@ const (
 	loadGeneratorAddrHelp    = "IP of the target machine for the load generator"
 )
 
-// FlagLoadGeneratorAddr registers arg for env and CLI for load generator addr and gives the promise.
+// FlagLoadGeneratorAddr registers arg for env and flag for load generator addr and gives the promise.
 func FlagLoadGeneratorAddr() *string {
-	return conf.RegisterStringArg(loadGeneratorAddrKey, defaultLoadGeneratorAddr, loadGeneratorAddrHelp)
+	return conf.RegisterStringOption(loadGeneratorAddrKey, defaultLoadGeneratorAddr, loadGeneratorAddrHelp)
 }
 
 // LoadGenerator launches stresser which generates load on specified workload.

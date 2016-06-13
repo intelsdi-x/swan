@@ -48,7 +48,7 @@ type Config struct {
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
-	path := conf.RegisterStringArg(pathArgKey, pathArgHelp,
+	path := conf.RegisterStringOption(pathArgKey, pathArgHelp,
 		path.Join(fs.GetSwanWorkloadsPath(), defaultPath))
 	// Re-parse for environment variables.
 	conf.MustParseOnlyEnv()
