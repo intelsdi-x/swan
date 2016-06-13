@@ -97,13 +97,11 @@ func (m mutilate) Populate() (err error) {
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := m.getTuneCommand(slo)
 
-	fmt.Println(tuneCmd)
 	taskHandle, err := m.executor.Execute(tuneCmd)
 	if err != nil {
 		errMsg := fmt.Sprintf("Executing Mutilate Tune command %s failed; ", tuneCmd)
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
-
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
