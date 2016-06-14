@@ -52,11 +52,12 @@ func CPUSelect(countRequested int, filters uint) (IntSet, error) {
 
 	if filters == ShareLLCButNotL1L2 {
 		for i := 0; i < info.Sockets; i++ {
-			result, err := searchSocket(info, countRequested, i)
+			socket := nextSocket()
+			cpus, err := searchSocket(info, countRequested, socket)
 			if err == nil {
-				if len(result) == countRequested {
-					log.Debug("Answering CPUSelect query for %d cpus with %v", countRequested, result)
-					return result, nil
+				if len(cpus) == countRequested {
+					log.Debug("Answering CPUSelect query for %d cpus with %v on socket %d", countRequested, cpus, socket)
+					return cpus, nil
 				}
 			}
 		}
