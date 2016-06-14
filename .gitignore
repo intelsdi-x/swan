@@ -18,7 +18,6 @@ autom4te.cache/
 /misc/snap-on-docker/snap/snap-plugin-publisher-cassandra
 /misc/snap-plugin-collector-mutilate/mutilate-src
 /misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate
-
 /misc/snap-plugin-publisher-session-test/snap-plugin-publisher-session-test
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
