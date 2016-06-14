@@ -35,6 +35,9 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider :aws do |aws, override|
     require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
     file = "#{ENV['HOME']}/.vagrant/aws-creds"
     if File.exists?(file)
       data = YAML.load_file(file)
@@ -43,8 +46,8 @@ Vagrant.configure(2) do |config|
     end
     aws.access_key_id = data['access_key_id']
     aws.secret_access_key = data['secret_access_key']
-    # this only works with versions of vagrant-aws > 0.7 (which are currently not released)
     override.vm.box = "aws"
+    # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
     aws.ami = data['ami'] || "ami-6d1c2007"
