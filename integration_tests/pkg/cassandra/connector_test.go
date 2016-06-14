@@ -12,8 +12,8 @@ func TestCassandraConnection(t *testing.T) {
 	Convey("While creating Cassandra config with proper parameters", t, func() {
 		config, err := cassandra.CreateConfigWithSession("127.0.0.1", "snap")
 		Convey("I should receive not nil config", func() {
-			So(config, ShouldNotBeNil)
 			So(err, ShouldBeNil)
+			So(config, ShouldNotBeNil)
 			Convey("Config should have not nil session", func() {
 				session := config.CassandraSession()
 				So(session, ShouldNotBeNil)
