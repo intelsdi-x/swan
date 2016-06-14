@@ -26,6 +26,12 @@ Vagrant.configure(2) do |config|
   home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
   config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan"
 
+   require 'erb'
+   renderer = ERB.new(File.read(File.join(__dir__, './resources/cassandra.service.erb')))
+   result = renderer.result(binding)
+   File.open(File.join(__dir__, './resources/cassandra.service')) do |fh|
+     fh.write(renderer.result(binding))
+   end
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
 
