@@ -73,10 +73,7 @@ func New(executor executor.Executor, config Config) workloads.LoadGenerator {
 
 // Populate loads Memcached and exits.
 func (m mutilate) Populate() (err error) {
-	populateCmd := fmt.Sprintf("%s -s %s --loadonly",
-		m.config.MutilatePath,
-		m.config.MemcachedHost,
-	)
+	populateCmd := m.getPopulateCommand()
 
 	taskHandle, err := m.executor.Execute(populateCmd)
 	if err != nil {
@@ -147,6 +144,13 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 // The task will do the load for specified amount of time.
 func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
 	return m.executor.Execute(m.getLoadCommand(qps, duration))
+}
+
+func (m mutilate) getPopulateCommand() string {
+	return fmt.Sprintf("%s -s %s --loadonly",
+		m.config.MutilatePath,
+		m.config.MemcachedHost,
+	)
 }
 
 func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
