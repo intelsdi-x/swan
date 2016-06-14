@@ -23,7 +23,7 @@ ExecStartPost=/usr/bin/docker run \
 ExecStartPost=/usr/bin/docker run \
   --rm \
   --net host \
-  -v /home/vagrant/swan/misc/dev/vagrant/singlenode/resources:/resources \
+  -v <%= home_dir %>/swan/misc/dev/vagrant/singlenode/resources:/resources \
   cassandra:3.5 \
   cqlsh localhost --file /resources/keyspace.cql
 [Install]
