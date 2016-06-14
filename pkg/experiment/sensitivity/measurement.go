@@ -210,7 +210,6 @@ func (m *measurementPhase) run(session phase.Session) error {
 	if err != nil {
 		return err
 	}
-	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, populateTask)
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.LoadGenerator.Load(loadPoint, m.loadDuration)
