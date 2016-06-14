@@ -1,5 +1,7 @@
 *.pyc
 *.idea
+.*.swp
+autom4te.cache/
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/low-level-aggressors/l1d
 /workloads/low-level-aggressors/l1i
@@ -12,10 +14,11 @@
 /build
 /vendor
 **/debug.test
+/misc/dev/vagrant/singlenode/.bundle/
 /misc/snap-on-docker/snap/snap-plugin-publisher-cassandra
 /misc/snap-plugin-collector-mutilate/mutilate-src
 /misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate
-.*.swp
+
 /misc/snap-plugin-publisher-session-test/snap-plugin-publisher-session-test
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
