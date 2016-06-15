@@ -15,13 +15,16 @@ ExecStart=/usr/bin/docker run \
   -e CASSANDRA_CLUSTER_NAME=cassandra-swan \
   -v /var/data/cassandra:/var/lib/cassandra \
   cassandra:3.5
-ExecStartPost=/usr/bin/sleep 10
 ExecStartPost=/usr/bin/docker run \
   --rm \
   --net host \
-  -v /home/vagrant/swan/misc/dev/vagrant/singlenode/resources:/resources \
+  cassandra:3.5 \
+  bash -c 'while ! echo "show host" | cqlsh localhost ; do sleep 1; done'
+ExecStartPost=/usr/bin/docker run \
+  --rm \
+  --net host \
+  -v /opt/swan/resources:/resources \
   cassandra:3.5 \
   cqlsh localhost --file /resources/keyspace.cql
-
 [Install]
 WantedBy=multi-user.target
