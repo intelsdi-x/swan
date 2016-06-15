@@ -118,7 +118,7 @@ func (e *Experiment) Run() (err error) {
 
 	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
 		" in ", time.Since(experimentStartingTime))
-	fmt.Print(e.uuid)
+	fmt.Println(e.uuid)
 	return err
 }
 
