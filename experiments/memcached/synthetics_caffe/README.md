@@ -21,9 +21,13 @@ Experiment makes use of enviroment variables:
 
 | Type | Name  | Source | Execution | Isolation | APMs |
 | --- | --- | --- | --- | --- | --- |
-| *Latency Critical* | Memcached | [Readme](../../../workloads/data_caching/memcached) | Local | None | None |
-| *Load Generator* | Mutilate | [Readme](../../../workloads/data_caching/memcached) | Local | None | `Latency` and `QPS` via Snap to `Cassandra` |
-| *Aggressor* | Last-Level cache synthetic | [Code](../../../workloads/low-level-aggressors/l3.c) | Local | None | None |
+| *Latency Critical* | Memcached | [Readme](../../../workloads/data_caching/memcached) | Local | 10 exclusive cores | None |
+| *Load Generator* | Mutilate | [Readme](../../../workloads/data_caching/memcached) | Remote | None | `Latency` and `QPS` via Snap to `Cassandra` |
+| *Aggressor* | Last-Level cache synthetic | [Code](../../../workloads/low-level-aggressors/l3.c) | Local | 10 exclusive cores | None |
+| *Aggressor* | L1 data | [Code](../../../workloads/low-level-aggressors/l1d.c) | Local | 10 exclusive cores | None |
+| *Aggressor* | L1 instruction | [Code](../../../workloads/low-level-aggressors/l1i.c) | Local | 10 exclusive cores | None |
+| *Aggressor* | memory bandwidth | [Code](../../../workloads/low-level-aggressors/memBw.c) | Local | 10 exclusive cores | None |
+| *Aggressor* | caffe | [Code](../../../workloads/deep_learning/caffe) | Local | 10 exclusive cores | None |
 
 ## Prerequisites
 - Running `snapd`

@@ -6,8 +6,10 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
@@ -17,20 +19,23 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
+	"log"
 	"os/user"
 	"time"
 )
 
 const (
-	defaultSSHPort            = 22
-	defaultMemcachedThreads   = 10
-	defaultMutilatePercentile = "99"
-	defaultTuningTime         = 1
-	defaultLoadDuration       = 1
-	defaultSLO                = 500
-	defaultRepetitionsNumber  = 10
+	defaultSSHPort       = 22
+	memcachedThreads     = 10
+	sloPercentile        = "99"
+	tuningTime           = 1
+	loadDuration         = 1
+	slo                  = 500
+	numberOfRepetitions  = 10
+	defaultSnapAddress   = "http://127.0.0.1:8181"
+	defaultCassandraHost = "127.0.0.1"
+	defaultMutilateHost  = "127.0.0.1"
+	defaultMemcachedHost = "127.0.0.1"
 )
 
 // Check README.md for details of this experiment.
@@ -44,9 +49,10 @@ func main() {
 
 	// Create new Cpu sets.
 	hpIsolation, err := cgroup.NewCPUSet("hp", hpCpus, numaZero, true, false)
-	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
 	hpIsolation.Create()
 	defer hpIsolation.Clean()
+
+	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
 	beIsolation.Create()
 	defer beIsolation.Clean()
 
@@ -56,34 +62,37 @@ func main() {
 
 	// Initialize Memcached Launcher.
 	conf := memcached.DefaultMemcachedConfig()
-	conf.NumThreads = defaultMemcachedThreads
+	conf.NumThreads = memcachedThreads
 	memcachedLauncher := memcached.New(localHPIsolated, conf)
 
 	// Initialize Mutilate Launcher.
-	percentile, err := decimal.NewFromString(defaultMutilatePercentile)
+	percentile, err := decimal.NewFromString(sloPercentile)
 	if err != nil {
 		panic(err)
+		log.Fatalf("Retrieving decimal from given percentile %s ended with error %s", sloPercentile, err)
 	}
 
-	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCACHED_HOST", "127.0.0.1")
-	mutilateHost := os.GetEnvOrDefault("SWAN_MUTILATE_HOST", "127.0.0.1")
+	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCACHED_HOST", defaultMemcachedHost)
+	mutilateHost := os.GetEnvOrDefault("SWAN_MUTILATE_HOST", defaultMutilateHost)
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
 		MemcachedHost:     memcachedHost,
 		LatencyPercentile: percentile,
-		TuningTime:        defaultTuningTime * time.Second,
-	}
-
-	// Get current user for ssh config.
-	user, err := user.Current()
-	if err != nil {
-		panic(err)
+		TuningTime:        tuningTime * time.Second,
 	}
 
 	// Create ssh config and remote executor with this config.
-	sshConfig, err := executor.NewSSHConfig(mutilateHost, defaultSSHPort, user)
+	sshUserName := os.GetEnvOrDefault("SWAN_SSH_USER", "root")
+	sshUser, err := user.Lookup(sshUserName)
 	if err != nil {
 		panic(err)
+		log.Fatalf("Looking for a user %s ended with error %s", sshUserName, err)
+
+	}
+	sshConfig, err := executor.NewSSHConfig(mutilateHost, defaultSSHPort, sshUser)
+	if err != nil {
+		panic(err)
+		log.Fatalf("Creating ssh config ended with error %s", err)
 	}
 	remote := executor.NewRemote(*sshConfig)
 
@@ -91,11 +100,13 @@ func main() {
 	mutilateLoadGenerator := mutilate.New(remote, mutilateConfig)
 
 	// Create connection with Snap.
-	logrus.Debug("Connecting to Snap")
-	snapAddress := os.GetEnvOrDefault("SWAN_SNAP_ADDRESS", "http://127.0.0.1:8181")
+	snapAddress := os.GetEnvOrDefault("SWAN_SNAP_ADDRESS", defaultSnapAddress)
+	logrus.Debug("Connecting to Snap at the address %s", snapAddress)
 	snapConnection, err := client.New(snapAddress, "v1", true)
 	if err != nil {
 		panic(err)
+		log.Fatalf("Connecting to snap at the address %s ended with error %s", snapAddress, err)
+
 	}
 
 	// Define publisher.
@@ -104,7 +115,7 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	cassandraHostName := os.GetEnvOrDefault("SWAN_CASSANDRA_HOST", "127.0.0.1")
+	cassandraHostName := os.GetEnvOrDefault("SWAN_CASSANDRA_HOST", defaultCassandraHost)
 	publisher.AddConfigItem("server", cassandraHostName)
 
 	// Initialize Mutilate Snap Session.
@@ -123,10 +134,10 @@ func main() {
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             defaultSLO,
-		LoadDuration:    defaultLoadDuration * time.Second,
-		LoadPointsCount: defaultRepetitionsNumber,
-		Repetitions:     defaultRepetitionsNumber,
+		SLO:             slo,
+		LoadDuration:    loadDuration * time.Second,
+		LoadPointsCount: numberOfRepetitions,
+		Repetitions:     numberOfRepetitions,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
