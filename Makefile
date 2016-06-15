@@ -37,7 +37,7 @@ plugins:
 	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
 
 integration_test: plugins unit_test build_workloads
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 #	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
@@ -67,10 +67,11 @@ build_workloads:
 	git submodule update --init --recursive
 
 	# Prepare & Build Caffe workload.
-	cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/
-	cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch
-	cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/
-	(cd workloads/deep_learning/caffe/caffe_src && make -j4 all && ../prepare_ciphar10_dataset.sh)
+	(cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/)
+	(cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch)
+	(cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/)
+	(cd ./workloads/deep_learning/caffe/caffe_src && make -j4 all)
+	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
 
 cleanup:
 	rm -fr misc/**/*log
