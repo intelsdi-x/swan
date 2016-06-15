@@ -63,6 +63,7 @@ func init() {
 }
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
+// We need to expose this function so other packages can set the app help.
 func SetHelpPath(readmePath string) {
 	readmeData, err := ioutil.ReadFile(readmePath)
 	if err != nil {
@@ -72,7 +73,7 @@ func SetHelpPath(readmePath string) {
 }
 
 // SetAppName sets application name for CLI output.
-//
+// We need to expose this function so other packages can set the app name.
 func SetAppName(name string) {
 	app.Name = name
 }
