@@ -16,14 +16,13 @@ import (
 const (
 	// DefaultDaemonPort represents default port on which snapd listen.
 	DefaultDaemonPort = "8181"
-	snapdAddrKey      = "snapd_addr"
-	defaultSnapdAddr  = "127.0.0.1"
-	snapdAddrHelp     = "IP of Snap Daemon"
 )
 
-// FlagDaemonAddr registers arg for env and CLI for snapd address and gives the promise.
-func FlagDaemonAddr() *string {
-	return conf.RegisterStringOption(snapdAddrKey, defaultSnapdAddr, snapdAddrHelp)
+var addrFlag = conf.NewFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
+
+// AddrFlag represents snap daemon address flag.
+func AddrFlag() *string {
+	return conf.RegisterStringFlag(addrFlag)
 }
 
 type task struct {

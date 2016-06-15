@@ -1,12 +1,10 @@
 package conf
 
 import (
-	"fmt"
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io/ioutil"
 	"os"
-	"strings"
 )
 
 // conf is a helper for SWAN configuration for both command line interface
@@ -17,48 +15,51 @@ import (
 // <SWAN_LOG> -l --log <Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic> Default: 3
 // <SWAN_IP> -i --ip <IP of interface for Swan workloads services to listen on> Default: 127.0.0.1
 //
-// When `MustParseOnlyEnv` is executed, only the environment arguments are parsed and
+// When `ParseEnv` is executed, only the environment arguments are parsed and
 // ready to be used in `promises` variables.
 // `MustParseOnlyEnv` can be run multiple times.
 //
-// When `MustParseCliAndEnv` is executed, the arguments from both CLI and Env are parsed.
+// When `ParseFlagAndEnv` is executed, the arguments from both CLI and Env are parsed.
 // In case of --help option - it prints help.
 // It's recommend to run it only once, since to have `conf` with registered all needed options from
 // system. When help option is executed it will then show whole overview of the Swan configuration.
 
 var (
 	// Default flags and values.
-	logLevelArg      = "log" // Short 'l'.
-	ipAddressArg     = "ip"  // Short 'i'.
-	defaultLogLevel  = "3"   // Error log level.
-	defaultIPAddress = "127.0.0.1"
-
+	logLevelFlag = NewFlag(
+		"log", // Short 'l'.
+		"Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
+		"3", // Default Error log level.
+	)
+	ipAddressFlag = NewFlag(
+		"ip", // Short 'i'.
+		"IP of interface for Swan workloads services to listen on",
+		"127.0.0.1",
+	)
 	// Package vars.
 	app       *kingpin.Application
 	logLevel  *int
 	iPAddress *string
 )
 
-// changeToEnvName creates environment variable name by making it uppercase and adding SWAN prefix.
-// For instance: "cassandra_host" will be "SWAN_CASSANDRA_HOST".
-func changeToEnvName(name string) string {
-	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(name))
-}
-
 // init constructs config with default help message and application name.
 // It also defines two important, default options like logLevel and IP of remote interface.
-// TODO(bp): Decide if we want specifying IP vs hostnames and deploy proper hosts into /etc/hosts.
 func init() {
 	app = kingpin.New("swan", "No help available")
 	logLevel = app.Flag(
-		logLevelArg, "Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
-	).OverrideDefaultFromEnvar(changeToEnvName(logLevelArg)).Default(defaultLogLevel).Short('l').Int()
+		logLevelFlag.name, logLevelFlag.description,
+	).OverrideDefaultFromEnvar(logLevelFlag.EnvName()).
+		Default(logLevelFlag.defaultValue).Short('l').Int()
 
 	iPAddress = app.Flag(
-		ipAddressArg, "IP of interface for Swan workloads services to listen on",
-	).OverrideDefaultFromEnvar(changeToEnvName(ipAddressArg)).Default(defaultIPAddress).Short('i').String()
+		ipAddressFlag.name, ipAddressFlag.description,
+	).OverrideDefaultFromEnvar(
+		ipAddressFlag.EnvName()).Default(ipAddressFlag.defaultValue).Short('i').String()
 
-	MustParseOnlyEnv()
+	err := ParseEnv()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
@@ -71,6 +72,7 @@ func SetHelpPath(readmePath string) {
 }
 
 // SetAppName sets application name for CLI output.
+//
 func SetAppName(name string) {
 	app.Name = name
 }
@@ -95,29 +97,23 @@ func AppName() string {
 	return app.Name
 }
 
-// RegisterStringOption registers given option in form of name, help msg and default value
+// RegisterStringFlag registers given flag in form of flag (with name, help msg and default value)
 // as optional string argument in CLI. It defines also overrideDefaultFromEnvar rule for this
-// argument.
-func RegisterStringOption(name string, help string, defaultVal string) *string {
-	return app.Flag(
-		name, help).Default(defaultVal).OverrideDefaultFromEnvar(changeToEnvName(name)).String()
+// flag.
+func RegisterStringFlag(flag Flag) *string {
+	return app.Flag(flag.name, flag.description).
+		Default(flag.defaultValue).OverrideDefaultFromEnvar(flag.EnvName()).String()
 }
 
-// MustParseFlagAndEnv parse both the command line flags of the process and
+// ParseFlagAndEnv parse both the command line flags of the process and
 // environment variables.
-// It panics in case of error.
-func MustParseFlagAndEnv() {
+func ParseFlagAndEnv() error {
 	_, err := app.Parse(os.Args[1:])
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
-// MustParseOnlyEnv parse the environment for arguments.
-// It panics in case of error.
-func MustParseOnlyEnv() {
+// ParseEnv parse the environment for arguments.
+func ParseEnv() error {
 	_, err := app.Parse([]string{})
-	if err != nil {
-		panic(err)
-	}
+	return err
 }

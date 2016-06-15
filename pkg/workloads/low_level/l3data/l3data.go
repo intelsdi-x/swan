@@ -14,10 +14,18 @@ import (
 const (
 	name            = "L3 Data"
 	defaultDuration = 86400 * time.Second
-	pathArgKey      = "l3_path"
-	pathArgHelp     = "Path to L3 Data binary"
-	defaultPath     = "low-level-aggressors/l3"
 )
+
+var pathFlag = conf.NewFlag(
+	"l3_path",
+	"Path to L3 Data binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),
+)
+
+// PathFlag represents l3data path flag.
+func PathFlag() *string {
+	return conf.RegisterStringFlag(pathFlag)
+}
 
 // Config is a struct for l3 aggressor configuration.
 type Config struct {
@@ -27,10 +35,9 @@ type Config struct {
 
 // DefaultL3Config is a constructor for l3 aggressor Config with default parameters.
 func DefaultL3Config() Config {
-	path := conf.RegisterStringOption(pathArgKey, pathArgHelp,
-		path.Join(fs.GetSwanWorkloadsPath(), defaultPath))
+	path := PathFlag()
 	// Re-parse for environment variables.
-	conf.MustParseOnlyEnv()
+	conf.ParseEnv()
 
 	return Config{
 		Path:     path,

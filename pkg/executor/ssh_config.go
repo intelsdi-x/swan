@@ -55,11 +55,6 @@ func validateConfig(host string, user *user.User) error {
 			return errors.New("Cannot figure out if localhost is self-authorized")
 		}
 
-		// TODO(bp): [SCE-423] Make this for remote hosts as well, when we have /etc/hosts
-		// propagated on our hosts.
-		// Currently we don't have /etc/hosts propagated and ssh cannot resolve the host.
-		// Even if we authorize the IP of remote machine it is saved using hostname in
-		// authorized keys file.
 		authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
 		if err != nil {
 			return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
