@@ -2,6 +2,7 @@ package experiment
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	experimentPhase "github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/nu7hatch/gouuid"
@@ -117,6 +118,7 @@ func (e *Experiment) Run() (err error) {
 
 	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
 		" in ", time.Since(experimentStartingTime))
+	fmt.Print(e.uuid)
 	return err
 }
 
@@ -177,7 +179,7 @@ func (e *Experiment) logInitialize() error {
 	// Setup logging set to both output and logFile.
 	log.SetLevel(e.logLevel)
 	log.SetFormatter(new(log.TextFormatter))
-	log.SetOutput(io.MultiWriter(e.logFile, os.Stdout))
+	log.SetOutput(io.MultiWriter(e.logFile, os.Stderr))
 
 	return err
 }
