@@ -10,12 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"path"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
-	"path"
 )
 
 const (
@@ -35,10 +36,11 @@ func GetPathFromEnvOrDefault() string {
 
 // Config contains all data for running mutilate.
 type Config struct {
-	MutilatePath      string
-	MemcachedHost     string
-	TuningTime        time.Duration
-	LatencyPercentile decimal.Decimal
+	MutilatePath          string
+	MemcachedHost         string
+	TuningTime            time.Duration
+	LatencyPercentile     decimal.Decimal
+	EraseSearchTuneOutput bool // false by default, we want to keep them, but remove durning integration tests
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
@@ -86,11 +88,14 @@ func (m mutilate) Populate() (err error) {
 	}
 
 	if exitCode != 0 {
-		return errors.New("Memchaced population exited with code: " +
+		return errors.New("Memcached population exited with code: " +
 			strconv.Itoa(exitCode))
 	}
 
-	return err
+	if m.config.EraseSearchTuneOutput {
+		return taskHandle.EraseOutput()
+	}
+	return nil
 }
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
@@ -123,6 +128,12 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	if err != nil {
 		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
+	}
+
+	if m.config.EraseSearchTuneOutput {
+		if err := taskHandle.EraseOutput(); err != nil {
+			return 0, 0, err
+		}
 	}
 
 	return qps, achievedSLI, err

@@ -74,7 +74,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	rawMetrics, err := parseOutput(sourceFilePath.(string))
+	rawMetrics, err := ParseOutput(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
 		logger.LogError(msg)
