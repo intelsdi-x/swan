@@ -6,15 +6,12 @@ import (
 	"github.com/vektra/errors"
 )
 
-const (
-	cassandraAddrKey     = "cassandra_addr"
-	defaultCassandraAddr = "127.0.0.1"
-	cassandraAddrHelp    = "Address of Cassandra DB endpoint"
-)
+var addrFlag = conf.NewFlag(
+	"cassandra_addr", "Address of Cassandra DB endpoint", "127.0.0.1")
 
-// FlagAddr registers arg for env and CLI for snapd address and gives the promise.
-func FlagAddr() *string {
-	return conf.RegisterStringOption(cassandraAddrKey, cassandraAddrHelp, defaultCassandraAddr)
+// AddrFlag represents cassandra address flag.
+func AddrFlag() *string {
+	return conf.RegisterStringFlag(addrFlag)
 }
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {

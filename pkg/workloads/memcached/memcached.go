@@ -20,10 +20,18 @@ const (
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
 	defaultListenIP       = "0.0.0.0"
-	pathArgKey            = "memcached_path"
-	pathArgHelp           = "Path to memcached binary"
-	defaultPath           = "data_caching/memcached/memcached-1.4.25/build/memcached"
 )
+
+var pathFlag = conf.NewFlag(
+	"memcached_path",
+	"Path to memcached binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
+)
+
+// PathFlag represents memcached path flag.
+func PathFlag() *string {
+	return conf.RegisterStringFlag(pathFlag)
+}
 
 // Config is a config for the memcached data caching application v 1.4.25.
 // memcached 1.4.25, supported options:
@@ -48,10 +56,9 @@ type Config struct {
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
-	path := conf.RegisterStringOption(pathArgKey, pathArgHelp,
-		path.Join(fs.GetSwanWorkloadsPath(), defaultPath))
+	path := PathFlag()
 	// Re-parse for environment variables.
-	conf.MustParseOnlyEnv()
+	conf.ParseEnv()
 
 	return Config{
 		PathToBinary:   path,

@@ -6,15 +6,12 @@ import (
 	"time"
 )
 
-const (
-	loadGeneratorAddrKey     = "load_generator_addr"
-	defaultLoadGeneratorAddr = "127.0.0.1"
-	loadGeneratorAddrHelp    = "IP of the target machine for the load generator"
-)
+var loadGeneratorAddrFlag = conf.NewFlag(
+	"load_generator_addr", "IP of the target machine for the load generator", "127.0.0.1")
 
-// FlagLoadGeneratorAddr registers arg for env and flag for load generator addr and gives the promise.
-func FlagLoadGeneratorAddr() *string {
-	return conf.RegisterStringOption(loadGeneratorAddrKey, defaultLoadGeneratorAddr, loadGeneratorAddrHelp)
+// LoadGeneratorAddrFlag represents load generator address flag.
+func LoadGeneratorAddrFlag() *string {
+	return conf.RegisterStringFlag(loadGeneratorAddrFlag)
 }
 
 // LoadGenerator launches stresser which generates load on specified workload.

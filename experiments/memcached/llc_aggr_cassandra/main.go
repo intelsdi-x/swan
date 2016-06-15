@@ -18,6 +18,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
 	"os"
+	"os/user"
 	"path"
 	"time"
 )
@@ -31,11 +32,8 @@ func main() {
 
 	logrus.SetLevel(conf.LogLevel())
 
-	// Initialize Memcached Launcher.
-	local := executor.NewLocal()
-	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+	memcachedConfig := memcached.DefaultMemcachedConfig()
 
-	// Initialize Mutilate Launcher.
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
@@ -44,20 +42,36 @@ func main() {
 		TuningTime:        1 * time.Second,
 	}
 
-	loadGeneratorExecutor, err := executor.CreateExecutor(*workloads.FlagLoadGeneratorAddr())
+	l3dataConfig := l3data.DefaultL3Config()
+
+	snapdAddr := snap.AddrFlag()
+	cassandraAddr := cassandra.AddrFlag()
+	loadGeneratorHost := workloads.LoadGeneratorAddrFlag()
+
+	// Parse CLI.
+	err := conf.ParseFlagAndEnv()
 	if err != nil {
 		panic(err)
 	}
 
-	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
+	// Initialize Memcached Launcher.
+	local := executor.NewLocal()
+	memcachedLauncher := memcached.New(local, memcachedConfig)
+
+	// Initialize Mutilate Launcher.
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	sshConfig, err := executor.NewSSHConfig(*loadGeneratorHost, executor.DefaultSSHPort, user)
+	if err != nil {
+		panic(err)
+	}
+	mutilateLoadGenerator := mutilate.New(executor.NewRemote(sshConfig), mutilateConfig)
 
 	// Initialize LLC aggressor.
-	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
-
-	// Parse CLI.
-	snapdAddr := snap.FlagDaemonAddr()
-	cassandraAddr := cassandra.FlagAddr()
-	conf.MustParseFlagAndEnv()
+	llcAggressorLauncher := l3data.New(local, l3dataConfig)
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snapd on ", *snapdAddr)

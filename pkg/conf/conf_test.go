@@ -13,23 +13,22 @@ import (
 const (
 	testAppName       = "testAppName"
 	testIPDefaultName = "127.0.0.1"
-	customArgKey      = "custom_arg"
-	customArgHelp     = "help"
-	customArgDefault  = "default"
 )
+
+var customFlag = NewFlag("custom_arg", "help", "default")
 
 func clearEnv() {
 	// Clear all environment variables in context of that test.
-	os.Unsetenv(changeToEnvName(logLevelArg))
-	os.Unsetenv(changeToEnvName(ipAddressArg))
-	os.Unsetenv(changeToEnvName(customArgKey))
+	logLevelFlag.Clear()
+	ipAddressFlag.Clear()
+	customFlag.Clear()
 }
 
-func TestChangeToEnvName(t *testing.T) {
-	Convey("While using changeToEnvName function", t, func() {
+func TestFlag(t *testing.T) {
+	Convey("While using Flag struct, it should construct proper swan environment var name", t, func() {
 		name := "test_name"
 		envName := "SWAN_TEST_NAME"
-		So(changeToEnvName(name), ShouldEqual, envName)
+		So(NewFlag(name, "", "").EnvName(), ShouldEqual, envName)
 	})
 }
 
@@ -63,10 +62,11 @@ func TestConf(t *testing.T) {
 			So(IPAddress(), ShouldEqual, testIPDefaultName)
 
 			customIP := "255.255.255.255"
-			os.Setenv(changeToEnvName(logLevelArg), "0") // 0 means debug level.
-			os.Setenv(changeToEnvName(ipAddressArg), customIP)
+			os.Setenv(logLevelFlag.EnvName(), "0") // 0 means debug level.
+			os.Setenv(ipAddressFlag.EnvName(), customIP)
 
-			MustParseOnlyEnv()
+			err := ParseEnv()
+			So(err, ShouldBeNil)
 
 			// Should be from environment.
 			So(LogLevel(), ShouldEqual, logrus.DebugLevel)
@@ -74,24 +74,26 @@ func TestConf(t *testing.T) {
 		})
 
 		Convey("When some custom argument is defined", func() {
-			// Register custom Argument.
-			customArg := RegisterStringOption(customArgKey, customArgHelp, customArgDefault)
+			// Register custom flag.
+			customFlagValue := RegisterStringFlag(customFlag)
 
 			Convey("Without parse it should be empty", func() {
-				So(*customArg, ShouldEqual, "")
+				So(*customFlagValue, ShouldEqual, "")
 			})
 
 			Convey("When we not defined any environment variable we should have default value after parse", func() {
-				MustParseOnlyEnv()
-				So(*customArg, ShouldEqual, customArgDefault)
+				err := ParseEnv()
+				So(err, ShouldBeNil)
+				So(*customFlagValue, ShouldEqual, customFlag.defaultValue)
 			})
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := "customContent"
-				os.Setenv(changeToEnvName(customArgKey), customValue)
+				os.Setenv(customFlag.EnvName(), customValue)
 
-				MustParseOnlyEnv()
-				So(*customArg, ShouldEqual, customValue)
+				err := ParseEnv()
+				So(err, ShouldBeNil)
+				So(*customFlagValue, ShouldEqual, customValue)
 			})
 		})
 	})
