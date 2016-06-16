@@ -24,8 +24,7 @@ func TestL3Aggressor(t *testing.T) {
 
 		Convey("Default configuration should be valid", func() {
 			config := DefaultL3Config()
-			pathToBinary := pathToBinary
-			config.Path = &pathToBinary
+			config.Path = pathToBinary
 			launcher := New(
 				mockedExecutor,
 				config,
@@ -56,9 +55,8 @@ func TestL3Aggressor(t *testing.T) {
 		})
 		Convey("While using incorrect configuration", func() {
 			duration := time.Duration(-1 * time.Second)
-			pathToBinary := pathToBinary
 			incorrectConfiguration := Config{
-				Path:     &pathToBinary,
+				Path:     pathToBinary,
 				Duration: duration,
 			}
 			launcher := New(mockedExecutor, incorrectConfiguration)

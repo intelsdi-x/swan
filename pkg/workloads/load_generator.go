@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-var loadGeneratorAddrFlag = conf.NewFlag(
+// LoadGeneratorAddrFlag represents load generator address flag.
+var LoadGeneratorAddrFlag = conf.NewRegisteredStringFlag(
 	"load_generator_addr", "IP of the target machine for the load generator", "127.0.0.1")
 
-// LoadGeneratorAddrFlag represents load generator address flag.
-func LoadGeneratorAddrFlag() *string {
-	return conf.RegisterStringFlag(loadGeneratorAddrFlag)
+func init() {
+	conf.ParseEnv()
 }
 
 // LoadGenerator launches stresser which generates load on specified workload.

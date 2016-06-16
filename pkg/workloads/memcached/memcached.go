@@ -22,15 +22,15 @@ const (
 	defaultListenIP       = "127.0.0.1"
 )
 
-var pathFlag = conf.NewFlag(
+// PathFlag represents memcached path flag.
+var PathFlag = conf.NewRegisteredStringFlag(
 	"memcached_path",
 	"Path to memcached binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
 )
 
-// PathFlag represents memcached path flag.
-func PathFlag() *string {
-	return conf.RegisterStringFlag(pathFlag)
+func init() {
+	conf.ParseEnv()
 }
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -45,7 +45,7 @@ func PathFlag() *string {
 //-vvv          extremely verbose (also print internal state transitions)
 //-t <num>      number of threads to use (default: 4)
 type Config struct {
-	PathToBinary   *string
+	PathToBinary   string
 	Port           int
 	User           string
 	NumThreads     int
@@ -56,12 +56,8 @@ type Config struct {
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
-	path := PathFlag()
-	// Re-parse for environment variables.
-	conf.ParseEnv()
-
 	return Config{
-		PathToBinary:   path,
+		PathToBinary:   PathFlag.Value(),
 		Port:           defaultPort,
 		User:           defaultUser,
 		NumThreads:     defaultNumThreads,
@@ -109,7 +105,7 @@ func New(exec executor.Executor, config Config) Memcached {
 }
 
 func (m Memcached) buildCommand() string {
-	return fmt.Sprint(*m.conf.PathToBinary,
+	return fmt.Sprint(m.conf.PathToBinary,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
 		" -t ", m.conf.NumThreads,

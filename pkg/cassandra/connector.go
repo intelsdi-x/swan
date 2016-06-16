@@ -6,12 +6,12 @@ import (
 	"github.com/vektra/errors"
 )
 
-var addrFlag = conf.NewFlag(
+// AddrFlag represents cassandra address flag.
+var AddrFlag = conf.NewRegisteredStringFlag(
 	"cassandra_addr", "Address of Cassandra DB endpoint", "127.0.0.1")
 
-// AddrFlag represents cassandra address flag.
-func AddrFlag() *string {
-	return conf.RegisterStringFlag(addrFlag)
+func init() {
+	conf.ParseEnv()
 }
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {

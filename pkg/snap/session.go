@@ -18,11 +18,11 @@ const (
 	DefaultDaemonPort = "8181"
 )
 
-var addrFlag = conf.NewFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
-
 // AddrFlag represents snap daemon address flag.
-func AddrFlag() *string {
-	return conf.RegisterStringFlag(addrFlag)
+var AddrFlag = conf.NewRegisteredStringFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
+
+func init() {
+	conf.ParseEnv()
 }
 
 type task struct {

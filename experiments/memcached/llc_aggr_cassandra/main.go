@@ -30,24 +30,6 @@ func main() {
 	conf.SetHelpPath(
 		path.Join(fs.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
 
-	logrus.SetLevel(conf.LogLevel())
-
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-
-	percentile, _ := decimal.NewFromString("99.9")
-	mutilateConfig := mutilate.Config{
-		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
-		MemcachedHost:     "127.0.0.1",
-		LatencyPercentile: percentile,
-		TuningTime:        1 * time.Second,
-	}
-
-	l3dataConfig := l3data.DefaultL3Config()
-
-	snapdAddr := snap.AddrFlag()
-	cassandraAddr := cassandra.AddrFlag()
-	loadGeneratorHost := workloads.LoadGeneratorAddrFlag()
-
 	// Parse CLI.
 	err := conf.ParseFlagAndEnv()
 	if err != nil {
@@ -55,16 +37,18 @@ func main() {
 		panic(err)
 	}
 
+	logrus.SetLevel(conf.LogLevel())
+
 	// Initialize Memcached Launcher.
 	local := executor.NewLocal()
-	memcachedLauncher := memcached.New(local, memcachedConfig)
+	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
 
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.
 	var loadGeneratorExecutor executor.Executor
 	loadGeneratorExecutor = local
 
-	if *loadGeneratorHost != "local" {
+	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
 		// Initialize Mutilate Launcher.
 		user, err := user.Current()
 		if err != nil {
@@ -72,7 +56,8 @@ func main() {
 			panic(err)
 		}
 
-		sshConfig, err := executor.NewSSHConfig(*loadGeneratorHost, executor.DefaultSSHPort, user)
+		sshConfig, err := executor.NewSSHConfig(
+			workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
 		if err != nil {
 			logrus.Fatal(err)
 			panic(err)
@@ -81,16 +66,23 @@ func main() {
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
 
+	percentile, _ := decimal.NewFromString("99.9")
+	mutilateConfig := mutilate.Config{
+		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
+		MemcachedHost:     "127.0.0.1",
+		LatencyPercentile: percentile,
+		TuningTime:        1 * time.Second,
+	}
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize LLC aggressor.
-	llcAggressorLauncher := l3data.New(local, l3dataConfig)
+	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
 
 	// Create connection with Snap.
-	logrus.Debug("Connecting to Snapd on ", *snapdAddr)
+	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
 	// TODO(bp): Make helper for passing host:port or only host option here.
 	snapConnection, err := client.New(
-		fmt.Sprintf("http://%s:%s", *snapdAddr, snap.DefaultDaemonPort),
+		fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
 		"v1",
 		true,
 	)
@@ -125,7 +117,7 @@ func main() {
 		panic("Failed to create Publish Node for cassandra")
 	}
 
-	publisher.AddConfigItem("server", *cassandraAddr)
+	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
