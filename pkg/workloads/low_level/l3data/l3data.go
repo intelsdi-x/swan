@@ -16,31 +16,27 @@ const (
 	defaultDuration = 86400 * time.Second
 )
 
-var pathFlag = conf.NewFlag(
+// PathFlag represents l3data path flag.
+var PathFlag = conf.NewRegisteredStringFlag(
 	"l3_path",
 	"Path to L3 Data binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),
 )
 
-// PathFlag represents l3data path flag.
-func PathFlag() *string {
-	return conf.RegisterStringFlag(pathFlag)
+func init() {
+	conf.ParseEnv()
 }
 
 // Config is a struct for l3 aggressor configuration.
 type Config struct {
-	Path     *string
+	Path     string
 	Duration time.Duration
 }
 
 // DefaultL3Config is a constructor for l3 aggressor Config with default parameters.
 func DefaultL3Config() Config {
-	path := PathFlag()
-	// Re-parse for environment variables.
-	conf.ParseEnv()
-
 	return Config{
-		Path:     path,
+		Path:     PathFlag.Value(),
 		Duration: defaultDuration,
 	}
 }
@@ -60,7 +56,7 @@ func New(exec executor.Executor, config Config) workloads.Launcher {
 }
 
 func (l l3) buildCommand() string {
-	return fmt.Sprintf("%s %d", *l.conf.Path, int(l.conf.Duration.Seconds()))
+	return fmt.Sprintf("%s %d", l.conf.Path, int(l.conf.Duration.Seconds()))
 }
 
 func (l l3) verifyConfiguration() error {
