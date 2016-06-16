@@ -10,10 +10,6 @@ import (
 var AddrFlag = conf.NewRegisteredStringFlag(
 	"cassandra_addr", "Address of Cassandra DB endpoint", "127.0.0.1")
 
-func init() {
-	conf.ParseEnv()
-}
-
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {
 	cluster := gocql.NewCluster(ip)
 	cluster.Keyspace = keyspace

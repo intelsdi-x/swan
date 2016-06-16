@@ -10,10 +10,6 @@ import (
 var LoadGeneratorAddrFlag = conf.NewRegisteredStringFlag(
 	"load_generator_addr", "IP of the target machine for the load generator", "127.0.0.1")
 
-func init() {
-	conf.ParseEnv()
-}
-
 // LoadGenerator launches stresser which generates load on specified workload.
 type LoadGenerator interface {
 	// Populate inserts initial data.
