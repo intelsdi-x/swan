@@ -26,7 +26,7 @@ import (
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
-	conf.SetAppName("MemcachedWithLocalMutilateToCassandra")
+	conf.SetAppName("MemcachedWithMutilateToCassandra")
 	conf.SetHelpPath(
 		path.Join(fs.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
 
