@@ -21,10 +21,6 @@ const (
 // AddrFlag represents snap daemon address flag.
 var AddrFlag = conf.NewRegisteredStringFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
 
-func init() {
-	conf.ParseEnv()
-}
-
 type task struct {
 	Version  int
 	Schedule *client.Schedule

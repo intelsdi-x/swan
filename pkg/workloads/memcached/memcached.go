@@ -29,10 +29,6 @@ var PathFlag = conf.NewRegisteredStringFlag(
 	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
 )
 
-func init() {
-	conf.ParseEnv()
-}
-
 // Config is a config for the memcached data caching application v 1.4.25.
 // memcached 1.4.25, supported options:
 // -p <num>      TCP port number to listen on (default: 11211)

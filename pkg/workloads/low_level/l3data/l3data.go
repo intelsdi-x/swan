@@ -23,10 +23,6 @@ var PathFlag = conf.NewRegisteredStringFlag(
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),
 )
 
-func init() {
-	conf.ParseEnv()
-}
-
 // Config is a struct for l3 aggressor configuration.
 type Config struct {
 	Path     string
