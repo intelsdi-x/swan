@@ -38,8 +38,8 @@ func NewMutilateSnapSessionLauncher(
 				"/intel/swan/mutilate/*/percentile/99th",
 				"/intel/swan/mutilate/*/qps",
 				//TODO: Fetch the 99_999th value from MUTILATE task itself!
-				//Does not work for now:
-				// "/intel/swan/mutilate/*/percentile/99_999th",
+				//It shall be redesigned ASAP
+				"/intel/swan/mutilate/*/percentile/*/custom",
 			},
 			interval,
 			snapClient,
