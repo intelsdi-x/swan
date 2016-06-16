@@ -10,10 +10,17 @@ By default Caffe is compiled with OpenBLAS library.
 To gain multithreading you should compile it with Intel Math Kernel Library
 and use OMP_NUM_THREAD variable to run multithreaded.
 
-## Caffe_cpu_solver.patch Documentation
+## `caffe_cpu_solver.patch` Documentation
 
 This patch changes solver from GPU to CPU in CIFAR10 training example.
 We change this to use Caffe CIFAR10 as CPU-Bound best effort job.
+
+## `vagrant_vboxsf_workaround.patch` Documentation
+
+Vagrant vboxsf synchronised filesystem has problem with LMDB files (virtualbox.org/ticket/819).
+For workaround, we put lmdb files with training and testing set in /tmp/caffe/ directory.
+This patch changes parameters of CIFAR10 layers to search for sets in /tmp/caffe/ dir and
+changes `example/cifar10/create_cifar10.sh` script to prepare sets in /tmp/caffe dir.
 
 ## Makefile.config
 
