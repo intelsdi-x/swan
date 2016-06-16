@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
 
 const (
+	// ID is used for specifying which aggressors should be used via parameters.
+	ID              = "l1d"
 	name            = "L1 Data"
 	defaultDuration = 86400 * time.Second
-	defaultL1DPath  = "low-level-aggressors/l1d"
-	l1DPathEnv      = "SWAN_L1D_PATH"
 )
 
-// GetPathFromEnvOrDefault returns the l1d binary path from environment variable
-// SWAN_L1D_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		l1DPathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultL1DPath))
-}
+// PathFlag represents l1 data path flag.
+var PathFlag = conf.NewRegisteredStringFlag(
+	"l1d_path",
+	"Path to L1 Data binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1d"),
+)
 
 // Config is a struct for l1d aggressor configuration.
 type Config struct {
@@ -34,7 +34,7 @@ type Config struct {
 // DefaultL1dConfig is a constructor for l1d aggressor Config with default parameters.
 func DefaultL1dConfig() Config {
 	return Config{
-		Path:     GetPathFromEnvOrDefault(),
+		Path:     PathFlag.Value(),
 		Duration: defaultDuration,
 	}
 }

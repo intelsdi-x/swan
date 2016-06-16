@@ -3,31 +3,31 @@ package l1instruction
 import (
 	"fmt"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"path"
 )
 
 const (
+	// ID is used for specifying which aggressors should be used via parameters.
+	ID                = "l1i"
 	name              = "L1 Instruction"
 	defaultIterations = 10
 	defaultIntensity  = 20
 	// {min,max}Intensity are hardcoded values in l1i binary
 	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan repository
-	minIntensity   = 1
-	maxIntensity   = 20
-	defaultL1IPath = "low-level-aggressors/l1i"
-	l1IPathEnv     = "SWAN_L1I_PATH"
+	minIntensity = 1
+	maxIntensity = 20
 )
 
-// GetPathFromEnvOrDefault fetches the l1 instructions binary path from environment variable
-// SWAN_L1I_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		l1IPathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultL1IPath))
-}
+// PathFlag represents l1i path flag.
+var PathFlag = conf.NewRegisteredStringFlag(
+	"l1i_path",
+	"Path to L1 instruction binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1i"),
+)
 
 // Config is a struct for l1i aggressor configuration.
 type Config struct {
@@ -41,7 +41,7 @@ type Config struct {
 // DefaultL1iConfig is a constructor for l1i aggressor Config with default parameters.
 func DefaultL1iConfig() Config {
 	return Config{
-		Path:       GetPathFromEnvOrDefault(),
+		Path:       PathFlag.Value(),
 		Intensity:  defaultIntensity,
 		Iterations: defaultIterations,
 	}
