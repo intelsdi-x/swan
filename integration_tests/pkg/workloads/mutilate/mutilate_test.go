@@ -20,7 +20,7 @@ import (
 
 // getMemcachedStats helper read and parse "stats" memcached command and return map key -> value
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L511
-func getMemcachedStats(mcAddress string, t *testing.T) map[string]string {
+func getMemcachedStats(mcAddress string, t *testing.T) (currItems, getCount int) {
 
 	conn, err := net.Dial("tcp", mcAddress)
 	if err != nil {
@@ -45,14 +45,22 @@ func getMemcachedStats(mcAddress string, t *testing.T) map[string]string {
 		fields := strings.Fields(line)
 		// stats dump ends with END keyword - it means we're done
 		if len(fields) == 1 && fields[0] == "END" {
-			return stats
+			break
 		}
 		key, value := fields[1], fields[2]
 		stats[key] = value
 	}
-	// expected to find END in response from memcache stats
-	t.Error("coulnd't get all data from stats")
-	return nil
+
+	currItems, err = strconv.Atoi(stats["curr_items"])
+	if err != nil {
+		t.Error(err)
+	}
+
+	getCount, err = strconv.Atoi(stats["cmd_get"])
+	if err != nil {
+		t.Error(err)
+	}
+	return
 }
 
 // TestMutilateWithExecutor is an integration test with local executor.
@@ -70,21 +78,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 	mcConfig.User = os.GetEnvOrDefault("USER", mcConfig.User)
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", mcConfig.Port)
 	// closure function with memcache address for getting statistics from mecache
-	currItems := func() int {
-		ci, err := strconv.Atoi(getMemcachedStats(mcAddress, t)["curr_items"])
-		if err != nil {
-			t.Error(err)
-		}
-		return ci
-	}
-
-	getCount := func() int {
-		ci, err := strconv.Atoi(getMemcachedStats(mcAddress, t)["cmd_get"])
-		if err != nil {
-			t.Error(err)
-		}
-		return ci
-	}
 
 	// start memcached and make sure it is a new one!
 	memcachedLauncher := memcached.New(executor.NewLocal(), mcConfig)
@@ -93,14 +86,14 @@ func TestMutilateWithExecutor(t *testing.T) {
 		t.Error("cannot start memcached:" + err.Error())
 	}
 
-	panicOnError := func(f func() error) {
+	errorOnError := func(f func() error) {
 		if err := f(); err != nil {
 			t.Error(err)
 		}
 	}
 	defer func() {
-		panicOnError(mcHandle.EraseOutput) // make sure temp files removal was successful
-		panicOnError(mcHandle.Stop)        // and our memcached instance was closed properlly
+		errorOnError(mcHandle.EraseOutput) // make sure temp files removal was successful
+		errorOnError(mcHandle.Stop)        // and our memcached instance was closed properlly
 		mcHandle.Wait(0)
 		ec, err := mcHandle.ExitCode()
 		if err != nil {
@@ -116,7 +109,8 @@ func TestMutilateWithExecutor(t *testing.T) {
 	if mcHandle.Status() != executor.RUNNING {
 		t.Error("my memcached is not running!")
 	}
-	if currItems() != 0 { // in case of not my memache or someone at the same time is messing with it
+	currItems, _ := getMemcachedStats(mcAddress, t)
+	if currItems != 0 { // in case of not my memache or someone at the same time is messing with it
 		t.Error("expecting empty mc! but some items are already there")
 	}
 
@@ -134,20 +128,22 @@ func TestMutilateWithExecutor(t *testing.T) {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			err := mutilateLauncher.Populate()
 			So(err, ShouldBeNil)
-			So(currItems(), ShouldNotEqual, 0)
+			currItems, _ = getMemcachedStats(mcAddress, t)
+			So(currItems, ShouldNotEqual, 0)
 		})
 
-		previousGetCnt := getCount()
+		_, previousGetCnt := getMemcachedStats(mcAddress, t)
 		Convey("When run mutilate tune", func() {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			achievedLoad, achievedSLI, err := mutilateLauncher.Tune(5000) // very high to be easile achiveable
 			So(err, ShouldBeNil)
 			So(achievedLoad, ShouldNotEqual, 0)
 			So(achievedSLI, ShouldNotEqual, 0)
-			So(getCount(), ShouldBeGreaterThan, previousGetCnt)
+			_, currentGetCount := getMemcachedStats(mcAddress, t)
+			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)
 		})
 
-		previousGetCnt = getCount()
+		_, previousGetCnt = getMemcachedStats(mcAddress, t)
 		Convey("When run mutilate load", func() {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			mutilateHandle, err := mutilateLauncher.Load(10, 1*time.Second)
@@ -164,8 +160,9 @@ func TestMutilateWithExecutor(t *testing.T) {
 				log.Debugf("%s = %0.2f", expectedMetric, v)
 			}
 
-			panicOnError(mutilateHandle.EraseOutput)
-			So(getCount(), ShouldBeGreaterThan, previousGetCnt)
+			errorOnError(mutilateHandle.EraseOutput)
+			_, currentGetCount := getMemcachedStats(mcAddress, t)
+			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)
 			if exitcode, err := mutilateHandle.ExitCode(); err != nil || exitcode != 0 {
 				t.Fatalf("mutilate didn't stopped correclty err=%q, exitcode=%d", err, exitcode)
 			}
