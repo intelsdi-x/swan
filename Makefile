@@ -36,14 +36,20 @@ plugins:
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
 
-integration_test: plugins unit_test build_workloads
+list_env:
+	@ echo Environment variables:
+	@ echo ""
+	@ env
+	@ echo ""
+
+integration_test: list_env plugins unit_test build_workloads
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 #	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 # For development purposes we need to do integration test faster on already built components.
-integration_test_no_build: unit_test
+integration_test_no_build: list_env unit_test
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 
