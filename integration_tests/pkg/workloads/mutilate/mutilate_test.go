@@ -105,7 +105,10 @@ func TestMutilateWithExecutor(t *testing.T) {
 	}()
 
 	// give memcache chance to start and possibly die
-	time.Sleep(1 * time.Second)
+	if stopped := mcHandle.Wait(1 * time.Second); stopped {
+		t.Error("my memcached is not running after the second")
+	}
+
 	if mcHandle.Status() != executor.RUNNING {
 		t.Error("my memcached is not running!")
 	}
