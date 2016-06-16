@@ -51,6 +51,7 @@ func main() {
 	// Parse CLI.
 	err := conf.ParseFlagAndEnv()
 	if err != nil {
+		logrus.Fatal(err)
 		panic(err)
 	}
 
@@ -67,11 +68,13 @@ func main() {
 		// Initialize Mutilate Launcher.
 		user, err := user.Current()
 		if err != nil {
+			logrus.Fatal(err)
 			panic(err)
 		}
 
 		sshConfig, err := executor.NewSSHConfig(*loadGeneratorHost, executor.DefaultSSHPort, user)
 		if err != nil {
+			logrus.Fatal(err)
 			panic(err)
 		}
 
@@ -93,6 +96,7 @@ func main() {
 	)
 
 	if err != nil {
+		logrus.Fatal(err)
 		panic(err)
 	}
 
@@ -110,6 +114,7 @@ func main() {
 			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
+			logrus.Fatal(err)
 			panic(err)
 		}
 	}
@@ -151,6 +156,7 @@ func main() {
 	// Run Experiment.
 	err = sensitivityExperiment.Run()
 	if err != nil {
+		logrus.Fatal(err)
 		panic(err)
 	}
 }
