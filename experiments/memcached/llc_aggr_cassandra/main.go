@@ -34,7 +34,6 @@ func main() {
 	err := conf.ParseFlagAndEnv()
 	if err != nil {
 		logrus.Fatal(err)
-		panic(err)
 	}
 
 	logrus.SetLevel(conf.LogLevel())
@@ -53,14 +52,12 @@ func main() {
 		user, err := user.Current()
 		if err != nil {
 			logrus.Fatal(err)
-			panic(err)
 		}
 
 		sshConfig, err := executor.NewSSHConfig(
 			workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
 		if err != nil {
 			logrus.Fatal(err)
-			panic(err)
 		}
 
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
@@ -89,7 +86,6 @@ func main() {
 
 	if err != nil {
 		logrus.Fatal(err)
-		panic(err)
 	}
 
 	// Load the snap cassandra publisher plugin if not yet loaded.
@@ -98,7 +94,7 @@ func main() {
 	plugins := snap.NewPlugins(snapConnection)
 	loaded, err := plugins.IsLoaded("publisher", "cassandra")
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	if !loaded {
@@ -107,14 +103,13 @@ func main() {
 		err = plugins.Load(pluginPath)
 		if err != nil {
 			logrus.Fatal(err)
-			panic(err)
 		}
 	}
 
 	// Define publisher.
 	publisher := wmap.NewPublishNode("cassandra", 2)
 	if publisher == nil {
-		panic("Failed to create Publish Node for cassandra")
+		logrus.Fatal("Failed to create Publish Node for cassandra")
 	}
 
 	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
@@ -149,6 +144,5 @@ func main() {
 	err = sensitivityExperiment.Run()
 	if err != nil {
 		logrus.Fatal(err)
-		panic(err)
 	}
 }
