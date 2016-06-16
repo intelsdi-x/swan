@@ -60,8 +60,10 @@ func main() {
 
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.
-	var loadGeneratorExecutor executor.Executor = local
-	if *loadGeneratorHost == "local" {
+	var loadGeneratorExecutor executor.Executor
+	loadGeneratorExecutor = local
+
+	if *loadGeneratorHost != "local" {
 		// Initialize Mutilate Launcher.
 		user, err := user.Current()
 		if err != nil {
