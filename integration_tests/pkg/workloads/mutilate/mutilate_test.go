@@ -18,51 +18,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// getMemcachedStats helper read and parse "stats" memcached command and return map key -> value
-// https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L511
-func getMemcachedStats(mcAddress string, t *testing.T) (currItems, getCount int) {
-
-	conn, err := net.Dial("tcp", mcAddress)
-	if err != nil {
-		t.Error(err)
-	}
-	defer conn.Close()
-	n, err := conn.Write([]byte("stats\n"))
-	if err != nil {
-		t.Error(err)
-	}
-	if n != 6 {
-		t.Error("coulnd't write to memcache exepected number of bytes:" + strconv.Itoa(n))
-	}
-
-	buf := make([]byte, 2048)
-	n, err = conn.Read(buf)
-	if err != nil {
-		t.Error(err)
-	}
-	stats := make(map[string]string)
-	for _, line := range strings.Split(string(buf), "\n") {
-		fields := strings.Fields(line)
-		// stats dump ends with END keyword - it means we're done
-		if len(fields) == 1 && fields[0] == "END" {
-			break
-		}
-		key, value := fields[1], fields[2]
-		stats[key] = value
-	}
-
-	currItems, err = strconv.Atoi(stats["curr_items"])
-	if err != nil {
-		t.Error(err)
-	}
-
-	getCount, err = strconv.Atoi(stats["cmd_get"])
-	if err != nil {
-		t.Error(err)
-	}
-	return
-}
-
 // TestMutilateWithExecutor is an integration test with local executor.
 // Flow:
 // - start memcache and make sure is new clean instance
@@ -168,4 +123,49 @@ func TestMutilateWithExecutor(t *testing.T) {
 			}
 		})
 	})
+}
+
+// getMemcachedStats helper read and parse "stats" memcached command and return map key -> value
+// https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L511
+func getMemcachedStats(mcAddress string, t *testing.T) (currItems, getCount int) {
+
+	conn, err := net.Dial("tcp", mcAddress)
+	if err != nil {
+		t.Error(err)
+	}
+	defer conn.Close()
+	n, err := conn.Write([]byte("stats\n"))
+	if err != nil {
+		t.Error(err)
+	}
+	if n != 6 {
+		t.Error("coulnd't write to memcache exepected number of bytes:" + strconv.Itoa(n))
+	}
+
+	buf := make([]byte, 2048)
+	n, err = conn.Read(buf)
+	if err != nil {
+		t.Error(err)
+	}
+	stats := make(map[string]string)
+	for _, line := range strings.Split(string(buf), "\n") {
+		fields := strings.Fields(line)
+		// stats dump ends with END keyword - it means we're done
+		if len(fields) == 1 && fields[0] == "END" {
+			break
+		}
+		key, value := fields[1], fields[2]
+		stats[key] = value
+	}
+
+	currItems, err = strconv.Atoi(stats["curr_items"])
+	if err != nil {
+		t.Error(err)
+	}
+
+	getCount, err = strconv.Atoi(stats["cmd_get"])
+	if err != nil {
+		t.Error(err)
+	}
+	return
 }
