@@ -58,17 +58,25 @@ func main() {
 	local := executor.NewLocal()
 	memcachedLauncher := memcached.New(local, memcachedConfig)
 
-	// Initialize Mutilate Launcher.
-	user, err := user.Current()
-	if err != nil {
-		panic(err)
+	// Special case to have ability to use local executor for load generator.
+	// This is needed for docker testing.
+	var loadGeneratorExecutor executor.Executor = local
+	if *loadGeneratorHost == "local" {
+		// Initialize Mutilate Launcher.
+		user, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+
+		sshConfig, err := executor.NewSSHConfig(*loadGeneratorHost, executor.DefaultSSHPort, user)
+		if err != nil {
+			panic(err)
+		}
+
+		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
 
-	sshConfig, err := executor.NewSSHConfig(*loadGeneratorHost, executor.DefaultSSHPort, user)
-	if err != nil {
-		panic(err)
-	}
-	mutilateLoadGenerator := mutilate.New(executor.NewRemote(sshConfig), mutilateConfig)
+	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize LLC aggressor.
 	llcAggressorLauncher := l3data.New(local, l3dataConfig)
