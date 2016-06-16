@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -49,6 +50,10 @@ func NewRegisteredStringFlag(flagName string, description string, defaultValue s
 
 // Value returns value of defined flag after parse.
 func (s StringFlag) Value() string {
+	if *s.value == "" {
+		return s.defaultValue
+	}
+
 	return *s.value
 }
 
@@ -76,5 +81,14 @@ func NewRegisteredIntFlag(flagName string, description string, defaultValue stri
 
 // Value returns value of defined flag after parse.
 func (i IntFlag) Value() int {
+	if *i.value == 0 {
+		ret, err := strconv.Atoi(i.defaultValue)
+		if err != nil {
+			return 0
+		}
+
+		return ret
+	}
+
 	return *i.value
 }
