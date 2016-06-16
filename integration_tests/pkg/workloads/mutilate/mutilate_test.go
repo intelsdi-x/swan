@@ -100,7 +100,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 			t.Error(err)
 		}
 		if ec != -1 { // expected -1 on SIGKILL (TODO: change to zero, after Stop "gracefull stop fix"
-			t.Error(fmt.Sprintf("memcached was stopped incorrectly exit-code: %d", ec))
+			t.Errorf("memcached was stopped incorrectly exit-code: %d", ec)
 		}
 	}()
 
