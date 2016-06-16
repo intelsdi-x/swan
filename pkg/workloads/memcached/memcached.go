@@ -19,7 +19,7 @@ const (
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
-	defaultListenIP       = "0.0.0.0"
+	defaultListenIP       = "127.0.0.1"
 )
 
 var pathFlag = conf.NewFlag(
