@@ -121,11 +121,8 @@ func TestMutilateWithExecutor(t *testing.T) {
 
 		mutilateConfig := mutilate.DefaultMutilateConfig()
 		mutilateConfig.TuningTime = 1 * time.Second
-		mutilateConfig.EraseSearchTuneOutput = true                         // make sure files are removed correctly
-		mutilateConfig.LatencyPercentile, err = decimal.NewFromString("99") // not sure if custom percentile is working correctly TODO: added a custom percentile integration test
-		if err != nil {
-			t.Error(err)
-		}
+		mutilateConfig.EraseSearchTuneOutput = true                       // make sure files are removed correctly
+		mutilateConfig.LatencyPercentile, _ = decimal.NewFromString("99") // not sure if custom percentile is working correctly TODO: added a custom percentile integration test
 
 		Convey("When run mutilate populate", func() {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
