@@ -68,8 +68,8 @@ func main() {
 	// Initialize Mutilate Launcher.
 	percentile, err := decimal.NewFromString(sloPercentile)
 	if err != nil {
-		panic(err)
 		log.Fatalf("Retrieving decimal from given percentile %s ended with error %s", sloPercentile, err)
+		panic(err)
 	}
 
 	memcachedHost := os.GetEnvOrDefault("SWAN_MEMCACHED_HOST", defaultMemcachedHost)
@@ -85,14 +85,14 @@ func main() {
 	sshUserName := os.GetEnvOrDefault("SWAN_SSH_USER", "root")
 	sshUser, err := user.Lookup(sshUserName)
 	if err != nil {
-		panic(err)
 		log.Fatalf("Looking for a user %s ended with error %s", sshUserName, err)
+		panic(err)
 
 	}
 	sshConfig, err := executor.NewSSHConfig(mutilateHost, defaultSSHPort, sshUser)
 	if err != nil {
-		panic(err)
 		log.Fatalf("Creating ssh config ended with error %s", err)
+		panic(err)
 	}
 	remote := executor.NewRemote(*sshConfig)
 
@@ -104,9 +104,8 @@ func main() {
 	logrus.Debug("Connecting to Snap at the address %s", snapAddress)
 	snapConnection, err := client.New(snapAddress, "v1", true)
 	if err != nil {
-		panic(err)
 		log.Fatalf("Connecting to snap at the address %s ended with error %s", snapAddress, err)
-
+		panic(err)
 	}
 
 	// Define publisher.
@@ -158,6 +157,7 @@ func main() {
 	// Run Experiment.
 	err = sensitivityExperiment.Run()
 	if err != nil {
+		log.Fatalf("Running experiment ended with error %s", snapAddress, err)
 		panic(err)
 	}
 }
