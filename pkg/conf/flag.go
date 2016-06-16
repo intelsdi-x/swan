@@ -3,15 +3,13 @@ package conf
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
 // flag represents option's definition from CLI and Environment variable.
 type flag struct {
-	name         string
-	description  string
-	defaultValue string
+	name        string
+	description string
 }
 
 // envName returns name converted to swan environment variable name.
@@ -29,28 +27,30 @@ func (f flag) clear() {
 // StringFlag represents flag with string value.
 type StringFlag struct {
 	flag
-	value *string
+	defaultValue string
+	value        *string
 }
 
 // NewRegisteredStringFlag is a constructor of StringFlag struct.
 func NewRegisteredStringFlag(flagName string, description string, defaultValue string) StringFlag {
 	strFlag := StringFlag{
 		flag: flag{
-			name:         flagName,
-			description:  description,
-			defaultValue: defaultValue,
+			name:        flagName,
+			description: description,
 		},
+		defaultValue: defaultValue,
 	}
 
 	strFlag.value = app.Flag(flagName, description).
 		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).String()
+	isEnvParsed = false
 
 	return strFlag
 }
 
 // Value returns value of defined flag after parse.
 func (s StringFlag) Value() string {
-	if *s.value == "" {
+	if !isEnvParsed {
 		return s.defaultValue
 	}
 
@@ -60,34 +60,31 @@ func (s StringFlag) Value() string {
 // IntFlag represents flag with int value.
 type IntFlag struct {
 	flag
-	value *int
+	defaultValue int
+	value        *int
 }
 
 // NewRegisteredIntFlag is a constructor of IntFlag struct.
-func NewRegisteredIntFlag(flagName string, description string, defaultValue string) IntFlag {
+func NewRegisteredIntFlag(flagName string, description string, defaultValue int) IntFlag {
 	intFlag := IntFlag{
 		flag: flag{
-			name:         flagName,
-			description:  description,
-			defaultValue: defaultValue,
+			name:        flagName,
+			description: description,
 		},
+		defaultValue: defaultValue,
 	}
 
 	intFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(intFlag.envName()).Int()
+		Default(fmt.Sprintf("%d", defaultValue)).OverrideDefaultFromEnvar(intFlag.envName()).Int()
+	isEnvParsed = false
 
 	return intFlag
 }
 
 // Value returns value of defined flag after parse.
 func (i IntFlag) Value() int {
-	if *i.value == 0 {
-		ret, err := strconv.Atoi(i.defaultValue)
-		if err != nil {
-			return 0
-		}
-
-		return ret
+	if !isEnvParsed {
+		return i.defaultValue
 	}
 
 	return *i.value

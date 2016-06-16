@@ -30,16 +30,17 @@ var (
 	logLevelFlag = NewRegisteredIntFlag(
 		"log",
 		"Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
-		"3", // Default Error log level.
+		3, // Default Error log level.
 	)
 	ipAddressFlag = NewRegisteredStringFlag(
 		"ip",
 		"IP of interface for Swan workloads services to listen on",
 		"127.0.0.1",
 	)
+	isEnvParsed = false
 )
 
-// init parses.
+// init parse.
 func init() {
 	err := ParseEnv()
 	if err != nil {
@@ -87,6 +88,9 @@ func AppName() string {
 // environment variables.
 func ParseFlagAndEnv() error {
 	_, err := app.Parse(os.Args[1:])
+	if err == nil {
+		isEnvParsed = true
+	}
 	return err
 }
 
@@ -94,5 +98,8 @@ func ParseFlagAndEnv() error {
 // NOTE: Make sure you run it after flag registration.
 func ParseEnv() error {
 	_, err := app.Parse([]string{})
+	if err == nil {
+		isEnvParsed = true
+	}
 	return err
 }
