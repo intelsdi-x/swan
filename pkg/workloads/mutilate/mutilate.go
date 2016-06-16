@@ -21,7 +21,7 @@ import (
 
 const (
 	defaultMemcachedHost          = "127.0.0.1"
-	defaultMemcachedPercentile    = "99.9"
+	defaultMemcachedPercentile    = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
 	defaultMemcachedTuningTimeSec = 10
 	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
 	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
