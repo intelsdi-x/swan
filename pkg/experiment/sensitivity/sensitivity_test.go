@@ -2,15 +2,17 @@ package sensitivity
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/Sirupsen/logrus"
-	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
-	snapMocks "github.com/intelsdi-x/swan/pkg/snap/mocks"
-	workloadMocks "github.com/intelsdi-x/swan/pkg/workloads/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
+
+	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
+	snapMocks "github.com/intelsdi-x/swan/pkg/snap/mocks"
+	workloadMocks "github.com/intelsdi-x/swan/pkg/workloads/mocks"
 )
 
 type SensitivityTestSuite struct {
