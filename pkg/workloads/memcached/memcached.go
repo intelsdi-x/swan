@@ -6,9 +6,9 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"path"
 )
 
@@ -19,16 +19,15 @@ const (
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
 	defaultNumConnections = 1024
-	defaultMemcachedPath  = "data_caching/memcached/memcached-1.4.25/build/memcached"
-	memcachedPathEnv      = "SWAN_MEMCACHED_PATH"
+	defaultListenIP       = "127.0.0.1"
 )
 
-// GetPathFromEnvOrDefault returns the memcached binary path from environment variable
-// SWAN_MEMCACHED_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		memcachedPathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultMemcachedPath))
-}
+// PathFlag represents memcached path flag.
+var PathFlag = conf.NewStringFlag(
+	"memcached_path",
+	"Path to memcached binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
+)
 
 // Config is a config for the memcached data caching application v 1.4.25.
 // memcached 1.4.25, supported options:
@@ -48,17 +47,19 @@ type Config struct {
 	NumThreads     int
 	MaxMemoryMB    int
 	NumConnections int
+	IP             string
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
 	return Config{
-		PathToBinary:   GetPathFromEnvOrDefault(),
+		PathToBinary:   PathFlag.Value(),
 		Port:           defaultPort,
 		User:           defaultUser,
 		NumThreads:     defaultNumThreads,
 		MaxMemoryMB:    defaultMaxMemoryMB,
 		NumConnections: defaultNumConnections,
+		IP:             defaultListenIP,
 	}
 }
 
@@ -117,7 +118,7 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		return nil, err
 	}
 
-	address := fmt.Sprintf("%s:%d", task.Address(), m.conf.Port)
+	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
 		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
 			address)

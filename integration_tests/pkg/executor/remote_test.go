@@ -65,8 +65,12 @@ func testRemoteProcessPidIsolation() {
 	user, err := user.Lookup(os.Getenv(EnvUser))
 	So(err, ShouldBeNil)
 
+	err = executor.ValidateSSHConfig(os.Getenv(EnvHost), user)
+	So(err, ShouldBeNil)
+
 	sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
 	So(err, ShouldBeNil)
+
 	launcher := newMultipleMemcached(*sshConfig)
 
 	Convey("I should be able to execute remote command and see the processes running", func() {
@@ -94,7 +98,7 @@ func newMultipleMemcached(sshConfig executor.SSHConfig) workloads.Launcher {
 	decors := isolation.Decorators{}
 	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
 	decors = append(decors, unshare)
-	exec := executor.NewRemoteIsolated(sshConfig, decors)
+	exec := executor.NewRemoteIsolated(&sshConfig, decors)
 
 	return multipleMemcached{exec}
 }
