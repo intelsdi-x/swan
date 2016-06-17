@@ -97,8 +97,8 @@ type SliceFlag struct {
 	value        *[]string
 }
 
-// NewRegisteredSliceFlag is a constructor of SliceFlag struct.
-func NewRegisteredSliceFlag(flagName string, description string) SliceFlag {
+// NewSliceFlag is a constructor of SliceFlag struct
+func NewSliceFlag(flagName string, description string) SliceFlag {
 	sliceFlag := SliceFlag{
 		flag: flag{
 			name:        flagName,

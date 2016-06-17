@@ -12,7 +12,7 @@ import (
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
-	ID            = "l1d"
+	ID            = "caffe"
 	binaryEnvKey  = "SWAN_CAFFE_BINARY_PATH"
 	solverEnvKey  = "SWAN_CAFFE_SOLVER_PATH"
 	workdirEnvKey = "SWAN_CAFFE_WORKING_DIR_PATH"

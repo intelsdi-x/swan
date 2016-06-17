@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"path"
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
@@ -15,25 +20,20 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"os"
-	"os/user"
-	"path"
-	"syscall"
-	"time"
 )
 
-// AggressorsFlag represents flag specifying aggressors to run experiment with.
-var AggressorsFlag = conf.NewRegisteredSliceFlag(
-	"aggr", "Aggressor to run experiment with. "+
-		"You can state as many as you want (--aggr=l1d --aggr=membw)")
+var (
+	aggressorsFlag = conf.NewSliceFlag(
+		"aggr", "Aggressor to run experiment with. "+
+			"You can state as many as you want (--aggr=l1d --aggr=membw)")
+	hpCPUCountFlag = conf.NewRegisteredIntFlag(
+		"hp-cpus", "Number of CPUs assigned to high priority task", 4)
+	beCPUCountFlag = conf.NewRegisteredIntFlag(
+		"be-cpus", "Number of CPUs assigned to best effort task", 4)
+)
 
 // Check README.md for details of this experiment.
 func main() {
@@ -48,15 +48,11 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	aggressorsSet := make(map[string]struct{})
-	for _, aggr := range AggressorsFlag.Value() {
-		aggressorsSet[aggr] = struct{}{}
-	}
 	logrus.SetLevel(conf.LogLevel())
 
 	numaZero := isolation.NewIntSet(0)
 	// Initialize Memcached Launcher with HP isolation.
-	hpCpus, err := isolation.CPUSelect(4, isolation.ShareLLCButNotL1L2, isolation.NewIntSet())
+	hpCpus, err := isolation.CPUSelect(hpCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, isolation.NewIntSet())
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -107,7 +103,7 @@ func main() {
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	beCpus, err := isolation.CPUSelect(4, isolation.ShareLLCButNotL1L2, hpCpus)
+	beCpus, err := isolation.CPUSelect(beCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, hpCpus)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -124,46 +120,11 @@ func main() {
 
 	defer beIsolation.Clean()
 
-	localForBE := executor.NewLocalIsolated(beIsolation)
-
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
-
-	// TODO(bp): Make a factory for aggressors and use it here.
-	if _, ok := aggressorsSet[l1data.ID]; ok {
-		// l1data.
-		aggressors = append(aggressors,
-			sensitivity.NewLauncherWithoutSession(
-				l1data.New(localForBE, l1data.DefaultL1dConfig())))
-	}
-
-	if _, ok := aggressorsSet[l1instruction.ID]; ok {
-		// l1instruction.
-		aggressors = append(aggressors,
-			sensitivity.NewLauncherWithoutSession(
-				l1instruction.New(localForBE, l1instruction.DefaultL1iConfig())))
-	}
-
-	if _, ok := aggressorsSet[memoryBandwidth.ID]; ok {
-		// memBW.
-		aggressors = append(aggressors,
-			sensitivity.NewLauncherWithoutSession(
-				memoryBandwidth.New(localForBE, memoryBandwidth.DefaultMemBwConfig())))
-
-	}
-
-	if _, ok := aggressorsSet[caffe.ID]; ok {
-		// caffe.
-		aggressors = append(aggressors,
-			sensitivity.NewLauncherWithoutSession(
-				caffe.New(localForBE, caffe.DefaultConfig())))
-	}
-
-	if _, ok := aggressorsSet[l3data.ID]; ok {
-		// llc.
-		aggressors = append(aggressors,
-			sensitivity.NewLauncherWithoutSession(
-				l3data.New(localForBE, l3data.DefaultL3Config())))
+	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
+	for _, aggr := range aggressorsFlag.Value() {
+		aggressors = append(aggressors, aggressorFactory.Create(aggr))
 	}
 
 	// Create connection with Snap.
@@ -233,6 +194,4 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-
-	syscall.Exit(0)
 }
