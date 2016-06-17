@@ -60,7 +60,7 @@ integration_test_on_docker:
 build:
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/baseline_local)
-	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_cassandra)
+	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_cassandra)
 	(cd build/experiments/memcached; go build ../../../experiments/memcached/llc_aggr_local_to_csv)
 	mkdir -p build/viewer
 	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
