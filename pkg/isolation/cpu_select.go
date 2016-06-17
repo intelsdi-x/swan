@@ -37,8 +37,10 @@ func nextSocket() int {
 // For now, the only supported filter is to select cores that share LLC
 // but do not share L1 or L2 cache.
 //
+// Additionally you can specify CPUS which can be ignored by select.
+//
 // Returns an error if the request cannot be satisfied.
-func CPUSelect(countRequested int, filters uint) (IntSet, error) {
+func CPUSelect(countRequested int, filters uint, blacklist IntSet) (IntSet, error) {
 	if countRequested == 0 {
 		return nil, errors.New("Number of core requested is zero")
 	}
@@ -52,7 +54,7 @@ func CPUSelect(countRequested int, filters uint) (IntSet, error) {
 
 	if filters == ShareLLCButNotL1L2 {
 		for i := 0; i < info.Sockets; i++ {
-			result, err := searchSocket(info, countRequested, i)
+			result, err := searchSocket(info, countRequested, blacklist, i)
 			if err == nil {
 				if len(result) == countRequested {
 					log.Debug("Answering CPUSelect query for %d cpus with %v", countRequested, result)
@@ -70,7 +72,7 @@ func CPUSelect(countRequested int, filters uint) (IntSet, error) {
 	return nil, fmt.Errorf("Unknown filter supplied (%d)", filters)
 }
 
-func searchSocket(info CPUInfo, countRequested, socket int) (IntSet, error) {
+func searchSocket(info CPUInfo, countRequested int, blacklist IntSet, socket int) (IntSet, error) {
 	result := NewIntSet()
 	cores := info.SocketCores[socket]
 
@@ -86,6 +88,11 @@ func searchSocket(info CPUInfo, countRequested, socket int) (IntSet, error) {
 		// NOTE: Go map iteration order is intentionally randomized
 		//       to prevent depending on any implied order.
 		for cpu := range cpus {
+			if blacklist.Contains(cpu) {
+				// Ignore cpus from blacklist.
+				continue
+			}
+
 			// Add at most one logical cpu from each physical core
 			result.Add(cpu)
 			break
