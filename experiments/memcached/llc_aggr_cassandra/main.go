@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"path"
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
@@ -9,18 +14,23 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"os"
-	"os/user"
-	"path"
-	"time"
+)
+
+var (
+	aggressorsFlag = conf.NewSliceFlag(
+		"aggr", "Aggressor to run experiment with. "+
+			"You can state as many as you want (--aggr=l1d --aggr=membw)")
+	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 4)
+	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 4)
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
@@ -45,17 +55,34 @@ func main() {
 
 	logrus.SetLevel(conf.LogLevel())
 
-	// Initialize Memcached Launcher.
-	local := executor.NewLocal()
+	numaZero := isolation.NewIntSet(0)
+	// Initialize Memcached Launcher with HP isolation.
+	hpCpus, err := isolation.CPUSelect(hpCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, isolation.NewIntSet())
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
+	hpIsolation, err := cgroup.NewCPUSet("hp", hpCpus, numaZero, true, false)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	err = hpIsolation.Create()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	defer hpIsolation.Clean()
+
+	localForHP := executor.NewLocalIsolated(hpIsolation)
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedConfig.IP = ipAddressFlag.Value()
-	memcachedLauncher := memcached.New(local, memcachedConfig)
+	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.
 	var loadGeneratorExecutor executor.Executor
-	loadGeneratorExecutor = local
+	loadGeneratorExecutor = executor.NewLocal()
 
 	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
 		// Initialize Mutilate Launcher.
@@ -82,8 +109,30 @@ func main() {
 	}
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
-	// Initialize LLC aggressor.
-	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
+	// Initialize BE isolation.
+	beCpus, err := isolation.CPUSelect(beCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, hpCpus)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	err = beIsolation.Create()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	defer beIsolation.Clean()
+
+	// Initialize aggressors with BE isolation.
+	aggressors := []sensitivity.LauncherSessionPair{}
+	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
+	for _, aggr := range aggressorsFlag.Value() {
+		aggressors = append(aggressors, aggressorFactory.Create(aggr))
+	}
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
@@ -93,7 +142,6 @@ func main() {
 		"v1",
 		true,
 	)
-
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -145,9 +193,7 @@ func main() {
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
-		[]sensitivity.LauncherSessionPair{
-			sensitivity.NewLauncherWithoutSession(llcAggressorLauncher),
-		},
+		aggressors,
 	)
 
 	// Run Experiment.
