@@ -1,4 +1,4 @@
-# Sensitivity Experiment: Memcached LLC aggressor Local with Cassandra
+# Sensitivity Experiment: Memcached LLC aggressor with Cassandra
 
 Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)
@@ -13,7 +13,7 @@ Every experiment includes:
 | Type | Name  | Source | Execution | Isolation | APMs |
 | --- | --- | --- | --- | --- | --- |
 | *Latency Critical* | Memcached | [Readme](../../../workloads/data_caching/memcached) | Local | None | None |
-| *Load Generator* | Mutilate | [Readme](../../../workloads/data_caching/memcached) | Local | None | `Latency` and `QPS` via Snap to `Cassandra` |
+| *Load Generator* | Mutilate | [Readme](../../../workloads/data_caching/memcached) | Remote/Local | None | `Latency` and `QPS` via Snap to `Cassandra` |
 | *Aggressor* | Last-Level cache synthetic | [Code](../../../workloads/low-level-aggressors/l3.c) | Local | None | None |
 
 ## Prerequisites

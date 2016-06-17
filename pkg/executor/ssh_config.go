@@ -39,9 +39,9 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(key), nil
 }
 
-// validateConfig checks if we are able to do remote connection using given host and user.
+// ValidateSSHConfig checks if we are able to do remote connection using given host and user.
 // Return error if there is blocker (e.g host is not authorized).
-func validateConfig(host string, user *user.User) error {
+func ValidateSSHConfig(host string, user *user.User) error {
 	if _, err := os.Stat(user.HomeDir + defaultSSHKeyPath); os.IsNotExist(err) {
 		return fmt.Errorf("SSH keys not found in %s", user.HomeDir+defaultSSHKeyPath)
 	}
@@ -53,26 +53,22 @@ func validateConfig(host string, user *user.User) error {
 		if err != nil {
 			return errors.New("Cannot figure out if localhost is self-authorized")
 		}
+	}
 
-		// TODO(bp): Make this for remote hosts as well, when we have /etc/hosts propagated on our hosts.
-		// Currently we don't have /etc/hosts propagated and ssh cannot resolve the host.
-		// Even if we authorize the IP of remote machine it is saved using hostname in
-		// authorized keys file.
-		authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
-		if err != nil {
-			return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
-		}
-		authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
-		if err != nil {
-			return fmt.Errorf("Cannot figure out if %s is authorized: %s", host, err.Error())
-		}
+	authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
+	if err != nil {
+		return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
+	}
+	authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
+	if err != nil {
+		return fmt.Errorf("Cannot figure out if %s is authorized: %s", host, err.Error())
+	}
 
-		re := regexp.MustCompile(host)
-		match := re.Find(authorizedHosts)
+	re := regexp.MustCompile(host)
+	match := re.Find(authorizedHosts)
 
-		if match == nil {
-			return fmt.Errorf("%s is not authorized", host)
-		}
+	if match == nil {
+		return fmt.Errorf("%s is not authorized", host)
 	}
 
 	return nil
@@ -81,11 +77,6 @@ func validateConfig(host string, user *user.User) error {
 // NewSSHConfig creates a new ssh config for user.
 // NOTE: Assumed that private key & authorized host is available in default dirs (<home_dir>/.ssh/).
 func NewSSHConfig(host string, port int, user *user.User) (*SSHConfig, error) {
-	err := validateConfig(host, user)
-	if err != nil {
-		return nil, err
-	}
-
 	authMethod, err := getAuthMethod(user.HomeDir + defaultSSHKeyPath)
 	if err != nil {
 		return nil, err

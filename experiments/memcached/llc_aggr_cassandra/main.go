@@ -1,34 +1,78 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
 	"os"
+	"os/user"
 	"path"
 	"time"
 )
 
+// ipAddressFlag returns IP which will be specified for workload services as endpoints.
+var ipAddressFlag = conf.NewStringFlag(
+	"ip",
+	"IP of interface for Swan workloads services to listen on",
+	"127.0.0.1",
+)
+
 // Check README.md for details of this experiment.
 func main() {
-	logLevel := logrus.InfoLevel
-	logrus.SetLevel(logLevel)
+	// Setup conf.
+	conf.SetAppName("ToCassandra")
+	conf.SetHelpPath(
+		path.Join(fs.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
 
-	local := executor.NewLocal()
+	// Parse CLI.
+	err := conf.ParseFlags()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	logrus.SetLevel(conf.LogLevel())
 
 	// Initialize Memcached Launcher.
-	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+	local := executor.NewLocal()
 
-	// Initialize Mutilate Launcher.
+	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig.IP = ipAddressFlag.Value()
+	memcachedLauncher := memcached.New(local, memcachedConfig)
+
+	// Special case to have ability to use local executor for load generator.
+	// This is needed for docker testing.
+	var loadGeneratorExecutor executor.Executor
+	loadGeneratorExecutor = local
+
+	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
+		// Initialize Mutilate Launcher.
+		user, err := user.Current()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		sshConfig, err := executor.NewSSHConfig(
+			workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		loadGeneratorExecutor = executor.NewRemote(sshConfig)
+	}
+
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
 		MutilatePath:      mutilate.GetPathFromEnvOrDefault(),
@@ -36,15 +80,22 @@ func main() {
 		LatencyPercentile: percentile,
 		TuningTime:        1 * time.Second,
 	}
+	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
-	mutilateLoadGenerator := mutilate.New(local, mutilateConfig)
+	// Initialize LLC aggressor.
+	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
 
 	// Create connection with Snap.
-	logrus.Debug("Connecting to Snap")
-	// TODO(bp): Fetch the host of Snap from cmd line. (SCE-391)
-	snapConnection, err := client.New("http://127.0.0.1:8181", "v1", true)
+	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
+	// TODO(bp): Make helper for passing host:port or only host option here.
+	snapConnection, err := client.New(
+		fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
+		"v1",
+		true,
+	)
+
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	// Load the snap cassandra publisher plugin if not yet loaded.
@@ -53,7 +104,7 @@ func main() {
 	plugins := snap.NewPlugins(snapConnection)
 	loaded, err := plugins.IsLoaded("publisher", "cassandra")
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	if !loaded {
@@ -61,19 +112,17 @@ func main() {
 			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
 		err = plugins.Load(pluginPath)
 		if err != nil {
-			panic(err)
+			logrus.Fatal(err)
 		}
 	}
 
 	// Define publisher.
 	publisher := wmap.NewPublishNode("cassandra", 2)
 	if publisher == nil {
-		panic("Failed to create Publish Node for cassandra")
+		logrus.Fatal("Failed to create Publish Node for cassandra")
 	}
 
-	// TODO(bp): Get cassandra host from cmdLine.
-	cassandraHostName := "127.0.0.1"
-	publisher.AddConfigItem("server", cassandraHostName)
+	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
 
 	// Initialize Mutilate Snap Session.
 	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
@@ -82,20 +131,17 @@ func main() {
 		snapConnection,
 		publisher)
 
-	// Initialize LLC aggressor.
-	llcAggressorLauncher := l3data.New(local, l3data.DefaultL3Config())
-
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
-		SLO:             500,             // us
-		LoadDuration:    1 * time.Second, //10 * time.Second,
-		LoadPointsCount: 1,               //10,
-		Repetitions:     1,               //3,
+		SLO:             500, // us
+		LoadDuration:    10 * time.Second,
+		LoadPointsCount: 10,
+		Repetitions:     3,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
-		"MemcachedWithLocalMutilateToCassandra",
-		logLevel,
+		conf.AppName(),
+		conf.LogLevel(),
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
@@ -107,6 +153,6 @@ func main() {
 	// Run Experiment.
 	err = sensitivityExperiment.Run()
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 }

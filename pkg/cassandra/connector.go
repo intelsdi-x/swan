@@ -2,8 +2,13 @@ package cassandra
 
 import (
 	"github.com/gocql/gocql"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/vektra/errors"
 )
+
+// AddrFlag represents cassandra address flag.
+var AddrFlag = conf.NewStringFlag(
+	"cassandra_addr", "Address of Cassandra DB endpoint", "127.0.0.1")
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {
 	cluster := gocql.NewCluster(ip)
