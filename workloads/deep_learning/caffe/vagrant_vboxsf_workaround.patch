@@ -1,0 +1,109 @@
+diff --git a/examples/cifar10/cifar10_full_sigmoid_train_test.prototxt b/examples/cifar10/cifar10_full_sigmoid_train_test.prototxt
+index fba69b8..b62c042 100644
+--- a/examples/cifar10/cifar10_full_sigmoid_train_test.prototxt
++++ b/examples/cifar10/cifar10_full_sigmoid_train_test.prototxt
+@@ -11,7 +11,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_train_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_train_lmdb"
+     batch_size: 111
+     backend: LMDB
+   }
+@@ -28,7 +28,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_test_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_test_lmdb"
+     batch_size: 1000
+     backend: LMDB
+   }
+diff --git a/examples/cifar10/cifar10_full_sigmoid_train_test_bn.prototxt b/examples/cifar10/cifar10_full_sigmoid_train_test_bn.prototxt
+index 1a81075..7444ccc 100644
+--- a/examples/cifar10/cifar10_full_sigmoid_train_test_bn.prototxt
++++ b/examples/cifar10/cifar10_full_sigmoid_train_test_bn.prototxt
+@@ -11,7 +11,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_train_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_train_lmdb"
+     batch_size: 100
+     backend: LMDB
+   }
+@@ -28,7 +28,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_test_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_test_lmdb"
+     batch_size: 1000
+     backend: LMDB
+   }
+diff --git a/examples/cifar10/cifar10_full_train_test.prototxt b/examples/cifar10/cifar10_full_train_test.prototxt
+index d45fc61..9486408 100644
+--- a/examples/cifar10/cifar10_full_train_test.prototxt
++++ b/examples/cifar10/cifar10_full_train_test.prototxt
+@@ -11,7 +11,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_train_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_train_lmdb"
+     batch_size: 100
+     backend: LMDB
+   }
+@@ -28,7 +28,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_test_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_test_lmdb"
+     batch_size: 100
+     backend: LMDB
+   }
+diff --git a/examples/cifar10/cifar10_quick_train_test.prototxt b/examples/cifar10/cifar10_quick_train_test.prototxt
+index 2317739..a90f9a3 100644
+--- a/examples/cifar10/cifar10_quick_train_test.prototxt
++++ b/examples/cifar10/cifar10_quick_train_test.prototxt
+@@ -11,7 +11,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_train_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_train_lmdb"
+     batch_size: 100
+     backend: LMDB
+   }
+@@ -28,7 +28,7 @@ layer {
+     mean_file: "examples/cifar10/mean.binaryproto"
+   }
+   data_param {
+-    source: "examples/cifar10/cifar10_test_lmdb"
++    source: "/tmp/caffe/examples/cifar10/cifar10_test_lmdb"
+     batch_size: 100
+     backend: LMDB
+   }
+diff --git a/examples/cifar10/create_cifar10.sh b/examples/cifar10/create_cifar10.sh
+index a42725c..1694973 100755
+--- a/examples/cifar10/create_cifar10.sh
++++ b/examples/cifar10/create_cifar10.sh
+@@ -7,13 +7,13 @@ DBTYPE=lmdb
+ 
+ echo "Creating $DBTYPE..."
+ 
+-rm -rf $EXAMPLE/cifar10_train_$DBTYPE $EXAMPLE/cifar10_test_$DBTYPE
++rm -rf /tmp/caffe/$EXAMPLE/cifar10_train_$DBTYPE /tmp/caffe/$EXAMPLE/cifar10_test_$DBTYPE
+ 
+-./build/examples/cifar10/convert_cifar_data.bin $DATA $EXAMPLE $DBTYPE
++./build/examples/cifar10/convert_cifar_data.bin $DATA /tmp/caffe/$EXAMPLE $DBTYPE
+ 
+ echo "Computing image mean..."
+ 
+ ./build/tools/compute_image_mean -backend=$DBTYPE \
+-  $EXAMPLE/cifar10_train_$DBTYPE $EXAMPLE/mean.binaryproto
++  /tmp/caffe/$EXAMPLE/cifar10_train_$DBTYPE $EXAMPLE/mean.binaryproto
+ 
+ echo "Done."
