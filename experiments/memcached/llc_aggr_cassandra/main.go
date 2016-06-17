@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"path"
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
@@ -23,15 +28,10 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
-	"os"
-	"os/user"
-	"path"
-	"syscall"
-	"time"
 )
 
 // AggressorsFlag represents flag specifying aggressors to run experiment with.
-var AggressorsFlag = conf.NewRegisteredSliceFlag(
+var AggressorsFlag = conf.NewSliceFlag(
 	"aggr", "Aggressor to run experiment with. "+
 		"You can state as many as you want (--aggr=l1d --aggr=membw)")
 
@@ -233,6 +233,4 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-
-	syscall.Exit(0)
 }

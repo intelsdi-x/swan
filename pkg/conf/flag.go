@@ -98,7 +98,7 @@ type SliceFlag struct {
 }
 
 // NewRegisteredSliceFlag is a constructor of SliceFlag struct.
-func NewRegisteredSliceFlag(flagName string, description string) SliceFlag {
+func NewSliceFlag(flagName string, description string) SliceFlag {
 	sliceFlag := SliceFlag{
 		flag: flag{
 			name:        flagName,
