@@ -23,6 +23,12 @@ func TestRemote(t *testing.T) {
 		})
 
 		Convey("When creating ssh configuration with proper data", func() {
+			err = ValidateSSHConfig("127.0.0.1", user)
+			if err != nil {
+				// Skip test if setup is not wel configured.
+				t.Skip("Skipping test: " + err.Error())
+			}
+
 			sshConfig, err := NewSSHConfig("127.0.0.1", DefaultSSHPort, user)
 			if err != nil {
 				// Skip test if setup is not wel configured.
@@ -34,7 +40,7 @@ func TestRemote(t *testing.T) {
 			})
 
 			Convey("And while using Remote Shell, the generic Executor test should pass", func() {
-				testExecutor(t, NewRemote(*sshConfig))
+				testExecutor(t, NewRemote(sshConfig))
 			})
 		})
 	})
