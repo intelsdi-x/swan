@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -19,11 +18,13 @@ import (
 )
 
 const (
-	defaultMemcachedHost          = "127.0.0.1"
-	defaultMemcachedPercentile    = "99.9"
-	defaultMemcachedTuningTimeSec = 10
-	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
-	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+	defaultMemcachedHost       = "127.0.0.1"
+	defaultMemcachedPercentile = "99.9"
+	defaultMemcachedTuningTime = 10 * time.Second
+	defaultMemcachedWarmupTime = 10 * time.Second
+	defaultMutilatePath        = "data_caching/memcached/mutilate/mutilate"
+	defaultAgentThreads        = 24
+	mutilatePathEnv            = "SWAN_MUTILATE_PATH"
 )
 
 // GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
@@ -38,7 +39,10 @@ type Config struct {
 	MutilatePath      string
 	MemcachedHost     string
 	TuningTime        time.Duration
+	WarmupTime        time.Duration
 	LatencyPercentile decimal.Decimal
+
+	AgentThreads int
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
@@ -48,36 +52,50 @@ func DefaultMutilateConfig() Config {
 		MutilatePath:      GetPathFromEnvOrDefault(),
 		MemcachedHost:     defaultMemcachedHost,
 		LatencyPercentile: percentile,
-		TuningTime:        defaultMemcachedTuningTimeSec * time.Second,
+		TuningTime:        defaultMemcachedTuningTime,
+		WarmupTime:        defaultMemcachedWarmupTime,
+		AgentThreads:      defaultAgentThreads,
 	}
 }
 
 type mutilate struct {
-	executor executor.Executor
-	config   Config
+	master executor.Executor
+	agents []executor.Executor
+	config Config
 }
 
 // New returns a new Mutilate Load Generator instance.
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
-func New(executor executor.Executor, config Config) workloads.LoadGenerator {
+func New(exec executor.Executor, config Config) workloads.LoadGenerator {
 	return mutilate{
-		executor: executor,
-		config:   config,
+		master: exec,
+		agents: []executor.Executor{exec},
+		config: config,
+	}
+}
+
+// New returns a new Mutilate Load Generator instance.
+// Mutilate is a load generator for Memcached.
+// https://github.com/leverich/mutilate
+func NewMultinode(master executor.Executor, agents []executor.Executor, config Config) workloads.LoadGenerator {
+	return mutilate{
+		master: master,
+		agents: agents,
+		config: config,
 	}
 }
 
 // Populate loads Memcached and exits.
 func (m mutilate) Populate() (err error) {
-	populateCmd := fmt.Sprintf("%s -s %s --loadonly",
-		m.config.MutilatePath,
-		m.config.MemcachedHost,
-	)
+	populateCmd := m.getPopulateCommand()
 
-	taskHandle, err := m.executor.Execute(populateCmd)
+	taskHandle, err := m.master.Execute(populateCmd)
 	if err != nil {
 		return err
 	}
+	defer taskHandle.Clean()
+	defer taskHandle.EraseOutput()
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -95,13 +113,24 @@ func (m mutilate) Populate() (err error) {
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
-	tuneCmd := m.getTuneCommand(slo)
+	agentHandles, err := m.runRemoteAgents()
+	if err != nil {
+		// TODO(skonefal): TBD
+	}
 
-	taskHandle, err := m.executor.Execute(tuneCmd)
+	tuneCmd := m.getTuneCommand(slo, agentHandles)
+
+	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
 		errMsg := fmt.Sprintf("Executing Mutilate Tune command %s failed; ", tuneCmd)
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
+
+	taskHandle := MutilateTaskHandle{
+		master: masterHandle,
+		agents: agentHandles,
+	}
+
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -130,44 +159,83 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
-// Note: Results from Load needs to be fetched out of band e.g using Snap.
-func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
-	return m.executor.Execute(m.getLoadCommand(qps, duration))
-}
-
-// Mutilate Search method requires percentile in an integer format
-// Transforms (decimal)999.9 to (int)9999
-func transformDecimalToIntegerWithoutDot(value decimal.Decimal) (ret int64) {
-	percentileString := value.String()
-	percentileWithoutDot := strings.Replace(percentileString, ".", "", -1)
-	tunePercentile, err := strconv.ParseInt(percentileWithoutDot, 10, 64)
+func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
+	agents, err := m.runRemoteAgents()
 	if err != nil {
-		panic("Parsing " + percentileWithoutDot + " failed.")
+		return handle, err
 	}
 
-	return tunePercentile
+	master, err := m.master.Execute(m.getLoadCommand(qps, duration, agents))
+	if err != nil {
+		// TODO(skonefal): Stop agents.
+		return master, err
+	}
+
+	handle = MutilateTaskHandle{
+		master: master,
+		agents: agents,
+	}
+
+	return handle, err
 }
 
-func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
-	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
+func (m mutilate) getAgentStartCommand() string {
+	return fmt.Sprintf("%s -T %d -A",
+		m.config.MutilatePath,
+		m.config.AgentThreads,
+	)
+}
+
+func (m mutilate) runRemoteAgents() (handles []executor.TaskHandle, err error) {
+	command := m.getAgentStartCommand()
+	for _, exec := range m.agents {
+		handle, err := exec.Execute(command)
+		if err != nil {
+			// TODO(skonefal): TBD
+		}
+		handles = append(handles, handle)
+	}
+	return handles, err
+}
+
+func getEnlistAgents(agentHandles []executor.TaskHandle) string {
+	enlistAgentsString := ""
+	for _, agent := range agentHandles {
+		enlistAgentsString += fmt.Sprintf(" -a %s", agent.Address())
+	}
+	return enlistAgentsString
+}
+
+func (m mutilate) getPopulateCommand() string {
+	return fmt.Sprintf("%s -s %s --loadonly",
+		m.config.MutilatePath,
+		m.config.MemcachedHost,
+	)
+}
+
+func (m mutilate) getLoadCommand(qps int, duration time.Duration, handles []executor.TaskHandle) string {
+	enlistsAgents := getEnlistAgents(handles)
+	return fmt.Sprintf("%s -s %s -q %d -t %d --warmup=%d --noload --swanpercentile=%s %s",
 		m.config.MutilatePath,
 		m.config.MemcachedHost,
 		qps,
 		int(duration.Seconds()),
+		m.config.WarmupTime,
 		m.config.LatencyPercentile.String(),
+		enlistsAgents,
 	)
 }
 
-func (m mutilate) getTuneCommand(slo int) (command string) {
-	// Transforms (decimal)999.9 to (int)9999
-	mutilateSearchPercentile :=
-		transformDecimalToIntegerWithoutDot(m.config.LatencyPercentile)
-	command = fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
+func (m mutilate) getTuneCommand(slo int, agentHandles []executor.TaskHandle) (command string) {
+	enlistsAgents := getEnlistAgents(agentHandles)
+	command = fmt.Sprintf("%s -s %s --warmup=%d --noload --search=%d:%d -t %d %s",
 		m.config.MutilatePath,
 		m.config.MemcachedHost,
-		mutilateSearchPercentile,
+		m.config.WarmupTime,
+		m.config.LatencyPercentile.String(),
 		slo,
 		int(m.config.TuningTime.Seconds()),
+		enlistsAgents,
 	)
 	return command
 }
@@ -177,7 +245,6 @@ func matchNotFound(match []string) bool {
 }
 
 func getQPSAndLatencyFrom(outputReader io.Reader) (qps int, latency int, err error) {
-
 	buff, err := ioutil.ReadAll(outputReader)
 	if err != nil {
 		return qps, latency, err
