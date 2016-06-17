@@ -119,6 +119,16 @@ func TestIntSet(t *testing.T) {
 					So(s1.Equals(s2), ShouldBeFalse)
 					So(s2.Equals(s1), ShouldBeFalse)
 				})
+
+				Convey("And they should not be subsets of each other", func() {
+					So(s1.Subset(s2), ShouldBeFalse)
+					So(s2.Subset(s1), ShouldBeFalse)
+				})
+
+				Convey("But they should be subsets of themselves", func() {
+					So(s1.Subset(s1), ShouldBeTrue)
+					So(s2.Subset(s2), ShouldBeTrue)
+				})
 			})
 
 			Convey("The difference should not include the shared element", func() {
@@ -170,6 +180,24 @@ func TestIntSet(t *testing.T) {
 				So(s1.Difference(s2).Union(s1.Intersection(s2)).Equals(s1), ShouldBeTrue)
 				So(s2.Difference(s1).Union(s2.Intersection(s1)).Equals(s2), ShouldBeTrue)
 			})
+
+			Convey("The intersection should be a subset of both", func() {
+				So(s1.Intersection(s2).Subset(s1), ShouldBeTrue)
+				So(s2.Intersection(s1).Subset(s2), ShouldBeTrue)
+			})
+		})
+
+		Convey("IntSet correctly yields a subset of a given size with take", func() {
+			s := NewIntSet(1, 2, 3, 4, 5, 6, 7, 8)
+
+			r, err := s.Take(0)
+			So(err, ShouldBeNil)
+			So(r.Empty(), ShouldBeTrue)
+
+			r, err = s.Take(4)
+			So(err, ShouldBeNil)
+			So(len(r), ShouldEqual, 4)
+			So(r.Subset(s), ShouldBeTrue)
 		})
 
 		Convey("IntSet correctly converts to a slice of integers", func() {

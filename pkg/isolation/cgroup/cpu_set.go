@@ -5,21 +5,21 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	iso "github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // CPUSet represents a cgroup in the cpuset hierarchy.
 type CPUSet interface {
-	iso.Isolation
+	isolation.Isolation
 
 	// Cgroup returns the underlying cgroup for this CPUSet.
 	Cgroup() Cgroup
 
 	// Cpus returns the set of cpus allocated to this CPUSet.
-	Cpus() iso.IntSet
+	Cpus() isolation.IntSet
 
 	// Cpus returns the set of memory nodes allocated to this CPUSet.
-	Mems() iso.IntSet
+	Mems() isolation.IntSet
 
 	// CPUExclusive returns true if this CPUSet's cpus are allocated
 	// exclusively..
@@ -49,23 +49,23 @@ const (
 // CPUSet describes a cgroup cpuset with core ids and numa (memory) nodes.
 type cpuset struct {
 	cgroup       Cgroup
-	cpus         iso.IntSet
-	mems         iso.IntSet
+	cpus         isolation.IntSet
+	mems         isolation.IntSet
 	cpuExclusive bool
 	memExclusive bool
 }
 
 // NewCPUSet creates a new CPUSet with the default (local) executor
 // and default timeout.
-func NewCPUSet(path string, cpus, mems iso.IntSet, cpuExclusive, memExclusive bool) (CPUSet, error) {
+func NewCPUSet(path string, cpus, mems isolation.IntSet, cpuExclusive, memExclusive bool) (CPUSet, error) {
 	return NewCPUSetWithExecutor(path, cpus, mems, cpuExclusive, memExclusive, executor.NewLocal(), DefaultCommandTimeout)
 }
 
 // NewCPUSetWithExecutor creates a new CPUSet with the supplied executor
 // and timeout.
 func NewCPUSetWithExecutor(path string,
-	cpus iso.IntSet,
-	mems iso.IntSet,
+	cpus isolation.IntSet,
+	mems isolation.IntSet,
 	cpuExclusive bool,
 	memExclusive bool,
 	executor executor.Executor,
@@ -96,11 +96,11 @@ func (cs *cpuset) Cgroup() Cgroup {
 	return cs.cgroup
 }
 
-func (cs *cpuset) Cpus() iso.IntSet {
+func (cs *cpuset) Cpus() isolation.IntSet {
 	return cs.cpus
 }
 
-func (cs *cpuset) Mems() iso.IntSet {
+func (cs *cpuset) Mems() isolation.IntSet {
 	return cs.mems
 }
 
