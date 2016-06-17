@@ -12,7 +12,6 @@ import (
 func runScript(parameter string) (string, error) {
 	cmd := exec.Command("sh", "-c", os.Getenv("GOPATH")+
 		"/src/github.com/intelsdi-x/swan/scripts/sensitivity-experiment.sh "+parameter)
-	fmt.Println(cmd.Args)
 	out, err := cmd.Output()
 	return strings.TrimSpace(string(out)), err
 }
@@ -32,5 +31,11 @@ func TestSensitivityExperimentScript(t *testing.T) {
 			So(fmt.Sprintf("%s", err), ShouldEqual, "exit status 127")
 		})
 	})
-
+	Convey("After running a script with existing proper experiment", t, func() {
+		output, err := runScript("-p integration_tests/pkg/scripts/fakeExperiment.sh")
+		Convey("There should be no error and output should not be empty", func() {
+			So(output, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
+	})
 }
