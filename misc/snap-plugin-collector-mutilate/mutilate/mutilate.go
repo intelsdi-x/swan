@@ -12,6 +12,7 @@ import (
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 )
 
 // Constants representing plugin name, version, type and unit of measurement used.
@@ -74,7 +75,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	rawMetrics, err := parseOutput(sourceFilePath.(string))
+	rawMetrics, err := parse.File(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
 		logger.LogError(msg)
