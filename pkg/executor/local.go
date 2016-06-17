@@ -35,7 +35,7 @@ func NewLocalIsolated(decorator isolation.Decorator) Local {
 func (l Local) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting ", command, "' locally ")
 
-	cmd := exec.Command("/bin/sh", "-c", l.commandDecorators.Decorate(command))
+	cmd := exec.Command("sh", "-c", l.commandDecorators.Decorate(command))
 
 	// TODO: delete this as we use PID namespace instead
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
