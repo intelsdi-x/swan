@@ -10,17 +10,17 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 )
 
-//AggressorFactory is a helper for creating aggressors with/without Snap sessions
+//AggressorFactory is a helper for creating aggressors with/without Snap sessions.
 type AggressorFactory struct {
 	executor executor.Executor
 }
 
-//NewAggressorFactory creates instance of AggressorFactory using isolation passed
+//NewAggressorFactory creates instance of AggressorFactory using isolation passed.
 func NewAggressorFactory(isolation isolation.Isolation) *AggressorFactory {
 	return &AggressorFactory{executor: executor.NewLocalIsolated(isolation)}
 }
 
-//Create sets up an aggresor of chosen type with Snap session
+//Create sets up an aggresor of chosen type with Snap session.
 func (af *AggressorFactory) Create(name string) LauncherSessionPair {
 	var aggressor LauncherSessionPair
 	switch name {

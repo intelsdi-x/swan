@@ -99,7 +99,7 @@ type SliceFlag struct {
 	value        *[]string
 }
 
-// NewSliceFlag is a constructor of SliceFlag struct
+// NewSliceFlag is a constructor of SliceFlag struct.
 func NewSliceFlag(flagName string, description string) SliceFlag {
 	sliceFlag := SliceFlag{
 		flag: flag{

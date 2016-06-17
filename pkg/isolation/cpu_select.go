@@ -37,7 +37,7 @@ func nextSocket() int {
 // For now, the only supported filter is to select cores that share LLC
 // but do not share L1 or L2 cache.
 //
-// Additionally you can specify CPUS which can be ignored by select.
+// Additionally you can specify CPUs which can be ignored by select.
 //
 // Returns an error if the request cannot be satisfied.
 func CPUSelect(countRequested int, filters uint, blacklist IntSet) (IntSet, error) {
