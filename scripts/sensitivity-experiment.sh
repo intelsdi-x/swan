@@ -31,5 +31,5 @@ while getopts ':hp:' opt; do
 ID=$($GOPATH/src/github.com/intelsdi-x/swan/$path)
 if [ -z ${ID+x} ];
   then echo "could not retrieve experiment ID";
-  else go run $GOPATH/src/github.com/intelsdi-x/swan/scripts/sensitivity_viewer/main.go sensitivity $ID;
+  else $GOPATH/src/github.com/intelsdi-x/swan/build/viewer/sensitivity_viewer sensitivity $ID;
 fi
