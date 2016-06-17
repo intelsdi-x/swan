@@ -91,3 +91,35 @@ func (i IntFlag) Value() int {
 
 	return *i.value
 }
+
+// SliceFlag represents flag with slice value.
+type SliceFlag struct {
+	flag
+	defaultValue []string
+	value        *[]string
+}
+
+// NewSliceFlag is a constructor of SliceFlag struct.
+func NewSliceFlag(flagName string, description string) SliceFlag {
+	sliceFlag := SliceFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+	}
+
+	sliceFlag.value = app.Flag(flagName, description).
+		Default("").OverrideDefaultFromEnvar(sliceFlag.envName()).Strings()
+	isEnvParsed = false
+
+	return sliceFlag
+}
+
+// Value returns value of defined flag after parse.
+func (s SliceFlag) Value() []string {
+	if !isEnvParsed {
+		return []string{}
+	}
+
+	return *s.value
+}

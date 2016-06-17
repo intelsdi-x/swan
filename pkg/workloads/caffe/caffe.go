@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	// ID is used for specifying which aggressors should be used via parameters.
+	ID            = "caffe"
 	binaryEnvKey  = "SWAN_CAFFE_BINARY_PATH"
 	solverEnvKey  = "SWAN_CAFFE_SOLVER_PATH"
 	workdirEnvKey = "SWAN_CAFFE_WORKING_DIR_PATH"
@@ -35,6 +37,7 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
+		// TODO: Make that consistent.
 		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
 		SolverPath:  getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
 		WorkdirPath: getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
