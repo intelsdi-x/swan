@@ -1,7 +1,7 @@
 package integration
 
 import (
-	iso "github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"os/exec"
 	pth "path"
 	"testing"
@@ -18,8 +18,8 @@ func TestCPUSet(t *testing.T) {
 		uuid3 := uuidgen(t)
 
 		path := pth.Join("/", uuid1, uuid2, uuid3)
-		cpus := iso.NewIntSet(1)
-		mems := iso.NewIntSet(0)
+		cpus := isolation.NewIntSet(1)
+		mems := isolation.NewIntSet(0)
 
 		// Setting these to true assumes too much about the environment...
 		// For example the docker cpuset cgroup assigns all cpus by default,
@@ -46,13 +46,13 @@ func TestCPUSet(t *testing.T) {
 
 			actual, err := cpuSet.Cgroup().Get(cgroup.CPUSetCpus)
 			So(err, ShouldBeNil)
-			set, err := iso.NewIntSetFromRange(actual)
+			set, err := isolation.NewIntSetFromRange(actual)
 			So(err, ShouldBeNil)
 			So(set.Equals(cpus), ShouldBeTrue)
 
 			actual, err = cpuSet.Cgroup().Get(cgroup.CPUSetMems)
 			So(err, ShouldBeNil)
-			set, err = iso.NewIntSetFromRange(actual)
+			set, err = isolation.NewIntSetFromRange(actual)
 			So(err, ShouldBeNil)
 			So(set.Equals(mems), ShouldBeTrue)
 
