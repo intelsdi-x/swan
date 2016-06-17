@@ -1,6 +1,7 @@
 package isolation
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -34,6 +35,19 @@ func (s IntSet) Remove(elem int) {
 // Equals returns true iff the supplied set is equal to this set.
 func (s IntSet) Equals(t IntSet) bool {
 	return reflect.DeepEqual(s, t)
+}
+
+// Subset returns true iff the supplied set contains all the elements in
+// this set (e.g. s is a subset of t).
+func (s IntSet) Subset(t IntSet) bool {
+	result := true
+	for elem := range s {
+		if !t.Contains(elem) {
+			result = false
+			break
+		}
+	}
+	return result
 }
 
 // Union returns a new set that contains all of the elements from this set
@@ -75,6 +89,19 @@ func (s IntSet) Difference(t IntSet) IntSet {
 		result.Remove(elem)
 	}
 	return result
+}
+
+// Take returns a new set containing n items from this set. If n is greater
+// than the number of elements in the set, returns an error.
+func (s IntSet) Take(n int) (IntSet, error) {
+	if n > len(s) {
+		return nil, fmt.Errorf("cannot take %d elements from a set of size %d", n, len(s))
+	}
+	result := NewIntSet()
+	for _, elem := range s.AsSlice()[0:n] {
+		result.Add(elem)
+	}
+	return result, nil
 }
 
 // AsSlice returns a slice of integers that contains all elements from
