@@ -19,6 +19,7 @@ package conf
 import (
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
 	"os"
 )
 
@@ -33,7 +34,17 @@ var (
 	isEnvParsed = false
 )
 
-// SetHelp sets the help message for CLI rendering the file.
+// SetHelpPath sets the help message for CLI rendering the file from given file.
+// We need to expose this function so other packages can set the app help.
+func SetHelpPath(readmePath string) {
+	readmeData, err := ioutil.ReadFile(readmePath)
+	if err != nil {
+		panic(err)
+	}
+	app.Help = string(readmeData)[:]
+}
+
+// SetHelp sets the help message for the CLI.
 // We need to expose this function so other packages can set the app help.
 func SetHelp(help string) {
 	app.Help = help
