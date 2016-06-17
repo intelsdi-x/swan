@@ -10,6 +10,7 @@ func TestCPUSelect(t *testing.T) {
 
 	// cpuDiscovered collect CPU topology.
 	var cpus isolation.CPUInfo
+	blackList := isolation.NewIntSet()
 
 	cpus.Discover()
 
@@ -25,7 +26,7 @@ func TestCPUSelect(t *testing.T) {
 	})
 
 	Convey("Should provide CPUSelect() to return an error when requesting zero cpus", t, func() {
-		threadset, err := isolation.CPUSelect(0, isolation.ShareLLCButNotL1L2)
+		threadset, err := isolation.CPUSelect(0, isolation.ShareLLCButNotL1L2, blackList)
 		So(err, ShouldNotBeNil)
 
 		Convey("Should have length zero", func() {
@@ -34,7 +35,7 @@ func TestCPUSelect(t *testing.T) {
 	})
 
 	Convey("Should provide CPUSelect() to return nil and correct cpu ids", t, func() {
-		threadset, err := isolation.CPUSelect(cpus.PhysicalCores, isolation.ShareLLCButNotL1L2)
+		threadset, err := isolation.CPUSelect(cpus.PhysicalCores, isolation.ShareLLCButNotL1L2, blackList)
 		So(err, ShouldBeNil)
 
 		Convey("Should have length", func() {
@@ -49,7 +50,7 @@ func TestCPUSelect(t *testing.T) {
 	})
 
 	Convey("Should provide CPUSelect() to not return nil when requesting more cores than a socket has", t, func() {
-		threadset, err := isolation.CPUSelect(cpus.PhysicalCores+1, isolation.ShareLLCButNotL1L2)
+		threadset, err := isolation.CPUSelect(cpus.PhysicalCores+1, isolation.ShareLLCButNotL1L2, blackList)
 		So(err, ShouldNotBeNil)
 
 		Convey("Should have length zero", func() {
