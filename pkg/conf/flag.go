@@ -31,8 +31,8 @@ type StringFlag struct {
 	value        *string
 }
 
-// NewRegisteredStringFlag is a constructor of StringFlag struct.
-func NewRegisteredStringFlag(flagName string, description string, defaultValue string) StringFlag {
+// NewStringFlag is a constructor of StringFlag struct.
+func NewStringFlag(flagName string, description string, defaultValue string) StringFlag {
 	strFlag := StringFlag{
 		flag: flag{
 			name:        flagName,
@@ -49,6 +49,7 @@ func NewRegisteredStringFlag(flagName string, description string, defaultValue s
 }
 
 // Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
 func (s StringFlag) Value() string {
 	if !isEnvParsed {
 		return s.defaultValue
@@ -64,8 +65,8 @@ type IntFlag struct {
 	value        *int
 }
 
-// NewRegisteredIntFlag is a constructor of IntFlag struct.
-func NewRegisteredIntFlag(flagName string, description string, defaultValue int) IntFlag {
+// NewIntFlag is a constructor of IntFlag struct.
+func NewIntFlag(flagName string, description string, defaultValue int) IntFlag {
 	intFlag := IntFlag{
 		flag: flag{
 			name:        flagName,
@@ -82,6 +83,7 @@ func NewRegisteredIntFlag(flagName string, description string, defaultValue int)
 }
 
 // Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
 func (i IntFlag) Value() int {
 	if !isEnvParsed {
 		return i.defaultValue

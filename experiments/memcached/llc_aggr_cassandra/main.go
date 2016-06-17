@@ -23,15 +23,22 @@ import (
 	"time"
 )
 
+// ipAddressFlag returns IP which will be specified for workload services as endpoints.
+var ipAddressFlag = conf.NewStringFlag(
+	"ip",
+	"IP of interface for Swan workloads services to listen on",
+	"127.0.0.1",
+)
+
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
-	conf.SetAppName("MemcachedWithMutilateToCassandra")
+	conf.SetAppName("ToCassandra")
 	conf.SetHelpPath(
 		path.Join(fs.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
 
 	// Parse CLI.
-	err := conf.ParseFlagAndEnv()
+	err := conf.ParseFlags()
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -40,7 +47,10 @@ func main() {
 
 	// Initialize Memcached Launcher.
 	local := executor.NewLocal()
-	memcachedLauncher := memcached.New(local, memcached.DefaultMemcachedConfig())
+
+	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig.IP = ipAddressFlag.Value()
+	memcachedLauncher := memcached.New(local, memcachedConfig)
 
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.

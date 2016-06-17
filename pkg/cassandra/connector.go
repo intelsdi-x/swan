@@ -7,7 +7,7 @@ import (
 )
 
 // AddrFlag represents cassandra address flag.
-var AddrFlag = conf.NewRegisteredStringFlag(
+var AddrFlag = conf.NewStringFlag(
 	"cassandra_addr", "Address of Cassandra DB endpoint", "127.0.0.1")
 
 func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {

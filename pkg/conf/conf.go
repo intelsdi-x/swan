@@ -4,7 +4,6 @@
 // CLI input OR environment variable.
 // By default it registers following options:
 // <SWAN_LOG> -l --log <Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic> Default: 3
-// <SWAN_IP> -i --ip <IP of interface for Swan workloads services to listen on> Default: 127.0.0.1
 //
 // When `ParseEnv` is executed, only the environment arguments are parsed and
 // ready to be used in `promises` variables.
@@ -27,26 +26,13 @@ import (
 var (
 	app = kingpin.New("swan", "No help available")
 	// Default flags and values.
-	logLevelFlag = NewRegisteredIntFlag(
+	logLevelFlag = NewStringFlag(
 		"log",
-		"Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic",
-		3, // Default Error log level.
-	)
-	ipAddressFlag = NewRegisteredStringFlag(
-		"ip",
-		"IP of interface for Swan workloads services to listen on",
-		"127.0.0.1",
+		"Log level for Swan: debug, info, warn, error, fatal, panic",
+		"error", // Default Error log level.
 	)
 	isEnvParsed = false
 )
-
-// init parse.
-func init() {
-	err := ParseEnv()
-	if err != nil {
-		panic(err)
-	}
-}
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
 // We need to expose this function so other packages can set the app help.
@@ -65,18 +51,21 @@ func SetAppName(name string) {
 }
 
 // LogLevel returns configured logLevel from input option or env variable.
+// If it cannot parse the log level, it returns default value.
 func LogLevel() logrus.Level {
-	// Since the logrus defines levels as iota enum
-	// (https://github.com/Sirupsen/logrus/blob/master/logrus.go#L57)
-	// We just need to roll over the enum to achieve our API (0:debug, 5:Panic)
-	return logrus.AllLevels[len(logrus.AllLevels)-(logLevelFlag.Value()+1)]
-}
+	level, err := logrus.ParseLevel(logLevelFlag.Value())
+	if err == nil {
+		return level
+	}
 
-// IPAddress returns IP which will be specified for workload services as endpoints.
-// TODO(bp): In future we can specify here the experiment host Address. This will be available only
-// when we will be ready to make remote isolations.
-func IPAddress() string {
-	return ipAddressFlag.Value()
+	level, err = logrus.ParseLevel(logLevelFlag.defaultValue)
+	if err == nil {
+		return level
+
+	}
+
+	// Programmer error.
+	panic(err)
 }
 
 // AppName returns specified app name.
@@ -84,9 +73,9 @@ func AppName() string {
 	return app.Name
 }
 
-// ParseFlagAndEnv parse both the command line flags of the process and
+// ParseFlags parse both the command line flags of the process and
 // environment variables.
-func ParseFlagAndEnv() error {
+func ParseFlags() error {
 	_, err := app.Parse(os.Args[1:])
 	if err == nil {
 		isEnvParsed = true
@@ -95,7 +84,6 @@ func ParseFlagAndEnv() error {
 }
 
 // ParseEnv parse the environment for arguments.
-// NOTE: Make sure you run it after flag registration.
 func ParseEnv() error {
 	_, err := app.Parse([]string{})
 	if err == nil {

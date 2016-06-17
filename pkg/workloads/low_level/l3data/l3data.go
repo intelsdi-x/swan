@@ -17,7 +17,7 @@ const (
 )
 
 // PathFlag represents l3data path flag.
-var PathFlag = conf.NewRegisteredStringFlag(
+var PathFlag = conf.NewStringFlag(
 	"l3_path",
 	"Path to L3 Data binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),

@@ -19,7 +19,7 @@ const (
 )
 
 // AddrFlag represents snap daemon address flag.
-var AddrFlag = conf.NewRegisteredStringFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
+var AddrFlag = conf.NewStringFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
 
 type task struct {
 	Version  int

@@ -23,7 +23,7 @@ const (
 )
 
 // PathFlag represents memcached path flag.
-var PathFlag = conf.NewRegisteredStringFlag(
+var PathFlag = conf.NewStringFlag(
 	"memcached_path",
 	"Path to memcached binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),

@@ -15,26 +15,23 @@ const (
 	testIPDefaultName = "127.0.0.1"
 )
 
-var customFlag = NewRegisteredStringFlag("custom_arg", "help", "default")
+var customFlag = NewStringFlag("custom_arg", "help", "default")
 
 func clearEnv() {
 	// Clear all environment variables in context of that test.
 	logLevelFlag.clear()
-	ipAddressFlag.clear()
 	customFlag.clear()
 }
 
 func TestFlag(t *testing.T) {
 	Convey("While using Flag struct, it should construct proper swan environment var name", t, func() {
-		name := "test_name"
-		envName := "SWAN_TEST_NAME"
-		So(NewRegisteredStringFlag(name, "", "").envName(), ShouldEqual, envName)
+		So(NewStringFlag("test_name", "", "").envName(), ShouldEqual, "SWAN_TEST_NAME")
 	})
 }
 
 func TestConf(t *testing.T) {
 	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "test_file.md")
-	Convey("While using Config", t, func() {
+	Convey("While using Conf pkg", t, func() {
 		clearEnv()
 		defer clearEnv()
 
@@ -51,26 +48,21 @@ func TestConf(t *testing.T) {
 			So(app.Help, ShouldEqual, string(readmeData)[:])
 		})
 
-		Convey("Default IP and log level can be fetched", func() {
+		Convey("Log level can be fetched", func() {
 			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
-			So(IPAddress(), ShouldEqual, testIPDefaultName)
 		})
 
-		Convey("Custom IP and log level can be fetched from env", func() {
+		Convey("Log level can be fetched from env", func() {
 			// Default one.
 			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
-			So(IPAddress(), ShouldEqual, testIPDefaultName)
 
-			customIP := "255.255.255.255"
-			os.Setenv(logLevelFlag.envName(), "0") // 0 means debug level.
-			os.Setenv(ipAddressFlag.envName(), customIP)
+			os.Setenv(logLevelFlag.envName(), "debug")
 
 			err := ParseEnv()
 			So(err, ShouldBeNil)
 
 			// Should be from environment.
 			So(LogLevel(), ShouldEqual, logrus.DebugLevel)
-			So(IPAddress(), ShouldEqual, customIP)
 		})
 
 		Convey("When some custom argument is defined", func() {

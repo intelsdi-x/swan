@@ -7,7 +7,7 @@ import (
 )
 
 // LoadGeneratorAddrFlag represents load generator address flag.
-var LoadGeneratorAddrFlag = conf.NewRegisteredStringFlag(
+var LoadGeneratorAddrFlag = conf.NewStringFlag(
 	"load_generator_addr", "IP of the target machine for the load generator", "127.0.0.1")
 
 // LoadGenerator launches stresser which generates load on specified workload.

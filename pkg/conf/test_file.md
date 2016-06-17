@@ -1,35 +1,10 @@
 # TEST CONFIGURATION HELP
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer rhoncus commodo ante, ut malesuada lorem scelerisque et. Ut interdum justo lectus, quis malesuada mauris tempus eu. Nullam facilisis dui condimentum sapien pharetra, in congue ante laoreet. Nunc sollicitudin sapien eu mauris hendrerit, quis sodales augue congue. Nulla porta sagittis bibendum. Sed luctus odio ac elit tempus, ac iaculis eros ornare. Sed non fermentum purus. Nunc feugiat porta lorem ac suscipit. Nulla nisl neque, posuere at interdum a, molestie et nibh. Vivamus a feugiat dui.
 
-Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)
+Curabitur molestie nisl eget porta ultrices. Fusce vel nulla justo. Pellentesque ut libero lacinia diam rhoncus hendrerit. Integer metus metus, bibendum ut auctor dictum, euismod hendrerit massa. Suspendisse eu sagittis urna. Mauris vulputate velit nec lectus facilisis volutpat. Nam eget vestibulum ligula. In faucibus tellus at sapien aliquam mollis. Pellentesque turpis magna, suscipit in elit a, dapibus accumsan nulla. Nulla dapibus massa imperdiet molestie placerat. Maecenas non sapien tempor, dignissim odio ac, efficitur metus. Donec sed ex id sapien pharetra tincidunt a id nulla. Aenean ut arcu ut libero fermentum auctor.
 
-Every experiment includes:
-- Latency critical / Production workload (LC/PR)
-- Load Generator to generate simulated load on the LC (LG)
-- Optional aggressors to be co-located on node.
+Aenean feugiat mattis dui id varius. Curabitur lacinia aliquam dui, nec interdum ligula luctus in. Duis vitae sollicitudin arcu, eget facilisis turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nam tristique arcu vitae dapibus molestie. Praesent nec libero efficitur, scelerisque risus quis, tincidunt velit. Ut vitae rutrum augue. Maecenas lobortis orci id blandit facilisis.
 
-## Workload details
+Sed nec nisl urna. Ut rhoncus odio auctor nunc consequat, ut pharetra erat vehicula. Suspendisse quis aliquet nisi, vel rutrum nunc. In interdum id ante pretium interdum. Nam scelerisque orci eu hendrerit luctus. Nullam sodales lorem non pellentesque finibus. Aenean sit amet nisl justo. Sed condimentum rutrum volutpat. Nunc malesuada augue et sem ornare vulputate. Nullam viverra ac sapien ac dignissim. Praesent risus orci, cursus eu leo at, ultricies mollis nisi. Duis porta vulputate orci, vitae blandit nulla vehicula eu. Pellentesque risus ante, placerat blandit arcu sed, bibendum vehicula nisi.
 
-| Type | Name  | Source | Execution | Isolation | APMs |
-| --- | --- | --- | --- | --- | --- |
-| *Latency Critical* | Memcached | [Readme](../../../workloads/data_caching/memcached) | Local | None | None |
-| *Load Generator* | Mutilate | [Readme](../../../workloads/data_caching/memcached) | Local | None | `Latency` and `QPS` via Snap to `Cassandra` |
-| *Aggressor* | Last-Level cache synthetic | [Code](../../../workloads/low-level-aggressors/l3.c) | Local | None | None |
-
-## Prerequisites
-- Running `snapd`
-- Running Cassandra (NOTE: Cassandra publisher is required but it's private currently)
-- `make build_workloads`
-- `make build`
-
-**NOTE**: It is recommended to ensure that all integration test are working on your machine before running experiment.
-
-## Running
-
-`./build/experiments/<path_to_experiment>/<name_of_experiment>`
-
-## Cassandra Result Viewer
-
-After test execution, you can see the results using following script:
-
-`go run ./script/sensitivity_viewer/main.go `
+Donec laoreet volutpat justo, non sollicitudin felis pharetra sed. Integer neque dui, ultricies quis nunc non, lacinia venenatis ligula. Morbi dapibus nisl sed risus scelerisque facilisis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce et velit metus. Cras vel malesuada nisl, a congue nulla. Sed elit mi, vehicula quis nulla in, sodales pretium odio. Integer nec enim vitae lectus consequat iaculis. Praesent at semper libero.
