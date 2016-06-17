@@ -29,8 +29,8 @@ var (
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. "+
 			"You can state as many as you want (--aggr=l1d --aggr=membw)")
-	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 4)
-	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 4)
+	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
+	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
@@ -43,9 +43,9 @@ var ipAddressFlag = conf.NewStringFlag(
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
-	conf.SetAppName("ToCassandra")
-	conf.SetHelpPath(
-		path.Join(fs.GetSwanExperimentPath(), "memcached", "llc_aggr_cassandra", "README.md"))
+	conf.SetAppName("memcached-sensitivity-profile")
+	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
+It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 
 	// Parse CLI.
 	err := conf.ParseFlags()
