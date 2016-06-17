@@ -9,9 +9,9 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	snapmutilate "github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate"
+	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
+	fs "github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/shopspring/decimal"
@@ -20,56 +20,56 @@ import (
 
 // TestMutilateWithExecutor is an integration test with local executor.
 // Flow:
-// - start memcache and make sure is new clean instance
+// - start memcached and make sure it is a new clean instance
 // - run populate and check new items were stored
-// - run tune - search for capacity and make it is not zero
+// - run tune - search for capacity and ensure it is not zero
 // - run load and check it run without error (ignore results)
-// note: couldn't check output files because cannot inject check coulnd before removal
+// note: for Populate/Tune we don't check output files
 func TestMutilateWithExecutor(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	// log.SetLevel(log.ErrorLevel)
+	// log.SetOutput(os.Stderr)
 
 	// memcached setup
 	mcConfig := memcached.DefaultMemcachedConfig()
-	mcConfig.User = os.GetEnvOrDefault("USER", mcConfig.User)
+	mcConfig.User = fs.GetEnvOrDefault("USER", mcConfig.User)
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", mcConfig.Port)
-	// closure function with memcache address for getting statistics from mecache
+	// closure function with memcached address for getting statistics from mecache
 
 	// start memcached and make sure it is a new one!
 	memcachedLauncher := memcached.New(executor.NewLocal(), mcConfig)
 	mcHandle, err := memcachedLauncher.Launch()
 	if err != nil {
-		t.Error("cannot start memcached:" + err.Error())
+		t.Fatal("cannot start memcached:" + err.Error())
 	}
 
-	errorOnError := func(f func() error) {
-		if err := f(); err != nil {
-			t.Error(err)
-		}
-	}
+	// clean memacache
 	defer func() {
-		errorOnError(mcHandle.EraseOutput) // make sure temp files removal was successful
-		errorOnError(mcHandle.Stop)        // and our memcached instance was closed properlly
-		mcHandle.Wait(0)
-		ec, err := mcHandle.ExitCode()
-		if err != nil {
-			t.Error(err)
+		// and our memcached instance was closed properlly
+		if err := mcHandle.Stop(); err != nil {
+			t.Fatal(err)
 		}
-		if ec != -1 { // expected -1 on SIGKILL (TODO: change to zero, after Stop "gracefull stop fix"
-			t.Errorf("memcached was stopped incorrectly exit-code: %d", ec)
+		mcHandle.Wait(0)
+		if ec, err := mcHandle.ExitCode(); err != nil || ec != -1 {
+			// expected -1 on SIGKILL (TODO: change to zero, after Stop "gracefull stop fix"
+			t.Fatalf("memcached was stopped incorrectly err %s exit-code: %d", err, ec)
+		}
+		// make sure temp files removal was successful
+		if err := mcHandle.EraseOutput(); err != nil {
+			t.Fatal(err)
 		}
 	}()
 
-	// give memcache chance to start and possibly die
+	// Give memcached chance to start and possibly die
 	if stopped := mcHandle.Wait(1 * time.Second); stopped {
-		t.Error("my memcached is not running after the second")
+		t.Fatal("memcached is not running after the second")
 	}
 
 	if mcHandle.Status() != executor.RUNNING {
-		t.Error("my memcached is not running!")
+		t.Fatal("memcached is not running!")
 	}
 	currItems, _ := getMemcachedStats(mcAddress, t)
-	if currItems != 0 { // in case of not my memache or someone at the same time is messing with it
-		t.Error("expecting empty mc! but some items are already there")
+	if currItems != 0 { // in case of not memached or someone at the same time is messing with it
+		t.Fatal("expecting empty memcached but some items are already there")
 	}
 
 	Convey("With memcached started already", t, func() {
@@ -87,8 +87,8 @@ func TestMutilateWithExecutor(t *testing.T) {
 			So(currItems, ShouldNotEqual, 0)
 		})
 
-		_, previousGetCnt := getMemcachedStats(mcAddress, t)
 		Convey("When run mutilate tune", func() {
+			_, previousGetCnt := getMemcachedStats(mcAddress, t)
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			achievedLoad, achievedSLI, err := mutilateLauncher.Tune(5000) // very high to be easile achiveable
 			So(err, ShouldBeNil)
@@ -98,24 +98,33 @@ func TestMutilateWithExecutor(t *testing.T) {
 			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)
 		})
 
-		_, previousGetCnt = getMemcachedStats(mcAddress, t)
 		Convey("When run mutilate load", func() {
+			_, previousGetCnt := getMemcachedStats(mcAddress, t)
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			mutilateHandle, err := mutilateLauncher.Load(10, 1*time.Second)
 			So(err, ShouldBeNil)
 			mutilateHandle.Wait(0)
 			out, err := mutilateHandle.StdoutFile()
 			log.Println(out.Name())
-			rawMetrics, err := snapmutilate.ParseOutput(out.Name())
+			rawMetrics, err := parse.File(out.Name())
 
-			for _, expectedMetric := range []string{"qps", "avg", "std", "min", "percentile/99th", "percentile/99.000th/custom"} {
-				v, ok := rawMetrics[expectedMetric]
+			SoNonZeroMetricExists := func(name string) {
+				v, ok := rawMetrics[name]
 				So(ok, ShouldBeTrue)
 				So(v, ShouldBeGreaterThan, 0)
-				log.Debugf("%s = %0.2f", expectedMetric, v)
 			}
 
-			errorOnError(mutilateHandle.EraseOutput)
+			SoNonZeroMetricExists("qps")
+			SoNonZeroMetricExists("avg")
+			SoNonZeroMetricExists("std")
+			SoNonZeroMetricExists("min")
+			SoNonZeroMetricExists("percentile/99th")
+			SoNonZeroMetricExists("percentile/99.000th/custom")
+
+			if err := mutilateHandle.EraseOutput(); err != nil {
+				t.Fatal(err)
+
+			}
 			_, currentGetCount := getMemcachedStats(mcAddress, t)
 			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)
 			if exitcode, err := mutilateHandle.ExitCode(); err != nil || exitcode != 0 {
@@ -129,43 +138,46 @@ func TestMutilateWithExecutor(t *testing.T) {
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L511
 func getMemcachedStats(mcAddress string, t *testing.T) (currItems, getCount int) {
 
+	const (
+		statsCmd         = "stats\n"
+		mcStatsReplySize = 4096 // enough to get whole response from memcache
+	)
+
 	conn, err := net.Dial("tcp", mcAddress)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer conn.Close()
-	n, err := conn.Write([]byte("stats\n"))
-	if err != nil {
-		t.Error(err)
-	}
-	if n != 6 {
-		t.Error("coulnd't write to memcache exepected number of bytes:" + strconv.Itoa(n))
+
+	if n, err := conn.Write([]byte(statsCmd)); err != nil || n != len(statsCmd) {
+		t.Fatalf("coulnd't write to memcached exepected number err=%s of bytes=%d", err, n)
 	}
 
-	buf := make([]byte, 2048)
-	n, err = conn.Read(buf)
-	if err != nil {
-		t.Error(err)
+	buf := make([]byte, mcStatsReplySize)
+	if _, err = conn.Read(buf); err != nil {
+		t.Fatal(err)
 	}
-	stats := make(map[string]string)
+
 	for _, line := range strings.Split(string(buf), "\n") {
-		fields := strings.Fields(line)
-		// stats dump ends with END keyword - it means we're done
-		if len(fields) == 1 && fields[0] == "END" {
+		if strings.HasPrefix(line, "END") {
 			break
 		}
-		key, value := fields[1], fields[2]
-		stats[key] = value
+		var key, value string
+		_, err := fmt.Sscanf(line, "STAT %s %s", &key, &value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		switch key {
+		case "curr_items":
+			if currItems, err = strconv.Atoi(value); err != nil {
+				t.Fatal(err)
+			}
+		case "cmd_get":
+			if getCount, err = strconv.Atoi(value); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 
-	currItems, err = strconv.Atoi(stats["curr_items"])
-	if err != nil {
-		t.Error(err)
-	}
-
-	getCount, err = strconv.Atoi(stats["cmd_get"])
-	if err != nil {
-		t.Error(err)
-	}
 	return
 }

@@ -1,4 +1,4 @@
-package mutilate
+package parse
 
 import (
 	"bufio"
@@ -10,10 +10,10 @@ import (
 // Metrics is a type alias for a float map indexed by a name.
 type Metrics map[string]float64
 
-// ParseOutput parse standard output from mutilate and gather all metrics
+// File parse standard output from mutilate from file and gather all metrics
 // including (custom percentile)
 // note: public to allow use it without snap infrastructure
-func ParseOutput(path string) (Metrics, error) {
+func File(path string) (Metrics, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {

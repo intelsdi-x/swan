@@ -1,4 +1,4 @@
-package mutilate
+package parse
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 
 func TestStdoutParser(t *testing.T) {
 	Convey("Opening non-existing file should fail", t, func() {
-		data, err := ParseOutput("/non/existing/file")
+		data, err := File("/non/existing/file")
 
 		So(data, ShouldBeEmpty)
 		So(err, ShouldNotBeNil)
@@ -21,7 +21,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(err, ShouldBeNil)
 		So(data, ShouldHaveLength, 10)
@@ -41,7 +41,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_incorrect_count_of_columns.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err, ShouldNotBeNil)
@@ -52,7 +52,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_missing_read_row.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 		So(err, ShouldBeNil)
 
 		// QPS and custom percentile latency are still available, thus 2.
@@ -72,7 +72,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_missing_swan_row.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 		So(err, ShouldBeNil)
 
 		// QPS and read latencies are still available, thus 9.
@@ -85,7 +85,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_malformed_swan_row.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
@@ -95,7 +95,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_missing_metric_in_swan_row.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
@@ -105,7 +105,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_swan_row_missing_percentile_in_description.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 0")
@@ -115,7 +115,7 @@ func TestStdoutParser(t *testing.T) {
 		path, err := getCurrentDirFilePath("/mutilate_non_numeric_default_metric_value.stdout")
 		So(err, ShouldBeNil)
 
-		data, err := ParseOutput(path)
+		data, err := File(path)
 
 		So(data, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 8 but got 3")
