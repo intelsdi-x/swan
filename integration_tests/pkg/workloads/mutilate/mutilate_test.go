@@ -33,7 +33,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 	mcConfig := memcached.DefaultMemcachedConfig()
 	mcConfig.User = fs.GetEnvOrDefault("USER", mcConfig.User)
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", mcConfig.Port)
-	// closure function with memcached address for getting statistics from mecache
 
 	// start memcached and make sure it is a new one!
 	memcachedLauncher := memcached.New(executor.NewLocal(), mcConfig)
@@ -64,9 +63,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 		t.Fatal("memcached is not running after the second")
 	}
 
-	if mcHandle.Status() != executor.RUNNING {
-		t.Fatal("memcached is not running!")
-	}
 	currItems, _ := getMemcachedStats(mcAddress, t)
 	if currItems != 0 { // in case of not memached or someone at the same time is messing with it
 		t.Fatal("expecting empty memcached but some items are already there")
