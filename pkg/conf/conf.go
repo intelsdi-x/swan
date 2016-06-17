@@ -44,6 +44,12 @@ func SetHelpPath(readmePath string) {
 	app.Help = string(readmeData)[:]
 }
 
+// SetHelp sets the help message for the CLI.
+// We need to expose this function so other packages can set the app help.
+func SetHelp(help string) {
+	app.Help = help
+}
+
 // SetAppName sets application name for CLI output.
 // We need to expose this function so other packages can set the app name.
 func SetAppName(name string) {
