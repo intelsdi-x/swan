@@ -28,8 +28,7 @@ import (
 
 var (
 	aggressorsFlag = conf.NewSliceFlag(
-		"aggr", "Aggressor to run experiment with. "+
-			"You can state as many as you want (--aggr=l1d --aggr=membw)")
+		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 )
@@ -127,7 +126,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	aggressors := []sensitivity.LauncherSessionPair{}
 	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
 	for _, aggr := range aggressorsFlag.Value() {
-		aggressors = append(aggressors, aggressorFactory.Create(aggr))
+		aggressor, err := aggressorFactory.Create(aggr)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		aggressors = append(aggressors, aggressor)
 	}
 
 	// Create connection with Snap.
