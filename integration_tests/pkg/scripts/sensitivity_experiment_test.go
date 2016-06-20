@@ -11,7 +11,7 @@ import (
 )
 
 func runScript(parameter string) (string, error) {
-	cmd := exec.Command("sh", "-c", os.Getenv("GOPATH")+
+	cmd := exec.Command("/bin/sh", "-c", os.Getenv("GOPATH")+
 		"/src/github.com/intelsdi-x/swan/scripts/sensitivity-experiment.sh "+parameter)
 	out, err := cmd.CombinedOutput()
 	return strings.TrimSpace(string(out)), err

@@ -42,7 +42,7 @@ list_env:
 	@ env
 	@ echo ""
 
-integration_test: list_env plugins unit_test build_workloads
+integration_test: list_env plugins unit_test build_workloads build
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 #   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
