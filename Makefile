@@ -42,14 +42,13 @@ list_env:
 	@ env
 	@ echo ""
 
-integration_test: list_env plugins unit_test build_workloads
+integration_test: list_env plugins unit_test build_workloads build
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
-#   TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
-#	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 # For development purposes we need to do integration test faster on already built components.
-integration_test_no_build: list_env unit_test
+integration_test_no_build: list_env unit_test build
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 
