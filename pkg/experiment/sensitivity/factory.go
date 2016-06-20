@@ -1,6 +1,7 @@
 package sensitivity
 
 import (
+	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
@@ -21,7 +22,7 @@ func NewAggressorFactory(isolation isolation.Isolation) *AggressorFactory {
 }
 
 //Create sets up an aggresor of chosen type with Snap session.
-func (af *AggressorFactory) Create(name string) LauncherSessionPair {
+func (af *AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 	var aggressor LauncherSessionPair
 	switch name {
 	case l1data.ID:
@@ -39,8 +40,9 @@ func (af *AggressorFactory) Create(name string) LauncherSessionPair {
 	case l3data.ID:
 		aggressor = NewLauncherWithoutSession(
 			l3data.New(af.executor, l3data.DefaultL3Config()))
-
+	default:
+		return aggressor, fmt.Errorf("Aggressor '%s' not found", name)
 	}
 
-	return aggressor
+	return aggressor, nil
 }

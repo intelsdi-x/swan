@@ -15,5 +15,5 @@ type Launcher interface {
 	// TODO(bp): Do the same for LoadGenerator.
 	Name() string
 
-	// TODO(bp): Include here getter for parameter (part of SCE-376)
+	// TODO(bp): Include a getter for parameters (part of SCE-376).
 }
