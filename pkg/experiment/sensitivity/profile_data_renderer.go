@@ -6,6 +6,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"
+	"github.com/montanaflynn/stats"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,7 +63,6 @@ func prepareData(metricsList []*cassandra.Metrics, loadPointsNumber int) ([][]st
 
 	// Create each row for scenario.
 	for _, scenario := range scenarios {
-
 		loadPointValues := map[int]string{}
 		// Get all values for each aggressor from metrics.
 		loadPointValues, err := getValuesForLoadPoints(metricsList, scenario)
@@ -127,22 +127,6 @@ func createHeadersForSensitivityProfile(loadPointsNumber int, qpsMap map[int]str
 	return headers
 }
 
-func calculateAverage(valuesList []string) (float64, error) {
-	var result float64
-	if len(valuesList) == 0 {
-		return result, errors.New("Empty list of values for given phase")
-	}
-	var sum float64
-	for _, elem := range valuesList {
-		value, err := strconv.ParseFloat(elem, 64)
-		if err != nil {
-			return result, err
-		}
-		sum += value
-	}
-	return sum / float64(len(valuesList)), nil
-}
-
 // TODO(ala) For getting LoadPointID - replace with id gathered directly from metrics, when we add loadPointID there.
 func getNumberForRegex(name string, regex string) (int, error) {
 	var result int
@@ -185,7 +169,7 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 
 func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) (map[int]string, error) {
 	loadPointValues := make(map[int]string)
-	allLoadPointValues := make(map[int][]string)
+	allLoadPointValues := make(map[int][]float64)
 
 	for _, metrics := range metricsList {
 		// In sensitivity profile we accept only double values.
@@ -206,19 +190,23 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 			if err != nil {
 				return nil, err
 			}
-			allLoadPointValues[number] = append(allLoadPointValues[number],
-				fmt.Sprintf("%f", metrics.Doubleval()))
-
+			allLoadPointValues[number] = append(allLoadPointValues[number], metrics.Doubleval())
 		}
 	}
 
 	// From all values for each load point calculate average value.
 	for key, list := range allLoadPointValues {
-		value, err := calculateAverage(list)
+		variance, err := stats.Variance(list)
 		if err != nil {
 			return nil, err
 		}
-		loadPointValues[key] = fmt.Sprintf("%f", value)
+
+		max, err := stats.Max(list)
+		if err != nil {
+			return nil, err
+		}
+
+		loadPointValues[key] = fmt.Sprintf("%.3f (%.3f)", max, variance)
 	}
 
 	return loadPointValues, nil
