@@ -108,8 +108,7 @@ func NewSliceFlag(flagName string, description string) SliceFlag {
 		},
 	}
 
-	sliceFlag.value = app.Flag(flagName, description).
-		Default("").OverrideDefaultFromEnvar(sliceFlag.envName()).Strings()
+	sliceFlag.value = app.Flag(flagName, description).OverrideDefaultFromEnvar(sliceFlag.envName()).Strings()
 	isEnvParsed = false
 
 	return sliceFlag
