@@ -28,8 +28,5 @@ type Metadata struct {
 	RepetitionsNumber int `json:",omitempty,string"`
 
 	Load float64 `json:",omitempty,string"`
-	//SLO  int     `json:",omitempty,string"`
-	QPS float64 `json:",omitempty,string"`
-
-	//TargetLoad int `json:",omitempty,string"`
+	QPS  float64 `json:",omitempty,string"`
 }

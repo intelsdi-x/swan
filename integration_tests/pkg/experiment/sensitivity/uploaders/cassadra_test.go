@@ -59,23 +59,27 @@ func TestCassandraUploading(t *testing.T) {
 func createValidSwanMetrics() sensitivity.Metadata {
 	var err error
 	m := sensitivity.Metadata{}
+
 	m.LoadDuration, err = time.ParseDuration("1s")
 	So(err, ShouldBeNil)
 	m.TuningDuration, err = time.ParseDuration("2s")
 	So(err, ShouldBeNil)
-	m.LoadPointsNumber = 666
+
 	m.RepetitionsNumber = 905
 	m.LoadPointsNumber = 509
+
 	m.LCName = "LC task"
 	m.LCParameters = "Latency critical parameters"
 	m.LCIsolation = "Latency critical isolation"
+
 	m.LGName = []string{"LG task"}
 	m.LGParameters = []string{"Load generator parameters"}
 	m.LGIsolation = "LG isolation"
+
 	m.AggressorName = []string{"an aggressor"}
 	m.AggressorParameters = []string{"aggressor parameters"}
 	m.AggressorIsolations = []string{"aggressor isolation"}
-	//m.SLO = 2048
+
 	m.QPS = 666.6
 	m.LGName = []string{"LG task"}
 	m.Load = 0.65
@@ -83,6 +87,7 @@ func createValidSwanMetrics() sensitivity.Metadata {
 	m.ExperimentID = "experiment"
 	m.PhaseID = "phase"
 	m.RepetitionID = 303
+
 	return m
 }
 

@@ -98,7 +98,6 @@ func (c cassandra) buildExperimentMetadata(metadata sensitivity.Metadata) experi
 	experimentMetadata.LcName = metadata.LCName
 	experimentMetadata.LoadPointsNumber = metadata.LoadPointsNumber
 	experimentMetadata.RepetitionsNumber = metadata.RepetitionsNumber
-	//experimentMetrics.SLO = metrics.SLO
 	experimentMetadata.LgNames = append(experimentMetadata.LgNames, metadata.LGName...)
 
 	return experimentMetadata
