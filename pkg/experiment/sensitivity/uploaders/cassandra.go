@@ -14,38 +14,32 @@ const phaseTablePrefix = "phase"
 const measurementTablePrefix = "measurement"
 
 type cassandra struct {
-	experiment  gocassa.Table
-	phase       gocassa.Table
-	measurement gocassa.Table
+	experiment gocassa.Table
+	phase      gocassa.Table
 }
 
 type experiment struct {
-	ID               string
-	TestingDuration  time.Duration
-	LcName           string
-	LcParameters     string
-	LcIsolation      string
-	LgName           string
-	LgParameters     string
-	LgIsolation      string
-	Repetitions      int
-	LoadPointsNumber int
-	SLO              int
+	ID                string
+	LoadDuration      time.Duration
+	TuningDuration    time.Duration
+	LcName            string
+	LgNames           []string
+	RepetitionsNumber int
+	LoadPointsNumber  int
+	SLO               int
 }
 
 type phase struct {
-	ID            string
-	ExperimentID  string
-	AggressorName string
-}
-
-type measurement struct {
-	ID                  int
-	PhaseID             string
+	ID                  string
 	ExperimentID        string
-	AggressorParameters string
-	HandledQPS          int
-	TargetQPS           int
+	LCParameters        string
+	LCIsolation         string
+	LGParameters        []string
+	AggressorNames      []string
+	AggressorParameters []string
+	AggressorIsolations []string
+	Load                float64
+	LoadPointQPS        float64
 }
 
 // Config stores Cassandra database configuration
@@ -73,12 +67,10 @@ func NewCassandra(config Config) (sensitivity.Uploader, error) {
 
 	experimentTable := keySpace.Table(experimentTablePrefix, &experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
 	phaseTable := keySpace.Table(phaseTablePrefix, &phase{}, gocassa.Keys{PartitionKeys: []string{"ID", "ExperimentID"}})
-	measurementTable := keySpace.Table(measurementTablePrefix, &measurement{}, gocassa.Keys{PartitionKeys: []string{"ID", "ExperimentID", "PhaseID"}})
 	experimentTable.CreateIfNotExist()
 	phaseTable.CreateIfNotExist()
-	measurementTable.CreateIfNotExist()
 
-	return &cassandra{experimentTable, phaseTable, measurementTable}, nil
+	return &cassandra{experimentTable, phaseTable}, nil
 }
 
 //SendMetrics implements metrics.Uploader interface
@@ -93,48 +85,37 @@ func (c cassandra) SendMetadata(metadata sensitivity.Metadata) error {
 	if err != nil {
 		return fmt.Errorf("Phase metrics saving failed: %s", err.Error())
 	}
-	measurementMetrics := c.buildMeasurementMetadata(metadata)
-	err = c.measurement.Set(measurementMetrics).Run()
-	if err != nil {
-		return fmt.Errorf("Measurement metrics saving failed: %s", err.Error())
-	}
 
 	return nil
 
 }
 
-func (c cassandra) buildExperimentMetadata(metrics sensitivity.Metadata) experiment {
-	experimentMetrics := experiment{}
-	experimentMetrics.ID = metrics.ExperimentID
-	experimentMetrics.TestingDuration = metrics.LoadDuration
-	experimentMetrics.LcName = metrics.LCName
-	experimentMetrics.LcParameters = metrics.LCParameters
-	experimentMetrics.LcIsolation = metrics.LCIsolation
-	experimentMetrics.LgParameters = metrics.LGParameters
-	experimentMetrics.LgName = metrics.LGName
-	experimentMetrics.LgIsolation = metrics.LGIsolation
-	experimentMetrics.LoadPointsNumber = metrics.LoadPointsNumber
-	experimentMetrics.Repetitions = metrics.RepetitionsNumber
-	experimentMetrics.SLO = metrics.SLO
+func (c cassandra) buildExperimentMetadata(metadata sensitivity.Metadata) experiment {
+	experimentMetadata := experiment{}
+	experimentMetadata.ID = metadata.ExperimentID
+	experimentMetadata.LoadDuration = metadata.LoadDuration
+	experimentMetadata.TuningDuration = metadata.TuningDuration
+	experimentMetadata.LcName = metadata.LCName
+	experimentMetadata.LoadPointsNumber = metadata.LoadPointsNumber
+	experimentMetadata.RepetitionsNumber = metadata.RepetitionsNumber
+	//experimentMetrics.SLO = metrics.SLO
+	experimentMetadata.LgNames = append(experimentMetadata.LgNames, metadata.LGName...)
 
-	return experimentMetrics
+	return experimentMetadata
 }
 
-func (c cassandra) buildPhaseMetadata(metrics sensitivity.Metadata) phase {
-	phaseMetrics := phase{}
-	phaseMetrics.ID = metrics.PhaseID
-	phaseMetrics.ExperimentID = metrics.ExperimentID
-	phaseMetrics.AggressorName = metrics.AggressorName
+func (c cassandra) buildPhaseMetadata(metadata sensitivity.Metadata) phase {
+	phaseMetadata := phase{}
+	phaseMetadata.ID = metadata.PhaseID
+	phaseMetadata.ExperimentID = metadata.ExperimentID
+	phaseMetadata.AggressorNames = append(phaseMetadata.AggressorNames, metadata.AggressorName...)
+	phaseMetadata.AggressorIsolations = metadata.AggressorIsolations
+	phaseMetadata.AggressorParameters = metadata.AggressorParameters
+	phaseMetadata.LCIsolation = metadata.LCIsolation
+	phaseMetadata.LCParameters = metadata.LCParameters
+	phaseMetadata.LGParameters = metadata.LGParameters
+	phaseMetadata.Load = metadata.Load
+	phaseMetadata.LoadPointQPS = metadata.QPS
 
-	return phaseMetrics
-}
-
-func (c cassandra) buildMeasurementMetadata(metrics sensitivity.Metadata) measurement {
-	measurementMetrics := measurement{}
-	measurementMetrics.ID = metrics.RepetitionID
-	measurementMetrics.ExperimentID = metrics.ExperimentID
-	measurementMetrics.PhaseID = metrics.PhaseID
-	measurementMetrics.AggressorParameters = metrics.AggressorParameters
-
-	return measurementMetrics
+	return phaseMetadata
 }
