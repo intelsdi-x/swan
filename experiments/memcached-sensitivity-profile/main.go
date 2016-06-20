@@ -10,6 +10,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/shopspring/decimal"
+
 	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -22,7 +24,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"github.com/shopspring/decimal"
 )
 
 var (
@@ -39,6 +40,13 @@ var ipAddressFlag = conf.NewStringFlag(
 	"127.0.0.1",
 )
 
+// Check the supplied error, log and exit if non-nil.
+func check(err error) {
+	if err != nil {
+		logrus.Fatal(err)
+	}
+}
+
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
@@ -46,30 +54,31 @@ func main() {
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 
-	// Parse CLI.
-	err := conf.ParseFlags()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
 	logrus.SetLevel(conf.LogLevel())
 
-	numaZero := isolation.NewIntSet(0)
-	// Initialize Memcached Launcher with HP isolation.
-	hpCpus, err := isolation.CPUSelect(hpCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, isolation.NewIntSet())
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	// Parse CLI.
+	check(conf.ParseFlags())
 
-	hpIsolation, err := cgroup.NewCPUSet("hp", hpCpus, numaZero, true, false)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	threadSet := sharedCacheThreads()
+	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
+	check(err)
+
+	// Allocate BE threads from the remaining threads on the same socket as the
+	// HP workload.
+	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
+	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
+	check(err)
+
+	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
+	// memory banks (probably not).
+	numaZero := isolation.NewIntSet(0)
+
+	// Initialize Memcached Launcher with HP isolation.
+	hpIsolation, err := cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, true, false)
+	check(err)
 
 	err = hpIsolation.Create()
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	check(err)
 
 	defer hpIsolation.Clean()
 
@@ -86,15 +95,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
 		// Initialize Mutilate Launcher.
 		user, err := user.Current()
-		if err != nil {
-			logrus.Fatal(err)
-		}
+		check(err)
 
 		sshConfig, err := executor.NewSSHConfig(
 			workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
-		if err != nil {
-			logrus.Fatal(err)
-		}
+		check(err)
 
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
@@ -109,20 +114,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	beCpus, err := isolation.CPUSelect(beCPUCountFlag.Value(), isolation.ShareLLCButNotL1L2, hpCpus)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	beIsolation, err := cgroup.NewCPUSet("be", beCpus, numaZero, true, false)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, true, false)
+	check(err)
 
 	err = beIsolation.Create()
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	check(err)
 
 	defer beIsolation.Clean()
 
@@ -145,26 +141,20 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		"v1",
 		true,
 	)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	check(err)
 
 	// Load the snap cassandra publisher plugin if not yet loaded.
 	// TODO(bp): Make helper for that.
 	logrus.Debug("Checking if publisher cassandra is loaded.")
 	plugins := snap.NewPlugins(snapConnection)
 	loaded, err := plugins.IsLoaded("publisher", "cassandra")
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	check(err)
 
 	if !loaded {
 		pluginPath := []string{path.Join(
 			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
 		err = plugins.Load(pluginPath)
-		if err != nil {
-			logrus.Fatal(err)
-		}
+		check(err)
 	}
 
 	// Define publisher.
@@ -201,7 +191,5 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Run Experiment.
 	err = sensitivityExperiment.Run()
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	check(err)
 }
