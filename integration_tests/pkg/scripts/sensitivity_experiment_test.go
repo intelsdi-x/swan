@@ -13,7 +13,7 @@ import (
 func runScript(parameter string) (string, error) {
 	cmd := exec.Command("sh", "-c", os.Getenv("GOPATH")+
 		"/src/github.com/intelsdi-x/swan/scripts/sensitivity-experiment.sh "+parameter)
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	return strings.TrimSpace(string(out)), err
 }
 
@@ -33,15 +33,16 @@ func TestSensitivityExperimentScript(t *testing.T) {
 				})
 			})
 			Convey("After running a script with non-existing experiment binary", func() {
-				output, err := runScript("-p /nonExistingBinary")
-				Convey("There should be an error and output should be empty", func() {
-					So(output, ShouldEqual, "")
+				_, err := runScript("-p nonExistingBinary")
+				Convey("There should be an error", func() {
 					So(fmt.Sprintf("%s", err), ShouldEqual, "exit status 127")
 				})
 			})
 			Convey("After running a script with existing proper experiment", func() {
 				output, err := runScript("-p integration_tests/pkg/scripts/fakeExperiment.sh")
 				Convey("There should be no error and output should not be empty", func() {
+					fmt.Println(output)
+					fmt.Println(err)
 					So(output, ShouldNotBeNil)
 					So(err, ShouldBeNil)
 				})
