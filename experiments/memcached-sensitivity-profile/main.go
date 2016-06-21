@@ -106,6 +106,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
+		PathToBinary:			 mutilate.PathFlag.Value(),
 		MemcachedHost:     memcachedConfig.IP,
 		MemcachedPort:     memcachedConfig.Port,
 		LatencyPercentile: percentile,
