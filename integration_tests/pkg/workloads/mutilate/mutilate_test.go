@@ -18,6 +18,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	memachedPort = 11212
+)
+
 // TestMutilateWithExecutor is an integration test with local executor.
 // Flow:
 // - start memcached and make sure it is a new clean instance
@@ -26,12 +30,13 @@ import (
 // - run load and check it run without error (ignore results)
 // note: for Populate/Tune we don't check output files.
 func TestMutilateWithExecutor(t *testing.T) {
-	// log.SetLevel(log.ErrorLevel)
-	// log.SetOutput(os.Stderr)
+	//log.SetLevel(log.DebugLevel)
+	//log.SetOutput(os.Stderr)
 
 	// Memcached setup.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedConfig.User = fs.GetEnvOrDefault("USER", memcachedConfig.User)
+	memcachedConfig.Port = memachedPort
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", memcachedConfig.Port)
 
 	// Start memcached and make sure it is a new one.
@@ -73,10 +78,13 @@ func TestMutilateWithExecutor(t *testing.T) {
 		mutilateConfig := mutilate.DefaultMutilateConfig()
 		mutilateConfig.TuningTime = 1 * time.Second
 		// Ensure files are removed afterwards.
-		mutilateConfig.EraseSearchTuneOutput = true
+		mutilateConfig.ErasePopulateOutput = true
+		mutilateConfig.EraseTuneOutput = true
+		mutilateConfig.WarmupTime = 1 * time.Second
 		// Note: not sure if custom percentile is working correctly.
 		// TODO: added a custom percentile integration test.
 		mutilateConfig.LatencyPercentile, _ = decimal.NewFromString("99")
+		mutilateConfig.MemcachedPort = memcachedConfig.Port
 
 		Convey("When run mutilate populate", func() {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
@@ -137,7 +145,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 // getMemcachedStats helper read and parse "stats" memcached command and return map key -> value.
 // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L511
 func getMemcachedStats(mcAddress string, t *testing.T) (currItems, getCount int) {
-
 	const (
 		statsCmd         = "stats\n"
 		mcStatsReplySize = 4096 // Enough size to get whole response from memcached.

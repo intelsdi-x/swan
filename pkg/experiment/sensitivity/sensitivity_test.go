@@ -82,12 +82,14 @@ func (s *SensitivityTestSuite) mockSingleLcWorkloadExecution() {
 }
 
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorTuning() {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedPeakLoad, 4, nil).Once()
 }
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is successful
 // as well.
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
@@ -99,7 +101,8 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is NOT
 // successful. That means ExitCode() methods will not be triggered.
-func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadExitCode(loadPoint int) {
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadWithoutExitCode(loadPoint int) {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
@@ -146,7 +149,7 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 			},
 		)
 
-		Convey("When production task can't be launched we expect error", func() {
+		Convey("When production task can't be launched we expect failure", func() {
 			s.mockedLcLauncher.On("Launch").Return(nil,
 				errors.New("Production task can't be launched")).Once()
 
@@ -158,8 +161,15 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 		Convey("When production task is launched successfully", func() {
 			s.mockSingleLcWorkloadExecution()
 
-			Convey("But load generator can't be tuned we expect error", func() {
+			Convey("But load generator cannot populate and we expect failure", func() {
+				s.mockedLoadGenerator.On("Populate").Return(errors.New("Populate")).Once()
+				err := s.sensitivityExperiment.Run()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "Populate")
+			})
 
+			Convey("But load generator can't be tuned we expect failure", func() {
+				s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 				s.mockedLoadGenerator.On("Tune", 1).Return(
 					0, 0, errors.New("Load generator can't be tuned")).Once()
 
@@ -207,7 +217,7 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
 
-			Convey("But production task can't be launched during baseline we expect error", func() {
+			Convey("But production task can't be launched during baseline we expect failure", func() {
 				s.mockedLcLauncher.On("Launch").Return(nil,
 					errors.New("Production task can't be launched during baseline")).Once()
 
@@ -220,7 +230,15 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 			Convey("When production task is launched successfully during baseline", func() {
 				s.mockSingleLcWorkloadExecution()
 
-				Convey("But load testing fails for baseline we expect error", func() {
+				Convey("But Populate fails for baseline and we expect failure", func() {
+					s.mockedLoadGenerator.On("Populate").Return(errors.New("Populate")).Once()
+					err := s.sensitivityExperiment.Run()
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEndWith, "Populate")
+				})
+
+				Convey("But load testing fails for baseline we expect failure", func() {
+					s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 					s.mockedLoadGenerator.On("Load", 1, 1*time.Second).
 						Return(nil, errors.New("Load testing failed")).Once()
 
@@ -285,7 +303,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			}
 
 			Convey("But production task can't be launched during aggressor phase, "+
-				"we expect error", func() {
+				"we expect failure", func() {
 				s.mockedAggressor.On("Name").Return("testName").Once()
 				s.mockedLcLauncher.On("Launch").Return(nil,
 					errors.New(
@@ -300,7 +318,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			Convey("When production task is launched successfully during aggressor phase", func() {
 				s.mockSingleLcWorkloadExecution()
 
-				Convey("But aggressor fails, we expect error", func() {
+				Convey("But aggressor fails, we expect failure", func() {
 					s.mockedAggressor.On("Launch").
 						Return(nil, errors.New("Agressor failed")).Once()
 					s.mockedAggressor.On("Name").Return("testName").Once()
@@ -313,7 +331,15 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 				Convey("When aggressor is launched successfuly", func() {
 					s.mockSingleAggressorWorkloadExecution()
 
-					Convey("But when load testing fails, we expect error", func() {
+					Convey("But Populate fails for baseline and we expect failure", func() {
+						s.mockedLoadGenerator.On("Populate").Return(errors.New("Populate")).Once()
+						err := s.sensitivityExperiment.Run()
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldEndWith, "Populate")
+					})
+
+					Convey("But when load testing fails, we expect failure", func() {
+						s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 						s.mockedLoadGenerator.On("Load", 1, 1*time.Second).
 							Return(nil, errors.New("Load testing failed")).Once()
 
@@ -409,7 +435,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 
 			// Mock first aggressors phase lcLauncher execution.
 			s.mockSingleLcWorkloadExecution()
-			Convey("When production task's Snap session can't be launched we expect error",
+			Convey("When production task's Snap session can't be launched we expect failure",
 				func() {
 					s.mockedAggressor.On("Name").Return("testName").Once()
 					s.mockedLcSessionLauncher.On(
@@ -429,7 +455,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 
 				// Mock first aggressors phase aggressor execution.
 				s.mockSingleAggressorWorkloadExecution()
-				Convey("When aggressor's Snap session can't be launched we expect error",
+				Convey("When aggressor's Snap session can't be launched we expect failure",
 					func() {
 						s.mockedAggressorSessionLauncher.On(
 							"LaunchSession",
@@ -445,16 +471,17 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 				Convey("When aggressor's Snap session is launched successfully", func() {
 					s.mockSingleAggressorSessionExecution()
 
-					Convey("When loadGenerator Snap session can't be launched we expect error",
+					Convey("When loadGenerator Snap session can't be launched we expect failure",
 						func() {
-							// Mock first aggressors phase loadGenerator execution.
-							s.mockSingleLoadGeneratorLoadExitCode(
+							s.mockSingleLoadGeneratorLoadWithoutExitCode(
 								s.mockedPeakLoad / s.configuration.LoadPointsCount)
+							// Mock error load generator session launcher.
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
 								s.mockedLoadGeneratorTask,
 								mock.AnythingOfType("phase.Session")).Return(
 								nil, errors.New("LoadGenerator session can't be launched")).Once()
+
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldNotBeNil)
 							So(err.Error(), ShouldEndWith,

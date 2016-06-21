@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	name                  = "Memcached"
-	defaultPort           = 11211
+	name = "Memcached"
+	// DefaultPort represents default memcached port.
+	DefaultPort           = 11211
 	defaultUser           = "memcached"
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
@@ -54,7 +55,7 @@ type Config struct {
 func DefaultMemcachedConfig() Config {
 	return Config{
 		PathToBinary:   PathFlag.Value(),
-		Port:           defaultPort,
+		Port:           DefaultPort,
 		User:           defaultUser,
 		NumThreads:     defaultNumThreads,
 		MaxMemoryMB:    defaultMaxMemoryMB,
