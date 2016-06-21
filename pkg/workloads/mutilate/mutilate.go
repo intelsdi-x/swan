@@ -15,6 +15,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/shopspring/decimal"
 )
 
@@ -34,12 +35,14 @@ var PathFlag = conf.NewStringFlag(
 
 // Config contains all data for running mutilate.
 type Config struct {
-	PathToBinary          string
-	MemcachedHost         string
-	TuningTime            time.Duration
-	LatencyPercentile     decimal.Decimal
-	EraseSearchTuneOutput bool // false by default, we want to keep them, but remove during integration tests
-	WarmupTime            time.Duration
+	PathToBinary        string
+	MemcachedHost       string
+	MemcachedPort       int
+	TuningTime          time.Duration
+	LatencyPercentile   decimal.Decimal
+	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
+	ErasePopulateOutput bool // false by default.
+	WarmupTime          time.Duration
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
@@ -52,6 +55,7 @@ func DefaultMutilateConfig() Config {
 		LatencyPercentile: percentile,
 		TuningTime:        defaultMemcachedTuningTime,
 		WarmupTime:        defaultMemcachedWarmupTime,
+		MemcachedPort:     memcached.DefaultPort,
 	}
 }
 
@@ -70,7 +74,7 @@ func New(executor executor.Executor, config Config) workloads.LoadGenerator {
 	}
 }
 
-// Populate loads Memcached and exit.
+// Populate load the initial test data into Memcached.
 func (m mutilate) Populate() (err error) {
 	populateCmd := m.getPopulateCommand()
 
@@ -79,7 +83,7 @@ func (m mutilate) Populate() (err error) {
 		return err
 	}
 	defer taskHandle.Clean()
-	defer taskHandle.EraseOutput()
+
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -92,7 +96,7 @@ func (m mutilate) Populate() (err error) {
 			strconv.Itoa(exitCode))
 	}
 
-	if m.config.EraseSearchTuneOutput {
+	if m.config.ErasePopulateOutput {
 		return taskHandle.EraseOutput()
 	}
 	return nil
@@ -130,7 +134,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
 
-	if m.config.EraseSearchTuneOutput {
+	if m.config.EraseTuneOutput {
 		if err := taskHandle.EraseOutput(); err != nil {
 			return 0, 0, err
 		}
@@ -146,28 +150,31 @@ func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHan
 }
 
 func (m mutilate) getPopulateCommand() string {
-	return fmt.Sprintf("%s -s %s --loadonly",
+	return fmt.Sprintf("%s -s %s:%d --loadonly",
 		m.config.PathToBinary,
 		m.config.MemcachedHost,
+		m.config.MemcachedPort,
 	)
 }
 
 func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
-	return fmt.Sprintf("%s -s %s -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
+	return fmt.Sprintf("%s -s %s:%d -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
 		m.config.PathToBinary,
 		m.config.MemcachedHost,
+		m.config.MemcachedPort,
 		qps,
 		int(duration.Seconds()),
-		m.config.WarmupTime,
+		int(m.config.WarmupTime.Seconds()),
 		m.config.LatencyPercentile.String(),
 	)
 }
 
 func (m mutilate) getTuneCommand(slo int) (command string) {
-	command = fmt.Sprintf("%s -s %s --warmup=%d --noload --search=%d:%d -t %d",
+	command = fmt.Sprintf("%s -s %s:%d --warmup=%d --noload --search=%s:%d -t %d",
 		m.config.PathToBinary,
 		m.config.MemcachedHost,
-		m.config.WarmupTime,
+		m.config.MemcachedPort,
+		int(m.config.WarmupTime.Seconds()),
 		m.config.LatencyPercentile.String(),
 		slo,
 		int(m.config.TuningTime.Seconds()),

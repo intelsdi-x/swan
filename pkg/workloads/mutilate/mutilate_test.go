@@ -56,6 +56,8 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.config.LatencyPercentile, _ = decimal.NewFromString("99.9")
 	s.config.TuningTime = 30 * time.Second
 	s.config.WarmupTime = 10 * time.Second
+	s.config.EraseTuneOutput = true
+	s.config.ErasePopulateOutput = true
 
 	s.defaultSlo = 1000
 
@@ -111,7 +113,8 @@ func (s *MutilateTestSuite) TestGetTuneCommand() {
 	})
 
 	Convey("Mutilate load command should contain target server", s.T(), func() {
-		expected := fmt.Sprintf("-s %s", s.mutilate.config.MemcachedHost)
+		expected := fmt.Sprintf("-s %s:%d", s.mutilate.config.MemcachedHost,
+			s.mutilate.config.MemcachedPort)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -131,7 +134,7 @@ func (s *MutilateTestSuite) TestGetTuneCommand() {
 	})
 
 	Convey("Mutilate load command should contain search option", s.T(), func() {
-		expected := fmt.Sprintf("--search=%d:%d",
+		expected := fmt.Sprintf("--search=%s:%d",
 			s.mutilate.config.LatencyPercentile.String(), slo)
 		So(command, ShouldContainSubstring, expected)
 	})
@@ -172,6 +175,7 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mHandle.On("ExitCode").Return(0, nil)
 	s.mHandle.On("StdoutFile").Return(outputFile, nil)
+	s.mHandle.On("EraseOutput").Return(nil)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
 		outputFile.Seek(0, 0)
@@ -252,9 +256,10 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 }
 
 func (s *MutilateTestSuite) TestPopulate() {
-	mutilatePopulateCommand := fmt.Sprintf("%s -s %s --loadonly",
+	mutilatePopulateCommand := fmt.Sprintf("%s -s %s:%d --loadonly",
 		s.config.PathToBinary,
 		s.config.MemcachedHost,
+		s.config.MemcachedPort,
 	)
 
 	mutilate := New(s.mExecutor, s.config)
