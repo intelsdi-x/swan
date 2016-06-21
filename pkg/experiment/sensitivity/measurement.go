@@ -127,10 +127,6 @@ func (m *measurementPhase) Run(session phase.Session) error {
 				session.AggressorName += "And"
 			}
 
-			if be.Launcher == nil {
-				panic("be.Launcher is nil")
-			}
-
 			session.AggressorName += be.Launcher.Name()
 		}
 	} else {

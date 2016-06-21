@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"runtime/debug"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -44,7 +43,6 @@ var ipAddressFlag = conf.NewStringFlag(
 // Check the supplied error, log and exit if non-nil.
 func check(err error) {
 	if err != nil {
-		debug.PrintStack()
 		logrus.Fatal(err)
 	}
 }
@@ -76,7 +74,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	numaZero := isolation.NewIntSet(0)
 
 	// Initialize Memcached Launcher with HP isolation.
-	hpIsolation, err := cgroup.NewCPUSet("/swan/hp", hpThreadIDs, numaZero, false, false)
+	hpIsolation, err := cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, true, false)
 	check(err)
 
 	err = hpIsolation.Create()
@@ -108,7 +106,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	percentile, _ := decimal.NewFromString("99.9")
 	mutilateConfig := mutilate.Config{
-		PathToBinary: 		 mutilate.PathFlag.Value(),
+		PathToBinary:      mutilate.PathFlag.Value(),
 		MemcachedHost:     memcachedConfig.IP,
 		MemcachedPort:     memcachedConfig.Port,
 		LatencyPercentile: percentile,
@@ -117,7 +115,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	beIsolation, err := cgroup.NewCPUSet("/swan/be", beThreadIDs, numaZero, false, false)
+	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, true, false)
 	check(err)
 
 	err = beIsolation.Create()
