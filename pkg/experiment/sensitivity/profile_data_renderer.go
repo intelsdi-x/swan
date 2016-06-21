@@ -156,6 +156,7 @@ func getQPS(metricsList []*cassandra.Metrics) (map[int]string, error) {
 	for _, metrics := range metricsList {
 		if metrics.Tags()[phase.AggressorNameKey] == aggressor {
 			// Load point ID is last digit in given phase ID, extract it and return.
+			fmt.Printf("metrics.Tags()[phase.PhaseKey]: ''%s'\n", metrics.Tags()[phase.PhaseKey])
 			key, err := getNumberForRegex(metrics.Tags()[phase.PhaseKey], `([0-9]+)$`)
 			if err != nil {
 				return nil, err
