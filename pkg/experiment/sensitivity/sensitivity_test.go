@@ -82,12 +82,14 @@ func (s *SensitivityTestSuite) mockSingleLcWorkloadExecution() {
 }
 
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorTuning() {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On("Tune", s.configuration.SLO).Return(s.mockedPeakLoad, 4, nil).Once()
 }
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is successful
 // as well.
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
@@ -177,7 +179,6 @@ func (s *SensitivityTestSuite) TestSensitivityTuningPhase() {
 
 			Convey("When load generator can be tuned, but baseline fails "+
 				"we are able to fetch TargetLoad result", func() {
-				s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 				s.mockSingleLoadGeneratorTuning()
 
 				// Make next measurement fail.
@@ -214,7 +215,6 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 			// Mock successful tuning phase.
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
-			s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 
 			Convey("But production task can't be launched during baseline we expect error", func() {
 				s.mockedLcLauncher.On("Launch").Return(nil,
@@ -255,7 +255,6 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 						// Mocking second iteration of baseline:
 						s.mockSingleLcWorkloadExecution()
 						s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
-						s.mockedLoadGenerator.On("Populate").Return(nil).Twice()
 
 						// Make next measurement fail.
 						s.mockedAggressor.On("Name").Return("testName").Once()
@@ -290,20 +289,16 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 			},
 		)
 
-		//s.mockedLoadGenerator.On("Populate").Return(nil)
-
 		Convey("When tuning and baselining was successful", func() {
 			// Mock successful tuning phase.
 			s.mockSingleLcWorkloadExecution()
 			s.mockSingleLoadGeneratorTuning()
-			s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 
 			// Mock successful baseline phase (for 2 loadPoints)
 			for i := 1; i <= s.configuration.LoadPointsCount; i++ {
 				s.mockSingleLcWorkloadExecution()
 				s.mockSingleLoadGeneratorLoad(
 					i * (s.mockedPeakLoad / s.configuration.LoadPointsCount))
-				s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 			}
 
 			Convey("But production task can't be launched during aggressor phase, "+
@@ -363,7 +358,6 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 							s.mockSingleLcWorkloadExecution()
 							s.mockSingleAggressorWorkloadExecution()
 							s.mockSingleLoadGeneratorLoad(s.mockedPeakLoad)
-							s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldBeNil)
@@ -424,8 +418,6 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 				),
 			},
 		)
-
-		s.mockedLoadGenerator.On("Populate").Return(nil)
 
 		Convey("When tuning and baselining was successful, during aggressors phase", func() {
 			// Mock successful tuning phase.
