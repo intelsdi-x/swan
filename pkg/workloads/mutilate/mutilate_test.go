@@ -51,7 +51,7 @@ type MutilateTestSuite struct {
 }
 
 func (s *MutilateTestSuite) SetupTest() {
-	s.config.MutilatePath = mutilatePath
+	s.config.PathToBinary = mutilatePath
 	s.config.MemcachedHost = memcachedHost
 	s.config.LatencyPercentile, _ = decimal.NewFromString("99.9")
 	s.config.TuningTime = 30 * time.Second
@@ -71,7 +71,7 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 	command := s.mutilate.getLoadCommand(load, duration)
 
 	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.MutilatePath)
+		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -106,7 +106,7 @@ func (s *MutilateTestSuite) TestGetTuneCommand() {
 	command := s.mutilate.getTuneCommand(slo)
 
 	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.MutilatePath)
+		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -141,7 +141,7 @@ func (s *MutilateTestSuite) TestGetPopulateCommand() {
 	command := s.mutilate.getPopulateCommand()
 
 	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.MutilatePath)
+		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -253,7 +253,7 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 
 func (s *MutilateTestSuite) TestPopulate() {
 	mutilatePopulateCommand := fmt.Sprintf("%s -s %s --loadonly",
-		s.config.MutilatePath,
+		s.config.PathToBinary,
 		s.config.MemcachedHost,
 	)
 

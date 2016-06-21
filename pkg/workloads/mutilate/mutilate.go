@@ -11,44 +11,43 @@ import (
 
 	"path"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/shopspring/decimal"
 )
 
 const (
-	defaultMemcachedHost          = "127.0.0.1"
-	defaultMemcachedPercentile    = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
-	defaultMemcachedTuningTimeSec = 10 * time.Second
-	defaultMemcachedWarmupTimeSec = 10 * time.Second
-	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
-	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+	defaultMemcachedHost       = "127.0.0.1"
+	defaultMemcachedPercentile = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultMemcachedTuningTime = 10 * time.Second
+	defaultMemcachedWarmupTime = 10 * time.Second
 )
 
-// GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
-// SWAN_MUTILATE_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		mutilatePathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultMutilatePath))
-}
+// PathFlag represents mutilate path flag.
+var PathFlag = conf.NewStringFlag(
+	"muitilate_path",
+	"Path to mutilate binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"),
+)
 
 // Config contains all data for running mutilate.
 type Config struct {
-	MutilatePath          string
+	PathToBinary          string
 	MemcachedHost         string
 	TuningTime            time.Duration
 	LatencyPercentile     decimal.Decimal
-	EraseSearchTuneOutput bool // false by default, we want to keep them, but remove durning integration tests
+	EraseSearchTuneOutput bool // false by default, we want to keep them, but remove during integration tests
 	WarmupTime            time.Duration
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
 	percentile, _ := decimal.NewFromString(defaultMemcachedPercentile)
+
 	return Config{
-		MutilatePath:      GetPathFromEnvOrDefault(),
+		PathToBinary:      PathFlag.Value(),
 		MemcachedHost:     defaultMemcachedHost,
 		LatencyPercentile: percentile,
 		TuningTime:        defaultMemcachedTuningTime,
@@ -71,7 +70,7 @@ func New(executor executor.Executor, config Config) workloads.LoadGenerator {
 	}
 }
 
-// Populate loads Memcached and exits.
+// Populate loads Memcached and exit.
 func (m mutilate) Populate() (err error) {
 	populateCmd := m.getPopulateCommand()
 
@@ -148,14 +147,14 @@ func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHan
 
 func (m mutilate) getPopulateCommand() string {
 	return fmt.Sprintf("%s -s %s --loadonly",
-		m.config.MutilatePath,
+		m.config.PathToBinary,
 		m.config.MemcachedHost,
 	)
 }
 
 func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
 	return fmt.Sprintf("%s -s %s -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
-		m.config.MutilatePath,
+		m.config.PathToBinary,
 		m.config.MemcachedHost,
 		qps,
 		int(duration.Seconds()),
@@ -166,7 +165,7 @@ func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
 
 func (m mutilate) getTuneCommand(slo int) (command string) {
 	command = fmt.Sprintf("%s -s %s --warmup=%d --noload --search=%d:%d -t %d",
-		m.config.MutilatePath,
+		m.config.PathToBinary,
 		m.config.MemcachedHost,
 		m.config.WarmupTime,
 		m.config.LatencyPercentile.String(),
