@@ -101,7 +101,8 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoad(loadPoint int) {
 
 // Mocking single LoadGenerator flow when collection session for loadGenerator is NOT
 // successful. That means ExitCode() methods will not be triggered.
-func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadExitCode(loadPoint int) {
+func (s *SensitivityTestSuite) mockSingleLoadGeneratorLoadWithoutExitCode(loadPoint int) {
+	s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 	s.mockedLoadGenerator.On(
 		"Load", loadPoint, s.configuration.LoadDuration).Return(
 		s.mockedLoadGeneratorTask, nil).Once()
@@ -348,7 +349,6 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 					})
 
 					Convey("When load is launched successfuly for last phase", func() {
-						s.mockedLoadGenerator.On("Populate").Return(nil).Once()
 						s.mockSingleLoadGeneratorLoad(
 							s.mockedPeakLoad / s.configuration.LoadPointsCount)
 
@@ -473,14 +473,15 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 
 					Convey("When loadGenerator Snap session can't be launched we expect failure",
 						func() {
-							// Mock first aggressors phase loadGenerator execution.
-							s.mockSingleLoadGeneratorLoadExitCode(
+							s.mockSingleLoadGeneratorLoadWithoutExitCode(
 								s.mockedPeakLoad / s.configuration.LoadPointsCount)
+							// Mock error load generator session launcher.
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
 								s.mockedLoadGeneratorTask,
 								mock.AnythingOfType("phase.Session")).Return(
 								nil, errors.New("LoadGenerator session can't be launched")).Once()
+
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldNotBeNil)
 							So(err.Error(), ShouldEndWith,
