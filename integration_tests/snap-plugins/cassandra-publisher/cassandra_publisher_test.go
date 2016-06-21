@@ -48,7 +48,7 @@ func TestCassandraPublisher(t *testing.T) {
 	}
 
 	value, tags, err := getValueAndTagsFromCassandra()
-	Convey("When getting values from Cassadndra", t, func() {
+	Convey("When getting values from Cassandra", t, func() {
 		So(err, ShouldBeNil)
 		Convey("Stored value in Cassandra should equal 1", func() {
 			So(value, ShouldEqual, 1)
