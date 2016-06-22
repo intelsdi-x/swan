@@ -7,18 +7,22 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/hailocab/gocassa"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 )
 
-const experimentTablePrefix = "experiment"
-const phaseTablePrefix = "phase"
-const measurementTablePrefix = "measurement"
+const (
+	experimentTablePrefix  = "experiment"
+	phaseTablePrefix       = "phase"
+	measurementTablePrefix = "measurement"
+)
 
 type cassandra struct {
-	experiment gocassa.Table
-	phase      gocassa.Table
+	experiment  gocassa.Table
+	phase       gocassa.Table
+	measurement gocassa.Table
 }
 
-type experiment struct {
+type Experiment struct {
 	ID                string
 	LoadDuration      time.Duration
 	TuningDuration    time.Duration
@@ -29,7 +33,7 @@ type experiment struct {
 	SLO               int
 }
 
-type phase struct {
+type Phase struct {
 	ID                  string
 	ExperimentID        string
 	LCParameters        string
@@ -40,6 +44,13 @@ type phase struct {
 	AggressorIsolations []string
 	Load                float64
 	LoadPointQPS        float64
+}
+
+type Measurment struct {
+	PhaseID      string
+	ExperimentID string
+	Load         float64
+	LoadPointQPS float64
 }
 
 // Config stores Cassandra database configuration
@@ -65,56 +76,83 @@ func NewCassandra(config Config) (sensitivity.Uploader, error) {
 	conn.CreateKeySpace(config.KeySpace)
 	keySpace := conn.KeySpace(config.KeySpace)
 
-	experimentTable := keySpace.Table(experimentTablePrefix, &experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
-	phaseTable := keySpace.Table(phaseTablePrefix, &phase{}, gocassa.Keys{PartitionKeys: []string{"ID", "ExperimentID"}})
+	experimentTable := keySpace.Table(experimentTablePrefix, &Experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
+	phaseTable := keySpace.Table(phaseTablePrefix, &Phase{}, gocassa.Keys{PartitionKeys: []string{"ID", "ExperimentID"}})
+	measurementTable := keySpace.Table(measurementTablePrefix, &Measurment{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"PhaseID", "Load"}})
 	experimentTable.CreateIfNotExist()
 	phaseTable.CreateIfNotExist()
+	measurementTable.CreateIfNotExist()
 
-	return &cassandra{experimentTable, phaseTable}, nil
+	return &cassandra{experimentTable, phaseTable, measurementTable}, nil
 }
 
 //SendMetrics implements metrics.Uploader interface
-func (c cassandra) SendMetadata(metadata sensitivity.Metadata) error {
+func (c cassandra) SendMetadata(metadata metadata.Experiment) error {
 	experimentMetrics := c.buildExperimentMetadata(metadata)
 	err := c.experiment.Set(experimentMetrics).Run()
 	if err != nil {
 		return fmt.Errorf("Experiment metrics saving failed: %s", err.Error())
 	}
-	phaseMetrics := c.buildPhaseMetadata(metadata)
-	err = c.phase.Set(phaseMetrics).Run()
-	if err != nil {
-		return fmt.Errorf("Phase metrics saving failed: %s", err.Error())
+	phasesMetrics := c.buildPhaseMetadata(metadata)
+	for _, phase := range phasesMetrics {
+		err = c.phase.Set(phase).Run()
+		if err != nil {
+			return fmt.Errorf("Phase metrics saving failed: %s (experiment: %s, phase: %s)", err.Error(), metadata.ID, phase.ID)
+		}
 	}
 
 	return nil
 
 }
 
-func (c cassandra) buildExperimentMetadata(metadata sensitivity.Metadata) experiment {
-	experimentMetadata := experiment{}
+func (c cassandra) GetMetadata(experiment string) (metadata.Experiment, error) {
+	var experimentModel Experiment
+	err := c.experiment.Where(gocassa.Eq("ID", experiment)).ReadOne(&experimentModel).Run()
+	if err != nil {
+		return metadata.Experiment{}, fmt.Errorf("Experiment metadata fetch failed: %s (experiment: %s)", err.Error(), experiment)
+	}
+	experimentMetadata := metadata.Experiment{
+		ID:                experimentModel.ID,
+		LoadDuration:      experimentModel.LoadDuration,
+		TuningDuration:    experimentModel.TuningDuration,
+		LcName:            experimentModel.LcName,
+		LgNames:           experimentModel.LgNames,
+		RepetitionsNumber: experimentModel.RepetitionsNumber,
+		LoadPointsNumber:  experimentModel.LoadPointsNumber,
+		SLO:               experimentModel.SLO,
+	}
+	return experimentMetadata, nil
+}
+
+func (c cassandra) buildExperimentMetadata(metadata metadata.Experiment) Experiment {
+	experimentMetadata := Experiment{}
 	experimentMetadata.ID = metadata.ExperimentID
 	experimentMetadata.LoadDuration = metadata.LoadDuration
 	experimentMetadata.TuningDuration = metadata.TuningDuration
-	experimentMetadata.LcName = metadata.LCName
+	experimentMetadata.LcName = metadata.LcName
 	experimentMetadata.LoadPointsNumber = metadata.LoadPointsNumber
 	experimentMetadata.RepetitionsNumber = metadata.RepetitionsNumber
-	experimentMetadata.LgNames = append(experimentMetadata.LgNames, metadata.LGName...)
+	experimentMetadata.LgNames = append(experimentMetadata.LgNames, metadata.LgNames...)
 
 	return experimentMetadata
 }
 
-func (c cassandra) buildPhaseMetadata(metadata sensitivity.Metadata) phase {
-	phaseMetadata := phase{}
-	phaseMetadata.ID = metadata.PhaseID
-	phaseMetadata.ExperimentID = metadata.ExperimentID
-	phaseMetadata.AggressorNames = append(phaseMetadata.AggressorNames, metadata.AggressorName...)
-	phaseMetadata.AggressorIsolations = metadata.AggressorIsolations
-	phaseMetadata.AggressorParameters = metadata.AggressorParameters
-	phaseMetadata.LCIsolation = metadata.LCIsolation
-	phaseMetadata.LCParameters = metadata.LCParameters
-	phaseMetadata.LGParameters = metadata.LGParameters
-	phaseMetadata.Load = metadata.Load
-	phaseMetadata.LoadPointQPS = metadata.QPS
+func (c cassandra) buildPhaseMetadata(experiment metadata.Experiment) []Phase {
+	var phasesMetadata []Phase
+	for _, metadata := range experiment.Phases {
+		phaseMetadata := Phase{}
+		phaseMetadata.ID = metadata.ID
+		phaseMetadata.ExperimentID = experiment.ID
+		phaseMetadata.AggressorNames = metadata.AggressorNames
+		phaseMetadata.AggressorIsolations = metadata.AggressorIsolations
+		phaseMetadata.AggressorParameters = metadata.AggressorParameters
+		phaseMetadata.LCIsolation = metadata.LCIsolation
+		phaseMetadata.LCParameters = metadata.LCParameters
+		phaseMetadata.LGParameters = metadata.LGParameters
+		phaseMetadata.Load = metadata.Load
+		phaseMetadata.LoadPointQPS = metadata.LoadPointQPS
+		phasesMetadata = append(phasesMetadata, phaseMetadata)
+	}
 
-	return phaseMetadata
+	return phasesMetadata
 }
