@@ -86,11 +86,11 @@ func (e *Experiment) Run() (err error) {
 		bar = pb.StartNew(100)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
-		total_phases := 0
+		totalPhases := 0
 		for _, phase := range e.phases {
-			total_phases += phase.Repetitions()
+			totalPhases += phase.Repetitions()
 		}
-		increment = 100 / total_phases
+		increment = 100 / totalPhases
 	}
 
 	for id, phase := range e.phases {
