@@ -46,9 +46,9 @@ func Draw(experimentID string, cassandraAddr string) error {
 	}
 
 	// View table.
-	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
+	fmt.Println(visualization.NewExperimentMetadata(experimentID).String())
 	table := visualization.NewTable(headers, data)
-	visualization.DrawTable(table)
+	table.Draw()
 	return nil
 }
 
@@ -206,7 +206,7 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 			return nil, err
 		}
 
-		loadPointValues[key] = fmt.Sprintf("%.3f (%.3f)", max, variance)
+		loadPointValues[key] = fmt.Sprintf("%f (%f)", max, variance)
 	}
 
 	return loadPointValues, nil
