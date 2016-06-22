@@ -196,17 +196,17 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 
 	// From all values for each load point calculate average value.
 	for key, list := range allLoadPointValues {
-		variance, err := stats.Variance(list)
+		stdev, err := stats.StandardDeviation(list)
 		if err != nil {
 			return nil, err
 		}
 
-		max, err := stats.Max(list)
+		mean, err := stats.Mean(list)
 		if err != nil {
 			return nil, err
 		}
 
-		loadPointValues[key] = fmt.Sprintf("%f (%f)", max, variance)
+		loadPointValues[key] = fmt.Sprintf("%f (+/- %f)", mean, stdev)
 	}
 
 	return loadPointValues, nil
