@@ -126,6 +126,7 @@ func (m *measurementPhase) Run(session phase.Session) error {
 			if i > 0 {
 				session.AggressorName += "And"
 			}
+
 			session.AggressorName += be.Launcher.Name()
 		}
 	} else {
