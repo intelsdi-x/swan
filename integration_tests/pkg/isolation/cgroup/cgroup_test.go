@@ -12,7 +12,7 @@ import (
 )
 
 func uuidgen(t *testing.T) string {
-	cmd := exec.Command("/usr/bin/uuidgen")
+	cmd := exec.Command("uuidgen")
 	out, err := cmd.Output()
 	if err != nil {
 		t.Error(err)
@@ -232,7 +232,7 @@ func TestCgroupTasks(t *testing.T) {
 		So(ok, ShouldBeTrue)
 
 		Convey("When sleeping in the cgroup", func() {
-			cmd := exec.Command("cgexec", "-g", "cpu:"+cg.Path(), "/usr/bin/sleep", "10")
+			cmd := exec.Command("cgexec", "-g", "cpu:"+cg.Path(), "sleep", "10")
 			cmd.Start()
 			defer cmd.Process.Kill()
 			Convey("The tasks set should contain the sleeping process id", func() {
@@ -271,7 +271,7 @@ func TestCgroupIsolate(t *testing.T) {
 		So(ok, ShouldBeTrue)
 
 		Convey("When sleeping outside of the cgroup", func() {
-			cmd := exec.Command("/usr/bin/sleep", "10")
+			cmd := exec.Command("sleep", "10")
 			cmd.Start()
 			defer cmd.Process.Kill()
 			tasks, _ := cg.Tasks(controller)

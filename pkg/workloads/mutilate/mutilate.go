@@ -7,48 +7,55 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
+	"path"
+
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/shopspring/decimal"
-	"path"
 )
 
 const (
-	defaultMemcachedHost          = "127.0.0.1"
-	defaultMemcachedPercentile    = "99.9"
-	defaultMemcachedTuningTimeSec = 10
-	defaultMutilatePath           = "data_caching/memcached/mutilate/mutilate"
-	mutilatePathEnv               = "SWAN_MUTILATE_PATH"
+	defaultMemcachedHost       = "127.0.0.1"
+	defaultMemcachedPercentile = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultMemcachedTuningTime = 10 * time.Second
+	defaultMemcachedWarmupTime = 10 * time.Second
 )
 
-// GetPathFromEnvOrDefault returns the mutilate binary path from environment variable
-// SWAN_MUTILATE_PATH or default path in swan directory.
-func GetPathFromEnvOrDefault() string {
-	return os.GetEnvOrDefault(
-		mutilatePathEnv, path.Join(fs.GetSwanWorkloadsPath(), defaultMutilatePath))
-}
+// PathFlag represents mutilate path flag.
+var PathFlag = conf.NewStringFlag(
+	"muitilate_path",
+	"Path to mutilate binary",
+	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"),
+)
 
 // Config contains all data for running mutilate.
 type Config struct {
-	MutilatePath      string
-	MemcachedHost     string
-	TuningTime        time.Duration
-	LatencyPercentile decimal.Decimal
+	PathToBinary        string
+	MemcachedHost       string
+	MemcachedPort       int
+	TuningTime          time.Duration
+	LatencyPercentile   decimal.Decimal
+	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
+	ErasePopulateOutput bool // false by default.
+	WarmupTime          time.Duration
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
 	percentile, _ := decimal.NewFromString(defaultMemcachedPercentile)
+
 	return Config{
-		MutilatePath:      GetPathFromEnvOrDefault(),
+		PathToBinary:      PathFlag.Value(),
 		MemcachedHost:     defaultMemcachedHost,
 		LatencyPercentile: percentile,
-		TuningTime:        defaultMemcachedTuningTimeSec * time.Second,
+		TuningTime:        defaultMemcachedTuningTime,
+		WarmupTime:        defaultMemcachedWarmupTime,
+		MemcachedPort:     memcached.DefaultPort,
 	}
 }
 
@@ -67,17 +74,16 @@ func New(executor executor.Executor, config Config) workloads.LoadGenerator {
 	}
 }
 
-// Populate loads Memcached and exits.
+// Populate load the initial test data into Memcached.
 func (m mutilate) Populate() (err error) {
-	populateCmd := fmt.Sprintf("%s -s %s --loadonly",
-		m.config.MutilatePath,
-		m.config.MemcachedHost,
-	)
+	populateCmd := m.getPopulateCommand()
 
 	taskHandle, err := m.executor.Execute(populateCmd)
 	if err != nil {
 		return err
 	}
+	defer taskHandle.Clean()
+
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -86,11 +92,14 @@ func (m mutilate) Populate() (err error) {
 	}
 
 	if exitCode != 0 {
-		return errors.New("Memchaced population exited with code: " +
+		return errors.New("Memcached population exited with code: " +
 			strconv.Itoa(exitCode))
 	}
 
-	return err
+	if m.config.ErasePopulateOutput {
+		return taskHandle.EraseOutput()
+	}
+	return nil
 }
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
@@ -125,47 +134,48 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
 
+	if m.config.EraseTuneOutput {
+		if err := taskHandle.EraseOutput(); err != nil {
+			return 0, 0, err
+		}
+	}
+
 	return qps, achievedSLI, err
 }
 
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
-// Note: Results from Load needs to be fetched out of band e.g using Snap.
-func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
+func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
 	return m.executor.Execute(m.getLoadCommand(qps, duration))
 }
 
-// Mutilate Search method requires percentile in an integer format
-// Transforms (decimal)999.9 to (int)9999
-func transformDecimalToIntegerWithoutDot(value decimal.Decimal) (ret int64) {
-	percentileString := value.String()
-	percentileWithoutDot := strings.Replace(percentileString, ".", "", -1)
-	tunePercentile, err := strconv.ParseInt(percentileWithoutDot, 10, 64)
-	if err != nil {
-		panic("Parsing " + percentileWithoutDot + " failed.")
-	}
-
-	return tunePercentile
+func (m mutilate) getPopulateCommand() string {
+	return fmt.Sprintf("%s -s %s:%d --loadonly",
+		m.config.PathToBinary,
+		m.config.MemcachedHost,
+		m.config.MemcachedPort,
+	)
 }
 
 func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
-	return fmt.Sprintf("%s -s %s -q %d -t %d --swanpercentile=%s",
-		m.config.MutilatePath,
+	return fmt.Sprintf("%s -s %s:%d -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
+		m.config.PathToBinary,
 		m.config.MemcachedHost,
+		m.config.MemcachedPort,
 		qps,
 		int(duration.Seconds()),
+		int(m.config.WarmupTime.Seconds()),
 		m.config.LatencyPercentile.String(),
 	)
 }
 
 func (m mutilate) getTuneCommand(slo int) (command string) {
-	// Transforms (decimal)999.9 to (int)9999
-	mutilateSearchPercentile :=
-		transformDecimalToIntegerWithoutDot(m.config.LatencyPercentile)
-	command = fmt.Sprintf("%s -s %s --search=%d:%d -t %d",
-		m.config.MutilatePath,
+	command = fmt.Sprintf("%s -s %s:%d --warmup=%d --noload --search=%s:%d -t %d",
+		m.config.PathToBinary,
 		m.config.MemcachedHost,
-		mutilateSearchPercentile,
+		m.config.MemcachedPort,
+		int(m.config.WarmupTime.Seconds()),
+		m.config.LatencyPercentile.String(),
 		slo,
 		int(m.config.TuningTime.Seconds()),
 	)
