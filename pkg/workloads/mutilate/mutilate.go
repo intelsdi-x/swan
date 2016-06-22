@@ -20,10 +20,18 @@ import (
 )
 
 const (
-	defaultMemcachedHost       = "127.0.0.1"
-	defaultMemcachedPercentile = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
-	defaultMemcachedTuningTime = 10 * time.Second
-	defaultMemcachedWarmupTime = 10 * time.Second
+	defaultMemcachedHost          = "127.0.0.1"
+	defaultMemcachedPercentile    = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultMemcachedTuningTime    = 10 * time.Second
+	defaultMemcachedWarmupTime    = 10 * time.Second
+	defaultAgentThreads           = 24
+	defaultAgentConnections       = 1
+	defaultAgentConnectionsDepth  = 1
+	defaultMasterThreads          = 24
+	defaultMasterConnections      = 1
+	defaultMasterConnectionsDepth = 1
+	defaultKeySize                = 30
+	defaultValueSize              = 200
 )
 
 // PathFlag represents mutilate path flag.
@@ -35,14 +43,29 @@ var PathFlag = conf.NewStringFlag(
 
 // Config contains all data for running mutilate.
 type Config struct {
-	PathToBinary        string
-	MemcachedHost       string
-	MemcachedPort       int
-	TuningTime          time.Duration
-	LatencyPercentile   decimal.Decimal
+	PathToBinary  string
+	MemcachedHost string
+	MemcachedPort int
+	// WarmupTime represents warm up time for both Tune and Load.
+	WarmupTime time.Duration
+
+	// Mutilate load Parameters
+	TuningTime        time.Duration
+	LatencyPercentile decimal.Decimal
+
+	// Number of threads for all agents.
+	AgentThreads           int // -T
+	AgentConnections       int // -c
+	AgentConnectionsDepth  int // Max length of request pipeline. -d
+	MasterThreads          int // -T
+	MasterConnections      int // -C
+	MasterConnectionsDepth int // Max length of request pipeline. -D
+	KeySize                int // Length of memcached keys. -K
+	ValueSize              int // Length of memcached values. -V
+
+	// Output flags.
 	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
 	ErasePopulateOutput bool // false by default.
-	WarmupTime          time.Duration
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
@@ -50,27 +73,51 @@ func DefaultMutilateConfig() Config {
 	percentile, _ := decimal.NewFromString(defaultMemcachedPercentile)
 
 	return Config{
-		PathToBinary:      PathFlag.Value(),
-		MemcachedHost:     defaultMemcachedHost,
-		LatencyPercentile: percentile,
-		TuningTime:        defaultMemcachedTuningTime,
+		PathToBinary:  PathFlag.Value(),
+		MemcachedHost: defaultMemcachedHost,
+		MemcachedPort: memcached.DefaultPort,
+
 		WarmupTime:        defaultMemcachedWarmupTime,
-		MemcachedPort:     memcached.DefaultPort,
+		TuningTime:        defaultMemcachedTuningTime,
+		LatencyPercentile: percentile,
+
+		AgentThreads:           defaultAgentThreads,
+		AgentConnections:       defaultAgentConnections,
+		AgentConnectionsDepth:  defaultAgentConnectionsDepth,
+		MasterThreads:          defaultMasterThreads,
+		MasterConnections:      defaultAgentConnections,
+		MasterConnectionsDepth: defaultAgentConnectionsDepth,
+		KeySize:                defaultKeySize,
+		ValueSize:              defaultValueSize,
+		// TODO(bplotka): Do we need -B"
 	}
 }
 
 type mutilate struct {
-	executor executor.Executor
-	config   Config
+	master executor.Executor
+	agents []executor.Executor
+	config Config
 }
 
 // New returns a new Mutilate Load Generator instance.
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
-func New(executor executor.Executor, config Config) workloads.LoadGenerator {
+func New(exec executor.Executor, config Config) workloads.LoadGenerator {
 	return mutilate{
-		executor: executor,
-		config:   config,
+		master: exec,
+		agents: []executor.Executor{},
+		config: config,
+	}
+}
+
+// New returns a new Mutilate Load Generator instance.
+// Mutilate is a load generator for Memcached.
+// https://github.com/leverich/mutilate
+func NewMultinode(master executor.Executor, agents []executor.Executor, config Config) workloads.LoadGenerator {
+	return mutilate{
+		master: master,
+		agents: agents,
+		config: config,
 	}
 }
 
@@ -78,7 +125,7 @@ func New(executor executor.Executor, config Config) workloads.LoadGenerator {
 func (m mutilate) Populate() (err error) {
 	populateCmd := m.getPopulateCommand()
 
-	taskHandle, err := m.executor.Execute(populateCmd)
+	taskHandle, err := m.master.Execute(populateCmd)
 	if err != nil {
 		return err
 	}
@@ -104,13 +151,25 @@ func (m mutilate) Populate() (err error) {
 
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
-	tuneCmd := m.getTuneCommand(slo)
+	// Run agents when specified.
+	agentHandles, err := m.runRemoteAgents()
+	if err != nil {
+		// TODO(skonefal): TBD
+	}
 
-	taskHandle, err := m.executor.Execute(tuneCmd)
+	// Run master with tuning option.
+	tuneCmd := m.getTuneCommand(slo, agentHandles)
+	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
 		errMsg := fmt.Sprintf("Executing Mutilate Tune command %s failed; ", tuneCmd)
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
+
+	taskHandle := MutilateTaskHandle{
+		master: masterHandle,
+		agents: agentHandles,
+	}
+
 	taskHandle.Wait(0)
 
 	exitCode, err := taskHandle.ExitCode()
@@ -146,7 +205,50 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
 func (m mutilate) Load(qps int, duration time.Duration) (handle executor.TaskHandle, err error) {
-	return m.executor.Execute(m.getLoadCommand(qps, duration))
+	agents, err := m.runRemoteAgents()
+	if err != nil {
+		return handle, err
+	}
+
+	master, err := m.master.Execute(m.getLoadCommand(qps, duration, agents))
+	if err != nil {
+		// TODO(skonefal): Stop agents.
+		return master, err
+	}
+
+	handle = MutilateTaskHandle{
+		master: master,
+		agents: agents,
+	}
+
+	return handle, err
+}
+
+func (m mutilate) getAgentStartCommand() string {
+	return fmt.Sprintf("%s -T %d -A",
+		m.config.PathToBinary,
+		m.config.AgentThreads,
+	)
+}
+
+func (m mutilate) runRemoteAgents() (handles []executor.TaskHandle, err error) {
+	command := m.getAgentStartCommand()
+	for _, exec := range m.agents {
+		handle, err := exec.Execute(command)
+		if err != nil {
+			// TODO(skonefal): TBD
+		}
+		handles = append(handles, handle)
+	}
+	return handles, err
+}
+
+func getEnlistAgents(agentHandles []executor.TaskHandle) string {
+	enlistAgentsString := ""
+	for _, agent := range agentHandles {
+		enlistAgentsString += fmt.Sprintf(" -a %s", agent.Address())
+	}
+	return enlistAgentsString
 }
 
 func (m mutilate) getPopulateCommand() string {
@@ -157,28 +259,30 @@ func (m mutilate) getPopulateCommand() string {
 	)
 }
 
-func (m mutilate) getLoadCommand(qps int, duration time.Duration) string {
-	return fmt.Sprintf("%s -s %s:%d -q %d -t %d --warmup=%d --noload --swanpercentile=%s",
-		m.config.PathToBinary,
-		m.config.MemcachedHost,
-		m.config.MemcachedPort,
-		qps,
-		int(duration.Seconds()),
-		int(m.config.WarmupTime.Seconds()),
-		m.config.LatencyPercentile.String(),
+func (m mutilate) getBaseMutilateCommand(handles []executor.TaskHandle) string {
+	enlistsAgents := getEnlistAgents(handles)
+	return fmt.Sprint(
+		fmt.Sprintf("%s", m.config.PathToBinary),
+		fmt.Sprintf(" -s %s:%d", m.config.MemcachedHost, m.config.MemcachedPort),
+		fmt.Sprintf(" --warmup=%d --noload ", int(m.config.WarmupTime.Seconds())),
+		fmt.Sprintf(" -K %d -V %d", m.config.KeySize, m.config.ValueSize),
+		fmt.Sprintf(" -T %d", m.config.MasterThreads),
+		fmt.Sprintf(" -D %d -C %d", m.config.MasterConnectionsDepth, m.config.MasterConnections),
+		fmt.Sprintf(" -d %d -c %d", m.config.AgentConnectionsDepth, m.config.AgentConnections),
+		fmt.Sprintf(" %s", enlistsAgents),
 	)
 }
 
-func (m mutilate) getTuneCommand(slo int) (command string) {
-	command = fmt.Sprintf("%s -s %s:%d --warmup=%d --noload --search=%s:%d -t %d",
-		m.config.PathToBinary,
-		m.config.MemcachedHost,
-		m.config.MemcachedPort,
-		int(m.config.WarmupTime.Seconds()),
-		m.config.LatencyPercentile.String(),
-		slo,
-		int(m.config.TuningTime.Seconds()),
-	)
+func (m mutilate) getLoadCommand(qps int, duration time.Duration, agentHandles []executor.TaskHandle) string {
+	baseCommand := m.getBaseMutilateCommand(agentHandles)
+	return fmt.Sprintf("%s -q %d -t %d --swanpercentile=%s",
+		baseCommand, qps, int(duration.Seconds()), m.config.LatencyPercentile.String())
+}
+
+func (m mutilate) getTuneCommand(slo int, agentHandles []executor.TaskHandle) (command string) {
+	baseCommand := m.getBaseMutilateCommand(agentHandles)
+	command = fmt.Sprintf("%s --search=%s:%d -t %d",
+		baseCommand, m.config.LatencyPercentile.String(), slo, int(m.config.TuningTime.Seconds()))
 	return command
 }
 
@@ -187,7 +291,6 @@ func matchNotFound(match []string) bool {
 }
 
 func getQPSAndLatencyFrom(outputReader io.Reader) (qps int, latency int, err error) {
-
 	buff, err := ioutil.ReadAll(outputReader)
 	if err != nil {
 		return qps, latency, err
