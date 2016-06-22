@@ -217,7 +217,10 @@ func (s *Session) Wait() error {
 		}
 
 		if t.State == "Stopped" || t.State == "Disabled" {
-			return fmt.Errorf("Failed to wait for task: Task %s is in state %s", s.task.ID, t.State)
+			return fmt.Errorf("Failed to wait for task: Task %s is in state %s (last failure: %q)",
+				s.task.ID,
+				t.State,
+				t.LastFailureMessage)
 
 		}
 
