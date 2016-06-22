@@ -43,20 +43,6 @@ func TestProfileDataRenderer(t *testing.T) {
 
 	})
 
-	Convey("While calculating average of string values", t, func() {
-		Convey("from empty slice, I should receive error", func() {
-			slice := []string{}
-			value, err := calculateAverage(slice)
-			So(value, ShouldEqual, 0)
-			So(err, ShouldNotBeNil)
-		})
-		Convey("from not empty slice, I should not receive error and I should receive proper value", func() {
-			slice := []string{"1", "2", "3"}
-			value, err := calculateAverage(slice)
-			So(value, ShouldEqual, 2)
-			So(err, ShouldBeNil)
-		})
-	})
 	Convey("While getting load point number", t, func() {
 		Convey("from correct PhaseID, I should receive proper value and no error", func() {
 			loadPoint := 1
