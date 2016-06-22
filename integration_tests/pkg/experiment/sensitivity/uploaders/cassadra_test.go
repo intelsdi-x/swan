@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/uploaders"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,13 +32,21 @@ func TestCassandraUploading(t *testing.T) {
 			Convey("When I pass SwanMetrics instance", func() {
 				sM := createValidSwanMetrics()
 				err = cassandra.SendMetadata(sM)
+				So(err, ShouldBeNil)
 				Convey("I should get no error and see metrics saved", func() {
+					metadata, err := cassandra.GetMetadata("experiment")
 					So(err, ShouldBeNil)
-					session, err := createGocqlSession(config)
+					soExperimentMetadataAreSaved(metadata)
+					/*session, err := createGocqlSession(config)
 					So(err, ShouldBeNil)
 					defer session.Close()
 					soExperimentMetadataAreSaved(session)
-					soPhaseMetadataAreSaved(session)
+					soPhaseMetadataAreSaved(session)*/
+				})
+				Convey("I should get an error when I try to get metadata for non existing experiment", func() {
+					metadata, err := cassandra.GetMetadata("non existing experiment")
+					So(err, ShouldNotBeNil)
+					So(metadata.ID, ShouldEqual, "")
 				})
 			})
 		})
@@ -56,39 +64,47 @@ func TestCassandraUploading(t *testing.T) {
 	})
 }
 
-func createValidSwanMetrics() sensitivity.Metadata {
-	var err error
-	m := sensitivity.Metadata{}
+func createValidSwanMetrics() metadata.Experiment {
+	meta := metadata.Experiment{}
+	meta.RepetitionsNumber = 905
+	meta.LoadPointsNumber = 509
 
-	m.LoadDuration, err = time.ParseDuration("1s")
-	So(err, ShouldBeNil)
-	m.TuningDuration, err = time.ParseDuration("2s")
-	So(err, ShouldBeNil)
+	meta.LcName = "Latency critical task"
+	//m.LCParameters = "Latency critical parameters"
+	//m.LCIsolation = "Latency critical isolation"
 
-	m.RepetitionsNumber = 905
-	m.LoadPointsNumber = 509
+	meta.LgNames = []string{"Load generator task"}
+	//m.LGParameters = []string{"Load generator parameters"}
+	//m.LGIsolation = "LG isolation"
 
-	m.LCName = "LC task"
-	m.LCParameters = "Latency critical parameters"
-	m.LCIsolation = "Latency critical isolation"
+	//m.AggressorName = []string{"an aggressor"}
+	//m.AggressorParameters = []string{"aggressor parameters"}
+	//m.AggressorIsolations = []string{"aggressor isolation"}
 
-	m.LGName = []string{"LG task"}
-	m.LGParameters = []string{"Load generator parameters"}
-	m.LGIsolation = "LG isolation"
+	//m.QPS = 666.6
+	//m.Load = 0.65
 
-	m.AggressorName = []string{"an aggressor"}
-	m.AggressorParameters = []string{"aggressor parameters"}
-	m.AggressorIsolations = []string{"aggressor isolation"}
+	meta.ExperimentID = "experiment"
+	//m.PhaseID = "phase
+	//m.RepetitionID = 303
 
-	m.QPS = 666.6
-	m.LGName = []string{"LG task"}
-	m.Load = 0.65
+	meta.LoadDuration, _ = time.ParseDuration("1s")
+	meta.TuningDuration, _ = time.ParseDuration("2s")
+	meta.AddPhase(metadata.Phase{
+		ID:                  "phase",
+		LCParameters:        "Latency critival parameters",
+		LCIsolation:         "Latency critical isolation",
+		AggressorNames:      []string{"an aggressor"},
+		AggressorParameters: []string{"aggressor parameters"},
+		AggressorIsolations: []string{"aggressor isolation"},
+	})
+	meta.Phases[0].AddMeasurement(metadata.Measurement{
+		Load:         0.65,
+		LoadPointQPS: 666.6,
+		LGParameters: []string{"Load generator parameters"},
+	})
 
-	m.ExperimentID = "experiment"
-	m.PhaseID = "phase"
-	m.RepetitionID = 303
-
-	return m
+	return meta
 }
 
 func createGocqlSession(config uploaders.Config) (*gocql.Session, error) {
@@ -99,8 +115,8 @@ func createGocqlSession(config uploaders.Config) (*gocql.Session, error) {
 
 }
 
-func soExperimentMetadataAreSaved(session *gocql.Session) {
-	var id, lcName string
+func soExperimentMetadataAreSaved(experiment metadata.Experiment) {
+	/*var id, lcName string
 	var LGNames []string
 	var loadDuration, tuningDuration time.Duration
 	var repetitionsNumber, loadPointsNumber, sLO int
@@ -110,38 +126,42 @@ func soExperimentMetadataAreSaved(session *gocql.Session) {
 	err := query.Scan(&id, &lcName, &LGNames, &loadDuration, &loadPointsNumber, &repetitionsNumber, &sLO, &tuningDuration)
 	query.Release()
 
-	So(err, ShouldBeNil)
-	So(id, ShouldEqual, "experiment")
-	So(lcName, ShouldEqual, "LC task")
-	So(LGNames, ShouldResemble, []string{"LG task"})
-	So(loadPointsNumber, ShouldEqual, 509)
-	So(repetitionsNumber, ShouldEqual, 905)
-	//So(sLO, ShouldEqual, 2048)
+	So(err, ShouldBeNil)*/
+	So(experiment.ID, ShouldEqual, "experiment")
+	So(experiment.LcName, ShouldEqual, "Latency critical task")
+	So(experiment.LgNames, ShouldResemble, []string{"Load generator task"})
+	So(experiment.LoadPointsNumber, ShouldEqual, 509)
+	So(experiment.RepetitionsNumber, ShouldEqual, 905)
+
 	oneSecond, err := time.ParseDuration("1s")
 	So(err, ShouldBeNil)
-	So(loadDuration, ShouldEqual, oneSecond)
+	So(experiment.LoadDuration, ShouldEqual, oneSecond)
 	twoSeconds, err := time.ParseDuration("2s")
 	So(err, ShouldBeNil)
-	So(tuningDuration, ShouldEqual, twoSeconds)
+	So(experiment.TuningDuration, ShouldEqual, twoSeconds)
 }
 
 func soPhaseMetadataAreSaved(session *gocql.Session) {
 	var id, experimentID, lcIsolation, lcParameters string
 	var aggressorsIsolations, aggressorName, aggressorsParameters, lgParameters []string
 	var load, loadPointsQPS float64
+
 	query := session.Query("SELECT * FROM phase__id_experimentid__ LIMIT 1")
 	query.Consistency(gocql.One)
 	err := query.Scan(&id, &experimentID, &aggressorsIsolations, &aggressorName, &aggressorsParameters, &lcIsolation, &lcParameters, &lgParameters, &load, &loadPointsQPS)
 	query.Release()
+
 	So(err, ShouldBeNil)
 	So(id, ShouldEqual, "phase")
 	So(experimentID, ShouldEqual, "experiment")
+
 	So(aggressorsIsolations, ShouldResemble, []string{"aggressor isolation"})
 	So(aggressorName, ShouldResemble, []string{"an aggressor"})
 	So(aggressorsParameters, ShouldResemble, []string{"aggressor parameters"})
 	So(lcIsolation, ShouldEqual, "Latency critical isolation")
 	So(lcParameters, ShouldEqual, "Latency critical parameters")
 	So(lgParameters, ShouldResemble, []string{"Load generator parameters"})
+
 	So(load, ShouldEqual, 0.65)
 	So(loadPointsQPS, ShouldEqual, 666.6)
 }
