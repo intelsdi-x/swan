@@ -22,6 +22,7 @@ type cassandra struct {
 	measurement gocassa.Table
 }
 
+// Experiment is a gocassa model for experiment metadata
 type Experiment struct {
 	ID                string
 	LoadDuration      time.Duration
@@ -33,6 +34,7 @@ type Experiment struct {
 	SLO               int
 }
 
+// Phase is a gocassa model for phase metadata
 type Phase struct {
 	ID                  string
 	ExperimentID        string
@@ -46,7 +48,8 @@ type Phase struct {
 	LoadPointQPS        float64
 }
 
-type Measurment struct {
+// Measurement is a gocassa model for phase metadata
+type Measurement struct {
 	PhaseID      string
 	ExperimentID string
 	Load         float64
@@ -78,7 +81,7 @@ func NewCassandra(config Config) (sensitivity.Uploader, error) {
 
 	experimentTable := keySpace.Table(experimentTablePrefix, &Experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
 	phaseTable := keySpace.Table(phaseTablePrefix, &Phase{}, gocassa.Keys{PartitionKeys: []string{"ID", "ExperimentID"}})
-	measurementTable := keySpace.Table(measurementTablePrefix, &Measurment{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"PhaseID", "Load"}})
+	measurementTable := keySpace.Table(measurementTablePrefix, &Measurement{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"PhaseID", "Load"}})
 	experimentTable.CreateIfNotExist()
 	phaseTable.CreateIfNotExist()
 	measurementTable.CreateIfNotExist()
