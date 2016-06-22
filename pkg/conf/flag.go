@@ -122,3 +122,35 @@ func (s SliceFlag) Value() []string {
 
 	return *s.value
 }
+
+type BoolFlag struct {
+	flag
+	defaultValue bool
+	value        *bool
+}
+
+// NewBoolFlag is a constructor of IntFlag struct.
+func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFlag {
+	boolFlag := BoolFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: defaultValue,
+	}
+
+	boolFlag.value = app.Flag(flagName, description).OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
+	isEnvParsed = false
+
+	return boolFlag
+}
+
+// Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
+func (b BoolFlag) Value() bool {
+	if !isEnvParsed {
+		return b.defaultValue
+	}
+
+	return *b.value
+}
