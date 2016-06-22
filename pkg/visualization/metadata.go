@@ -1,22 +1,23 @@
 package visualization
 
-import (
-	"fmt"
-)
-
-// ExperimentMetadata is a model for data.
+// ExperimentMetadata encodes the metadata which is related to an experiment run.
+// This currently only contains the experiment id, but is intended to encode
+// the experiment environment (hardware and software configuration),
+// the machines involved in the experiment, etc.
 type ExperimentMetadata struct {
 	experimentID string
 }
 
-// NewExperimentMetadata creates new model of data representation.
+// NewExperimentMetadata is the ExperimentMetadata constructor and returns
+// a new ExperimentMetadata with a specific id.
 func NewExperimentMetadata(ID string) *ExperimentMetadata {
 	return &ExperimentMetadata{
 		ID,
 	}
 }
 
-// PrintExperimentMetadata prints elements from list.
-func PrintExperimentMetadata(experimentMetadata *ExperimentMetadata) {
-	fmt.Println("\nExperiment id: " + experimentMetadata.experimentID)
+// String returns a printable string with all experiment metadata.
+// This is currently only the experiment id.
+func (metadata *ExperimentMetadata) String() string {
+	return "Experiment id: " + metadata.experimentID
 }
