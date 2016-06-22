@@ -123,13 +123,14 @@ func (s SliceFlag) Value() []string {
 	return *s.value
 }
 
+// BoolFlag represents flag with bool value.
 type BoolFlag struct {
 	flag
 	defaultValue bool
 	value        *bool
 }
 
-// NewBoolFlag is a constructor of IntFlag struct.
+// NewBoolFlag is a constructor of BootFlag struct.
 func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFlag {
 	boolFlag := BoolFlag{
 		flag: flag{
