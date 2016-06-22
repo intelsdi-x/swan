@@ -95,8 +95,8 @@ func (e *Experiment) Run() (err error) {
 
 	for id, phase := range e.phases {
 		if e.textUI {
-				prefix := fmt.Sprintf("[%02d / %02d] %s ", id, len(e.phases), phase.Name())
-				bar.Prefix(prefix)
+			prefix := fmt.Sprintf("[%02d / %02d] %s ", id, len(e.phases), phase.Name())
+			bar.Prefix(prefix)
 		}
 
 		for i := 0; i < phase.Repetitions(); i++ {
