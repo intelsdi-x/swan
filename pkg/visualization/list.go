@@ -1,16 +1,14 @@
 package visualization
 
-import (
-	"fmt"
-)
-
-// List is a model for data.
+// List is a convenience structure to encode a list of items attached with a
+// certain label.
 type List struct {
 	elements []string
 	label    string
 }
 
-// NewList creates new model of data representation.
+// NewList is a constructor for a List structure with a certain list of
+// elements attached to the specified label.
 func NewList(elements []string, label string) *List {
 	return &List{
 		elements,
@@ -18,9 +16,11 @@ func NewList(elements []string, label string) *List {
 	}
 }
 
-// PrintList prints elements from list.
-func PrintList(list *List) {
+// String returns a printable string representation of the list.
+func (list *List) String() string {
+	output := ""
 	for _, value := range list.elements {
-		fmt.Println(list.label + value)
+		output += list.label + value + "\n"
 	}
+	return output
 }
