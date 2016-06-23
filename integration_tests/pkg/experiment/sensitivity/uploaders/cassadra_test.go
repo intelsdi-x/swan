@@ -14,7 +14,7 @@ import (
 func TestCassandraUploading(t *testing.T) {
 	Convey("When I connect to Cassandra instance with incorrect configuration", t, func() {
 		config := uploaders.Config{}
-		cassandra, err := uploaders.NewCassandra(config)
+		cassandra, err := uploaders.NewKeySpace(config)
 		Convey("I should get an error and no Uploader instance", func() {
 			So(err, ShouldNotBeNil)
 			So(cassandra, ShouldBeNil)
@@ -25,41 +25,104 @@ func TestCassandraUploading(t *testing.T) {
 		config := uploaders.Config{}
 		config.Host = []string{"127.0.0.1"}
 		config.KeySpace = "testing_keyspace"
-		cassandra, err := uploaders.NewCassandra(config)
-		Convey("I should get no error and Uploader instance", func() {
-			So(err, ShouldBeNil)
+
+		keySpace, err := uploaders.NewKeySpace(config)
+		So(err, ShouldBeNil)
+		phaseTable := uploaders.NewPhaseTable(keySpace)
+		measurementTable := uploaders.NewMeasurementTable(keySpace)
+		cassandra := uploaders.NewCassandra(uploaders.NewExperimentTable(keySpace), phaseTable, measurementTable)
+		Convey("I should get an Uploader instance", func() {
 			So(cassandra, ShouldNotBeNil)
 			Convey("When I pass SwanMetrics instance", func() {
 				sM := createValidSwanMetrics()
 				err = cassandra.SendMetadata(sM)
 				So(err, ShouldBeNil)
-				Convey("I should get no error and see metrics saved", func() {
+				Convey("I should get no error and see experiment metadata saved", func() {
 					metadata, err := cassandra.GetMetadata("experiment")
 					So(err, ShouldBeNil)
 					soExperimentMetadataAreSaved(metadata)
-					/*session, err := createGocqlSession(config)
-					So(err, ShouldBeNil)
-					defer session.Close()
-					soExperimentMetadataAreSaved(session)
-					soPhaseMetadataAreSaved(session)*/
+					Convey("I should get no error and see phases metadata saved", func() {
+						So(metadata.Phases, ShouldHaveLength, 1)
+						soPhaseMetadataAreSaved(metadata.Phases[0])
+						Convey("I should get no error and see measurement metadata saved", func() {
+							So(metadata.Phases[0].Measurements, ShouldHaveLength, 1)
+							soMeasurementMetadataAreSaved(metadata.Phases[0].Measurements[0])
+						})
+					})
 				})
 				Convey("I should get an error when I try to get metadata for non existing experiment", func() {
 					metadata, err := cassandra.GetMetadata("non existing experiment")
+					So(err.Error(), ShouldStartWith, "Experiment metadata fetch failed")
 					So(err, ShouldNotBeNil)
 					So(metadata.ID, ShouldEqual, "")
 				})
+				Convey("I should get an error when phase metadata query fails", func() {
+					session, err := createGocqlSession(config)
+					So(err, ShouldBeNil)
+					query := session.Query(fmt.Sprintf("DROP TABLE %s.%s", config.KeySpace, phaseTable.Name()))
+					err = query.Exec()
+					query.Release()
+					session.Close()
+					So(err, ShouldBeNil)
+					metadata, err := cassandra.GetMetadata("experiment")
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldStartWith, "Phases metadata fetch failed")
+					So(metadata.ID, ShouldEqual, "")
+				})
+				Convey("I should get en error when phase metadata query returns no results", func() {
+					session, err := createGocqlSession(config)
+					So(err, ShouldBeNil)
+					query := session.Query(fmt.Sprintf("TRUNCATE %s.%s", config.KeySpace, phaseTable.Name()))
+					err = query.Exec()
+					query.Release()
+					session.Close()
+					So(err, ShouldBeNil)
+					metadata, err := cassandra.GetMetadata("experiment")
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldStartWith, "Phases metadata fetch returned no results")
+					So(metadata.ID, ShouldEqual, "")
+
+				})
+				Convey("I should get an error when measurement metadata query fails", func() {
+					session, err := createGocqlSession(config)
+					So(err, ShouldBeNil)
+					query := session.Query(fmt.Sprintf("DROP TABLE %s.%s", config.KeySpace, measurementTable.Name()))
+					err = query.Exec()
+					query.Release()
+					session.Close()
+					So(err, ShouldBeNil)
+					metadata, err := cassandra.GetMetadata("experiment")
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldStartWith, "Measurement metadata fetch failed")
+					So(metadata.ID, ShouldEqual, "")
+				})
+				Convey("I should get en error when measurement metadata query returns no results", func() {
+					session, err := createGocqlSession(config)
+					So(err, ShouldBeNil)
+					query := session.Query(fmt.Sprintf("TRUNCATE %s.%s", config.KeySpace, measurementTable.Name()))
+					err = query.Exec()
+					query.Release()
+					session.Close()
+					So(err, ShouldBeNil)
+					metadata, err := cassandra.GetMetadata("experiment")
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldStartWith, "Measurement metadata fetch returned no results")
+					So(metadata.ID, ShouldEqual, "")
+
+				})
+
 			})
 		})
 
 		Reset(func() {
+			time.Sleep(1 * time.Second)
 			session, err := createGocqlSession(config)
 			So(err, ShouldBeNil)
-			defer session.Close()
 			query := session.Query(fmt.Sprintf("DROP KEYSPACE %s", config.KeySpace))
-			defer query.Release()
 			err = query.Exec()
-			//For some reason this query times out (but keyspace gets deleted...)
-			//So(err, ShouldBeNil)
+			query.Release()
+			session.Close()
+			So(err, ShouldBeNil)
 		})
 	})
 }
@@ -70,34 +133,20 @@ func createValidSwanMetrics() metadata.Experiment {
 	meta.LoadPointsNumber = 509
 
 	meta.LcName = "Latency critical task"
-	//m.LCParameters = "Latency critical parameters"
-	//m.LCIsolation = "Latency critical isolation"
-
 	meta.LgNames = []string{"Load generator task"}
-	//m.LGParameters = []string{"Load generator parameters"}
-	//m.LGIsolation = "LG isolation"
-
-	//m.AggressorName = []string{"an aggressor"}
-	//m.AggressorParameters = []string{"aggressor parameters"}
-	//m.AggressorIsolations = []string{"aggressor isolation"}
-
-	//m.QPS = 666.6
-	//m.Load = 0.65
-
 	meta.ExperimentID = "experiment"
-	//m.PhaseID = "phase
-	//m.RepetitionID = 303
-
 	meta.LoadDuration, _ = time.ParseDuration("1s")
 	meta.TuningDuration, _ = time.ParseDuration("2s")
+
 	meta.AddPhase(metadata.Phase{
 		ID:                  "phase",
-		LCParameters:        "Latency critival parameters",
+		LCParameters:        "Latency critical parameters",
 		LCIsolation:         "Latency critical isolation",
 		AggressorNames:      []string{"an aggressor"},
 		AggressorParameters: []string{"aggressor parameters"},
 		AggressorIsolations: []string{"aggressor isolation"},
 	})
+
 	meta.Phases[0].AddMeasurement(metadata.Measurement{
 		Load:         0.65,
 		LoadPointQPS: 666.6,
@@ -111,22 +160,12 @@ func createGocqlSession(config uploaders.Config) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(config.Host...)
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = config.KeySpace
+	cluster.Timeout = 100 * time.Second
 	return cluster.CreateSession()
 
 }
 
 func soExperimentMetadataAreSaved(experiment metadata.Experiment) {
-	/*var id, lcName string
-	var LGNames []string
-	var loadDuration, tuningDuration time.Duration
-	var repetitionsNumber, loadPointsNumber, sLO int
-
-	query := session.Query("SELECT * FROM experiment__id__ LIMIT 1")
-	query.Consistency(gocql.One)
-	err := query.Scan(&id, &lcName, &LGNames, &loadDuration, &loadPointsNumber, &repetitionsNumber, &sLO, &tuningDuration)
-	query.Release()
-
-	So(err, ShouldBeNil)*/
 	So(experiment.ID, ShouldEqual, "experiment")
 	So(experiment.LcName, ShouldEqual, "Latency critical task")
 	So(experiment.LgNames, ShouldResemble, []string{"Load generator task"})
@@ -141,27 +180,18 @@ func soExperimentMetadataAreSaved(experiment metadata.Experiment) {
 	So(experiment.TuningDuration, ShouldEqual, twoSeconds)
 }
 
-func soPhaseMetadataAreSaved(session *gocql.Session) {
-	var id, experimentID, lcIsolation, lcParameters string
-	var aggressorsIsolations, aggressorName, aggressorsParameters, lgParameters []string
-	var load, loadPointsQPS float64
+func soPhaseMetadataAreSaved(phase metadata.Phase) {
+	So(phase.ID, ShouldEqual, "phase")
 
-	query := session.Query("SELECT * FROM phase__id_experimentid__ LIMIT 1")
-	query.Consistency(gocql.One)
-	err := query.Scan(&id, &experimentID, &aggressorsIsolations, &aggressorName, &aggressorsParameters, &lcIsolation, &lcParameters, &lgParameters, &load, &loadPointsQPS)
-	query.Release()
+	So(phase.AggressorIsolations, ShouldResemble, []string{"aggressor isolation"})
+	So(phase.AggressorNames, ShouldResemble, []string{"an aggressor"})
+	So(phase.AggressorParameters, ShouldResemble, []string{"aggressor parameters"})
+	So(phase.LCIsolation, ShouldEqual, "Latency critical isolation")
+	So(phase.LCParameters, ShouldEqual, "Latency critical parameters")
+}
 
-	So(err, ShouldBeNil)
-	So(id, ShouldEqual, "phase")
-	So(experimentID, ShouldEqual, "experiment")
-
-	So(aggressorsIsolations, ShouldResemble, []string{"aggressor isolation"})
-	So(aggressorName, ShouldResemble, []string{"an aggressor"})
-	So(aggressorsParameters, ShouldResemble, []string{"aggressor parameters"})
-	So(lcIsolation, ShouldEqual, "Latency critical isolation")
-	So(lcParameters, ShouldEqual, "Latency critical parameters")
-	So(lgParameters, ShouldResemble, []string{"Load generator parameters"})
-
-	So(load, ShouldEqual, 0.65)
-	So(loadPointsQPS, ShouldEqual, 666.6)
+func soMeasurementMetadataAreSaved(measurement metadata.Measurement) {
+	So(measurement.Load, ShouldEqual, 0.65)
+	So(measurement.LoadPointQPS, ShouldEqual, 666.6)
+	So(measurement.LGParameters, ShouldResemble, []string{"Load generator parameters"})
 }

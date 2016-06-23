@@ -26,12 +26,9 @@ type Phase struct {
 	ID                  string
 	LCParameters        string
 	LCIsolation         string
-	LGParameters        []string
 	AggressorNames      []string
 	AggressorParameters []string
 	AggressorIsolations []string
-	Load                float64
-	LoadPointQPS        float64
 	Measurements        []Measurement
 }
 
