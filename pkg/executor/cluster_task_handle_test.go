@@ -13,14 +13,14 @@ const (
 	testMasterAddress = "testMasterAddress"
 )
 
-func TestMasterAgentsTaskHandle(t *testing.T) {
+func TestClusterTaskHandle(t *testing.T) {
 	Convey("While using MasterAgentTaskHandle", t, func() {
 		Convey("When we have a master task handle", func() {
 			mMasterHandle := new(mocks.TaskHandle)
 
-			// masterAgentsTaskHandle with only master should behave the same as master handle itself.
-			Convey("And create masterAgentsTaskHandle from it", func() {
-				handle := executor.NewMasterAgentsTaskHandle(
+			// ClusterTaskHandle with only one master should behave the same as master handle itself.
+			Convey("And create ClusterTaskHandle from it", func() {
+				handle := executor.NewClusterTaskHandle(
 					mMasterHandle, []executor.TaskHandle{})
 				Convey("It should implement TaskHandle", func() {
 					So(handle, ShouldImplement, (*executor.TaskHandle)(nil))
@@ -115,8 +115,8 @@ func TestMasterAgentsTaskHandle(t *testing.T) {
 				mAgent1Handle := new(mocks.TaskHandle)
 				mAgent2Handle := new(mocks.TaskHandle)
 
-				Convey("And create masterAgentsTaskHandle from it", func() {
-					handle := executor.NewMasterAgentsTaskHandle(
+				Convey("And create ClusterTaskHandle from it", func() {
+					handle := executor.NewClusterTaskHandle(
 						mMasterHandle, []executor.TaskHandle{
 							mAgent1Handle, mAgent2Handle,
 						},
@@ -288,6 +288,4 @@ func TestMasterAgentsTaskHandle(t *testing.T) {
 			So(mMasterHandle.AssertExpectations(t), ShouldBeTrue)
 		})
 	})
-	//	mockedAgentHandle1 := new(mocks.TaskHandle)
-	//	mockedAgentHandle2 := new(mocks.TaskHandle)
 }

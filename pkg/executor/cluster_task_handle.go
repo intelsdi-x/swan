@@ -7,32 +7,36 @@ import (
 	"time"
 )
 
-// MasterAgentsTaskHandle implements TaskHandle interface.
-type MasterAgentsTaskHandle struct {
+// ClusterTaskHandle is a task handle for composition of master and multiple agents.
+// - StdoutFile, StderrFile, ExitCode, Status, Address are taken from master task handle.
+// - Clean, EraseOutput, Stop are done for master and all agents.
+// - Wait waits for master task and when it's terminated it stops all agents.
+// It implements TaskHandle interface.
+type ClusterTaskHandle struct {
 	master TaskHandle
 	agents []TaskHandle
 }
 
-// NewMasterAgentsTaskHandle returns a MasterAgentsTaskHandle instance.
-func NewMasterAgentsTaskHandle(master TaskHandle, agents []TaskHandle) *MasterAgentsTaskHandle {
-	return &MasterAgentsTaskHandle{
+// NewClusterTaskHandle returns a ClusterTaskHandle instance.
+func NewClusterTaskHandle(master TaskHandle, agents []TaskHandle) *ClusterTaskHandle {
+	return &ClusterTaskHandle{
 		master: master,
 		agents: agents,
 	}
 }
 
-// StdoutFile returns a file handle for file to the master's stdout file.
-func (m MasterAgentsTaskHandle) StdoutFile() (*os.File, error) {
+// StdoutFile returns a file handle for the master's stdout file.
+func (m ClusterTaskHandle) StdoutFile() (*os.File, error) {
 	return m.master.StdoutFile()
 }
 
-// StderrFile returns a file handle for file to the master's stderr file.
-func (m MasterAgentsTaskHandle) StderrFile() (*os.File, error) {
+// StderrFile returns a file handle for the master's stderr file.
+func (m ClusterTaskHandle) StderrFile() (*os.File, error) {
 	return m.master.StderrFile()
 }
 
 // Stop terminates the master firstly and then all the agents.
-func (m MasterAgentsTaskHandle) Stop() (err error) {
+func (m ClusterTaskHandle) Stop() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	// Stop master.
@@ -52,20 +56,20 @@ func (m MasterAgentsTaskHandle) Stop() (err error) {
 	return errCollection.GetErrIfAny()
 }
 
-// Status returns a state of the master.
-func (m MasterAgentsTaskHandle) Status() TaskState {
+// Status returns the state of the master.
+func (m ClusterTaskHandle) Status() TaskState {
 	return m.master.Status()
 }
 
-// ExitCode returns a master exitCode. If master is not terminated it returns error.
-func (m MasterAgentsTaskHandle) ExitCode() (int, error) {
+// ExitCode returns the master exitCode. If master is not terminated it returns error.
+func (m ClusterTaskHandle) ExitCode() (int, error) {
 	return m.master.ExitCode()
 }
 
-// Wait does the blocking wait for the master completion in case of nil.
+// Wait does the blocking wait for the master completion in case of 0 timeout time.
 // Wait is a helper for waiting with a given timeout time.
 // It returns true if all tasks are terminated.
-func (m MasterAgentsTaskHandle) Wait(timeout time.Duration) bool {
+func (m ClusterTaskHandle) Wait(timeout time.Duration) bool {
 	// Wait for master first.
 	isMasterTerminated := m.master.Wait(timeout)
 	if isMasterTerminated {
@@ -83,7 +87,7 @@ func (m MasterAgentsTaskHandle) Wait(timeout time.Duration) bool {
 
 // Clean cleans master and agents temporary resources.
 // It also closes the tasks' stdout & stderr files.
-func (m MasterAgentsTaskHandle) Clean() (err error) {
+func (m ClusterTaskHandle) Clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.Clean()
@@ -101,7 +105,7 @@ func (m MasterAgentsTaskHandle) Clean() (err error) {
 }
 
 // EraseOutput removes master's and agents' stdout & stderr files.
-func (m MasterAgentsTaskHandle) EraseOutput() (err error) {
+func (m ClusterTaskHandle) EraseOutput() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.EraseOutput()
@@ -119,6 +123,6 @@ func (m MasterAgentsTaskHandle) EraseOutput() (err error) {
 }
 
 // Address returns address of master task.
-func (m MasterAgentsTaskHandle) Address() string {
+func (m ClusterTaskHandle) Address() string {
 	return m.master.Address()
 }
