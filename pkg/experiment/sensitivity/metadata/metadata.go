@@ -48,34 +48,3 @@ func (e *Experiment) AddPhase(phase Phase) {
 func (p *Phase) AddMeasurement(measurement Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
 }
-
-// Metadata swan runtime metrics.
-/*type Metadata struct {
-	experiment.Metadata
-
-	LCName string `json:",omitempty"`
-
-	LGIsolation string   `json:",omitempty"`
-	LGName      []string `json:",omitempty"`
-
-	LoadDuration   time.Duration `json:",omitempty,string"`
-	TuningDuration time.Duration `json:",omitempty,string"`
-
-	LoadPointsNumber  int `json:",omitempty,string"`
-	RepetitionsNumber int `json:",omitempty,string"`
-
-	Phases []Phase
-}
-
-type Phase struct {
-	LCIsolation  string   `json:",omitempty"`
-	LCParameters string   `json:",omitempty"`
-	LGParameters []string `json:",omitempty"`
-
-	AggressorName       []string `json:",omitempty"`
-	AggressorParameters []string `json:",omitempty"`
-	AggressorIsolations []string `json:",omitempty"`
-
-	Load float64 `json:",omitempty,string"`
-	QPS  float64 `json:",omitempty,string"`
-}*/
