@@ -130,7 +130,7 @@ type BoolFlag struct {
 	value        *bool
 }
 
-// NewBoolFlag is a constructor of BootFlag struct.
+// NewBoolFlag is a constructor of BoolFlag struct.
 func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFlag {
 	boolFlag := BoolFlag{
 		flag: flag{
@@ -140,7 +140,8 @@ func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFla
 		defaultValue: defaultValue,
 	}
 
-	boolFlag.value = app.Flag(flagName, description).OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
+	boolFlag.value = app.Flag(flagName, description).Default(fmt.Sprintf("%s", defaultValue)).
+		OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
 	isEnvParsed = false
 
 	return boolFlag

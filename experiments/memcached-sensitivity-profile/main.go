@@ -31,8 +31,8 @@ var (
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
-	hpCPUExclusive = conf.NewBoolFlag("has_hp_excl", "Has high priority task exclusive cores", false)
-	beCPUExclusive = conf.NewBoolFlag("has_be_excl", "Has best effort task exclusive cores", false)
+	hpCPUExclusive = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
+	beCPUExclusive = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
