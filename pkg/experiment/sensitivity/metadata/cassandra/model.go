@@ -1,4 +1,4 @@
-package uploaders
+package cassandra
 
 import "time"
 
