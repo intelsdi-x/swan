@@ -27,7 +27,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 	if err != nil {
 		return nil, nil, err
 	}
-	directoryPrivileges := os.FileMode(0755)
+	directoryPrivilages := os.FileMode(0755)
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -38,8 +38,8 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 		return nil, nil, fmt.Errorf("Failed to create output directory for %s. Error: %s\n", commandName,
 			err.Error())
 	}
-	if err = os.Chmod(outputDir, directoryPrivileges); err != nil {
-		return nil, nil, fmt.Errorf("Failed to set privilages for dir %s: %q", outputDir, err)
+	if err = os.Chmod(outputDir, directoryPrivilages); err != nil {
+		return nil, nil, fmt.Errorf("Failed to set privileges for dir %s: %q", outputDir, err)
 	}
 
 	filePrivileges := os.FileMode(0644)
@@ -50,7 +50,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 		return nil, nil, err
 	}
 	if err = stdout.Chmod(filePrivileges); err != nil {
-		return nil, nil, fmt.Errorf("Failed to set privilages for file %s: %q", stdout.Name(), err)
+		return nil, nil, fmt.Errorf("Failed to set privileges for file %s: %q", stdout.Name(), err)
 	}
 
 	stderr, err = os.Create(path.Join(outputDir, "stderr"))
@@ -59,7 +59,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 		return nil, nil, err
 	}
 	if err = stderr.Chmod(filePrivileges); err != nil {
-		return nil, nil, fmt.Errorf("Failed to set privilages for file %s: %q", stderr.Name(), err)
+		return nil, nil, fmt.Errorf("Failed to set privileges for file %s: %q", stderr.Name(), err)
 	}
 
 	return stdout, stderr, err
