@@ -1,4 +1,4 @@
-package uploaders
+package cassandra
 
 import "github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 

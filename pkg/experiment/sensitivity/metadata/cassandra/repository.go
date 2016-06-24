@@ -1,11 +1,10 @@
-package uploaders
+package cassandra
 
 import (
 	"fmt"
 
 	"github.com/gocql/gocql"
 	"github.com/hailocab/gocassa"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 )
 
@@ -15,7 +14,7 @@ const (
 	measurementTablePrefix = "measurement"
 )
 
-type cassandra struct {
+type repository struct {
 	experiment  gocassa.Table
 	phase       gocassa.Table
 	measurement gocassa.Table
@@ -31,9 +30,9 @@ type Config struct {
 	KeySpace string
 }
 
-// NewCassandra created new Cassandra Uploader
-func NewCassandra(experiment, phase, measurement gocassa.Table) sensitivity.Uploader {
-	return &cassandra{experiment, phase, measurement, newCassandraToMetadata()}
+// NewCassandra created new Cassandra repository
+func NewCassandra(experiment, phase, measurement gocassa.Table) metadata.Repository {
+	return &repository{experiment, phase, measurement, newCassandraToMetadata()}
 }
 
 // NewKeySpace creates instance of gocassa.KeySpace
@@ -81,8 +80,8 @@ func NewMeasurementTable(keySpace gocassa.KeySpace) gocassa.Table {
 	return table
 }
 
-// SendMetrics implements metrics.Uploader interface
-func (c cassandra) SendMetadata(metadata metadata.Experiment) error {
+// Save implements metadata.Repository interface
+func (c repository) Save(metadata metadata.Experiment) error {
 	experimentMetrics, phasesMetrics, measurementsMetrics := metadataToCassandra(metadata)
 	err := c.experiment.Set(experimentMetrics).Run()
 	if err != nil {
@@ -102,8 +101,8 @@ func (c cassandra) SendMetadata(metadata metadata.Experiment) error {
 
 }
 
-// GetMetadata implements metrics.Uploader interface
-func (c cassandra) GetMetadata(experiment string) (metadata.Experiment, error) {
+// Fetch implements metadata.REpository interface
+func (c repository) Fetch(experiment string) (metadata.Experiment, error) {
 	var experimentModel Experiment
 	err := c.experiment.Where(gocassa.Eq("ID", experiment)).ReadOne(&experimentModel).Run()
 	if err != nil {

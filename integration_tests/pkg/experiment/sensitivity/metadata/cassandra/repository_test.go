@@ -1,4 +1,4 @@
-package uploaders
+package cassandra
 
 import (
 	"fmt"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/uploaders"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata/cassandra"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCassandraUploading(t *testing.T) {
 	Convey("When I connect to Cassandra instance with incorrect configuration", t, func() {
-		config := uploaders.Config{}
-		cassandra, err := uploaders.NewKeySpace(config)
+		config := cassandra.Config{}
+		cassandra, err := cassandra.NewKeySpace(config)
 		Convey("I should get an error and no Uploader instance", func() {
 			So(err, ShouldNotBeNil)
 			So(cassandra, ShouldBeNil)
@@ -22,23 +22,23 @@ func TestCassandraUploading(t *testing.T) {
 	})
 
 	Convey("When I connect to Cassandra instance with correct configuration", t, func() {
-		config := uploaders.Config{}
+		config := cassandra.Config{}
 		config.Host = []string{"127.0.0.1"}
 		config.KeySpace = "testing_keyspace"
 
-		keySpace, err := uploaders.NewKeySpace(config)
+		keySpace, err := cassandra.NewKeySpace(config)
 		So(err, ShouldBeNil)
-		phaseTable := uploaders.NewPhaseTable(keySpace)
-		measurementTable := uploaders.NewMeasurementTable(keySpace)
-		cassandra := uploaders.NewCassandra(uploaders.NewExperimentTable(keySpace), phaseTable, measurementTable)
+		phaseTable := cassandra.NewPhaseTable(keySpace)
+		measurementTable := cassandra.NewMeasurementTable(keySpace)
+		cassandra := cassandra.NewCassandra(cassandra.NewExperimentTable(keySpace), phaseTable, measurementTable)
 		Convey("I should get an Uploader instance", func() {
 			So(cassandra, ShouldNotBeNil)
 			Convey("When I pass SwanMetrics instance", func() {
 				sM := createValidSwanMetrics()
-				err = cassandra.SendMetadata(sM)
+				err = cassandra.Save(sM)
 				So(err, ShouldBeNil)
 				Convey("I should get no error and see experiment metadata saved", func() {
-					metadata, err := cassandra.GetMetadata("experiment")
+					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldBeNil)
 					soExperimentMetadataAreSaved(metadata)
 					Convey("I should get no error and see phases metadata saved", func() {
@@ -51,21 +51,21 @@ func TestCassandraUploading(t *testing.T) {
 					})
 				})
 				Convey("I should get an error when I try to get metadata for non existing experiment", func() {
-					metadata, err := cassandra.GetMetadata("non existing experiment")
+					metadata, err := cassandra.Fetch("non existing experiment")
 					So(err.Error(), ShouldStartWith, "Experiment metadata fetch failed")
 					So(err, ShouldNotBeNil)
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get an error when phase metadata query fails", func() {
 					brakeDatabase(config, "DROP TABLE", phaseTable.Name())
-					metadata, err := cassandra.GetMetadata("experiment")
+					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Phases metadata fetch failed")
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get en error when phase metadata query returns no results", func() {
 					brakeDatabase(config, "TRUNCATE", phaseTable.Name())
-					metadata, err := cassandra.GetMetadata("experiment")
+					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Phases metadata fetch returned no results")
 					So(metadata.ID, ShouldEqual, "")
@@ -73,14 +73,14 @@ func TestCassandraUploading(t *testing.T) {
 				})
 				Convey("I should get an error when measurement metadata query fails", func() {
 					brakeDatabase(config, "DROP TABLE", measurementTable.Name())
-					metadata, err := cassandra.GetMetadata("experiment")
+					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Measurements metadata fetch failed")
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get en error when measurement metadata query returns no results", func() {
 					brakeDatabase(config, "TRUNCATE", measurementTable.Name())
-					metadata, err := cassandra.GetMetadata("experiment")
+					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Measurements metadata fetch returned no results")
 					So(metadata.ID, ShouldEqual, "")
@@ -132,7 +132,7 @@ func createValidSwanMetrics() metadata.Experiment {
 	return meta
 }
 
-func createGocqlSession(config uploaders.Config) (*gocql.Session, error) {
+func createGocqlSession(config cassandra.Config) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(config.Host...)
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = config.KeySpace
@@ -172,7 +172,7 @@ func soMeasurementMetadataAreSaved(measurement metadata.Measurement) {
 	So(measurement.LGParameters, ShouldResemble, []string{"Load generator parameters"})
 }
 
-func brakeDatabase(config uploaders.Config, operation, tableName string) {
+func brakeDatabase(config cassandra.Config, operation, tableName string) {
 	session, err := createGocqlSession(config)
 	So(err, ShouldBeNil)
 	query := session.Query(fmt.Sprintf("%s %s.%s", operation, config.KeySpace, tableName))
