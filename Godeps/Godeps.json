@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v71",
+	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
 	],
@@ -419,6 +419,11 @@
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
 			"Comment": "v2.1.11",
 			"Rev": "8cccfa8eb2e3183254457fb1749b2667fbc364c7"
+		},
+		{
+			"ImportPath": "gopkg.in/cheggaaa/pb.v1",
+			"Comment": "v1.0.3",
+			"Rev": "8808370bf63524e115da1371ba42bce6739f3a6b"
 		},
 		{
 			"ImportPath": "gopkg.in/inf.v0",

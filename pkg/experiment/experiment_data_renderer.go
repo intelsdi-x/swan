@@ -28,9 +28,9 @@ func Draw(experimentID string, cassandraAddr string) error {
 	data := prepareData(metricsList)
 
 	// View table.
-	visualization.PrintExperimentMetadata(visualization.NewExperimentMetadata(experimentID))
+	fmt.Println(visualization.NewExperimentMetadata(experimentID).String())
 	table := visualization.NewTable(headers, data)
-	visualization.DrawTable(table)
+	table.Draw()
 
 	return nil
 }
@@ -45,7 +45,7 @@ func List(cassandraIP string) (err error) {
 	for _, elem := range tagsMapsList {
 		uniqueNames = append(uniqueNames, createUniqueList(phase.ExperimentKey, elem, uniqueNames)...)
 	}
-	visualization.PrintList(visualization.NewList(uniqueNames, "experiment ID:"))
+	fmt.Println(visualization.NewList(uniqueNames, "experiment ID:").String())
 	return nil
 }
 
