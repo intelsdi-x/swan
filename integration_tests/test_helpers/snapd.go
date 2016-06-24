@@ -71,20 +71,20 @@ func (s *Snapd) CleanAndEraseOutput() error {
 // Connected checks if we can connect to Snap daemon.
 func (s *Snapd) Connected() bool {
 	retries := 100
-	connected := false
+	isConnected := false
 	cli, err := client.New(fmt.Sprintf("http://127.0.0.1:%d", s.apiPort), "v1", true)
 	if err != nil {
-		return connected
+		return isConnected
 	}
 	for i := 0; i < retries; i++ {
 		if cli.GetPlugins(false).Err != nil {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		connected = true
+		isConnected = true
 	}
 
-	return connected
+	return isConnected
 }
 
 // Port returns port Snapd is listening.
