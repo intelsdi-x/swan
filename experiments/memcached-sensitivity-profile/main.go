@@ -1,26 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"os/user"
-	"path"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/shopspring/decimal"
 
-	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
@@ -33,6 +24,10 @@ var (
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 	hpCPUExclusive = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
 	beCPUExclusive = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
+	percentileFlag = conf.NewStringFlag("percentile", "Tail latency Percentile", "99")
+
+	mutilateMasterFlag = conf.NewStringFlag("mutilate_master", "Mutilate master node name for remote executor (defaults to empty agentless mode).", "")
+	mutilateAgentsFlag = conf.NewSliceFlag("mutilate_agent", "Mutilate agent node name for remote executor. Can be specified many times for multiple agents setup.")
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
@@ -89,31 +84,60 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	memcachedConfig.IP = ipAddressFlag.Value()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
-	// Special case to have ability to use local executor for load generator.
-	// This is needed for docker testing.
-	var loadGeneratorExecutor executor.Executor
-	loadGeneratorExecutor = executor.NewLocal()
-
-	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
-		// Initialize Mutilate Launcher.
-		user, err := user.Current()
-		check(err)
-
-		sshConfig, err := executor.NewSSHConfig(
-			workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
-		check(err)
-
-		loadGeneratorExecutor = executor.NewRemote(sshConfig)
-	}
-
-	percentile, _ := decimal.NewFromString("99")
+	var mutilateLoadGenerator workloads.LoadGenerator
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
-	mutilateConfig.LatencyPercentile = percentile
+	mutilateConfig.LatencyPercentile, _ = decimal.NewFromString(percentileFlag.Value())
 	mutilateConfig.TuningTime = 1 * time.Second
+	if mutilateMasterFlag.Value() == "" {
+		// Special case to have ability to use local executor for load generator.
+		// This is needed for docker testing.
+		var loadGeneratorExecutor executor.Executor
+		loadGeneratorExecutor = executor.NewLocal()
 
-	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
+		if workloads.LoadGeneratorAddrFlag.Value() != "local" {
+			// Initialize Mutilate Launcher.
+			user, err := user.Current()
+			check(err)
+
+			sshConfig, err := executor.NewSSHConfig(
+				workloads.LoadGeneratorAddrFlag.Value(), executor.DefaultSSHPort, user)
+			check(err)
+
+			loadGeneratorExecutor = executor.NewRemote(sshConfig)
+		}
+		mutilateLoadGenerator = mutilate.New(loadGeneratorExecutor, mutilateConfig)
+	} else {
+
+		newRemote := func(ip string) executor.Executor {
+
+			user, err := user.Current()
+			check(err)
+
+			sshConfig, err := executor.NewSSHConfig(
+				ip, executor.DefaultSSHPort, user)
+			check(err)
+			return executor.NewRemote(sshConfig)
+		}
+
+		mutilateConfig.MasterQPS = 1000
+		mutilateConfig.MasterConnections = 4
+		mutilateConfig.MasterConnectionsDepth = 4
+		mutilateConfig.MasterThreads = 4
+		var masterLoadGeneratorExecutor executor.Executor
+		var agentsLoadGeneratorExecutors []executor.Executor
+
+		// Locals.
+		// masterLoadGeneratorExecutor = executor.NewLocal()
+		// agentsLoadGeneratorExecutors = []executor.Executor{executor.NewLocal()}
+
+		// Remotes.
+		masterLoadGeneratorExecutor = newRemote(workloads.LoadGeneratorAddrFlag.Value())
+		agentsLoadGeneratorExecutors = []executor.Executor{newRemote("127.0.0.1")}
+
+		mutilateLoadGenerator = mutilate.NewCluster(masterLoadGeneratorExecutor, agentsLoadGeneratorExecutors, mutilateConfig)
+	}
 
 	// Initialize BE isolation.
 	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusive.Value(), false)
@@ -136,50 +160,57 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	// Create connection with Snap.
-	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
-	// TODO(bp): Make helper for passing host:port or only host option here.
-	snapConnection, err := client.New(
-		fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
-		"v1",
-		true,
-	)
-	check(err)
+	/*
+		logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
+		// TODO(bp): Make helper for passing host:port or only host option here.
+		snapConnection, err := client.New(
+			fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
+			"v1",
+			true,
+		)
+		check(err)
+	*/
 
 	// Load the snap cassandra publisher plugin if not yet loaded.
 	// TODO(bp): Make helper for that.
-	logrus.Debug("Checking if publisher cassandra is loaded.")
-	plugins := snap.NewPlugins(snapConnection)
-	loaded, err := plugins.IsLoaded("publisher", "cassandra")
-	check(err)
-
-	if !loaded {
-		pluginPath := []string{path.Join(
-			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
-		err = plugins.Load(pluginPath)
+	/*
+		logrus.Debug("Checking if publisher cassandra is loaded.")
+		plugins := snap.NewPlugins(snapConnection)
+		loaded, err := plugins.IsLoaded("publisher", "cassandra")
 		check(err)
-	}
 
-	// Define publisher.
-	publisher := wmap.NewPublishNode("cassandra", 2)
-	if publisher == nil {
-		logrus.Fatal("Failed to create Publish Node for cassandra")
-	}
+		if !loaded {
+			pluginPath := []string{path.Join(
+				os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
+			err = plugins.Load(pluginPath)
+			check(err)
+		}
 
-	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
+		// Define publisher.
+		publisher := wmap.NewPublishNode("cassandra", 2)
+		if publisher == nil {
+			logrus.Fatal("Failed to create Publish Node for cassandra")
+		}
+
+		publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
+	*/
 
 	// Initialize Mutilate Snap Session.
-	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-		fs.GetSwanBuildPath(),
-		1*time.Second,
-		snapConnection,
-		publisher)
+	/*
+		mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
+			fs.GetSwanBuildPath(),
+			1*time.Second,
+			snapConnection,
+			publisher)
+	*/
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
 		SLO:             500, // us
-		LoadDuration:    10 * time.Second,
-		LoadPointsCount: 10,
-		Repetitions:     3,
+		LoadDuration:    1 * time.Second,
+		LoadPointsCount: 2,
+		Repetitions:     1,
+		PeakLoad:        sensitivity.PeakLoadFlag.Value(),
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
@@ -187,7 +218,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		conf.LogLevel(),
 		configuration,
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
-		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
+		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, nil),
 		aggressors,
 	)
 
