@@ -27,7 +27,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 	if err != nil {
 		return nil, nil, err
 	}
-	directoryPrivilages := os.FileMode(0755)
+	directoryPrivileges := os.FileMode(0755)
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -38,7 +38,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 		return nil, nil, fmt.Errorf("Failed to create output directory for %s. Error: %s\n", commandName,
 			err.Error())
 	}
-	if err = os.Chmod(outputDir, directoryPrivilages); err != nil {
+	if err = os.Chmod(outputDir, directoryPrivileges); err != nil {
 		return nil, nil, fmt.Errorf("Failed to set privileges for dir %s: %q", outputDir, err)
 	}
 
