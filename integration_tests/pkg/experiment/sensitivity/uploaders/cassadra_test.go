@@ -75,14 +75,14 @@ func TestCassandraUploading(t *testing.T) {
 					brakeDatabase(config, "DROP TABLE", measurementTable.Name())
 					metadata, err := cassandra.GetMetadata("experiment")
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Measurement metadata fetch failed")
+					So(err.Error(), ShouldStartWith, "Measurements metadata fetch failed")
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get en error when measurement metadata query returns no results", func() {
 					brakeDatabase(config, "TRUNCATE", measurementTable.Name())
 					metadata, err := cassandra.GetMetadata("experiment")
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Measurement metadata fetch returned no results")
+					So(err.Error(), ShouldStartWith, "Measurements metadata fetch returned no results")
 					So(metadata.ID, ShouldEqual, "")
 
 				})

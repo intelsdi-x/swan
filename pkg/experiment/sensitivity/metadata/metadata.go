@@ -29,7 +29,7 @@ type Phase struct {
 	AggressorNames      []string
 	AggressorParameters []string
 	AggressorIsolations []string
-	Measurements        []Measurement
+	Measurements        Measurements
 }
 
 // Measurement represents metadata of single measurement in sensitivity experiment
@@ -39,6 +39,9 @@ type Measurement struct {
 	LGParameters []string
 }
 
+// Measurements represents slice of Measurement structs
+type Measurements []Measurement
+
 // AddPhase adds a Phase to the Experiment
 func (e *Experiment) AddPhase(phase Phase) {
 	e.Phases = append(e.Phases, phase)
@@ -47,4 +50,19 @@ func (e *Experiment) AddPhase(phase Phase) {
 // AddMeasurement adds a Measurement to the Experiment
 func (p *Phase) AddMeasurement(measurement Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
+}
+
+// Len implements sort.Interface
+func (m Measurements) Len() int {
+	return len(m)
+}
+
+// Less implements sort.Interface
+func (m Measurements) Less(i, j int) bool {
+	return m[i].Load < m[j].Load
+}
+
+// Swap implements sort.Interface
+func (m Measurements) Swap(i, j int) {
+	m[i], m[j] = m[j], m[i]
 }
