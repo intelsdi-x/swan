@@ -3,9 +3,9 @@ package testhelpers
 import (
 	"errors"
 	"fmt"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"math/rand"
-	"net"
 	"os"
 	"path"
 	"time"
@@ -70,19 +70,21 @@ func (s *Snapd) CleanAndEraseOutput() error {
 
 // Connected checks if we can connect to Snap daemon.
 func (s *Snapd) Connected() bool {
-	retries := 5
-	connected := false
+	retries := 100
+	isConnected := false
+	cli, err := client.New(fmt.Sprintf("http://127.0.0.1:%d", s.apiPort), "v1", true)
+	if err != nil {
+		return isConnected
+	}
 	for i := 0; i < retries; i++ {
-		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", s.apiPort))
-		if err != nil {
+		if cli.GetPlugins(false).Err != nil {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		defer conn.Close()
-		connected = true
+		isConnected = true
 	}
 
-	return connected
+	return isConnected
 }
 
 // Port returns port Snapd is listening.
