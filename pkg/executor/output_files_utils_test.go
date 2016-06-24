@@ -15,6 +15,17 @@ const (
 	expectedDirMode = "drwxr-xr-x"
 )
 
+func filesCleanup(stdout, stderr *os.File) {
+	err := stderr.Close()
+	So(err, ShouldBeNil)
+	err = stdout.Close()
+	So(err, ShouldBeNil)
+
+	err = os.RemoveAll(path.Dir(stdout.Name()))
+	So(err, ShouldBeNil)
+
+}
+
 func TestCreateExecutorOutputFiles(t *testing.T) {
 
 	Convey("I should be able to create files and folders for experiment details", t, func() {
@@ -22,6 +33,8 @@ func TestCreateExecutorOutputFiles(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(stdout, ShouldNotBeNil)
 		So(stderr, ShouldNotBeNil)
+
+		defer filesCleanup(stdout, stderr)
 
 		Convey("Which should have got valid modes.", func() {
 			eStat, err := stderr.Stat()
