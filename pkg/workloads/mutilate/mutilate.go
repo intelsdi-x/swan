@@ -36,7 +36,7 @@ const (
 )
 
 // pathFlag represents mutilate path flag.
-var pathFlag = conf.NewStringFlag("muitilate_path", "Path to mutilate binary",
+var pathFlag = conf.NewStringFlag("mutilate_path", "Path to mutilate binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"),
 )
 
