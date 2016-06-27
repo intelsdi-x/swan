@@ -96,6 +96,8 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 	for metric := range rawMetrics {
 		var percentile float64
 		if n, err := fmt.Sscanf(metric, "percentile/%fth/custom", &percentile); err == nil && n == 1 {
+			// TODO(bplotka): We keep percentile in float. Is that proper?
+			// We decided to have decimals for that in Swan code.
 			customPercentile = percentile
 			break
 		}

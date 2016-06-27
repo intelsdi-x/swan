@@ -9,7 +9,7 @@ import (
 )
 
 func (s *MutilateTestSuite) TestGetPopulateCommand() {
-	command := s.mutilate.getPopulateCommand()
+	command := getPopulateCommand(s.mutilate.config)
 
 	Convey("Mutilate populate command should contain mutilate binary path", s.T(), func() {
 		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
@@ -45,8 +45,10 @@ func (s *MutilateTestSuite) soExpectBaseCommandOptions(command string) {
 		So(command, ShouldContainSubstring, expected)
 	})
 
-	Convey("Mutilate base command should contain noload option", s.T(), func() {
+	Convey("Mutilate base command should contain noload and -B option", s.T(), func() {
 		expected := fmt.Sprintf("--noload")
+		So(command, ShouldContainSubstring, expected)
+		expected = fmt.Sprintf("-B")
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -59,13 +61,6 @@ func (s *MutilateTestSuite) soExpectBaseCommandOptions(command string) {
 
 	Convey("Mutilate base command should contain master threads option", s.T(), func() {
 		expected := fmt.Sprintf("-T %d", s.mutilate.config.MasterThreads)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate base command should contain master connection options", s.T(), func() {
-		expected := fmt.Sprintf("-D %d", s.mutilate.config.MasterConnectionsDepth)
-		So(command, ShouldContainSubstring, expected)
-		expected = fmt.Sprintf("-C %d", s.mutilate.config.MasterConnections)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -89,7 +84,7 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 	const duration = 10 * time.Second
 
 	s.mutilate.config.MasterQPS = 0
-	command := s.mutilate.getLoadCommand(load, duration, []executor.TaskHandle{})
+	command := getLoadCommand(s.mutilate.config, load, duration, []executor.TaskHandle{})
 
 	s.soExpectBaseCommandOptions(command)
 
@@ -119,7 +114,7 @@ func (s *MutilateTestSuite) TestGetMultinodeLoadCommand() {
 
 	s.mAgentHandle1.On("Address").Return(agentAddress1).Once()
 	s.mAgentHandle2.On("Address").Return(agentAddress2).Once()
-	command := s.mutilate.getLoadCommand(load, duration, []executor.TaskHandle{
+	command := getLoadCommand(s.mutilate.config, load, duration, []executor.TaskHandle{
 		s.mAgentHandle1,
 		s.mAgentHandle2,
 	})
@@ -146,12 +141,19 @@ func (s *MutilateTestSuite) TestGetMultinodeLoadCommand() {
 		So(command, ShouldContainSubstring, expected)
 	})
 
+	Convey("Mutilate base command should contain master connection options", s.T(), func() {
+		expected := fmt.Sprintf("-D %d", s.mutilate.config.MasterConnectionsDepth)
+		So(command, ShouldContainSubstring, expected)
+		expected = fmt.Sprintf("-C %d", s.mutilate.config.MasterConnections)
+		So(command, ShouldContainSubstring, expected)
+	})
+
 	// Check with MasterQPS different to 0.
 	s.mutilate.config.MasterQPS = 24234
 
 	s.mAgentHandle1.On("Address").Return(agentAddress1).Once()
 	s.mAgentHandle2.On("Address").Return(agentAddress2).Once()
-	command = s.mutilate.getLoadCommand(load, duration, []executor.TaskHandle{
+	command = getLoadCommand(s.mutilate.config, load, duration, []executor.TaskHandle{
 		s.mAgentHandle1,
 		s.mAgentHandle2,
 	})
@@ -168,7 +170,7 @@ func (s *MutilateTestSuite) TestGetTuneCommand() {
 	const slo = 300
 
 	s.mutilate.config.MasterQPS = 0
-	command := s.mutilate.getTuneCommand(slo, []executor.TaskHandle{})
+	command := getTuneCommand(s.mutilate.config, slo, []executor.TaskHandle{})
 
 	s.soExpectBaseCommandOptions(command)
 
@@ -197,7 +199,7 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 
 	s.mAgentHandle1.On("Address").Return(agentAddress1).Once()
 	s.mAgentHandle2.On("Address").Return(agentAddress2).Once()
-	command := s.mutilate.getTuneCommand(slo, []executor.TaskHandle{
+	command := getTuneCommand(s.mutilate.config, slo, []executor.TaskHandle{
 		s.mAgentHandle1,
 		s.mAgentHandle2,
 	})
@@ -225,7 +227,7 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 
 	s.mAgentHandle1.On("Address").Return(agentAddress1).Once()
 	s.mAgentHandle2.On("Address").Return(agentAddress2).Once()
-	command = s.mutilate.getTuneCommand(slo, []executor.TaskHandle{
+	command = getTuneCommand(s.mutilate.config, slo, []executor.TaskHandle{
 		s.mAgentHandle1,
 		s.mAgentHandle2,
 	})

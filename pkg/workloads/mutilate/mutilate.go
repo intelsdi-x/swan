@@ -24,6 +24,7 @@ const (
 	defaultTuningTime             = 10 * time.Second
 	defaultWarmupTime             = 10 * time.Second
 	defaultAgentThreads           = 24
+	defaultAgentPort              = 5556
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
 	defaultMasterThreads          = 24
@@ -61,7 +62,7 @@ type Config struct {
 	MasterConnectionsDepth int // Max length of request pipeline. -D
 	KeySize                int // Length of memcached keys. -K
 	ValueSize              int // Length of memcached values. -V
-	// TODO(bp): Decide if we want to use -B option as well.
+	AgentPort              int // Agent port. -p
 
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
@@ -96,6 +97,7 @@ func DefaultMutilateConfig() Config {
 		KeySize:                defaultKeySize,
 		ValueSize:              defaultValueSize,
 		MasterQPS:              defaultMasterQPS,
+		AgentPort:              defaultAgentPort,
 	}
 }
 
@@ -159,7 +161,7 @@ func eraseAgentOutputs(agentHandles []executor.TaskHandle) {
 func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 	handles := []executor.TaskHandle{}
 
-	command := m.getAgentMutilateCommand()
+	command := getAgentCommand(m.config)
 	for _, exec := range m.agents {
 		handle, err := exec.Execute(command)
 		if err != nil {
@@ -182,7 +184,7 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 // Populate load the initial test data into Memcached.
 // Even for multi-node Mutilate, populate the Memcached is done only by master.
 func (m mutilate) Populate() (err error) {
-	populateCmd := m.getPopulateCommand()
+	populateCmd := getPopulateCommand(m.config)
 
 	taskHandle, err := m.master.Execute(populateCmd)
 	if err != nil {
@@ -218,7 +220,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	}
 
 	// Run master with tuning option.
-	tuneCmd := m.getTuneCommand(slo, agentHandles)
+	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
 	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
 		logrus.Debug("Mutilate master execution failed (cmd: '",
@@ -303,12 +305,13 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 		return nil, err
 	}
 
-	masterHandle, err := m.master.Execute(m.getLoadCommand(qps, duration, agentHandles))
+	masterHandle, err := m.master.Execute(
+		getLoadCommand(m.config, qps, duration, agentHandles))
 	if err != nil {
 		stopAgents(agentHandles)
 		return nil, fmt.Errorf(
 			"Execution of Mutilate Master Load failed; Command: %s; %s",
-			m.getLoadCommand(qps, duration, agentHandles), err.Error())
+			getLoadCommand(m.config, qps, duration, agentHandles), err.Error())
 	}
 
 	return executor.NewClusterTaskHandle(masterHandle, agentHandles), nil
