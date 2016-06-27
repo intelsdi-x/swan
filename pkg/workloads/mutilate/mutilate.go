@@ -23,11 +23,11 @@ const (
 	defaultPercentile             = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
 	defaultTuningTime             = 10 * time.Second
 	defaultWarmupTime             = 10 * time.Second
-	defaultAgentThreads           = 24
+	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
-	defaultMasterThreads          = 24
+	defaultMasterThreads          = 8
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
 	defaultKeySize                = 30
