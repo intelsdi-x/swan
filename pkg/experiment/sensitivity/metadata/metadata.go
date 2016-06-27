@@ -1,15 +1,9 @@
 package metadata
 
-import (
-	"time"
+import "time"
 
-	"github.com/intelsdi-x/swan/pkg/experiment"
-)
-
-// Experiment represents metadata of single sensitivity experiment
+// Experiment represents metadata of single sensitivity experiment.
 type Experiment struct {
-	experiment.Metadata
-
 	ID                string
 	LoadDuration      time.Duration
 	TuningDuration    time.Duration
@@ -21,7 +15,7 @@ type Experiment struct {
 	Phases            []Phase
 }
 
-// Phase represents metadata of single Phase in sensitivity experiment
+// Phase represents metadata of single Phase in sensitivity experiment.
 type Phase struct {
 	ID                  string
 	LCParameters        string
@@ -32,37 +26,37 @@ type Phase struct {
 	Measurements        Measurements
 }
 
-// Measurement represents metadata of single measurement in sensitivity experiment
+// Measurement represents metadata of single measurement in sensitivity experiment.
 type Measurement struct {
 	Load         float64
 	LoadPointQPS float64
 	LGParameters []string
 }
 
-// Measurements represents slice of Measurement structs
+// Measurements represents slice of Measurement structs.
 type Measurements []Measurement
 
-// AddPhase adds a Phase to the Experiment
+// AddPhase adds a Phase to the Experiment.
 func (e *Experiment) AddPhase(phase Phase) {
 	e.Phases = append(e.Phases, phase)
 }
 
-// AddMeasurement adds a Measurement to the Experiment
+// AddMeasurement adds a Measurement to the Experiment.
 func (p *Phase) AddMeasurement(measurement Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
 }
 
-// Len implements sort.Interface
+// Len implements sort.Interface.
 func (m Measurements) Len() int {
 	return len(m)
 }
 
-// Less implements sort.Interface
+// Less implements sort.Interface.
 func (m Measurements) Less(i, j int) bool {
 	return m[i].Load < m[j].Load
 }
 
-// Swap implements sort.Interface
+// Swap implements sort.Interface.
 func (m Measurements) Swap(i, j int) {
 	m[i], m[j] = m[j], m[i]
 }
