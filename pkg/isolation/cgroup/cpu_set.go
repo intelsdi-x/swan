@@ -132,22 +132,24 @@ func (cs *cpuset) Create() error {
 		return err
 	}
 
-	// When setting cpuset.cpus or cpuset.mems, the value must
-	// be set to a subset of its parent's allocated cpus. These values
-	// are not set to anything by default (except for the root cgroup).
-	// The root cgroup by default is assigned all available cpus.
-	//
-	// If some ancestor cgroup's cpuset.cpus or cpuset.mems have been
-	// overridden already and that value is not a superset or equal to
-	// this CPUSet's cpus / mems, this creation could fail.
+	// When setting cpuset.cpus or cpuset.mems, overwrite everything
+	// except root. When starting experiment it's neccessary to be
+	// sure that there are proper values and not leftovers from
+	// earlier crash.
 	//
 	// When setting cpuset.cpu_exclusive or cpuset.mem_exclusive, the
 	// attribute must first be set for all cgroup ancestors, starting with
 	// the root of the hierarchy. If this is not done first, setting the
 	// attribute will fail! These values default to "0" (off) for all
 	// non-root cgroups.
+	// Note also that cpu_exclusive cannot be set if any sibling cpuset
+	// overlaps with current cgroup.
 
 	for _, a := range cs.cgroup.Ancestors() {
+		if a.IsRoot() {
+			continue
+		}
+		// Setup parents.
 		err = cs.setupCgroup(a)
 		if err != nil {
 			cs.Clean()
@@ -171,28 +173,14 @@ func (cs *cpuset) Isolate(PID int) error {
 }
 
 func (cs *cpuset) setupCgroup(c Cgroup) error {
-	// Set cpus without overwriting any currently set ranges.
-	current, err := c.Get(CPUSetCpus)
+	err := c.Set(CPUSetCpus, cs.cpus.AsRangeString())
 	if err != nil {
 		return err
-	}
-	if current == "" {
-		err = c.Set(CPUSetCpus, cs.cpus.AsRangeString())
-		if err != nil {
-			return err
-		}
 	}
 
-	// Set memory nodes without overwriting any currently set ranges.
-	current, err = c.Get(CPUSetMems)
+	err = c.Set(CPUSetMems, cs.mems.AsRangeString())
 	if err != nil {
 		return err
-	}
-	if current == "" {
-		err = c.Set(CPUSetMems, cs.mems.AsRangeString())
-		if err != nil {
-			return err
-		}
 	}
 
 	// Set cpu exclusivity bit if necessary.

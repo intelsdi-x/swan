@@ -191,31 +191,22 @@ func TestCgroupSet(t *testing.T) {
 		So(ok, ShouldBeTrue)
 
 		Convey("The cgroup's attributes should be settable", func() {
-			// Check initial cpuset mems setting
-			value, _ := cg.Get("cpuset.mems")
-			So(value, ShouldEqual, "")
+			// There is no default value in it after cgroup's
+			// creation. Check only if can be read.
+			_, err := cg.Get("cpuset.mems")
+			So(err, ShouldBeNil)
 
 			// Set cpuset mems
-			err := cg.Set("cpuset.mems", "0")
+			err = cg.Set("cpuset.mems", "0")
 			So(err, ShouldBeNil)
-			value, _ = cg.Get("cpuset.mems")
+			value, _ := cg.Get("cpuset.mems")
 			So(value, ShouldEqual, "0")
 
-			// Check initial cpuset exclusivity setting
-			value, _ = cg.Get("cpuset.cpu_exclusive")
-			So(value, ShouldEqual, "0")
-
-			// Set cpuset exclusivity
-			err = cg.Set("cpuset.cpu_exclusive", "1")
+			// Cpu_exclusive is not always settable because
+			// it depends on parent's settings and sibling
+			// cpusets. Therefore check only if it's readable.
+			_, err = cg.Get("cpuset.cpu_exclusive")
 			So(err, ShouldBeNil)
-			value, _ = cg.Get("cpuset.cpu_exclusive")
-			So(value, ShouldEqual, "1")
-
-			// Unset cpuset exclusivity
-			err = cg.Set("cpuset.cpu_exclusive", "0")
-			So(err, ShouldBeNil)
-			value, _ = cg.Get("cpuset.cpu_exclusive")
-			So(value, ShouldEqual, "0")
 		})
 	})
 }
