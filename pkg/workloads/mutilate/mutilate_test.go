@@ -151,7 +151,7 @@ func (s *MutilateTestSuite) TestClusterMutilateTuning() {
 
 	outputFile.WriteString(correctMutilateOutput)
 
-	mutilate := NewClustered(s.mExecutor, []executor.Executor{
+	mutilate := NewCluster(s.mExecutor, []executor.Executor{
 		s.mExecutorForAgent1,
 		s.mExecutorForAgent2,
 	}, s.config)
@@ -223,7 +223,7 @@ func (s *MutilateTestSuite) TestMutilateTuningExecutorError() {
 // Testing clustered mutilate tuning with different failures.
 func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 	Convey("While having clustered mutilate", s.T(), func() {
-		mutilate := NewClustered(s.mExecutor, []executor.Executor{
+		mutilate := NewCluster(s.mExecutor, []executor.Executor{
 			s.mExecutorForAgent1,
 			s.mExecutorForAgent2,
 		}, s.config)

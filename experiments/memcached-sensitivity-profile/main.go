@@ -104,7 +104,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
 
-	percentile, _ := decimal.NewFromString("99.9")
+	percentile, _ := decimal.NewFromString("99")
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port

@@ -116,11 +116,11 @@ func New(exec executor.Executor, config Config) workloads.LoadGenerator {
 	}
 }
 
-// NewClustered returns a new Mutilate Load Generator instance composed of master
+// NewCluster returns a new Mutilate Load Generator instance composed of master
 // and specified executors per each agent.
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
-func NewClustered(
+func NewCluster(
 	master executor.Executor, agents []executor.Executor, config Config) workloads.LoadGenerator {
 	return mutilate{
 		master: master,
