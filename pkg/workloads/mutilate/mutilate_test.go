@@ -35,7 +35,7 @@ const (
 read       20.9    11.9    11.9    12.5    13.1    32.4    39.0    56.8
 update      0.0     0.0     0.0     0.0     0.0     0.0     0.0     0.0
 op_q        1.0     0.0     1.0     1.0     1.0     1.1     1.1     1.1
-Swan latency for percentile 99.900000: 75.125312
+Swan latency for percentile 99.923400: 75.125312
 
 Total QPS = 4450.3 (89007 / 20.0s)
 Peak QPS  = 71164.8

@@ -135,7 +135,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 				metricNamespaceSuffix[1].Value == "*" && metricNamespaceSuffix[1].Name == "percentile" &&
 				metricNamespaceSuffix[2].Value == "custom" {
 
-				customPercentileKey := fmt.Sprintf("percentile/%2.3fth/custom", customPercentile)
+				customPercentileKey := parse.GenerateCustomPercentileKey(customPercentile)
 				if value, ok := rawMetrics[customPercentileKey]; ok {
 					percentileString := fmt.Sprintf("%2.3fth", customPercentile)
 
@@ -149,6 +149,8 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 				} else {
 					logger.LogError("Could not find raw metric for key '%s': skipping metric", customPercentileKey)
 				}
+			} else {
+				logger.LogError("Could not find raw metric for key '%s': skipping metric", metricName)
 			}
 		}
 

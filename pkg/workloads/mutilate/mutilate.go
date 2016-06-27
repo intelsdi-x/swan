@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -259,11 +260,30 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	if err != nil {
 		return qps, achievedSLI, err
 	}
-	qps, achievedSLI, err = getQPSAndLatencyFrom(stdoutFile)
+
+	metricsMap, err := parse.OpenedFile(stdoutFile)
 	if err != nil {
 		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
 		return qps, achievedSLI, errors.New(errMsg + err.Error())
 	}
+
+	rawQPS, ok := metricsMap[parse.MutilateQPS]
+	if !ok {
+		errMsg := fmt.Sprintf("Could not retrieve MutilateQPS from mutilate parser.")
+		return qps, achievedSLI, errors.New(errMsg)
+	}
+	qps = int(rawQPS)
+
+	// We don't need to have 'exact' flag retrieved.
+	// TODO(bplotka): Do we need percentile in Decimal type? Float64 is not enough?
+	// If float64 is not enough we need to fix parser and mutilate collector as well.
+	floatPercentile, _ := m.config.LatencyPercentile.Float64()
+	rawSLI, ok := metricsMap[parse.GenerateCustomPercentileKey(floatPercentile)]
+	if !ok {
+		errMsg := fmt.Sprintf("Could not retrieve Custom Percentile from mutilate parser.")
+		return qps, achievedSLI, errors.New(errMsg)
+	}
+	achievedSLI = int(rawSLI)
 
 	taskHandle.Clean()
 	if m.config.EraseTuneOutput {
