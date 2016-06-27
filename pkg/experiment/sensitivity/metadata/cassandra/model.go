@@ -8,7 +8,7 @@ type Experiment struct {
 	LoadDuration      time.Duration
 	TuningDuration    time.Duration
 	LcName            string
-	LgNames           []string
+	LgName            string
 	RepetitionsNumber int
 	LoadPointsNumber  int
 	SLO               int
@@ -31,5 +31,5 @@ type Measurement struct {
 	ExperimentID string
 	Load         float64
 	LoadPointQPS float64
-	LGParameters []string
+	LGParameters string
 }

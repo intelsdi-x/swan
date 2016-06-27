@@ -30,7 +30,7 @@ func (c *cassandraToMetadata) buildExperimentMetadataFromModel(experimentModel E
 		LoadDuration:      experimentModel.LoadDuration,
 		TuningDuration:    experimentModel.TuningDuration,
 		LcName:            experimentModel.LcName,
-		LgNames:           experimentModel.LgNames,
+		LgName:            experimentModel.LgName,
 		RepetitionsNumber: experimentModel.RepetitionsNumber,
 		LoadPointsNumber:  experimentModel.LoadPointsNumber,
 		SLO:               experimentModel.SLO,

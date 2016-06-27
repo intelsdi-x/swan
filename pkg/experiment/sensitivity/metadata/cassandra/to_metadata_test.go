@@ -18,7 +18,7 @@ func TestCassandraModelTransformation(t *testing.T) {
 			So(experiment.LoadDuration, ShouldResemble, time.Second)
 			So(experiment.TuningDuration, ShouldResemble, time.Second)
 			So(experiment.LcName, ShouldEqual, "launch critical task")
-			So(experiment.LgNames, ShouldResemble, []string{"load generator one"})
+			So(experiment.LgName, ShouldEqual, "load generator")
 			So(experiment.RepetitionsNumber, ShouldEqual, 1)
 			So(experiment.LoadPointsNumber, ShouldEqual, 2)
 			So(experiment.SLO, ShouldEqual, 123)
@@ -50,7 +50,6 @@ func TestCassandraModelTransformation(t *testing.T) {
 			So(experiment.Phases[1].Aggressors[1].Name, ShouldEqual, "second aggressor phase two")
 			So(experiment.Phases[1].Aggressors[1].Parameters, ShouldEqual, "second aggressor parameters phase two")
 			So(experiment.Phases[1].Aggressors[1].Isolation, ShouldEqual, "second aggressor isolation phase two")
-
 		})
 
 		Convey("Measurements metadata should be correct", func() {
@@ -58,18 +57,17 @@ func TestCassandraModelTransformation(t *testing.T) {
 
 			So(experiment.Phases[0].Measurements[0].Load, ShouldEqual, 0.5)
 			So(experiment.Phases[0].Measurements[0].LoadPointQPS, ShouldEqual, 303.0)
-			So(experiment.Phases[0].Measurements[0].LGParameters, ShouldResemble, []string{"Load generator parameters measurement 1.1"})
+			So(experiment.Phases[0].Measurements[0].LGParameters, ShouldEqual, "Load generator parameters measurement 1.1")
 
 			So(experiment.Phases[0].Measurements[1].Load, ShouldEqual, 0.7)
 			So(experiment.Phases[0].Measurements[1].LoadPointQPS, ShouldEqual, 666.6)
-			So(experiment.Phases[0].Measurements[1].LGParameters, ShouldResemble, []string{"Load generator parameters measurement 1.2"})
+			So(experiment.Phases[0].Measurements[1].LGParameters, ShouldEqual, "Load generator parameters measurement 1.2")
 
 			So(experiment.Phases[1].Measurements, ShouldHaveLength, 1)
 
 			So(experiment.Phases[1].Measurements[0].Load, ShouldEqual, 0.1)
 			So(experiment.Phases[1].Measurements[0].LoadPointQPS, ShouldEqual, 0.75)
-			So(experiment.Phases[1].Measurements[0].LGParameters, ShouldResemble, []string{"Load generator parameters measurement 2.1"})
-
+			So(experiment.Phases[1].Measurements[0].LGParameters, ShouldEqual, "Load generator parameters measurement 2.1")
 		})
 	})
 }
@@ -80,7 +78,7 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 		LoadDuration:      time.Second,
 		TuningDuration:    time.Second,
 		LcName:            "launch critical task",
-		LgNames:           []string{"load generator one"},
+		LgName:            "load generator",
 		RepetitionsNumber: 1,
 		LoadPointsNumber:  2,
 		SLO:               123,
@@ -107,21 +105,21 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 		ExperimentID: "experiment",
 		Load:         0.5,
 		LoadPointQPS: 303.0,
-		LGParameters: []string{"Load generator parameters measurement 1.1"},
+		LGParameters: "Load generator parameters measurement 1.1",
 	}
 	measurementOneTwo := Measurement{
 		PhaseID:      "phase one",
 		ExperimentID: "experiment",
 		Load:         0.7,
 		LoadPointQPS: 666.6,
-		LGParameters: []string{"Load generator parameters measurement 1.2"},
+		LGParameters: "Load generator parameters measurement 1.2",
 	}
 	measurementTwoOne := Measurement{
 		PhaseID:      "phase two",
 		ExperimentID: "experiment",
 		Load:         0.1,
 		LoadPointQPS: 0.75,
-		LGParameters: []string{"Load generator parameters measurement 2.1"},
+		LGParameters: "Load generator parameters measurement 2.1",
 	}
 
 	return experiment, []Phase{phaseOne, phaseTwo}, []Measurement{measurementTwoOne, measurementOneTwo, measurementOneOne}

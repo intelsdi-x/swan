@@ -8,7 +8,7 @@ type Experiment struct {
 	LoadDuration      time.Duration
 	TuningDuration    time.Duration
 	LcName            string
-	LgNames           []string
+	LgName            string
 	RepetitionsNumber int
 	LoadPointsNumber  int
 	SLO               int
@@ -35,7 +35,7 @@ type Aggressor struct {
 type Measurement struct {
 	Load         float64
 	LoadPointQPS float64
-	LGParameters []string
+	LGParameters string
 }
 
 // Measurements represents slice of Measurement structs.
