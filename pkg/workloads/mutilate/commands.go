@@ -49,7 +49,7 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 		// Add master-only parameters.
 		baseCommand += fmt.Sprint(
 			fmt.Sprintf(" -D %d -C %d", config.MasterConnectionsDepth, config.MasterConnections),
-			fmt.Sprintf(" -p%d %s", config.AgentPort, getMasterQPSOption(config)),
+			fmt.Sprintf(" -p %d %s", config.AgentPort, getMasterQPSOption(config)),
 		)
 
 		// Enlist agents.

@@ -222,6 +222,11 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 		So(command, ShouldContainSubstring, expected)
 	})
 
+	Convey("Mutilate tuning command should contain port options", s.T(), func() {
+		expected := fmt.Sprintf("-p %d", s.mutilate.config.AgentPort)
+		So(command, ShouldContainSubstring, expected)
+	})
+
 	// Check with MasterQPS different to 0.
 	s.mutilate.config.MasterQPS = 24234
 
