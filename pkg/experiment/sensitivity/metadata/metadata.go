@@ -17,13 +17,18 @@ type Experiment struct {
 
 // Phase represents metadata of single Phase in sensitivity experiment.
 type Phase struct {
-	ID                  string
-	LCParameters        string
-	LCIsolation         string
-	AggressorNames      []string
-	AggressorParameters []string
-	AggressorIsolations []string
-	Measurements        Measurements
+	ID           string
+	LCParameters string
+	LCIsolation  string
+	Aggressors   []Aggressor
+	Measurements Measurements
+}
+
+// Aggressor represents metadata of phase aggressor.
+type Aggressor struct {
+	Name       string
+	Parameters string
+	Isolation  string
 }
 
 // Measurement represents metadata of single measurement in sensitivity experiment.
@@ -41,9 +46,14 @@ func (e *Experiment) AddPhase(phase Phase) {
 	e.Phases = append(e.Phases, phase)
 }
 
-// AddMeasurement adds a Measurement to the Experiment.
+// AddMeasurement adds a Measurement to the Phase.
 func (p *Phase) AddMeasurement(measurement Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
+}
+
+// AddAggressor adds Aggressor to the Phase
+func (p *Phase) AddAggressor(aggressor Aggressor) {
+	p.Aggressors = append(p.Aggressors, aggressor)
 }
 
 // Len implements sort.Interface.

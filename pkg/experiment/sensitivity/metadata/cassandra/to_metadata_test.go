@@ -28,16 +28,28 @@ func TestCassandraModelTransformation(t *testing.T) {
 			So(experiment.Phases[0].ID, ShouldEqual, "phase one")
 			So(experiment.Phases[0].LCIsolation, ShouldEqual, "Latency critical isolation phase one")
 			So(experiment.Phases[0].LCParameters, ShouldEqual, "Latency critical parameters phase one")
-			So(experiment.Phases[0].AggressorNames, ShouldResemble, []string{"first aggressor phase one", "second aggressor phase one"})
-			So(experiment.Phases[0].AggressorParameters, ShouldResemble, []string{"first aggressor parameters phase one", "second aggressor parameters phase one"})
-			So(experiment.Phases[0].AggressorIsolations, ShouldResemble, []string{"first aggressor isolation phase one", "second aggressor isolation phase one"})
 
 			So(experiment.Phases[1].ID, ShouldEqual, "phase two")
 			So(experiment.Phases[1].LCIsolation, ShouldEqual, "Latency critical isolation phase two")
 			So(experiment.Phases[1].LCParameters, ShouldEqual, "Latency critical parameters phase two")
-			So(experiment.Phases[1].AggressorNames, ShouldResemble, []string{"first aggressor phase two", "second aggressor phase two"})
-			So(experiment.Phases[1].AggressorParameters, ShouldResemble, []string{"first aggressor parameters phase two", "second aggressor parameters phase two"})
-			So(experiment.Phases[1].AggressorIsolations, ShouldResemble, []string{"first aggressor isolation phase two", "second aggressor isolation phase two"})
+		})
+
+		Convey("Aggressors metadata should be correct", func() {
+			So(experiment.Phases[0].Aggressors, ShouldHaveLength, 2)
+			So(experiment.Phases[0].Aggressors[0].Name, ShouldEqual, "first aggressor phase one")
+			So(experiment.Phases[0].Aggressors[0].Parameters, ShouldEqual, "first aggressor parameters phase one")
+			So(experiment.Phases[0].Aggressors[0].Isolation, ShouldEqual, "first aggressor isolation phase one")
+			So(experiment.Phases[0].Aggressors[1].Name, ShouldEqual, "second aggressor phase one")
+			So(experiment.Phases[0].Aggressors[1].Parameters, ShouldEqual, "second aggressor parameters phase one")
+			So(experiment.Phases[0].Aggressors[1].Isolation, ShouldEqual, "second aggressor isolation phase one")
+
+			So(experiment.Phases[1].Aggressors, ShouldHaveLength, 2)
+			So(experiment.Phases[1].Aggressors[0].Name, ShouldEqual, "first aggressor phase two")
+			So(experiment.Phases[1].Aggressors[0].Parameters, ShouldEqual, "first aggressor parameters phase two")
+			So(experiment.Phases[1].Aggressors[0].Isolation, ShouldEqual, "first aggressor isolation phase two")
+			So(experiment.Phases[1].Aggressors[1].Name, ShouldEqual, "second aggressor phase two")
+			So(experiment.Phases[1].Aggressors[1].Parameters, ShouldEqual, "second aggressor parameters phase two")
+			So(experiment.Phases[1].Aggressors[1].Isolation, ShouldEqual, "second aggressor isolation phase two")
 
 		})
 
