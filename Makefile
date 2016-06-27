@@ -42,7 +42,8 @@ list_env:
 	@ env
 	@ echo ""
 
-integration_test: list_env plugins unit_test build_workloads build
+# Temporary disabling unit_test during integration test
+integration_test: list_env plugins build_workloads build
 	./scripts/isolate-pid.sh go test -race $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test -race $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test -race $(TEST_OPT) ./misc/...
