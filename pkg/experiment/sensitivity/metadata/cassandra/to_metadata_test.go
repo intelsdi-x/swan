@@ -17,8 +17,8 @@ func TestCassandraModelTransformation(t *testing.T) {
 			So(experiment.ID, ShouldEqual, "experiment")
 			So(experiment.LoadDuration, ShouldResemble, time.Second)
 			So(experiment.TuningDuration, ShouldResemble, time.Second)
-			So(experiment.LcName, ShouldEqual, "launch critical task")
-			So(experiment.LgName, ShouldEqual, "load generator")
+			So(experiment.LCName, ShouldEqual, "launch critical task")
+			So(experiment.LGName, ShouldEqual, "load generator")
 			So(experiment.RepetitionsNumber, ShouldEqual, 1)
 			So(experiment.LoadPointsNumber, ShouldEqual, 2)
 			So(experiment.SLO, ShouldEqual, 123)
@@ -77,8 +77,8 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 		ID:                "experiment",
 		LoadDuration:      time.Second,
 		TuningDuration:    time.Second,
-		LcName:            "launch critical task",
-		LgName:            "load generator",
+		LCName:            "launch critical task",
+		LGName:            "load generator",
 		RepetitionsNumber: 1,
 		LoadPointsNumber:  2,
 		SLO:               123,

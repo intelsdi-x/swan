@@ -7,8 +7,8 @@ type Experiment struct {
 	ID                string
 	LoadDuration      time.Duration
 	TuningDuration    time.Duration
-	LcName            string
-	LgName            string
+	LCName            string
+	LGName            string
 	RepetitionsNumber int
 	LoadPointsNumber  int
 	SLO               int
