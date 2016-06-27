@@ -67,7 +67,6 @@ type Config struct {
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
 	// If it equals 0, than remote -Q option at all from master.
-	// TODO(bp): Do we need to have that just per whole Load Generator?
 	MasterQPS int // -Q
 
 	// Output flags.
