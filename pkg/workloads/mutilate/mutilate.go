@@ -203,10 +203,15 @@ func (m mutilate) Populate() (err error) {
 			strconv.Itoa(exitCode))
 	}
 
-	taskHandle.Clean()
+	err = taskHandle.Clean()
+	if err != nil {
+		return err
+	}
+
 	if m.config.ErasePopulateOutput {
 		return taskHandle.EraseOutput()
 	}
+
 	return nil
 }
 
@@ -287,7 +292,11 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	}
 	achievedSLI = int(rawSLI)
 
-	taskHandle.Clean()
+	err = taskHandle.Clean()
+	if err != nil {
+		return 0, 0, err
+	}
+
 	if m.config.EraseTuneOutput {
 		if err := taskHandle.EraseOutput(); err != nil {
 			return 0, 0, err
