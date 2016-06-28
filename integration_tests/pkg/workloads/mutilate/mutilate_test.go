@@ -85,6 +85,8 @@ func TestMutilateWithExecutor(t *testing.T) {
 		// TODO: added a custom percentile integration test.
 		mutilateConfig.LatencyPercentile, _ = decimal.NewFromString("99")
 		mutilateConfig.MemcachedPort = memcachedConfig.Port
+		mutilateConfig.ErasePopulateOutput = true
+		mutilateConfig.EraseTuneOutput = true
 
 		Convey("When run mutilate populate", func() {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
