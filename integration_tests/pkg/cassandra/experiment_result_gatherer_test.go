@@ -30,9 +30,9 @@ func createKeyspace(ip string) error {
 	return nil
 }
 
-func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics) error {
+func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics) (err error) {
 	// TODO(CD): Consider getting schema from the cassandra publisher plugin
-	session.Query(`CREATE TABLE IF NOT EXISTS snap.metrics (
+	err = session.Query(`CREATE TABLE IF NOT EXISTS snap.metrics (
 		ns  text,
 		ver int,
 		host text,
@@ -46,7 +46,11 @@ func insertDataIntoCassandra(session *gocql.Session, metrics *cassandra.Metrics)
 	) WITH CLUSTERING ORDER BY (time DESC);`,
 	).Exec()
 
-	err := session.Query(`insert into snap.metrics(
+	if err != nil {
+		return err
+	}
+
+	err = session.Query(`insert into snap.metrics(
 		ns, ver, host, time, boolval,
 		doubleval, strval, tags, valtype) values
 		(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
