@@ -10,7 +10,7 @@ import (
 
 func TestCassandraModelTransformation(t *testing.T) {
 	experimentModel, phasesModel, measurementsModel := prepareCassandraModel()
-	mapper := NewToMetadata()
+	mapper := newToMetadata()
 	experiment := mapper.transform(experimentModel, phasesModel, measurementsModel)
 
 	Convey("When Cassandra model is transformed into metadata", t, func() {

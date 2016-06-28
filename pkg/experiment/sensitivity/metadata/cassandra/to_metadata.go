@@ -7,7 +7,7 @@ import (
 )
 
 // NewToMetadata creates new instance of struct that transforms Cassandra models to metadata.Experiment.
-func NewToMetadata() *toMetadata {
+func newToMetadata() *toMetadata {
 	return &toMetadata{phaseNameToIndex: make(map[string]int)}
 }
 
