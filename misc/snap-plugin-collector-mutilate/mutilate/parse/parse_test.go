@@ -25,16 +25,16 @@ func TestStdoutParser(t *testing.T) {
 
 		So(err, ShouldBeNil)
 		So(data, ShouldHaveLength, 10)
-		So(data["avg"], ShouldResemble, 20.8)
-		So(data["std"], ShouldResemble, 23.1)
-		So(data["min"], ShouldResemble, 11.9)
-		So(data["percentile/5th"], ShouldResemble, 13.3)
-		So(data["percentile/10th"], ShouldResemble, 13.4)
-		So(data["percentile/90th"], ShouldResemble, 33.4)
-		So(data["percentile/95th"], ShouldResemble, 43.1)
-		So(data["percentile/99th"], ShouldResemble, 59.5)
+		So(data[MutilateAvg], ShouldResemble, 20.8)
+		So(data[MutilateStd], ShouldResemble, 23.1)
+		So(data[MutilateMin], ShouldResemble, 11.9)
+		So(data[MutilatePercentile5th], ShouldResemble, 13.3)
+		So(data[MutilatePercentile10th], ShouldResemble, 13.4)
+		So(data[MutilatePercentile90th], ShouldResemble, 33.4)
+		So(data[MutilatePercentile95th], ShouldResemble, 43.1)
+		So(data[MutilatePercentile99th], ShouldResemble, 59.5)
 		So(data["percentile/99.999th/custom"], ShouldResemble, 1777.887805)
-		So(data["qps"], ShouldResemble, 4993.1)
+		So(data[MutilateQPS], ShouldResemble, 4993.1)
 	})
 
 	Convey("Attempting to read file with wrong number of read columns should return an error and no metrics", t, func() {
@@ -58,14 +58,14 @@ func TestStdoutParser(t *testing.T) {
 		// QPS and custom percentile latency are still available, thus 2.
 		So(data, ShouldHaveLength, 2)
 
-		So(data, ShouldNotContainKey, "avg")
-		So(data, ShouldNotContainKey, "std")
-		So(data, ShouldNotContainKey, "min")
-		So(data, ShouldNotContainKey, "percentile/5th")
-		So(data, ShouldNotContainKey, "percentile/10th")
-		So(data, ShouldNotContainKey, "percentile/90th")
-		So(data, ShouldNotContainKey, "percentile/95th")
-		So(data, ShouldNotContainKey, "percentile/99th")
+		So(data, ShouldNotContainKey, MutilateAvg)
+		So(data, ShouldNotContainKey, MutilateStd)
+		So(data, ShouldNotContainKey, MutilateMin)
+		So(data, ShouldNotContainKey, MutilatePercentile5th)
+		So(data, ShouldNotContainKey, MutilatePercentile10th)
+		So(data, ShouldNotContainKey, MutilatePercentile90th)
+		So(data, ShouldNotContainKey, MutilatePercentile95th)
+		So(data, ShouldNotContainKey, MutilatePercentile99th)
 	})
 
 	Convey("Attempting to read a file with no swan-specific row at all should return an error and no metrics", t, func() {

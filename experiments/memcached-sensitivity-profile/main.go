@@ -106,14 +106,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
 
-	percentile, _ := decimal.NewFromString("99.9")
-	mutilateConfig := mutilate.Config{
-		PathToBinary:      mutilate.PathFlag.Value(),
-		MemcachedHost:     memcachedConfig.IP,
-		MemcachedPort:     memcachedConfig.Port,
-		LatencyPercentile: percentile,
-		TuningTime:        1 * time.Second,
-	}
+	percentile, _ := decimal.NewFromString("99")
+	mutilateConfig := mutilate.DefaultMutilateConfig()
+	mutilateConfig.MemcachedHost = memcachedConfig.IP
+	mutilateConfig.MemcachedPort = memcachedConfig.Port
+	mutilateConfig.LatencyPercentile = percentile
+	mutilateConfig.TuningTime = 1 * time.Second
+
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
