@@ -89,21 +89,6 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	// Swan provides a patched version of mutilate, which let's a user provide
-	// a custom percentile value for mutilate to report. By default, Mutilate
-	// reports p5, p10, p90, p95 and p99.
-	customPercentile := 0.0
-	for metric := range rawMetrics {
-		var percentile float64
-		if n, err := fmt.Sscanf(metric, "percentile/%fth/custom", &percentile); err == nil && n == 1 {
-			// TODO(bplotka): We keep percentile in float. Is that proper?
-			// We decided to have decimals for that in Swan code.
-			customPercentile = percentile
-			break
-		}
-	}
-	rawMetricsHasCustomPercentile := customPercentile > 0.0
-
 	const namespaceHostnameIndex = 3
 	const swanNamespacePrefix = len([...]string{"intel", "swan", "mutilate", "hostname"})
 
@@ -124,32 +109,33 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		// Flatten to string so ['percentile', '5th'] becomes '/percentile/5th'.
 		metricName := strings.Join(metricNamespaceSuffixStrings, "/")
 
-		if value, ok := rawMetrics[metricName]; ok {
+		if value, ok := rawMetrics.Raw[metricName]; ok {
 			metric.Data_ = value
 		} else {
 			// If metric wasn't found directly in raw metrics map, it may be a custom
 			// percentile latency. For example, 'percentile/*/custom'.
-			// If the rawMetrics gathered contains, for example 'percentile/99.999th',
+			// If the rawMetrics gathered contains non-default LatencyPercentile field e.g '99.99900',
 			// we provide it here.
-			if rawMetricsHasCustomPercentile &&
+			// Swan provides a patched version of mutilate, which let's a user provide
+			// a custom percentile value for mutilate to report. By default, Mutilate
+			// reports p5, p10, p90, p95 and p99.
+			if rawMetrics.LatencyPercentile != "" &&
 				len(metricNamespaceSuffix) == 3 &&
 				metricNamespaceSuffix[0].Value == "percentile" &&
 				metricNamespaceSuffix[1].Value == "*" && metricNamespaceSuffix[1].Name == "percentile" &&
 				metricNamespaceSuffix[2].Value == "custom" {
 
-				customPercentileKey := parse.GenerateCustomPercentileKey(customPercentile)
-				if value, ok := rawMetrics[customPercentileKey]; ok {
-					percentileString := fmt.Sprintf("%2.3fth", customPercentile)
-
+				if value, ok := rawMetrics.Raw[parse.MutilatePercentileCustom]; ok {
 					// Snap namespaces may not have '.' so we have to replace with "_".
-					percentileStringSanitized := strings.Replace(percentileString, ".", "_", 1)
+					percentileStringSanitized := strings.Replace(
+						fmt.Sprintf("%sth", rawMetrics.LatencyPercentile), ".", "_", 1)
 
 					// Specialize '*' to for example '99_999th'.
 					metricNamespaceSuffix[1].Value = percentileStringSanitized
 
 					metric.Data_ = value
 				} else {
-					logger.LogError("Could not find raw metric for key '%s': skipping metric", customPercentileKey)
+					logger.LogError("Could not find raw metric for key '%s': skipping metric", parse.MutilatePercentileCustom)
 				}
 			} else {
 				logger.LogError("Could not find raw metric for key '%s': skipping metric", metricName)

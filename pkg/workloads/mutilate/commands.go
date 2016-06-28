@@ -67,7 +67,7 @@ func getLoadCommand(
 	config Config, qps int, duration time.Duration, agentHandles []executor.TaskHandle) string {
 	baseCommand := getBaseMasterCommand(config, agentHandles)
 	return fmt.Sprintf("%s -q %d -t %d --swanpercentile %s",
-		baseCommand, qps, int(duration.Seconds()), config.LatencyPercentile.String())
+		baseCommand, qps, int(duration.Seconds()), config.LatencyPercentile)
 }
 
 // getTuneCommand returns master tune command for both agent and agentless mode.
@@ -75,9 +75,9 @@ func getTuneCommand(config Config, slo int, agentHandles []executor.TaskHandle) 
 	baseCommand := getBaseMasterCommand(config, agentHandles)
 	command = fmt.Sprintf("%s --search %s:%d -t %d --swanpercentile %s",
 		baseCommand,
-		config.LatencyPercentile.String(),
+		config.LatencyPercentile,
 		slo,
 		int(config.TuningTime.Seconds()),
-		config.LatencyPercentile.String())
+		config.LatencyPercentile)
 	return command
 }
