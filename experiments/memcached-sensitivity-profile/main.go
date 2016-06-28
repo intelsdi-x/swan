@@ -31,6 +31,8 @@ var (
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
+	hpCPUExclusive = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
+	beCPUExclusive = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
@@ -74,7 +76,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	numaZero := isolation.NewIntSet(0)
 
 	// Initialize Memcached Launcher with HP isolation.
-	hpIsolation, err := cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, true, false)
+	hpIsolation, err := cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, hpCPUExclusive.Value(), false)
 	check(err)
 
 	err = hpIsolation.Create()
@@ -114,7 +116,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, true, false)
+	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
 	err = beIsolation.Create()
