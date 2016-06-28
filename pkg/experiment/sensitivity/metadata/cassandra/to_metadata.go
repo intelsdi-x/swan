@@ -25,11 +25,9 @@ func (c *toMetadata) transform(experiment Experiment, phases []Phase, measuremen
 }
 
 func (c *toMetadata) buildExperimentMetadataFromModel(experimentModel Experiment) metadata.Experiment {
-	experimentMetadata := metadata.Experiment{
+	return metadata.Experiment{
 		BaseExperiment: experimentModel.BaseExperiment,
 	}
-
-	return experimentMetadata
 }
 
 func (c *toMetadata) addPhasesToExperiment(experimentMetadata metadata.Experiment, phases []Phase) metadata.Experiment {
@@ -62,12 +60,7 @@ func (c *toMetadata) addAggressorsToPhase(phaseMetadata metadata.Phase, phaseMod
 func (c *toMetadata) addMeasurementsToPhases(experimentMetadata metadata.Experiment, measurements []Measurement) metadata.Experiment {
 	for _, measurement := range measurements {
 		phase := &experimentMetadata.Phases[c.phaseNameToIndex[measurement.PhaseID+experimentMetadata.ID]]
-		measurementMetadata := metadata.Measurement{
-			Load:         measurement.Load,
-			LoadPointQPS: measurement.LoadPointQPS,
-			LGParameters: measurement.LGParameters,
-		}
-		phase.Measurements = append(phase.Measurements, measurementMetadata)
+		phase.Measurements = append(phase.Measurements, measurement.Measurement)
 	}
 
 	return c.sortMeasurements(experimentMetadata)
