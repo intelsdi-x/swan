@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,8 +17,17 @@ import (
 )
 
 const (
-	mutilatePath  = "/usr/bin/local/mutilate"
-	memcachedHost = "127.0.0.1"
+	mutilatePath           = "/usr/bin/local/mutilate"
+	memcachedHost          = "123.123.22.34"
+	memcachedPort          = 2145
+	agentThreads           = 24
+	agentConnections       = 9
+	agentConnectionsDepth  = 2
+	masterThreads          = 4
+	masterConnections      = 23
+	masterConnectionsDepth = 1
+	keySize                = 3
+	valueSize              = 5
 
 	correctMutilateQPS    = 4450
 	correctMutilateSLI    = 75
@@ -25,7 +35,7 @@ const (
 read       20.9    11.9    11.9    12.5    13.1    32.4    39.0    56.8
 update      0.0     0.0     0.0     0.0     0.0     0.0     0.0     0.0
 op_q        1.0     0.0     1.0     1.0     1.0     1.1     1.1     1.1
-Swan latency for percentile 99.900000: 75.125312
+Swan latency for percentile 99.923400: 75.125312
 
 Total QPS = 4450.3 (89007 / 20.0s)
 Peak QPS  = 71164.8
@@ -46,119 +56,48 @@ type MutilateTestSuite struct {
 	defaultMutilateCommand string
 	defaultSlo             int
 
-	mExecutor *mocks.Executor
-	mHandle   *mocks.TaskHandle
+	mExecutor          *mocks.Executor
+	mExecutorForAgent1 *mocks.Executor
+	mExecutorForAgent2 *mocks.Executor
+	mMasterHandle      *mocks.TaskHandle
+	mAgentHandle1      *mocks.TaskHandle
+	mAgentHandle2      *mocks.TaskHandle
 }
 
 func (s *MutilateTestSuite) SetupTest() {
-	s.config.PathToBinary = mutilatePath
-	s.config.MemcachedHost = memcachedHost
-	s.config.LatencyPercentile, _ = decimal.NewFromString("99.9")
-	s.config.TuningTime = 30 * time.Second
-	s.config.WarmupTime = 10 * time.Second
-	s.config.EraseTuneOutput = true
-	s.config.ErasePopulateOutput = true
-
 	s.defaultSlo = 1000
 
-	s.mExecutor = new(mocks.Executor)
-	s.mHandle = new(mocks.TaskHandle)
-
+	// Mutilate Configuration.
+	s.config.PathToBinary = mutilatePath
+	s.config.MemcachedHost = memcachedHost
+	s.config.MemcachedPort = memcachedPort
+	s.config.LatencyPercentile, _ = decimal.NewFromString("99.9234")
+	s.config.TuningTime = 934 * time.Second
+	s.config.WarmupTime = 1231 * time.Second
+	s.config.AgentThreads = agentThreads
+	s.config.AgentConnections = agentConnections
+	s.config.AgentConnectionsDepth = agentConnectionsDepth
+	s.config.MasterThreads = masterThreads
+	s.config.MasterConnections = masterConnections
+	s.config.MasterConnectionsDepth = masterConnectionsDepth
+	s.config.KeySize = keySize
+	s.config.ValueSize = valueSize
 	s.mutilate.config = s.config
+
+	s.mAgentHandle1 = new(mocks.TaskHandle)
+	s.mAgentHandle2 = new(mocks.TaskHandle)
+
+	s.mMasterHandle = new(mocks.TaskHandle)
+	s.mExecutor = new(mocks.Executor)
+	s.mExecutorForAgent1 = new(mocks.Executor)
+	s.mExecutorForAgent2 = new(mocks.Executor)
+
+	// Don't want to have not erased output after tests.
+	s.config.EraseTuneOutput = true
+	s.config.ErasePopulateOutput = true
 }
 
-func (s *MutilateTestSuite) TestGetLoadCommand() {
-	const load = 300
-	const duration = 10 * time.Second
-	command := s.mutilate.getLoadCommand(load, duration)
-
-	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain target server", s.T(), func() {
-		expected := fmt.Sprintf("-s %s", s.mutilate.config.MemcachedHost)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain load duration", s.T(), func() {
-		expected := fmt.Sprintf("-t %d", int(duration.Seconds()))
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain warmup", s.T(), func() {
-		expected := fmt.Sprintf("--warmup=%d", int(s.config.WarmupTime.Seconds()))
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain noload option", s.T(), func() {
-		expected := fmt.Sprintf("--noload")
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
-		expected := fmt.Sprintf("--swanpercentile=%s", s.mutilate.config.LatencyPercentile.String())
-		So(command, ShouldContainSubstring, expected)
-	})
-}
-
-func (s *MutilateTestSuite) TestGetTuneCommand() {
-	const slo = 300
-	command := s.mutilate.getTuneCommand(slo)
-
-	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain target server", s.T(), func() {
-		expected := fmt.Sprintf("-s %s:%d", s.mutilate.config.MemcachedHost,
-			s.mutilate.config.MemcachedPort)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain warmup", s.T(), func() {
-		expected := fmt.Sprintf("--warmup=%d", int(s.config.WarmupTime.Seconds()))
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain tuning phase duration", s.T(), func() {
-		expected := fmt.Sprintf("-t %d", int(s.mutilate.config.TuningTime.Seconds()))
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain noload option", s.T(), func() {
-		expected := fmt.Sprintf("--noload")
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain search option", s.T(), func() {
-		expected := fmt.Sprintf("--search=%s:%d",
-			s.mutilate.config.LatencyPercentile.String(), slo)
-		So(command, ShouldContainSubstring, expected)
-	})
-}
-
-func (s *MutilateTestSuite) TestGetPopulateCommand() {
-	command := s.mutilate.getPopulateCommand()
-
-	Convey("Mutilate load command should contain mutilate binary path", s.T(), func() {
-		expected := fmt.Sprintf("%s", s.mutilate.config.PathToBinary)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain target server", s.T(), func() {
-		expected := fmt.Sprintf("-s %s", s.mutilate.config.MemcachedHost)
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain --loadonly switch", s.T(), func() {
-		expected := fmt.Sprintf("--loadonly")
-		So(command, ShouldContainSubstring, expected)
-	})
-}
-
+// Testing successful master-only mutilate tuning case.
 func (s *MutilateTestSuite) TestMutilateTuning() {
 	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
 	if err != nil {
@@ -171,11 +110,14 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 
 	mutilate := New(s.mExecutor, s.config)
 
-	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("ExitCode").Return(0, nil)
-	s.mHandle.On("StdoutFile").Return(outputFile, nil)
-	s.mHandle.On("EraseOutput").Return(nil)
+	// This is needed to know how many times the mock should expect function execution.
+	numberOfConveys := 4
+	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true).Times(numberOfConveys)
+	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
+	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
+	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
+	s.mMasterHandle.On("Clean").Return(nil).Times(numberOfConveys)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
 		outputFile.Seek(0, 0)
@@ -193,16 +135,79 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 
 		Convey("Mock expectations are asserted.", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
-			So(s.mHandle.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mMasterHandle.AssertExpectations(s.T()), ShouldBeTrue)
 		})
 	})
 }
 
+// Testing successful clustered mutilate tuning case.
+func (s *MutilateTestSuite) TestClusterMutilateTuning() {
+	outputFile, err := ioutil.TempFile(os.TempDir(), "mutilate")
+	if err != nil {
+		s.Fail(err.Error())
+		return
+	}
+	defer outputFile.Close()
+
+	outputFile.WriteString(correctMutilateOutput)
+
+	mutilate := NewCluster(s.mExecutor, []executor.Executor{
+		s.mExecutorForAgent1,
+		s.mExecutorForAgent2,
+	}, s.config)
+
+	// This is needed to know how many times the mock should expect function execution.
+	numberOfConveys := 4
+	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true).Times(numberOfConveys)
+	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
+	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
+	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
+	s.mMasterHandle.On("Clean").Return(nil).Times(numberOfConveys)
+
+	s.mExecutorForAgent1.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil)
+	s.mAgentHandle1.On("Address").Return("255.255.255.001").Times(numberOfConveys)
+	s.mAgentHandle1.On("Stop").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle1.On("EraseOutput").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle1.On("Clean").Return(nil).Times(numberOfConveys * 2)
+
+	s.mExecutorForAgent2.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil)
+	s.mAgentHandle2.On("Address").Return("255.255.255.002").Times(numberOfConveys)
+	s.mAgentHandle2.On("Stop").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle2.On("EraseOutput").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle2.On("Clean").Return(nil).Times(numberOfConveys * 2)
+
+	Convey("When Tuning Memcached.", s.T(), func() {
+		outputFile.Seek(0, 0)
+		targetQPS, sli, err := mutilate.Tune(s.defaultSlo)
+		Convey("On success, error should be nil.", func() {
+			So(err, ShouldBeNil)
+		})
+		Convey("TargetQPS should be correct.", func() {
+			So(targetQPS, ShouldEqual, correctMutilateQPS)
+		})
+
+		Convey("SLI should be correct.", func() {
+			So(sli, ShouldEqual, correctMutilateSLI)
+		})
+
+		Convey("Mock expectations are asserted.", func() {
+			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mExecutorForAgent1.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mExecutorForAgent2.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mMasterHandle.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mAgentHandle1.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mAgentHandle2.AssertExpectations(s.T()), ShouldBeTrue)
+		})
+	})
+}
+
+// Testing master-only mutilate tuning with master executor failure.
 func (s *MutilateTestSuite) TestMutilateTuningExecutorError() {
 	mutilate := New(s.mExecutor, s.config)
 	const errorMsg = "Error in execution"
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).
-		Return(s.mHandle, errors.New(errorMsg))
+		Return(nil, errors.New(errorMsg))
 
 	Convey("When tuning, and an executor retuns an error", s.T(), func() {
 		_, _, err := mutilate.Tune(s.defaultSlo)
@@ -215,34 +220,127 @@ func (s *MutilateTestSuite) TestMutilateTuningExecutorError() {
 	})
 }
 
+// Testing clustered mutilate tuning with different failures.
+func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
+	Convey("While having clustered mutilate", s.T(), func() {
+		mutilate := NewCluster(s.mExecutor, []executor.Executor{
+			s.mExecutorForAgent1,
+			s.mExecutorForAgent2,
+		}, s.config)
+
+		Convey("Having failure with master executor, tune should return error and agents should be stopped", func() {
+			const errorMsg = "Error in execution"
+
+			s.mExecutor.On("Execute", mock.AnythingOfType("string")).
+				Return(nil, errors.New(errorMsg)).Once()
+			s.mExecutorForAgent1.On(
+				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
+			s.mAgentHandle1.On("Address").Return("255.255.255.001").Once()
+			s.mAgentHandle1.On("Stop").Return(nil).Once()
+			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle1.On("Clean").Return(nil).Once()
+
+			s.mExecutorForAgent2.On(
+				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil).Once()
+			s.mAgentHandle2.On("Address").Return("255.255.255.002").Once()
+			s.mAgentHandle2.On("Stop").Return(nil).Once()
+			s.mAgentHandle2.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle2.On("Clean").Return(nil).Once()
+
+			_, _, err := mutilate.Tune(s.defaultSlo)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, errorMsg)
+		})
+
+		Convey("Having failure with one agent executor, tune should return error"+
+			", agents should be stopped and master not started", func() {
+			const errorMsg = "Error in execution"
+
+			s.mExecutorForAgent1.On(
+				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
+			s.mAgentHandle1.On("Stop").Return(nil).Once()
+			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle1.On("Clean").Return(nil).Once()
+
+			s.mExecutorForAgent2.On(
+				"Execute", mock.AnythingOfType("string")).Return(nil, errors.New(errorMsg)).Once()
+
+			_, _, err := mutilate.Tune(s.defaultSlo)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, errorMsg)
+		})
+
+		Convey("Having failure with master's Wait, tune should return error and agents "+
+			"should be stopped and cleaned", func() {
+			const errorMsg = "Cannot terminate the Mutilate master. Stopping agents."
+
+			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
+			// IsTerminated will false.
+			s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(false).Once()
+
+			s.mExecutorForAgent1.On(
+				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
+			s.mAgentHandle1.On("Address").Return("255.255.255.001").Once()
+			s.mAgentHandle1.On("Stop").Return(nil).Once()
+			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle1.On("Clean").Return(nil).Once()
+
+			s.mExecutorForAgent2.On(
+				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil).Once()
+			s.mAgentHandle2.On("Address").Return("255.255.255.002").Once()
+			s.mAgentHandle2.On("Stop").Return(nil).Once()
+			s.mAgentHandle2.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle2.On("Clean").Return(nil).Once()
+
+			_, _, err := mutilate.Tune(s.defaultSlo)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, errorMsg)
+		})
+
+		So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
+		So(s.mExecutorForAgent1.AssertExpectations(s.T()), ShouldBeTrue)
+		So(s.mExecutorForAgent2.AssertExpectations(s.T()), ShouldBeTrue)
+		So(s.mMasterHandle.AssertExpectations(s.T()), ShouldBeTrue)
+		So(s.mAgentHandle1.AssertExpectations(s.T()), ShouldBeTrue)
+		So(s.mAgentHandle2.AssertExpectations(s.T()), ShouldBeTrue)
+	})
+}
+
+// Testing successful master-only mutilate load case.
+// NOTE: No need to test clustered case. It is tested in cluster_task_handle_test.go
 func (s *MutilateTestSuite) TestMutilateLoad() {
 	const load = 1000
 	const duration = 10 * time.Second
+	const masterAddress = "255.255.255.001"
 
 	mutilate := New(s.mExecutor, s.config)
 
-	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mHandle, nil)
+	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil)
+	s.mMasterHandle.On("Address").Return(masterAddress).Twice()
 
 	Convey("When generating Load.", s.T(), func() {
 		mutilateTask, err := mutilate.Load(load, duration)
 		Convey("On success, error should be nil", func() {
 			So(err, ShouldBeNil)
 		})
-		Convey("mutilateTask should be a mockedTask", func() {
-			So(mutilateTask, ShouldEqual, s.mHandle)
+
+		Convey("mutilateTask's address should be match masterTask's address", func() {
+			So(mutilateTask.Address(), ShouldEqual, s.mMasterHandle.Address())
 		})
+
 		Convey("Mock expectations are asserted", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
-			So(s.mHandle.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mMasterHandle.AssertExpectations(s.T()), ShouldBeTrue)
 		})
 	})
 }
 
+// Testing master-only mutilate load with excutor failure.
 func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 	mutilate := New(s.mExecutor, s.config)
 	const errorMsg = "Error in execution"
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).
-		Return(s.mHandle, errors.New(errorMsg))
+		Return(s.mMasterHandle, errors.New(errorMsg))
 
 	Convey("When executing Load and executor returns an error.", s.T(), func() {
 		_, err := mutilate.Load(20, 1*time.Second)
@@ -255,6 +353,7 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 	})
 }
 
+// Testing successful mutilate populate case.
 func (s *MutilateTestSuite) TestPopulate() {
 	mutilatePopulateCommand := fmt.Sprintf("%s -s %s:%d --loadonly",
 		s.config.PathToBinary,
@@ -264,11 +363,11 @@ func (s *MutilateTestSuite) TestPopulate() {
 
 	mutilate := New(s.mExecutor, s.config)
 
-	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mHandle, nil)
-	s.mHandle.On("Wait", 0*time.Nanosecond).Return(true)
-	s.mHandle.On("ExitCode").Return(0, nil)
-	s.mHandle.On("Clean").Return(nil)
-	s.mHandle.On("EraseOutput").Return(nil)
+	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mMasterHandle, nil)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true)
+	s.mMasterHandle.On("ExitCode").Return(0, nil)
+	s.mMasterHandle.On("Clean").Return(nil)
+	s.mMasterHandle.On("EraseOutput").Return(nil)
 
 	Convey("When Populating Memcached.", s.T(), func() {
 		err := mutilate.Populate()
@@ -278,7 +377,7 @@ func (s *MutilateTestSuite) TestPopulate() {
 
 		Convey("Mock expectations are asserted", func() {
 			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
-			So(s.mHandle.AssertExpectations(s.T()), ShouldBeTrue)
+			So(s.mMasterHandle.AssertExpectations(s.T()), ShouldBeTrue)
 		})
 	})
 }
