@@ -1,25 +1,16 @@
 package cassandra
 
-import "time"
+import "github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 
 // Experiment is a gocassa model for experiment metadata (such that are constant for all the phases) of sensitivity profile experiment.
 type Experiment struct {
-	ID                string
-	LoadDuration      time.Duration
-	TuningDuration    time.Duration
-	LCName            string
-	LGName            string
-	RepetitionsNumber int
-	LoadPointsNumber  int
-	SLO               int
+	metadata.BaseExperiment
 }
 
 // Phase is a gocassa model for phase metadata (such that are constant for all measurements) of sensitivity profile experiment.
 type Phase struct {
-	ID                  string
+	metadata.BasePhase
 	ExperimentID        string
-	LCParameters        string
-	LCIsolation         string
 	AggressorNames      []string
 	AggressorParameters []string
 	AggressorIsolations []string
@@ -29,7 +20,5 @@ type Phase struct {
 type Measurement struct {
 	PhaseID      string
 	ExperimentID string
-	Load         float64
-	LoadPointQPS float64
-	LGParameters string
+	metadata.Measurement
 }

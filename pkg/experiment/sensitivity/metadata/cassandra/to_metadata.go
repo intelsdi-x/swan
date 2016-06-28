@@ -26,14 +26,7 @@ func (c *cassandraToMetadata) fromCassandraModelToMetadata(experiment Experiment
 
 func (c *cassandraToMetadata) buildExperimentMetadataFromModel(experimentModel Experiment) metadata.Experiment {
 	experimentMetadata := metadata.Experiment{
-		ID:                experimentModel.ID,
-		LoadDuration:      experimentModel.LoadDuration,
-		TuningDuration:    experimentModel.TuningDuration,
-		LCName:            experimentModel.LCName,
-		LGName:            experimentModel.LGName,
-		RepetitionsNumber: experimentModel.RepetitionsNumber,
-		LoadPointsNumber:  experimentModel.LoadPointsNumber,
-		SLO:               experimentModel.SLO,
+		BaseExperiment: experimentModel.BaseExperiment,
 	}
 
 	return experimentMetadata
@@ -42,9 +35,7 @@ func (c *cassandraToMetadata) buildExperimentMetadataFromModel(experimentModel E
 func (c *cassandraToMetadata) addPhasesToExperiment(experimentMetadata metadata.Experiment, phases []Phase) metadata.Experiment {
 	for key, phase := range phases {
 		phaseMetadata := metadata.Phase{
-			ID:           phase.ID,
-			LCParameters: phase.LCParameters,
-			LCIsolation:  phase.LCIsolation,
+			BasePhase: phase.BasePhase,
 		}
 		phaseMetadata = c.addAggressorsToPhase(phaseMetadata, phase)
 		c.phaseNameToIndex[phase.ID+phase.ExperimentID] = key

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -74,52 +75,64 @@ func TestCassandraModelTransformation(t *testing.T) {
 
 func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 	experiment := Experiment{
-		ID:                "experiment",
-		LoadDuration:      time.Second,
-		TuningDuration:    time.Second,
-		LCName:            "launch critical task",
-		LGName:            "load generator",
-		RepetitionsNumber: 1,
-		LoadPointsNumber:  2,
-		SLO:               123,
+		BaseExperiment: metadata.BaseExperiment{
+			ID:                "experiment",
+			LoadDuration:      time.Second,
+			TuningDuration:    time.Second,
+			LCName:            "launch critical task",
+			LGName:            "load generator",
+			RepetitionsNumber: 1,
+			LoadPointsNumber:  2,
+			SLO:               123,
+		},
 	}
 	phaseOne := Phase{
-		ID:                  "phase one",
-		LCParameters:        "Latency critical parameters phase one",
-		LCIsolation:         "Latency critical isolation phase one",
+		BasePhase: metadata.BasePhase{
+			ID:           "phase one",
+			LCParameters: "Latency critical parameters phase one",
+			LCIsolation:  "Latency critical isolation phase one",
+		},
 		AggressorNames:      []string{"first aggressor phase one", "second aggressor phase one"},
 		AggressorParameters: []string{"first aggressor parameters phase one", "second aggressor parameters phase one"},
 		AggressorIsolations: []string{"first aggressor isolation phase one", "second aggressor isolation phase one"},
 	}
 	phaseTwo := Phase{
+		BasePhase: metadata.BasePhase{
+			ID:           "phase two",
+			LCParameters: "Latency critical parameters phase two",
+			LCIsolation:  "Latency critical isolation phase two",
+		},
 		ExperimentID:        "experiment",
-		ID:                  "phase two",
-		LCParameters:        "Latency critical parameters phase two",
-		LCIsolation:         "Latency critical isolation phase two",
 		AggressorNames:      []string{"first aggressor phase two", "second aggressor phase two"},
 		AggressorParameters: []string{"first aggressor parameters phase two", "second aggressor parameters phase two"},
 		AggressorIsolations: []string{"first aggressor isolation phase two", "second aggressor isolation phase two"},
 	}
 	measurementOneOne := Measurement{
+		Measurement: metadata.Measurement{
+			Load:         0.5,
+			LoadPointQPS: 303.0,
+			LGParameters: "Load generator parameters measurement 1.1",
+		},
 		PhaseID:      "phase one",
 		ExperimentID: "experiment",
-		Load:         0.5,
-		LoadPointQPS: 303.0,
-		LGParameters: "Load generator parameters measurement 1.1",
 	}
 	measurementOneTwo := Measurement{
+		Measurement: metadata.Measurement{
+			Load:         0.7,
+			LoadPointQPS: 666.6,
+			LGParameters: "Load generator parameters measurement 1.2",
+		},
 		PhaseID:      "phase one",
 		ExperimentID: "experiment",
-		Load:         0.7,
-		LoadPointQPS: 666.6,
-		LGParameters: "Load generator parameters measurement 1.2",
 	}
 	measurementTwoOne := Measurement{
+		Measurement: metadata.Measurement{
+			Load:         0.1,
+			LoadPointQPS: 0.75,
+			LGParameters: "Load generator parameters measurement 2.1",
+		},
 		PhaseID:      "phase two",
 		ExperimentID: "experiment",
-		Load:         0.1,
-		LoadPointQPS: 0.75,
-		LGParameters: "Load generator parameters measurement 2.1",
 	}
 
 	return experiment, []Phase{phaseOne, phaseTwo}, []Measurement{measurementTwoOne, measurementOneTwo, measurementOneOne}
