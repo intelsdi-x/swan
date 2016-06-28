@@ -6,6 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	experimentPhase "github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/nu7hatch/gouuid"
+	"gopkg.in/cheggaaa/pb.v1"
 	"io"
 	"os"
 	"path"
@@ -28,6 +29,8 @@ type Experiment struct {
 
 	logFile  *os.File
 	logLevel log.Level
+
+	textUI bool
 }
 
 // NewExperiment creates a new Experiment instance,
@@ -50,6 +53,7 @@ func NewExperiment(name string, phases []experimentPhase.Phase,
 		workingDirectory: directory,
 		phases:           phases,
 		logLevel:         logLevel,
+		textUI:           logLevel == log.ErrorLevel,
 	}
 
 	err = e.createExperimentDir()
@@ -72,7 +76,29 @@ func (e *Experiment) Run() (err error) {
 	experimentStartingTime := time.Now()
 
 	log.Info("Starting Experiment ", e.name, " with uuid ", e.uuid)
-	for _, phase := range e.phases {
+
+	// Adds progress bar and some brief output when experiment is run in non-verbose
+	// mode.
+	var bar *pb.ProgressBar
+	var increment int
+	if e.textUI {
+		fmt.Printf("Experiment '%s' with uuid '%s'\n", e.name, e.uuid)
+		bar = pb.StartNew(100)
+		bar.ShowCounters = false
+		bar.ShowTimeLeft = true
+		totalPhases := 0
+		for _, phase := range e.phases {
+			totalPhases += phase.Repetitions()
+		}
+		increment = 100 / totalPhases
+	}
+
+	for id, phase := range e.phases {
+		if e.textUI {
+			prefix := fmt.Sprintf("[%02d / %02d] %s ", id, len(e.phases), phase.Name())
+			bar.Prefix(prefix)
+		}
+
 		for i := 0; i < phase.Repetitions(); i++ {
 			// Create phase session.
 			session := experimentPhase.Session{
@@ -99,6 +125,10 @@ func (e *Experiment) Run() (err error) {
 				return err
 			}
 
+			if e.textUI {
+				bar.Add(increment)
+			}
+
 			log.Info("Ended ", phase.Name(), " repetition ", i,
 				" in ", time.Since(phaseStartingTime))
 		}
@@ -114,6 +144,10 @@ func (e *Experiment) Run() (err error) {
 				" while finalizing.")
 			return err
 		}
+	}
+
+	if e.textUI {
+		bar.Finish()
 	}
 
 	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
