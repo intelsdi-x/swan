@@ -59,6 +59,9 @@ class Experiment:
 
         display(HTML(html_out))
 
+    def show_sensitivity_profile(self):
+        display(HTML('<table><tr><th>Scenario / Load</th><th>5%</th><th>10%</th><th>15%</th><th>15%</th><th>20%</th></tr></table>'))
+
 class Experiments:
     def __init__(self, cassandra_cluster):
         self.cluster = None
