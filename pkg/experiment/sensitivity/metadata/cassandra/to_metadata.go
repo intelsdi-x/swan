@@ -6,17 +6,17 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 )
 
-// NewCassandraToMetadata creates new instance of struct that transforms Cassandra models to metadata.Experiment.
-func newCassandraToMetadata() *cassandraToMetadata {
-	return &cassandraToMetadata{phaseNameToIndex: make(map[string]int)}
+// NewToMetadata creates new instance of struct that transforms Cassandra models to metadata.Experiment.
+func NewToMetadata() *toMetadata {
+	return &toMetadata{phaseNameToIndex: make(map[string]int)}
 }
 
-type cassandraToMetadata struct {
+type toMetadata struct {
 	phaseNameToIndex map[string]int
 	experiment       metadata.Experiment
 }
 
-func (c *cassandraToMetadata) fromCassandraModelToMetadata(experiment Experiment, phases []Phase, measurements []Measurement) metadata.Experiment {
+func (c *toMetadata) transform(experiment Experiment, phases []Phase, measurements []Measurement) metadata.Experiment {
 	experimentMetadata := c.buildExperimentMetadataFromModel(experiment)
 	experimentMetadata = c.addPhasesToExperiment(experimentMetadata, phases)
 	experimentMetadata = c.addMeasurementsToPhases(experimentMetadata, measurements)
@@ -24,7 +24,7 @@ func (c *cassandraToMetadata) fromCassandraModelToMetadata(experiment Experiment
 	return experimentMetadata
 }
 
-func (c *cassandraToMetadata) buildExperimentMetadataFromModel(experimentModel Experiment) metadata.Experiment {
+func (c *toMetadata) buildExperimentMetadataFromModel(experimentModel Experiment) metadata.Experiment {
 	experimentMetadata := metadata.Experiment{
 		BaseExperiment: experimentModel.BaseExperiment,
 	}
@@ -32,7 +32,7 @@ func (c *cassandraToMetadata) buildExperimentMetadataFromModel(experimentModel E
 	return experimentMetadata
 }
 
-func (c *cassandraToMetadata) addPhasesToExperiment(experimentMetadata metadata.Experiment, phases []Phase) metadata.Experiment {
+func (c *toMetadata) addPhasesToExperiment(experimentMetadata metadata.Experiment, phases []Phase) metadata.Experiment {
 	for key, phase := range phases {
 		phaseMetadata := metadata.Phase{
 			BasePhase: phase.BasePhase,
@@ -45,7 +45,7 @@ func (c *cassandraToMetadata) addPhasesToExperiment(experimentMetadata metadata.
 	return experimentMetadata
 }
 
-func (c *cassandraToMetadata) addAggressorsToPhase(phaseMetadata metadata.Phase, phaseModel Phase) metadata.Phase {
+func (c *toMetadata) addAggressorsToPhase(phaseMetadata metadata.Phase, phaseModel Phase) metadata.Phase {
 	for key, name := range phaseModel.AggressorNames {
 		aggressor := metadata.Aggressor{
 			Name:       name,
@@ -59,7 +59,7 @@ func (c *cassandraToMetadata) addAggressorsToPhase(phaseMetadata metadata.Phase,
 
 }
 
-func (c *cassandraToMetadata) addMeasurementsToPhases(experimentMetadata metadata.Experiment, measurements []Measurement) metadata.Experiment {
+func (c *toMetadata) addMeasurementsToPhases(experimentMetadata metadata.Experiment, measurements []Measurement) metadata.Experiment {
 	for _, measurement := range measurements {
 		phase := &experimentMetadata.Phases[c.phaseNameToIndex[measurement.PhaseID+experimentMetadata.ID]]
 		measurementMetadata := metadata.Measurement{
@@ -73,7 +73,7 @@ func (c *cassandraToMetadata) addMeasurementsToPhases(experimentMetadata metadat
 	return c.sortMeasurements(experimentMetadata)
 }
 
-func (c *cassandraToMetadata) sortMeasurements(experimentMetadata metadata.Experiment) metadata.Experiment {
+func (c *toMetadata) sortMeasurements(experimentMetadata metadata.Experiment) metadata.Experiment {
 	for _, phase := range experimentMetadata.Phases {
 		sort.Sort(phase.Measurements)
 	}
