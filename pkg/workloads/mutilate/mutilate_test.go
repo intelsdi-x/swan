@@ -167,15 +167,15 @@ func (s *MutilateTestSuite) TestClusterMutilateTuning() {
 
 	s.mExecutorForAgent1.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil)
 	s.mAgentHandle1.On("Address").Return("255.255.255.001").Times(numberOfConveys)
-	s.mAgentHandle1.On("Stop").Return(nil).Times(numberOfConveys)
-	s.mAgentHandle1.On("EraseOutput").Return(nil).Times(numberOfConveys)
-	s.mAgentHandle1.On("Clean").Return(nil).Times(numberOfConveys)
+	s.mAgentHandle1.On("Stop").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle1.On("EraseOutput").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle1.On("Clean").Return(nil).Times(numberOfConveys * 2)
 
 	s.mExecutorForAgent2.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil)
 	s.mAgentHandle2.On("Address").Return("255.255.255.002").Times(numberOfConveys)
-	s.mAgentHandle2.On("Stop").Return(nil).Times(numberOfConveys)
-	s.mAgentHandle2.On("EraseOutput").Return(nil).Times(numberOfConveys)
-	s.mAgentHandle2.On("Clean").Return(nil).Times(numberOfConveys)
+	s.mAgentHandle2.On("Stop").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle2.On("EraseOutput").Return(nil).Times(numberOfConveys * 2)
+	s.mAgentHandle2.On("Clean").Return(nil).Times(numberOfConveys * 2)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
 		outputFile.Seek(0, 0)

@@ -53,23 +53,25 @@ type Config struct {
 	TuningTime        time.Duration
 	LatencyPercentile decimal.Decimal
 
-	// Number of threads for all agents.
-	AgentThreads           int // -T
-	AgentConnections       int // -c
-	AgentConnectionsDepth  int // Max length of request pipeline. -d
-	MasterThreads          int // -T
+	AgentConnections      int // -c
+	AgentConnectionsDepth int // Max length of request pipeline. -d
+	MasterThreads         int // -T
+	KeySize               int // Length of memcached keys. -K
+	ValueSize             int // Length of memcached values. -V
+
+	// Agent-mode options.
+	AgentThreads           int // Number of threads for all agents. -T
+	AgentPort              int // Agent port. -p
 	MasterConnections      int // -C
 	MasterConnectionsDepth int // Max length of request pipeline. -D
-	KeySize                int // Length of memcached keys. -K
-	ValueSize              int // Length of memcached values. -V
-	AgentPort              int // Agent port. -p
 
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
-	// If it equals 0, than remote -Q option at all from master.
+	// If it equals 0, than -Q will be not specified.
 	MasterQPS int // -Q
 
 	// Output flags.
+	// TODO(bplotka): Move this flags to global experiment namespace.
 	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
 	ErasePopulateOutput bool // false by default.
 }
@@ -165,8 +167,9 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 		handle, err := exec.Execute(command)
 		if err != nil {
 			// If one agent fails we need to stop these which are running.
-			logrus.Debug("One of agents failed (cmd: '",
-				command, "'). Stopping already started ", len(handles), " agents.")
+			logrus.Debugf(
+				"One of agents failed (cmd: '%s'). Stopping already started %d agents",
+				command, len(handles))
 			stopAgents(handles)
 			cleanAgents(handles)
 			if m.config.EraseTuneOutput {
@@ -223,17 +226,20 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 			fmt.Errorf("Executing Mutilate Agents failed; %s", err.Error())
 	}
 
-	// Run master with tuning option.
-	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
-	masterHandle, err := m.master.Execute(tuneCmd)
-	if err != nil {
-		logrus.Debug("Mutilate master execution failed (cmd: '",
-			tuneCmd, "'). Stopping already started ", len(agentHandles), " agents.")
+	defer func() {
+		logrus.Debug("Stopping %d agents", len(agentHandles))
 		stopAgents(agentHandles)
 		cleanAgents(agentHandles)
 		if m.config.EraseTuneOutput {
 			eraseAgentOutputs(agentHandles)
 		}
+	}()
+
+	// Run master with tuning option.
+	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
+	masterHandle, err := m.master.Execute(tuneCmd)
+	if err != nil {
+		logrus.Debug("Mutilate master execution failed (cmd: '%s')", tuneCmd)
 		return qps, achievedSLI,
 			fmt.Errorf("Mutilate Master Tune failed; Command: %s; %s", tuneCmd, err.Error())
 	}
@@ -242,12 +248,6 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 	// Blocking wait for master.
 	if !taskHandle.Wait(0) {
-		// If master was not terminate, then agents could be still running!
-		stopAgents(agentHandles)
-		cleanAgents(agentHandles)
-		if m.config.EraseTuneOutput {
-			eraseAgentOutputs(agentHandles)
-		}
 		return qps, achievedSLI, fmt.Errorf("Cannot terminate the Mutilate master. Stopping agents.")
 	}
 
@@ -281,7 +281,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	qps = int(rawQPS)
 
 	// We don't need to have 'exact' flag retrieved.
-	// TODO(bplotka): Do we need percentile in Decimal type? Float64 is not enough?
+	// TODO(bplotka): Move latency to string.
 	// If float64 is not enough we need to fix parser and mutilate collector as well.
 	floatPercentile, _ := m.config.LatencyPercentile.Float64()
 	rawSLI, ok := metricsMap[parse.GenerateCustomPercentileKey(floatPercentile)]

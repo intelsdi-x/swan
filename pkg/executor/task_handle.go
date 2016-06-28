@@ -33,7 +33,7 @@ type TaskHandle interface {
 	Status() TaskState
 	// ExitCode returns a exitCode. If task is not terminated it returns error.
 	ExitCode() (int, error)
-	// Wait does the blocking wait for the task completion in case of nil.
+	// Wait does the blocking wait for the task completion in case of 0.
 	// Wait is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.
 	Wait(timeout time.Duration) bool
