@@ -27,10 +27,10 @@ import (
 )
 
 var (
-	// ipAddressFlag returns IP which will be specified for workload services as endpoints.
-	ipAddressFlag = conf.NewStringFlag(
-		"ip",
-		"IP of interface for Swan workloads services to listen on",
+	// memcachedIPFlag returns IP which will be specified for workload services as endpoints.
+	memcachedIPFlag = conf.NewStringFlag(
+		"memcached_ip",
+		"IP of interface memcached is listening on",
 		"127.0.0.1",
 	)
 
@@ -118,7 +118,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize Memcached Launcher.
 	localForHP := executor.NewLocalIsolated(hpIsolation)
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedConfig.IP = ipAddressFlag.Value()
+	memcachedConfig.IP = memcachedIPFlag.Value()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.
