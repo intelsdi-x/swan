@@ -47,11 +47,11 @@ var (
 	// Mutilate configuration.
 	percentileFlag     = conf.NewStringFlag("percentile", "Tail latency Percentile", "99")
 	mutilateMasterFlag = conf.NewStringFlag(
-		"lg_master",
+		"mutilate_master",
 		"Mutilate master host for remote executor. In case of 0 agents being specified it runs in agentless mode.",
 		"127.0.0.1")
 	mutilateAgentsFlag = conf.NewSliceFlag(
-		"lg_agent",
+		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 
 	snapCassandraPluginPath = conf.NewStringFlag(
