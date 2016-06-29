@@ -140,7 +140,7 @@ func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFla
 		defaultValue: defaultValue,
 	}
 
-	boolFlag.value = app.Flag(flagName, description).Default(fmt.Sprintf("%s", defaultValue)).
+	boolFlag.value = app.Flag(flagName, description).Default(fmt.Sprintf("%v", defaultValue)).
 		OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
 	isEnvParsed = false
 
