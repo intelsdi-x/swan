@@ -212,14 +212,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			publisher)
 	}
 
-	// Create Experiment configuration.
-	configuration := sensitivity.Configuration{
-		SLO:             500,             // us
-		LoadDuration:    1 * time.Second, // 10 * time.Second,
-		LoadPointsCount: 2,               // 10,
-		Repetitions:     1,               // 3,
-		PeakLoad:        sensitivity.PeakLoadFlag.Value(),
-	}
+	// Create Experiment configuration from Conf.
+	configuration := sensitivity.DefaultConfiguration()
+	// Debug only:
+	configuration.LoadDuration = 1 * time.Second
 
 	sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),

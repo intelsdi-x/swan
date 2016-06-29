@@ -12,9 +12,12 @@ import (
 )
 
 var (
-	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
+	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
+	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
+	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
-	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	peakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -33,6 +36,17 @@ type Configuration struct {
 	Repetitions int
 	// PeakLoad. If set >0 skip tuning phase.
 	PeakLoad int
+}
+
+// DefaultConfiguration returns default configuration for experiment from Conf flags.
+func DefaultConfiguration() Configuration {
+	return Configuration{
+		SLO:             sloFlag.Value(),
+		LoadDuration:    10 * time.Second,
+		LoadPointsCount: loadPointsCountFlag.Value(),
+		Repetitions:     repetitionsFlag.Value(),
+		PeakLoad:        peakLoadFlag.Value(),
+	}
 }
 
 // Experiment is handler structure for Experiment Driver. All fields shall be
