@@ -11,17 +11,20 @@ import (
 	"time"
 )
 
-func createKeyspace(ip string) error {
+func createKeyspace(ip string) (err error) {
 	cluster := gocql.NewCluster(ip)
 	cluster.ProtoVersion = 4
 	cluster.Consistency = gocql.All
+	cluster.Timeout = 100 * time.Second
+
 	session, err := cluster.CreateSession()
 	if err != nil {
 		return err
 	}
-	err = session.Query(`CREATE KEYSPACE IF NOT EXISTS snap WITH replication = {
-	'class': 'SimpleStrategy','replication_factor':1}`).Exec()
 
+	err = session.Query(
+		`CREATE KEYSPACE IF NOT EXISTS snap WITH replication = {
+		'class': 'SimpleStrategy','replication_factor':1}`).Exec()
 	if err != nil {
 		return err
 	}
