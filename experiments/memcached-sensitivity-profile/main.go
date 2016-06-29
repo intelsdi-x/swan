@@ -8,6 +8,9 @@ import (
 	"github.com/shopspring/decimal"
 
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/cassandra"
@@ -21,8 +24,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"os"
-	"path"
 )
 
 var (
@@ -52,6 +53,11 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"lg_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
+
+	snapCassandraPluginPath = conf.NewStringFlag(
+		"snap_cassandra_plugin",
+		"Path to snap cassandra plugin.",
+		path.Join(os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra"))
 )
 
 // Check the supplied error, log and exit if non-nil.
@@ -190,9 +196,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		check(err)
 
 		if !loaded {
-			pluginPath := []string{path.Join(
-				os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
-			err = plugins.Load(pluginPath)
+
+			pluginPath := snapCassandraPluginPath.Value()
+			if _, err := os.Stat(pluginPath); err != nil && os.IsNotExist(err) {
+				logrus.Error("Cannot find snap cassandra plugin at %q", pluginPath)
+			}
+			err = plugins.Load([]string{pluginPath})
 			check(err)
 		}
 
