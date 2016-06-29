@@ -27,7 +27,7 @@ const (
 
 	// DefaultCommandTimeout is the default amount of time to wait for
 	// dispatched commands to finish executing.
-	DefaultCommandTimeout = 1 * time.Second
+	DefaultCommandTimeout = 10 * time.Second
 )
 
 // Cgroup represents a Linux control group.

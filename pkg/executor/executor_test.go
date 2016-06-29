@@ -289,11 +289,10 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer taskHandle.EraseOutput()
 
 		// Wait for the command to execute.
-		// TODO(bplotka): Remove the Sleep, since this is prone to errors on different enviroments.
-		time.Sleep(100 * time.Millisecond)
+		// TODO(bplotka): Remove the Sleep/Wait, since this is prone to errors on different environments.
+		taskHandle.Wait(1 * time.Second)
 
-		Convey("When we get Status without the Waiting for it", func() {
-
+		Convey("When we get Status with Wait for max 1 second", func() {
 			taskState := taskHandle.Status()
 
 			Convey("And the task should stated that it terminated", func() {
@@ -301,7 +300,6 @@ func testExecutor(t *testing.T, executor Executor) {
 			})
 
 			Convey("And the exit status should be 0", func() {
-
 				exitcode, err := taskHandle.ExitCode()
 
 				So(err, ShouldBeNil)
