@@ -142,3 +142,11 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 func (m Memcached) Name() string {
 	return name
 }
+
+func (m Memcached) Parameters() string {
+	return m.buildCommand()
+}
+
+func (m Memcached) Isolators() string {
+	return m.exec.GetIsolators()
+}

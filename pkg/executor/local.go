@@ -30,6 +30,10 @@ func NewLocalIsolated(decorator isolation.Decorator) Local {
 	return Local{decorator}
 }
 
+func (l Local) GetIsolators() string {
+	return l.commandDecorators.GetDecorators()
+}
+
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (TaskHandle, error) {

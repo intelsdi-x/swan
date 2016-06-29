@@ -98,3 +98,11 @@ func popWorkingDir(workdir string) {
 func (c Caffe) Name() string {
 	return "Caffe"
 }
+
+func (c Caffe) Parameters() string {
+	return c.buildCommand()
+}
+
+func (c Caffe) Isolators() string {
+	return c.exec.GetIsolators()
+}

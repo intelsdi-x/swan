@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"fmt"
 )
 
 // CPUShares defines data needed for CPU controller.
@@ -21,6 +22,10 @@ func NewCPUShares(name string, shares int) Isolation {
 // Decorate implements Decorator interface
 func (cpu *CPUShares) Decorate(command string) string {
 	return "cgexec -g cpu:" + cpu.name + " " + command
+}
+
+func (cpu *CPUShares) GetDecorators() string {
+	return fmt.Sprintf("cpu:%s", cpu.name)
 }
 
 // Clean removes the specified cgroup

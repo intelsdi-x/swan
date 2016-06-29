@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"fmt"
 )
 
 // MemorySize defines input data
@@ -24,6 +25,10 @@ func NewMemorySize(name string, size int) Isolation {
 // Decorate implements Decorator interface.
 func (memorySize *MemorySize) Decorate(command string) string {
 	return "cgexec -g memory:" + memorySize.name + " " + command
+}
+
+func (memorySize *MemorySize) GetDecorators() string {
+	return fmt.Sprintf("memory:%s", memorySize.name)
 }
 
 // Clean removes specified cgroup.

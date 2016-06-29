@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"syscall"
+	"fmt"
 )
 
 type namespace struct {
@@ -26,8 +27,7 @@ func NewNamespace(mask int) (Decorator, error) {
 	return &namespace{ns: mask, nsToOption: optionMap}, nil
 }
 
-// Decorate implements Decorator.
-func (n *namespace) Decorate(command string) (decorated string) {
+func (n *namespace) getNamespaces() string {
 	var namespaces []string
 
 	for namespace, option := range n.nsToOption {
@@ -35,6 +35,14 @@ func (n *namespace) Decorate(command string) (decorated string) {
 			namespaces = append(namespaces, option)
 		}
 	}
+	return strings.Join(namespaces, " ")
+}
 
-	return "unshare " + strings.Join(namespaces, " ") + " " + command
+// Decorate implements Decorator.
+func (n *namespace) Decorate(command string) (decorated string) {
+	return fmt.Sprintf("unshare %s %s", n.getNamespaces(), command)
+}
+
+func (n *namespace) GetDecorators() string {
+	return fmt.Sprintf("unshare:%q", n.getNamespaces())
 }

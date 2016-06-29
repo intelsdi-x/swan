@@ -23,4 +23,7 @@ type LoadGenerator interface {
 	// The task will do the load for specified amount of time.
 	// Note: Results from Load needs to be fetched out of band e.g using Snap.
 	Load(load int, duration time.Duration) (task executor.TaskHandle, err error)
+
+	Name() string
+	Parameters(load, slo int, duration time.Duration) string
 }

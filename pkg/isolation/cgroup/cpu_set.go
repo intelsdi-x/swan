@@ -117,6 +117,10 @@ func (cs *cpuset) Decorate(command string) string {
 	return cs.cgroup.Decorate(command)
 }
 
+func (cs *cpuset) GetDecorators() string {
+	return cs.cgroup.GetDecorators()
+}
+
 // Clean removes the underlying cgroup.
 func (cs *cpuset) Clean() error {
 	return cs.cgroup.Clean()

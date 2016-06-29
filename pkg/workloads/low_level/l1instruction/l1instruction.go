@@ -92,3 +92,11 @@ func (l l1i) Launch() (executor.TaskHandle, error) {
 func (l l1i) Name() string {
 	return name
 }
+
+func (l l1i) Parameters() string {
+	return l.buildCommand()
+}
+
+func (l l1i) Isolators() string {
+	return l.exec.GetIsolators()
+}

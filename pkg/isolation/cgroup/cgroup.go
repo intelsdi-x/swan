@@ -314,6 +314,10 @@ func (cg *cgroup) Decorate(command string) string {
 	return fmt.Sprintf("cgexec -g %s %s", cg.Spec(), command)
 }
 
+func (cg *cgroup) GetDecorators() string {
+	return cg.Spec()
+}
+
 func (cg *cgroup) Isolate(PID int) error {
 	_, err := cg.cmdOutput("cgclassify", "-g", cg.Spec(), strconv.Itoa(PID))
 	return err

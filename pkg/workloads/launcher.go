@@ -16,4 +16,7 @@ type Launcher interface {
 	Name() string
 
 	// TODO(bp): Include a getter for parameters (part of SCE-376).
+
+	Parameters() string
+	Isolators() string
 }

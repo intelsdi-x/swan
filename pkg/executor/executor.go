@@ -5,4 +5,5 @@ package executor
 // Workload is executed asynchronously.
 type Executor interface {
 	Execute(command string) (TaskHandle, error)
+	GetIsolators() string
 }

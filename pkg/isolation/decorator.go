@@ -3,6 +3,7 @@ package isolation
 //Decorator allows to decorate launcher output.
 type Decorator interface {
 	Decorate(string) string
+	GetDecorators() string
 }
 
 //Decorators represents array of Decorator implementations.
@@ -15,4 +16,12 @@ func (d Decorators) Decorate(command string) string {
 		command = decorator.Decorate(command)
 	}
 	return command
+}
+
+func (d Decorators) GetDecorators() string {
+	var decorators string
+	for _, decorator := range d {
+		decorators += decorator.GetDecorators()
+	}
+	return decorators
 }

@@ -128,6 +128,11 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		remote.sshConfig.Host, waitEndChannel, exitCode), nil
 }
 
+func (remote Remote) GetIsolators() string {
+	return remote.commandDecorators.GetDecorators()
+}
+
+
 const killTimeout = 5 * time.Second
 
 // remoteTaskHandle implements TaskHandle interface.

@@ -325,3 +325,14 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 
 	return executor.NewClusterTaskHandle(masterHandle, agentHandles), nil
 }
+
+func (m mutilate) Name() string {
+	return "mutilate"
+}
+
+func (m mutilate) Parameters(qps, slo int, duration time.Duration) string {
+	tuneCommand := getTargetTuneCommand(m.config, slo, m.config.AgentConnections)
+	loadCommand := getTargetLoadCommand(m.config, qps, duration, m.config.AgentConnections)
+
+	return fmt.Sprintf("Load command: %s\n Tune command\n", tuneCommand, loadCommand)
+}

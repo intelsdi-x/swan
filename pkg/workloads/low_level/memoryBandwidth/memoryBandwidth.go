@@ -79,3 +79,11 @@ func (m memBw) Launch() (executor.TaskHandle, error) {
 func (m memBw) Name() string {
 	return name
 }
+
+func (m memBw) Parameters() string {
+	return m.buildCommand()
+}
+
+func (m memBw) Isolators() string {
+	return m.exec.GetIsolators()
+}

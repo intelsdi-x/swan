@@ -7,6 +7,9 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
+	"encoding/json"
+	"strings"
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -41,6 +44,9 @@ type Experiment struct {
 	tuningPhase     *tuningPhase
 	baselinePhase   []phase.Phase
 	aggressorPhases [][]phase.Phase
+
+	experimentMetadata metadata.Experiment
+	phasesMetadata []metadata.Phase
 }
 
 // NewExperiment construct new Experiment object.
@@ -101,12 +107,14 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 }
 
 func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
+	measurementPhases := []metadata.Measurement{}
+	aggressors := []metadata.Aggressor{}
 	aggressorPhases := [][]phase.Phase{}
 	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
 		aggressorPhase := []phase.Phase{}
 		// Include measurements for each LoadPoint.
 		for i := 1; i <= e.configuration.LoadPointsCount; i++ {
-			aggressorPhase = append(aggressorPhase, &measurementPhase{
+			aggressorPhaseData := &measurementPhase{
 				namePrefix:            "aggressor_nr_" + strconv.Itoa(beIndex),
 				pr:                    e.productionTaskLauncher,
 				lgForPr:               e.loadGeneratorForProductionTask,
@@ -116,13 +124,53 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 				repetitions:           e.configuration.Repetitions,
 				currentLoadPointIndex: i,
 				PeakLoad:              e.tuningPhase.PeakLoad,
+			}
+			measurementPhases = append(measurementPhases, metadata.Measurement{
+				LoadPointQPS: aggressorPhaseData.currentLoadPointIndex,
+				Load: *aggressorPhaseData.PeakLoad,
+				LGParameters: aggressorPhaseData.lgForPr.LoadGenerator.Parameters(
+					e.configuration.LoadPointsCount,
+					e.configuration.SLO,
+					e.configuration.LoadDuration,
+				),
 			})
+
+			aggressorPhase = append(aggressorPhase, aggressorPhaseData)
 		}
+		aggressors = append(aggressors, metadata.Aggressor{
+			Name: beLauncher.Launcher.Name(),
+			Parameters: beLauncher.Launcher.Parameters(),
+		})
+
 		aggressorPhases = append(aggressorPhases, aggressorPhase)
 	}
-
+	e.phasesMetadata = append(e.phasesMetadata, metadata.Phase{
+		BasePhase: metadata.BasePhase{
+			ID: e.name,
+			LCParameters: e.productionTaskLauncher.Launcher.Parameters(),
+			LCIsolation: e.productionTaskLauncher.Launcher.Isolators(),
+		},
+		Measurements: measurementPhases,
+		Aggressors: aggressors,
+	})
 	return aggressorPhases
 }
+
+func (e *Experiment) generateMetadata() {
+	e.experimentMetadata = metadata.Experiment{
+		BaseExperiment: metadata.BaseExperiment{
+			ID: e.name,
+			LoadDuration: e.configuration.LoadDuration,
+			LCName: e.productionTaskLauncher.Launcher.Name(),
+			LGName: e.loadGeneratorForProductionTask.LoadGenerator.Name(),
+			RepetitionsNumber: e.configuration.Repetitions,
+			LoadPointsNumber: e.configuration.LoadPointsCount,
+			SLO: e.configuration.SLO,
+		},
+		Phases: e.phasesMetadata,
+	}
+}
+
 
 func (e *Experiment) configureGenericExperiment() error {
 	// Configure phases & measurements.
@@ -159,6 +207,10 @@ func (e *Experiment) Run() error {
 	if err != nil {
 		return err
 	}
+
+	e.generateMetadata()
+	data, err := json.Marshal(e.phasesMetadata)
+	log.Printf("%s\nDATA: %s\nERROR: %s\n%s", strings.Repeat("#", 10), data, err, strings.Repeat("#", 10))
 
 	err = e.exp.Run()
 	defer e.exp.Finalize()

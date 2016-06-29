@@ -79,3 +79,11 @@ func (l l1d) Launch() (executor.TaskHandle, error) {
 func (l l1d) Name() string {
 	return name
 }
+
+func (l l1d) Parameters() string {
+	return l.buildCommand()
+}
+
+func (l l1d) Isolators() string {
+	return l.exec.GetIsolators()
+}

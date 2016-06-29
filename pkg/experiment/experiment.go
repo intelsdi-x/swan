@@ -219,3 +219,7 @@ func (e *Experiment) logInitialize() error {
 
 	return err
 }
+
+func (e *Experiment) GetPhases() []experimentPhase.Phase {
+	return e.phases
+}
