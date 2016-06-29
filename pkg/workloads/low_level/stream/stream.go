@@ -41,16 +41,19 @@ func DefaultConfig() Config {
 	}
 }
 
-// stream is a launcher for stream aggressor.
-// Note: By default is uses 100M array size (problem size). It is enough to saturate about 200MB L3
-// cache over whole platform.  If you need more consider rebuilding stream with STREAM_ARRAY_SIZE
-// adjusted accordingly. Check stream.c "Instructions" for more details.
 type stream struct {
 	exec executor.Executor
 	conf Config
 }
 
-// New is a constructor for stream aggressor.
+// New is a constructor for stream benchmark aggressor.
+// STREAM: Sustainable Memory Bandwidth in High Performance Computers
+// https://www.cs.virginia.edu/stream/
+//
+// Stream Benchmark working set is 100 million of elements (type double).
+// Working set size should be more than 4x the size of sum of all last-level cache used in the run
+// If you need more consider rebuilding stream with STREAM_ARRAY_SIZE adjusted accordingly.
+// Check stream.c "Instructions" for more details.
 func New(exec executor.Executor, config Config) workloads.Launcher {
 	return stream{
 		exec: exec,
