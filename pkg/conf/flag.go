@@ -2,8 +2,10 @@ package conf
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 // flag represents option's definition from CLI and Environment variable.
@@ -43,6 +45,23 @@ func NewStringFlag(flagName string, description string, defaultValue string) Str
 
 	strFlag.value = app.Flag(flagName, description).
 		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).String()
+	isEnvParsed = false
+
+	return strFlag
+}
+
+// NewFileFlag is a constructor of StringFlag struct which checks if file exists.
+func NewFileFlag(flagName string, description string, defaultValue string) StringFlag {
+	strFlag := StringFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: defaultValue,
+	}
+
+	strFlag.value = app.Flag(flagName, description).
+		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).ExistingFile()
 	isEnvParsed = false
 
 	return strFlag
@@ -108,7 +127,8 @@ func NewSliceFlag(flagName string, description string) SliceFlag {
 		},
 	}
 
-	sliceFlag.value = app.Flag(flagName, description).OverrideDefaultFromEnvar(sliceFlag.envName()).Strings()
+	sliceFlag.value =
+		StringList(app.Flag(flagName, description).OverrideDefaultFromEnvar(sliceFlag.envName()))
 	isEnvParsed = false
 
 	return sliceFlag
@@ -150,6 +170,119 @@ func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFla
 // Value returns value of defined flag after parse.
 // NOTE: If conf is not parsed it returns default value (!)
 func (b BoolFlag) Value() bool {
+	if !isEnvParsed {
+		return b.defaultValue
+	}
+
+	return *b.value
+}
+
+// DurationFlag represents flag with duration value.
+type DurationFlag struct {
+	flag
+	defaultValue time.Duration
+	value        *time.Duration
+}
+
+// NewDurationFlag is a constructor of DurationFlag struct.
+func NewDurationFlag(flagName string, description string, defaultValue time.Duration) DurationFlag {
+	durationFlag := DurationFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: defaultValue,
+	}
+
+	durationFlag.value = app.Flag(flagName, description).Default(defaultValue.String()).
+		OverrideDefaultFromEnvar(durationFlag.envName()).Duration()
+	isEnvParsed = false
+
+	return durationFlag
+}
+
+// Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
+func (d DurationFlag) Value() time.Duration {
+	if !isEnvParsed {
+		return d.defaultValue
+	}
+
+	return *d.value
+}
+
+// IPFlag represents flag with IP value.
+type IPFlag struct {
+	flag
+	defaultValue string
+	value        *net.IP
+}
+
+// NewIPFlag is a constructor of IPFlag struct.
+func NewIPFlag(flagName string, description string, defaultValue string) IPFlag {
+	ipFlag := IPFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: defaultValue,
+	}
+
+	ip, err := net.ResolveIPAddr("ip4", defaultValue)
+	if err != nil {
+		panic(err)
+	}
+
+	ipFlag.value = app.Flag(flagName, description).Default(ip.String()).
+		OverrideDefaultFromEnvar(ipFlag.envName()).IP()
+	isEnvParsed = false
+
+	return ipFlag
+}
+
+// Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
+func (i IPFlag) Value() string {
+	if !isEnvParsed {
+		return i.defaultValue
+	}
+
+	return (*i.value).String()
+}
+
+// TCPFlag represents flag with tcp (host:port) value.
+type TCPFlag struct {
+	flag
+	// We need pointer receiver here.
+	defaultValue *net.TCPAddr
+	value        **net.TCPAddr
+}
+
+// NewTCPFlag is a constructor of TcpFlag struct.
+func NewTCPFlag(flagName string, description string, defaultValue string) (TCPFlag, error) {
+	resolvedDefaultValue, err := net.ResolveTCPAddr("tcp4", defaultValue)
+	if err != nil {
+		return TCPFlag{}, err
+	}
+
+	tcpFlag := TCPFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: resolvedDefaultValue,
+	}
+
+	tcpFlag.value = app.Flag(flagName, description).Default(defaultValue).
+		OverrideDefaultFromEnvar(tcpFlag.envName()).TCP()
+	isEnvParsed = false
+
+	return tcpFlag, nil
+}
+
+// Value returns value of defined flag after parse.
+// NOTE: If conf is not parsed it returns default value (!)
+func (b TCPFlag) Value() *net.TCPAddr {
 	if !isEnvParsed {
 		return b.defaultValue
 	}
