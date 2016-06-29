@@ -2,17 +2,22 @@ package mutilate
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/swan/pkg/executor"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
 // getAgentCommand returns command for agent.
 func getAgentCommand(config Config) string {
-	return fmt.Sprintf("%s -T %d -A -p %d",
+	cmd := fmt.Sprintf("%s -T %d -A -p %d",
 		config.PathToBinary,
 		config.AgentThreads,
 		config.AgentPort,
 	)
+	if config.AgentAffinity {
+		cmd += " --affinity"
+	}
+	return cmd
 }
 
 func getMasterQPSOption(config Config) string {
@@ -43,6 +48,10 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 		fmt.Sprintf(" -T %d -B", config.MasterThreads), // -B option for all master commands.
 		fmt.Sprintf(" -d %d -c %d", config.AgentConnectionsDepth, config.AgentConnections),
 	)
+
+	if config.MasterAffinity {
+		baseCommand += " --affinity"
+	}
 
 	// Check if it is NOT agentless mode.
 	if len(agentHandles) > 0 {

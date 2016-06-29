@@ -2,6 +2,7 @@ package mutilate
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -95,6 +96,11 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 
 	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
 		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile.String())
+		So(command, ShouldContainSubstring, expected)
+	})
+
+	Convey("Mutilate load command should contain qps option", s.T(), func() {
+		expected := fmt.Sprintf("-q %d", load)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -259,4 +265,36 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 		So(s.mAgentHandle1.AssertExpectations(s.T()), ShouldBeTrue)
 		So(s.mAgentHandle2.AssertExpectations(s.T()), ShouldBeTrue)
 	})
+}
+
+func TestMutilateAffinityCommand(t *testing.T) {
+
+	Convey("Mutilate commands should not contain affinity by default", t, func() {
+		config := Config{}
+		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getAgentCommand(config), ShouldNotContainSubstring, "--affinity")
+	})
+
+	Convey("Mutilate master commands should contain affinity when requested with MasterAffinity", t, func() {
+		config := Config{MasterAffinity: true}
+		So(getLoadCommand(config, 0, 0, nil), ShouldContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldContainSubstring, "--affinity")
+		Convey("but agent and populate commands not.", func() {
+			So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+			So(getAgentCommand(config), ShouldNotContainSubstring, "--affinity")
+		})
+	})
+
+	Convey("Mutilate master populate commands should not contain affinity when requested with AgentAffinity", t, func() {
+		config := Config{AgentAffinity: true}
+		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+		Convey("but agent commands should.", func() {
+			So(getAgentCommand(config), ShouldContainSubstring, "--affinity")
+		})
+	})
+
 }

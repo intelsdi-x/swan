@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"io/ioutil"
+	"os"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"io/ioutil"
-	"os"
 )
 
 const (

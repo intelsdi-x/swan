@@ -27,12 +27,14 @@ const (
 	defaultAgentPort              = 5556
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
+	defaultAgentAffinity          = false
 	defaultMasterThreads          = 8
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
 	defaultKeySize                = 30
 	defaultValueSize              = 200
 	defaultMasterQPS              = 0
+	defaultAffinity               = false // For both master and agents.
 )
 
 // pathFlag represents mutilate path flag.
@@ -53,17 +55,19 @@ type Config struct {
 	TuningTime        time.Duration
 	LatencyPercentile decimal.Decimal
 
-	AgentConnections      int // -c
-	AgentConnectionsDepth int // Max length of request pipeline. -d
-	MasterThreads         int // -T
-	KeySize               int // Length of memcached keys. -K
-	ValueSize             int // Length of memcached values. -V
+	AgentConnections      int  // -c
+	AgentConnectionsDepth int  // Max length of request pipeline. -d
+	MasterThreads         int  // -T
+	MasterAffinity        bool // Set CPU affinity for threads, round-robin (for Master)
+	KeySize               int  // Length of memcached keys. -K
+	ValueSize             int  // Length of memcached values. -V
 
 	// Agent-mode options.
-	AgentThreads           int // Number of threads for all agents. -T
-	AgentPort              int // Agent port. -p
-	MasterConnections      int // -C
-	MasterConnectionsDepth int // Max length of request pipeline. -D
+	AgentThreads           int  // Number of threads for all agents. -T
+	AgentAffinity          bool // Set CPU affinity for threads, round-robin (fro Agent).
+	AgentPort              int  // Agent port. -p
+	MasterConnections      int  // -C
+	MasterConnectionsDepth int  // Max length of request pipeline. -D
 
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
@@ -74,6 +78,7 @@ type Config struct {
 	// TODO(bplotka): Move this flags to global experiment namespace.
 	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
 	ErasePopulateOutput bool // false by default.
+
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
@@ -92,9 +97,11 @@ func DefaultMutilateConfig() Config {
 		AgentThreads:           defaultAgentThreads,
 		AgentConnections:       defaultAgentConnections,
 		AgentConnectionsDepth:  defaultAgentConnectionsDepth,
+		AgentAffinity:          defaultAffinity,
 		MasterThreads:          defaultMasterThreads,
 		MasterConnections:      defaultAgentConnections,
-		MasterConnectionsDepth: defaultAgentConnectionsDepth,
+		MasterConnectionsDepth: defaultMasterConnectionsDepth,
+		MasterAffinity:         defaultAffinity,
 		KeySize:                defaultKeySize,
 		ValueSize:              defaultValueSize,
 		MasterQPS:              defaultMasterQPS,
