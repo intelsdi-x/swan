@@ -12,6 +12,8 @@ import (
 )
 
 var (
+	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
+	// It omits tuning phase.
 	PeakLoadFlag = conf.NewIntFlag("peakload", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
 )
 
@@ -29,7 +31,7 @@ type Configuration struct {
 	// Repetitions.
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	Repetitions int
-	// PeakLoad. If set >0 skip tunning phase.
+	// PeakLoad. If set >0 skip tuning phase.
 	PeakLoad int
 }
 
@@ -138,11 +140,11 @@ func (e *Experiment) configureGenericExperiment() error {
 
 	// Include Tuning Phase if PeakLoad wasn't given.
 	if e.configuration.PeakLoad == 0 {
-		log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
+	} else {
+		log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
 	}
-	log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
 
 	// Include Baseline Phase.
 	e.baselinePhase = e.prepareBaselinePhases()
