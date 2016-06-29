@@ -56,18 +56,18 @@ func TestCassandraModelTransformation(t *testing.T) {
 		Convey("Measurements metadata should be correct", func() {
 			So(experiment.Phases[0].Measurements, ShouldHaveLength, 2)
 
-			So(experiment.Phases[0].Measurements[0].Load, ShouldEqual, 0.5)
-			So(experiment.Phases[0].Measurements[0].LoadPointQPS, ShouldEqual, 303.0)
+			So(experiment.Phases[0].Measurements[0].Load, ShouldEqual, 5)
+			So(experiment.Phases[0].Measurements[0].LoadPointQPS, ShouldEqual, 303)
 			So(experiment.Phases[0].Measurements[0].LGParameters, ShouldEqual, "Load generator parameters measurement 1.1")
 
-			So(experiment.Phases[0].Measurements[1].Load, ShouldEqual, 0.7)
-			So(experiment.Phases[0].Measurements[1].LoadPointQPS, ShouldEqual, 666.6)
+			So(experiment.Phases[0].Measurements[1].Load, ShouldEqual, 7)
+			So(experiment.Phases[0].Measurements[1].LoadPointQPS, ShouldEqual, 666)
 			So(experiment.Phases[0].Measurements[1].LGParameters, ShouldEqual, "Load generator parameters measurement 1.2")
 
 			So(experiment.Phases[1].Measurements, ShouldHaveLength, 1)
 
-			So(experiment.Phases[1].Measurements[0].Load, ShouldEqual, 0.1)
-			So(experiment.Phases[1].Measurements[0].LoadPointQPS, ShouldEqual, 0.75)
+			So(experiment.Phases[1].Measurements[0].Load, ShouldEqual, 1)
+			So(experiment.Phases[1].Measurements[0].LoadPointQPS, ShouldEqual, 75)
 			So(experiment.Phases[1].Measurements[0].LGParameters, ShouldEqual, "Load generator parameters measurement 2.1")
 		})
 	})
@@ -109,8 +109,8 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 	}
 	measurementOneOne := Measurement{
 		Measurement: metadata.Measurement{
-			Load:         0.5,
-			LoadPointQPS: 303.0,
+			Load:         5,
+			LoadPointQPS: 303,
 			LGParameters: "Load generator parameters measurement 1.1",
 		},
 		PhaseID:      "phase one",
@@ -118,8 +118,8 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 	}
 	measurementOneTwo := Measurement{
 		Measurement: metadata.Measurement{
-			Load:         0.7,
-			LoadPointQPS: 666.6,
+			Load:         7,
+			LoadPointQPS: 666,
 			LGParameters: "Load generator parameters measurement 1.2",
 		},
 		PhaseID:      "phase one",
@@ -127,8 +127,8 @@ func prepareCassandraModel() (Experiment, []Phase, []Measurement) {
 	}
 	measurementTwoOne := Measurement{
 		Measurement: metadata.Measurement{
-			Load:         0.1,
-			LoadPointQPS: 0.75,
+			Load:         1,
+			LoadPointQPS: 75,
 			LGParameters: "Load generator parameters measurement 2.1",
 		},
 		PhaseID:      "phase two",
