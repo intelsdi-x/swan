@@ -222,14 +222,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	// Create Experiment configuration from Conf.
-	configuration := sensitivity.DefaultConfiguration()
-	// Debug only:
-	configuration.LoadDuration = 1 * time.Second
-
 	sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),
 		conf.LogLevel(),
-		configuration,
+		sensitivity.DefaultConfiguration(),
 		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
