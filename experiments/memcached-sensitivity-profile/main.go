@@ -176,7 +176,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Temp for ppalucki debug only.
 	// TODO(bp): Remove this logic when ready-for-review.
 	var mutilateSnapSession snap.SessionLauncher
-	if snap.AddrFlag.Value() != "" {
+	if snap.AddrFlag.Value() != "none" {
 
 		// Create connection with Snap.
 		logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
