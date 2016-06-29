@@ -219,6 +219,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			1*time.Second,
 			snapConnection,
 			publisher)
+	} else {
+		logrus.Info("Warn: snap workflows disabled!")
 	}
 
 	// Create Experiment configuration from Conf.
