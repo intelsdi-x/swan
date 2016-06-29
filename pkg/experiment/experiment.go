@@ -76,6 +76,8 @@ func (e *Experiment) Run() (err error) {
 	experimentStartingTime := time.Now()
 
 	log.Info("Starting Experiment ", e.name, " with uuid ", e.uuid)
+	// Print uuid on stdout to be able to draw sensitivity profile automatically.
+	fmt.Println(e.uuid)
 
 	// Adds progress bar and some brief output when experiment is run in non-verbose
 	// mode.
@@ -153,8 +155,6 @@ func (e *Experiment) Run() (err error) {
 	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
 		" in ", time.Since(experimentStartingTime))
 
-	// Print uuid on stdout to be able to draw sensitivity profile automatically.
-	fmt.Println(e.uuid)
 	return err
 }
 

@@ -179,7 +179,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	if snap.AddrFlag.Value() != "none" {
 
 		// Create connection with Snap.
-		logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
+		logrus.Info("Connecting to Snapd on ", snap.AddrFlag.Value())
 		// TODO(bp): Make helper for passing host:port or only host option here.
 		snapConnection, err := client.New(
 			fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
@@ -196,7 +196,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		check(err)
 
 		if !loaded {
-
 			pluginPath := snapCassandraPluginPath.Value()
 			if _, err := os.Stat(pluginPath); err != nil && os.IsNotExist(err) {
 				logrus.Error("Cannot find snap cassandra plugin at %q", pluginPath)
@@ -214,6 +213,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
 
 		// Initialize Mutilate Snap Session.
+		pp := path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-mutilate")
+		logrus.Info("new snap session with mutilate plugin path:", pp)
+		if _, err := os.Stat(pp); err != nil && os.IsNotExist(err) {
+			logrus.Fatalf("snap-plugin-collector-mutilate not found at %q", pp)
+		}
 		mutilateSnapSession = sessions.NewMutilateSnapSessionLauncher(
 			fs.GetSwanBuildPath(),
 			1*time.Second,
