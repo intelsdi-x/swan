@@ -6,11 +6,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 )
 
-// NewToMetadata creates new instance of struct that transforms Cassandra models to metadata.Experiment.
-func newToMetadata() *toMetadata {
-	return &toMetadata{phaseNameToIndex: make(map[string]int)}
-}
-
 type toMetadata struct {
 	phaseNameToIndex map[string]int
 	experiment       metadata.Experiment
