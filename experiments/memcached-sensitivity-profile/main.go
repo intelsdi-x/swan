@@ -61,6 +61,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Parse CLI.
 	check(conf.ParseFlags())
 
+	// Validate setup.
+	check(validate())
+
 	threadSet := sharedCacheThreads()
 	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
 	check(err)
