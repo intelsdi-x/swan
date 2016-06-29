@@ -167,44 +167,50 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		aggressors = append(aggressors, aggressor)
 	}
 
-	// Create connection with Snap.
-	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
-	// TODO(bp): Make helper for passing host:port or only host option here.
-	snapConnection, err := client.New(
-		fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
-		"v1",
-		true,
-	)
-	check(err)
+	// Temp for ppalucki debug only.
+	// TODO(bp): Remove this logic when ready-for-review.
+	var mutilateSnapSession snap.SessionLauncher
+	if snap.AddrFlag.Value() != "" {
 
-	// Load the snap cassandra publisher plugin if not yet loaded.
-	// TODO(bp): Make helper for that.
-	logrus.Debug("Checking if publisher cassandra is loaded.")
-	plugins := snap.NewPlugins(snapConnection)
-	loaded, err := plugins.IsLoaded("publisher", "cassandra")
-	check(err)
-
-	if !loaded {
-		pluginPath := []string{path.Join(
-			os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
-		err = plugins.Load(pluginPath)
+		// Create connection with Snap.
+		logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
+		// TODO(bp): Make helper for passing host:port or only host option here.
+		snapConnection, err := client.New(
+			fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
+			"v1",
+			true,
+		)
 		check(err)
+
+		// Load the snap cassandra publisher plugin if not yet loaded.
+		// TODO(bp): Make helper for that.
+		logrus.Debug("Checking if publisher cassandra is loaded.")
+		plugins := snap.NewPlugins(snapConnection)
+		loaded, err := plugins.IsLoaded("publisher", "cassandra")
+		check(err)
+
+		if !loaded {
+			pluginPath := []string{path.Join(
+				os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra")}
+			err = plugins.Load(pluginPath)
+			check(err)
+		}
+
+		// Define publisher.
+		publisher := wmap.NewPublishNode("cassandra", 2)
+		if publisher == nil {
+			logrus.Fatal("Failed to create Publish Node for cassandra")
+		}
+
+		publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
+
+		// Initialize Mutilate Snap Session.
+		mutilateSnapSession = sessions.NewMutilateSnapSessionLauncher(
+			fs.GetSwanBuildPath(),
+			1*time.Second,
+			snapConnection,
+			publisher)
 	}
-
-	// Define publisher.
-	publisher := wmap.NewPublishNode("cassandra", 2)
-	if publisher == nil {
-		logrus.Fatal("Failed to create Publish Node for cassandra")
-	}
-
-	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
-
-	// Initialize Mutilate Snap Session.
-	mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-		fs.GetSwanBuildPath(),
-		1*time.Second,
-		snapConnection,
-		publisher)
 
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{

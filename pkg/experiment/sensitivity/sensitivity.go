@@ -14,7 +14,7 @@ import (
 var (
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
-	PeakLoadFlag = conf.NewIntFlag("peakload", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
 )
 
 // Configuration - set of parameters to control the experiment.
