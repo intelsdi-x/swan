@@ -55,7 +55,7 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 
 	snapCassandraPluginPath = conf.NewStringFlag(
-		"snap_cassandra_plugin",
+		"snap_cassandra_plugin_path",
 		"Path to snap cassandra plugin.",
 		path.Join(os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra"))
 )
