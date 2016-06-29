@@ -4,6 +4,7 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/vektra/errors"
+	"time"
 )
 
 // AddrFlag represents cassandra address flag.
@@ -15,6 +16,7 @@ func getClusterConfig(ip string, keyspace string) *gocql.ClusterConfig {
 	cluster.Keyspace = keyspace
 	cluster.ProtoVersion = 4
 	cluster.Consistency = gocql.All
+	cluster.Timeout = 100 * time.Second
 	return cluster
 }
 
