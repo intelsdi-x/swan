@@ -11,32 +11,29 @@ func metadataToCassandra(experiment metadata.Experiment) (Experiment, []Phase, [
 }
 
 func buildExperimentMetadata(metadata metadata.Experiment) Experiment {
-	experimentMetadata := Experiment{}
-	experimentMetadata.ID = metadata.ExperimentID
-	experimentMetadata.LoadDuration = metadata.LoadDuration
-	experimentMetadata.TuningDuration = metadata.TuningDuration
-	experimentMetadata.LcName = metadata.LcName
-	experimentMetadata.LoadPointsNumber = metadata.LoadPointsNumber
-	experimentMetadata.RepetitionsNumber = metadata.RepetitionsNumber
-	experimentMetadata.LgNames = append(experimentMetadata.LgNames, metadata.LgNames...)
-
-	return experimentMetadata
+	return Experiment{
+		BaseExperiment: metadata.BaseExperiment,
+	}
 }
 
 func buildPhaseMetadata(experiment metadata.Experiment) ([]Phase, []Measurement) {
 	var phasesMetadata []Phase
 	var measurementsMetadata []Measurement
 	for _, metadata := range experiment.Phases {
+		var names, isolations, parameters []string
+		for _, aggressor := range metadata.Aggressors {
+			names = append(names, aggressor.Name)
+			isolations = append(isolations, aggressor.Isolation)
+			parameters = append(parameters, aggressor.Parameters)
+		}
 		phasesMetadata = append(phasesMetadata, Phase{
-			ID:                  metadata.ID,
-			ExperimentID:        experiment.ExperimentID,
-			AggressorNames:      metadata.AggressorNames,
-			AggressorIsolations: metadata.AggressorIsolations,
-			AggressorParameters: metadata.AggressorParameters,
-			LCIsolation:         metadata.LCIsolation,
-			LCParameters:        metadata.LCParameters,
+			BasePhase:           metadata.BasePhase,
+			ExperimentID:        experiment.ID,
+			AggressorNames:      names,
+			AggressorIsolations: isolations,
+			AggressorParameters: parameters,
 		})
-		measurementsMetadata = append(measurementsMetadata, buildMeasurementMetadata(metadata, experiment.ExperimentID)...)
+		measurementsMetadata = append(measurementsMetadata, buildMeasurementMetadata(metadata, experiment.ID)...)
 	}
 
 	return phasesMetadata, measurementsMetadata
@@ -48,9 +45,7 @@ func buildMeasurementMetadata(phase metadata.Phase, experiment string) []Measure
 		measurementsMetadata = append(measurementsMetadata, Measurement{
 			ExperimentID: experiment,
 			PhaseID:      phase.ID,
-			Load:         metadata.Load,
-			LoadPointQPS: metadata.LoadPointQPS,
-			LGParameters: metadata.LGParameters,
+			Measurement:  metadata,
 		})
 	}
 

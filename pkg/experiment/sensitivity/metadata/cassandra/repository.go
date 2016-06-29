@@ -18,7 +18,7 @@ type repository struct {
 	experiment  gocassa.Table
 	phase       gocassa.Table
 	measurement gocassa.Table
-	mapper      *cassandraToMetadata
+	mapper      *toMetadata
 }
 
 // Config stores Cassandra database configuration
@@ -32,7 +32,7 @@ type Config struct {
 
 // NewCassandra created new Cassandra repository
 func NewCassandra(experiment, phase, measurement gocassa.Table) metadata.Repository {
-	return &repository{experiment, phase, measurement, newCassandraToMetadata()}
+	return &repository{experiment, phase, measurement, &toMetadata{phaseNameToIndex: make(map[string]int)}}
 }
 
 // NewKeySpace creates instance of gocassa.KeySpace

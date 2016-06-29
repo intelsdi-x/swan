@@ -38,15 +38,36 @@ func TestCassandraUploading(t *testing.T) {
 				err = cassandra.Save(sM)
 				So(err, ShouldBeNil)
 				Convey("I should get no error and see experiment metadata saved", func() {
-					metadata, err := cassandra.Fetch("experiment")
+					experiment, err := cassandra.Fetch("experiment")
 					So(err, ShouldBeNil)
-					soExperimentMetadataAreSaved(metadata)
+
+					So(experiment.ID, ShouldEqual, "experiment")
+					So(experiment.LCName, ShouldEqual, "Latency critical task")
+					So(experiment.LGName, ShouldEqual, "Load generator task")
+					So(experiment.LoadPointsNumber, ShouldEqual, 509)
+					So(experiment.RepetitionsNumber, ShouldEqual, 905)
+
+					oneSecond, _ := time.ParseDuration("1s")
+					So(experiment.LoadDuration, ShouldEqual, oneSecond)
+					twoSeconds, _ := time.ParseDuration("2s")
+					So(experiment.TuningDuration, ShouldEqual, twoSeconds)
+
 					Convey("I should get no error and see phases metadata saved", func() {
-						So(metadata.Phases, ShouldHaveLength, 1)
-						soPhaseMetadataAreSaved(metadata.Phases[0])
+						So(experiment.Phases, ShouldHaveLength, 1)
+						So(experiment.Phases[0].ID, ShouldEqual, "phase")
+
+						So(experiment.Phases[0].Aggressors, ShouldHaveLength, 1)
+						So(experiment.Phases[0].Aggressors[0].Isolation, ShouldEqual, "aggressor isolation")
+						So(experiment.Phases[0].Aggressors[0].Name, ShouldEqual, "an aggressor")
+						So(experiment.Phases[0].Aggressors[0].Parameters, ShouldEqual, "aggressor parameters")
+						So(experiment.Phases[0].LCIsolation, ShouldEqual, "Latency critical isolation")
+						So(experiment.Phases[0].LCParameters, ShouldEqual, "Latency critical parameters")
+
 						Convey("I should get no error and see measurement metadata saved", func() {
-							So(metadata.Phases[0].Measurements, ShouldHaveLength, 1)
-							soMeasurementMetadataAreSaved(metadata.Phases[0].Measurements[0])
+							So(experiment.Phases[0].Measurements, ShouldHaveLength, 1)
+							So(experiment.Phases[0].Measurements[0].Load, ShouldEqual, 65)
+							So(experiment.Phases[0].Measurements[0].LoadPointQPS, ShouldEqual, 666)
+							So(experiment.Phases[0].Measurements[0].LGParameters, ShouldEqual, "Load generator parameters")
 						})
 					})
 				})
@@ -104,29 +125,37 @@ func TestCassandraUploading(t *testing.T) {
 }
 
 func createValidSwanMetrics() metadata.Experiment {
-	meta := metadata.Experiment{}
-	meta.RepetitionsNumber = 905
-	meta.LoadPointsNumber = 509
-
-	meta.LcName = "Latency critical task"
-	meta.LgNames = []string{"Load generator task"}
-	meta.ExperimentID = "experiment"
-	meta.LoadDuration, _ = time.ParseDuration("1s")
-	meta.TuningDuration, _ = time.ParseDuration("2s")
+	oneSecond, _ := time.ParseDuration("1s")
+	twoSeconds, _ := time.ParseDuration("2s")
+	meta := metadata.Experiment{
+		BaseExperiment: metadata.BaseExperiment{
+			RepetitionsNumber: 905,
+			LoadPointsNumber:  509,
+			LCName:            "Latency critical task",
+			LGName:            "Load generator task",
+			ID:                "experiment",
+			LoadDuration:      oneSecond,
+			TuningDuration:    twoSeconds,
+		},
+	}
 
 	meta.AddPhase(metadata.Phase{
-		ID:                  "phase",
-		LCParameters:        "Latency critical parameters",
-		LCIsolation:         "Latency critical isolation",
-		AggressorNames:      []string{"an aggressor"},
-		AggressorParameters: []string{"aggressor parameters"},
-		AggressorIsolations: []string{"aggressor isolation"},
+		BasePhase: metadata.BasePhase{
+			ID:           "phase",
+			LCParameters: "Latency critical parameters",
+			LCIsolation:  "Latency critical isolation",
+		},
+		Aggressors: []metadata.Aggressor{metadata.Aggressor{
+			Name:       "an aggressor",
+			Parameters: "aggressor parameters",
+			Isolation:  "aggressor isolation",
+		}},
 	})
 
 	meta.Phases[0].AddMeasurement(metadata.Measurement{
-		Load:         0.65,
-		LoadPointQPS: 666.6,
-		LGParameters: []string{"Load generator parameters"},
+		Load:         65,
+		LoadPointQPS: 666,
+		LGParameters: "Load generator parameters",
 	})
 
 	return meta
@@ -139,37 +168,6 @@ func createGocqlSession(config cassandra.Config) (*gocql.Session, error) {
 	cluster.Timeout = 100 * time.Second
 	return cluster.CreateSession()
 
-}
-
-func soExperimentMetadataAreSaved(experiment metadata.Experiment) {
-	So(experiment.ID, ShouldEqual, "experiment")
-	So(experiment.LcName, ShouldEqual, "Latency critical task")
-	So(experiment.LgNames, ShouldResemble, []string{"Load generator task"})
-	So(experiment.LoadPointsNumber, ShouldEqual, 509)
-	So(experiment.RepetitionsNumber, ShouldEqual, 905)
-
-	oneSecond, err := time.ParseDuration("1s")
-	So(err, ShouldBeNil)
-	So(experiment.LoadDuration, ShouldEqual, oneSecond)
-	twoSeconds, err := time.ParseDuration("2s")
-	So(err, ShouldBeNil)
-	So(experiment.TuningDuration, ShouldEqual, twoSeconds)
-}
-
-func soPhaseMetadataAreSaved(phase metadata.Phase) {
-	So(phase.ID, ShouldEqual, "phase")
-
-	So(phase.AggressorIsolations, ShouldResemble, []string{"aggressor isolation"})
-	So(phase.AggressorNames, ShouldResemble, []string{"an aggressor"})
-	So(phase.AggressorParameters, ShouldResemble, []string{"aggressor parameters"})
-	So(phase.LCIsolation, ShouldEqual, "Latency critical isolation")
-	So(phase.LCParameters, ShouldEqual, "Latency critical parameters")
-}
-
-func soMeasurementMetadataAreSaved(measurement metadata.Measurement) {
-	So(measurement.Load, ShouldEqual, 0.65)
-	So(measurement.LoadPointQPS, ShouldEqual, 666.6)
-	So(measurement.LGParameters, ShouldResemble, []string{"Load generator parameters"})
 }
 
 func brakeDatabase(config cassandra.Config, operation, tableName string) {
