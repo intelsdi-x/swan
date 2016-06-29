@@ -16,7 +16,7 @@ import (
 // testExecutor tests the execution of process for given executor.
 // This test can be used inside any Executor implementation test.
 func testExecutor(t *testing.T, executor Executor) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	Convey("When blocking infinitively sleep command is executed", func() {
 		taskHandle, err := executor.Execute("sleep inf")
