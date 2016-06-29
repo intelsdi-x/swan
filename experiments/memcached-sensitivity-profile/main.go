@@ -212,6 +212,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		LoadDuration:    1 * time.Second, // 10 * time.Second,
 		LoadPointsCount: 2,               // 10,
 		Repetitions:     1,               // 3,
+		PeakLoad:        sensitivity.PeakLoadFlag.Value(),
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(
