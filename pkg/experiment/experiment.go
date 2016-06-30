@@ -223,3 +223,7 @@ func (e *Experiment) logInitialize() error {
 func (e *Experiment) GetPhases() []experimentPhase.Phase {
 	return e.phases
 }
+
+func (e *Experiment) GetUUID() string {
+	return e.uuid
+}

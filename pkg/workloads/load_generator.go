@@ -25,5 +25,6 @@ type LoadGenerator interface {
 	Load(load int, duration time.Duration) (task executor.TaskHandle, err error)
 
 	Name() string
-	Parameters(load, slo int, duration time.Duration) string
+	GetTuneParameters(slo int) string
+	GetLoadParameters(qps int, duration time.Duration) string
 }

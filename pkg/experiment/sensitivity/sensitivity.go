@@ -76,6 +76,14 @@ func NewExperiment(
 
 func (e *Experiment) prepareTuningPhase() *tuningPhase {
 	peakLoad := int(-1)
+	e.phasesMetadata = append(e.phasesMetadata, metadata.Phase{
+		BasePhase: metadata.BasePhase{
+			ID: "tuning",
+			LCParameters: e.productionTaskLauncher.Launcher.Name(),
+			LCIsolation: e.productionTaskLauncher.Launcher.Isolators(),
+		},
+
+	})
 	return &tuningPhase{
 		pr:          e.productionTaskLauncher.Launcher,
 		lgForPr:     e.loadGeneratorForProductionTask.LoadGenerator,
@@ -86,10 +94,11 @@ func (e *Experiment) prepareTuningPhase() *tuningPhase {
 }
 
 func (e *Experiment) prepareBaselinePhases() []phase.Phase {
+	var baselineMeasurementsMetadata []metadata.Measurement
 	baseline := []phase.Phase{}
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
-		baseline = append(baseline, &measurementPhase{
+		baselinePhase := &measurementPhase{
 			namePrefix:      "baseline",
 			pr:              e.productionTaskLauncher,
 			lgForPr:         e.loadGeneratorForProductionTask,
@@ -100,8 +109,18 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 			PeakLoad:        e.tuningPhase.PeakLoad,
 			// Measurements in baseline have different load point input.
 			currentLoadPointIndex: i,
-		})
+		}
+		baselineMeasurementsMetadata = append(baselineMeasurementsMetadata, baselinePhase.GetMetadata())
+		baseline = append(baseline, baselinePhase)
 	}
+	e.phasesMetadata = append(e.phasesMetadata, metadata.Phase{
+		BasePhase: metadata.BasePhase{
+			ID: "baseline",
+			LCIsolation: e.productionTaskLauncher.Launcher.Isolators(),
+			LCParameters: e.productionTaskLauncher.Launcher.Parameters(),
+		},
+		Measurements: baselineMeasurementsMetadata,
+	})
 
 	return baseline
 }
@@ -125,16 +144,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 				currentLoadPointIndex: i,
 				PeakLoad:              e.tuningPhase.PeakLoad,
 			}
-			measurementPhases = append(measurementPhases, metadata.Measurement{
-				LoadPointQPS: aggressorPhaseData.currentLoadPointIndex,
-				Load: *aggressorPhaseData.PeakLoad,
-				LGParameters: aggressorPhaseData.lgForPr.LoadGenerator.Parameters(
-					e.configuration.LoadPointsCount,
-					e.configuration.SLO,
-					e.configuration.LoadDuration,
-				),
-			})
-
+			measurementPhases = append(measurementPhases, aggressorPhaseData.GetMetadata())
 			aggressorPhase = append(aggressorPhase, aggressorPhaseData)
 		}
 		aggressors = append(aggressors, metadata.Aggressor{
@@ -146,7 +156,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 	}
 	e.phasesMetadata = append(e.phasesMetadata, metadata.Phase{
 		BasePhase: metadata.BasePhase{
-			ID: e.name,
+			ID: "aggressor",
 			LCParameters: e.productionTaskLauncher.Launcher.Parameters(),
 			LCIsolation: e.productionTaskLauncher.Launcher.Isolators(),
 		},
@@ -159,7 +169,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 func (e *Experiment) generateMetadata() {
 	e.experimentMetadata = metadata.Experiment{
 		BaseExperiment: metadata.BaseExperiment{
-			ID: e.name,
+			ID: e.exp.GetUUID(),
 			LoadDuration: e.configuration.LoadDuration,
 			LCName: e.productionTaskLauncher.Launcher.Name(),
 			LGName: e.loadGeneratorForProductionTask.LoadGenerator.Name(),
@@ -208,15 +218,14 @@ func (e *Experiment) Run() error {
 		return err
 	}
 
-	e.generateMetadata()
-	data, err := json.Marshal(e.phasesMetadata)
-	log.Printf("%s\nDATA: %s\nERROR: %s\n%s", strings.Repeat("#", 10), data, err, strings.Repeat("#", 10))
-
 	err = e.exp.Run()
 	defer e.exp.Finalize()
 	if err != nil {
 		return err
 	}
+	e.generateMetadata()
+	data, err := json.Marshal(e.experimentMetadata)
+	log.Printf("%s\nDATA: %s\nERROR: %s\n%s", strings.Repeat("#", 10), data, err, strings.Repeat("#", 10))
 
 	return nil
 }

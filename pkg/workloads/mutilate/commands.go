@@ -73,7 +73,7 @@ func getBaseMasterCoomandBaseOnInt(config Config, agentNumber int) string {
 	isNotAgentless := agentNumber > 0
 	baseCommand := getBaseMasterCommand(config, isNotAgentless)
 	for i:=0; i<agentNumber; i++ {
-		baseCommand += fmt.Sprintf(" -a %s", i)
+		baseCommand += fmt.Sprintf(" -a %d", i)
 	}
 	return baseCommand
 }

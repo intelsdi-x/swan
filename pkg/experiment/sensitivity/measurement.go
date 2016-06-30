@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 )
 
 // measurementPhase performs a measurement for given loadPointIndex.
@@ -253,4 +254,12 @@ func (m *measurementPhase) run(session phase.Session) error {
 func (m *measurementPhase) Finalize() error {
 	// All data should be aggregated in Snap. So nothing to do here.
 	return nil
+}
+
+func (m *measurementPhase) GetMetadata() metadata.Measurement{
+	return metadata.Measurement{
+		LoadPointQPS: m.loadPointsCount,
+		Load: &m.getLoadPoint(),
+		LGParameters: m.lgForPr.LoadGenerator.GetLoadParameters(m.loadPointsCount, m.loadDuration),
+	}
 }

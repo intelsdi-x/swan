@@ -42,6 +42,7 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorator isolation.Decorator) Remo
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting '", command, "' remotely")
+	log.Debug(fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port), remote.sshConfig.ClientConfig)
 
 	connection, err := ssh.Dial(
 		"tcp",
@@ -79,7 +80,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	err = session.Start(remote.commandDecorators.Decorate(command))
+	err = session.Start(command)
 	if err != nil {
 		return nil, err
 	}

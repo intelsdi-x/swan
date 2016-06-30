@@ -54,11 +54,14 @@ func main() {
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
+	logrus.Info("1AAA")
 
 	logrus.SetLevel(conf.LogLevel())
+	logrus.Debug("1.2AAA")
 
 	// Parse CLI.
 	check(conf.ParseFlags())
+	logrus.Debug("1.6AAA")
 
 	threadSet := sharedCacheThreads()
 	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
@@ -67,8 +70,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
+	logrus.Debug("1.8AAA")
 	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
+	logrus.Info("2AAA")
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -88,10 +93,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	memcachedConfig.IP = ipAddressFlag.Value()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
+	logrus.Info("3AAA")
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.
 	var loadGeneratorExecutor executor.Executor
 	loadGeneratorExecutor = executor.NewLocal()
+	logrus.Info("4AAA")
 
 	if workloads.LoadGeneratorAddrFlag.Value() != "local" {
 		// Initialize Mutilate Launcher.
@@ -104,18 +111,21 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
+	logrus.Info("5AAA")
 
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
 	mutilateConfig.LatencyPercentile = "99"
 	mutilateConfig.TuningTime = 1 * time.Second
+	logrus.Info("6AAA")
 
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
 	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
+	logrus.Info("7AAA")
 
 	err = beIsolation.Create()
 	check(err)
@@ -132,6 +142,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		}
 		aggressors = append(aggressors, aggressor)
 	}
+	logrus.Info("8AAA")
 
 	// Create connection with Snap.
 	logrus.Debug("Connecting to Snapd on ", snap.AddrFlag.Value())
@@ -175,9 +186,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Create Experiment configuration.
 	configuration := sensitivity.Configuration{
 		SLO:             500, // us
-		LoadDuration:    10 * time.Second,
-		LoadPointsCount: 10,
-		Repetitions:     3,
+		LoadDuration:    5 * time.Second,
+		LoadPointsCount: 1,
+		Repetitions:     1,
 	}
 
 	sensitivityExperiment := sensitivity.NewExperiment(

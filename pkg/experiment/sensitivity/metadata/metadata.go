@@ -43,7 +43,7 @@ type Aggressor struct {
 
 // Measurement represents metadata of single measurement in sensitivity profile experiment and is agnostic to data store.
 type Measurement struct {
-	Load         int
+	Load         *int
 	LoadPointQPS int
 	LGParameters string
 }
@@ -73,7 +73,7 @@ func (m Measurements) Len() int {
 
 // Less implements sort.Interface.
 func (m Measurements) Less(i, j int) bool {
-	return m[i].Load < m[j].Load
+	return *m[i].Load < *m[j].Load
 }
 
 // Swap implements sort.Interface.
