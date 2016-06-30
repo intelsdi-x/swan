@@ -16,7 +16,8 @@ func NewThread(id int, core int, socket int) Thread {
 	return thread{id, core, socket}
 }
 
-func NewThreadFromId(id int) Thread {
+// NewThreadFromID returns new Thread from ThreadID
+func NewThreadFromID(id int) Thread {
 	allThreads, err := Discover()
 	if err != nil {
 		logrus.Fatal(err)

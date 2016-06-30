@@ -17,9 +17,8 @@ func NewThreadSet() ThreadSet {
 // NewThreadSetFromIntSet returns newly allocated thread set from IntSet with Thread IDs.
 func NewThreadSetFromIntSet(threads isolation.IntSet) ThreadSet {
 	threadSet := NewThreadSet()
-	for thread, _ := range threads {
-		_ = thread
-		threadSet = append(threadSet, NewThreadFromId(thread))
+	for thread := range threads {
+		threadSet = append(threadSet, NewThreadFromID(thread))
 	}
 	return threadSet
 }
