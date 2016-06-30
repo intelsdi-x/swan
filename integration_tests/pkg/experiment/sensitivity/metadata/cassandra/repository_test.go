@@ -121,9 +121,9 @@ func TestCassandraUploading(t *testing.T) {
 			So(err, ShouldBeNil)
 			query := session.Query(fmt.Sprintf("DROP KEYSPACE %s", config.KeySpace))
 			err = query.Exec()
+			So(err, ShouldBeNil)
 			query.Release()
 			session.Close()
-			So(err, ShouldBeNil)
 		})
 	})
 }
