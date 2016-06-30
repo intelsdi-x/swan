@@ -8,6 +8,8 @@ import (
 
 	"path"
 
+	"os"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -15,7 +17,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"os"
 )
 
 const (
@@ -35,7 +36,6 @@ const (
 	defaultKeySize                = 30  // [b]
 	defaultValueSize              = 200 // [b]
 	defaultMasterQPS              = 0
-	defaultAffinity               = false // For both master and agents.
 )
 
 var (
