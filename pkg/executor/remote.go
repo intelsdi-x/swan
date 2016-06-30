@@ -11,7 +11,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
 	"strings"
-	"syscall"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -21,13 +20,11 @@ type Remote struct {
 	commandDecorators isolation.Decorators
 }
 
-// NewRemote returns a Remote instance with default PID namespace isolation.
+// NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
-	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: []isolation.Decorator{isolationPid},
+		commandDecorators: []isolation.Decorator{},
 	}
 }
 
