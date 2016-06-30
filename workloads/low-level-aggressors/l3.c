@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-#define CACHE_SIZE 20*1024*1024
+#define CACHE_SIZE 20*1024*2024
 
 void remove_all_chars(char* str, char c) {
 	char *pr = str, *pw = str;
