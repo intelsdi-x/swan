@@ -141,10 +141,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		var aggressor sensitivity.LauncherSessionPair
 		var err error
 
+		// NOTE: Awful hack to get different isolations per workload.
 		if aggr == l1data.ID || aggr == l1instruction.ID {
-			aggressor, err := sensitivity.CreateAggressor(aggr, l1AggressorIsolation)
+			aggressor, err = sensitivity.CreateAggressor(aggr, l1AggressorIsolation)
 		} else {
-			aggressor, err := sensitivity.CreateAggressor(aggr, ll3AggressorIsolation)
+			aggressor, err = sensitivity.CreateAggressor(aggr, ll3AggressorIsolation)
 		}
 
 		if err != nil {
