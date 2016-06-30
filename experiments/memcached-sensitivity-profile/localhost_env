@@ -1,9 +1,0 @@
-SWAN_LOAD_GENERATOR_ADDR=10.5.3.9
-#SWAN_L1D_PATH=/home/ppalucki/golang/src/github.com/intelsdi-x/swan/workloads/low-level-aggressors/l1d
-SWAN_CASSANDRA_ADDR=10.4.3.2
-SWAN_MEMCACHED_PATH=$GOPATH/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached
-SWAN_MUTILATE_PATH=$GOPATH/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/mutilate/mutilate
-SWAN_MUTILATE_MASTER=10.4.3.1
-SWAN_MUTILATE_AGENT=10.4.3.3
-SWAN_PEEKLOAD=10000
-
