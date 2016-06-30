@@ -27,7 +27,7 @@ import (
 
 var (
 	// memcachedIPFlag returns IP which will be specified for workload services as endpoints.
-	memcachedIPFlag = conf.NewStringFlag(
+	memcachedIPFlag = conf.NewIPFlag(
 		"memcached_ip",
 		"IP of interface memcached is listening on",
 		"127.0.0.1",
