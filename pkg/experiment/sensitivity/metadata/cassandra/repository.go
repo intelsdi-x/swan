@@ -21,7 +21,7 @@ type repository struct {
 	mapper      *toMetadata
 }
 
-// Config stores Cassandra database configuration
+// Config stores Cassandra database configuration.
 type Config struct {
 	Username string
 	Password string
@@ -30,12 +30,12 @@ type Config struct {
 	KeySpace string
 }
 
-// NewCassandra created new Cassandra repository
+// NewCassandra created new Cassandra repository.
 func NewCassandra(experiment, phase, measurement gocassa.Table) metadata.Repository {
 	return &repository{experiment, phase, measurement, &toMetadata{phaseNameToIndex: make(map[string]int)}}
 }
 
-// NewKeySpace creates instance of gocassa.KeySpace
+// NewKeySpace creates instance of gocassa.KeySpace.
 func NewKeySpace(config Config) (gocassa.KeySpace, error) {
 	gocql := gocql.NewCluster(config.Host...)
 	gocql.ProtoVersion = 4
@@ -56,7 +56,7 @@ func NewKeySpace(config Config) (gocassa.KeySpace, error) {
 	return keySpace, nil
 }
 
-// NewExperimentTable creates new instance of gocassa.Table representing experiment metadata
+// NewExperimentTable creates new instance of gocassa.Table representing experiment metadata.
 func NewExperimentTable(keySpace gocassa.KeySpace) gocassa.Table {
 	table := keySpace.Table(experimentTablePrefix, &Experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
 	table.CreateIfNotExist()
@@ -64,7 +64,7 @@ func NewExperimentTable(keySpace gocassa.KeySpace) gocassa.Table {
 	return table
 }
 
-// NewPhaseTable creates new instance of gocassa.Table representing phase metadata
+// NewPhaseTable creates new instance of gocassa.Table representing phase metadata.
 func NewPhaseTable(keySpace gocassa.KeySpace) gocassa.Table {
 	table := keySpace.Table(phaseTablePrefix, &Phase{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"ID"}})
 	table.CreateIfNotExist()
@@ -72,7 +72,7 @@ func NewPhaseTable(keySpace gocassa.KeySpace) gocassa.Table {
 	return table
 }
 
-// NewMeasurementTable creates new instance of gocassa.Table representing measurement metadata
+// NewMeasurementTable creates new instance of gocassa.Table representing measurement metadata.
 func NewMeasurementTable(keySpace gocassa.KeySpace) gocassa.Table {
 	table := keySpace.Table(measurementTablePrefix, &Measurement{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"PhaseID", "Load"}})
 	table.CreateIfNotExist()
@@ -80,7 +80,7 @@ func NewMeasurementTable(keySpace gocassa.KeySpace) gocassa.Table {
 	return table
 }
 
-// Save implements metadata.Repository interface
+// Save implements metadata.Repository interface.
 func (c repository) Save(metadata metadata.Experiment) error {
 	experimentMetrics, phasesMetrics, measurementsMetrics := metadataToCassandra(metadata)
 	err := c.experiment.Set(experimentMetrics).Run()
@@ -101,7 +101,7 @@ func (c repository) Save(metadata metadata.Experiment) error {
 
 }
 
-// Fetch implements metadata.REpository interface
+// Fetch implements metadata.Repository interface.
 func (c repository) Fetch(experiment string) (metadata.Experiment, error) {
 	var experimentModel Experiment
 	err := c.experiment.Where(gocassa.Eq("ID", experiment)).ReadOne(&experimentModel).Run()
