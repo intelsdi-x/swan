@@ -4,12 +4,14 @@ import "github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 
 // Experiment is a gocassa model for experiment metadata (such that are constant for all the phases) of sensitivity profile experiment.
 type Experiment struct {
-	metadata.BaseExperiment
+	// The tag is needed for embedding; see: https://github.com/hailocab/gocassa#encodingdecoding-data-structures.
+	metadata.BaseExperiment `cql:",squash"`
 }
 
 // Phase is a gocassa model for phase metadata (such that are constant for all measurements) of sensitivity profile experiment.
 type Phase struct {
-	metadata.BasePhase
+	// The tag is needed for embedding; see: https://github.com/hailocab/gocassa#encodingdecoding-data-structures.
+	metadata.BasePhase  `cql:",squash"`
 	ExperimentID        string
 	AggressorNames      []string
 	AggressorParameters []string
@@ -20,5 +22,6 @@ type Phase struct {
 type Measurement struct {
 	PhaseID      string
 	ExperimentID string
-	metadata.Measurement
+	// The tag is needed for embedding; see: https://github.com/hailocab/gocassa#encodingdecoding-data-structures.
+	metadata.Measurement `cql:",squash"`
 }
