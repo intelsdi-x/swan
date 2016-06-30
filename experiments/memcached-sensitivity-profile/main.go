@@ -17,7 +17,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -36,12 +35,6 @@ var (
 	// Aggressors flag.
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
-
-	// Isolation flags.
-	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
-	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
-	hpCPUExclusive = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
-	beCPUExclusive = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
 
 	// Mutilate configuration.
 	percentileFlag     = conf.NewStringFlag("percentile", "Tail latency Percentile", "99")
@@ -66,7 +59,7 @@ func check(err error) {
 	}
 }
 
-// helper for creating remotes with default sshConfig.
+// newRemote is helper for creating remotes with default sshConfig.
 func newRemote(ip string) executor.Executor {
 	// TODO(bp): Have ability to choose user using parameter here.
 	user, err := user.Current()
@@ -79,99 +72,7 @@ func newRemote(ip string) executor.Executor {
 	return executor.NewRemote(sshConfig)
 }
 
-// Check README.md for details of this experiment.
-func main() {
-	// Setup conf.
-	conf.SetAppName("memcached-sensitivity-profile")
-	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-
-	// Parse CLI.
-	check(conf.ParseFlags())
-
-	logrus.SetLevel(conf.LogLevel())
-
-	threadSet := sharedCacheThreads()
-	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
-	check(err)
-
-	// Allocate BE threads from the remaining threads on the same socket as the
-	// HP workload.
-	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
-	check(err)
-
-	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
-	// memory banks (probably not).
-	numaZero := isolation.NewIntSet(0)
-
-	// Initialize Memcached Launcher with HP isolation.
-	hpIsolation, err := cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, hpCPUExclusive.Value(), false)
-	check(err)
-
-	err = hpIsolation.Create()
-	check(err)
-
-	defer hpIsolation.Clean()
-
-	// Initialize Memcached Launcher.
-	localForHP := executor.NewLocalIsolated(hpIsolation)
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedConfig.IP = memcachedIPFlag.Value()
-	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
-
-	// Initialize Mutilate Load Generator.
-	mutilateConfig := mutilate.DefaultMutilateConfig()
-	mutilateConfig.MemcachedHost = memcachedConfig.IP
-	mutilateConfig.MemcachedPort = memcachedConfig.Port
-	mutilateConfig.LatencyPercentile = percentileFlag.Value()
-	mutilateConfig.TuningTime = 1 * time.Second
-
-	// Master options.
-	mutilateConfig.MasterQPS = 1000
-	mutilateConfig.MasterConnections = 4
-	mutilateConfig.MasterConnectionsDepth = 4
-	mutilateConfig.MasterThreads = 4
-
-	// Special case to have ability to use local executor for mutilate master load generator.
-	// This is needed for docker testing.
-	var masterLoadGeneratorExecutor executor.Executor
-	masterLoadGeneratorExecutor = executor.NewLocal()
-	if mutilateMasterFlag.Value() != "local" {
-		masterLoadGeneratorExecutor = newRemote(mutilateMasterFlag.Value())
-	}
-
-	// Pack agents.
-	agentsLoadGeneratorExecutors := []executor.Executor{}
-	for _, agent := range mutilateAgentsFlag.Value() {
-		agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, newRemote(agent))
-	}
-	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
-
-	mutilateLoadGenerator := mutilate.NewCluster(
-		masterLoadGeneratorExecutor,
-		agentsLoadGeneratorExecutors,
-		mutilateConfig)
-
-	// Initialize BE isolation.
-	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusive.Value(), false)
-	check(err)
-
-	err = beIsolation.Create()
-	check(err)
-
-	defer beIsolation.Clean()
-
-	// Initialize aggressors with BE isolation.
-	aggressors := []sensitivity.LauncherSessionPair{}
-	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
-	for _, aggr := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggr)
-		check(err)
-
-		aggressors = append(aggressors, aggressor)
-	}
-
+func prepareSnapSessionLauncher() snap.SessionLauncher {
 	// Temp for ppalucki debug only.
 	// TODO(bp): Remove this logic when ready-for-review.
 	var mutilateSnapSession snap.SessionLauncher
@@ -225,6 +126,83 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	} else {
 		logrus.Info("Warn: snap workflows disabled!")
 	}
+	return mutilateSnapSession
+}
+
+// Check README.md for details of this experiment.
+func main() {
+	// Setup conf.
+	conf.SetAppName("memcached-sensitivity-profile")
+	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
+It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
+
+	// Parse CLI.
+	check(conf.ParseFlags())
+
+	logrus.SetLevel(conf.LogLevel())
+
+	// Isolation configuration method.
+	// TODO: needs update for different isolation per cpu
+	var hpIsolation, beIsolation isolation.Isolation
+	if hpSetsFlag.Value() != "" && beSetsFlag.Value() != "" {
+		hpIsolation, beIsolation = manualPolicy()
+	} else {
+		hpIsolation, beIsolation = sharedCacheIsolationPolicy()
+	}
+	defer hpIsolation.Clean()
+	defer beIsolation.Clean()
+
+	// Initialize Memcached Launcher.
+	localForHP := executor.NewLocalIsolated(hpIsolation)
+	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig.IP = memcachedIPFlag.Value()
+	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
+
+	// Initialize Mutilate Load Generator.
+	mutilateConfig := mutilate.DefaultMutilateConfig()
+	mutilateConfig.MemcachedHost = memcachedConfig.IP
+	mutilateConfig.MemcachedPort = memcachedConfig.Port
+	mutilateConfig.LatencyPercentile = percentileFlag.Value()
+	mutilateConfig.TuningTime = 1 * time.Second
+
+	// Master options.
+	mutilateConfig.MasterQPS = 1000
+	mutilateConfig.MasterConnections = 4
+	mutilateConfig.MasterConnectionsDepth = 4
+	mutilateConfig.MasterThreads = 4
+
+	// Special case to have ability to use local executor for mutilate master load generator.
+	// This is needed for docker testing.
+	var masterLoadGeneratorExecutor executor.Executor
+	masterLoadGeneratorExecutor = executor.NewLocal()
+	if mutilateMasterFlag.Value() != "local" {
+		masterLoadGeneratorExecutor = newRemote(mutilateMasterFlag.Value())
+	}
+
+	// Pack agents.
+	agentsLoadGeneratorExecutors := []executor.Executor{}
+	for _, agent := range mutilateAgentsFlag.Value() {
+		agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, newRemote(agent))
+	}
+	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
+
+	mutilateLoadGenerator := mutilate.NewCluster(
+		masterLoadGeneratorExecutor,
+		agentsLoadGeneratorExecutors,
+		mutilateConfig)
+
+	// Initialize aggressors with BE isolation.
+	aggressors := []sensitivity.LauncherSessionPair{}
+	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
+	for _, aggr := range aggressorsFlag.Value() {
+		aggressor, err := aggressorFactory.Create(aggr)
+		check(err)
+
+		aggressors = append(aggressors, aggressor)
+	}
+
+	// Snap Session for mutilate.
+	mutilateSnapSession := prepareSnapSessionLauncher()
 
 	// Create Experiment configuration from Conf.
 	sensitivityExperiment := sensitivity.NewExperiment(
@@ -237,6 +215,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 
 	// Run Experiment.
-	err = sensitivityExperiment.Run()
+	err := sensitivityExperiment.Run()
 	check(err)
 }
