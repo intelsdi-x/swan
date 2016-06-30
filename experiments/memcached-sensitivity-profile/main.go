@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/shopspring/decimal"
 
 	"fmt"
 	"os"
@@ -125,7 +124,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
-	mutilateConfig.LatencyPercentile, _ = decimal.NewFromString(percentileFlag.Value())
+	mutilateConfig.LatencyPercentile = percentileFlag.Value()
 	mutilateConfig.TuningTime = 1 * time.Second
 
 	// Master options.

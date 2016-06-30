@@ -95,7 +95,7 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 	})
 
 	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
-		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile.String())
+		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -133,7 +133,7 @@ func (s *MutilateTestSuite) TestGetMultinodeLoadCommand() {
 	})
 
 	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
-		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile.String())
+		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -187,7 +187,7 @@ func (s *MutilateTestSuite) TestGetTuneCommand() {
 
 	Convey("Mutilate tuning command should contain search option", s.T(), func() {
 		expected := fmt.Sprintf("--search %s:%d",
-			s.mutilate.config.LatencyPercentile.String(), slo)
+			s.mutilate.config.LatencyPercentile, slo)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -219,7 +219,7 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 
 	Convey("Mutilate tuning command should contain search option", s.T(), func() {
 		expected := fmt.Sprintf("--search %s:%d",
-			s.mutilate.config.LatencyPercentile.String(), slo)
+			s.mutilate.config.LatencyPercentile, slo)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -252,7 +252,7 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 
 	Convey("Mutilate tuning command should contain search option", s.T(), func() {
 		expected := fmt.Sprintf("--search %s:%d",
-			s.mutilate.config.LatencyPercentile.String(), slo)
+			s.mutilate.config.LatencyPercentile, slo)
 		So(command, ShouldContainSubstring, expected)
 	})
 
