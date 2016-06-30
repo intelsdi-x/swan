@@ -20,7 +20,7 @@ const stringListDelimiter = ","
 // Tested in SliceFlag (conf_test.go)
 type StringListValue []string
 
-// Set parsed the input string and append that as a slice. Implements kingpin.Value.
+// Set parses the input string and append that as a slice. Implements kingpin.Value.
 func (s *StringListValue) Set(value string) error {
 	// Split string from input to slice and merge with saved slice.
 	*s = append(*s, strings.Split(value, stringListDelimiter)...)

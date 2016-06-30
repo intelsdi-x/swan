@@ -228,12 +228,7 @@ func NewIPFlag(flagName string, description string, defaultValue string) IPFlag 
 		defaultValue: defaultValue,
 	}
 
-	ip, err := net.ResolveIPAddr("ip4", defaultValue)
-	if err != nil {
-		panic(err)
-	}
-
-	ipFlag.value = app.Flag(flagName, description).Default(ip.String()).
+	ipFlag.value = app.Flag(flagName, description).Default(net.ParseIP(defaultValue).String()).
 		OverrideDefaultFromEnvar(ipFlag.envName()).IP()
 	isEnvParsed = false
 

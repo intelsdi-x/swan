@@ -28,7 +28,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, "default")
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
@@ -55,7 +55,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, defaultFilePath)
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
@@ -90,7 +90,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, 23424)
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
@@ -116,7 +116,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldResemble, []string{})
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
@@ -142,7 +142,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, false)
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
@@ -168,7 +168,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, 99*time.Millisecond)
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
@@ -195,7 +195,7 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, "255.255.255.5")
 			})
 
-			Convey("When we not defined any environment variable we should have default value after parse", func() {
+			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
