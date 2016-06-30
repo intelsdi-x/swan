@@ -21,12 +21,12 @@ export SWAN_MEMCACHED_CONNECTIONS=16000
 export SWAN_MUTILATE_PATH=/root/sce362/mutilate
 export SWAN_MUTILATE_MASTER=10.4.3.1
 export SWAN_MUTILATE_MASTER_THREADS=20
-export SWAN_MUTILATE_MASTER_CONNECTIONS=4
-export SWAN_MUTILATE_MASTER_DEPTH=1
-export SWAN_MUTILATE_WARMUP_TIME=5s
+export SWAN_MUTILATE_MASTER_CONNECTIONS=8
+export SWAN_MUTILATE_MASTER_DEPTH=4
+export SWAN_MUTILATE_WARMUP_TIME=0s
 export SWAN_MUTILATE_AGENT_THREADS=20
-export SWAN_MUTILATE_AGENT_CONNECTIONS=4
-export SWAN_MUTILATE_AGENT_DEPTH=1
+export SWAN_MUTILATE_AGENT_CONNECTIONS=8
+export SWAN_MUTILATE_AGENT_DEPTH=4
 export SWAN_MUTILATE_AGENT_PORT=6556
 
 ## experiment configuration
@@ -34,9 +34,10 @@ export SWAN_SLO=500
 export SWAN_LOAD_DURATION=30s
 #export SWAN_PEAK_LOAD=1000000
 #export SWAN_LOAD_POINTS=10
-export SWAN_PEAK_LOAD=700000
+export SWAN_PEAK_LOAD=870000
 export SWAN_LOAD_POINTS=1
-export SWAN_REPS=1
+export SWAN_REPS=3
+export SWAN_LOG=info
 
 ## isolations
 #NUMA node0 CPU(s):     0-7,16-23
@@ -49,6 +50,8 @@ export SWAN_BE_SETS=16,17,18,19,20,21,22,23:0
 export SWAN_SNAPD_ADDR=10.4.3.9
 #for disabling snap
 #export SWAN_SNAPD_ADDR="none"
+
+export SWAN_AGGR=l3d,stream,l1d
 
 ## cassandra configuration
 export SWAN_CASSANDRA_ADDR=10.4.3.10
@@ -101,7 +104,7 @@ fi
 
 
 echo -- experiment ---
-OPTS="--mutilate_agent=10.4.3.3 --mutilate_agent=10.4.3.4 --mutilate_agent=10.4.3.5 --mutilate_agent=10.4.3.6 --mutilate_agent=10.4.3.7 --mutilate_agent=10.4.3.8  --log debug --aggr=l3d --aggr=stream"
+OPTS="--mutilate_agent=10.4.3.3 --mutilate_agent=10.4.3.4 --mutilate_agent=10.4.3.5 --mutilate_agent=10.4.3.6 --mutilate_agent=10.4.3.7 --mutilate_agent=10.4.3.8"
 echo --- go ---
 EXP_ID=$(go run $GOPATH/src/github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/*.go $OPTS)
 #$GOPATH/src/github.com/intelsdi-x/swan/build/experiments/memcached/memcached-sensitivity-profile $OPTS
