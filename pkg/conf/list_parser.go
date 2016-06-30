@@ -16,8 +16,6 @@ const stringListDelimiter = ","
 //
 // When user would specify options: `-f=A,B,C -f=D,E,F` our `flag` variable would be a slice with
 // A,B,C,D,E,F items.
-//
-// Tested in SliceFlag (flag_test.go)
 type StringListValue []string
 
 // Set parses the input string and append that as a slice. Implements kingpin.Value.
@@ -34,7 +32,7 @@ func (s *StringListValue) String() string {
 }
 
 // Get retrieves content of StringListVar. Implements kingpin.Getter.
-func (s *StringListValue) Get() []string {
+func (s *StringListValue) Get() interface{} {
 	return ([]string)(*s)
 }
 
