@@ -21,6 +21,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
@@ -67,8 +69,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
+	LL3SharingBeThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
+
+	// Allocate BE threads on the same cores as Memched for L1 aggressors
+	L1SharingBeThreadIDs := getSiblingThreadsOfThreadSet(hpThreadIDs)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -114,19 +119,34 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	beIsolation, err := cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusive.Value(), false)
+	ll3AggressorIsolation, err := cgroup.NewCPUSet("be-ll3", LL3SharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	err = beIsolation.Create()
+	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", L1SharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	defer beIsolation.Clean()
+	err = ll3AggressorIsolation.Create()
+	check(err)
+
+	err = l1AggressorIsolation.Create()
+	check(err)
+
+	defer ll3AggressorIsolation.Clean()
+	defer l1AggressorIsolation.Clean()
 
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
-	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
+	//aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
 	for _, aggr := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggr)
+		var aggressor sensitivity.LauncherSessionPair
+		var err error
+
+		if aggr == l1data.ID || aggr == l1instruction.ID {
+			aggressor, err := sensitivity.CreateAggressor(aggr, l1AggressorIsolation)
+		} else {
+			aggressor, err := sensitivity.CreateAggressor(aggr, ll3AggressorIsolation)
+		}
+
 		if err != nil {
 			logrus.Fatal(err)
 		}

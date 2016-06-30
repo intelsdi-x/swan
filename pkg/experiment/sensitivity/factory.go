@@ -11,35 +11,32 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 )
 
-//AggressorFactory is a helper for creating aggressors with/without Snap sessions.
-type AggressorFactory struct {
-	executor executor.Executor
-}
-
-//NewAggressorFactory creates instance of AggressorFactory using isolation passed.
-func NewAggressorFactory(isolation isolation.Isolation) *AggressorFactory {
-	return &AggressorFactory{executor: executor.NewLocalIsolated(isolation)}
-}
-
-//Create sets up an aggresor of chosen type with Snap session.
-func (af *AggressorFactory) Create(name string) (LauncherSessionPair, error) {
+// CreateAggressor returns aggressor of chosen type with Snap session and isolation.
+func CreateAggressor(name string, isolation isolation.Isolation) (LauncherSessionPair, error) {
 	var aggressor LauncherSessionPair
+	executor := executor.NewLocalIsolated(isolation)
+
 	switch name {
 	case l1data.ID:
 		aggressor = NewLauncherWithoutSession(
-			l1data.New(af.executor, l1data.DefaultL1dConfig()))
+			l1data.New(executor, l1data.DefaultL1dConfig()))
+		break
 	case l1instruction.ID:
 		aggressor = NewLauncherWithoutSession(
-			l1instruction.New(af.executor, l1instruction.DefaultL1iConfig()))
+			l1instruction.New(executor, l1instruction.DefaultL1iConfig()))
+		break
 	case memoryBandwidth.ID:
 		aggressor = NewLauncherWithoutSession(
-			memoryBandwidth.New(af.executor, memoryBandwidth.DefaultMemBwConfig()))
+			memoryBandwidth.New(executor, memoryBandwidth.DefaultMemBwConfig()))
+		break
 	case caffe.ID:
 		aggressor = NewLauncherWithoutSession(
-			caffe.New(af.executor, caffe.DefaultConfig()))
+			caffe.New(executor, caffe.DefaultConfig()))
+		break
 	case l3data.ID:
 		aggressor = NewLauncherWithoutSession(
-			l3data.New(af.executor, l3data.DefaultL3Config()))
+			l3data.New(executor, l3data.DefaultL3Config()))
+		break
 	default:
 		return aggressor, fmt.Errorf("Aggressor '%s' not found", name)
 	}
