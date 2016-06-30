@@ -9,7 +9,7 @@ import (
 
 const stringListDelimiter = ","
 
-// StringListVar is a custom kingpin parser which resolves flag's parameters which consists of
+// StringListValue is a custom kingpin parser which resolves flag's parameters which consists of
 // string slice delimited by `stringListDelimiter`.
 // For instance for delimiter = "," and flag defined like this:
 // `flag = StringList(kingpin.Flag("flag_name", "help").Short("f"))`
@@ -18,29 +18,34 @@ const stringListDelimiter = ","
 // A,B,C,D,E,F items.
 //
 // Tested in SliceFlag (conf_test.go)
-type StringListVar []string
+type StringListValue []string
 
 // Set parsed the input string and append that as a slice. Implements kingpin.Value.
-func (s *StringListVar) Set(value string) error {
+func (s *StringListValue) Set(value string) error {
 	// Split string from input to slice and merge with saved slice.
-	*s = append((*s), strings.Split(value, stringListDelimiter)...)
+	*s = append(*s, strings.Split(value, stringListDelimiter)...)
 	// TODO(bp): Remove duplicates?
 	return nil
 }
 
 // String returns string value from StringListVar. Implements kingpin.Value.
-func (s *StringListVar) String() string {
-	return fmt.Sprintf("%v", *s)
+func (s *StringListValue) String() string {
+	return fmt.Sprintf("%v", ([]string)(*s))
+}
+
+// Get retrieves content of StringListVar. Implements kingpin.Getter.
+func (s *StringListValue) Get() []string {
+	return ([]string)(*s)
 }
 
 // IsCumulative implements optional interface (kingpin.repeatableFlag) for flags that can be repeated.
-func (s *StringListVar) IsCumulative() bool {
+func (s *StringListValue) IsCumulative() bool {
 	return true
 }
 
 // StringList is a helper for defining kingping flags.
 func StringList(s kingpin.Settings) (target *[]string) {
 	target = new([]string)
-	s.SetValue((*StringListVar)(target))
+	s.SetValue((*StringListValue)(target))
 	return
 }

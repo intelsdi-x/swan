@@ -37,7 +37,7 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		// TODO: Make that consistent.
+		// TODO(bp): Make that consistent with other workloads.
 		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
 		SolverPath:  getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
 		WorkdirPath: getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),

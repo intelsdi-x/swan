@@ -2,8 +2,10 @@ package conf
 
 import (
 	"fmt"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 	"os"
+	"path"
 	"testing"
 	"time"
 )
@@ -42,14 +44,15 @@ func TestFlags(t *testing.T) {
 			})
 		})
 
-		Convey("When some custom Bool Flag is defined", func() {
+		Convey("When some custom File Flag is defined", func() {
 			// Register custom flag.
-			customFlag := NewBoolFlag("custom_bool_arg", "help", false)
+			defaultFilePath := path.Join(fs.GetSwanPath(), "README.md")
+			customFlag := NewFileFlag("custom_file_arg", "help", defaultFilePath)
 			customFlag.clear()
 			defer customFlag.clear()
 
 			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, false)
+				So(customFlag.Value(), ShouldEqual, defaultFilePath)
 			})
 
 			Convey("When we not defined any environment variable we should have default value after parse", func() {
@@ -58,13 +61,22 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
 			})
 
-			Convey("When we define custom environment variable we should have custom value after parse", func() {
-				customValue := true
-				os.Setenv(customFlag.envName(), fmt.Sprintf("%v", customValue))
+			Convey("When we define custom existing path we should have that value after parse", func() {
+				customValue := path.Join(fs.GetSwanPath(), "Makefile")
+				os.Setenv(customFlag.envName(), customValue)
 
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customValue)
+			})
+
+			Convey("When we define custom not existing path we should have error after parse", func() {
+				customValue := "non-existing/path"
+				os.Setenv(customFlag.envName(), customValue)
+
+				err := ParseEnv()
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEndWith, "does not exist")
 			})
 		})
 
@@ -117,6 +129,32 @@ func TestFlags(t *testing.T) {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldResemble, []string{"A", "B", "C"})
+			})
+		})
+
+		Convey("When some custom Bool Flag is defined", func() {
+			// Register custom flag.
+			customFlag := NewBoolFlag("custom_bool_arg", "help", false)
+			customFlag.clear()
+			defer customFlag.clear()
+
+			Convey("Without parse it should be default", func() {
+				So(customFlag.Value(), ShouldEqual, false)
+			})
+
+			Convey("When we not defined any environment variable we should have default value after parse", func() {
+				err := ParseEnv()
+				So(err, ShouldBeNil)
+				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
+			})
+
+			Convey("When we define custom environment variable we should have custom value after parse", func() {
+				customValue := true
+				os.Setenv(customFlag.envName(), fmt.Sprintf("%v", customValue))
+
+				err := ParseEnv()
+				So(err, ShouldBeNil)
+				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
 
@@ -193,55 +231,5 @@ func TestFlags(t *testing.T) {
 				So(err.Error(), ShouldEndWith, "is not an IP address")
 			})
 		})
-
-		// TODO:
-		// Convey("When some custom TCP Flag is defined", func() {
-		//			// Register custom flag.
-		//			customFlag, err := NewTCPFlag("custom_tcp_arg", "help", "255.255.255.005:12345")
-		//			So(err, ShouldBeNil)
-		//
-		//			customFlag.clear()
-		//			defer customFlag.clear()
-		//
-		//			Convey("Without parse it should be default", func() {
-		//				So(customFlag.Value().IP.String(), ShouldEqual, "255.255.255.5")
-		//				So(customFlag.Value().Port, ShouldEqual, 12345)
-		//			})
-		//
-		//			Convey("When we not defined any environment variable we should have default value after parse", func() {
-		//				err := ParseEnv()
-		//				So(err, ShouldBeNil)
-		//				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
-		//			})
-		//
-		//			Convey("When we define custom host port we should have custom value after parse", func() {
-		//				customValue := "255.255.255.99:54321"
-		//				os.Setenv(customFlag.envName(), customValue)
-		//
-		//				err := ParseEnv()
-		//				So(err, ShouldBeNil)
-		//				So(customFlag.Value().String(), ShouldEqual, customValue)
-		//			})
-		//
-		//			Convey("When we define only custom host we should have custom host and default port after parse", func() {
-		//				customValue := "255.255.255.99:"
-		//				os.Setenv(customFlag.envName(), customValue)
-		//
-		//				err := ParseEnv()
-		//				So(err, ShouldBeNil)
-		//				So(customFlag.Value().IP.String(), ShouldEqual, customValue[:len(customValue)-1])
-		//				So(customFlag.Value().Port, ShouldEqual, customFlag.defaultValue.Port)
-		//			})
-		//
-		//			Convey("When we define only custom port we should have custom port and default host after parse", func() {
-		//				customValue := ":54321"
-		//				os.Setenv(customFlag.envName(), customValue)
-		//
-		//				err := ParseEnv()
-		//				So(err, ShouldBeNil)
-		//				So(customFlag.Value().IP, ShouldResemble, customFlag.defaultValue.IP)
-		//				So(customFlag.Value().Port, ShouldEqual, fmt.Sprintf("%d", customValue[1:]))
-		//			})
-		//		})
 	})
 }
