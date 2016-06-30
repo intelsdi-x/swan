@@ -10,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
+	"strings"
 	"syscall"
 )
 
@@ -17,7 +18,7 @@ import (
 // on remote machine via ssh.
 type Remote struct {
 	sshConfig         *SSHConfig
-	commandDecorators isolation.Decorator
+	commandDecorators isolation.Decorators
 }
 
 // NewRemote returns a Remote instance with default PID namespace isolation.
@@ -26,15 +27,15 @@ func NewRemote(sshConfig *SSHConfig) Remote {
 
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: isolationPid,
+		commandDecorators: []isolation.Decorator{isolationPid},
 	}
 }
 
 // NewRemoteIsolated returns a Remote instance.
-func NewRemoteIsolated(sshConfig *SSHConfig, decorator isolation.Decorator) Remote {
+func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Remote {
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: decorator,
+		commandDecorators: decorators,
 	}
 }
 
@@ -79,7 +80,13 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	err = session.Start(remote.commandDecorators.Decorate(command))
+	// Escape the quotes characters for `sh -c`.
+	stringForSh := remote.commandDecorators.Decorate(command)
+	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
+	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
+
+	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
+	err = session.Start("sh -O huponexit -c " + stringForSh)
 	if err != nil {
 		return nil, err
 	}
