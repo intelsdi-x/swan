@@ -60,6 +60,7 @@ func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation)
 // manualPolicy helper to create HP and BE isolations based on manually provided flags.
 func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 
+	// TODO: validation of input data: cpus and numa node overlap and no empty
 	parse := func(raw string) (CPUs, NUMAs []int) {
 		parseInts := func(strings []string) (ints []int) {
 			for _, s := range strings {
@@ -69,8 +70,9 @@ func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 			}
 			return
 		}
-		CPUStrings := strings.Split(strings.Split(raw, ":")[0], ",")
-		NUMAStrings := strings.Split(strings.Split(raw, ":")[1], ",")
+		splits := strings.Split(raw, ":")
+		CPUStrings := strings.Split(splits[0], ",")
+		NUMAStrings := strings.Split(splits[1], ",")
 		CPUs = parseInts(CPUStrings)
 		NUMAs = parseInts(NUMAStrings)
 		return
@@ -86,6 +88,11 @@ func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 	hpIsolation, err = cgroup.NewCPUSet("hp", isolation.NewIntSet(hpCPUs...), isolation.NewIntSet(hpNUMAs...), hpCPUExclusiveFlag.Value(), false)
 	check(err)
 	beIsolation, err = cgroup.NewCPUSet("be", isolation.NewIntSet(beCPUs...), isolation.NewIntSet(beNUMAs...), beCPUExclusiveFlag.Value(), false)
+	check(err)
+
+	err = hpIsolation.Create()
+	check(err)
+	err = beIsolation.Create()
 	check(err)
 	return
 }
