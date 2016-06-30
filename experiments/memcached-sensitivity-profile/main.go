@@ -2,6 +2,7 @@ package main
 
 import (
 	"os/user"
+	"strconv"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -156,6 +157,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	localForHP := executor.NewLocalIsolated(hpIsolation)
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedConfig.IP = memcachedIPFlag.Value()
+	atoi := func(s string) int {
+		i, err := strconv.Atoi(s)
+		check(err)
+		return i
+	} // TODO: replace with flags provided by Bartek
+	memcachedConfig.NumThreads = atoi(os.Getenv("SWAN_MEMCACHED_THREADS"))
+	memcachedConfig.NumConnections = atoi(os.Getenv("SWAN_MEMCACHED_CONNECTIONS"))
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.
