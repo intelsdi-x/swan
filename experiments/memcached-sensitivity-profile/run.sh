@@ -23,18 +23,19 @@ export SWAN_MUTILATE_MASTER=10.4.3.1
 export SWAN_MUTILATE_MASTER_THREADS=20
 export SWAN_MUTILATE_MASTER_CONNECTIONS=8
 export SWAN_MUTILATE_MASTER_DEPTH=4
-export SWAN_MUTILATE_WARMUP_TIME=0s
+export SWAN_MUTILATE_WARMUP_TIME=5s
 export SWAN_MUTILATE_AGENT_THREADS=20
 export SWAN_MUTILATE_AGENT_CONNECTIONS=8
 export SWAN_MUTILATE_AGENT_DEPTH=4
 export SWAN_MUTILATE_AGENT_PORT=6556
+export SWAN_MUTILATE_AGENT_AFFINITY=true
 
 ## experiment configuration
 export SWAN_SLO=500
-export SWAN_LOAD_DURATION=30s
+export SWAN_LOAD_DURATION=60s
 #export SWAN_PEAK_LOAD=1000000
 #export SWAN_LOAD_POINTS=10
-export SWAN_PEAK_LOAD=870000
+export SWAN_PEAK_LOAD=900000
 export SWAN_LOAD_POINTS=1
 export SWAN_REPS=3
 export SWAN_LOG=info
@@ -51,7 +52,8 @@ export SWAN_SNAPD_ADDR=10.4.3.9
 #for disabling snap
 #export SWAN_SNAPD_ADDR="none"
 
-export SWAN_AGGR=l3d,stream,l1d
+#export SWAN_AGGR=stream
+export SWAN_AGGR=l1d,l3d,stream
 
 ## cassandra configuration
 export SWAN_CASSANDRA_ADDR=10.4.3.10
@@ -95,12 +97,14 @@ if true; then
 	pkill memcached || true
 	pkill -e -9 mutilate || true
 	pssh -P -H 10.4.3.3 -H 10.4.3.4 -H 10.4.3.5 -H 10.4.3.6 -H 10.4.3.7 -H 10.4.3.8 -H 10.4.3.1 pkill -e -9 mutilate || true
+	pssh -p 1 -i -H 10.4.3.3 -H 10.4.3.4 -H 10.4.3.5 -H 10.4.3.6 -H 10.4.3.7 -H 10.4.3.8 -H 10.4.3.1 pgrep mutilate || true
 fi
 
-#pstree
+# check swan lab now!!!
+pstree
 #env | grep SWAN_
-#echo ready to run ... press a key
-#read
+echo ready to run ... press a key
+read
 
 
 echo -- experiment ---
