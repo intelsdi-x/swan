@@ -29,13 +29,13 @@ export SWAN_MUTILATE_AGENT_PORT=6556
 
 ## experiment configuration
 export SWAN_SLO=500
-export SWAN_LOAD_POINTS=1
+export SWAN_LOAD_POINTS=10
 export SWAN_LOAD_DURATION=1
 export SWAN_REPS=1
 export SWAN_PEAK_LOAD=1000000
 
 ## snap configuration
-export SWAN_SNAPD_ADDR=10.4.3.10
+export SWAN_SNAPD_ADDR=10.4.3.9
 #for disabling snap
 #export SWAN_SNAPD_ADDR="none"
 
@@ -82,7 +82,7 @@ pssh -P -H 10.4.3.3 -H 10.4.3.4 -H 10.4.3.5 -H 10.4.3.6 -H 10.4.3.7 -H 10.4.3.8 
 
 
 echo -- experiment ---
-OPTS="--mutilate_agent=10.4.3.3 --mutilate_agent=10.4.3.4 --mutilate_agent=10.4.3.5 --mutilate_agent=10.4.3.6 --mutilate_agent=10.4.3.7 --mutilate_agent=10.4.3.8  --log info --aggr=l1d"
+OPTS="--mutilate_agent=10.4.3.3 --mutilate_agent=10.4.3.4 --mutilate_agent=10.4.3.5 --mutilate_agent=10.4.3.6 --mutilate_agent=10.4.3.7 --mutilate_agent=10.4.3.8  --log info --aggr=l1d --aggr=stream"
 
 echo --- go ---
 EXP_ID=$(go run $GOPATH/src/github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/*.go $OPTS)
