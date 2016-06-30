@@ -43,7 +43,7 @@ var (
 	pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
 		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
-	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tunning_time", "Mutilate tunning time [s]", defaultTuningTime)
+	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
 	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
 	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
 	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
@@ -99,8 +99,8 @@ type Config struct {
 func DefaultMutilateConfig() Config {
 	return Config{
 		PathToBinary:  pathFlag.Value(),
-		MemcachedHost: defaultMemcachedHost,
-		MemcachedPort: memcached.DefaultPort,
+		MemcachedHost: memcached.IPFlag.Value(),
+		MemcachedPort: memcached.PortFlag.Value(),
 
 		WarmupTime:        warmupTimeFlag.Value(),
 		TuningTime:        tuningTimeFlag.Value(),

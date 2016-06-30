@@ -2,7 +2,6 @@ package main
 
 import (
 	"os/user"
-	"strconv"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -26,13 +25,6 @@ import (
 )
 
 var (
-	// memcachedIPFlag returns IP which will be specified for workload services as endpoints.
-	memcachedIPFlag = conf.NewIPFlag(
-		"memcached_ip",
-		"IP of interface memcached is listening on",
-		"127.0.0.1",
-	)
-
 	// Aggressors flag.
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
@@ -47,6 +39,7 @@ var (
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 
+	// Snap path.
 	snapCassandraPluginPath = conf.NewStringFlag(
 		"snap_cassandra_plugin_path",
 		"Path to snap cassandra plugin.",
@@ -156,14 +149,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize Memcached Launcher.
 	localForHP := executor.NewLocalIsolated(hpIsolation)
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedConfig.IP = memcachedIPFlag.Value()
-	atoi := func(s string) int {
-		i, err := strconv.Atoi(s)
-		check(err)
-		return i
-	} // TODO: replace with flags provided by Bartek
-	memcachedConfig.NumThreads = atoi(os.Getenv("SWAN_MEMCACHED_THREADS"))
-	memcachedConfig.NumConnections = atoi(os.Getenv("SWAN_MEMCACHED_CONNECTIONS"))
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.
