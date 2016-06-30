@@ -42,8 +42,6 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting '", command, "' remotely")
-
 	connection, err := ssh.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port),
@@ -84,6 +82,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	stringForSh := remote.commandDecorators.Decorate(command)
 	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
 	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
+
+	log.Debug("Starting '", stringForSh, "' remotely")
 
 	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
 	err = session.Start("sh -O huponexit -c " + stringForSh)
