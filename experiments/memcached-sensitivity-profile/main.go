@@ -35,7 +35,7 @@ var (
 )
 
 // ipAddressFlag returns IP which will be specified for workload services as endpoints.
-var ipAddressFlag = conf.NewStringFlag(
+var ipAddressFlag = conf.NewIPFlag(
 	"ip",
 	"IP of interface for Swan workloads services to listen on",
 	"127.0.0.1",
