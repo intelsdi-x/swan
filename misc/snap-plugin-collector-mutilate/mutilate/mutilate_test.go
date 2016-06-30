@@ -84,7 +84,7 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/90th", 33.4, now},
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
-				{"/percentile/99_999th/custom", 1777.887805, now},
+				{"/percentile/99_123400th/custom", 1777.887805, now},
 				{"/qps", 4993.1, now},
 			}
 

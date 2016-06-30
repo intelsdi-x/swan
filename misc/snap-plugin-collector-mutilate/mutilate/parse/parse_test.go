@@ -12,7 +12,7 @@ func TestStdoutParser(t *testing.T) {
 	Convey("Opening non-existing file should fail", t, func() {
 		data, err := File("/non/existing/file")
 
-		So(data, ShouldBeEmpty)
+		So(data.Raw, ShouldBeEmpty)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
 	})
@@ -24,17 +24,18 @@ func TestStdoutParser(t *testing.T) {
 		data, err := File(path)
 
 		So(err, ShouldBeNil)
-		So(data, ShouldHaveLength, 10)
-		So(data[MutilateAvg], ShouldResemble, 20.8)
-		So(data[MutilateStd], ShouldResemble, 23.1)
-		So(data[MutilateMin], ShouldResemble, 11.9)
-		So(data[MutilatePercentile5th], ShouldResemble, 13.3)
-		So(data[MutilatePercentile10th], ShouldResemble, 13.4)
-		So(data[MutilatePercentile90th], ShouldResemble, 33.4)
-		So(data[MutilatePercentile95th], ShouldResemble, 43.1)
-		So(data[MutilatePercentile99th], ShouldResemble, 59.5)
-		So(data["percentile/99.999th/custom"], ShouldResemble, 1777.887805)
-		So(data[MutilateQPS], ShouldResemble, 4993.1)
+		So(data.Raw, ShouldHaveLength, 10)
+		So(data.Raw[MutilateAvg], ShouldResemble, 20.8)
+		So(data.Raw[MutilateStd], ShouldResemble, 23.1)
+		So(data.Raw[MutilateMin], ShouldResemble, 11.9)
+		So(data.Raw[MutilatePercentile5th], ShouldResemble, 13.3)
+		So(data.Raw[MutilatePercentile10th], ShouldResemble, 13.4)
+		So(data.Raw[MutilatePercentile90th], ShouldResemble, 33.4)
+		So(data.Raw[MutilatePercentile95th], ShouldResemble, 43.1)
+		So(data.Raw[MutilatePercentile99th], ShouldResemble, 59.5)
+		So(data.Raw[MutilatePercentileCustom], ShouldResemble, 1777.887805)
+		So(data.Raw[MutilateQPS], ShouldResemble, 4993.1)
+		So(data.LatencyPercentile, ShouldEqual, "99.123400")
 	})
 
 	Convey("Attempting to read file with wrong number of read columns should return an error and no metrics", t, func() {
@@ -43,7 +44,7 @@ func TestStdoutParser(t *testing.T) {
 
 		data, err := File(path)
 
-		So(data, ShouldHaveLength, 0)
+		So(data.Raw, ShouldHaveLength, 0)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 8 but got 2")
 	})
@@ -56,16 +57,16 @@ func TestStdoutParser(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// QPS and custom percentile latency are still available, thus 2.
-		So(data, ShouldHaveLength, 2)
+		So(data.Raw, ShouldHaveLength, 2)
 
-		So(data, ShouldNotContainKey, MutilateAvg)
-		So(data, ShouldNotContainKey, MutilateStd)
-		So(data, ShouldNotContainKey, MutilateMin)
-		So(data, ShouldNotContainKey, MutilatePercentile5th)
-		So(data, ShouldNotContainKey, MutilatePercentile10th)
-		So(data, ShouldNotContainKey, MutilatePercentile90th)
-		So(data, ShouldNotContainKey, MutilatePercentile95th)
-		So(data, ShouldNotContainKey, MutilatePercentile99th)
+		So(data.Raw, ShouldNotContainKey, MutilateAvg)
+		So(data.Raw, ShouldNotContainKey, MutilateStd)
+		So(data.Raw, ShouldNotContainKey, MutilateMin)
+		So(data.Raw, ShouldNotContainKey, MutilatePercentile5th)
+		So(data.Raw, ShouldNotContainKey, MutilatePercentile10th)
+		So(data.Raw, ShouldNotContainKey, MutilatePercentile90th)
+		So(data.Raw, ShouldNotContainKey, MutilatePercentile95th)
+		So(data.Raw, ShouldNotContainKey, MutilatePercentile99th)
 	})
 
 	Convey("Attempting to read a file with no swan-specific row at all should return an error and no metrics", t, func() {
@@ -76,9 +77,9 @@ func TestStdoutParser(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// QPS and read latencies are still available, thus 9.
-		So(data, ShouldHaveLength, 9)
+		So(data.Raw, ShouldHaveLength, 9)
 
-		So(data, ShouldNotContainKey, "percentile/99.999th/custom")
+		So(data.Raw, ShouldNotContainKey, MutilatePercentileCustom)
 	})
 
 	Convey("Attempting to read a file with malformed swan-specific row should return an error and no metrics", t, func() {
@@ -87,7 +88,7 @@ func TestStdoutParser(t *testing.T) {
 
 		data, err := File(path)
 
-		So(data, ShouldHaveLength, 0)
+		So(data.Raw, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
 	})
 
@@ -97,7 +98,7 @@ func TestStdoutParser(t *testing.T) {
 
 		data, err := File(path)
 
-		So(data, ShouldHaveLength, 0)
+		So(data.Raw, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 1")
 	})
 
@@ -107,7 +108,7 @@ func TestStdoutParser(t *testing.T) {
 
 		data, err := File(path)
 
-		So(data, ShouldHaveLength, 0)
+		So(data.Raw, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 2 but got 0")
 	})
 
@@ -117,7 +118,7 @@ func TestStdoutParser(t *testing.T) {
 
 		data, err := File(path)
 
-		So(data, ShouldHaveLength, 0)
+		So(data.Raw, ShouldHaveLength, 0)
 		So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 8 but got 3")
 	})
 }
