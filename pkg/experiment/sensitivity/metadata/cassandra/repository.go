@@ -91,7 +91,7 @@ func NewMeasurementTable(keySpace gocassa.KeySpace) (gocassa.Table, error) {
 
 // Save implements metadata.Repository interface.
 func (c repository) Save(metadata metadata.Experiment) error {
-	experimentMetrics, phasesMetrics, measurementsMetrics := metadataToCassandra(metadata)
+	experimentMetrics, phasesMetrics, measurementsMetrics := parseFromMetadata(metadata)
 	err := c.experiment.Set(experimentMetrics).Run()
 	if err != nil {
 		return fmt.Errorf("Experiment metrics saving failed: %s", err.Error())

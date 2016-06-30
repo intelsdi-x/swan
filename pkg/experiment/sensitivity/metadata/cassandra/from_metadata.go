@@ -2,7 +2,7 @@ package cassandra
 
 import "github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 
-func metadataToCassandra(experiment metadata.Experiment) (Experiment, []Phase, []Measurement) {
+func parseFromMetadata(experiment metadata.Experiment) (Experiment, []Phase, []Measurement) {
 	experimentMetadata := buildExperimentMetadata(experiment)
 	phaseMetadata, measurementMetadata := buildPhaseMetadata(experiment)
 
