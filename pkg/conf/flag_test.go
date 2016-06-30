@@ -211,20 +211,8 @@ func TestFlags(t *testing.T) {
 			})
 
 			Convey("When we define invalid custom environment variable we should have error after parse", func() {
-				Convey("Like too long IP", func() {
-					invalidCustomValue := "255.255.255.99.324"
-					os.Setenv(customFlag.envName(), invalidCustomValue)
-				})
-
-				Convey("Like IP with invalid characters", func() {
-					invalidCustomValue := "255.dfg.255.99"
-					os.Setenv(customFlag.envName(), invalidCustomValue)
-				})
-
-				Convey("Like IP with number above 255", func() {
-					invalidCustomValue := "300.255.255.99"
-					os.Setenv(customFlag.envName(), invalidCustomValue)
-				})
+				invalidCustomValue := "300.255.255.99"
+				os.Setenv(customFlag.envName(), invalidCustomValue)
 
 				err := ParseEnv()
 				So(err, ShouldNotBeNil)
