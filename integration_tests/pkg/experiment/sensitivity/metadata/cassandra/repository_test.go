@@ -82,14 +82,14 @@ func TestCassandraUploading(t *testing.T) {
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get an error when phase metadata query fails", func() {
-					brakeDatabase(config, "DROP TABLE", phaseTable.Name())
+					corruptDatabase(config, "DROP TABLE", phaseTable.Name())
 					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Phases metadata fetch failed")
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get en error when phase metadata query returns no results", func() {
-					brakeDatabase(config, "TRUNCATE", phaseTable.Name())
+					corruptDatabase(config, "TRUNCATE", phaseTable.Name())
 					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Phases metadata fetch returned no results")
@@ -97,14 +97,14 @@ func TestCassandraUploading(t *testing.T) {
 
 				})
 				Convey("I should get an error when measurement metadata query fails", func() {
-					brakeDatabase(config, "DROP TABLE", measurementTable.Name())
+					corruptDatabase(config, "DROP TABLE", measurementTable.Name())
 					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Measurements metadata fetch failed")
 					So(metadata.ID, ShouldEqual, "")
 				})
 				Convey("I should get en error when measurement metadata query returns no results", func() {
-					brakeDatabase(config, "TRUNCATE", measurementTable.Name())
+					corruptDatabase(config, "TRUNCATE", measurementTable.Name())
 					metadata, err := cassandra.Fetch("experiment")
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldStartWith, "Measurements metadata fetch returned no results")
@@ -174,7 +174,7 @@ func createGocqlSession(config cassandra.Config) (*gocql.Session, error) {
 
 }
 
-func brakeDatabase(config cassandra.Config, operation, tableName string) {
+func corruptDatabase(config cassandra.Config, operation, tableName string) {
 	session, err := createGocqlSession(config)
 	So(err, ShouldBeNil)
 	query := session.Query(fmt.Sprintf("%s %s.%s", operation, config.KeySpace, tableName))
