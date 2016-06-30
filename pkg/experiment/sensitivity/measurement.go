@@ -3,13 +3,14 @@ package sensitivity
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // measurementPhase performs a measurement for given loadPointIndex.
