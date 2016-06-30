@@ -17,6 +17,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
+	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -72,8 +73,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	LL3SharingBeThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
 
-	// Allocate BE threads on the same cores as Memched for L1 aggressors
-	L1SharingBeThreadIDs := getSiblingThreadsOfThreadSet(hpThreadIDs)
+	// Allocate BE threads on the same cores as Memcached for L1 aggressors
+	L1SharingBeThreadIDs := getSiblingThreadsOfThreadSet(topo.NewThreadSetFromIntSet(hpThreadIDs))
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -122,7 +123,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	ll3AggressorIsolation, err := cgroup.NewCPUSet("be-ll3", LL3SharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", L1SharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
+	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", L1SharingBeThreadIDs.AvailableThreads(), numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
 	err = ll3AggressorIsolation.Create()

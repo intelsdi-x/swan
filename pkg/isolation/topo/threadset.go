@@ -14,6 +14,16 @@ func NewThreadSet() ThreadSet {
 	return []Thread{}
 }
 
+// NewThreadSetFromIntSet returns newly allocated thread set from IntSet with Thread IDs.
+func NewThreadSetFromIntSet(threads isolation.IntSet) ThreadSet {
+	threadSet := NewThreadSet()
+	for thread, _ := range threads {
+		_ = thread
+		threadSet = append(threadSet, NewThreadFromId(thread))
+	}
+	return threadSet
+}
+
 // Partition returns two newly allocated thread sets: the first contains
 // threads from this set that match the supplied predicate and the second
 // contains threads that do not.

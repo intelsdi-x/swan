@@ -1,5 +1,7 @@
 package topo
 
+import "github.com/Sirupsen/logrus"
+
 // Thread represents a hyperthread, typically presented by the operating
 // system as a logical CPU.
 type Thread interface {
@@ -12,6 +14,19 @@ type Thread interface {
 // socket IDs.
 func NewThread(id int, core int, socket int) Thread {
 	return thread{id, core, socket}
+}
+
+func NewThreadFromId(id int) Thread {
+	allThreads, err := Discover()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	foundThread := allThreads.Filter(func(t Thread) bool {
+		return t.ID() == id
+	})
+
+	return foundThread[0]
 }
 
 type thread struct {
