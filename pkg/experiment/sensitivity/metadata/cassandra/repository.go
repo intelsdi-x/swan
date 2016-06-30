@@ -2,6 +2,7 @@ package cassandra
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/hailocab/gocassa"
@@ -39,6 +40,7 @@ func NewCassandra(experiment, phase, measurement gocassa.Table) metadata.Reposit
 func NewKeySpace(config Config) (gocassa.KeySpace, error) {
 	gocql := gocql.NewCluster(config.Host...)
 	gocql.ProtoVersion = 4
+	gocql.Timeout = 100 * time.Second
 	session, err := gocql.CreateSession()
 	if err != nil {
 		err = fmt.Errorf("Creating gocql session failed: %s", err.Error())
