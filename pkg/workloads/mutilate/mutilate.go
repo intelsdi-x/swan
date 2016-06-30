@@ -15,7 +15,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/shopspring/decimal"
+	"os"
 )
 
 const (
@@ -51,7 +51,7 @@ type Config struct {
 	// TODO(bplotka): Pack below parameters as flags.
 	// Mutilate load Parameters
 	TuningTime        time.Duration
-	LatencyPercentile decimal.Decimal
+	LatencyPercentile string
 
 	AgentConnections      int // -c
 	AgentConnectionsDepth int // Max length of request pipeline. -d
@@ -78,8 +78,6 @@ type Config struct {
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
-	percentile, _ := decimal.NewFromString(defaultPercentile)
-
 	return Config{
 		PathToBinary:  pathFlag.Value(),
 		MemcachedHost: defaultMemcachedHost,
@@ -87,7 +85,7 @@ func DefaultMutilateConfig() Config {
 
 		WarmupTime:        defaultWarmupTime,
 		TuningTime:        defaultTuningTime,
-		LatencyPercentile: percentile,
+		LatencyPercentile: defaultPercentile,
 
 		AgentThreads:           defaultAgentThreads,
 		AgentConnections:       defaultAgentConnections,
@@ -217,6 +215,28 @@ func (m mutilate) Populate() (err error) {
 	return nil
 }
 
+func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSLI int, err error) {
+	results, err := parse.OpenedFile(stdoutFile)
+	if err != nil {
+		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
+		return qps, achievedSLI, errors.New(errMsg + err.Error())
+	}
+
+	rawQPS, ok := results.Raw[parse.MutilateQPS]
+	if !ok {
+		errMsg := fmt.Sprintf("Could not retrieve MutilateQPS from mutilate parser.")
+		return qps, achievedSLI, errors.New(errMsg)
+	}
+
+	rawSLI, ok := results.Raw[parse.MutilatePercentileCustom]
+	if !ok {
+		errMsg := fmt.Sprintf("Could not retrieve Custom Percentile from mutilate parser.")
+		return qps, achievedSLI, errors.New(errMsg)
+	}
+
+	return int(rawQPS), int(rawSLI), nil
+}
+
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	// Run agents when specified.
@@ -267,29 +287,10 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, err
 	}
 
-	metricsMap, err := parse.OpenedFile(stdoutFile)
+	qps, achievedSLI, err = m.getQPSAndLatencyFrom(stdoutFile)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
-		return qps, achievedSLI, errors.New(errMsg + err.Error())
+		return qps, achievedSLI, err
 	}
-
-	rawQPS, ok := metricsMap[parse.MutilateQPS]
-	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve MutilateQPS from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
-	}
-	qps = int(rawQPS)
-
-	// We don't need to have 'exact' flag retrieved.
-	// TODO(bplotka): Move latency to string.
-	// If float64 is not enough we need to fix parser and mutilate collector as well.
-	floatPercentile, _ := m.config.LatencyPercentile.Float64()
-	rawSLI, ok := metricsMap[parse.GenerateCustomPercentileKey(floatPercentile)]
-	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve Custom Percentile from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
-	}
-	achievedSLI = int(rawSLI)
 
 	err = taskHandle.Clean()
 	if err != nil {

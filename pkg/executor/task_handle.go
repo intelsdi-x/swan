@@ -33,9 +33,9 @@ type TaskHandle interface {
 	Status() TaskState
 	// ExitCode returns a exitCode. If task is not terminated it returns error.
 	ExitCode() (int, error)
-	// Wait does the blocking wait for the task completion in case of 0.
-	// Wait is a helper for waiting with a given timeout time.
+	// Wait does the blocking wait. It is a helper for waiting with a given timeout time.
 	// It returns true if task is terminated.
+	// In case of '0*time.Nanoseconds' timeout it waits infinitely for task completion.
 	Wait(timeout time.Duration) bool
 	// Clean cleans task temporary resources like isolations for Local.
 	// It also closes the task's stdout & stderr files.

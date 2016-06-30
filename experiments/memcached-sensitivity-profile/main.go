@@ -10,7 +10,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/shopspring/decimal"
 
 	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -106,11 +105,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		loadGeneratorExecutor = executor.NewRemote(sshConfig)
 	}
 
-	percentile, _ := decimal.NewFromString("99")
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
-	mutilateConfig.LatencyPercentile = percentile
+	mutilateConfig.LatencyPercentile = "99"
 	mutilateConfig.TuningTime = 1 * time.Second
 
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
