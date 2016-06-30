@@ -28,9 +28,13 @@ func TestCassandraUploading(t *testing.T) {
 
 		keySpace, err := cassandra.NewKeySpace(config)
 		So(err, ShouldBeNil)
-		phaseTable := cassandra.NewPhaseTable(keySpace)
-		measurementTable := cassandra.NewMeasurementTable(keySpace)
-		cassandra := cassandra.NewCassandra(cassandra.NewExperimentTable(keySpace), phaseTable, measurementTable)
+		experimentTable, err := cassandra.NewExperimentTable(keySpace)
+		So(err, ShouldBeNil)
+		phaseTable, err := cassandra.NewPhaseTable(keySpace)
+		So(err, ShouldBeNil)
+		measurementTable, err := cassandra.NewMeasurementTable(keySpace)
+		So(err, ShouldBeNil)
+		cassandra := cassandra.NewCassandra(experimentTable, phaseTable, measurementTable)
 		Convey("I should get an Uploader instance", func() {
 			So(cassandra, ShouldNotBeNil)
 			Convey("When I pass SwanMetrics instance", func() {

@@ -57,27 +57,36 @@ func NewKeySpace(config Config) (gocassa.KeySpace, error) {
 }
 
 // NewExperimentTable creates new instance of gocassa.Table representing experiment metadata.
-func NewExperimentTable(keySpace gocassa.KeySpace) gocassa.Table {
+func NewExperimentTable(keySpace gocassa.KeySpace) (gocassa.Table, error) {
 	table := keySpace.Table(experimentTablePrefix, &Experiment{}, gocassa.Keys{PartitionKeys: []string{"ID"}})
-	table.CreateIfNotExist()
+	err := table.CreateIfNotExist()
+	if err != nil {
+		return nil, err
+	}
 
-	return table
+	return table, nil
 }
 
 // NewPhaseTable creates new instance of gocassa.Table representing phase metadata.
-func NewPhaseTable(keySpace gocassa.KeySpace) gocassa.Table {
+func NewPhaseTable(keySpace gocassa.KeySpace) (gocassa.Table, error) {
 	table := keySpace.Table(phaseTablePrefix, &Phase{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"ID"}})
-	table.CreateIfNotExist()
+	err := table.CreateIfNotExist()
+	if err != nil {
+		return nil, err
+	}
 
-	return table
+	return table, nil
 }
 
 // NewMeasurementTable creates new instance of gocassa.Table representing measurement metadata.
-func NewMeasurementTable(keySpace gocassa.KeySpace) gocassa.Table {
+func NewMeasurementTable(keySpace gocassa.KeySpace) (gocassa.Table, error) {
 	table := keySpace.Table(measurementTablePrefix, &Measurement{}, gocassa.Keys{PartitionKeys: []string{"ExperimentID"}, ClusteringColumns: []string{"PhaseID", "Load"}})
-	table.CreateIfNotExist()
+	err := table.CreateIfNotExist()
+	if err != nil {
+		return nil, err
+	}
 
-	return table
+	return table, nil
 }
 
 // Save implements metadata.Repository interface.
