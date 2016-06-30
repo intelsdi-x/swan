@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strconv"
 	"strings"
 
@@ -82,7 +81,6 @@ func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 
 	logrus.Debugf("HP: CPUs=%v NUMAs=%v", hpCPUs, hpNUMAs)
 	logrus.Debugf("BE: CPUs=%v NUMAs=%v", beCPUs, beNUMAs)
-	os.Exit(1)
 
 	var err error
 	hpIsolation, err = cgroup.NewCPUSet("hp", isolation.NewIntSet(hpCPUs...), isolation.NewIntSet(hpNUMAs...), hpCPUExclusiveFlag.Value(), false)
