@@ -7,28 +7,28 @@ import (
 )
 
 func TestSysctl(t *testing.T) {
-  Convey("Reading a sane sysctl value (kernel.ostype)", t, func() {
-    value, err := Get("kernel.ostype")
+	Convey("Reading a sane sysctl value (kernel.ostype)", t, func() {
+		value, err := Get("kernel.ostype")
 
-    Convey("Should not return an error", func() {
-      So(err, ShouldBeNil)
+		Convey("Should not return an error", func() {
+			So(err, ShouldBeNil)
 
-      Convey("And should contain 'Linux'", func() {
-        So(value, ShouldEqual, "Linux")
-      })
-    })
-  })
+			Convey("And should contain 'Linux'", func() {
+				So(value, ShouldEqual, "Linux")
+			})
+		})
+	})
 
-  Convey("Reading a non-sense sysctl value (foo.bar.baz)", t, func() {
-    value, err := Get("foo.bar.baz")
+	Convey("Reading a non-sense sysctl value (foo.bar.baz)", t, func() {
+		value, err := Get("foo.bar.baz")
 
-    Convey("Should return an error", func() {
-      So(err, ShouldNotBeNil)
-      So(err.Error(), ShouldEqual, "open /proc/sys/foo/bar/baz: no such file or directory")
+		Convey("Should return an error", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "open /proc/sys/foo/bar/baz: no such file or directory")
 
-      Convey("And the value should be empty", func() {
-        So(value, ShouldEqual, "")
-      })
-    })
-  })
+			Convey("And the value should be empty", func() {
+				So(value, ShouldEqual, "")
+			})
+		})
+	})
 }
