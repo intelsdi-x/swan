@@ -3,11 +3,10 @@ package mutilate
 import (
 	"errors"
 	"fmt"
-	"testing"
-	"time"
-
 	"io/ioutil"
 	"os"
+	"testing"
+	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
