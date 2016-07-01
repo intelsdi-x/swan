@@ -36,6 +36,12 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 	}
 }
 
+// EscapeQuotes escapes the single & double quotes characters.
+func EscapeQuotes(old string) string {
+	new := strings.Replace(old, "'", "\\'", -1)
+	return new
+}
+
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
@@ -75,15 +81,10 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	// Escape the quotes characters for `sh -c`.
-	stringForSh := remote.commandDecorators.Decorate(command)
-	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
-	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
-
-	log.Debug("Starting '", stringForSh, "' remotely")
-
+	decoratedCommand := remote.commandDecorators.Decorate(command)
+	log.Debug("Starting '", decoratedCommand, "' remotely")
 	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", stringForSh))
+	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", EscapeQuotes(decoratedCommand)))
 	if err != nil {
 		return nil, err
 	}
