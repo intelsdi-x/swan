@@ -16,6 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 	"os/user"
+	"syscall"
 )
 
 const (
@@ -120,8 +121,8 @@ func testRemoteStop() {
 }
 
 func newMultipleMemcached(sshConfig executor.SSHConfig) workloads.Launcher {
-	decors := isolation.Decorators{}
-	exec := executor.NewRemoteIsolated(&sshConfig, decors)
+	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	exec := executor.NewRemoteIsolated(&sshConfig, isolation.Decorators{isolationPid})
 
 	return multipleMemcached{exec}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
 	"strings"
+	"syscall"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -22,9 +23,11 @@ type Remote struct {
 
 // NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
+	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: []isolation.Decorator{},
+		commandDecorators: []isolation.Decorator{isolationPid},
 	}
 }
 
@@ -83,8 +86,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	decoratedCommand := remote.commandDecorators.Decorate(command)
 	log.Debug("Starting '", decoratedCommand, "' remotely")
-	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", EscapeQuotes(decoratedCommand)))
+	err = session.Start(decoratedCommand)
 	if err != nil {
 		return nil, err
 	}
