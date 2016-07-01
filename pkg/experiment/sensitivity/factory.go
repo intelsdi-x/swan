@@ -12,7 +12,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 )
 
-// CreateAggressor returns aggressor of chosen type with Snap session and isolation.
+// CreateAggressor returns aggressor of chosen type with Snap session.
 func CreateAggressor(name string, executor executor.Executor) (LauncherSessionPair, error) {
 	var aggressor LauncherSessionPair
 
