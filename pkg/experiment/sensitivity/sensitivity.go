@@ -18,7 +18,8 @@ var (
 	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
 	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
-	peakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	peakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	runTuningPhase = 0
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -154,7 +155,7 @@ func (e *Experiment) configureGenericExperiment() error {
 	var allMeasurements []phase.Phase
 
 	// Include Tuning Phase if PeakLoad wasn't given.
-	if e.configuration.PeakLoad == 0 {
+	if e.configuration.PeakLoad == runTuningPhase {
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
 	} else {

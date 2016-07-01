@@ -1,7 +1,6 @@
 #!/bin/sh
 
-set -e
-set -x
+set -e -x
 
 # memcached connection reset by peer fix
 echo 0 > /proc/sys/net/ipv4/tcp_syncookies
