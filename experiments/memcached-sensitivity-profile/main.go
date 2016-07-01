@@ -70,11 +70,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	LL3SharingBeThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
+	llcSharingBeThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
 
 	// Allocate BE threads on the same cores as Memcached for L1 aggressors
-	L1SharingBeThreadIDs := getSiblingThreadsOfThreadSet(topo.NewThreadSetFromIntSet(hpThreadIDs))
+	l1CacheSharingBeThreadIDs := getSiblingThreadsOfThreadSet(topo.NewThreadSetFromIntSet(hpThreadIDs))
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -120,20 +120,24 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
 
 	// Initialize BE isolation.
-	ll3AggressorIsolation, err := cgroup.NewCPUSet("be-ll3", LL3SharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
+	llcAggressorIsolation, err := cgroup.NewCPUSet("be-llc", llcSharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", L1SharingBeThreadIDs.AvailableThreads(), numaZero, beCPUExclusive.Value(), false)
+	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", l1CacheSharingBeThreadIDs.AvailableThreads(), numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	err = ll3AggressorIsolation.Create()
+	err = llcAggressorIsolation.Create()
 	check(err)
 
 	err = l1AggressorIsolation.Create()
 	check(err)
 
-	defer ll3AggressorIsolation.Clean()
+	defer llcAggressorIsolation.Clean()
 	defer l1AggressorIsolation.Clean()
+
+	logrus.Info("HP Workload cores: %#v", hpThreadIDs)
+	logrus.Info("BE-L1 Workloads cores: %#v", l1CacheSharingBeThreadIDs.AvailableThreads())
+	logrus.Info("BE-LLC Workloads cores: %#v", llcSharingBeThreadIDs)
 
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
@@ -144,9 +148,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 		// NOTE: Awful hack to get different isolations per workload.
 		if aggr == l1data.ID || aggr == l1instruction.ID {
-			aggressor, err = sensitivity.CreateAggressor(aggr, l1AggressorIsolation)
+			executor := executor.NewLocalIsolated(l1AggressorIsolation)
+			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		} else {
-			aggressor, err = sensitivity.CreateAggressor(aggr, ll3AggressorIsolation)
+			executor := executor.NewLocalIsolated(llcAggressorIsolation)
+			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		}
 
 		if err != nil {

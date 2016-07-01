@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
@@ -14,9 +13,8 @@ import (
 )
 
 // CreateAggressor returns aggressor of chosen type with Snap session and isolation.
-func CreateAggressor(name string, isolation isolation.Isolation) (LauncherSessionPair, error) {
+func CreateAggressor(name string, executor executor.Executor) (LauncherSessionPair, error) {
 	var aggressor LauncherSessionPair
-	executor := executor.NewLocalIsolated(isolation)
 
 	switch name {
 	case l1data.ID:
