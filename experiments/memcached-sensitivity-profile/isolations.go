@@ -23,7 +23,7 @@ var (
 	beCPUExclusiveFlag = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
 )
 
-// sharedCacheIsolationPolicy TODO: describe intention of this policy
+// sharedCacheIsolationPolicy TODO: describe intention of this policy.
 func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 
 	threadSet := sharedCacheThreads()
@@ -36,7 +36,7 @@ func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation)
 	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
 
-	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
+	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all.
 	// memory banks (probably not).
 	numaZero := isolation.NewIntSet(0)
 

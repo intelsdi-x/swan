@@ -31,7 +31,7 @@ var (
 
 	// Mutilate configuration.
 	percentileFlag     = conf.NewStringFlag("percentile", "Tail latency Percentile", "99")
-	mutilateMasterFlag = conf.NewStringFlag(
+	mutilateMasterFlag = conf.NewIPFlag(
 		"mutilate_master",
 		"Mutilate master host for remote executor. In case of 0 agents being specified it runs in agentless mode.",
 		"127.0.0.1")
@@ -40,10 +40,12 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 
 	// Snap path.
-	snapCassandraPluginPath = conf.NewStringFlag(
+	snapCassandraPluginPath = conf.NewFileFlag(
 		"snap_cassandra_plugin_path",
 		"Path to snap cassandra plugin.",
 		path.Join(os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra"))
+
+	mutilateMasterFlagDefault = "local"
 )
 
 // Check the supplied error, log and exit if non-nil.
@@ -59,8 +61,7 @@ func newRemote(ip string) executor.Executor {
 	user, err := user.Current()
 	check(err)
 
-	sshConfig, err := executor.NewSSHConfig(
-		ip, executor.DefaultSSHPort, user)
+	sshConfig, err := executor.NewSSHConfig(ip, executor.DefaultSSHPort, user)
 	check(err)
 
 	return executor.NewRemote(sshConfig)
@@ -118,7 +119,7 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 			snapConnection,
 			publisher)
 	} else {
-		logrus.Info("Warn: snap workflows disabled!")
+		logrus.Warn("Warn: snap workflows disabled!")
 	}
 	return mutilateSnapSession
 }
@@ -168,7 +169,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// This is needed for docker testing.
 	var masterLoadGeneratorExecutor executor.Executor
 	masterLoadGeneratorExecutor = executor.NewLocal()
-	if mutilateMasterFlag.Value() != "local" {
+	if mutilateMasterFlag.Value() != mutilateMasterFlagDefault {
 		masterLoadGeneratorExecutor = newRemote(mutilateMasterFlag.Value())
 	}
 
