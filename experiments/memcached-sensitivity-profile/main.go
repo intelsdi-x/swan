@@ -58,8 +58,7 @@ func main() {
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 
-	//logrus.SetLevel(conf.LogLevel())
-	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetLevel(conf.LogLevel())
 
 	// Parse CLI.
 	check(conf.ParseFlags())
@@ -147,14 +146,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggr := range aggressorsFlag.Value() {
-		executor := executor.NewLocalIsolated(l1AggressorIsolation)
 		var aggressor sensitivity.LauncherSessionPair
 		var err error
 
 		// NOTE: Awful hack to get different isolations per workload.
 		if aggr == l1data.ID || aggr == l1instruction.ID {
+			executor := executor.NewLocalIsolated(l1AggressorIsolation)
 			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		} else {
+			executor := executor.NewLocalIsolated(llcAggressorIsolation)
 			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		}
 
