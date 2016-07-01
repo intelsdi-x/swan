@@ -19,7 +19,7 @@ func Get(name string) (string, error) {
 	}
 
 	// As the sys file system represent single values as files, they are
-  // terminated with a newline. We trim trailing newline, if present.
+	// terminated with a newline. We trim trailing newline, if present.
 	content := strings.TrimSuffix(string(byteContent), "\n")
 
 	return content, nil
