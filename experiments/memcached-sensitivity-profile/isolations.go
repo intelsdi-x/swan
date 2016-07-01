@@ -57,29 +57,31 @@ func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation)
 	return
 }
 
-// manualPolicy helper to create HP and BE isolations based on manually provided flags.
+// parseSlices helper accepts raw string in format "1,2,3:5,3,1" and returns two slices of ints
+func parseSlices(raw string) (s1, s2 []int) {
+	// helper to parse slice of strings and return slice of ints
+	parseInts := func(strings []string) (ints []int) {
+		for _, s := range strings {
+			i, err := strconv.Atoi(s)
+			check(err)
+			ints = append(ints, i)
+		}
+		return
+	}
+	splits := strings.Split(raw, ":")
+	s1Strings := strings.Split(splits[0], ",")
+	s2Strings := strings.Split(splits[1], ",")
+	s1 = parseInts(s1Strings)
+	s2 = parseInts(s2Strings)
+	return
+}
+
+// manualPolicy helper to create HP and BE isolations based on manually provided flags (--hp_sets and --be_sets).
 func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 
 	// TODO: validation of input data: cpus and numa node overlap and no empty
-	parse := func(raw string) (CPUs, NUMAs []int) {
-		parseInts := func(strings []string) (ints []int) {
-			for _, s := range strings {
-				i, err := strconv.Atoi(s)
-				check(err)
-				ints = append(ints, i)
-			}
-			return
-		}
-		splits := strings.Split(raw, ":")
-		CPUStrings := strings.Split(splits[0], ",")
-		NUMAStrings := strings.Split(splits[1], ",")
-		CPUs = parseInts(CPUStrings)
-		NUMAs = parseInts(NUMAStrings)
-		return
-	}
-
-	hpCPUs, hpNUMAs := parse(hpSetsFlag.Value())
-	beCPUs, beNUMAs := parse(beSetsFlag.Value())
+	hpCPUs, hpNUMAs := parseSlices(hpSetsFlag.Value())
+	beCPUs, beNUMAs := parseSlices(beSetsFlag.Value())
 
 	logrus.Debugf("HP: CPUs=%v NUMAs=%v", hpCPUs, hpNUMAs)
 	logrus.Debugf("BE: CPUs=%v NUMAs=%v", beCPUs, beNUMAs)
