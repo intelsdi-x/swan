@@ -23,5 +23,5 @@ type Measurement struct {
 	PhaseID      string
 	ExperimentID string
 	// The tag is needed for embedding; see: https://github.com/hailocab/gocassa#encodingdecoding-data-structures.
-	metadata.Measurement `cql:",squash"`
+	metadata.BaseMeasurement `cql:",squash"`
 }

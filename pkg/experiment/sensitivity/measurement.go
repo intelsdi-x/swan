@@ -256,10 +256,10 @@ func (m *measurementPhase) Finalize() error {
 	return nil
 }
 
-func (m *measurementPhase) GetMetadata() metadata.Measurement{
-	return metadata.Measurement{
-		LoadPointQPS: m.loadPointsCount,
-		Load: &m.getLoadPoint(),
-		LGParameters: m.lgForPr.LoadGenerator.GetLoadParameters(m.loadPointsCount, m.loadDuration),
-	}
+func (m *measurementPhase) GetMetadata() *metadata.Measurement{
+	return metadata.NewMeasurement(
+		m.PeakLoad,
+		m.loadPointsCount,
+		m.currentLoadPointIndex,
+		m.lgForPr.LoadGenerator.GetLoadParameters(m.loadPointsCount, m.loadDuration))
 }

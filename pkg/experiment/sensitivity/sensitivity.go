@@ -10,6 +10,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata"
 	"encoding/json"
 	"strings"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/metadata/cassandra"
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -94,7 +95,7 @@ func (e *Experiment) prepareTuningPhase() *tuningPhase {
 }
 
 func (e *Experiment) prepareBaselinePhases() []phase.Phase {
-	var baselineMeasurementsMetadata []metadata.Measurement
+	var baselineMeasurementsMetadata []*metadata.Measurement
 	baseline := []phase.Phase{}
 	// It includes all baseline measurements for each LoadPoint.
 	for i := 1; i <= e.configuration.LoadPointsCount; i++ {
@@ -126,7 +127,7 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 }
 
 func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
-	measurementPhases := []metadata.Measurement{}
+	measurementPhases := []*metadata.Measurement{}
 	aggressors := []metadata.Aggressor{}
 	aggressorPhases := [][]phase.Phase{}
 	for beIndex, beLauncher := range e.aggressorTaskLaunchers {
@@ -167,6 +168,11 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 }
 
 func (e *Experiment) generateMetadata() {
+	for _, phase := range e.phasesMetadata {
+		for _, measurement := range phase.Measurements{
+			measurement.PrepareLoad()
+		}
+	}
 	e.experimentMetadata = metadata.Experiment{
 		BaseExperiment: metadata.BaseExperiment{
 			ID: e.exp.GetUUID(),
@@ -210,6 +216,38 @@ func (e *Experiment) configureGenericExperiment() error {
 	return nil
 }
 
+func (e *Experiment) saveMetadata() error {
+	cassandraConfig := cassandra.Config{
+		Username: "admin",
+		Password: "admin",
+		Host: []string{"localhost"},
+		Port: 9042,
+		KeySpace: "Metadata",
+	}
+	keySpace, err := cassandra.NewKeySpace(cassandraConfig)
+	if err != nil {
+		return err
+	}
+
+	expTable, err := cassandra.NewExperimentTable(keySpace)
+	if err != nil {
+		return err
+	}
+
+	phTable, err := cassandra.NewPhaseTable(keySpace)
+	if err != nil {
+		return err
+	}
+
+	measurementTable, err := cassandra.NewMeasurementTable(keySpace)
+	if err != nil {
+		return err
+	}
+
+	dataRepository := cassandra.NewCassandra(expTable, phTable, measurementTable)
+	return dataRepository.Save(e.experimentMetadata)
+}
+
 // Run runs experiment.
 // In the end it prints results to the standard output.
 func (e *Experiment) Run() error {
@@ -224,8 +262,6 @@ func (e *Experiment) Run() error {
 		return err
 	}
 	e.generateMetadata()
-	data, err := json.Marshal(e.experimentMetadata)
-	log.Printf("%s\nDATA: %s\nERROR: %s\n%s", strings.Repeat("#", 10), data, err, strings.Repeat("#", 10))
 
-	return nil
+	return e.saveMetadata()
 }

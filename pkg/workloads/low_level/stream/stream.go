@@ -74,3 +74,11 @@ func (l stream) Launch() (executor.TaskHandle, error) {
 func (l stream) Name() string {
 	return name
 }
+
+func (l stream) Isolators() string {
+	return l.exec.GetIsolators()
+}
+
+func (l stream) Parameters() string {
+	return l.buildCommand()
+}

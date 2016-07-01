@@ -45,7 +45,7 @@ func buildMeasurementMetadata(phase metadata.Phase, experiment string) []Measure
 		measurementsMetadata = append(measurementsMetadata, Measurement{
 			ExperimentID: experiment,
 			PhaseID:      phase.ID,
-			Measurement:  metadata,
+			BaseMeasurement:  metadata,
 		})
 	}
 

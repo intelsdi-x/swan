@@ -16,7 +16,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"os"
-	"strings"
 )
 
 const (
@@ -241,7 +240,6 @@ func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSL
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	// Run agents when specified.
-	fmt.Println("####TUNE####")
 	agentHandles, err := m.runRemoteAgents()
 	if err != nil {
 		return qps, achievedSLI,
@@ -316,7 +314,6 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 		return nil, err
 	}
 
-	fmt.Println("####LOAD####")
 	masterHandle, err := m.master.Execute(
 		getLoadCommand(m.config, qps, duration, agentHandles))
 	if err != nil {
@@ -330,18 +327,16 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 }
 
 func (m mutilate) Name() string {
-	return "mutilate"
+	return "Mutilate"
 }
 
 func (m mutilate) GetTuneParameters(slo int) string {
 	tuneCommand := getTargetTuneCommand(m.config, slo, m.config.AgentConnections)
-	tuneParams := strings.Split(tuneCommand, " ")[1:]
-	return strings.Join(tuneParams, " ")
+	return tuneCommand
 }
 
 func (m mutilate) GetLoadParameters(qps int, duration time.Duration) string {
 	loadCommand := getTargetLoadCommand(m.config, qps, duration, m.config.AgentConnections)
-	loadParams := strings.Split(loadCommand, " ")[1:]
-	return strings.Join(loadParams, " ")
+	return loadCommand
 }
 

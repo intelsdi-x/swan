@@ -1,6 +1,8 @@
 package metadata
 
-import "time"
+import (
+	"time"
+)
 
 // BaseExperiment common part of all structs that represent sensitivity profile experiment metadata.
 type BaseExperiment struct {
@@ -41,15 +43,38 @@ type Aggressor struct {
 	Isolation  string
 }
 
-// Measurement represents metadata of single measurement in sensitivity profile experiment and is agnostic to data store.
-type Measurement struct {
-	Load         *int
+// BaseMeasurement represents metadata of single measurement in sensitivity profile experiment and is agnostic to data store.
+type BaseMeasurement struct {
+	Load         int
 	LoadPointQPS int
 	LGParameters string
 }
 
+type Measurement struct {
+	peakLoad     *int
+	currentLoadPoint int
+	loadPointsCount int
+	BaseMeasurement
+}
+
+func NewMeasurement(peakLoad *int, loadPointsCount, currentLoadPoint int, LGParameters string) *Measurement {
+	return &Measurement{
+		peakLoad: peakLoad,
+		loadPointsCount: loadPointsCount,
+		currentLoadPoint: currentLoadPoint,
+		BaseMeasurement: BaseMeasurement{
+			LGParameters: LGParameters,
+		},
+	}
+}
+
+func (m *Measurement) PrepareLoad() {
+	m.LoadPointQPS = int(float64(*m.peakLoad))
+	m.Load = int(float64(m.LoadPointQPS) / float64(m.loadPointsCount) * float64(m.currentLoadPoint))
+}
+
 // Measurements represents slice of Measurement structs.
-type Measurements []Measurement
+type Measurements []*Measurement
 
 // AddPhase adds a Phase to the Experiment.
 func (e *Experiment) AddPhase(phase Phase) {
@@ -57,7 +82,7 @@ func (e *Experiment) AddPhase(phase Phase) {
 }
 
 // AddMeasurement adds a Measurement to the Phase.
-func (p *Phase) AddMeasurement(measurement Measurement) {
+func (p *Phase) AddMeasurement(measurement *Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
 }
 
@@ -73,7 +98,7 @@ func (m Measurements) Len() int {
 
 // Less implements sort.Interface.
 func (m Measurements) Less(i, j int) bool {
-	return *m[i].Load < *m[j].Load
+	return m[i].Load < m[j].Load
 }
 
 // Swap implements sort.Interface.
