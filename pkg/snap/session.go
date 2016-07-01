@@ -3,14 +3,15 @@ package snap
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+	"time"
+
 	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"os"
-	"path"
-	"time"
 )
 
 const (

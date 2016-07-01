@@ -8,6 +8,8 @@ import (
 
 	"path"
 
+	"os"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -15,29 +17,43 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"os"
 )
 
 const (
 	defaultMemcachedHost          = "127.0.0.1"
-	defaultPercentile             = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
-	defaultTuningTime             = 10 * time.Second
-	defaultWarmupTime             = 10 * time.Second
+	defaultPercentile             = "99"             // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultTuningTime             = 10 * time.Second // [s]
+	defaultWarmupTime             = 10 * time.Second // [s]
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
+	defaultAgentAffinity          = false
 	defaultMasterThreads          = 8
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
-	defaultKeySize                = 30
-	defaultValueSize              = 200
+	defaultMasterAffinity         = false
+	defaultKeySize                = 30  // [bytes]
+	defaultValueSize              = 200 // [bytes]
 	defaultMasterQPS              = 0
 )
 
-// pathFlag represents mutilate path flag.
-var pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
-	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"),
+var (
+	// pathFlag represents mutilate path flag.
+	pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
+		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
+	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
+	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
+	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
+	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
+	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
+	agentConnectionsDepthFlag  = conf.NewIntFlag("mutilate_agent_connections_depth", "Mutilate agent connections (-d).", defaultAgentConnectionsDepth)
+	agentAffinityFlag          = conf.NewBoolFlag("mutilate_agent_affinity", "Mutilate agent affinity (--affinity).", defaultAgentAffinity)
+	masterThreadsFlag          = conf.NewIntFlag("mutilate_master_threads", "Mutilate master threads (-T).", defaultMasterThreads)
+	masterConnectionsFlag      = conf.NewIntFlag("mutilate_master_connections", "Mutilate master connections (-C).", defaultMasterConnections)
+	masterConnectionsDepthFlag = conf.NewIntFlag("mutilate_master_connections_depth", "Mutilate master connections depth (-C).", defaultMasterConnectionsDepth)
+	masterAffinityFlag         = conf.NewBoolFlag("mutilate_master_affinity", "Mutilate master affinity (--affinity).", defaultMasterAffinity)
+	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)
 )
 
 // Config contains all data for running mutilate.
@@ -53,17 +69,19 @@ type Config struct {
 	TuningTime        time.Duration
 	LatencyPercentile string
 
-	AgentConnections      int // -c
-	AgentConnectionsDepth int // Max length of request pipeline. -d
-	MasterThreads         int // -T
-	KeySize               int // Length of memcached keys. -K
-	ValueSize             int // Length of memcached values. -V
+	AgentConnections      int  // -c
+	AgentConnectionsDepth int  // Max length of request pipeline. -d
+	MasterThreads         int  // -T
+	MasterAffinity        bool // Set CPU affinity for threads, round-robin (for Master)
+	KeySize               int  // Length of memcached keys. -K
+	ValueSize             int  // Length of memcached values. -V
 
 	// Agent-mode options.
-	AgentThreads           int // Number of threads for all agents. -T
-	AgentPort              int // Agent port. -p
-	MasterConnections      int // -C
-	MasterConnectionsDepth int // Max length of request pipeline. -D
+	AgentThreads           int  // Number of threads for all agents. -T
+	AgentAffinity          bool // Set CPU affinity for threads, round-robin (fro Agent).
+	AgentPort              int  // Agent port. -p
+	MasterConnections      int  // -C
+	MasterConnectionsDepth int  // Max length of request pipeline. -D
 
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
@@ -74,29 +92,32 @@ type Config struct {
 	// TODO(bplotka): Move this flags to global experiment namespace.
 	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
 	ErasePopulateOutput bool // false by default.
+
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
 	return Config{
 		PathToBinary:  pathFlag.Value(),
-		MemcachedHost: defaultMemcachedHost,
-		MemcachedPort: memcached.DefaultPort,
+		MemcachedHost: memcached.IPFlag.Value(),
+		MemcachedPort: memcached.PortFlag.Value(),
 
-		WarmupTime:        defaultWarmupTime,
-		TuningTime:        defaultTuningTime,
+		WarmupTime:        warmupTimeFlag.Value(),
+		TuningTime:        tuningTimeFlag.Value(),
 		LatencyPercentile: defaultPercentile,
 
-		AgentThreads:           defaultAgentThreads,
-		AgentConnections:       defaultAgentConnections,
-		AgentConnectionsDepth:  defaultAgentConnectionsDepth,
-		MasterThreads:          defaultMasterThreads,
-		MasterConnections:      defaultAgentConnections,
-		MasterConnectionsDepth: defaultAgentConnectionsDepth,
+		AgentThreads:           agentThreadsFlag.Value(),
+		AgentConnections:       agentConnectionsFlag.Value(),
+		AgentConnectionsDepth:  agentConnectionsDepthFlag.Value(),
+		AgentAffinity:          agentAffinityFlag.Value(),
+		MasterThreads:          masterThreadsFlag.Value(),
+		MasterConnections:      masterConnectionsFlag.Value(),
+		MasterConnectionsDepth: masterConnectionsDepthFlag.Value(),
+		MasterAffinity:         masterAffinityFlag.Value(),
 		KeySize:                defaultKeySize,
 		ValueSize:              defaultValueSize,
-		MasterQPS:              defaultMasterQPS,
-		AgentPort:              defaultAgentPort,
+		MasterQPS:              masterQPSFlag.Value(),
+		AgentPort:              agentAgentPortFlag.Value(),
 	}
 }
 
