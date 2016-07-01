@@ -10,39 +10,35 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
-	"syscall"
+	"strings"
 )
 
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
 	sshConfig         *SSHConfig
-	commandDecorators isolation.Decorator
+	commandDecorators isolation.Decorators
 }
 
-// NewRemote returns a Remote instance with default PID namespace isolation.
+// NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
-	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: isolationPid,
+		commandDecorators: []isolation.Decorator{},
 	}
 }
 
 // NewRemoteIsolated returns a Remote instance.
-func NewRemoteIsolated(sshConfig *SSHConfig, decorator isolation.Decorator) Remote {
+func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Remote {
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: decorator,
+		commandDecorators: decorators,
 	}
 }
 
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting '", command, "' remotely")
-
 	connection, err := ssh.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port),
@@ -79,7 +75,15 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	err = session.Start(remote.commandDecorators.Decorate(command))
+	// Escape the quotes characters for `sh -c`.
+	stringForSh := remote.commandDecorators.Decorate(command)
+	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
+	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
+
+	log.Debug("Starting '", stringForSh, "' remotely")
+
+	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
+	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", stringForSh))
 	if err != nil {
 		return nil, err
 	}
