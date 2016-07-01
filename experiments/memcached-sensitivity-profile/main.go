@@ -58,7 +58,8 @@ func main() {
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 
-	logrus.SetLevel(conf.LogLevel())
+	//logrus.SetLevel(conf.LogLevel())
+	logrus.SetLevel(logrus.InfoLevel)
 
 	// Parse CLI.
 	check(conf.ParseFlags())
@@ -74,7 +75,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	check(err)
 
 	// Allocate BE threads on the same cores as Memcached for L1 aggressors
-	l1CacheSharingBeThreadIDs := getSiblingThreadsOfThreadSet(topo.NewThreadSetFromIntSet(hpThreadIDs))
+	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(hpThreadIDs)
+	check(err)
+	l1CacheSharingBeThreadIDs := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -93,6 +96,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedConfig.IP = ipAddressFlag.Value()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
+	_ = memcachedLauncher
 
 	// Special case to have ability to use local executor for load generator.
 	// This is needed for docker testing.
@@ -118,6 +122,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig.TuningTime = 1 * time.Second
 
 	mutilateLoadGenerator := mutilate.New(loadGeneratorExecutor, mutilateConfig)
+	_ = mutilateLoadGenerator
 
 	// Initialize BE isolation.
 	llcAggressorIsolation, err := cgroup.NewCPUSet("be-llc", llcSharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
@@ -135,23 +140,21 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer llcAggressorIsolation.Clean()
 	defer l1AggressorIsolation.Clean()
 
-	logrus.Info("HP Workload cores: %#v", hpThreadIDs)
-	logrus.Info("BE-L1 Workloads cores: %#v", l1CacheSharingBeThreadIDs.AvailableThreads())
-	logrus.Info("BE-LLC Workloads cores: %#v", llcSharingBeThreadIDs)
+	logrus.Info("HP Workload cores: %v", hpThreadIDs)
+	logrus.Info("BE-L1 Workloads cores: %v", l1CacheSharingBeThreadIDs.AvailableThreads())
+	logrus.Info("BE-LLC Workloads cores: %v", llcSharingBeThreadIDs)
 
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
-	//aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
 	for _, aggr := range aggressorsFlag.Value() {
+		executor := executor.NewLocalIsolated(l1AggressorIsolation)
 		var aggressor sensitivity.LauncherSessionPair
 		var err error
 
 		// NOTE: Awful hack to get different isolations per workload.
 		if aggr == l1data.ID || aggr == l1instruction.ID {
-			executor := executor.NewLocalIsolated(l1AggressorIsolation)
 			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		} else {
-			executor := executor.NewLocalIsolated(llcAggressorIsolation)
 			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
 		}
 
@@ -171,8 +174,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 	check(err)
 
-	// Load the snap cassandra publisher plugin if not yet loaded.
-	// TODO(bp): Make helper for that.
+	//Load the snap cassandra publisher plugin if not yet loaded.
+	//TODO(bp): Make helper for that.
 	logrus.Debug("Checking if publisher cassandra is loaded.")
 	plugins := snap.NewPlugins(snapConnection)
 	loaded, err := plugins.IsLoaded("publisher", "cassandra")

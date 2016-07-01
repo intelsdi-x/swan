@@ -1,6 +1,8 @@
 package topo
 
-import "github.com/Sirupsen/logrus"
+import (
+	"fmt"
+)
 
 // Thread represents a hyperthread, typically presented by the operating
 // system as a logical CPU.
@@ -17,17 +19,21 @@ func NewThread(id int, core int, socket int) Thread {
 }
 
 // NewThreadFromID returns new Thread from ThreadID
-func NewThreadFromID(id int) Thread {
+func NewThreadFromID(id int) (thread Thread, err error) {
 	allThreads, err := Discover()
 	if err != nil {
-		logrus.Fatal(err)
+		return thread, err
 	}
 
-	foundThread := allThreads.Filter(func(t Thread) bool {
+	foundThreads := allThreads.Filter(func(t Thread) bool {
 		return t.ID() == id
 	})
 
-	return foundThread[0]
+	if len(foundThreads) == 0 {
+		return thread, fmt.Errorf("Could not find thread with id %d on platform", id)
+	}
+
+	return foundThreads[0], err
 }
 
 type thread struct {
