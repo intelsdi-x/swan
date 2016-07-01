@@ -68,9 +68,9 @@ func newRemote(ip string) executor.Executor {
 }
 
 func prepareSnapSessionLauncher() snap.SessionLauncher {
-	// Temp for ppalucki debug only.
-	// TODO(bp): Remove this logic when ready-for-review.
 	var mutilateSnapSession snap.SessionLauncher
+
+	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.AddrFlag.Value() != "none" {
 
 		// Create connection with Snap.

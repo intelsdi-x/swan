@@ -268,7 +268,6 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 }
 
 func TestMutilateAffinityCommand(t *testing.T) {
-
 	Convey("Mutilate commands should not contain affinity by default", t, func() {
 		config := Config{}
 		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
@@ -281,20 +280,19 @@ func TestMutilateAffinityCommand(t *testing.T) {
 		config := Config{MasterAffinity: true}
 		So(getLoadCommand(config, 0, 0, nil), ShouldContainSubstring, "--affinity")
 		So(getTuneCommand(config, 0, nil), ShouldContainSubstring, "--affinity")
-		Convey("but agent and populate commands not.", func() {
+		Convey("but agent and populate commands not", func() {
 			So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
 			So(getAgentCommand(config), ShouldNotContainSubstring, "--affinity")
 		})
 	})
 
-	Convey("Mutilate master populate commands should not contain affinity when requested with AgentAffinity", t, func() {
+	Convey("Mutilate master and populate commands should not contain affinity when requested with AgentAffinity", t, func() {
 		config := Config{AgentAffinity: true}
 		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
 		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "--affinity")
 		So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
-		Convey("but agent commands should.", func() {
+		Convey("but agent commands should", func() {
 			So(getAgentCommand(config), ShouldContainSubstring, "--affinity")
 		})
 	})
-
 }
