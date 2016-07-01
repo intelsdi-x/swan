@@ -146,18 +146,16 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggr := range aggressorsFlag.Value() {
-		var aggressor sensitivity.LauncherSessionPair
-		var err error
+		var exec executor.Executor
 
 		// NOTE: Awful hack to get different isolations per workload.
 		if aggr == l1data.ID || aggr == l1instruction.ID {
-			executor := executor.NewLocalIsolated(l1AggressorIsolation)
-			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
+			exec = executor.NewLocalIsolated(l1AggressorIsolation)
 		} else {
-			executor := executor.NewLocalIsolated(llcAggressorIsolation)
-			aggressor, err = sensitivity.CreateAggressor(aggr, executor)
+			exec = executor.NewLocalIsolated(llcAggressorIsolation)
 		}
 
+		aggressor, err := sensitivity.CreateAggressor(aggr, exec)
 		if err != nil {
 			logrus.Fatal(err)
 		}
