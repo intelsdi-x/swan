@@ -29,13 +29,13 @@ const (
 	defaultAgentAffinity          = false
 	defaultAgentBlocking          = true
 	defaultMasterThreads          = 8
-	defaultMasterConnections      = 1
-	defaultMasterConnectionsDepth = 1
+	defaultMasterConnections      = 4
+	defaultMasterConnectionsDepth = 4
 	defaultMasterAffinity         = false
 	defaultMasterBlocking         = true
 	defaultKeySize                = 30  // [bytes]
 	defaultValueSize              = 200 // [bytes]
-	defaultMasterQPS              = 0
+	defaultMasterQPS              = 1000
 )
 
 var (
