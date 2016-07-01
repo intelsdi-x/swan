@@ -61,7 +61,7 @@ func (p *Phase) AddMeasurement(measurement Measurement) {
 	p.Measurements = append(p.Measurements, measurement)
 }
 
-// AddAggressor adds Aggressor to the Phase
+// AddAggressor adds Aggressor to the Phase.
 func (p *Phase) AddAggressor(aggressor Aggressor) {
 	p.Aggressors = append(p.Aggressors, aggressor)
 }
