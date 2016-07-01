@@ -24,29 +24,34 @@ const (
 	MutilatePercentile95th = "percentile/95th"
 	// MutilatePercentile99th represent 99th latency percentile [us].
 	MutilatePercentile99th = "percentile/99th"
+	// MutilatePercentileCustom represent custom latency percentile [us].
+	MutilatePercentileCustom = "percentile/custom"
 	// MutilateQPS represent qps.
 	MutilateQPS = "qps"
 )
 
-// Metrics is a type alias for a float map indexed by a name.
+// Results contains map of parsed mutilate results indexed by a name.
 // TODO(bplotka): We should introduce here a typed struct instead of having dynamic map.
 // We don't expect to change these fields any soon.
-type Metrics map[string]float64
+type Results struct {
+	Raw               map[string]float64
+	LatencyPercentile string
+}
 
-// GenerateCustomPercentileKey returns a key of custom percentile field in Metrics.
-// TODO(bplotka): This needs to be erased when typed struct will replace dynamic map.
-func GenerateCustomPercentileKey(customPercentile float64) string {
-	return fmt.Sprintf("percentile/%2.3fth/custom", customPercentile)
+func newResults() Results {
+	return Results{
+		Raw: make(map[string]float64, 0),
+	}
 }
 
 // File parse the file from given path and gather all metrics
 // including (custom percentile).
 // NOTE: Public to allow use it without snap infrastructure.
-func File(path string) (Metrics, error) {
+func File(path string) (Results, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {
-		return Metrics{}, err
+		return newResults(), err
 	}
 	return parse(file)
 }
@@ -54,46 +59,47 @@ func File(path string) (Metrics, error) {
 // OpenedFile parse the file from given file handle and gather all metrics
 // including (custom percentile). It leaves the responsibilities of this handler to the caller.
 // NOTE: Public to allow use it without snap infrastructure.
-func OpenedFile(file *os.File) (Metrics, error) {
+func OpenedFile(file *os.File) (Results, error) {
 	return parse(file)
 }
 
-func parse(file *os.File) (Metrics, error) {
-	metrics := Metrics{}
+func parse(file *os.File) (Results, error) {
+	metrics := newResults()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			return Metrics{}, err
+			return newResults(), err
 		}
 
 		line := scanner.Text()
 		if strings.HasPrefix(line, "read") {
 			latencies, err := parseReadLatencies(line)
 			if err != nil {
-				return Metrics{}, err
+				return newResults(), err
 			}
 
 			// This depends on the fact that the 'read...' line comes before the
 			// custom latency and qps line. If other 'latencies' lines needs to be
 			// parsed, the below should be a 'add to output map' rather than
 			// overwriting.
-			metrics = latencies
+			metrics.Raw = latencies
 
 		} else if strings.HasPrefix(line, "Swan latency for percentile") {
-			name, latency, err := parseCustomPercentileLatency(line)
+			percentile, latency, err := parseCustomPercentileLatency(line)
 			if err != nil {
-				return Metrics{}, err
+				return newResults(), err
 			}
 
-			metrics[name] = latency
+			metrics.Raw[MutilatePercentileCustom] = latency
+			metrics.LatencyPercentile = percentile
 
 		} else if strings.HasPrefix(line, "Total QPS") {
-			name, qps, err := parseQPS(line)
+			qps, err := parseQPS(line)
 			if err != nil {
-				return Metrics{}, err
+				return newResults(), err
 			}
 
-			metrics[name] = qps
+			metrics.Raw[MutilateQPS] = qps
 		}
 	}
 
@@ -103,7 +109,7 @@ func parse(file *os.File) (Metrics, error) {
 // Parse line from Mutilate with read latencies. For example:
 // "read       20.8    23.1    11.9    13.3    13.4    33.4    43.1    59.5"
 // Returns a metrics map of {"avg": 20.8, "std": 23.1, ...}.
-func parseReadLatencies(line string) (Metrics, error) {
+func parseReadLatencies(line string) (map[string]float64, error) {
 	var (
 		avg float64
 		std float64
@@ -119,13 +125,13 @@ func parseReadLatencies(line string) (Metrics, error) {
 
 	if n, err := fmt.Sscanf(line, "read %f %f %f %f %f %f %f %f", &avg, &std, &min, &p5, &p10, &p90, &p95, &p99); err != nil {
 		if n != fields {
-			return Metrics{}, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
+			return nil, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
 		}
 
-		return Metrics{}, err
+		return nil, err
 	}
 
-	return Metrics{
+	return map[string]float64{
 		MutilateAvg:            avg,
 		MutilateStd:            std,
 		MutilateMin:            min,
@@ -139,7 +145,7 @@ func parseReadLatencies(line string) (Metrics, error) {
 
 // Mutilate in the Swan repo has been patched to provide a custom percentile latency measurement.
 // For example: "Swan latency for percentile 99.999000: 1777.887805"
-// Returns a pair of metric name and value. For example ('percentile/99.999th/custom', 1777.887805).
+// Returns a pair of resulted percentile and value. For example ('99.99900', 1777.887805).
 func parseCustomPercentileLatency(line string) (string, float64, error) {
 	var (
 		percentile float64
@@ -148,6 +154,7 @@ func parseCustomPercentileLatency(line string) (string, float64, error) {
 
 	const fields = 2
 
+	// TODO(bplotka): We might use Regexp here instead of sscanf to scan %s for percentile.
 	if n, err := fmt.Sscanf(line, "Swan latency for percentile %f: %f", &percentile, &latency); err != nil {
 		if n != fields {
 			return "", 0.0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
@@ -156,13 +163,13 @@ func parseCustomPercentileLatency(line string) (string, float64, error) {
 		return "", 0.0, err
 	}
 
-	return GenerateCustomPercentileKey(percentile), latency, nil
+	return fmt.Sprintf("%f", percentile), latency, nil
 }
 
 // Parse the measured number of queries per second for latency measurement.
 // For example: "Total QPS = 4993.1 (149793 / 30.0s)".
-// Returns a pair of metric name and value. For example ('qps', 4993.1).
-func parseQPS(line string) (string, float64, error) {
+// Returns value. For example 4993.1
+func parseQPS(line string) (float64, error) {
 	var (
 		qps      float64
 		count    int
@@ -173,11 +180,11 @@ func parseQPS(line string) (string, float64, error) {
 
 	if n, err := fmt.Sscanf(line, "Total QPS = %f (%d / %fs)", &qps, &count, &duration); err != nil {
 		if n != fields {
-			return "", 0.0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
+			return 0.0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
 		}
 
-		return "", 0.0, err
+		return 0.0, err
 	}
 
-	return MutilateQPS, qps, nil
+	return qps, nil
 }

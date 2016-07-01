@@ -14,7 +14,6 @@ import (
 	fs "github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -83,7 +82,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 		mutilateConfig.WarmupTime = 1 * time.Second
 		// Note: not sure if custom percentile is working correctly.
 		// TODO: added a custom percentile integration test.
-		mutilateConfig.LatencyPercentile, _ = decimal.NewFromString("99")
+		mutilateConfig.LatencyPercentile = "99.1234"
 		mutilateConfig.MemcachedPort = memcachedConfig.Port
 		mutilateConfig.ErasePopulateOutput = true
 		mutilateConfig.EraseTuneOutput = true
@@ -119,7 +118,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 			rawMetrics, err := parse.File(out.Name())
 
 			SoNonZeroMetricExists := func(name string) {
-				v, ok := rawMetrics[name]
+				v, ok := rawMetrics.Raw[name]
 				So(ok, ShouldBeTrue)
 				So(v, ShouldBeGreaterThan, 0)
 			}
@@ -129,7 +128,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 			SoNonZeroMetricExists("std")
 			SoNonZeroMetricExists("min")
 			SoNonZeroMetricExists("percentile/99th")
-			SoNonZeroMetricExists("percentile/99.000th/custom")
+			SoNonZeroMetricExists("percentile/custom")
 
 			if err := mutilateHandle.EraseOutput(); err != nil {
 				t.Fatal(err)

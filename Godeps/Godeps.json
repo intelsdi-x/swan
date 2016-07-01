@@ -116,6 +116,10 @@
 			"Rev": "d7b1e156f50d3c4664f683603af70e3e47fa0aa2"
 		},
 		{
+			"ImportPath": "github.com/google/btree",
+			"Rev": "7d79101e329e5a3adf994758c578dab82b90c017"
+		},
+		{
 			"ImportPath": "github.com/gopherjs/gopherjs/js",
 			"Comment": "go1.5-45-g19e100e",
 			"Rev": "19e100e9652485a76176bc5fd2669f57d3a2743c"
@@ -123,6 +127,16 @@
 		{
 			"ImportPath": "github.com/hailocab/go-hostpool",
 			"Rev": "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
+		},
+		{
+			"ImportPath": "github.com/hailocab/gocassa",
+			"Comment": "v1.2.0-7-gd3c840d",
+			"Rev": "d3c840df87884c07d5ca67f08ecf62f4877ac79a"
+		},
+		{
+			"ImportPath": "github.com/hailocab/gocassa/reflect",
+			"Comment": "v1.2.0-7-gd3c840d",
+			"Rev": "d3c840df87884c07d5ca67f08ecf62f4877ac79a"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/errwrap",
@@ -278,6 +292,10 @@
 		{
 			"ImportPath": "github.com/miekg/dns",
 			"Rev": "c9d1302d540edfb97d9ecbfe90b4fb515088630b"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "d2dd0262208475919e1a362f675cfc0e7c10e905"
 		},
 		{
 			"ImportPath": "github.com/montanaflynn/stats",

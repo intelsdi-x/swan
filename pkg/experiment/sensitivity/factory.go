@@ -2,6 +2,7 @@ package sensitivity
 
 import (
 	"fmt"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
@@ -9,6 +10,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 )
 
 //AggressorFactory is a helper for creating aggressors with/without Snap sessions.
@@ -40,6 +42,9 @@ func (af *AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 	case l3data.ID:
 		aggressor = NewLauncherWithoutSession(
 			l3data.New(af.executor, l3data.DefaultL3Config()))
+	case stream.ID:
+		aggressor = NewLauncherWithoutSession(
+			stream.New(af.executor, stream.DefaultConfig()))
 	default:
 		return aggressor, fmt.Errorf("Aggressor '%s' not found", name)
 	}

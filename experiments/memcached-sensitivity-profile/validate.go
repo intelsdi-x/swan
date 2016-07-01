@@ -6,7 +6,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
 )
 
-func validate() error {
+func validateOS() error {
 	logrus.SetLevel(conf.LogLevel())
 
 	// Warn user about potential issue with SYN flooding of victim machine.
@@ -16,7 +16,6 @@ func validate() error {
 	} else if value == "1" {
 		logrus.Warn("net.ipv4.tcp_syncookies is enabled on the memcached target and may lead to SYN flooding detection closing mutilate connections.")
 	}
-	logrus.Debug("Value was %s", value)
 
 	return nil
 }

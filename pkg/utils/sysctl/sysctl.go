@@ -1,35 +1,26 @@
 package sysctl
 
 import (
-	"fmt"
 	"io/ioutil"
-	"runtime"
+	"path"
 	"strings"
 )
 
-const (
-	sysctlDir = "/proc/sys/"
-)
-
-// Get returns the value from a sysctl key with the specified name.
+// Get returns the value of the sysctl key specified by name.
 func Get(name string) (string, error) {
-	if runtime.GOOS != "linux" {
-		return "", fmt.Errorf("sysctl only supported on linux: '%s' found", runtime.GOOS)
-	}
-	path := sysctlDir + strings.Replace(name, ".", "/", -1)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("Could not find key with name '%s'", name)
-	}
-	return strings.TrimSpace(string(data)), nil
-}
+	// "net.ipv4.tcp_syncookies" translates into "/proc/sys/net/ipv4/tcp_syncookies"
+	const sysctlRoot = "/proc/sys"
+	relativeSysctlPath := strings.Replace(name, ".", "/", -1)
+	sysctlPath := path.Join(sysctlRoot, relativeSysctlPath)
 
-// Set the value from a sysctl key with the specified name.
-func Set(name string, value string) error {
-	if runtime.GOOS != "linux" {
-		return fmt.Errorf("sysctl only supported on linux: %s found", runtime.GOOS)
+	byteContent, err := ioutil.ReadFile(sysctlPath)
+	if err != nil {
+		return "", err
 	}
-	path := sysctlDir + strings.Replace(name, ".", "/", -1)
-	err := ioutil.WriteFile(path, []byte(value), 0644)
-	return err
+
+	// As the sys file system represent single values as files, they are
+  // terminated with a newline. We trim trailing newline, if present.
+	content := strings.TrimSuffix(string(byteContent), "\n")
+
+	return content, nil
 }
