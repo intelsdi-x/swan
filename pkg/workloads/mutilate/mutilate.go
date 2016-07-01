@@ -33,8 +33,8 @@ const (
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
 	defaultMasterAffinity         = false
-	defaultKeySize                = 30  // [b]
-	defaultValueSize              = 200 // [b]
+	defaultKeySize                = 30  // [bytes]
+	defaultValueSize              = 200 // [bytes]
 	defaultMasterQPS              = 0
 )
 
