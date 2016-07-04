@@ -136,6 +136,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	logrus.SetLevel(conf.LogLevel())
 
+	// Validate environment.
+	check(validateOS())
+
 	// Isolation configuration method.
 	// TODO: needs update for different isolation per cpu
 	var hpIsolation, beIsolation isolation.Isolation
