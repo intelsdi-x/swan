@@ -1,14 +1,9 @@
 package workloads
 
 import (
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"time"
 )
-
-// LoadGeneratorAddrFlag represents load generator address flag.
-var LoadGeneratorAddrFlag = conf.NewStringFlag(
-	"load_generator_addr", "IP of the target machine for the load generator", "127.0.0.1")
 
 // LoadGenerator launches stresser which generates load on specified workload.
 type LoadGenerator interface {
