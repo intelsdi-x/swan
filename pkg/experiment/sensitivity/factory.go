@@ -72,9 +72,9 @@ func (f AggressorFactory) CreateAggressor(name string) (LauncherSessionPair, err
 func (f AggressorFactory) createIsolatedExecutor(name string) executor.Executor {
 	switch name {
 	case l1data.ID:
-		executor.NewLocalIsolated(f.l1AggressorIsolation)
+		return executor.NewLocalIsolated(f.l1AggressorIsolation)
 	case l1instruction.ID:
-		executor.NewLocalIsolated(f.l1AggressorIsolation)
+		return executor.NewLocalIsolated(f.l1AggressorIsolation)
 	default:
 		return executor.NewLocalIsolated(f.otherAggressorIsolation)
 	}

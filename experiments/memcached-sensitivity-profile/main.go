@@ -22,8 +22,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
