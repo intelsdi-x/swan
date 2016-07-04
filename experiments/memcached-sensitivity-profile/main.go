@@ -76,7 +76,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Allocate BE threads on the same cores as Memcached for L1 aggressors
 	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(hpThreadIDs)
 	check(err)
-	l1CacheSharingBeThreadIDs := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
+	siblingThreadsToHpThreads := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all
 	// memory banks (probably not).
@@ -124,38 +124,33 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	_ = mutilateLoadGenerator
 
 	// Initialize BE isolation.
-	llcAggressorIsolation, err := cgroup.NewCPUSet("be-llc", llcSharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
+	sharingLLCButNotL1Isolation, err := cgroup.NewCPUSet("be-llc", llcSharingBeThreadIDs, numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	l1AggressorIsolation, err := cgroup.NewCPUSet("be-l1", l1CacheSharingBeThreadIDs.AvailableThreads(), numaZero, beCPUExclusive.Value(), false)
+	siblingThreadsToHpThreadsIsolation, err := cgroup.NewCPUSet("be-l1", siblingThreadsToHpThreads.AvailableThreads(), numaZero, beCPUExclusive.Value(), false)
 	check(err)
 
-	err = llcAggressorIsolation.Create()
+	err = sharingLLCButNotL1Isolation.Create()
 	check(err)
 
-	err = l1AggressorIsolation.Create()
+	err = siblingThreadsToHpThreadsIsolation.Create()
 	check(err)
 
-	defer llcAggressorIsolation.Clean()
-	defer l1AggressorIsolation.Clean()
+	defer sharingLLCButNotL1Isolation.Clean()
+	defer siblingThreadsToHpThreadsIsolation.Clean()
 
 	logrus.Info("HP Workload cores: %v", hpThreadIDs)
-	logrus.Info("BE-L1 Workloads cores: %v", l1CacheSharingBeThreadIDs.AvailableThreads())
+	logrus.Info("BE-L1 Workloads cores: %v", siblingThreadsToHpThreads.AvailableThreads())
 	logrus.Info("BE-LLC Workloads cores: %v", llcSharingBeThreadIDs)
 
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggr := range aggressorsFlag.Value() {
-		var exec executor.Executor
+		aggressorFactory := sensitivity.NewAggressorFactory(
+			siblingThreadsToHpThreadsIsolation,
+			sharingLLCButNotL1Isolation)
 
-		// NOTE: Awful hack to get different isolations per workload.
-		if aggr == l1data.ID || aggr == l1instruction.ID {
-			exec = executor.NewLocalIsolated(l1AggressorIsolation)
-		} else {
-			exec = executor.NewLocalIsolated(llcAggressorIsolation)
-		}
-
-		aggressor, err := sensitivity.CreateAggressor(aggr, exec)
+		aggressor, err := aggressorFactory.CreateAggressor(aggr)
 		if err != nil {
 			logrus.Fatal(err)
 		}
