@@ -21,11 +21,20 @@ type AggressorFactory struct {
 	otherAggressorIsolation isolation.Decorator
 }
 
-// NewAggressorFactory returns factory for aggressor launchers with local executor
+// NewSingleIsolationAggressorFactory returns aggressor launchers factory with local executor.
+// Aggressors will have the same isolation.
+func NewSingleIsolationAggressorFactory(isolation isolation.Decorator) AggressorFactory {
+	return AggressorFactory{
+		l1AggressorIsolation:    isolation,
+		otherAggressorIsolation: isolation,
+	}
+}
+
+// NewMultiIsolationAggressorFactory returns factory for aggressor launchers with local executor
 // and prepared isolations.
 // L1-Data and L1-Instruction cache aggressor will receive l1AggressorIsolation
 // Other aggressors will receive otherAggressorIsolation
-func NewAggressorFactory(
+func NewMultiIsolationAggressorFactory(
 	l1AggressorIsolation isolation.Decorator,
 	otherAggressorIsolation isolation.Decorator) AggressorFactory {
 	return AggressorFactory{
@@ -34,8 +43,8 @@ func NewAggressorFactory(
 	}
 }
 
-// CreateAggressor returns aggressor of chosen type with Snap session.
-func (f AggressorFactory) CreateAggressor(name string) (LauncherSessionPair, error) {
+// Create returns aggressor of chosen type with Snap session.
+func (f AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 	var aggressor LauncherSessionPair
 
 	exec := f.createIsolatedExecutor(name)

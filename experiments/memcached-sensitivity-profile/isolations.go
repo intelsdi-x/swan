@@ -8,6 +8,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
+	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 )
 
 var (
@@ -24,16 +25,26 @@ var (
 )
 
 // sharedCacheIsolationPolicy TODO: describe intention of this policy.
-func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation) {
+func sensitivityProfileIsolationPolicy() (
+	hpIsolation isolation.Isolation,
+	siblingThreadsToHpThreadsIsolation isolation.Isolation,
+	sharingLLCButNotL1Isolation isolation.Isolation) {
 
 	threadSet := sharedCacheThreads()
-	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
+	//hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
+	hpThreadIDs, err := threadSet.AvailableThreads().Take(2)
 	check(err)
+
+	// Allocate sibling threads of HP workload to create L1 cache contention
+	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(hpThreadIDs)
+	check(err)
+	siblingThreadsToHpThreads := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	beThreadIDs, err := remaining.Take(beCPUCountFlag.Value())
+	//sharingLLCButNotL1Threads, err := remaining.Take(beCPUCountFlag.Value())
+	sharingLLCButNotL1Threads, err := remaining.Take(2)
 	check(err)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all.
@@ -41,20 +52,48 @@ func sharedCacheIsolationPolicy() (hpIsolation, beIsolation isolation.Isolation)
 	numaZero := isolation.NewIntSet(0)
 
 	// Initialize Memcached Launcher with HP isolation.
-	hpIsolation, err = cgroup.NewCPUSet("hp", hpThreadIDs, numaZero, hpCPUExclusiveFlag.Value(), false)
+	hpIsolation, err = cgroup.NewCPUSet(
+		"hp",
+		hpThreadIDs,
+		numaZero,
+		hpCPUExclusiveFlag.Value(),
+		false)
 	check(err)
 
 	err = hpIsolation.Create()
 	check(err)
 
-	// Initialize BE isolation.
-	beIsolation, err = cgroup.NewCPUSet("be", beThreadIDs, numaZero, beCPUExclusiveFlag.Value(), false)
+	// Initialize BE L1 isolation.
+	siblingThreadsToHpThreadsIsolation, err = cgroup.NewCPUSet(
+		"be-l1",
+		siblingThreadsToHpThreads.AvailableThreads(),
+		numaZero,
+		beCPUExclusiveFlag.Value(),
+		false)
 	check(err)
 
-	err = beIsolation.Create()
+	err = siblingThreadsToHpThreadsIsolation.Create()
 	check(err)
 
-	return
+	// Initialize BE LLC isolation.
+	sharingLLCButNotL1Isolation, err = cgroup.NewCPUSet(
+		"be",
+		sharingLLCButNotL1Threads,
+		numaZero,
+		beCPUExclusiveFlag.Value(),
+		false)
+	check(err)
+
+	err = sharingLLCButNotL1Isolation.Create()
+	check(err)
+
+	logrus.Infof("Sensitivity Profile Isolation:\n"+
+		"High Priority Job CpuThreads: %v\n"+
+		"L1 Cache Aggressor CpuThreads: %v\n"+
+		"L3 Cache  Aggressor CpuThreads: %v\n",
+		hpThreadIDs, siblingThreadsToHpThreads.AvailableThreads(), sharingLLCButNotL1Threads)
+
+	return hpIsolation, siblingThreadsToHpThreadsIsolation, sharingLLCButNotL1Isolation
 }
 
 // parseSlices helper accepts raw string in format "1,2,3:5,3,1" and returns two slices of ints
