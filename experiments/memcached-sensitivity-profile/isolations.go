@@ -31,8 +31,7 @@ func sensitivityProfileIsolationPolicy() (
 	sharingLLCButNotL1Isolation isolation.Isolation) {
 
 	threadSet := sharedCacheThreads()
-	//hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
-	hpThreadIDs, err := threadSet.AvailableThreads().Take(2)
+	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
 	check(err)
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
@@ -43,8 +42,7 @@ func sensitivityProfileIsolationPolicy() (
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	//sharingLLCButNotL1Threads, err := remaining.Take(beCPUCountFlag.Value())
-	sharingLLCButNotL1Threads, err := remaining.Take(2)
+	sharingLLCButNotL1Threads, err := remaining.Take(beCPUCountFlag.Value())
 	check(err)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all.
