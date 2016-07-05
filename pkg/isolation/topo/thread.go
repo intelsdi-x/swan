@@ -23,7 +23,7 @@ func NewThread(id int, core int, socket int) Thread {
 func NewThreadFromID(id int) (thread Thread, err error) {
 	allThreads, err := Discover()
 	if err != nil {
-		logrus.Errorf("NewThreadFromID: Could not discover CPUs")
+		logrus.Errorf("NewThreadFromID: Could not discover CPUs\n")
 		return thread, err
 	}
 
@@ -33,7 +33,8 @@ func NewThreadFromID(id int) (thread Thread, err error) {
 		})
 
 	if len(foundThreads) == 0 {
-		return thread, fmt.Errorf("Could not find thread with id %d on platform", id)
+		logrus.Errorf("NewThreadFromID: Could not find thread with id %d on platform\n", id)
+		return thread, fmt.Errorf("Could not find thread with id %d on platform\n", id)
 	}
 
 	return foundThreads[0], err
