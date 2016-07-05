@@ -124,6 +124,10 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 	return mutilateSnapSession
 }
 
+func isManualPolicy() bool {
+	return hpSetsFlag.Value() != "" && beSetsFlag.Value() != ""
+}
+
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
@@ -141,14 +145,20 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Isolation configuration method.
 	// TODO: needs update for different isolation per cpu
-	var hpIsolation, beIsolation isolation.Isolation
-	if hpSetsFlag.Value() != "" && beSetsFlag.Value() != "" {
+	var hpIsolation, beIsolation, l1Isolation, llcIsolation isolation.Isolation
+	var aggressorFactory sensitivity.AggressorFactory
+	if isManualPolicy() {
 		hpIsolation, beIsolation = manualPolicy()
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+		defer beIsolation.Clean()
 	} else {
-		hpIsolation, beIsolation = sharedCacheIsolationPolicy()
+		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
+		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+		defer l1Isolation.Clean()
+		defer llcIsolation.Clean()
 	}
 	defer hpIsolation.Clean()
-	defer beIsolation.Clean()
 
 	// Initialize Memcached Launcher.
 	localForHP := executor.NewLocalIsolated(hpIsolation)
@@ -190,9 +200,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
-	aggressorFactory := sensitivity.NewAggressorFactory(beIsolation)
-	for _, aggr := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggr)
+	for _, aggressorName := range aggressorsFlag.Value() {
+		aggressor, err := aggressorFactory.Create(aggressorName)
 		check(err)
 
 		aggressors = append(aggressors, aggressor)
