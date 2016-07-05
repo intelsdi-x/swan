@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
 	"strings"
+	"syscall"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -22,9 +23,11 @@ type Remote struct {
 
 // NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
+	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+
 	return Remote{
 		sshConfig:         sshConfig,
-		commandDecorators: []isolation.Decorator{},
+		commandDecorators: []isolation.Decorator{isolationPid},
 	}
 }
 
@@ -34,6 +37,12 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 		sshConfig:         sshConfig,
 		commandDecorators: decorators,
 	}
+}
+
+// EscapeQuotes escapes the single & double quotes characters.
+func EscapeQuotes(old string) string {
+	new := strings.Replace(old, "'", "\\'", -1)
+	return new
 }
 
 // Execute runs the command given as input.
@@ -75,15 +84,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	session.Stdout = stdoutFile
 	session.Stderr = stderrFile
 
-	// Escape the quotes characters for `sh -c`.
-	stringForSh := remote.commandDecorators.Decorate(command)
-	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
-	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
-
-	log.Debug("Starting '", stringForSh, "' remotely")
-
-	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", stringForSh))
+	decoratedCommand := remote.commandDecorators.Decorate(command)
+	log.Debug("Starting '", decoratedCommand, "' remotely")
+	err = session.Start(decoratedCommand)
 	if err != nil {
 		return nil, err
 	}

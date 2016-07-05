@@ -4,10 +4,21 @@ import (
 	"os/user"
 	"testing"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	. "github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestRemoteEscapeQuotes(t *testing.T) {
+	Convey("While using escapeQuotes function", t, func() {
+		testStr := fmt.Sprintf("sh -c '%s'", "test")
+		So(EscapeQuotes(testStr), ShouldEqual, `sh -c \'test\'`)
+
+		testStr = fmt.Sprintf("sh -c \"%s\"", "test")
+		So(EscapeQuotes(testStr), ShouldEqual, `sh -c "test"`)
+	})
+}
 
 // This tests required following setup:
 // - id_rsa ssh keys in user home directory. [command ssh-keygen]

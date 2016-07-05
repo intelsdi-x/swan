@@ -5,16 +5,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 
 	"golang.org/x/crypto/ssh"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 	"os/user"
+	"syscall"
 )
 
 const (
@@ -34,12 +36,11 @@ func init() {
 	}
 }
 
-// TODO(bp): Remove remote test from unit_test and test remote connection to localhost here.
-func TestRemoteProcessPidIsolation(t *testing.T) {
+func TestRemoteStop(t *testing.T) {
 	if isEnvironmentReady() {
-		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+		Convey("When I create remote executor for memcached", t, testRemoteStop)
 	} else {
-		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+		SkipConvey("When I create remote executor for memcached", t, testRemoteStop)
 	}
 }
 
@@ -61,7 +62,9 @@ func isEnvironmentReady() bool {
 	return true
 }
 
-func testRemoteProcessPidIsolation() {
+func testRemoteStop() {
+	logrus.SetLevel(logrus.DebugLevel)
+
 	user, err := user.Lookup(os.Getenv(EnvUser))
 	So(err, ShouldBeNil)
 
@@ -71,10 +74,11 @@ func testRemoteProcessPidIsolation() {
 	sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
 	So(err, ShouldBeNil)
 
-	launcher := newMultipleMemcached(*sshConfig)
+	Convey("For multipleMemchached with `bash -c` I should be able to execute remote command and see the processes running", func() {
+		launcher := newMultipleMemcached(*sshConfig)
 
-	Convey("I should be able to execute remote command and see the processes running", func() {
 		task, err := launcher.Launch()
+		So(err, ShouldBeNil)
 
 		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
 		So(err, ShouldBeNil)
@@ -92,13 +96,33 @@ func testRemoteProcessPidIsolation() {
 			})
 	})
 
+	Convey("For default memcached launcher I should be able to execute remote command and see the processes running", func() {
+		config := memcached.DefaultMemcachedConfig()
+		launcher := memcached.New(executor.NewRemote(sshConfig), config)
+
+		task, err := launcher.Launch()
+		So(err, ShouldBeNil)
+
+		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
+		So(err, ShouldBeNil)
+		defer client.Close()
+		pids := soProcessesAreRunning(client, "memcached", 1)
+
+		Convey("I should be able to stop remote task and all the processes should be terminated",
+			func() {
+				err := task.Stop()
+				So(err, ShouldBeNil)
+				_, err = task.ExitCode()
+				So(err, ShouldBeNil)
+				soProcessIsNotRunning(client, pids[0])
+				soProcessIsNotRunning(client, pids[1])
+			})
+	})
 }
 
 func newMultipleMemcached(sshConfig executor.SSHConfig) workloads.Launcher {
-	decors := isolation.Decorators{}
-	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-	decors = append(decors, unshare)
-	exec := executor.NewRemoteIsolated(&sshConfig, decors)
+	isolationPid, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	exec := executor.NewRemoteIsolated(&sshConfig, isolation.Decorators{isolationPid})
 
 	return multipleMemcached{exec}
 }
