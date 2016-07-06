@@ -8,7 +8,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"github.com/pkg/errors"
 )
 
 const (
