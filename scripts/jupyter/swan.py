@@ -15,6 +15,26 @@ class Sample:
         self.tags = tags
         self.valtype = valtype
 
+    def metric_name(self):
+        # Sanitize metric name by stripping namespace prefix.
+        # For example, from '/intel/swan/mutilate/jp7-1/percentile/99th' to
+        # 'percentile/99th'.
+
+        # Make sure it is a metric we recognise.
+        if not self.ns.startswith('/intel/swan/mutilate/'):
+            return self.ns
+
+        namespace_exploded = self.ns.split('/')
+
+        # Make sure we have at least '/intel/swan/mutilate/', the host name and a metric.
+        if len(namespace_exploded) < 5:
+            return self.ns
+
+        metric_exploded = namespace_exploded[5:]
+        return '/'.join(metric_exploded)
+
+
+
 class Experiment:
     def __init__(self, id, cluster, session):
         self.id = id
@@ -56,7 +76,7 @@ class Experiment:
                     if load_point not in self.sensivity_rows[phase]:
                         self.sensivity_rows[phase][load_point] = {}
 
-                    self.sensivity_rows[phase][load_point][sample_row.ns] = sample
+                    self.sensivity_rows[phase][load_point][sample.metric_name()] = sample
 
             self.samples.append(sample)
 
@@ -81,18 +101,22 @@ class Experiment:
 
     # SLO should be read from database.
     def show_sensitivity_profile(self, SLO):
+        # HTML styling constants
+        no_border = "border: 0"
+        black_border = "1px solid black; "
+
         html_out = ''
-        html_out += '<table>'
-        html_out += '<tr>'
-        html_out += '<th>Scenario / Load</th>'
+        html_out += '<table style="border: 0;">'
+        html_out += '<tr style="%s">' % no_border
+        html_out += '<th style="%s; border-bottom: %s; border-right: %s;">Scenario / Load</th>' % (no_border, black_border, black_border)
 
         for load_percentage in range(5, 100, 10):
-            html_out += '<th>%s%%</th>' % load_percentage
+            html_out += '<th style="border: 0; border-bottom: 1px solid black;">%s%%</th>' % load_percentage
 
         html_out += '</tr>'
 
         for phase in self.sensivity_rows:
-            html_out += '<tr>'
+            html_out += '<tr style="%s">' % no_border
 
             aggressor = self.phase_to_aggressor[phase]
             if aggressor == "None":
@@ -100,7 +124,7 @@ class Experiment:
             else:
                 label = aggressor
 
-            html_out += '<td>%s</td>' % label
+            html_out += '<td style="%s; border-right: %s;">%s</td>' % (no_border, black_border, label)
 
             # Yet another hack. We have to sort the load points from lowest to highest.
             sorted_loadpoints = []
@@ -110,17 +134,22 @@ class Experiment:
 
             for load_points in sorted_loadpoints:
                 samples = self.sensivity_rows[phase][load_points]
-                latency = samples["/intel/swan/mutilate/localhost.localdomain/percentile/99th"]
-                violation = ((latency.doubleval / SLO) * 100)
 
-                if violation > 150:
-                    color = "red"
-                elif violation > 100:
-                    color = "orange"
-                else:
-                    color = "green"
+                if 'percentile/99th' in samples:
+                    latency = samples['percentile/99th']
+                    violation = ((latency.doubleval / SLO) * 100)
+                    style = "%s; " % no_border
 
-                html_out += '<td style="background-color: %s;">%.1f%%</td>' % (color, violation)
+                    if violation > 150:
+                        style += "background-color: #a9341f; color: white;"
+                    elif violation > 100:
+                        style += "background-color: #ffeda0;"
+                    else:
+                        style += "background-color: #98cc70;"
+
+                    html_out += '<td style="%s">%.1f%%</td>' % (style, violation)
+        else:
+            html_out += '<td style="%s"></td>' % no_border
 
             html_out += '</tr>'
 
