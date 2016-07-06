@@ -60,7 +60,7 @@ func (m memBw) buildCommand() string {
 
 func (m memBw) verifyConfiguration() error {
 	if m.conf.Duration.Seconds() <= 0 {
-		return errors.Errorf("Launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
+		return errors.Errorf("launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
 			int(m.conf.Duration.Seconds()))
 	}
 	return nil

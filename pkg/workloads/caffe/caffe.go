@@ -75,13 +75,13 @@ func (c Caffe) buildCommand() string {
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	currentWorkingDir, err := os.Getwd()
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not obtain working directory")
+		return nil, errors.Wrap(err, "could not obtain working directory")
 	}
 	defer popWorkingDir(currentWorkingDir)
 
 	err = os.Chdir(c.conf.WorkdirPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not change directory to %s", c.conf.WorkdirPath)
+		return nil, errors.Wrapf(err, "could not change directory to %q", c.conf.WorkdirPath)
 	}
 
 	task, err = c.exec.Execute(c.buildCommand())

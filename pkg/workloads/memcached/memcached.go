@@ -128,16 +128,16 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
-		err := errors.Errorf("Failed to connect to memcached instance. Timeout on connection to '%s'",
+		err := errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
 			address)
 
 		err1 := task.Stop()
 		if err1 != nil {
-			log.Errorf("Failed to stop memcached instance. Error: '%s'", err1.Error())
+			log.Errorf("failed to stop memcached instance. Error: %q", err1.Error())
 		}
 		err1 = task.Clean()
 		if err1 != nil {
-			log.Errorf("Failed to cleanup memcached task. Error: '%s'", err1.Error())
+			log.Errorf("failed to cleanup memcached task. Error: %q", err1.Error())
 		}
 		return nil, err
 	}

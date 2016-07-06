@@ -60,7 +60,7 @@ func (l l3) buildCommand() string {
 
 func (l l3) verifyConfiguration() error {
 	if l.conf.Duration.Seconds() <= 0 {
-		return errors.Errorf("Launcher configuration is invalid. `duration` value(%v) is lower/equal than/to 0",
+		return errors.Errorf("launcher configuration is invalid. `duration` value(%v) is lower/equal than/to 0",
 			int(l.conf.Duration.Seconds()))
 	}
 	return nil

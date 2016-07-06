@@ -68,13 +68,13 @@ func (l l1i) buildCommand() string {
 
 func (l l1i) verifyConfiguration() error {
 	if l.conf.Intensity > maxIntensity || l.conf.Intensity < minIntensity {
-		return errors.Errorf("Intensivity value(%d) is out of range <%d;%d>",
+		return errors.Errorf("intensivity value(%d) is out of range <%d;%d>",
 			l.conf.Intensity,
 			minIntensity,
 			maxIntensity)
 	}
 	if l.conf.Iterations <= 0 {
-		return errors.Errorf("Iterations value(%d) should be greater than 0", l.conf.Iterations)
+		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
 }
