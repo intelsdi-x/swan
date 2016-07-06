@@ -2,13 +2,13 @@ package executor
 
 import (
 	"io/ioutil"
-
-	"errors"
-	"fmt"
-	"golang.org/x/crypto/ssh"
 	"os"
 	"os/user"
 	"regexp"
+
+	"fmt"
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -28,12 +28,12 @@ type SSHConfig struct {
 func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Reading key '%s' failed", keyPath)
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Parsing private key '%s' failed", keyPath)
 	}
 
 	return ssh.PublicKeys(key), nil
@@ -43,7 +43,7 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 // Return error if there is blocker (e.g host is not authorized).
 func ValidateSSHConfig(host string, user *user.User) error {
 	if _, err := os.Stat(user.HomeDir + defaultSSHKeyPath); os.IsNotExist(err) {
-		return fmt.Errorf("SSH keys not found in %s", user.HomeDir+defaultSSHKeyPath)
+		return errors.Errorf("SSH keys not found in '%s'", user.HomeDir+defaultSSHKeyPath)
 	}
 
 	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
@@ -51,24 +51,24 @@ func ValidateSSHConfig(host string, user *user.User) error {
 		var err error
 		host, err = os.Hostname()
 		if err != nil {
-			return errors.New("Cannot figure out if localhost is self-authorized")
+			return errors.Wrap(err, "Cannot figure out if localhost is self-authorized")
 		}
 	}
 
 	authorizedHostsFile, err := os.Open(user.HomeDir + "/.ssh/authorized_keys")
 	if err != nil {
-		return errors.New("Cannot figure out if localhost is self-authorized: " + err.Error())
+		return errors.Wrap(err, "Cannot figure out if localhost is self-authorized")
 	}
 	authorizedHosts, err := ioutil.ReadAll(authorizedHostsFile)
 	if err != nil {
-		return fmt.Errorf("Cannot figure out if %s is authorized: %s", host, err.Error())
+		return errors.Wrapf(err, "Cannot figure out if '%s' is authorized", host)
 	}
 
 	re := regexp.MustCompile(host)
 	match := re.Find(authorizedHosts)
 
 	if match == nil {
-		return fmt.Errorf("%s is not authorized", host)
+		return errors.Errorf("'%s' is not authorized", host)
 	}
 
 	return nil
@@ -94,4 +94,8 @@ func NewSSHConfig(host string, port int, user *user.User) (*SSHConfig, error) {
 		Host:         host,
 		Port:         port,
 	}, nil
+}
+
+func (s SSHConfig) String() string {
+	return fmt.Sprintf("")
 }

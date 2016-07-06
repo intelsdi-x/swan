@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"path"
@@ -11,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/pkg/errors"
 )
 
 // Local provisioning is responsible for providing the execution environment
@@ -42,7 +42,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command '%s' failed", command)
 	}
 
 	log.Debug("Created temporary files ",
@@ -53,7 +53,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Command '%s' start failed", command)
 	}
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
@@ -77,7 +77,8 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 				// terminate so panic.
 				// This error happens very rarely and it represent the critical state of the
 				// server like volume or HW problems.
-				log.Panic("Waiting for local task failed. ", err)
+				err = errors.Wrap(err, "Wait returned with NON exit error")
+				log.Panicf("Waiting for local task failed\n%+v", err)
 			}
 		}
 
@@ -145,14 +146,15 @@ func (taskHandle *localTaskHandle) Stop() error {
 	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -taskHandle.getPid())
 	err := syscall.Kill(-taskHandle.getPid(), syscall.SIGKILL)
 	if err != nil {
-		log.Error(err)
-		return err
+		return errors.Wrapf(err, "Kill of PID %d of application '%s' failed",
+			-taskHandle.getPid(), taskHandle.cmdHandler.Path)
 	}
 
 	// Checking if kill was successful.
 	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
-		return errors.New("Cannot terminate task")
+		return errors.Errorf("Cannot terminate running '%s' application",
+			taskHandle.cmdHandler.Path)
 	}
 
 	// No error, task terminated.
@@ -171,7 +173,7 @@ func (taskHandle *localTaskHandle) Status() TaskState {
 // ExitCode returns a exitCode. If task is not terminated it returns error.
 func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 	if !taskHandle.isTerminated() {
-		return -1, errors.New("Task is not terminated")
+		return -1, errors.Errorf("Task '%s' is not terminated", taskHandle.cmdHandler.Path)
 	}
 
 	return (taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
@@ -180,7 +182,7 @@ func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *localTaskHandle) StdoutFile() (*os.File, error) {
 	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "os.stat on file '%s' failed", taskHandle.stdoutFile.Name())
 	}
 
 	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
@@ -190,7 +192,7 @@ func (taskHandle *localTaskHandle) StdoutFile() (*os.File, error) {
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *localTaskHandle) StderrFile() (*os.File, error) {
 	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "os.stat on file '%s' failed", taskHandle.stderrFile.Name())
 	}
 
 	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
@@ -206,11 +208,11 @@ func (taskHandle *localTaskHandle) Clean() error {
 	stderrErr := taskHandle.stderrFile.Close()
 
 	if stdoutErr != nil {
-		return stdoutErr
+		return errors.Wrapf(stdoutErr, "Close on file '%s' failed", taskHandle.stdoutFile.Name())
 	}
 
 	if stderrErr != nil {
-		return stderrErr
+		return errors.Wrapf(stderrErr, "Close on file '%s' failed", taskHandle.stderrFile.Name())
 	}
 
 	return nil
@@ -222,7 +224,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 
 	// Remove temporary directory created for stdout and stderr.
 	if err := os.RemoveAll(outputDir); err != nil {
-		return err
+		return errors.Wrapf(err, "os.RemoveAll of directory '%s' failed", outputDir)
 	}
 	return nil
 }

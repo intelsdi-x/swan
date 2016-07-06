@@ -51,7 +51,7 @@ var (
 // Check the supplied error, log and exit if non-nil.
 func check(err error) {
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Fatalf("%+v", err)
 	}
 }
 

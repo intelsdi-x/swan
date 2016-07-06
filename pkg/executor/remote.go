@@ -1,16 +1,16 @@
 package executor
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"strings"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -39,17 +39,19 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
+	connectionCommand := fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port)
 	connection, err := ssh.Dial(
 		"tcp",
-		fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port),
+		connectionCommand,
 		remote.sshConfig.ClientConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "ssh.Dial to '%s@%s' for command '%s' failed",
+			remote.sshConfig.ClientConfig.User, connectionCommand, command)
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "connection.NewSession for command '%s' failed", command)
 	}
 
 	terminal := ssh.TerminalModes{
@@ -61,12 +63,12 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	err = session.RequestPty("xterm", 80, 40, terminal)
 	if err != nil {
 		session.Close()
-		return nil, err
+		return nil, errors.Wrapf(err, "session.RequestPty for command '%s' failed", command)
 	}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command '%s' failed", command)
 	}
 
 	log.Debug("Created temporary files: ",
@@ -85,7 +87,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
 	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", stringForSh))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "session.Start for command '%s' failed", command)
 	}
 
 	log.Debug("Started remote command")
@@ -115,7 +117,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			if exitError, ok := err.(*ssh.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
 				// terminate so panic.
-				log.Panic("Waiting for remote task failed. ", err)
+				err = errors.Wrap(err, "Wait returned with NON exit error")
+				log.Panicf("Waiting for remote task failed %+v", err)
 			} else {
 				*exitCode = exitError.Waitmsg.ExitStatus()
 			}
@@ -184,8 +187,8 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	// - gathering PID & killing the pid in separate session
 	err := taskHandle.session.Close()
 	if err != nil {
-		log.Error(err)
-		return err
+		//log.Error(err)
+		return errors.Wrap(err, "session.Close failed")
 	}
 
 	// Checking if kill was successful.
