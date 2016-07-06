@@ -28,10 +28,12 @@ const (
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
 	defaultAgentAffinity          = false
+	defaultAgentBlocking          = true
 	defaultMasterThreads          = 8
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
 	defaultMasterAffinity         = false
+	defaultMasterBlocking         = true
 	defaultKeySize                = 30  // [bytes]
 	defaultValueSize              = 200 // [bytes]
 	defaultMasterQPS              = 0
@@ -48,10 +50,12 @@ var (
 	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
 	agentConnectionsDepthFlag  = conf.NewIntFlag("mutilate_agent_connections_depth", "Mutilate agent connections (-d).", defaultAgentConnectionsDepth)
 	agentAffinityFlag          = conf.NewBoolFlag("mutilate_agent_affinity", "Mutilate agent affinity (--affinity).", defaultAgentAffinity)
+	agentBlockingFlag          = conf.NewBoolFlag("mutilate_agent_blocking", "Mutilate agent blocking (--blocking -B).", defaultAgentBlocking)
 	masterThreadsFlag          = conf.NewIntFlag("mutilate_master_threads", "Mutilate master threads (-T).", defaultMasterThreads)
 	masterConnectionsFlag      = conf.NewIntFlag("mutilate_master_connections", "Mutilate master connections (-C).", defaultMasterConnections)
 	masterConnectionsDepthFlag = conf.NewIntFlag("mutilate_master_connections_depth", "Mutilate master connections depth (-C).", defaultMasterConnectionsDepth)
 	masterAffinityFlag         = conf.NewBoolFlag("mutilate_master_affinity", "Mutilate master affinity (--affinity).", defaultMasterAffinity)
+	masterBlockingFlag         = conf.NewBoolFlag("mutilate_master_blocking", "Mutilate master blocking (--blocking -B).", defaultMasterBlocking)
 	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)
 )
 
@@ -72,12 +76,14 @@ type Config struct {
 	AgentConnectionsDepth int  // Max length of request pipeline. -d
 	MasterThreads         int  // -T
 	MasterAffinity        bool // Set CPU affinity for threads, round-robin (for Master)
+	MasterBlocking        bool // -B --blocking:  Use blocking epoll().  May increase latency (for Master).
 	KeySize               int  // Length of memcached keys. -K
 	ValueSize             int  // Length of memcached values. -V
 
 	// Agent-mode options.
 	AgentThreads           int  // Number of threads for all agents. -T
-	AgentAffinity          bool // Set CPU affinity for threads, round-robin (fro Agent).
+	AgentAffinity          bool // Set CPU affinity for threads, round-robin (for Agent).
+	AgentBlocking          bool // -B --blocking:  Use blocking epoll().  May increase latency (for Agent).
 	AgentPort              int  // Agent port. -p
 	MasterConnections      int  // -C
 	MasterConnectionsDepth int  // Max length of request pipeline. -D
@@ -109,10 +115,12 @@ func DefaultMutilateConfig() Config {
 		AgentConnections:       agentConnectionsFlag.Value(),
 		AgentConnectionsDepth:  agentConnectionsDepthFlag.Value(),
 		AgentAffinity:          agentAffinityFlag.Value(),
+		AgentBlocking:          agentBlockingFlag.Value(),
 		MasterThreads:          masterThreadsFlag.Value(),
 		MasterConnections:      masterConnectionsFlag.Value(),
 		MasterConnectionsDepth: masterConnectionsDepthFlag.Value(),
 		MasterAffinity:         masterAffinityFlag.Value(),
+		MasterBlocking:         masterBlockingFlag.Value(),
 		KeySize:                defaultKeySize,
 		ValueSize:              defaultValueSize,
 		MasterQPS:              masterQPSFlag.Value(),
