@@ -132,6 +132,7 @@ SCRIPT
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
     mkdir -p /opt/swan/resources
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/keyspace.cql /opt/swan/resources
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/table.cql /opt/swan/resources
     systemctl daemon-reload
     systemctl enable cassandra.service
     systemctl restart cassandra.service

@@ -19,8 +19,8 @@ func NewPlugins(pClient *client.Client) *Plugins {
 
 // Load plugin binary.
 // TODO(skonefal): Currently accepts only absolute path.
-func (p *Plugins) Load(pluginPath []string) error {
-	r := p.pClient.LoadPlugin(pluginPath)
+func (p *Plugins) Load(pluginPaths []string) error {
+	r := p.pClient.LoadPlugin(pluginPaths)
 	if r.Err != nil {
 		return r.Err
 	}
