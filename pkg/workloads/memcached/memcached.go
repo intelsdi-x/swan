@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
 	"path"
 
 	log "github.com/Sirupsen/logrus"
@@ -127,17 +128,16 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
-		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
+		err := errors.Errorf("Failed to connect to memcached instance. Timeout on connection to '%s'",
 			address)
-		log.Error(err)
 
 		err1 := task.Stop()
 		if err1 != nil {
-			log.Error("Failed to stop memcached instance. Error: " + err1.Error())
+			log.Errorf("Failed to stop memcached instance. Error: '%s'", err1.Error())
 		}
 		err1 = task.Clean()
 		if err1 != nil {
-			log.Error("Failed to cleanup memcached task. Error: " + err1.Error())
+			log.Errorf("Failed to cleanup memcached task. Error: '%s'", err1.Error())
 		}
 		return nil, err
 	}
