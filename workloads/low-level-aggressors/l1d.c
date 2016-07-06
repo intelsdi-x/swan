@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-//#define CACHE_SIZE 2*1024*1024
+#define CACHE_SIZE 32*1024
 #define NS_PER_S (1000000000L)
 
 
@@ -53,7 +53,8 @@ int cache_size_kb(void) {
 
 int main(int argc, char **argv) {
 	char* volatile block;
-	int CACHE_SIZE = cache_size_kb(); 
+	// cache_size_kb() returns value in kilobytes while mmap() expects bytes
+	// int CACHE_SIZE = cache_size_kb(); 
 	printf("L1d cache size: %dKB\n", CACHE_SIZE); 
 	block = (char*)mmap(NULL, CACHE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 
