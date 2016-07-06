@@ -1,8 +1,6 @@
 package mutilate
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -17,6 +15,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -186,8 +185,8 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 		handle, err := exec.Execute(command)
 		if err != nil {
 			// If one agent fails we need to stop these which are running.
-			logrus.Debugf(
-				"One of agents failed (cmd: '%s'). Stopping already started %d agents",
+			logrus.Errorf(
+				"Mutilate: one of agents has failed (cmd: %q). Stopping already started %d agents",
 				command, len(handles))
 			stopAgents(handles)
 			cleanAgents(handles)
@@ -220,8 +219,7 @@ func (m mutilate) Populate() (err error) {
 	}
 
 	if exitCode != 0 {
-		return errors.New("Memcached population exited with code: " +
-			strconv.Itoa(exitCode))
+		return errors.Errorf("memcached population exited with code: %d", strconv.Itoa(exitCode))
 	}
 
 	err = taskHandle.Clean()
@@ -239,20 +237,17 @@ func (m mutilate) Populate() (err error) {
 func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSLI int, err error) {
 	results, err := parse.OpenedFile(stdoutFile)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
-		return qps, achievedSLI, errors.New(errMsg + err.Error())
+		return qps, achievedSLI, errors.Wrap(err, "could not retrieve QPS from Mutilate Tune output")
 	}
 
 	rawQPS, ok := results.Raw[parse.MutilateQPS]
 	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve MutilateQPS from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
+		return qps, achievedSLI, errors.New("could not retrieve MutilateQPS from mutilate parser")
 	}
 
 	rawSLI, ok := results.Raw[parse.MutilatePercentileCustom]
 	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve Custom Percentile from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
+		return qps, achievedSLI, errors.New("could not retrieve Custom Percentile from mutilate parser")
 	}
 
 	return int(rawQPS), int(rawSLI), nil
@@ -263,8 +258,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	// Run agents when specified.
 	agentHandles, err := m.runRemoteAgents()
 	if err != nil {
-		return qps, achievedSLI,
-			fmt.Errorf("Executing Mutilate Agents failed; %s", err.Error())
+		return qps, achievedSLI, errors.Wrap(err, "executing Mutilate Agents failed")
 	}
 
 	defer func() {
@@ -280,16 +274,15 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
 	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
-		logrus.Debug("Mutilate master execution failed (cmd: '%s')", tuneCmd)
-		return qps, achievedSLI,
-			fmt.Errorf("Mutilate Master Tune failed; Command: %s; %s", tuneCmd, err.Error())
+		return qps, achievedSLI, errors.Wrapf(
+			err, "mutilate Master Tune failed; Command: %q", tuneCmd)
 	}
 
 	taskHandle := executor.NewClusterTaskHandle(masterHandle, agentHandles)
 
 	// Blocking wait for master.
 	if !taskHandle.Wait(0) {
-		return qps, achievedSLI, fmt.Errorf("Cannot terminate the Mutilate master. Stopping agents.")
+		return qps, achievedSLI, errors.Errorf("cannot terminate the Mutilate master. Stopping agents.")
 	}
 
 	exitCode, err := taskHandle.ExitCode()
@@ -299,7 +292,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 	if exitCode != 0 {
 		return qps, achievedSLI, errors.New(
-			"Executing Mutilate Tune command returned with exit code: " +
+			"executing Mutilate Tune command returned with exit code: " +
 				strconv.Itoa(exitCode))
 	}
 
@@ -335,13 +328,13 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 		return nil, err
 	}
 
-	masterHandle, err := m.master.Execute(
-		getLoadCommand(m.config, qps, duration, agentHandles))
+	loadCommand := getLoadCommand(m.config, qps, duration, agentHandles)
+	masterHandle, err := m.master.Execute(loadCommand)
 	if err != nil {
 		stopAgents(agentHandles)
-		return nil, fmt.Errorf(
-			"Execution of Mutilate Master Load failed; Command: %s; %s",
-			getLoadCommand(m.config, qps, duration, agentHandles), err.Error())
+		return nil, errors.Wrapf(err,
+			"execution of Mutilate Master Load failed. command: %q",
+			loadCommand)
 	}
 
 	return executor.NewClusterTaskHandle(masterHandle, agentHandles), nil
