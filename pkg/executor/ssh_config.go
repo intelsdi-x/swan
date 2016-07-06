@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"regexp"
 
-	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
