@@ -95,7 +95,3 @@ func NewSSHConfig(host string, port int, user *user.User) (*SSHConfig, error) {
 		Port:         port,
 	}, nil
 }
-
-func (s SSHConfig) String() string {
-	return fmt.Sprintf("")
-}
