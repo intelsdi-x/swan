@@ -66,7 +66,7 @@ func TestL1dAggressor(t *testing.T) {
 				Convey("Should launcher return error", func() {
 					task, err := launcher.Launch()
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Intensivity value")
+					So(err.Error(), ShouldStartWith, "intensivity value")
 					So(task, ShouldBeNil)
 				})
 			})
@@ -82,7 +82,7 @@ func TestL1dAggressor(t *testing.T) {
 				Convey("Should launcher return error", func() {
 					task, err := launcher.Launch()
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Iterations value")
+					So(err.Error(), ShouldStartWith, "iterations value")
 					So(task, ShouldBeNil)
 				})
 			})

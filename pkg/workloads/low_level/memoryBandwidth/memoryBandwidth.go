@@ -2,13 +2,14 @@ package memoryBandwidth
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"path"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -59,7 +60,7 @@ func (m memBw) buildCommand() string {
 
 func (m memBw) verifyConfiguration() error {
 	if m.conf.Duration.Seconds() <= 0 {
-		return fmt.Errorf("Launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
+		return errors.Errorf("launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
 			int(m.conf.Duration.Seconds()))
 	}
 	return nil
