@@ -82,8 +82,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	log.Debug("Starting '", stringForSh, "' remotely")
 
-	// `-O huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("sh -O huponexit -c '%s'", stringForSh))
+	// huponexit` ensures that the process will be killed when ssh connection will be closed.
+	err = session.Start(fmt.Sprintf("shopt -s huponexit; sh -c '%s'", stringForSh))
 	if err != nil {
 		return nil, err
 	}
