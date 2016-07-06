@@ -272,7 +272,7 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 
 		Convey("Having failure with master's Wait, tune should return error and agents "+
 			"should be stopped and cleaned", func() {
-			const errorMsg = "Cannot terminate the Mutilate master. Stopping agents."
+			const errorMsg = "cannot terminate the Mutilate master. Stopping agents."
 
 			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
 			// IsTerminated will false.
