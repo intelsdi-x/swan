@@ -12,6 +12,7 @@ ADD install_deps.sh /workload_deps_centos/
 RUN yum install -y epel-release && \
     yum groupinstall -y 'Development Tools' && \
     yum install -y \
+        cppzmq-devel \
         gengetopt \
         git \
         libevent-devel \
@@ -24,6 +25,7 @@ RUN yum install -y epel-release && \
         which && \
     (cd workload_deps_centos && ./install_deps.sh) && \
     yum clean all && \
+    wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp && \
     wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
     tar xfvv go.tar.gz && \
@@ -33,4 +35,5 @@ WORKDIR /opt/gopath/src/github.com/intelsdi-x
 ADD start.sh /start.sh
 
 ENTRYPOINT ["/start.sh"]
-CMD ["integration_test"]
+CMD ["-t make -s integration_tests"]
+
