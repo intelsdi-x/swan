@@ -2,7 +2,6 @@ package stream
 
 import (
 	"fmt"
-
 	"path"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
