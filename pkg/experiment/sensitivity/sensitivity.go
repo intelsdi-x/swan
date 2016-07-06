@@ -149,7 +149,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 	return aggressorPhases
 }
 
-func (e *Experiment) configureGenericExperiment() error {
+func (e *Experiment) configureGenericExperiment() (err error) {
 	// Configure phases & measurements.
 	// Each sensitivity phase (part of experiment) can include couple of measurements.
 	var allMeasurements []phase.Phase
@@ -159,7 +159,7 @@ func (e *Experiment) configureGenericExperiment() error {
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
 	} else {
-		log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
+		log.Infof("Skipping Tunning phase, using peakload %d", e.configuration.PeakLoad)
 	}
 
 	// Include Baseline Phase.
@@ -172,7 +172,6 @@ func (e *Experiment) configureGenericExperiment() error {
 		allMeasurements = append(allMeasurements, aggressorPhase...)
 	}
 
-	var err error
 	e.exp, err = experiment.NewExperiment(e.name, allMeasurements, os.TempDir(), e.logLevel)
 	if err != nil {
 		return err

@@ -1,6 +1,10 @@
 package errcollection
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 const delimiter = "; "
 
@@ -33,5 +37,5 @@ func (e *ErrorCollection) GetErrIfAny() error {
 			errMsg += delimiter
 		}
 	}
-	return fmt.Errorf(errMsg)
+	return errors.Errorf(errMsg)
 }

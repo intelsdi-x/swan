@@ -1,8 +1,6 @@
 package sensitivity
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/pkg/errors"
 )
 
 // measurementPhase performs a measurement for given loadPointIndex.
@@ -71,14 +70,14 @@ func (m *measurementPhase) clean() error {
 	for _, task := range m.activeLaunchersTasks {
 		err = task.Stop()
 		if err != nil {
-			errMsg += " Error while stopping task: " + err.Error()
+			errMsg += " error while stopping task: " + err.Error()
 			// Don't clean when stop failed.
 			continue
 		}
 
 		err = task.Clean()
 		if err != nil {
-			errMsg += " Error while cleaning task: " + err.Error()
+			errMsg += " error while cleaning task: " + err.Error()
 		}
 	}
 	m.activeLaunchersTasks = []executor.TaskHandle{}
@@ -87,7 +86,7 @@ func (m *measurementPhase) clean() error {
 	for _, task := range m.activeLoadGeneratorTasks {
 		err = task.Clean()
 		if err != nil {
-			errMsg += " Error while cleaning task: " + err.Error()
+			errMsg += " error while cleaning task: " + err.Error()
 		}
 	}
 	m.activeLoadGeneratorTasks = []executor.TaskHandle{}
@@ -97,12 +96,12 @@ func (m *measurementPhase) clean() error {
 		log.Debug("Waiting for snap session to complete it's work. ", snapSession)
 		err = snapSession.Wait()
 		if err != nil {
-			errMsg += " Error while waiting for Snap session to complete it's work: " + err.Error()
+			errMsg += " error while waiting for Snap session to complete it's work: " + err.Error()
 		}
 
 		err = snapSession.Stop()
 		if err != nil {
-			errMsg += " Error while stopping Snap session: " + err.Error()
+			errMsg += " error while stopping Snap session: " + err.Error()
 		}
 	}
 	m.activeSnapSessions = []snap.SessionHandle{}
@@ -117,7 +116,7 @@ func (m *measurementPhase) clean() error {
 // Run runs a measurement for given loadPointIndex.
 func (m *measurementPhase) Run(session phase.Session) error {
 	if m.PeakLoad == nil {
-		return errors.New("Target QPS for measurement was not given.")
+		return errors.New("target QPS for measurement was not given")
 	}
 
 	// TODO(bp): Remove that when completing SCE-376
@@ -138,7 +137,7 @@ func (m *measurementPhase) Run(session phase.Session) error {
 	errMsg := ""
 	err := m.run(session)
 	if err != nil {
-		errMsg += " Error while running measurement: " + err.Error()
+		errMsg += " error while running measurement: " + err.Error()
 	}
 
 	// Make sure that deferred stops and cleans are executed.
@@ -244,7 +243,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 
 	if exitCode != 0 {
 		// Load generator failed.
-		return fmt.Errorf("Executing Mutilate Load returned with exit code %d", exitCode)
+		return errors.Errorf("executing Mutilate Load returned with exit code %d", exitCode)
 	}
 
 	return nil
