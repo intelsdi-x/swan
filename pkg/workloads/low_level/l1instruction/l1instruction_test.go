@@ -18,7 +18,7 @@ func TestL1dAggressor(t *testing.T) {
 	Convey("While using l1d aggressor launcher", t, func() {
 		const (
 			pathToBinary = "test"
-			validCommand = "test 10 20"
+			validCommand = "test 1024 20"
 		)
 
 		Convey("Default configuration should be valid", func() {
