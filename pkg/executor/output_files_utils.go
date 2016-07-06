@@ -49,14 +49,14 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 		return nil, nil, errors.Wrapf(err, "creating %q failed", stdoutFileName)
 	}
 	if err = stdout.Chmod(filePrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q\n", stdout.Name())
+		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stdout.Name())
 	}
 
 	stderrFileName := path.Join(outputDir, "stderr")
 	stderr, err = os.Create(stderrFileName)
 	if err != nil {
 		os.Remove(stdoutFileName)
-		return nil, nil, errors.Wrapf(err, "os.Create failed for path %q\n", stderrFileName)
+		return nil, nil, errors.Wrapf(err, "os.Create failed for path %q", stderrFileName)
 	}
 	if err = stderr.Chmod(filePrivileges); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stderr.Name())
