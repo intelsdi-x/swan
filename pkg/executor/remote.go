@@ -45,13 +45,13 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		connectionCommand,
 		remote.sshConfig.ClientConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "ssh.Dial to '%s@%s' for command '%s' failed",
+		return nil, errors.Wrapf(err, "ssh.Dial to '%s@%s' for command %q failed",
 			remote.sshConfig.ClientConfig.User, connectionCommand, command)
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return nil, errors.Wrapf(err, "connection.NewSession for command '%s' failed", command)
+		return nil, errors.Wrapf(err, "connection.NewSession for command %q failed", command)
 	}
 
 	terminal := ssh.TerminalModes{
@@ -63,12 +63,12 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	err = session.RequestPty("xterm", 80, 40, terminal)
 	if err != nil {
 		session.Close()
-		return nil, errors.Wrapf(err, "session.RequestPty for command '%s' failed", command)
+		return nil, errors.Wrapf(err, "session.RequestPty for command %q failed", command)
 	}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
 	if err != nil {
-		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command '%s' failed", command)
+		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
 	log.Debug("Created temporary files: ",
@@ -85,9 +85,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	log.Debug("Starting '", stringForSh, "' remotely")
 
 	// huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("shopt -s huponexit; sh -c '%s'", stringForSh))
+	err = session.Start(fmt.Sprintf("shopt -s huponexit; sh -c %q", stringForSh))
 	if err != nil {
-		return nil, errors.Wrapf(err, "session.Start for command '%s' failed", command)
+		return nil, errors.Wrapf(err, "session.Start for command %q failed", command)
 	}
 
 	log.Debug("Started remote command")
@@ -117,7 +117,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			if exitError, ok := err.(*ssh.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
 				// terminate so panic.
-				err = errors.Wrap(err, "Wait returned with NON exit error")
+				err = errors.Wrap(err, "wait returned with NON exit error")
 				log.Panicf("Waiting for remote task failed %+v", err)
 			} else {
 				*exitCode = exitError.Waitmsg.ExitStatus()
@@ -187,15 +187,13 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	// - gathering PID & killing the pid in separate session
 	err := taskHandle.session.Close()
 	if err != nil {
-		//log.Error(err)
 		return errors.Wrap(err, "session.Close failed")
 	}
 
 	// Checking if kill was successful.
 	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
-		log.Error("Cannot terminate task")
-		return errors.New("Cannot terminate task")
+		return errors.New("cannot terminate task")
 
 	}
 	// No error, task terminated.
@@ -214,7 +212,7 @@ func (taskHandle *remoteTaskHandle) Status() TaskState {
 // ExitCode returns a exitCode. If task is not terminated it returns error.
 func (taskHandle *remoteTaskHandle) ExitCode() (int, error) {
 	if !taskHandle.isTerminated() {
-		return -1, errors.New("Task is not terminated")
+		return -1, errors.New("task is not terminated")
 	}
 
 	return *taskHandle.exitCode, nil
