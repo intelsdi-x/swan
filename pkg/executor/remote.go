@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"golang.org/x/crypto/ssh"
-	"strings"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -106,7 +106,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	// Wait for local task in go routine.
 	go func() {
 		defer close(waitEndChannel)
-		defer session.Close()
+		defer session.Close() // Closing a session is not enough to close connection.
+		defer connection.Close()
 
 		*exitCode = successExitCode
 		// Wait for task completion.
