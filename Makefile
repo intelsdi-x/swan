@@ -13,6 +13,7 @@ deps:
 	go get github.com/stretchr/testify
 	go get github.com/vektra/mockery/.../
 	godep restore -v
+	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
@@ -27,6 +28,7 @@ unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
+	(cd scripts/jupyter; py.test)
 
 plugins:
 	mkdir -p build

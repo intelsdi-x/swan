@@ -89,10 +89,12 @@ EOF
       libevent-devel \
       nmap-ncat \
       perf \
+      python-pip \
+      python-devel \
       scons \
       tree \
       vim \
-      wget 
+      wget
     . $HOME_DIR/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
     if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
