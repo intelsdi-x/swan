@@ -51,7 +51,8 @@ var (
 // Check the supplied error, log and exit if non-nil.
 func check(err error) {
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Debugf("%+v", err)
+		logrus.Fatalf("%v", err)
 	}
 }
 
@@ -141,7 +142,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.SetLevel(conf.LogLevel())
 
 	// Validate environment.
-	check(validateOS())
+	validateOS()
 
 	// Isolation configuration method.
 	// TODO: needs update for different isolation per cpu

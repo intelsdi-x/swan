@@ -17,6 +17,9 @@ func getAgentCommand(config Config) string {
 	if config.AgentAffinity {
 		cmd += " --affinity"
 	}
+	if config.AgentBlocking {
+		cmd += " -B"
+	}
 	return cmd
 }
 
@@ -45,12 +48,16 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 		fmt.Sprintf(" -s %s:%d", config.MemcachedHost, config.MemcachedPort),
 		fmt.Sprintf(" --warmup %d --noload ", int(config.WarmupTime.Seconds())),
 		fmt.Sprintf(" -K %d -V %d", config.KeySize, config.ValueSize),
-		fmt.Sprintf(" -T %d -B", config.MasterThreads), // -B option for all master commands.
+		fmt.Sprintf(" -T %d", config.MasterThreads),
 		fmt.Sprintf(" -d %d -c %d", config.AgentConnectionsDepth, config.AgentConnections),
 	)
 
 	if config.MasterAffinity {
 		baseCommand += " --affinity"
+	}
+
+	if config.MasterBlocking {
+		baseCommand += " -B"
 	}
 
 	// Check if it is NOT agentless mode.
