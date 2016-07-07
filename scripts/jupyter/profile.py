@@ -31,7 +31,7 @@ class Profile(object):
                 load_point = int(sample_row.tags['swan_loadpoint_qps'])
 
                 if phase not in self.sensivity_rows:
-                    self.sensivity_rows[phase] = {}
+                    self.sensivity_rows[phase] = collections.OrderedDict()
 
                 if load_point not in self.sensivity_rows[phase]:
                     self.sensivity_rows[phase][load_point] = {}
@@ -67,13 +67,7 @@ class Profile(object):
             html_out += '<td style="%s; border-right: %s;">%s</td>' % \
                 (no_border, black_border, label)
 
-            # Yet another hack. We have to sort the load points from lowest to highest.
-            sorted_loadpoints = []
             for load_points in self.sensivity_rows[phase]:
-                sorted_loadpoints.append(load_points)
-            sorted_loadpoints.sort()
-
-            for load_points in sorted_loadpoints:
                 samples = self.sensivity_rows[phase][load_points]
 
                 if 'percentile/99th' in samples:
