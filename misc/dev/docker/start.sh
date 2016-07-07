@@ -147,24 +147,39 @@ function workload() {
     cd swan
     buildWorkloads
     BIN=""
+    WD=""
     case $SCENARIO in
         "mutilate")
-            BIN="./workloads/data_caching/memcached/mutilate/mutilate $BINPARAMETERS"
+            WD="./workloads/data_caching/memcached/mutilate"
+            BIN="./mutilate $BINPARAMETERS"
             ;;
         "memcached")
-            BIN="./workloads/data_caching/memcached/memcached-1.4.25/build/memcached -u memcached $BINPARAMETERS"
+            WD="./workloads/data_caching/memcached/memcached-1.4.25"
+            BIN="./build/memcached -u memcached $BINPARAMETERS"
             ;;
         "caffe")
-            BIN="./workloads/deep_learning/caffe/caffe_src/build/tools/caffe $BINPARAMETERS"
+            WD="./workloads/deep_learning/caffe/caffe_src"
+            BIN="./build/tools/caffe $BINPARAMETERS"
             ;;
         *)
             echo "You must provide scenario for 'workload' target"
             usage
-            exit
+#            exit
             ;;
     esac
-    printInfo "Executing $BIN"
+    printInfo "Executing $BIN from $WD"
+    cd $WD
     $BIN
+    lockWorkload
+}
+
+function lockWorkload() {
+    if [[ ! -f /lock.lock ]]; then
+        printInfo "Locking container for further usage"
+        touch /lock.lock
+        sleep inf
+    fi
+
 }
 
 function main() {
