@@ -7,6 +7,7 @@ from profile import Profile
 from cassandra.cluster import Cluster
 import test_data_reader
 from sample import Sample
+import numpy as np
 
 class Experiment(object):
     """
@@ -27,7 +28,6 @@ class Experiment(object):
         self.cluster = cluster
         self.session = session
 
-        self.samples = []
         self.phases = {}
 
         sample_rows = []
@@ -39,6 +39,7 @@ class Experiment(object):
         elif test_file is not None:
             sample_rows = test_data_reader.read(test_file)
 
+        samples = []
         for sample_row in sample_rows:
             sample = Sample(
                 sample_row.ns,
@@ -57,7 +58,9 @@ class Experiment(object):
                     self.phases[sample_row.tags['swan_phase']] = []
                 self.phases[sample_row.tags['swan_phase']].append(sample)
 
-            self.samples.append(sample)
+            samples.append(sample)
+
+        self.samples = np.array(samples)
 
     def profile(self, slo):
         """
