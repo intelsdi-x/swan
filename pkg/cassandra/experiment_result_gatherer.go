@@ -1,6 +1,7 @@
 package cassandra
 
 import (
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func (cassandraConfig *Connection) GetValuesForGivenExperiment(experimentID stri
 	}
 
 	if err := iter.Close(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "query iterator close failed")
 	}
 
 	return metricsList, nil
@@ -48,7 +49,7 @@ func GetTags(cassandraAddress string) (tagsMapsList []map[string]string, err err
 	}
 
 	if err := iter.Close(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "query iterator close failed")
 	}
 
 	return tagsMapsList, nil
