@@ -1,0 +1,4 @@
+pytest
+cassandra-driver
+jupyter
+numpy
