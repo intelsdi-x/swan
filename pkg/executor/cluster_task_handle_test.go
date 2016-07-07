@@ -167,7 +167,7 @@ func TestClusterTaskHandle(t *testing.T) {
 						mAgent2Handle.On("Stop").Return(errors.New("test2")).Once()
 						err = handle.Stop()
 						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEqual, "test; test2")
+						So(err.Error(), ShouldEqual, "test;\n test2")
 
 						mMasterHandle.On("Stop").Return(nil).Once()
 						mAgent1Handle.On("Stop").Return(errors.New("test1")).Once()
@@ -236,7 +236,7 @@ func TestClusterTaskHandle(t *testing.T) {
 						mAgent2Handle.On("Clean").Return(errors.New("test2")).Once()
 						err = handle.Clean()
 						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEqual, "test; test1; test2")
+						So(err.Error(), ShouldEqual, "test;\n test1;\n test2")
 
 						mMasterHandle.On("Clean").Return(nil).Once()
 						mAgent1Handle.On("Clean").Return(nil).Once()
@@ -264,7 +264,7 @@ func TestClusterTaskHandle(t *testing.T) {
 						mAgent2Handle.On("EraseOutput").Return(errors.New("test2")).Once()
 						err = handle.EraseOutput()
 						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEqual, "test; test1; test2")
+						So(err.Error(), ShouldEqual, "test;\n test1;\n test2")
 
 						mMasterHandle.On("EraseOutput").Return(nil).Once()
 						mAgent1Handle.On("EraseOutput").Return(nil).Once()

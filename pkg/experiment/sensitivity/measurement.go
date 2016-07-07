@@ -9,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
 
@@ -63,21 +64,22 @@ func (m *measurementPhase) getLoadPoint() int {
 	return int(a * x)
 }
 
-func (m *measurementPhase) clean() error {
-	var err error
-	errMsg := ""
+func (m *measurementPhase) clean() (err error) {
+	var errCollection errcollection.ErrorCollection
+
 	// Cleaning and stopping active Launchers' tasks.
 	for _, task := range m.activeLaunchersTasks {
 		err = task.Stop()
 		if err != nil {
-			errMsg += " error while stopping task: " + err.Error()
+			errCollection.Add(errors.Wrap(err, "error while stopping task"))
+
 			// Don't clean when stop failed.
 			continue
 		}
 
 		err = task.Clean()
 		if err != nil {
-			errMsg += " error while cleaning task: " + err.Error()
+			errCollection.Add(errors.Wrap(err, "error while cleaning task"))
 		}
 	}
 	m.activeLaunchersTasks = []executor.TaskHandle{}
@@ -86,7 +88,7 @@ func (m *measurementPhase) clean() error {
 	for _, task := range m.activeLoadGeneratorTasks {
 		err = task.Clean()
 		if err != nil {
-			errMsg += " error while cleaning task: " + err.Error()
+			errCollection.Add(errors.Wrap(err, "error while cleaning task"))
 		}
 	}
 	m.activeLoadGeneratorTasks = []executor.TaskHandle{}
@@ -96,21 +98,17 @@ func (m *measurementPhase) clean() error {
 		log.Debug("Waiting for snap session to complete it's work. ", snapSession)
 		err = snapSession.Wait()
 		if err != nil {
-			errMsg += " error while waiting for Snap session to complete it's work: " + err.Error()
+			errCollection.Add(errors.Wrap(err, "error while waiting for Snap session to complete it's work"))
 		}
 
 		err = snapSession.Stop()
 		if err != nil {
-			errMsg += " error while stopping Snap session: " + err.Error()
+			errCollection.Add(errors.Wrap(err, "error while  stopping Snap session"))
 		}
 	}
 	m.activeSnapSessions = []snap.SessionHandle{}
 
-	if strings.Compare(errMsg, "") != 0 {
-		return errors.New(errMsg)
-	}
-
-	return nil
+	return errCollection.GetErrIfAny()
 }
 
 // Run runs a measurement for given loadPointIndex.

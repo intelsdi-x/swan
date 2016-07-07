@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const delimiter = "; "
+const delimiter = ";\n "
 
 // ErrorCollection gives ability to return multiple errors instead of one.
 // It gathers errors and return error with message combined with messages
