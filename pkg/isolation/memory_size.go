@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // MemorySize defines input data
@@ -31,7 +33,7 @@ func (memorySize *MemorySize) Clean() error {
 	cmd := exec.Command("cgdelete", "-g", "memory:"+memorySize.name)
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	return nil
@@ -43,14 +45,14 @@ func (memorySize *MemorySize) Create() error {
 	cmd := exec.Command("cgcreate", "-g", "memory:"+memorySize.name)
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	// 1.b Set cgroup memory size.
 	cmd = exec.Command("cgset", "-r", "memory.limit_in_bytes="+strconv.Itoa(memorySize.size), memorySize.name)
 	err = cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	return nil
@@ -61,10 +63,12 @@ func (memorySize *MemorySize) Isolate(PID int) error {
 	// Set PID to cgroups.
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/memory", memorySize.name, "tasks"), d, 0644)
+
+	filePath := path.Join("/sys/fs/cgroup/cpu", memorySize.name, "tasks")
+	err := ioutil.WriteFile(filePath, d, 0644)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not write %q to file %q", d, filePath)
 	}
 
 	return nil
