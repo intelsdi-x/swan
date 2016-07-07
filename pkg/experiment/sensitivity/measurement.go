@@ -3,13 +3,14 @@ package sensitivity
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // measurementPhase performs a measurement for given loadPointIndex.
@@ -93,6 +94,7 @@ func (m *measurementPhase) clean() error {
 
 	// Stopping only active Snap sessions.
 	for _, snapSession := range m.activeSnapSessions {
+		log.Debug("Waiting for snap session to complete it's work. ", snapSession)
 		err = snapSession.Wait()
 		if err != nil {
 			errMsg += " Error while waiting for Snap session to complete it's work: " + err.Error()

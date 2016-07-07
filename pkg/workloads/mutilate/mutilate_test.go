@@ -3,17 +3,16 @@ package mutilate
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
-	"github.com/shopspring/decimal"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"io/ioutil"
-	"os"
 )
 
 const (
@@ -28,6 +27,7 @@ const (
 	masterConnectionsDepth = 1
 	keySize                = 3
 	valueSize              = 5
+	latencyPercentile      = "99.9234"
 
 	correctMutilateQPS    = 4450
 	correctMutilateSLI    = 75
@@ -71,7 +71,7 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.config.PathToBinary = mutilatePath
 	s.config.MemcachedHost = memcachedHost
 	s.config.MemcachedPort = memcachedPort
-	s.config.LatencyPercentile, _ = decimal.NewFromString("99.9234")
+	s.config.LatencyPercentile = latencyPercentile
 	s.config.TuningTime = 934 * time.Second
 	s.config.WarmupTime = 1231 * time.Second
 	s.config.AgentThreads = agentThreads
@@ -272,7 +272,7 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 
 		Convey("Having failure with master's Wait, tune should return error and agents "+
 			"should be stopped and cleaned", func() {
-			const errorMsg = "Cannot terminate the Mutilate master. Stopping agents."
+			const errorMsg = "cannot terminate the Mutilate master. Stopping agents."
 
 			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
 			// IsTerminated will false.

@@ -5,17 +5,19 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
+	"path"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"path"
 )
 
 const (
 	name = "Memcached"
 	// DefaultPort represents default memcached port.
-	DefaultPort           = 11211
+	defaultPort           = 11211
 	defaultUser           = "memcached"
 	defaultNumThreads     = 4
 	defaultMaxMemoryMB    = 64
@@ -23,11 +25,16 @@ const (
 	defaultListenIP       = "127.0.0.1"
 )
 
-// PathFlag represents memcached path flag.
-var PathFlag = conf.NewStringFlag(
-	"memcached_path",
-	"Path to memcached binary",
-	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
+var (
+	pathFlag = conf.NewFileFlag("memcached_path", "Path to memcached binary",
+		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"))
+	// PortFlag returns port which will be specified for workload services as endpoints.
+	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
+	// IPFlag returns IP which will be specified for workload services as endpoints.
+	IPFlag             = conf.NewIPFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
+	userFlag           = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
+	numThreadsFlag     = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
+	maxConnectionsFlag = conf.NewIntFlag("memcached_connections", "Number of maximum connections for mutilate (-c)", defaultNumConnections)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -54,13 +61,13 @@ type Config struct {
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
 	return Config{
-		PathToBinary:   PathFlag.Value(),
-		Port:           DefaultPort,
-		User:           defaultUser,
-		NumThreads:     defaultNumThreads,
+		PathToBinary:   pathFlag.Value(),
+		Port:           PortFlag.Value(),
+		User:           userFlag.Value(),
+		NumThreads:     numThreadsFlag.Value(),
 		MaxMemoryMB:    defaultMaxMemoryMB,
-		NumConnections: defaultNumConnections,
-		IP:             defaultListenIP,
+		NumConnections: maxConnectionsFlag.Value(),
+		IP:             IPFlag.Value(),
 	}
 }
 
@@ -121,17 +128,16 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
 	if !m.tryConnect(address, 5*time.Second) {
-		err := fmt.Errorf("Failed to connect to memcached instance. Timeout on connection to %s",
+		err := errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
 			address)
-		log.Error(err)
 
 		err1 := task.Stop()
 		if err1 != nil {
-			log.Error("Failed to stop memcached instance. Error: " + err1.Error())
+			log.Errorf("failed to stop memcached instance. Error: %q", err1.Error())
 		}
 		err1 = task.Clean()
 		if err1 != nil {
-			log.Error("Failed to cleanup memcached task. Error: " + err1.Error())
+			log.Errorf("failed to cleanup memcached task. Error: %q", err1.Error())
 		}
 		return nil, err
 	}

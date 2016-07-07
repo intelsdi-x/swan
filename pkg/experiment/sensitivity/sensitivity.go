@@ -1,12 +1,25 @@
 package sensitivity
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/experiment"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"os"
 	"strconv"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+)
+
+var (
+	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
+	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
+	loadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
+	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
+	// It omits tuning phase.
+	peakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	runTuningPhase = 0
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -23,6 +36,19 @@ type Configuration struct {
 	// Repetitions.
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	Repetitions int
+	// PeakLoad. If set >0 skip tuning phase.
+	PeakLoad int
+}
+
+// DefaultConfiguration returns default configuration for experiment from Conf flags.
+func DefaultConfiguration() Configuration {
+	return Configuration{
+		SLO:             sloFlag.Value(),
+		LoadDuration:    loadDurationFlag.Value(),
+		LoadPointsCount: loadPointsCountFlag.Value(),
+		Repetitions:     repetitionsFlag.Value(),
+		PeakLoad:        peakLoadFlag.Value(),
+	}
 }
 
 // Experiment is handler structure for Experiment Driver. All fields shall be
@@ -69,13 +95,12 @@ func NewExperiment(
 }
 
 func (e *Experiment) prepareTuningPhase() *tuningPhase {
-	peakLoad := int(-1)
 	return &tuningPhase{
 		pr:          e.productionTaskLauncher.Launcher,
 		lgForPr:     e.loadGeneratorForProductionTask.LoadGenerator,
 		SLO:         e.configuration.SLO,
 		repetitions: e.configuration.Repetitions,
-		PeakLoad:    &peakLoad,
+		PeakLoad:    &e.configuration.PeakLoad,
 	}
 }
 
@@ -91,7 +116,7 @@ func (e *Experiment) prepareBaselinePhases() []phase.Phase {
 			loadDuration:    e.configuration.LoadDuration,
 			loadPointsCount: e.configuration.LoadPointsCount,
 			repetitions:     e.configuration.Repetitions,
-			PeakLoad:        e.tuningPhase.PeakLoad,
+			PeakLoad:        &e.configuration.PeakLoad,
 			// Measurements in baseline have different load point input.
 			currentLoadPointIndex: i,
 		})
@@ -115,7 +140,7 @@ func (e *Experiment) prepareAggressorsPhases() [][]phase.Phase {
 				loadPointsCount:       e.configuration.LoadPointsCount,
 				repetitions:           e.configuration.Repetitions,
 				currentLoadPointIndex: i,
-				PeakLoad:              e.tuningPhase.PeakLoad,
+				PeakLoad:              &e.configuration.PeakLoad,
 			})
 		}
 		aggressorPhases = append(aggressorPhases, aggressorPhase)
@@ -129,9 +154,13 @@ func (e *Experiment) configureGenericExperiment() error {
 	// Each sensitivity phase (part of experiment) can include couple of measurements.
 	var allMeasurements []phase.Phase
 
-	// Include Tuning Phase.
-	e.tuningPhase = e.prepareTuningPhase()
-	allMeasurements = append(allMeasurements, e.tuningPhase)
+	// Include Tuning Phase if PeakLoad wasn't given.
+	if e.configuration.PeakLoad == runTuningPhase {
+		e.tuningPhase = e.prepareTuningPhase()
+		allMeasurements = append(allMeasurements, e.tuningPhase)
+	} else {
+		log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
+	}
 
 	// Include Baseline Phase.
 	e.baselinePhase = e.prepareBaselinePhases()

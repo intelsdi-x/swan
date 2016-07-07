@@ -8,6 +8,11 @@
 Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
+  # if this env is set, it means that we are not building
+  # out a full image, but just bringing up an image with
+  # some of the dependencies installed on it. This is being
+  # used to cache dependencies on an AMI.
+  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] && ENV['BUILD_CACHED_IMAGE'] != '') || false
 
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
@@ -23,8 +28,10 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
-  config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan"
+  if ! only_cache_dependencies
+    home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
+    config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan"
+  end
 
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
@@ -50,11 +57,12 @@ Vagrant.configure(2) do |config|
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
-    aws.ami = data['ami'] || "ami-6d1c2007"
+    aws.ami = (only_cache_dependencies && data['base_ami']) || data['ami'] || "ami-6d1c2007"
     aws.keypair_name = data['keypair_name'] || "snapbot-private"
     aws.instance_type = data['instance_type'] || "m3.medium"
     override.ssh.username = data['ssh_username'] || "centos"
-    override.ssh.private_key_path = data['ssh_private_key_path'] || "/home/jenkins/.ssh/id_rsa.snap.bot.private"
+    override.ssh.private_key_path = data['ssh_private_key_path'] || nil
+    override.ssh.keys_only = data['keys_only'] || true
   end
 
   $install_packages = <<SCRIPT
@@ -124,6 +132,7 @@ SCRIPT
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
     mkdir -p /opt/swan/resources
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/keyspace.cql /opt/swan/resources
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/table.cql /opt/swan/resources
     systemctl daemon-reload
     systemctl enable cassandra.service
     systemctl restart cassandra.service
@@ -131,7 +140,9 @@ SCRIPT
 
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  if ! only_cache_dependencies
+    config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  end
 end

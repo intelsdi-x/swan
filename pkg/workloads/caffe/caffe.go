@@ -2,12 +2,14 @@ package caffe
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	swanOs "github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"os"
-	"path"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -37,7 +39,7 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		// TODO: Make that consistent.
+		// TODO(bp): Make that consistent with other workloads.
 		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
 		SolverPath:  getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
 		WorkdirPath: getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
@@ -73,13 +75,13 @@ func (c Caffe) buildCommand() string {
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	currentWorkingDir, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not obtain working directory")
 	}
 	defer popWorkingDir(currentWorkingDir)
 
 	err = os.Chdir(c.conf.WorkdirPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not change directory to %q", c.conf.WorkdirPath)
 	}
 
 	task, err = c.exec.Execute(c.buildCommand())

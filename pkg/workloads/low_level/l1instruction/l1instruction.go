@@ -2,12 +2,13 @@ package l1instruction
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"path"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -23,7 +24,7 @@ const (
 )
 
 // PathFlag represents l1i path flag.
-var PathFlag = conf.NewStringFlag(
+var PathFlag = conf.NewFileFlag(
 	"l1i_path",
 	"Path to L1 instruction binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1i"),
@@ -67,13 +68,13 @@ func (l l1i) buildCommand() string {
 
 func (l l1i) verifyConfiguration() error {
 	if l.conf.Intensity > maxIntensity || l.conf.Intensity < minIntensity {
-		return fmt.Errorf("Intensivity value(%d) is out of range <%d;%d>",
+		return errors.Errorf("intensivity value(%d) is out of range <%d;%d>",
 			l.conf.Intensity,
 			minIntensity,
 			maxIntensity)
 	}
 	if l.conf.Iterations <= 0 {
-		return fmt.Errorf("Iterations value(%d) should be greater than 0", l.conf.Iterations)
+		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
 }

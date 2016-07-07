@@ -1,12 +1,12 @@
 package mutilate
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
 	"path"
+
+	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
@@ -15,29 +15,48 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/shopspring/decimal"
+	"github.com/pkg/errors"
 )
 
 const (
 	defaultMemcachedHost          = "127.0.0.1"
-	defaultPercentile             = "99" // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
-	defaultTuningTime             = 10 * time.Second
-	defaultWarmupTime             = 10 * time.Second
+	defaultPercentile             = "99"             // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultTuningTime             = 10 * time.Second // [s]
+	defaultWarmupTime             = 10 * time.Second // [s]
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
 	defaultAgentConnections       = 1
 	defaultAgentConnectionsDepth  = 1
+	defaultAgentAffinity          = false
+	defaultAgentBlocking          = true
 	defaultMasterThreads          = 8
 	defaultMasterConnections      = 1
 	defaultMasterConnectionsDepth = 1
-	defaultKeySize                = 30
-	defaultValueSize              = 200
+	defaultMasterAffinity         = false
+	defaultMasterBlocking         = true
+	defaultKeySize                = 30  // [bytes]
+	defaultValueSize              = 200 // [bytes]
 	defaultMasterQPS              = 0
 )
 
-// pathFlag represents mutilate path flag.
-var pathFlag = conf.NewStringFlag("mutilate_path", "Path to mutilate binary",
-	path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"),
+var (
+	// pathFlag represents mutilate path flag.
+	pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
+		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
+	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
+	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
+	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
+	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
+	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
+	agentConnectionsDepthFlag  = conf.NewIntFlag("mutilate_agent_connections_depth", "Mutilate agent connections (-d).", defaultAgentConnectionsDepth)
+	agentAffinityFlag          = conf.NewBoolFlag("mutilate_agent_affinity", "Mutilate agent affinity (--affinity).", defaultAgentAffinity)
+	agentBlockingFlag          = conf.NewBoolFlag("mutilate_agent_blocking", "Mutilate agent blocking (--blocking -B).", defaultAgentBlocking)
+	masterThreadsFlag          = conf.NewIntFlag("mutilate_master_threads", "Mutilate master threads (-T).", defaultMasterThreads)
+	masterConnectionsFlag      = conf.NewIntFlag("mutilate_master_connections", "Mutilate master connections (-C).", defaultMasterConnections)
+	masterConnectionsDepthFlag = conf.NewIntFlag("mutilate_master_connections_depth", "Mutilate master connections depth (-C).", defaultMasterConnectionsDepth)
+	masterAffinityFlag         = conf.NewBoolFlag("mutilate_master_affinity", "Mutilate master affinity (--affinity).", defaultMasterAffinity)
+	masterBlockingFlag         = conf.NewBoolFlag("mutilate_master_blocking", "Mutilate master blocking (--blocking -B).", defaultMasterBlocking)
+	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)
 )
 
 // Config contains all data for running mutilate.
@@ -51,19 +70,23 @@ type Config struct {
 	// TODO(bplotka): Pack below parameters as flags.
 	// Mutilate load Parameters
 	TuningTime        time.Duration
-	LatencyPercentile decimal.Decimal
+	LatencyPercentile string
 
-	AgentConnections      int // -c
-	AgentConnectionsDepth int // Max length of request pipeline. -d
-	MasterThreads         int // -T
-	KeySize               int // Length of memcached keys. -K
-	ValueSize             int // Length of memcached values. -V
+	AgentConnections      int  // -c
+	AgentConnectionsDepth int  // Max length of request pipeline. -d
+	MasterThreads         int  // -T
+	MasterAffinity        bool // Set CPU affinity for threads, round-robin (for Master)
+	MasterBlocking        bool // -B --blocking:  Use blocking epoll().  May increase latency (for Master).
+	KeySize               int  // Length of memcached keys. -K
+	ValueSize             int  // Length of memcached values. -V
 
 	// Agent-mode options.
-	AgentThreads           int // Number of threads for all agents. -T
-	AgentPort              int // Agent port. -p
-	MasterConnections      int // -C
-	MasterConnectionsDepth int // Max length of request pipeline. -D
+	AgentThreads           int  // Number of threads for all agents. -T
+	AgentAffinity          bool // Set CPU affinity for threads, round-robin (for Agent).
+	AgentBlocking          bool // -B --blocking:  Use blocking epoll().  May increase latency (for Agent).
+	AgentPort              int  // Agent port. -p
+	MasterConnections      int  // -C
+	MasterConnectionsDepth int  // Max length of request pipeline. -D
 
 	// Number of QPS which will be done by master itself, and only these requests
 	// will measure the latency (!).
@@ -74,31 +97,34 @@ type Config struct {
 	// TODO(bplotka): Move this flags to global experiment namespace.
 	EraseTuneOutput     bool // false by default, we want to keep them, but remove during integration tests
 	ErasePopulateOutput bool // false by default.
+
 }
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
-	percentile, _ := decimal.NewFromString(defaultPercentile)
-
 	return Config{
 		PathToBinary:  pathFlag.Value(),
-		MemcachedHost: defaultMemcachedHost,
-		MemcachedPort: memcached.DefaultPort,
+		MemcachedHost: memcached.IPFlag.Value(),
+		MemcachedPort: memcached.PortFlag.Value(),
 
-		WarmupTime:        defaultWarmupTime,
-		TuningTime:        defaultTuningTime,
-		LatencyPercentile: percentile,
+		WarmupTime:        warmupTimeFlag.Value(),
+		TuningTime:        tuningTimeFlag.Value(),
+		LatencyPercentile: defaultPercentile,
 
-		AgentThreads:           defaultAgentThreads,
-		AgentConnections:       defaultAgentConnections,
-		AgentConnectionsDepth:  defaultAgentConnectionsDepth,
-		MasterThreads:          defaultMasterThreads,
-		MasterConnections:      defaultAgentConnections,
-		MasterConnectionsDepth: defaultAgentConnectionsDepth,
+		AgentThreads:           agentThreadsFlag.Value(),
+		AgentConnections:       agentConnectionsFlag.Value(),
+		AgentConnectionsDepth:  agentConnectionsDepthFlag.Value(),
+		AgentAffinity:          agentAffinityFlag.Value(),
+		AgentBlocking:          agentBlockingFlag.Value(),
+		MasterThreads:          masterThreadsFlag.Value(),
+		MasterConnections:      masterConnectionsFlag.Value(),
+		MasterConnectionsDepth: masterConnectionsDepthFlag.Value(),
+		MasterAffinity:         masterAffinityFlag.Value(),
+		MasterBlocking:         masterBlockingFlag.Value(),
 		KeySize:                defaultKeySize,
 		ValueSize:              defaultValueSize,
-		MasterQPS:              defaultMasterQPS,
-		AgentPort:              defaultAgentPort,
+		MasterQPS:              masterQPSFlag.Value(),
+		AgentPort:              agentAgentPortFlag.Value(),
 	}
 }
 
@@ -167,8 +193,8 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 		handle, err := exec.Execute(command)
 		if err != nil {
 			// If one agent fails we need to stop these which are running.
-			logrus.Debugf(
-				"One of agents failed (cmd: '%s'). Stopping already started %d agents",
+			logrus.Errorf(
+				"Mutilate: one of agents has failed (cmd: %q). Stopping already started %d agents",
 				command, len(handles))
 			stopAgents(handles)
 			cleanAgents(handles)
@@ -201,8 +227,7 @@ func (m mutilate) Populate() (err error) {
 	}
 
 	if exitCode != 0 {
-		return errors.New("Memcached population exited with code: " +
-			strconv.Itoa(exitCode))
+		return errors.Errorf("memcached population exited with code: %d", strconv.Itoa(exitCode))
 	}
 
 	err = taskHandle.Clean()
@@ -217,13 +242,31 @@ func (m mutilate) Populate() (err error) {
 	return nil
 }
 
+func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSLI int, err error) {
+	results, err := parse.OpenedFile(stdoutFile)
+	if err != nil {
+		return qps, achievedSLI, errors.Wrap(err, "could not retrieve QPS from Mutilate Tune output")
+	}
+
+	rawQPS, ok := results.Raw[parse.MutilateQPS]
+	if !ok {
+		return qps, achievedSLI, errors.New("could not retrieve MutilateQPS from mutilate parser")
+	}
+
+	rawSLI, ok := results.Raw[parse.MutilatePercentileCustom]
+	if !ok {
+		return qps, achievedSLI, errors.New("could not retrieve Custom Percentile from mutilate parser")
+	}
+
+	return int(rawQPS), int(rawSLI), nil
+}
+
 // Tune returns the maximum achieved QPS where SLI is below target SLO.
 func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	// Run agents when specified.
 	agentHandles, err := m.runRemoteAgents()
 	if err != nil {
-		return qps, achievedSLI,
-			fmt.Errorf("Executing Mutilate Agents failed; %s", err.Error())
+		return qps, achievedSLI, errors.Wrap(err, "executing Mutilate Agents failed")
 	}
 
 	defer func() {
@@ -239,16 +282,15 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
 	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
-		logrus.Debug("Mutilate master execution failed (cmd: '%s')", tuneCmd)
-		return qps, achievedSLI,
-			fmt.Errorf("Mutilate Master Tune failed; Command: %s; %s", tuneCmd, err.Error())
+		return qps, achievedSLI, errors.Wrapf(
+			err, "mutilate Master Tune failed; Command: %q", tuneCmd)
 	}
 
 	taskHandle := executor.NewClusterTaskHandle(masterHandle, agentHandles)
 
 	// Blocking wait for master.
 	if !taskHandle.Wait(0) {
-		return qps, achievedSLI, fmt.Errorf("Cannot terminate the Mutilate master. Stopping agents.")
+		return qps, achievedSLI, errors.Errorf("cannot terminate the Mutilate master. Stopping agents.")
 	}
 
 	exitCode, err := taskHandle.ExitCode()
@@ -258,7 +300,7 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 	if exitCode != 0 {
 		return qps, achievedSLI, errors.New(
-			"Executing Mutilate Tune command returned with exit code: " +
+			"executing Mutilate Tune command returned with exit code: " +
 				strconv.Itoa(exitCode))
 	}
 
@@ -267,29 +309,10 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, err
 	}
 
-	metricsMap, err := parse.OpenedFile(stdoutFile)
+	qps, achievedSLI, err = m.getQPSAndLatencyFrom(stdoutFile)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not retrieve QPS from Mutilate Tune output. ")
-		return qps, achievedSLI, errors.New(errMsg + err.Error())
+		return qps, achievedSLI, err
 	}
-
-	rawQPS, ok := metricsMap[parse.MutilateQPS]
-	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve MutilateQPS from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
-	}
-	qps = int(rawQPS)
-
-	// We don't need to have 'exact' flag retrieved.
-	// TODO(bplotka): Move latency to string.
-	// If float64 is not enough we need to fix parser and mutilate collector as well.
-	floatPercentile, _ := m.config.LatencyPercentile.Float64()
-	rawSLI, ok := metricsMap[parse.GenerateCustomPercentileKey(floatPercentile)]
-	if !ok {
-		errMsg := fmt.Sprintf("Could not retrieve Custom Percentile from mutilate parser.")
-		return qps, achievedSLI, errors.New(errMsg)
-	}
-	achievedSLI = int(rawSLI)
 
 	err = taskHandle.Clean()
 	if err != nil {
@@ -313,13 +336,13 @@ func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, er
 		return nil, err
 	}
 
-	masterHandle, err := m.master.Execute(
-		getLoadCommand(m.config, qps, duration, agentHandles))
+	loadCommand := getLoadCommand(m.config, qps, duration, agentHandles)
+	masterHandle, err := m.master.Execute(loadCommand)
 	if err != nil {
 		stopAgents(agentHandles)
-		return nil, fmt.Errorf(
-			"Execution of Mutilate Master Load failed; Command: %s; %s",
-			getLoadCommand(m.config, qps, duration, agentHandles), err.Error())
+		return nil, errors.Wrapf(err,
+			"execution of Mutilate Master Load failed. command: %q",
+			loadCommand)
 	}
 
 	return executor.NewClusterTaskHandle(masterHandle, agentHandles), nil

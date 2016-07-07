@@ -25,3 +25,27 @@ func sharedCacheThreads() topo.ThreadSet {
 		return retain
 	})
 }
+
+func getSiblingThreadsOfThread(reservedThread topo.Thread) topo.ThreadSet {
+	requestedCore := reservedThread.Core()
+
+	allThreads, err := topo.Discover()
+	check(err)
+
+	threadsFromCore, err := allThreads.FromCores(requestedCore)
+	check(err)
+
+	return threadsFromCore.Filter(func(t topo.Thread) bool {
+		return t != reservedThread
+	})
+}
+
+func getSiblingThreadsOfThreadSet(threads topo.ThreadSet) (results topo.ThreadSet) {
+	for _, thread := range threads {
+		siblings := getSiblingThreadsOfThread(thread)
+		for _, sibling := range siblings {
+			results = append(results, sibling)
+		}
+	}
+	return results
+}

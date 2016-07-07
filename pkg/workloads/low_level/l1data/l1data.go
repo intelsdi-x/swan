@@ -19,7 +19,7 @@ const (
 )
 
 // PathFlag represents l1 data path flag.
-var PathFlag = conf.NewStringFlag(
+var PathFlag = conf.NewFileFlag(
 	"l1d_path",
 	"Path to L1 Data binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1d"),
@@ -59,7 +59,7 @@ func (l l1d) buildCommand() string {
 
 func (l l1d) verifyConfiguration() error {
 	if l.conf.Duration.Seconds() <= 0 {
-		return fmt.Errorf("Launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
+		return fmt.Errorf("launcher configuration is invalid. `duration` value(%d) is lower/equal than/to 0",
 			int(l.conf.Duration.Seconds()))
 	}
 	return nil

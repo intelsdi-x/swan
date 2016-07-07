@@ -2,13 +2,14 @@ package l3data
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"path"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 )
 
 // PathFlag represents l3data path flag.
-var PathFlag = conf.NewStringFlag(
+var PathFlag = conf.NewFileFlag(
 	"l3_path",
 	"Path to L3 Data binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),
@@ -59,7 +60,7 @@ func (l l3) buildCommand() string {
 
 func (l l3) verifyConfiguration() error {
 	if l.conf.Duration.Seconds() <= 0 {
-		return fmt.Errorf("Launcher configuration is invalid. `duration` value(%v) is lower/equal than/to 0",
+		return errors.Errorf("launcher configuration is invalid. `duration` value(%v) is lower/equal than/to 0",
 			int(l.conf.Duration.Seconds()))
 	}
 	return nil

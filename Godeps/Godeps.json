@@ -116,6 +116,10 @@
 			"Rev": "d7b1e156f50d3c4664f683603af70e3e47fa0aa2"
 		},
 		{
+			"ImportPath": "github.com/google/btree",
+			"Rev": "7d79101e329e5a3adf994758c578dab82b90c017"
+		},
+		{
 			"ImportPath": "github.com/gopherjs/gopherjs/js",
 			"Comment": "go1.5-45-g19e100e",
 			"Rev": "19e100e9652485a76176bc5fd2669f57d3a2743c"
@@ -123,6 +127,16 @@
 		{
 			"ImportPath": "github.com/hailocab/go-hostpool",
 			"Rev": "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
+		},
+		{
+			"ImportPath": "github.com/hailocab/gocassa",
+			"Comment": "v1.2.0-7-gd3c840d",
+			"Rev": "d3c840df87884c07d5ca67f08ecf62f4877ac79a"
+		},
+		{
+			"ImportPath": "github.com/hailocab/gocassa/reflect",
+			"Comment": "v1.2.0-7-gd3c840d",
+			"Rev": "d3c840df87884c07d5ca67f08ecf62f4877ac79a"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/errwrap",
@@ -158,116 +172,117 @@
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/client",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/cpolicy",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encoding",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encrypter",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/strategy",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/cdata",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/control_event",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/ctypes",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/serror",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/client",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/rbody",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/request",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/tribe/agreement",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/aci",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/chrono",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/ctree",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/psigning",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/schedule",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/scheduler/wmap",
-			"Comment": "v0.13.0-beta-69-g0a2acb7",
+			"Comment": "v0.13.0-beta-120-g7e41c44",
 			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
+			"Comment": "v4.2.0",
 			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
 		},
 		{
@@ -278,6 +293,10 @@
 		{
 			"ImportPath": "github.com/miekg/dns",
 			"Rev": "c9d1302d540edfb97d9ecbfe90b4fb515088630b"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "d2dd0262208475919e1a362f675cfc0e7c10e905"
 		},
 		{
 			"ImportPath": "github.com/montanaflynn/stats",
@@ -297,6 +316,11 @@
 			"Rev": "263ce04fc1d71bc7d50c241293488b3f54c779e5"
 		},
 		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.7.0-5-ga2d6902",
+			"Rev": "a2d6902c6d2a2f194eb3fb474981ab7867c81505"
+		},
+		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
@@ -304,10 +328,6 @@
 			"ImportPath": "github.com/robfig/cron",
 			"Comment": "v1-16-g0f39cf7",
 			"Rev": "0f39cf7ebc65a602f45692f9894bd6a193faf8fa"
-		},
-		{
-			"ImportPath": "github.com/shopspring/decimal",
-			"Rev": "74d668a796fa3734c552fb907d9b83146d0bebee"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/assertions",
