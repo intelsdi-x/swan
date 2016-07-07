@@ -39,13 +39,13 @@ class Experiments(object):
                 self.experiments[row.tags['swan_experiment']] = row.time
 
     def _repr_html_(self):
-        html_out = ""
-        html_out += "<table>"
-        html_out += "<tr><th>Experiment id</th><th>Date</th></tr>"
+        html_out = ''
+        html_out += '<table>'
+        html_out += '<tr><th>Experiment id</th><th>Date</th></tr>'
         for experiment, time in self.experiments.iteritems():
-            html_out += "<tr><td>%s</td><td>%s</td></tr>" % (experiment, time)
+            html_out += '<tr><td>%s</td><td>%s</td></tr>' % (experiment, time)
 
-        html_out += "</table>"
+        html_out += '</table>'
 
         return html_out
 

@@ -1,30 +1,23 @@
+"""
+This module contains a helper to generate list of Sample objects from a comma separated file.
+"""
+
 import csv
 import json
-
-class Metric:
-    def __init__(self):
-        self.ns = None
-        self.ver = None
-        self.host = None
-        self.time = None
-        self.boolval = None
-        self.doubleval = None
-        self.strval = None
-        self.tags = None
-        self.valtype = None
-
-    def __repr__(self):
-        return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.ns, \
-            self.ver,
-            self.host,
-            self.time,
-            self.boolval,
-            self.doubleval,
-            self.strval,
-            self.tags,
-            self.valtype)
+from sample import Sample
 
 def strip_quotation(input):
+    """
+    The test metrics files adds quotations to string fields for readability.
+    For example:
+    '/intel/swan/mutilate/machine1/std',-1,'localhost.localdomain',...
+    The incoming field may therefore include quotation, which needs to be removed before we store
+    the sample.
+    """
+
+    if input is None:
+        return input
+
     output = input.strip()
 
     if len(input) < 2:
@@ -39,35 +32,44 @@ def strip_quotation(input):
     return output
 
 def is_null(input):
-    if input == "null":
+    """
+    The test metrics files need to have a way to express that a value is absent.
+    This is done by setting the value to 'null'. is_null converts this to a None type.
+    """
+
+    if input == 'null':
         return None
 
     return input
 
 def read(path):
+    """
+    read returns a list of Samples
+    """
+
     output = []
     field_to_name = {}
     with open(path, 'rb') as csvfile:
-        metric_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
-        for row in metric_reader:
-            metric = Metric()
+        sample_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
+        for row in sample_reader:
+            sample = Sample()
 
-            if row[0] == "#ns":
+            if row[0] == '#ns':
                 continue
 
             if len(row) != 9:
                 continue
 
-            metric.ns = is_null(row[0])
-            metric.ver = int(row[1])
-            metric.host = is_null(strip_quotation(row[2]))
-            metric.time = is_null(strip_quotation(row[3]))
-            metric.boolval = bool(is_null(row[4]))
-            metric.doubleval = float(is_null(row[5]))
-            metric.strval = is_null(strip_quotation(row[6]))
-            metric.tags = json.loads(is_null(strip_quotation(row[7])))
-            metric.valtype = is_null(strip_quotation(row[8]))
+            sample.ns = is_null(row[0])
+            sample.ver = int(row[1])
+            sample.host = is_null(strip_quotation(row[2]))
+            sample.time = is_null(strip_quotation(row[3]))
+            sample.boolval = bool(is_null(row[4]))
+            sample.doubleval = float(is_null(row[5]))
+            sample.strval = is_null(strip_quotation(row[6]))
+            sample.tags = json.loads(is_null(strip_quotation(row[7])))
+            sample.valtype = is_null(strip_quotation(row[8]))
 
-            output.append(metric)
+            output.append(sample)
 
     return output

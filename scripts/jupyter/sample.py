@@ -1,7 +1,31 @@
+"""
+This module contains the Sample class which stores all fields from the Cassandra publisher
+for Snap.
+"""
+
 import json
 
-class Sample:
-    def __init__(self, ns, ver, host, time, boolval, doubleval, strval, tags, valtype):
+class Sample(object):
+    """
+    The Sample class contains all the fields from the metric table which is populated by the
+    Cassandra Snap Publisher.
+    """
+
+    def __init__(
+            self,
+            ns="",
+            ver=-1,
+            host="",
+            time="",
+            boolval=False,
+            doubleval=0.0,
+            strval="",
+            tags=None,
+            valtype=""):
+        """
+        Initializes a Sample from the list of fields defined by the Cassandra Snap Publisher.
+        """
+
         self.ns = ns
         self.ver = ver
         self.host = host
@@ -13,9 +37,10 @@ class Sample:
         self.valtype = valtype
 
     def metric_name(self):
-        # Sanitize metric name by stripping namespace prefix.
-        # For example, from '/intel/swan/mutilate/jp7-1/percentile/99th' to
-        # 'percentile/99th'.
+        """
+        Sanitize metric name by stripping namespace prefix.
+        For example, from '/intel/swan/mutilate/jp7-1/percentile/99th' to 'percentile/99th'.
+        """
 
         # Make sure it is a metric we recognise.
         if not self.ns.startswith('/intel/swan/mutilate/'):
@@ -31,15 +56,21 @@ class Sample:
         return '/'.join(metric_exploded)
 
     def _repr_html_(self):
-        html_out = ""
-        html_out += "<table>"
-        html_out += "<tr><th>Namespace</th><th>Version</th><th>Host</th><th>Time</th>\
-            <th>Value</th><th>Tags</th></tr>"
+        html_out = ''
+        html_out += '<table>'
+        html_out += '<tr><th>Namespace</th><th>Version</th><th>Host</th><th>Time</th>\
+            <th>Value</th><th>Tags</th></tr>'
 
-        value = 0.0
+        value = ""
+        if self.valtype == "boolval":
+            value = "%s" % self.boolval
+        elif self.valtype == "doubleval":
+            value = "%f" % self.doubleval
+        elif self.valtype == "strval":
+            value = "%s" % self.strval
 
-        html_out += "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%f</td>\
-            <td><code>%s</code></td><tr>" % \
+        html_out += '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>\
+            <td><code>%s</code></td><tr>' % \
             (self.ns,
              self.ver,
              self.host,

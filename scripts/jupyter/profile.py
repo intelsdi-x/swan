@@ -1,15 +1,20 @@
 """
-
+This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
 
 import collections
 
 class Profile(object):
     """
+    A sensivity profile is a table listing a workload's relative performance (it's measured
+    quality metric against a target performance). The HTML representation of the profile color
+    codes each cell based on it's slack (quality of service head room) or violation.
     """
 
     def __init__(self, samples, slo):
         """
+        Initializes a sensivity profile with given list of Sample objects and visualized against the
+        specified slo (performance target).
         """
         # TODO: slo should be read from database.
         self.slo = slo
@@ -40,8 +45,8 @@ class Profile(object):
 
     def _repr_html_(self):
         # HTML styling constants
-        no_border = "border: 0"
-        black_border = "1px solid black; "
+        no_border = 'border: 0'
+        black_border = '1px solid black'
 
         html_out = ''
         html_out += '<table style="border: 0;">'
@@ -59,8 +64,8 @@ class Profile(object):
             html_out += '<tr style="%s">' % no_border
 
             aggressor = self.phase_to_aggressor[phase]
-            if aggressor == "None":
-                label = "Baseline"
+            if aggressor == 'None':
+                label = 'Baseline'
             else:
                 label = aggressor
 
@@ -73,14 +78,14 @@ class Profile(object):
                 if 'percentile/99th' in samples:
                     latency = samples['percentile/99th']
                     violation = ((latency.doubleval / self.slo) * 100)
-                    style = "%s; " % no_border
+                    style = '%s; ' % no_border
 
                     if violation > 150:
-                        style += "background-color: #a9341f; color: white;"
+                        style += 'background-color: #a9341f; color: white;'
                     elif violation > 100:
-                        style += "background-color: #ffeda0;"
+                        style += 'background-color: #ffeda0;'
                     else:
-                        style += "background-color: #98cc70;"
+                        style += 'background-color: #98cc70;'
 
                     html_out += '<td style="%s">%.1f%%</td>' % (style, violation)
                 else:

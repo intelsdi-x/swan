@@ -66,21 +66,21 @@ class Experiment(object):
         return Profile(self.samples, slo)
 
     def _repr_html_(self):
-        html_out = ""
-        html_out += "<table>"
-        html_out += "<tr><th>Phase</th><th>Repetition</th><th>Metric</th><th>Value</th></tr>"
+        html_out = ''
+        html_out += '<table>'
+        html_out += '<tr><th>Phase</th><th>Repetition</th><th>Metric</th><th>Value</th></tr>'
         for phase, repetitions in self.phases.iteritems():
             # Times two is a mega hack. Should be removed.
-            phase_column = "<td rowspan=%d>%s</td>" % (len(repetitions) * 2, phase)
+            phase_column = '<td rowspan=%d>%s</td>' % (len(repetitions) * 2, phase)
             for sample in repetitions:
                 repetition = 0
                 if 'swan_repetition' in sample.tags:
                     repetition = sample.tags['swan_repetition']
 
-                html_out += "<tr>%s<td>%s</td><td>%s</td><td>%s</td><tr>" % \
+                html_out += '<tr>%s<td>%s</td><td>%s</td><td>%s</td><tr>' % \
                     (phase_column, repetition, sample.ns, sample.doubleval)
                 phase_column = ""
 
-        html_out += "</table>"
+        html_out += '</table>'
 
         return html_out
