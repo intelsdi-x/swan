@@ -1,8 +1,19 @@
-class Profile:
-    # SLO should be read from database.
-    def __init__(self, samples, SLO):
-        self.SLO = SLO
-        self.sensivity_rows = {}
+"""
+
+"""
+
+import collections
+
+class Profile(object):
+    """
+    """
+
+    def __init__(self, samples, slo):
+        """
+        """
+        # TODO: slo should be read from database.
+        self.slo = slo
+        self.sensivity_rows = collections.OrderedDict()
         self.phase_to_aggressor = {}
 
         for sample_row in samples:
@@ -35,10 +46,12 @@ class Profile:
         html_out = ''
         html_out += '<table style="border: 0;">'
         html_out += '<tr style="%s">' % no_border
-        html_out += '<th style="%s; border-bottom: %s; border-right: %s;">Scenario / Load</th>' % (no_border, black_border, black_border)
+        html_out += '<th style="%s; border-bottom: %s; border-right: %s;">Scenario / Load</th>' % \
+            (no_border, black_border, black_border)
 
         for load_percentage in range(5, 100, 10):
-            html_out += '<th style="border: 0; border-bottom: 1px solid black;">%s%%</th>' % load_percentage
+            html_out += '<th style="border: 0; border-bottom: 1px solid black;">%s%%</th>' % \
+                load_percentage
 
         html_out += '</tr>'
 
@@ -51,7 +64,8 @@ class Profile:
             else:
                 label = aggressor
 
-            html_out += '<td style="%s; border-right: %s;">%s</td>' % (no_border, black_border, label)
+            html_out += '<td style="%s; border-right: %s;">%s</td>' % \
+                (no_border, black_border, label)
 
             # Yet another hack. We have to sort the load points from lowest to highest.
             sorted_loadpoints = []
@@ -64,7 +78,7 @@ class Profile:
 
                 if 'percentile/99th' in samples:
                     latency = samples['percentile/99th']
-                    violation = ((latency.doubleval / self.SLO) * 100)
+                    violation = ((latency.doubleval / self.slo) * 100)
                     style = "%s; " % no_border
 
                     if violation > 150:
@@ -75,9 +89,9 @@ class Profile:
                         style += "background-color: #98cc70;"
 
                     html_out += '<td style="%s">%.1f%%</td>' % (style, violation)
-        else:
-            html_out += '<td style="%s"></td>' % no_border
-            html_out += '</tr>'
+                else:
+                    html_out += '<td style="%s"></td>' % no_border
+                    html_out += '</tr>'
 
         html_out += '</table>'
 

@@ -14,10 +14,18 @@ class Metric:
         self.valtype = None
 
     def __repr__(self):
-        return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.ns, self.ver, self.host, self.time, self.boolval, self.doubleval, self.strval, self.tags, self.valtype)
+        return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.ns, \
+            self.ver,
+            self.host,
+            self.time,
+            self.boolval,
+            self.doubleval,
+            self.strval,
+            self.tags,
+            self.valtype)
 
 def strip_quotation(input):
-    output = input
+    output = input.strip()
 
     if len(input) < 2:
         return input
@@ -43,7 +51,7 @@ def read(path):
         metric_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
         for row in metric_reader:
             metric = Metric()
-            
+
             if row[0] == "#ns":
                 continue
 

@@ -1,8 +1,24 @@
+"""
+This module contains the convience class to list available experiments in a Cassandra cluster and
+return experiment instances using the same cassandra setup.
+"""
+
 from cassandra.cluster import Cluster
+from experiment import Experiment
 import test_data_reader
 
-class Experiments:
+class Experiments(object):
+    """
+    The Experiments works as a high level container for the available experiments in a
+    Cassandra cluster.
+    """
+
     def __init__(self, cassandra_cluster=None, test_file=None):
+        """
+        Initializes a experiments object using the list of cassandra nodes defined in
+        cassandra_cluster. For example: ['localhost'].
+        The test_file parameter should only be used in unit tests.
+        """
         self.cluster = None
         self.session = None
         self.experiments = {}
@@ -33,5 +49,8 @@ class Experiments:
 
         return html_out
 
-    def experiment(self, id):
-        return Experiment(id, self.cluster, self.session)
+    def experiment(self, experiment_id):
+        """
+        Returns a experiment with a given experiment_id
+        """
+        return Experiment(experiment_id, self.cluster, self.session)
