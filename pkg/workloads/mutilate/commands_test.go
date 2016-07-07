@@ -2,6 +2,7 @@ package mutilate
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -45,10 +46,8 @@ func (s *MutilateTestSuite) soExpectBaseCommandOptions(command string) {
 		So(command, ShouldContainSubstring, expected)
 	})
 
-	Convey("Mutilate base command should contain noload and -B option", s.T(), func() {
+	Convey("Mutilate base command should contain noload", s.T(), func() {
 		expected := fmt.Sprintf("--noload")
-		So(command, ShouldContainSubstring, expected)
-		expected = fmt.Sprintf("-B")
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -95,6 +94,11 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 
 	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
 		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile)
+		So(command, ShouldContainSubstring, expected)
+	})
+
+	Convey("Mutilate load command should contain qps option", s.T(), func() {
+		expected := fmt.Sprintf("-q %d", load)
 		So(command, ShouldContainSubstring, expected)
 	})
 
@@ -259,4 +263,75 @@ func (s *MutilateTestSuite) TestGetMultinodeTuneCommand() {
 		So(s.mAgentHandle1.AssertExpectations(s.T()), ShouldBeTrue)
 		So(s.mAgentHandle2.AssertExpectations(s.T()), ShouldBeTrue)
 	})
+}
+
+func TestMutilateAffinityCommand(t *testing.T) {
+	Convey("Mutilate commands should not contain affinity by default", t, func() {
+		config := Config{}
+		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getAgentCommand(config), ShouldNotContainSubstring, "--affinity")
+	})
+
+	Convey("Mutilate master commands should contain affinity when requested with MasterAffinity", t, func() {
+		config := Config{MasterAffinity: true}
+		So(getLoadCommand(config, 0, 0, nil), ShouldContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldContainSubstring, "--affinity")
+		Convey("but agent and populate commands not", func() {
+			So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+			So(getAgentCommand(config), ShouldNotContainSubstring, "--affinity")
+		})
+	})
+
+	Convey("Mutilate master and populate commands should not contain affinity when requested with AgentAffinity", t, func() {
+		config := Config{AgentAffinity: true}
+		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "--affinity")
+		So(getPopulateCommand(config), ShouldNotContainSubstring, "--affinity")
+		Convey("but agent commands should", func() {
+			So(getAgentCommand(config), ShouldContainSubstring, "--affinity")
+		})
+	})
+}
+
+func TestMutilateBlockingFlag(t *testing.T) {
+	Convey("Mutilate commands should contain -B by default", t, func() {
+		config := DefaultMutilateConfig()
+		So(getLoadCommand(config, 0, 0, nil), ShouldContainSubstring, "-B")
+		So(getTuneCommand(config, 0, nil), ShouldContainSubstring, "-B")
+		So(getAgentCommand(config), ShouldContainSubstring, "-B")
+	})
+
+	Convey("Mutilate master commands should not contain blocking when requested with MasterBlocking set to false", t, func() {
+		config := DefaultMutilateConfig()
+		config.MasterBlocking = false
+		So(getLoadCommand(config, 0, 0, nil), ShouldNotContainSubstring, "-B")
+		So(getTuneCommand(config, 0, nil), ShouldNotContainSubstring, "-B")
+		Convey("but agent command still should", func() {
+			So(getAgentCommand(config), ShouldContainSubstring, "-B")
+		})
+	})
+
+	Convey("Mutilate agent commands should not contain blocking when requested with AgentBlocking set to false", t, func() {
+		config := DefaultMutilateConfig()
+		config.AgentBlocking = false
+		So(getAgentCommand(config), ShouldNotContainSubstring, "-B")
+		Convey("but master commands still should", func() {
+			So(getLoadCommand(config, 0, 0, nil), ShouldContainSubstring, "-B")
+			So(getTuneCommand(config, 0, nil), ShouldContainSubstring, "-B")
+		})
+	})
+
+	Convey("Mutilate populate commands should not contain affinity regardless to MasterBlocking and AgentBlocing", t, func() {
+		config := DefaultMutilateConfig()
+		So(getPopulateCommand(config), ShouldNotContainSubstring, "-B")
+
+		Convey("but master commands still should", func() {
+			config.MasterBlocking = false
+			config.AgentBlocking = false
+			So(getPopulateCommand(config), ShouldNotContainSubstring, "-B")
+		})
+	})
+
 }

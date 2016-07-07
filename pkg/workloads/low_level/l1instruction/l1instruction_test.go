@@ -18,7 +18,7 @@ func TestL1dAggressor(t *testing.T) {
 	Convey("While using l1d aggressor launcher", t, func() {
 		const (
 			pathToBinary = "test"
-			validCommand = "test 10 20"
+			validCommand = "test 2147483648 20"
 		)
 
 		Convey("Default configuration should be valid", func() {
@@ -66,7 +66,7 @@ func TestL1dAggressor(t *testing.T) {
 				Convey("Should launcher return error", func() {
 					task, err := launcher.Launch()
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Intensivity value")
+					So(err.Error(), ShouldStartWith, "intensivity value")
 					So(task, ShouldBeNil)
 				})
 			})
@@ -82,7 +82,7 @@ func TestL1dAggressor(t *testing.T) {
 				Convey("Should launcher return error", func() {
 					task, err := launcher.Launch()
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldStartWith, "Iterations value")
+					So(err.Error(), ShouldStartWith, "iterations value")
 					So(task, ShouldBeNil)
 				})
 			})

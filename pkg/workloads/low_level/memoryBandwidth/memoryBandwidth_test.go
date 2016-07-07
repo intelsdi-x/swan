@@ -65,7 +65,7 @@ func TestL3Aggressor(t *testing.T) {
 
 				task, err := launcher.Launch()
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldStartWith, "Launcher configuration is invalid.")
+				So(err.Error(), ShouldStartWith, "launcher configuration is invalid.")
 				So(task, ShouldBeNil)
 			})
 		})

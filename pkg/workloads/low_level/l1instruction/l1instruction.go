@@ -2,19 +2,20 @@ package l1instruction
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads"
-	"path"
+	"github.com/pkg/errors"
 )
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID                = "l1i"
 	name              = "L1 Instruction"
-	defaultIterations = 10
+	defaultIterations = 2147483648 // 2^31
 	defaultIntensity  = 20
 	// {min,max}Intensity are hardcoded values in l1i binary
 	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan repository
@@ -67,13 +68,13 @@ func (l l1i) buildCommand() string {
 
 func (l l1i) verifyConfiguration() error {
 	if l.conf.Intensity > maxIntensity || l.conf.Intensity < minIntensity {
-		return fmt.Errorf("Intensivity value(%d) is out of range <%d;%d>",
+		return errors.Errorf("intensivity value(%d) is out of range <%d;%d>",
 			l.conf.Intensity,
 			minIntensity,
 			maxIntensity)
 	}
 	if l.conf.Iterations <= 0 {
-		return fmt.Errorf("Iterations value(%d) should be greater than 0", l.conf.Iterations)
+		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
 }
