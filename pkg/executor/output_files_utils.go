@@ -10,12 +10,12 @@ import (
 )
 
 func getBinaryNameFromCommand(command string) (string, error) {
-	_, name := path.Split(command)
-	nameSplit := strings.Split(name, " ")
-	if len(nameSplit) == 0 {
+	argsSplit := strings.Split(command, " ")
+	if len(argsSplit) == 0 {
 		return "", errors.Errorf("failed to extract command name from %q", command)
 	}
-	return nameSplit[0], nil
+	_, name := path.Split(argsSplit[0])
+	return name, nil
 }
 
 func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File, err error) {
