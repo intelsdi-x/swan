@@ -17,10 +17,12 @@
 package conf
 
 import (
-	"github.com/Sirupsen/logrus"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"io/ioutil"
 	"os"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -39,7 +41,7 @@ var (
 func SetHelpPath(readmePath string) {
 	readmeData, err := ioutil.ReadFile(readmePath)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrapf(err, "reading %s failed", readmePath))
 	}
 	app.Help = string(readmeData)[:]
 }
@@ -71,7 +73,7 @@ func LogLevel() logrus.Level {
 	}
 
 	// Programmer error.
-	panic(err)
+	panic(errors.Wrap(err, "parsing log level failed"))
 }
 
 // AppName returns specified app name.
@@ -85,8 +87,10 @@ func ParseFlags() error {
 	_, err := app.Parse(os.Args[1:])
 	if err == nil {
 		isEnvParsed = true
+		return nil
 	}
-	return err
+
+	return errors.Wrapf(err, "could not parse command line flags")
 }
 
 // ParseEnv parse the environment for arguments.
@@ -94,6 +98,8 @@ func ParseEnv() error {
 	_, err := app.Parse([]string{})
 	if err == nil {
 		isEnvParsed = true
+		return nil
 	}
-	return err
+
+	return errors.Wrapf(err, "could not parse enviroment flags")
 }

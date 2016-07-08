@@ -1,10 +1,11 @@
 package cassandra
 
 import (
+	"time"
+
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/vektra/errors"
-	"time"
+	"github.com/pkg/errors"
 )
 
 // AddrFlag represents cassandra address flag.
@@ -39,7 +40,7 @@ func CreateConfigWithSession(ip string, keyspace string) (cassandraConfig *Conne
 	cluster := getClusterConfig(ip, keyspace)
 	session, err := cluster.CreateSession()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cassandra session creation failed")
 	}
 	return newConnection(session), nil
 }

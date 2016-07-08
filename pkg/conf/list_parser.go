@@ -3,7 +3,6 @@ package conf
 import (
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
-	//"strings"
 	"strings"
 )
 
