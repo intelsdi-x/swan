@@ -1,15 +1,16 @@
 package sensitivity
 
 import (
-	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"
 	"github.com/montanaflynn/stats"
-	"regexp"
-	"strconv"
-	"strings"
+	"github.com/pkg/errors"
 )
 
 // Draw prepares data for sensitivity table with values for each aggressor and load point for given experiment ID and
@@ -133,11 +134,11 @@ func getNumberForRegex(name string, regex string) (int, error) {
 	re := regexp.MustCompile(regex)
 	match := re.FindStringSubmatch(name)
 	if len(match) == 0 {
-		return result, fmt.Errorf("Could not retrieve number from string: %s", name)
+		return result, errors.Errorf("could not retrieve number from string %q", name)
 	}
 	number, err := strconv.Atoi(match[1])
 	if err != nil {
-		return result, fmt.Errorf("Error while creating sensitivity profile: " + err.Error())
+		return result, errors.Wrap(err, "error while creating sensitivity profile")
 	}
 	return number, nil
 }
@@ -174,11 +175,11 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 	for _, metrics := range metricsList {
 		// In sensitivity profile we accept only double values.
 		if metrics.Valtype() != "doubleval" {
-			return nil, errors.New("Values for sensitivity profile should have double type.")
+			return nil, errors.New("values for sensitivity profile should have type 'double'")
 		}
 		splittedNamespace := strings.Split(metrics.Namespace(), "/")
 		if len(splittedNamespace) == 0 {
-			return nil, fmt.Errorf("Bad namespace format: %s", metrics.Namespace())
+			return nil, errors.Errorf("bad namespace format %q", metrics.Namespace())
 		}
 		// Currently we want to show 99th percentile, we can change it here in future.
 		if splittedNamespace[len(splittedNamespace)-1] == "99th" &&
@@ -198,12 +199,12 @@ func getValuesForLoadPoints(metricsList []*cassandra.Metrics, aggressor string) 
 	for key, list := range allLoadPointValues {
 		stdev, err := stats.StandardDeviation(list)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "standard deviation computation failed")
 		}
 
 		mean, err := stats.Mean(list)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "mean computation failed")
 		}
 
 		loadPointValues[key] = fmt.Sprintf("%f (+/- %f)", mean, stdev)
