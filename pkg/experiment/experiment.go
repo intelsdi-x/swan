@@ -1,17 +1,18 @@
 package experiment
 
 import (
-	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	experimentPhase "github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/nu7hatch/gouuid"
-	"gopkg.in/cheggaaa/pb.v1"
 	"io"
 	"os"
 	"path"
 	"strconv"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	experimentPhase "github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/nu7hatch/gouuid"
+	"github.com/pkg/errors"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 // Experiment captures the internal data for the Experiment Driver.
@@ -44,7 +45,7 @@ func NewExperiment(name string, phases []experimentPhase.Phase,
 
 	uuid, err := uuid.NewV4()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not create uuid")
 	}
 	// TODO(mpatelcz): Check if phases names are unique!
 	e := &Experiment{
@@ -84,7 +85,7 @@ func (e *Experiment) Run() (err error) {
 	var bar *pb.ProgressBar
 	var increment int
 	if e.textUI {
-		fmt.Printf("Experiment '%s' with uuid '%s'\n", e.name, e.uuid)
+		fmt.Printf("Experiment %q with uuid %q\n", e.name, e.uuid)
 		bar = pb.StartNew(100)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
@@ -192,24 +193,23 @@ func (e *Experiment) createPhaseDir(session experimentPhase.Session) error {
 
 	err := os.MkdirAll(phaseDir, 0777)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not create dir %q", phaseDir)
 	}
 
 	err = os.Chdir(phaseDir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not change to dir %q", phaseDir)
 	}
 
 	return err
 }
 
-func (e *Experiment) logInitialize() error {
-	var err error
-
+func (e *Experiment) logInitialize() (err error) {
 	// Create master log file "master.log".
-	e.logFile, err = os.OpenFile(e.experimentDirectory+"/master.log", os.O_WRONLY|os.O_CREATE, 0755)
+	masterLogFilename := path.Join(e.experimentDirectory, "master.log")
+	e.logFile, err = os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not open log file %q", masterLogFilename)
 	}
 
 	// Setup logging set to both output and logFile.
