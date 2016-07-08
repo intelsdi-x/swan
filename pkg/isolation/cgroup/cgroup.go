@@ -13,6 +13,7 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -151,13 +152,13 @@ func NewCgroupWithExecutor(controllers []string,
 	executor executor.Executor,
 	cmdTimeout time.Duration) (Cgroup, error) {
 	if len(controllers) == 0 {
-		return nil, fmt.Errorf("No controllers specified for cgroup")
+		return nil, errors.Errorf("No controllers specified for cgroup")
 	}
 	if path == "" {
-		return nil, fmt.Errorf("Empty path specified for cgroup")
+		return nil, errors.Errorf("Empty path specified for cgroup")
 	}
 	if executor == nil {
-		return nil, fmt.Errorf("Nil executor supplied for cgroup")
+		return nil, errors.Errorf("Nil executor supplied for cgroup")
 	}
 	canonicalPath := pth.Join("/", path)
 	return &cgroup{controllers, canonicalPath, executor, cmdTimeout}, nil
@@ -247,7 +248,7 @@ func (cg *cgroup) Ancestors() []Cgroup {
 func (cg *cgroup) Tasks(controller string) (isolation.IntSet, error) {
 	d := cg.AbsPath(controller)
 	if d == "" {
-		return nil, fmt.Errorf("Failed to read absolute path for controller %s", controller)
+		return nil, errors.Errorf("Failed to read absolute path for controller %q", controller)
 	}
 
 	tf, err := os.Open(pth.Join(d, "tasks"))
@@ -301,7 +302,7 @@ func (cg *cgroup) SetAndCheck(name string, value string) error {
 		return err
 	}
 	if result != value {
-		return fmt.Errorf("Failed to set attribute '%s' to '%s' in cgroup '%s' (value is %s)", name, value, cg.Spec(), result)
+		return errors.Errorf("Failed to set attribute %q to %q in cgroup %q (value is %q)", name, value, cg.Spec(), result)
 	}
 	return nil
 }
@@ -328,14 +329,14 @@ func cmdOutput(executor executor.Executor, cmdTimeout time.Duration, argv ...str
 		return "", err
 	}
 	if ok := task.Wait(cmdTimeout); !ok {
-		return "", fmt.Errorf("Timed out waiting for command: %s", cmd)
+		return "", errors.Errorf("Timed out waiting for command: %q", cmd)
 	}
 	code, err := task.ExitCode()
 	if err != nil {
 		return "", err
 	}
 	if code != 0 {
-		return "", fmt.Errorf("Command exited with code %d: %s", code, cmd)
+		return "", errors.Errorf("Command exited with code %d: %q", code, cmd)
 	}
 	oFile, err := task.StdoutFile()
 	if err != nil {
