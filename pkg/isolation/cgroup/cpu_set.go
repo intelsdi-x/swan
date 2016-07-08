@@ -1,11 +1,11 @@
 package cgroup
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/pkg/errors"
 )
 
 // CPUSet represents a cgroup in the cpuset hierarchy.
@@ -76,10 +76,10 @@ func NewCPUSetWithExecutor(path string,
 		return nil, err
 	}
 	if len(cpus) == 0 {
-		return nil, fmt.Errorf("Empty set of cpus provided")
+		return nil, errors.Errorf("Empty set of cpus provided")
 	}
 	if len(mems) == 0 {
-		return nil, fmt.Errorf("Empty set of memory nodes provided")
+		return nil, errors.Errorf("Empty set of memory nodes provided")
 	}
 
 	cs := &cpuset{
