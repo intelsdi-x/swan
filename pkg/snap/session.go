@@ -1,7 +1,6 @@
 package snap
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -12,6 +11,7 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -147,7 +147,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 
 	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
 	if r.Err != nil {
-		return r.Err
+		return errors.Wrapf(r.Err, "could not create task %q", t.Name)
 	}
 
 	// Save a copy of the task so we can stop it again.
@@ -170,12 +170,13 @@ func (s *Session) IsRunning() bool {
 // Status connects to snap to verify the current state of the task.
 func (s *Session) status() (string, error) {
 	if s.task == nil {
-		return "", errors.New("snap task not running or not found")
+		return "", errors.New("snap task is not running or not found")
 	}
 
 	task := s.pClient.GetTask(s.task.ID)
 	if task.Err != nil {
-		return "", task.Err
+		return "", errors.Wrapf(task.Err, "could not get task name:%q, ID:%q",
+			s.task.Name, s.task.ID)
 	}
 
 	return task.State, nil
@@ -190,17 +191,17 @@ func (s *Session) Stop() error {
 
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
-		return rs.Err
+		return errors.Wrapf(rs.Err, "could not send stop signal to task %q", s.task.ID)
 	}
 
 	err := s.waitForStop()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not stop task %q", s.task.ID)
 	}
 
 	rr := s.pClient.RemoveTask(s.task.ID)
 	if rr.Err != nil {
-		return rr.Err
+		return errors.Wrapf(rr.Err, "could not remove task %q", s.task.ID)
 	}
 
 	s.task = nil
@@ -214,11 +215,11 @@ func (s *Session) Wait() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if t.Err != nil {
-			return t.Err
+			return errors.Wrapf(t.Err, "getting task %q failed", s.task.ID)
 		}
 
 		if t.State == "Stopped" || t.State == "Disabled" {
-			return fmt.Errorf("Failed to wait for task: Task %s is in state %s (last failure: %q)",
+			return errors.Errorf("failed to wait for task: task %q is in state %q (last failure: %q)",
 				s.task.ID,
 				t.State,
 				t.LastFailureMessage)
@@ -236,7 +237,7 @@ func (s *Session) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if t.Err != nil {
-			return t.Err
+			return errors.Wrapf(t.Err, "could not get task %q", s.task.ID)
 		}
 
 		if t.State == "Stopped" || t.State == "Disabled" {

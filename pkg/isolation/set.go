@@ -1,10 +1,11 @@
 package isolation
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // IntSet represents a traditional set type so we can do intersections, joins, etc.
@@ -95,7 +96,7 @@ func (s IntSet) Difference(t IntSet) IntSet {
 // than the number of elements in the set, returns an error.
 func (s IntSet) Take(n int) (IntSet, error) {
 	if n > len(s) {
-		return nil, fmt.Errorf("cannot take %d elements from a set of size %d", n, len(s))
+		return nil, errors.Errorf("cannot take %d elements from a set of size %d", n, len(s))
 	}
 	result := NewIntSet()
 	for _, elem := range s.AsSlice()[0:n] {
@@ -152,19 +153,19 @@ func NewIntSetFromRange(rangesString string) (IntSet, error) {
 			// Some entries may only contain one id, like "34" in our example.
 			elem, err := strconv.Atoi(boundaries[0])
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "could not atoi %q", boundaries[0])
 			}
 			result.Add(elem)
 		} else if len(boundaries) == 2 {
 			// For ranges, we parse start and end.
 			start, err := strconv.Atoi(boundaries[0])
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "could not atoi %q", boundaries[0])
 			}
 
 			end, err := strconv.Atoi(boundaries[1])
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "could not atoi %q", boundaries[1])
 			}
 
 			// And add all the ids to the set.

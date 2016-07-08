@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // CPUShares defines data needed for CPU controller.
@@ -26,10 +28,9 @@ func (cpu *CPUShares) Decorate(command string) string {
 // Clean removes the specified cgroup
 func (cpu *CPUShares) Clean() error {
 	cmd := exec.Command("sh", "-c", "cgdelete -g cpu"+":"+cpu.name)
-
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	return nil
@@ -41,14 +42,14 @@ func (cpu *CPUShares) Create() error {
 	cmd := exec.Command("cgcreate", "-g", "cpu:"+cpu.name)
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	// 2 Set cpu cgroup shares
 	cmd = exec.Command("cgset", "-r", "cpu.shares="+strconv.Itoa(cpu.shares), cpu.name)
 	err = cmd.Run()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "running command %q failed", cmd.Path)
 	}
 
 	return nil
@@ -59,10 +60,11 @@ func (cpu *CPUShares) Isolate(PID int) error {
 	// Associate task with the specified cgroup.
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
-	err := ioutil.WriteFile(path.Join("/sys/fs/cgroup/cpu", cpu.name, "tasks"), d, 0644)
+	filePath := path.Join("/sys/fs/cgroup/cpu", cpu.name, "tasks")
+	err := ioutil.WriteFile(filePath, d, 0644)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not write %q to file %q", d, filePath)
 	}
 
 	return nil

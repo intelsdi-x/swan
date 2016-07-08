@@ -2,6 +2,7 @@ package experiment
 
 import (
 	"fmt"
+
 	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/visualization"

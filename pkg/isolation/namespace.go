@@ -1,9 +1,10 @@
 package isolation
 
 import (
-	"errors"
 	"strings"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
 type namespace struct {
