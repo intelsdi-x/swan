@@ -64,7 +64,7 @@ func (memorySize *MemorySize) Isolate(PID int) error {
 	strPID := strconv.Itoa(PID)
 	d := []byte(strPID)
 
-	filePath := path.Join("/sys/fs/cgroup/cpu", memorySize.name, "tasks")
+	filePath := path.Join("/sys/fs/cgroup/memory", memorySize.name, "tasks")
 	err := ioutil.WriteFile(filePath, d, 0644)
 
 	if err != nil {
