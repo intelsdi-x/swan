@@ -5,34 +5,53 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
-func getCommonOptions(config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --allow-privileged=false"),
-	)
-}
-
 // getKubeAPIServerCommand returns command for kube-apiserver.
 func getKubeAPIServerCommand(config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s%s", config.PathToKubeAPIServer, getCommonOptions(config)),
-		// TODO(bp): Test it. Documentation vs help description is conflicting.
-		fmt.Sprintf(" --address=0.0.0.0"),
-		// TODO(bp): Test it. Documentation vs help description is conflicting.
-		fmt.Sprintf(" --port=%d", config.KubeAPIPort),
-		fmt.Sprintf(" --kubelet-port=%d", config.KubeletPort),
+		fmt.Sprintf("%s", config.PathToKubeAPIServer),
+		fmt.Sprintf(" --v=%d", config.LogLevel),
+		fmt.Sprintf(" --allow-privileged=false"), // Privileged containers are not allowed.
+		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
+		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
+		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
+		fmt.Sprintf(" --kubelet-timeout=5s"), // Default for now.
 		fmt.Sprintf(" --service-cluster-ip-range=%s", config.ServiceAddresses),
 		fmt.Sprintf(" %s", config.KubeAPIArgs),
 	)
 }
 
-// TODO(bp): Implement command getter for kube-controller-manager & kube-scheduler as well.
+// getKubeControllerCommand returns command for kube-controller-manager.
+func getKubeControllerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
+	return fmt.Sprint(
+		fmt.Sprintf("%s", config.PathToKubeController),
+		fmt.Sprintf(" --v=%d", config.LogLevel),
+		fmt.Sprintf(" --address=0.0.0.0"),
+		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
+		fmt.Sprintf(" --port=%d", config.KubeControllerPort),
+		//fmt.Sprintf(" --kubelet-port=%d", config.KubeletPort),
+		fmt.Sprintf(" %s", config.KubeControllerArgs),
+	)
+}
+
+// getKubeSchedulerCommand returns command for kube-scheduler.
+func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
+	return fmt.Sprint(
+		fmt.Sprintf("%s", config.PathToKubeScheduler),
+		fmt.Sprintf(" --v=%d", config.LogLevel),
+		fmt.Sprintf(" --address=0.0.0.0"),
+		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
+		fmt.Sprintf(" --port=%d", config.KubeSchedulerPort),
+		//fmt.Sprintf(" --kubelet-port=%d", config.KubeletPort),
+		fmt.Sprintf(" %s", config.KubeSchedulerArgs),
+	)
+}
 
 // getKubeletCommand returns command for kubelet.
 func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s%s", config.PathToKubelet, getCommonOptions(config)),
+		fmt.Sprintf("%s", config.PathToKubelet),
+		fmt.Sprintf(" --allow-privileged=false"), // Privileged containers are not allowed.
+		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --port=%d", config.KubeletPort),
 		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeletPort),
@@ -43,8 +62,10 @@ func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 // getKubeProxyCommand returns command for kube-proxy.
 func getKubeProxyCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s%s", config.PathToKubeProxy, getCommonOptions(config)),
-		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeletPort),
+		fmt.Sprintf("%s", config.PathToKubeProxy),
+		fmt.Sprintf(" --bind-address=0.0.0.0"),
+		fmt.Sprintf(" --v=%d", config.LogLevel),
+		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" %s", config.KubeProxyArgs),
 	)
 }

@@ -26,6 +26,11 @@ func NewClusterTaskHandle(master TaskHandle, agents []TaskHandle) *ClusterTaskHa
 	}
 }
 
+// AddAgent gives possibility to dynamically add agent to already handled agents.
+func (m ClusterTaskHandle) AddAgent(agent TaskHandle) {
+	m.agents = append(m.agents, agent)
+}
+
 // StdoutFile returns a file handle for the master's stdout file.
 func (m ClusterTaskHandle) StdoutFile() (*os.File, error) {
 	return m.master.StdoutFile()
