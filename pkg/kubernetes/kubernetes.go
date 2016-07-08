@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/http"
 	"github.com/pkg/errors"
 	"net"
 	"time"
@@ -67,9 +68,10 @@ func DefaultConfig() Config {
 }
 
 type kubernetes struct {
-	master executor.Executor
-	minion executor.Executor
-	config Config
+	master      executor.Executor
+	minion      executor.Executor
+	config      Config
+	isListening http.IsListeningFunction // For mocking purposes.
 }
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
@@ -87,24 +89,6 @@ func New(master executor.Executor, minion executor.Executor, config Config) exec
 // Name returns human readable name for job.
 func (m kubernetes) Name() string {
 	return "Kubernetes [single-kubelet]"
-}
-
-func (m kubernetes) tryConnect(address string, timeout time.Duration) bool {
-	retries := 5
-	sleepTime := time.Duration(
-		timeout.Nanoseconds() / int64(retries))
-	connected := false
-	for i := 0; i < retries; i++ {
-		conn, err := net.Dial("tcp", address)
-		if err != nil {
-			time.Sleep(sleepTime)
-			continue
-		}
-		defer conn.Close()
-		connected = true
-	}
-
-	return connected
 }
 
 func (m kubernetes) launchKubeAPI() (executor.TaskHandle, error) {
