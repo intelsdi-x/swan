@@ -12,20 +12,19 @@ import (
 
 	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
 	snapMocks "github.com/intelsdi-x/swan/pkg/snap/mocks"
-	workloadMocks "github.com/intelsdi-x/swan/pkg/workloads/mocks"
 )
 
 type SensitivityTestSuite struct {
 	suite.Suite
 
 	// LC launcher and task.
-	mockedLcLauncher *workloadMocks.Launcher
+	mockedLcLauncher *executorMocks.Launcher
 	mockedLcTask     *executorMocks.TaskHandle
 	// LoadGenerator launcher and task.
-	mockedLoadGenerator     *workloadMocks.LoadGenerator
+	mockedLoadGenerator     *executorMocks.LoadGenerator
 	mockedLoadGeneratorTask *executorMocks.TaskHandle
 	// Aggressor launcher and task.
-	mockedAggressor     *workloadMocks.Launcher
+	mockedAggressor     *executorMocks.Launcher
 	mockedAggressorTask *executorMocks.TaskHandle
 
 	// LC collection Launcher and Handle.
@@ -46,13 +45,13 @@ type SensitivityTestSuite struct {
 
 func (s *SensitivityTestSuite) SetupTest() {
 	// LC launcher and task.
-	s.mockedLcLauncher = new(workloadMocks.Launcher)
+	s.mockedLcLauncher = new(executorMocks.Launcher)
 	s.mockedLcTask = new(executorMocks.TaskHandle)
 	// LoadGenerator launcher and task.
-	s.mockedLoadGenerator = new(workloadMocks.LoadGenerator)
+	s.mockedLoadGenerator = new(executorMocks.LoadGenerator)
 	s.mockedLoadGeneratorTask = new(executorMocks.TaskHandle)
 	// Aggressor launcher and task.
-	s.mockedAggressor = new(workloadMocks.Launcher)
+	s.mockedAggressor = new(executorMocks.Launcher)
 	s.mockedAggressorTask = new(executorMocks.TaskHandle)
 
 	// LC collection Launcher and Handle.

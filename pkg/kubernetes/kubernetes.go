@@ -6,7 +6,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/http"
 	"github.com/pkg/errors"
-	"net"
 	"time"
 )
 
@@ -80,9 +79,10 @@ type kubernetes struct {
 // We would need to setup flannel/calico for multi-kubelet setup.
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
 	return kubernetes{
-		master: master,
-		minion: minion,
-		config: config,
+		master:      master,
+		minion:      minion,
+		config:      config,
+		isListening: http.IsListening,
 	}
 }
 
@@ -91,8 +91,8 @@ func (m kubernetes) Name() string {
 	return "Kubernetes [single-kubelet]"
 }
 
+// Launch kube-apiserver using master executor.
 func (m kubernetes) launchKubeAPI() (executor.TaskHandle, error) {
-	// Launch kube-apiserver using master executor.
 	apiHandle, err := m.master.Execute(getKubeAPIServerCommand(m.config))
 	if err != nil {
 		return nil, errors.Wrapf(err,
@@ -101,7 +101,7 @@ func (m kubernetes) launchKubeAPI() (executor.TaskHandle, error) {
 	}
 
 	address := fmt.Sprintf("%s:%d", apiHandle.Address(), m.config.KubeAPIPort)
-	if !m.tryConnect(address, 5*time.Second) {
+	if !m.isListening(address, 5*time.Second) {
 		file, fileErr := apiHandle.StderrFile()
 		details := ""
 		if fileErr == nil {
@@ -127,9 +127,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	}
 	clusterTaskHandle := executor.NewClusterTaskHandle(apiHandle, []executor.TaskHandle{})
 
-	// DEBUG
-	apiHandle.Wait(0 * time.Nanosecond)
-
+	// TODO(bp): Launch other services with isListening check as well.
 	// Launch kube-controller-manager using master executor.
 	controllerHandle, err := m.master.Execute(getKubeControllerCommand(apiHandle, m.config))
 	if err != nil {
