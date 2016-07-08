@@ -82,8 +82,9 @@ In the pull request description, remember to:
 
 ### Continuous integration
 
-We use Jenkins as a pre check for our pull requests.
-This, currently, does not carry out integration tests.
+We use Jenkins as a pre check for our pull requests. By default, unit tests will be run.
+Add comment `run integration test` in PR to run integration tests.
+All tests must pass to merge PR.
 
 ### Reviewing
 
@@ -102,3 +103,53 @@ Currently, we use manual partitioning of internal Intel lab environments.
 Each developer has access to a set of machines until a scheduling system is in place.
 The details on the cluster can be found [here](https://intelsdi.atlassian.net/wiki/display/KOP/intel.sdi.us_west01).
 Please contact the cluster owner to get machines assigned to you.
+
+## Coding practices
+
+### Error Handling
+
+We use `pkg/errors` library for errors. Here are guidelines on how to use the package from [source](http://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package)
+
+- In your own code, use errors.New or errors.Errorf at the point an error occurs.
+```
+    func parseArgs(args []string) error {
+            if len(args) < 3 {
+                    return errors.Errorf("not enough arguments, expected at least 3, got %d", len(args))
+            }
+            // ...
+    }
+```
+
+- If you receive an error from another function, it is often sufficient to simply return it.
+```
+    if err != nil {
+           return err
+    }
+```
+- If you interact with a package from another repository, consider using errors.Wrap or errors.Wrapf to establish a stack trace at that point. This advice also applies when interacting with the standard library.
+```
+    f, err := os.Open(path)
+    if err != nil {
+            return errors.Wrapf(err, "failed to open %q", path)
+    }
+```
+- Always return errors to their caller rather than logging them throughout your program.
+    At the top level of your program, or worker goroutine, use %+v to print the error with sufficient detail.
+```
+    func main() {
+            err := app.Run()
+            if err != nil {
+                    fmt.Printf("FATAL: %+v\n", err)
+                    os.Exit(1)
+            }
+    }
+```
+- If you want to exclude some classes of error from printing, use errors.Cause to unwrap errors before inspecting them.
+
+**Errod code style:**
+- Start error message from lower case and do not end it with dot
+- Add dynamic parameters to error message with `%q`
+
+**Sources:**
+- http://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package
+- http://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully
