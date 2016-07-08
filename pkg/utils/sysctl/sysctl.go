@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"path"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Get returns the value of the sysctl key specified by name.
@@ -15,7 +17,7 @@ func Get(name string) (string, error) {
 
 	byteContent, err := ioutil.ReadFile(sysctlPath)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not read file %q", sysctlPath)
 	}
 
 	// As the sys file system represent single values as files, they are
