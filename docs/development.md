@@ -108,7 +108,7 @@ Please contact the cluster owner to get machines assigned to you.
 
 ### Error Handling
 
-We use `pkg/errors` library for errors. Here are guidelines on how to use the package from [source](http://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package)
+We use `github.com/pkg/errors` library for errors. Here are guidelines on how to use the package from [source](http://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package)
 
 - In your own code, use errors.New or errors.Errorf at the point an error occurs.
 ```
@@ -148,7 +148,8 @@ We use `pkg/errors` library for errors. Here are guidelines on how to use the pa
 
 **Errod code style:**
 - Start error message from lower case and do not end it with dot
-- Add dynamic parameters to error message with `%q`
+- Error message should contain parameters given to function that has returned error
+- Parameters should be printed with `%q`
 
 **Sources:**
 - http://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package
