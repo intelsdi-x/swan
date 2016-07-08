@@ -1,13 +1,14 @@
 package sessions
 
 import (
+	"path"
+	"time"
+
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"path"
-	"time"
 )
 
 // MutilateSnapSessionLauncher configures & launches snap workflow for gathering
