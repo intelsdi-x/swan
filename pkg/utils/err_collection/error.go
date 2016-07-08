@@ -1,8 +1,12 @@
 package errcollection
 
-import "fmt"
+import (
+	"fmt"
 
-const delimiter = "; "
+	"github.com/pkg/errors"
+)
+
+const delimiter = ";\n "
 
 // ErrorCollection gives ability to return multiple errors instead of one.
 // It gathers errors and return error with message combined with messages
@@ -33,5 +37,5 @@ func (e *ErrorCollection) GetErrIfAny() error {
 			errMsg += delimiter
 		}
 	}
-	return fmt.Errorf(errMsg)
+	return errors.Errorf(errMsg)
 }
