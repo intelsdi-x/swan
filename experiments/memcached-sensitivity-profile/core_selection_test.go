@@ -14,6 +14,10 @@ func TestGetSiblingThread(t *testing.T) {
 	socket, err := allThreads.Sockets(1)
 	check(err)
 
+	if len(socket.AvailableThreads()) == len(socket.AvailableCores()) {
+		t.Skipf("Cores does not seem to have hyper threading enabled. Skipping sibling test.")
+	}
+
 	hpThreads, err := socket.Threads(2)
 	check(err)
 
