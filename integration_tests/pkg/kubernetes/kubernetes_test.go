@@ -32,6 +32,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 
 			Convey("And kubectl is able to list the pods", func() {
 				// TODO(bp)
+				k8sHandle.Wait(0 * time.Nanosecond)
 			})
 		})
 	})

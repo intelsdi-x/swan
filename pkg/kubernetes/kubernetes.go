@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/http"
+	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/pkg/errors"
 	"time"
 )
+
+const serviceListenTimeout = 5 * time.Second
 
 var (
 	// path flags contain paths to kubernetes services' binaries. Default values were fetched from
@@ -17,7 +19,6 @@ var (
 	pathKubeletFlag        = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", "/usr/bin/kubelet")
 	pathKubeProxyFlag      = conf.NewFileFlag("kube_proxy_path", "Path to kube-proxy binary", "/usr/bin/kube-proxy")
 	pathKubeSchedulerFlag  = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", "/usr/bin/kube-scheduler")
-	pathKubectlFlag        = conf.NewFileFlag("kubectl_path", "Path to kubectl binary", "/usr/bin/kubectl")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 )
 
@@ -36,6 +37,7 @@ type Config struct {
 	KubeAPIPort        int
 	KubeControllerPort int
 	KubeSchedulerPort  int
+	KubeProxyPort      int
 	KubeletPort        int
 	// Address range to use for services.
 	ServiceAddresses string
@@ -62,6 +64,7 @@ func DefaultConfig() Config {
 		KubeletPort:          10250,
 		KubeControllerPort:   10252,
 		KubeSchedulerPort:    10251,
+		KubeProxyPort:        10249, // ?
 		ServiceAddresses:     "10.254.0.0/16",
 	}
 }
@@ -70,7 +73,7 @@ type kubernetes struct {
 	master      executor.Executor
 	minion      executor.Executor
 	config      Config
-	isListening http.IsListeningFunction // For mocking purposes.
+	isListening netutil.IsListeningFunction // For mocking purposes.
 }
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
@@ -82,7 +85,7 @@ func New(master executor.Executor, minion executor.Executor, config Config) exec
 		master:      master,
 		minion:      minion,
 		config:      config,
-		isListening: http.IsListening,
+		isListening: netutil.IsListening,
 	}
 }
 
@@ -91,18 +94,17 @@ func (m kubernetes) Name() string {
 	return "Kubernetes [single-kubelet]"
 }
 
-// Launch kube-apiserver using master executor.
-func (m kubernetes) launchKubeAPI() (executor.TaskHandle, error) {
-	apiHandle, err := m.master.Execute(getKubeAPIServerCommand(m.config))
+// launchService executes service and check if it is listening on it's endpoint.
+func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
+	handle, err := exec.Execute(command)
 	if err != nil {
 		return nil, errors.Wrapf(err,
-			"Execution of kube-apiserver failed; Command: %s",
-			getKubeAPIServerCommand(m.config))
+			"Execution of service failed; Command: %s", command)
 	}
 
-	address := fmt.Sprintf("%s:%d", apiHandle.Address(), m.config.KubeAPIPort)
-	if !m.isListening(address, 5*time.Second) {
-		file, fileErr := apiHandle.StderrFile()
+	address := fmt.Sprintf("%s:%d", handle.Address(), port)
+	if !m.isListening(address, serviceListenTimeout) {
+		file, fileErr := handle.StderrFile()
 		details := ""
 		if fileErr == nil {
 			// TODO(bp): I would suggest to implement helper for catting last three
@@ -110,72 +112,74 @@ func (m kubernetes) launchKubeAPI() (executor.TaskHandle, error) {
 			details = fmt.Sprintf(" Check %s file for details", file.Name())
 		}
 
-		return nil, errors.Errorf("Failed to connect to kube-apiserver instance. "+
+		handle.Stop()
+		handle.Clean()
+		return nil, errors.Errorf("Failed to connect to service on instance. "+
 			"Timeout on connection to %q.%s", address, details)
 	}
 
-	return apiHandle, nil
+	return handle, nil
 }
 
 // Launch starts the kubernetes cluster. It returns a cluster
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a cluster.
 func (m kubernetes) Launch() (executor.TaskHandle, error) {
-	apiHandle, err := m.launchKubeAPI()
+	// Launch kube-apiserver using master executor.
+	apiHandle, err := m.launchService(
+		m.master, getKubeAPIServerCommand(m.config), m.config.KubeAPIPort)
 	if err != nil {
 		return nil, err
 	}
 	clusterTaskHandle := executor.NewClusterTaskHandle(apiHandle, []executor.TaskHandle{})
 
-	// TODO(bp): Launch other services with isListening check as well.
 	// Launch kube-controller-manager using master executor.
-	controllerHandle, err := m.master.Execute(getKubeControllerCommand(apiHandle, m.config))
+	controllerHandle, err := m.launchService(
+		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output as well?
-		return nil, errors.Wrapf(err,
-			"Execution of kube-controller-manager failed; Command: %s",
-			getKubeControllerCommand(apiHandle, m.config))
+		// TODO(bp): Erase output of previous, successful handles?
+		return nil, err
 	}
 	clusterTaskHandle.AddAgent(controllerHandle)
 
 	// Launch kube-scheduler using master executor.
-	schedulerHandle, err := m.master.Execute(getKubeSchedulerCommand(apiHandle, m.config))
+	schedulerHandle, err := m.launchService(
+		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output as well?
-		return nil, errors.Wrapf(err,
-			"Execution of kube-scheduler failed; Command: %s",
-			getKubeSchedulerCommand(apiHandle, m.config))
+		// TODO(bp): Erase output of previous, successful handles?
+		return nil, err
 	}
 	clusterTaskHandle.AddAgent(schedulerHandle)
 
 	// Launch services on minion node.
 	// Launch kube-proxy using minion executor.
-	proxyHandle, err := m.minion.Execute(getKubeProxyCommand(apiHandle, m.config))
+	proxyHandle, err := m.launchService(
+		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output as well?
-		return nil, errors.Wrapf(err,
-			"Execution of kube-proxy failed; Command: %s",
-			getKubeProxyCommand(apiHandle, m.config))
+		// TODO(bp): Erase output of previous, successful handles?
+		return nil, err
 	}
 	clusterTaskHandle.AddAgent(proxyHandle)
 
 	// Launch kubelet using minion executor.
-	kubeletHandle, err := m.minion.Execute(getKubeletCommand(apiHandle, m.config))
+	kubeletHandle, err := m.launchService(
+		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output as well?
-		return nil, errors.Wrapf(err,
-			"Execution of kubelet failed; Command: %s",
-			getKubeletCommand(apiHandle, m.config))
+		// TODO(bp): Erase output of previous, successful handles?
+		return nil, err
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
+
+	// TODO(bp) We may add a simple pre-check here for instantiating one pod or checking how
+	// many nodes we have in cluster.
 
 	return clusterTaskHandle, nil
 }
