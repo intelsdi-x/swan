@@ -11,7 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	fs "github.com/intelsdi-x/swan/pkg/utils/os"
+	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,7 +34,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 
 	// Memcached setup.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedConfig.User = fs.GetEnvOrDefault("USER", memcachedConfig.User)
+	memcachedConfig.User = env.GetOrDefault("USER", memcachedConfig.User)
 	memcachedConfig.Port = memachedPort
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", memcachedConfig.Port)
 
