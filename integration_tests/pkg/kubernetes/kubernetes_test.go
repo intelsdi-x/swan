@@ -3,16 +3,24 @@ package kubernetes
 import (
 	"testing"
 
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
+	"os"
+	"regexp"
 	"time"
+)
+
+const (
+	kubectlBinPath = "/usr/bin/kubectl"
 )
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.ErrorLevel)
 
 	Convey("While having local executor", t, func() {
 		local := executor.NewLocal()
@@ -30,10 +38,42 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(err, ShouldBeNil)
 			}()
 
-			Convey("And kubectl is able to list the pods", func() {
-				// TODO(bp)
-				k8sHandle.Wait(0 * time.Nanosecond)
+			Convey("And kubectl shows that local host is in Ready state", func() {
+				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
+
+				taskHandle, err := local.Execute(fmt.Sprintf("%s get nodes", kubectlBinPath))
+				So(err, ShouldBeNil)
+
+				defer func() {
+					taskHandle.Stop()
+					taskHandle.Clean()
+					taskHandle.EraseOutput()
+				}()
+
+				taskHandle.Wait(0)
+
+				file, err := taskHandle.StdoutFile()
+				So(err, ShouldBeNil)
+				So(file, ShouldNotBeNil)
+
+				data, readErr := ioutil.ReadAll(file)
+				So(readErr, ShouldBeNil)
+
+				host, err := os.Hostname()
+				So(err, ShouldBeNil)
+
+				// kubectl get nodes should return this:
+				// NAME            STATUS    AGE
+				// <hostname>      Ready     <x>h
+
+				re, err := regexp.Compile(fmt.Sprintf("%s.*Ready", host))
+				So(err, ShouldBeNil)
+
+				match := re.Find(data)
+				So(match, ShouldNotBeNil)
 			})
+
+			// TODO(bp): Create pod & remove. Not a part of SCE-504.
 		})
 	})
 }

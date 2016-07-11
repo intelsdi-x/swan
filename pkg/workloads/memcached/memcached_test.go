@@ -18,7 +18,6 @@ func IsEndpointListeningMockedSuccess(address string, timeout time.Duration) boo
 
 // IsEndpointListeningMockedFailure is a mocked IsListeningFunction returning always false.
 func IsEndpointListeningMockedFailure(address string, timeout time.Duration) bool {
-
 	return false
 }
 

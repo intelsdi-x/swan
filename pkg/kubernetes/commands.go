@@ -54,7 +54,7 @@ func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --port=%d", config.KubeletPort),
-		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeletPort),
+		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" %s", config.KubeletArgs),
 	)
 }

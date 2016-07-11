@@ -8,6 +8,6 @@ You can specify two executors:
 ## Prerequisites
 
 - 2 machines with CentOS
-- `yum install -y etcd`
+- install etcd (`yum install -y etcd`), docker and iptables.
 - Download k8s binaries (current launcher tested on `1.3` k8s) from
 e.g [here](https://github.com/kubernetes/kubernetes/releases)

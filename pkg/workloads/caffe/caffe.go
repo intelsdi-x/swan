@@ -28,7 +28,7 @@ func getPathFromEnvOrDefault(envkey string, relativePath string) string {
 		envkey, path.Join(fs.GetSwanWorkloadsPath(), relativePath))
 }
 
-// Config is a config for the Caffe
+// Config is a config for the Caffe.
 type Config struct {
 	BinaryPath  string
 	SolverPath  string
@@ -45,8 +45,8 @@ func DefaultConfig() Config {
 	}
 }
 
-// Caffe is a deep learning framework
-// Implements workload.Launcher
+// Caffe is a deep learning framework.
+// Implements workload.Launcher.
 type Caffe struct {
 	exec executor.Executor
 	conf Config
@@ -67,7 +67,7 @@ func (c Caffe) buildCommand() string {
 		c.conf.SolverPath)
 }
 
-// Launch launches Caffe workload. It's implementation of workload.Launcher interface
+// Launch launches Caffe workload. It's implementation of workload.Launcher interface.
 // Caffe needs to run from it's own working directory, because
 // solver look for relative paths when dealing with training and testing
 // sets.

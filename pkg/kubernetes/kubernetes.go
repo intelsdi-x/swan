@@ -12,13 +12,13 @@ import (
 const serviceListenTimeout = 5 * time.Second
 
 var (
-	// path flags contain paths to kubernetes services' binaries. Default values were fetched from
-	// systemd units fetched from http://cbs.centos.org/repos/virt7-docker-common-release/x86_64/os/ repo.
+	// path flags contain paths to kubernetes services' binaries. See REAMDE.md for details.
 	pathKubeAPIServerFlag  = conf.NewFileFlag("kube_apiserver_path", "Path to kube-apiserver binary", "/usr/bin/kube-apiserver")
 	pathKubeControllerFlag = conf.NewFileFlag("kube_controller_path", "Path to kube-controller-manager binary", "/usr/bin/kube-controller-manager")
 	pathKubeletFlag        = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", "/usr/bin/kubelet")
 	pathKubeProxyFlag      = conf.NewFileFlag("kube_proxy_path", "Path to kube-proxy binary", "/usr/bin/kube-proxy")
 	pathKubeSchedulerFlag  = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", "/usr/bin/kube-scheduler")
+	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 )
 
@@ -30,7 +30,7 @@ type Config struct {
 	PathToKubeProxy      string
 	PathToKubelet        string
 
-	// TODO(bp): Expose these via flags.
+	// TODO(bp): Consider exposing these via flags.
 	// Comma separated list of nodes in the etcd cluster
 	ETCDServers        string
 	LogLevel           int // 0 is debug.
@@ -64,8 +64,9 @@ func DefaultConfig() Config {
 		KubeletPort:          10250,
 		KubeControllerPort:   10252,
 		KubeSchedulerPort:    10251,
-		KubeProxyPort:        10249, // ?
+		KubeProxyPort:        10249,
 		ServiceAddresses:     "10.254.0.0/16",
+		KubeletArgs:          kubeletArgsFlag.Value(),
 	}
 }
 
