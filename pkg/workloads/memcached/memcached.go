@@ -11,7 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/http"
+	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 )
 
 const (
@@ -75,7 +75,7 @@ func DefaultMemcachedConfig() Config {
 type Memcached struct {
 	exec          executor.Executor
 	conf          Config
-	isMemcachedUp http.IsListeningFunction // For mocking purposes.
+	isMemcachedUp netutil.IsListeningFunction // For mocking purposes.
 }
 
 // New is a constructor for Memcached.
@@ -83,7 +83,7 @@ func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
 		exec:          exec,
 		conf:          config,
-		isMemcachedUp: http.IsListening,
+		isMemcachedUp: netutil.IsListening,
 	}
 
 }
