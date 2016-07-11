@@ -73,7 +73,15 @@ func (l l3) Launch() (executor.TaskHandle, error) {
 	if err := l.verifyConfiguration(); err != nil {
 		return nil, err
 	}
-	return l.exec.Execute(l.buildCommand())
+	cmd := l.buildCommand()
+	master, _ := l.exec.Execute(cmd)
+	var slaves []executor.TaskHandle
+	for i := 0; i < 3; i++ {
+		slave, _ := l.exec.Execute(cmd)
+		slaves = append(slaves, slave)
+	}
+
+	return executor.NewClusterTaskHandle(master, slaves), nil
 }
 
 // Name returns human readable name for job.
