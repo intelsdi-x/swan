@@ -1,9 +1,9 @@
-package os
+package env
 
 import "os"
 
-// GetEnvOrDefault returns the environment variable or default string.
-func GetEnvOrDefault(env string, defaultStr string) string {
+// GetOrDefault returns the environment variable or default string.
+func GetOrDefault(env string, defaultStr string) string {
 	if env == "" {
 		return defaultStr
 	}

@@ -2,7 +2,6 @@ package memcached
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 )
 
 const (
@@ -71,39 +71,19 @@ func DefaultMemcachedConfig() Config {
 	}
 }
 
-type dialTimeoutFunc func(address string, timeout time.Duration) bool
-
-func tryConnect(address string, timeout time.Duration) bool {
-	retries := 5
-	sleepTime := time.Duration(
-		timeout.Nanoseconds() / int64(retries))
-	connected := false
-	for i := 0; i < retries; i++ {
-		conn, err := net.Dial("tcp", address)
-		if err != nil {
-			time.Sleep(sleepTime)
-			continue
-		}
-		defer conn.Close()
-		connected = true
-	}
-
-	return connected
-}
-
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
 type Memcached struct {
-	exec       executor.Executor
-	conf       Config
-	tryConnect dialTimeoutFunc // For mocking purposes.
+	exec          executor.Executor
+	conf          Config
+	isMemcachedUp netutil.IsListeningFunction // For mocking purposes.
 }
 
 // New is a constructor for Memcached.
 func New(exec executor.Executor, config Config) Memcached {
 	return Memcached{
-		exec:       exec,
-		conf:       config,
-		tryConnect: tryConnect,
+		exec:          exec,
+		conf:          config,
+		isMemcachedUp: netutil.IsListening,
 	}
 
 }
@@ -127,7 +107,7 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 	}
 
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
-	if !m.tryConnect(address, 5*time.Second) {
+	if !m.isMemcachedUp(address, 5*time.Second) {
 		err := errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
 			address)
 

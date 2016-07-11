@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	swanOs "github.com/intelsdi-x/swan/pkg/utils/os"
 	"github.com/pkg/errors"
 )
 
@@ -24,7 +24,7 @@ const (
 )
 
 func getPathFromEnvOrDefault(envkey string, relativePath string) string {
-	return swanOs.GetEnvOrDefault(
+	return env.GetOrDefault(
 		envkey, path.Join(fs.GetSwanWorkloadsPath(), relativePath))
 }
 
