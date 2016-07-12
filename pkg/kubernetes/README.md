@@ -7,7 +7,7 @@ You can specify two executors:
 
 ## Prerequisites
 
-- 2 machines with CentOS
+- 2 machines with CentOS (to have k8s minion not being interfered by master services)
 - install etcd (`yum install -y etcd`), docker and iptables.
 - Download k8s binaries (current launcher tested on `1.3` k8s) from
 e.g [here](https://github.com/kubernetes/kubernetes/releases)

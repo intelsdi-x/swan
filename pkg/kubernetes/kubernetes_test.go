@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
-	"github.com/intelsdi-x/testify/mock"
-	"github.com/intelsdi-x/testify/suite"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"os"
 	"time"
@@ -38,7 +38,7 @@ func (s *KubernetesTestSuite) recursiveConveyTest(iteration int) {
 	Convey(fmt.Sprintf("When %q fails to execute, we expect error", serviceNames[iteration]), func() {
 		// Mock current service's executor failure.
 		s.mExecutor.On(
-			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail"))
+			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail")).Once()
 
 		// Mock successful connection verifier for `iteration+1` iteration.
 		// It will succeed for current service.
@@ -60,7 +60,7 @@ func (s *KubernetesTestSuite) recursiveConveyTest(iteration int) {
 	Convey(fmt.Sprintf("When %q is not listening on the endpoint, we expect error and it's handle stopped", serviceNames[iteration]), func() {
 		// Mock current service's executor success.
 		s.mExecutor.On(
-			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[iteration], nil)
+			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[iteration], nil).Once()
 
 		s.mTaskHandles[iteration].On("StderrFile").Return(s.outputFile, nil).Once()
 		s.mTaskHandles[iteration].On("Address").Return(serviceNames[iteration]).Once()
