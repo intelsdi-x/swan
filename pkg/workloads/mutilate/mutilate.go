@@ -13,7 +13,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/pkg/errors"
 )
@@ -137,7 +136,7 @@ type mutilate struct {
 // New returns a new Mutilate Load Generator instance.
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
-func New(exec executor.Executor, config Config) workloads.LoadGenerator {
+func New(exec executor.Executor, config Config) executor.LoadGenerator {
 	return mutilate{
 		master: exec,
 		agents: []executor.Executor{},
@@ -150,7 +149,7 @@ func New(exec executor.Executor, config Config) workloads.LoadGenerator {
 // Mutilate is a load generator for Memcached.
 // https://github.com/leverich/mutilate
 func NewCluster(
-	master executor.Executor, agents []executor.Executor, config Config) workloads.LoadGenerator {
+	master executor.Executor, agents []executor.Executor, config Config) executor.LoadGenerator {
 	return mutilate{
 		master: master,
 		agents: agents,

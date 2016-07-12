@@ -8,7 +8,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +46,7 @@ type l3 struct {
 }
 
 // New is a constructor for l3 aggressor.
-func New(exec executor.Executor, config Config) workloads.Launcher {
+func New(exec executor.Executor, config Config) executor.Launcher {
 	return l3{
 		exec: exec,
 		conf: config,
