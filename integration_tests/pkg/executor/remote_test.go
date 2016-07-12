@@ -12,7 +12,6 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	. "github.com/smartystreets/goconvey/convey"
 	"os/user"
 )
@@ -94,7 +93,7 @@ func testRemoteProcessPidIsolation() {
 
 }
 
-func newMultipleMemcached(sshConfig executor.SSHConfig) workloads.Launcher {
+func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
 	decors := isolation.Decorators{}
 	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
 	decors = append(decors, unshare)
