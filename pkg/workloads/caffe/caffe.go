@@ -8,7 +8,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +53,7 @@ type Caffe struct {
 }
 
 // New is a constructor for Caffe.
-func New(exec executor.Executor, config Config) workloads.Launcher {
+func New(exec executor.Executor, config Config) executor.Launcher {
 	return Caffe{
 		exec: exec,
 		conf: config,
