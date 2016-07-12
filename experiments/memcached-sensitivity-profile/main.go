@@ -46,6 +46,8 @@ var (
 		path.Join(os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra"))
 
 	mutilateMasterFlagDefault = "local"
+
+	niceIsolationFlag = conf.NewIntFlag("nice", "Nice isolation for workloads and load generators to isolate from environment", 0)
 )
 
 // Check the supplied error, log and exit if non-nil.
@@ -57,7 +59,7 @@ func check(err error) {
 }
 
 // newRemote is helper for creating remotes with default sshConfig.
-func newRemote(ip string) executor.Executor {
+func newRemote(ip string, decorator isolation.Decorator) executor.Executor {
 	// TODO(bp): Have ability to choose user using parameter here.
 	user, err := user.Current()
 	check(err)
@@ -65,7 +67,7 @@ func newRemote(ip string) executor.Executor {
 	sshConfig, err := executor.NewSSHConfig(ip, executor.DefaultSSHPort, user)
 	check(err)
 
-	return executor.NewRemote(sshConfig)
+	return executor.NewRemoteIsolated(sshConfig, isolation.Decorators{decorator})
 }
 
 func prepareSnapSessionLauncher() snap.SessionLauncher {
@@ -131,6 +133,7 @@ func isManualPolicy() bool {
 
 // Check README.md for details of this experiment.
 func main() {
+
 	// Setup conf.
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
@@ -145,24 +148,31 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	validateOS()
 
 	// Isolation configuration method.
+	niceIsolation := isolation.NewNice(niceIsolationFlag.Value())
+
 	// TODO: needs update for different isolation per cpu
 	var hpIsolation, beIsolation, l1Isolation, llcIsolation isolation.Isolation
 	var aggressorFactory sensitivity.AggressorFactory
 	if isManualPolicy() {
 		hpIsolation, beIsolation = manualPolicy()
-		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(
+			isolation.Decorators{beIsolation, niceIsolation},
+		)
 		defer beIsolation.Clean()
 	} else {
 		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
 		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
-		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(
+			isolation.Decorators{l1Isolation, niceIsolation},
+			isolation.Decorators{llcIsolation, niceIsolation},
+		)
 		defer l1Isolation.Clean()
 		defer llcIsolation.Clean()
 	}
 	defer hpIsolation.Clean()
 
 	// Initialize Memcached Launcher.
-	localForHP := executor.NewLocalIsolated(hpIsolation)
+	localForHP := executor.NewLocalIsolated(isolation.Decorators{hpIsolation, niceIsolation})
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
@@ -184,13 +194,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var masterLoadGeneratorExecutor executor.Executor
 	masterLoadGeneratorExecutor = executor.NewLocal()
 	if mutilateMasterFlag.Value() != mutilateMasterFlagDefault {
-		masterLoadGeneratorExecutor = newRemote(mutilateMasterFlag.Value())
+		masterLoadGeneratorExecutor = newRemote(mutilateMasterFlag.Value(), niceIsolation)
 	}
 
 	// Pack agents.
 	agentsLoadGeneratorExecutors := []executor.Executor{}
 	for _, agent := range mutilateAgentsFlag.Value() {
-		agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, newRemote(agent))
+		agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, newRemote(agent, niceIsolation))
 	}
 	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
 
