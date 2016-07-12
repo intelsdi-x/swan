@@ -7,7 +7,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/pkg/errors"
 )
 
@@ -55,7 +54,7 @@ type l1i struct {
 }
 
 // New is a constructor for l1i aggressor.
-func New(exec executor.Executor, config Config) workloads.Launcher {
+func New(exec executor.Executor, config Config) executor.Launcher {
 	return l1i{
 		exec: exec,
 		conf: config,
