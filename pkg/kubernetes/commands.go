@@ -28,7 +28,6 @@ func getKubeControllerCommand(kubeAPIAddr executor.TaskHandle, config Config) st
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" --port=%d", config.KubeControllerPort),
-		//fmt.Sprintf(" --kubelet-port=%d", config.KubeletPort),
 		fmt.Sprintf(" %s", config.KubeControllerArgs),
 	)
 }
@@ -41,7 +40,6 @@ func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) str
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" --port=%d", config.KubeSchedulerPort),
-		//fmt.Sprintf(" --kubelet-port=%d", config.KubeletPort),
 		fmt.Sprintf(" %s", config.KubeSchedulerArgs),
 	)
 }

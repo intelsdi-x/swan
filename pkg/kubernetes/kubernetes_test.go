@@ -125,9 +125,10 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		s.mExecutor = new(mocks.Executor)
 		// Create taskHandles with labels corresponding to service names.
 		s.mTaskHandles = []*mocks.TaskHandle{}
-		for _, serviceName := range serviceNames {
+		for _, _ = range serviceNames {
 			mTaskHandle := new(mocks.TaskHandle)
-			mTaskHandle.Label(serviceName)
+			// TODO(bp): Add that after https://github.com/intelsdi-x/swan/pull/263 merge.
+			//mTaskHandle.Label(serviceName)
 
 			s.mTaskHandles = append(s.mTaskHandles, mTaskHandle)
 		}

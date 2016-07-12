@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# NOTE: This is a script for manual deployment of k8s binaries. It should be replaced by Ansible
+# scripts.
 set -x
 
 # Remove version which could be already there.
