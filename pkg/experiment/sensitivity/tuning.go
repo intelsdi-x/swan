@@ -2,16 +2,16 @@ package sensitivity
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/montanaflynn/stats"
 )
 
 type tuningPhase struct {
 	// Latency Sensitivity (Production) workload.
-	pr workloads.Launcher
+	pr executor.Launcher
 	// Workload Generator for Latency Sensitivity task.
-	lgForPr workloads.LoadGenerator
+	lgForPr executor.LoadGenerator
 	// Given Service Level Objective.
 	SLO int
 	// Number of repetitions
