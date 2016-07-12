@@ -19,6 +19,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/utils/err_handle"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
@@ -48,22 +49,14 @@ var (
 	mutilateMasterFlagDefault = "local"
 )
 
-// Check the supplied error, log and exit if non-nil.
-func check(err error) {
-	if err != nil {
-		logrus.Debugf("%+v", err)
-		logrus.Fatalf("%v", err)
-	}
-}
-
 // newRemote is helper for creating remotes with default sshConfig.
 func newRemote(ip string) executor.Executor {
 	// TODO(bp): Have ability to choose user using parameter here.
 	user, err := user.Current()
-	check(err)
+	err_handle.Check(err)
 
 	sshConfig, err := executor.NewSSHConfig(ip, executor.DefaultSSHPort, user)
-	check(err)
+	err_handle.Check(err)
 
 	return executor.NewRemote(sshConfig)
 }
@@ -82,14 +75,14 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 			"v1",
 			true,
 		)
-		check(err)
+		err_handle.Check(err)
 
 		// Load the snap cassandra publisher plugin if not yet loaded.
 		// TODO(bp): Make helper for that.
 		logrus.Debug("Checking if publisher cassandra is loaded.")
 		plugins := snap.NewPlugins(snapConnection)
 		loaded, err := plugins.IsLoaded("publisher", "cassandra")
-		check(err)
+		err_handle.Check(err)
 
 		if !loaded {
 			pluginPath := snapCassandraPluginPath.Value()
@@ -97,7 +90,7 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 				logrus.Error("Cannot find snap cassandra plugin at %q", pluginPath)
 			}
 			err = plugins.Load([]string{pluginPath})
-			check(err)
+			err_handle.Check(err)
 		}
 
 		// Define publisher.
@@ -137,7 +130,7 @@ func main() {
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 
 	// Parse CLI.
-	check(conf.ParseFlags())
+	err_handle.Check(conf.ParseFlags())
 
 	logrus.SetLevel(conf.LogLevel())
 
@@ -203,7 +196,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggressorName := range aggressorsFlag.Value() {
 		aggressor, err := aggressorFactory.Create(aggressorName)
-		check(err)
+		err_handle.Check(err)
 
 		aggressors = append(aggressors, aggressor)
 	}
@@ -223,5 +216,5 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Run Experiment.
 	err := sensitivityExperiment.Run()
-	check(err)
+	err_handle.Check(err)
 }
