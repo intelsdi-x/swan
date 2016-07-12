@@ -2,6 +2,7 @@ package snap
 
 import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/pkg/errors"
 )
 
 // Plugins provides a 'manager' like abstraction for plugin operations.
@@ -22,7 +23,7 @@ func NewPlugins(pClient *client.Client) *Plugins {
 func (p *Plugins) Load(pluginPaths []string) error {
 	r := p.pClient.LoadPlugin(pluginPaths)
 	if r.Err != nil {
-		return r.Err
+		return errors.Wrapf(r.Err, "could not load plugin from path %q", pluginPaths)
 	}
 
 	return nil
@@ -34,7 +35,7 @@ func (p *Plugins) IsLoaded(t string, name string) (bool, error) {
 	// Get all (running: false) plugins
 	plugins := p.pClient.GetPlugins(false)
 	if plugins.Err != nil {
-		return false, plugins.Err
+		return false, errors.Wrap(plugins.Err, "could not obtain loaded plugins")
 	}
 
 	for _, lp := range plugins.LoadedPlugins {
@@ -50,7 +51,8 @@ func (p *Plugins) IsLoaded(t string, name string) (bool, error) {
 func (p *Plugins) Unload(t string, name string, version int) error {
 	r := p.pClient.UnloadPlugin(t, name, version)
 	if r.Err != nil {
-		return r.Err
+		return errors.Wrapf(r.Err, "could not unload plugin %q:%q:%q",
+			name, t, version)
 	}
 
 	return nil
