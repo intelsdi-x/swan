@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
 
 // sharedCacheThreads returns threads from one socket that share a last-level
@@ -9,11 +10,11 @@ import (
 // core, only one thread from each is included in the result.
 func sharedCacheThreads() topo.ThreadSet {
 	allThreads, err := topo.Discover()
-	check(err)
+	errutil.Check(err)
 
 	// Retain only threads for one socket.
 	socket, err := allThreads.Sockets(1)
-	check(err)
+	errutil.Check(err)
 
 	// Retain only one thread per physical core.
 	// NB: The following filter prediccate closes over this int set.
@@ -30,10 +31,10 @@ func getSiblingThreadsOfThread(reservedThread topo.Thread) topo.ThreadSet {
 	requestedCore := reservedThread.Core()
 
 	allThreads, err := topo.Discover()
-	check(err)
+	errutil.Check(err)
 
 	threadsFromCore, err := allThreads.FromCores(requestedCore)
-	check(err)
+	errutil.Check(err)
 
 	return threadsFromCore.Filter(func(t topo.Thread) bool {
 		return t != reservedThread
