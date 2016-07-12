@@ -94,7 +94,7 @@ func (s *KubernetesTestSuite) recursiveConveyTest(iteration int) {
 		// Check if it is the last service.
 		if iteration < len(serviceNames)-1 {
 			// kube-apiserver's Address is passed to other services so we need to add that as well.
-			s.mTaskHandles[0].On("Address").Return(serviceNames[iteration]).Twice()
+			s.mTaskHandles[0].On("Address").Return(serviceNames[iteration]).Once()
 
 			// We did not test all of them yet. Go to another service.
 			s.recursiveConveyTest(iteration + 1)
