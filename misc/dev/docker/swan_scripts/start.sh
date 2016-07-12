@@ -6,6 +6,10 @@ REPOSITORY_URL=github.com/intelsdi-x/swan
 TARGET=""
 SCENARIO=""
 BINPARAMETERS=""
+LOCKSTATE=false
+
+. /make.sh
+. /workload.sh
 
 function printError() {
     echo -e "\033[0;31m### $1 ###\033[0m"
@@ -20,7 +24,11 @@ function printInfo() {
 }
 
 function printOption() {
-    echo -e " * '-$1'\t$2"
+    echo -e " - '-$1'\t$2"
+    for option in $(seq 3 $#); do
+        echo -e "   +  $3"        
+        shift
+    done
 }
 
 function verifyStatus() {
@@ -36,17 +44,6 @@ function setGitHubCredentials() {
         git config --global url."https://$GIT_TOKEN:x-oauth-basic@github.com/".insteadOf "https://github.com/"
         printInfo "Token for GitHub has been set"
     fi
-}
-
-function buildSnap() {
-    printStep "Build snap"
-    git clone https://github.com/intelsdi-x/snap
-    cd snap
-    make deps
-    make all
-    verifyStatus
-    printInfo "Snap has been build"
-    cd ..
 }
 
 function cloneCode() {
@@ -70,19 +67,6 @@ function prepareEnvironment() {
     printInfo "All dependencies have been downloaded"
 }
 
-function runScenarioMake() {
-    printStep "Running scenario: $SCENARIO"
-    DEFAULT_TARGETS=all
-    if [[ "$SCENARIO" != "" ]]; then
-        DEFAULT_TARGETS="$@"
-    fi
-
-    printInfo "Selected targets: $DEFAULT_TARGETS"
-
-    make $DEFAULT_TARGETS
-    verifyStatus
-}
-
 function getCodeFromDir() {
     printStep "Binding source code from /swan to proper directory in \$GOPATH"
     mkdir swan
@@ -99,24 +83,22 @@ function getCode() {
     fi
 }
 
-function runAndPrepareMakeTarget() {
-    printStep "Preparing environment for running 'make $SCENARIO'"
-    buildSnap
-    cd swan
-    prepareEnvironment
-    runScenarioMake
-}
-
 function usage() {
+    echo "Swan's Docker image provides complex solution for building, running and testing swan or running experiment's workloads inside Docker container."
     echo "Usage:"
-    printOption "t" "Run selected target. Possible choices are: 'make' and 'workload'. Default: 'make'"
-    printOption "s" "Selected scenario for target. Possible choices are: 'make': options are specified in swan's Makefile; default: 'integration_test', 'workload':['caffe', 'memcached', 'mutilate']; default: 'memcached'"
+    printOption "t" "Run selected target. Possible choices are(default: make):" \
+        "make" \
+        "workload"
+    printOption "s" "Selected scenario for target. Possible choices:" \
+        "for 'make' target options are specified in swan's Makefile; default: 'integration_test'" \
+        "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate']; default: 'memcached'"
     printOption "p" "Pass parameters to workload binaries. Only for 'workload' target. There is no default parameter."
+    printOption "l" "Lock state after executed command has been stopped. Default: false"
 }
 
 function parseArguments() {
     printStep "Parsing arguments"
-    while getopts "t:s:p:" opt; do
+    while getopts "t:s:p:l" opt; do
     case $opt in
         t)
             TARGET=$OPTARG
@@ -127,59 +109,15 @@ function parseArguments() {
         p)
             BINPARAMETERS="$OPTARG"
             ;;
+        l)
+            LOCKSTATE=true
+            ;;
         *)
             usage
             exit
             ;;
         esac
     done
-}
-
-function buildWorkloads() {
-    printStep "Build Workloads"
-    make build_workloads
-    printInfo "Building has been completed."
-}
-
-
-function workload() {
-    printStep "Running workload: $SCENARIO"
-    cd swan
-    buildWorkloads
-    BIN=""
-    WD=""
-    case $SCENARIO in
-        "mutilate")
-            WD="./workloads/data_caching/memcached/mutilate"
-            BIN="./mutilate $BINPARAMETERS"
-            ;;
-        "memcached")
-            WD="./workloads/data_caching/memcached/memcached-1.4.25"
-            BIN="./build/memcached -u memcached $BINPARAMETERS"
-            ;;
-        "caffe")
-            WD="./workloads/deep_learning/caffe/caffe_src"
-            BIN="./build/tools/caffe $BINPARAMETERS"
-            ;;
-        *)
-            echo "You must provide scenario for 'workload' target"
-            usage
-#            exit
-            ;;
-    esac
-    printInfo "Executing $BIN from $WD"
-    cd $WD
-    $BIN
-    lockWorkload
-}
-
-function lockWorkload() {
-    if [[ ! -f /lock.lock ]]; then
-        printInfo "Locking container for further usage"
-        touch /lock.lock
-        sleep inf
-    fi
-
 }
 
 function main() {

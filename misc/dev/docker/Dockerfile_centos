@@ -32,8 +32,7 @@ RUN yum install -y epel-release && \
     mkdir /opt/gopath
 
 WORKDIR /opt/gopath/src/github.com/intelsdi-x
-ADD start.sh /start.sh
+ADD swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
 CMD ["-t make -s integration_tests"]
-
