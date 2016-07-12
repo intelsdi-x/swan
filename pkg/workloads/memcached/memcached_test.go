@@ -2,21 +2,23 @@ package memcached
 
 import (
 	"errors"
-	"syscall"
-	"testing"
-	"time"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
+	"syscall"
+	"testing"
+	"time"
 )
 
-func connectTimeoutSuccess(address string, timeout time.Duration) bool {
+// IsEndpointListeningMockedSuccess is a mocked IsListeningFunction returning always true.
+func IsEndpointListeningMockedSuccess(address string, timeout time.Duration) bool {
 	return true
 }
 
-func connectTimeoutFailure(address string, timeout time.Duration) bool {
+// IsEndpointListeningMockedFailure is a mocked IsListeningFunction returning always false.
+func IsEndpointListeningMockedFailure(address string, timeout time.Duration) bool {
+
 	return false
 }
 
@@ -44,7 +46,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 			memcachedLauncher := New(
 				mockedExecutor,
 				config)
-			memcachedLauncher.tryConnect = connectTimeoutSuccess
+			memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedSuccess
 			Convey("While simulating proper execution", func() {
 				mockedExecutor.On("Execute", expectedCommand).Return(mockedTaskHandle, nil).Once()
 				mockedTaskHandle.On("Address").Return(expectedHost)
@@ -70,7 +72,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("When test connection to memcached fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(nil)
 						mockedTaskHandle.On("Clean").Return(nil)
-						memcachedLauncher.tryConnect = connectTimeoutFailure
+						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
 						So(task, ShouldBeNil)
@@ -80,7 +82,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("When test connection to memcached fails and task.Stop fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(errors.New("Test error code for stop"))
 						mockedTaskHandle.On("Clean").Return(nil)
-						memcachedLauncher.tryConnect = connectTimeoutFailure
+						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
 						So(task, ShouldBeNil)
@@ -90,7 +92,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("When test connection to memcached fails, task.Stop succeeds and task.Clean fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(nil)
 						mockedTaskHandle.On("Clean").Return(errors.New("Test error code for clean"))
-						memcachedLauncher.tryConnect = connectTimeoutFailure
+						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
 						So(task, ShouldBeNil)
