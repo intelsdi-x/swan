@@ -9,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
 
 var (
@@ -32,18 +33,18 @@ func sensitivityProfileIsolationPolicy() (
 
 	threadSet := sharedCacheThreads()
 	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
-	check(err)
+	errutil.Check(err)
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
 	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(hpThreadIDs)
-	check(err)
+	errutil.Check(err)
 	siblingThreadsToHpThreads := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
 	sharingLLCButNotL1Threads, err := remaining.Take(beCPUCountFlag.Value())
-	check(err)
+	errutil.Check(err)
 
 	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all.
 	// memory banks (probably not).
@@ -56,10 +57,10 @@ func sensitivityProfileIsolationPolicy() (
 		numaZero,
 		hpCPUExclusiveFlag.Value(),
 		false)
-	check(err)
+	errutil.Check(err)
 
 	err = hpIsolation.Create()
-	check(err)
+	errutil.Check(err)
 
 	// Initialize BE L1 isolation.
 	siblingThreadsToHpThreadsIsolation, err = cgroup.NewCPUSet(
@@ -68,10 +69,10 @@ func sensitivityProfileIsolationPolicy() (
 		numaZero,
 		beCPUExclusiveFlag.Value(),
 		false)
-	check(err)
+	errutil.Check(err)
 
 	err = siblingThreadsToHpThreadsIsolation.Create()
-	check(err)
+	errutil.Check(err)
 
 	// Initialize BE LLC isolation.
 	sharingLLCButNotL1Isolation, err = cgroup.NewCPUSet(
@@ -80,10 +81,10 @@ func sensitivityProfileIsolationPolicy() (
 		numaZero,
 		beCPUExclusiveFlag.Value(),
 		false)
-	check(err)
+	errutil.Check(err)
 
 	err = sharingLLCButNotL1Isolation.Create()
-	check(err)
+	errutil.Check(err)
 
 	logrus.Infof("Sensitivity Profile Isolation:\n"+
 		"High Priority Job CpuThreads: %v\n"+
@@ -100,7 +101,7 @@ func parseSlices(raw string) (s1, s2 []int) {
 	parseInts := func(strings []string) (ints []int) {
 		for _, s := range strings {
 			i, err := strconv.Atoi(s)
-			check(err)
+			errutil.Check(err)
 			ints = append(ints, i)
 		}
 		return
@@ -125,13 +126,13 @@ func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
 
 	var err error
 	hpIsolation, err = cgroup.NewCPUSet("hp", isolation.NewIntSet(hpCPUs...), isolation.NewIntSet(hpNUMAs...), hpCPUExclusiveFlag.Value(), false)
-	check(err)
+	errutil.Check(err)
 	beIsolation, err = cgroup.NewCPUSet("be", isolation.NewIntSet(beCPUs...), isolation.NewIntSet(beNUMAs...), beCPUExclusiveFlag.Value(), false)
-	check(err)
+	errutil.Check(err)
 
 	err = hpIsolation.Create()
-	check(err)
+	errutil.Check(err)
 	err = beIsolation.Create()
-	check(err)
+	errutil.Check(err)
 	return
 }
