@@ -53,7 +53,7 @@ where:
 - `params` - Pass parameters to workload binaries. Only for 'workload' target. (optional)
 - `-l` - Don't close container after command execution. (optional)
 
-*Note: If you pass repository as a volume into container then cloning source code from GitHub will be skipped*
+*Note: If you pass the repository as a volume into container then cloning source code from GitHub will be skipped*
 
 ***Warning: Your docker container should be run with following flags:***
 

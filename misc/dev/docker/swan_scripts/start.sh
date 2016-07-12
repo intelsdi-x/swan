@@ -7,20 +7,33 @@ TARGET=""
 SCENARIO=""
 BINPARAMETERS=""
 LOCKSTATE=false
+COLORTERMINAL=false
 
 . /make.sh
 . /workload.sh
 
 function printError() {
-    echo -e "\033[0;31m### $1 ###\033[0m"
+    errorString="### $1 ###"
+    if [[ $COLORTERMINAL = true ]]; then
+        errorString="\033[0;31m$errorString\033[0m"
+    fi
+    echo -e $errorString
 }
 
 function printStep() {
-    echo -e "\033[0;36m[$1]\033[0m"
+    stepString="[$1]"
+    if [[ $COLORTERMINAL = true ]]; then
+        stepString="\033[0;36m$stepString\033[0m"
+    fi
+    echo -e $stepString
 }
 
 function printInfo() {
-    echo -e "\033[0;32m> $1\033[0m"
+    infoString="> $1"
+    if [[ $COLORTERMINAL = true ]]; then
+        infoString="\033[0;32m$infoString\033[0m"
+    fi
+    echo -e $infoString
 }
 
 function printOption() {
@@ -29,6 +42,12 @@ function printOption() {
         echo -e "   +  $3"        
         shift
     done
+}
+
+function determineColors(){
+    if [[ $(tput colors) -gt 2 ]]; then
+        COLORTERMINAL=true
+    fi
 }
 
 function verifyStatus() {
@@ -121,6 +140,7 @@ function parseArguments() {
 }
 
 function main() {
+    determineColors
     printInfo "Configuring source code repository"
     setGitHubCredentials
     getCode
