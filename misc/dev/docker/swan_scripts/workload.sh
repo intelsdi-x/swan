@@ -25,6 +25,7 @@ function workload() {
             WD="./workloads/deep_learning/caffe/caffe_src"
             BIN="./build/tools/caffe $BINPARAMETERS"
             ;;
+        # TODO(mstachow): Add low level aggressors here.
         *)
             echo "You must provide scenario for 'workload' target"
             usage

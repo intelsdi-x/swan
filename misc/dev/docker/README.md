@@ -6,7 +6,7 @@ Swan's Docker image provides complex solution for building, running and testing 
 
 ### Building swan and run integration tests
 
-Swan's image is able to run all Makefile's targets. Due to swan's architecture, container is building and runnning (snap)[]
+Swan's image is able to run all Makefile's targets. Due to swan's architecture, container is building and runnning (snap)[https://github.com/intelsdi-x/snap]
 
 ### Running swan's workloads
 
@@ -16,7 +16,7 @@ Swan's Docker image provides support for following workloads:
 - mutilate
 - caffe
 
-After command execution, container could stay running with `-l` parameter.
+With `-l` parameter container stays running after command execution.
 
 ## Building
 
@@ -29,7 +29,6 @@ To build Docker images just run:
 - based on Centos image:
 
 `docker build -t <image_tag> ./integration_tests/docker/centos/`
-
 
 where:
 - `image_tag` means friendly name for docker image
