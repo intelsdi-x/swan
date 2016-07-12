@@ -17,6 +17,7 @@ RUN apt-get update && \
         git \
         libevent-dev \
         libcgroup-dev \
+        libzmq5-dev \
         netcat \
         scons \
         sudo \
@@ -27,13 +28,14 @@ RUN apt-get update && \
     ln -s /usr/bin/aclocal /usr/bin/aclocal-1.13 && \
     ln -s /usr/bin/autoconf /usr/bin/autoconf-1.13 && \
     cp /usr/sbin/useradd /usr/sbin/adduser && \
+    wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp && \
     wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
     tar xfvv go.tar.gz && \
     mkdir /opt/gopath
 
 WORKDIR /opt/gopath/src/github.com/intelsdi-x
-ADD start.sh /start.sh
+ADD swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
-CMD ["integration_test"]
+CMD ["-t make -s integration_tests"]
