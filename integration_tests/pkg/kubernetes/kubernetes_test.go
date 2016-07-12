@@ -22,7 +22,7 @@ const (
 func TestLocalKubernetesPodExecution(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
 
-	Convey("While having local executor", t, func() {
+	SkipConvey("While having local executor", t, func() {
 		local := executor.NewLocal()
 		Convey("We are able to launch kubernetes cluster on one node", func() {
 			k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
