@@ -1,8 +1,8 @@
 package sensitivity
 
 import (
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 )
 
 // LauncherSessionPair is a pair of Launcher and corresponding Session Launcher.
@@ -10,38 +10,38 @@ import (
 // Launcher and SessionLauncher. It is not possible right now since Launcher
 // and LauncherSession have not the same API.
 type LauncherSessionPair struct {
-	Launcher            workloads.Launcher
+	Launcher            executor.Launcher
 	SnapSessionLauncher snap.SessionLauncher
 }
 
 // NewLauncherWithoutSession constructs LauncherSessionPair without any Session.
-func NewLauncherWithoutSession(launcher workloads.Launcher) LauncherSessionPair {
+func NewLauncherWithoutSession(launcher executor.Launcher) LauncherSessionPair {
 	return LauncherSessionPair{launcher, nil}
 }
 
 // NewMonitoredLauncher constructs LauncherSessionPair with specified Session.
 func NewMonitoredLauncher(
-	launcher workloads.Launcher,
+	launcher executor.Launcher,
 	snapSessionLauncher snap.SessionLauncher) LauncherSessionPair {
 	return LauncherSessionPair{launcher, snapSessionLauncher}
 }
 
 // LoadGeneratorSessionPair is a pair of Load Generator and corresponding Session Launcher.
 type LoadGeneratorSessionPair struct {
-	LoadGenerator       workloads.LoadGenerator
+	LoadGenerator       executor.LoadGenerator
 	SnapSessionLauncher snap.SessionLauncher
 }
 
 // NewLoadGeneratorWithoutSession constructs LoadGenerator without any Session.
 func NewLoadGeneratorWithoutSession(
-	loadGenerator workloads.LoadGenerator) LoadGeneratorSessionPair {
+	loadGenerator executor.LoadGenerator) LoadGeneratorSessionPair {
 
 	return LoadGeneratorSessionPair{loadGenerator, nil}
 }
 
 // NewMonitoredLoadGenerator constructs LoadGenerator with specified Session.
 func NewMonitoredLoadGenerator(
-	loadGenerator workloads.LoadGenerator,
+	loadGenerator executor.LoadGenerator,
 	snapSessionLauncher snap.SessionLauncher) LoadGeneratorSessionPair {
 
 	return LoadGeneratorSessionPair{loadGenerator, snapSessionLauncher}
