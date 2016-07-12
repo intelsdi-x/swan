@@ -38,7 +38,8 @@ function workload() {
 }
 
 function lockWorkload() {
-    if [[ ! -f /lock.lock && $LOCKSTATE==true ]]; then
+    if [[ ! -f /lock.lock ]] && [[ $LOCKSTATE = true ]]; then
+        echo $LOCKSTATE
         printInfo "Locking container for further usage"
         touch /lock.lock
         sleep inf
