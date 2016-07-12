@@ -5,8 +5,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/testify/mock"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 )
 

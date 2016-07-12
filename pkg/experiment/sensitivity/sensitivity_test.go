@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/testify/mock"
+	"github.com/intelsdi-x/testify/suite"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 
 	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
 	snapMocks "github.com/intelsdi-x/swan/pkg/snap/mocks"

@@ -10,9 +10,9 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/testify/mock"
+	"github.com/intelsdi-x/testify/suite"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 const (

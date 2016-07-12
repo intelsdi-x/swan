@@ -4,7 +4,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 )
-import "github.com/stretchr/testify/mock"
+import "github.com/intelsdi-x/testify/mock"
 
 import "github.com/intelsdi-x/swan/pkg/experiment/phase"
 
