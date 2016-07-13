@@ -2,9 +2,9 @@ package kubernetes
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"testing"
 	"time"
 )
 
@@ -16,8 +16,10 @@ func check(err error) {
 }
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
-func TestLocalKubernetesRun(t *testing.T) {
+func main() {
 	logrus.SetLevel(logrus.DebugLevel)
+
+	conf.ParseFlags()
 
 	local := executor.NewLocal()
 	k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
