@@ -11,6 +11,7 @@ type Thread interface {
 	ID() int
 	Core() int
 	Socket() int
+	Equals(Thread) bool
 }
 
 // NewThread returns a new thread with the supplied thread, core, and
@@ -56,4 +57,10 @@ func (t thread) Core() int {
 
 func (t thread) Socket() int {
 	return t.socket
+}
+
+func (t thread) Equals(that Thread) bool {
+	return t.ID() == that.ID() &&
+		t.Core() == that.Core() &&
+		t.Socket() == that.Socket()
 }

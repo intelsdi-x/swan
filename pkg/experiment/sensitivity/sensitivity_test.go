@@ -69,6 +69,7 @@ func (s *SensitivityTestSuite) SetupTest() {
 		LoadDuration:    1 * time.Second,
 		LoadPointsCount: 2,
 		Repetitions:     1,
+		StopOnError:     true,
 	}
 
 	s.mockedPeakLoad = 2

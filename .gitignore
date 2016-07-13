@@ -3,6 +3,7 @@
 .*.swp
 /**/stderr
 /**/stdout
+/.vscode
 autom4te.cache/
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/low-level-aggressors/l1d

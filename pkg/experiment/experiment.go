@@ -15,11 +15,20 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+// Configuration - set of parameters to control the experiment.
+type Configuration struct {
+	LogLevel log.Level
+	// Stop experiment in a case if any error happen
+	StopOnError bool
+	TextUI      bool
+}
+
 // Experiment captures the internal data for the Experiment Driver.
 type Experiment struct {
 	// Human-readable name.
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
-	name string
+	name          string
+	configuration Configuration
 	// Unique ID for Experiment.
 	// Pushed to DB via Snap in tag.
 	uuid                string
@@ -27,18 +36,14 @@ type Experiment struct {
 	phases              []experimentPhase.Phase
 	startingDirectory   string
 	experimentDirectory string
-
-	logFile  *os.File
-	logLevel log.Level
-
-	textUI bool
+	logFile             *os.File
 }
 
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
 // Caller have to provide slice of Phase interfaces which are going to be executed.
 func NewExperiment(name string, phases []experimentPhase.Phase,
-	directory string, logLevel log.Level) (*Experiment, error) {
+	directory string, config Configuration) (*Experiment, error) {
 	if len(phases) == 0 {
 		return nil, errors.New("invalid argument: no phases provided")
 	}
@@ -53,8 +58,7 @@ func NewExperiment(name string, phases []experimentPhase.Phase,
 		uuid:             uuid.String(),
 		workingDirectory: directory,
 		phases:           phases,
-		logLevel:         logLevel,
-		textUI:           logLevel == log.ErrorLevel,
+		configuration:    config,
 	}
 
 	err = e.createExperimentDir()
@@ -73,7 +77,7 @@ func NewExperiment(name string, phases []experimentPhase.Phase,
 
 // Run runs experiment.
 // It runs in a sequence defined phases with given repetition count.
-func (e *Experiment) Run() (err error) {
+func (e *Experiment) Run() error {
 	experimentStartingTime := time.Now()
 
 	log.Info("Starting Experiment ", e.name, " with uuid ", e.uuid)
@@ -84,7 +88,7 @@ func (e *Experiment) Run() (err error) {
 	// mode.
 	var bar *pb.ProgressBar
 	var increment int
-	if e.textUI {
+	if e.configuration.TextUI {
 		fmt.Printf("Experiment %q with uuid %q\n", e.name, e.uuid)
 		bar = pb.StartNew(100)
 		bar.ShowCounters = false
@@ -97,17 +101,18 @@ func (e *Experiment) Run() (err error) {
 	}
 
 	for id, phase := range e.phases {
-		if e.textUI {
+		if e.configuration.TextUI {
 			prefix := fmt.Sprintf("[%02d / %02d] %s ", id, len(e.phases), phase.Name())
 			bar.Prefix(prefix)
 		}
 
-		for i := 0; i < phase.Repetitions(); i++ {
+		repetition := 0
+		for ; repetition < phase.Repetitions(); repetition++ {
 			// Create phase session.
 			session := experimentPhase.Session{
 				PhaseID:      phase.Name(),
 				ExperimentID: e.uuid,
-				RepetitionID: i,
+				RepetitionID: repetition,
 			}
 
 			// Start timer.
@@ -115,48 +120,47 @@ func (e *Experiment) Run() (err error) {
 			log.Info("Starting ", session.PhaseID, " repetition ", session.RepetitionID)
 
 			// Create and step into unique phase dir.
-			err = e.createPhaseDir(session)
+			err := e.createPhaseDir(session)
 			if err != nil {
 				return err
 			}
 
 			// Start phase.
-			err := phase.Run(session)
-			if err != nil {
-				// When phase return error we stop the whole experiment.
-				log.Error(phase.Name(), " returned error ", err)
-				return err
+			if err = phase.Run(session); err != nil {
+				log.Error(phase.Name(), " repetition ", repetition, ", returned error ", err)
+				if e.configuration.StopOnError {
+					// When phase return error we want to stop the whole experiment.
+					return err
+				}
+			} else {
+				log.Info("Ended ", phase.Name(), " repetition ", repetition,
+					" in ", time.Since(phaseStartingTime))
 			}
 
-			if e.textUI {
+			if e.configuration.TextUI {
 				bar.Add(increment)
 			}
-
-			log.Info("Ended ", phase.Name(), " repetition ", i,
-				" in ", time.Since(phaseStartingTime))
 		}
 
 		// Give a chance for phase to finalize.
 		// E.g to check statistical confidence of a result based on repetitions results.
-		log.Info("Finalizing ", phase.Name(),
-			" after ", phase.Repetitions(), " repetitions")
-		err := phase.Finalize()
-		if err != nil {
+		if err := phase.Finalize(); err != nil {
 			// When phase return error we stop the whole experiment.
-			log.Error(phase.Name(), " returned error ", err,
-				" while finalizing.")
+			log.Errorf("%s returned error %q while finalizing.", phase.Name(), err.Error())
 			return err
 		}
+
+		log.Info("Finalizing ", phase.Name(), " after ", repetition, " repetitions")
 	}
 
-	if e.textUI {
+	if e.configuration.TextUI {
 		bar.Finish()
 	}
 
 	log.Info("Ended experiment ", e.name, " with uuid ", e.uuid,
 		" in ", time.Since(experimentStartingTime))
 
-	return err
+	return nil
 }
 
 // createExperimentDir creates unique directory for experiment logs and results.
@@ -213,7 +217,7 @@ func (e *Experiment) logInitialize() (err error) {
 	}
 
 	// Setup logging set to both output and logFile.
-	log.SetLevel(e.logLevel)
+	log.SetLevel(e.configuration.LogLevel)
 	log.SetFormatter(new(log.TextFormatter))
 	log.SetOutput(io.MultiWriter(e.logFile, os.Stderr))
 

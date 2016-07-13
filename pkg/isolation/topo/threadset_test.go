@@ -155,6 +155,26 @@ func TestThreadSetSockets(t *testing.T) {
 	})
 }
 
+func TestThreadSetFromThreads(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("Requesting threads with IDs 1, 2, 5 and 6 should yield 4 threads from 2 cores and 2 sockets", func() {
+			threads, err := ts.FromThreads(1, 2, 5, 6)
+			So(err, ShouldBeNil)
+			So(len(threads), ShouldEqual, 4)
+			So(threads.AvailableThreads().Equals(isolation.NewIntSet(1, 2, 5, 6)), ShouldBeTrue)
+			So(threads.AvailableCores().Equals(isolation.NewIntSet(1, 3)), ShouldBeTrue)
+			So(threads.AvailableSockets().Equals(isolation.NewIntSet(1, 2)), ShouldBeTrue)
+		})
+
+		Convey("Requesting threads with IDs 1, 3, and 9 should yield an error", func() {
+			threads, err := ts.FromThreads(1, 3, 9)
+			So(err, ShouldNotBeNil)
+			So(threads, ShouldBeNil)
+		})
+	})
+}
+
 func TestThreadSetFromCores(t *testing.T) {
 	Convey("Given a synthetic thread set", t, func() {
 		ts := syntheticThreadSet()
@@ -200,6 +220,65 @@ func TestThreadSetFromSockets(t *testing.T) {
 			threads, err := ts.FromSockets(1, 3)
 			So(err, ShouldNotBeNil)
 			So(threads, ShouldBeNil)
+		})
+	})
+}
+
+func TestThreadSetContains(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("It should contain all of its threads", func() {
+			for _, th := range ts {
+				So(ts.Contains(th), ShouldBeTrue)
+			}
+		})
+		Convey("And it should not contain other threads", func() {
+			So(ts.Contains(NewThread(0, 0, 0)), ShouldBeFalse)
+		})
+	})
+}
+
+func TestThreadSetDifference(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("Subtracting all threads from socket 1 should yield 4 threads from 2 cores and 1 sockets", func() {
+			s1Threads, err := ts.FromSockets(1)
+			So(err, ShouldBeNil)
+
+			s2Threads := ts.Difference(s1Threads)
+
+			s2ThreadsExpected, err := ts.FromSockets(2)
+			So(err, ShouldBeNil)
+
+			So(len(s2Threads), ShouldEqual, 4)
+			So(s2Threads, ShouldResemble, s2ThreadsExpected)
+			So(s2Threads.AvailableThreads().Equals(isolation.NewIntSet(5, 6, 7, 8)), ShouldBeTrue)
+			So(s2Threads.AvailableCores().Equals(isolation.NewIntSet(3, 4)), ShouldBeTrue)
+			So(s2Threads.AvailableSockets().Equals(isolation.NewIntSet(2)), ShouldBeTrue)
+		})
+	})
+}
+
+func TestThreadSetRemove(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("Removing all threads from socket 1 should yield 4 threads from 2 cores and 1 sockets", func() {
+			s1Threads, err := ts.FromSockets(1)
+			So(err, ShouldBeNil)
+
+			s2Threads := ts
+			for _, th := range s1Threads {
+				s2Threads = s2Threads.Remove(th)
+			}
+
+			s2ThreadsExpected, err := ts.FromSockets(2)
+			So(err, ShouldBeNil)
+
+			So(len(s2Threads), ShouldEqual, 4)
+			So(s2Threads, ShouldResemble, s2ThreadsExpected)
+			So(s2Threads.AvailableThreads().Equals(isolation.NewIntSet(5, 6, 7, 8)), ShouldBeTrue)
+			So(s2Threads.AvailableCores().Equals(isolation.NewIntSet(3, 4)), ShouldBeTrue)
+			So(s2Threads.AvailableSockets().Equals(isolation.NewIntSet(2)), ShouldBeTrue)
 		})
 	})
 }
