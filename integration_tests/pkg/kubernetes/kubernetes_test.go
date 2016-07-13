@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"testing"
-
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -13,6 +11,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"testing"
 	"time"
 )
 
