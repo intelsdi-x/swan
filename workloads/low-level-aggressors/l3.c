@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <sched.h>
 
 #define CACHE_SIZE 20*1024*1024
 
@@ -66,7 +67,8 @@ int main(int argc, char **argv) {
 	while (time_spent < usr_timer) {
   		begin = clock();
 		memcpy(block, block+CACHE_SIZE/2, CACHE_SIZE/2);
-		sleep((float)(usr_timer-time_spent)/usr_timer);
+		// note: replaced original throttling sleep with yielding that gives chance ther workloads to run
+		sched_yield(); // sleep((float)(usr_timer-time_spent)/usr_timer);
 		end = clock();
   		time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
 	}
