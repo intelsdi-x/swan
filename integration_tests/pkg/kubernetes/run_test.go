@@ -5,7 +5,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	. "github.com/smartystreets/goconvey/convey"
 	"path"
 	"testing"
 	"time"
@@ -33,11 +32,8 @@ func TestLocalKubernetesRun(t *testing.T) {
 
 	defer func() {
 		err := k8sHandle.Stop()
-		So(err, ShouldBeNil)
 		err = k8sHandle.Clean()
-		So(err, ShouldBeNil)
 		err = k8sHandle.EraseOutput()
-		So(err, ShouldBeNil)
 	}()
 
 	k8sHandle.Wait(0 * time.Millisecond)
