@@ -1,6 +1,8 @@
 package errutil
 
-import "github.com/Sirupsen/logrus"
+import (
+	"github.com/Sirupsen/logrus"
+)
 
 // Check the supplied error, log and exit if non-nil.
 func Check(err error) {
