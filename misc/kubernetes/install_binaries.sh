@@ -15,13 +15,14 @@ pushd `dirname $0`
     OPT=$1
     if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_BIN}.kube-services-${K8S_VERSION} ] ; then
         pushd ${SWAN_BIN}
-            touch .kube-services-${K8S_VERSION}
             wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubectl
             wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-apiserver
             wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-controller-manager
             wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-proxy
+            wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-scheduler
             wget https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubelet
             chmod +x ./*
+            touch .kube-services-${K8S_VERSION}
         popd
     fi
 popd
