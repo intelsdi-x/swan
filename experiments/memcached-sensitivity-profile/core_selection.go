@@ -35,17 +35,21 @@ func getSiblingThreadsOfThread(reservedThread topo.Thread) topo.ThreadSet {
 	threadsFromCore, err := allThreads.FromCores(requestedCore)
 	check(err)
 
-	return threadsFromCore.Filter(func(t topo.Thread) bool {
-		return t != reservedThread
-	})
+	return threadsFromCore.Remove(reservedThread)
 }
 
 func getSiblingThreadsOfThreadSet(threads topo.ThreadSet) (results topo.ThreadSet) {
 	for _, thread := range threads {
 		siblings := getSiblingThreadsOfThread(thread)
 		for _, sibling := range siblings {
-			results = append(results, sibling)
+			// Omit the reserved threads; if at least one pair from threads were
+			// siblings of each other, they would both otherwise wrongly end up in
+			// the result.
+			if !threads.Contains(sibling) {
+				results = append(results, sibling)
+			}
 		}
 	}
+
 	return results
 }

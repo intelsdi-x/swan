@@ -93,7 +93,7 @@ EOF
       tree \
       vim \
       wget 
-    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/workloads/deep_learning/caffe/caffe_deps_centos.sh
     if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
