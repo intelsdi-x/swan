@@ -9,6 +9,9 @@ pushd `dirname $0`
     SWAN_BIN=${SWAN_ROOT}misc/bin/
     SWAN_LIB=${SWAN_ROOT}misc/lib/
 
+    mkdir -p ${SWAN_BIN}
+    mkdir -p ${SWAN_LIB}
+
     OPT=$1
     if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_LIB}kubernetes.tar.gz ] ; then
         pushd ${SWAN_LIB}

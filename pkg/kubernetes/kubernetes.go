@@ -32,7 +32,7 @@ type Config struct {
 	PathToKubeProxy      string
 	PathToKubelet        string
 
-	// TODO(bp): Consider exposing these via flags.
+	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
 	ETCDServers        string
 	LogLevel           int // 0 is debug.
@@ -82,7 +82,6 @@ type kubernetes struct {
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
 // In case of the same executor they will be on the same host (high risk of interferences).
 // NOTE: Currently we support only single-kubelet (single-minion) kubernetes.
-// We would need to setup flannel/calico for multi-kubelet setup.
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
 	return kubernetes{
 		master:      master,
@@ -101,8 +100,7 @@ func (m kubernetes) Name() string {
 func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
 	handle, err := exec.Execute(command)
 	if err != nil {
-		return nil, errors.Wrapf(err,
-			"Execution of service failed; Command: %s", command)
+		return nil, errors.Wrapf(err, "Execution of service failed; Command: %s", command)
 	}
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), port)
@@ -110,7 +108,7 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 		file, fileErr := handle.StderrFile()
 		details := ""
 		if fileErr == nil {
-			// TODO(bp): I would suggest to implement helper for catting last three
+			// NOTE: Here we could implement helper for catting last three
 			// lines of this output (when some flag will be specified to do so).
 			details = fmt.Sprintf(" Check %s file for details", file.Name())
 		}
@@ -142,7 +140,6 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output of previous, successful handles?
 		return nil, err
 	}
 	clusterTaskHandle.AddAgent(controllerHandle)
@@ -153,7 +150,6 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output of previous, successful handles?
 		return nil, err
 	}
 	clusterTaskHandle.AddAgent(schedulerHandle)
@@ -165,7 +161,6 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output of previous, successful handles?
 		return nil, err
 	}
 	clusterTaskHandle.AddAgent(proxyHandle)
@@ -176,13 +171,12 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		clusterTaskHandle.Stop()
 		clusterTaskHandle.Clean()
-		// TODO(bp): Erase output of previous, successful handles?
 		return nil, err
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
 
-	// TODO(bp) We may add a simple pre-check here for instantiating one pod or checking how
-	// many nodes we have in cluster.
+	// NOTE: We may add a simple pre-health-check here for instantiating one pod or checking how
+	// many nodes we have in cluster. (SCE-548)
 
 	return clusterTaskHandle, nil
 }

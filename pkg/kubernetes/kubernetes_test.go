@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"testing"
-
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
@@ -11,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"os"
+	"testing"
 	"time"
 )
 
