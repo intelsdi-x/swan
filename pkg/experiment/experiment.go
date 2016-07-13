@@ -17,18 +17,17 @@ import (
 
 // Configuration - set of parameters to control the experiment.
 type Configuration struct {
-	LogLevel    log.Level
+	LogLevel log.Level
 	// Stop experiment in a case if any error happen
 	StopOnError bool
-	TextUI bool
+	TextUI      bool
 }
-
 
 // Experiment captures the internal data for the Experiment Driver.
 type Experiment struct {
 	// Human-readable name.
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
-	name string
+	name          string
 	configuration Configuration
 	// Unique ID for Experiment.
 	// Pushed to DB via Snap in tag.
@@ -37,10 +36,8 @@ type Experiment struct {
 	phases              []experimentPhase.Phase
 	startingDirectory   string
 	experimentDirectory string
-	logFile  *os.File
+	logFile             *os.File
 }
-
-
 
 // NewExperiment creates a new Experiment instance,
 // initialize experiment working directory and initialize logs.
@@ -130,7 +127,7 @@ func (e *Experiment) Run() error {
 
 			// Start phase.
 			if err = phase.Run(session); err != nil {
-				log.Error(phase.Name(), " repetition ", repetition,", returned error ", err)
+				log.Error(phase.Name(), " repetition ", repetition, ", returned error ", err)
 				if e.configuration.StopOnError {
 					// When phase return error we want to stop the whole experiment.
 					return err

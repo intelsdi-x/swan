@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase/mocks"
@@ -8,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"os"
 	"testing"
-	"errors"
 )
 
 func TestExperiment(t *testing.T) {
