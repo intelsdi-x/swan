@@ -29,7 +29,6 @@ func main() {
 	defer func() {
 		k8sHandle.Stop()
 		k8sHandle.Clean()
-		k8sHandle.EraseOutput()
 	}()
 
 	k8sHandle.Wait(0 * time.Millisecond)
