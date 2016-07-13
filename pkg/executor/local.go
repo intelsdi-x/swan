@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"bufio"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -59,9 +60,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
 
-	// Wait End channel is for checking the status of the Wait. If this channel is closed,
-	// it means that the wait is completed (either with error or not)
-	// This channel will not be used for passing any message.
+	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
 	hasStopOrWaitInvoked := make(chan struct{})
 
@@ -113,13 +112,24 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			log.Errorf("%d Stderr stored in %q", pid, stderrFile.Name())
 			log.Errorf("%d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 			log.Errorf("%d Last 10 lines of stdout:", pid)
-			log.Errorf("%d %q", pid, stdoutTail)
+			logLines(strings.NewReader(stdoutTail))
 			log.Errorf("%d Last 10 lines of stderr:", pid)
-			log.Errorf("%d %q", pid, stderrTail)
+			logLines(strings.NewReader(stderrTail))
 		}
 	}()
 
 	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked), nil
+}
+
+func logLines(r *strings.Reader) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		log.Error(scanner.Text())
+	}
+	err := scanner.Err()
+	if err != nil {
+		log.Errorf("Printing output failed: %q", err.Error())
+	}
 }
 
 // localTaskHandle implements TaskHandle interface.
@@ -128,9 +138,9 @@ type localTaskHandle struct {
 	stdoutFile *os.File
 	stderrFile *os.File
 
-	// This channel is closed immedietaly when process exits.
+	// This channel is closed immediately when process exits.
 	// It is used to signal task termination.
-	processHasExited chan struct{}
+	hasProcessExited chan struct{}
 
 	// This channel is closed when Stop or Wait has been invoked on TaskHandle.
 	// It is used to signal that process exit is expected by user.
@@ -144,13 +154,13 @@ func newLocalTaskHandle(
 	cmdHandler *exec.Cmd,
 	stdoutFile *os.File,
 	stderrFile *os.File,
-	processHasExited chan struct{},
+	hasProcessExited chan struct{},
 	hasStopOrWaitBeenInvoked chan struct{}) *localTaskHandle {
 	t := &localTaskHandle{
 		cmdHandler:           cmdHandler,
 		stdoutFile:           stdoutFile,
 		stderrFile:           stderrFile,
-		processHasExited:     processHasExited,
+		hasProcessExited:     hasProcessExited,
 		hasStopOrWaitInvoked: hasStopOrWaitBeenInvoked,
 	}
 	return t
@@ -162,7 +172,7 @@ func newLocalTaskHandle(
 // about an exited process available after call to Wait or Run.
 func (taskHandle *localTaskHandle) isTerminated() bool {
 	select {
-	case <-taskHandle.processHasExited:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	default:
@@ -176,7 +186,7 @@ func (taskHandle *localTaskHandle) getPid() int {
 
 // Stop terminates the local task.
 func (taskHandle *localTaskHandle) Stop() error {
-	taskHandle.stopOrWaitInvoked()
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return nil
 	}
@@ -272,7 +282,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
 func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
-	taskHandle.stopOrWaitInvoked()
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return true
 	}
@@ -284,7 +294,7 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 	}
 
 	select {
-	case <-taskHandle.processHasExited:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	case <-timeoutChannel:
@@ -297,7 +307,7 @@ func (taskHandle *localTaskHandle) Address() string {
 	return "127.0.0.1"
 }
 
-func (taskHandle *localTaskHandle) stopOrWaitInvoked() {
+func (taskHandle *localTaskHandle) signalStopOrWaitInvocation() {
 	if taskHandle.stopOrWaitChannelClosed {
 		return
 	}
