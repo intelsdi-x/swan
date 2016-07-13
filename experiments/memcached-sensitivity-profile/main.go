@@ -166,12 +166,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig.LatencyPercentile = percentileFlag.Value()
 	mutilateConfig.TuningTime = 1 * time.Second
 
-	// Master options.
-	mutilateConfig.MasterQPS = 1000
-	mutilateConfig.MasterConnections = 4
-	mutilateConfig.MasterConnectionsDepth = 4
-	mutilateConfig.MasterThreads = 4
-
 	// Special case to have ability to use local executor for mutilate master load generator.
 	// This is needed for docker testing.
 	var masterLoadGeneratorExecutor executor.Executor
