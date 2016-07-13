@@ -67,7 +67,7 @@ func DefaultConfig() Config {
 		KubeControllerPort:   10252,
 		KubeSchedulerPort:    10251,
 		KubeProxyPort:        10249,
-		ServiceAddresses:     "10.254.0.0/16",
+		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
 	}
 }
@@ -81,7 +81,8 @@ type kubernetes struct {
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
 // In case of the same executor they will be on the same host (high risk of interferences).
-// NOTE: Currently we support only single-kubelet (single-minion) kubernetes.
+// NOTE: Currently we support only single-kubelet (single-minion) kubernetes. We also does not
+// support ip lookup for pods. To support that we need to setup flannel or calico as well. (SCE-551)
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
 	return kubernetes{
 		master:      master,
