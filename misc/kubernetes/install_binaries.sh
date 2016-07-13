@@ -13,7 +13,7 @@ pushd `dirname $0`
     mkdir -p ${SWAN_LIB}
 
     OPT=$1
-    if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_LIB}kubernetes.tar.gz ] ; then
+    if [ "${OPT}" = "--force" ] || [ ! -d  ${SWAN_LIB}kubernetes ] ; then
         pushd ${SWAN_LIB}
             # Remove version which could be already there.
             rm -rf kubernetes.tar.gz
