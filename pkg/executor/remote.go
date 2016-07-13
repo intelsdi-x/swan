@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"bufio"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
