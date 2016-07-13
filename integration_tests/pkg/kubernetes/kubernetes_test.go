@@ -7,22 +7,24 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
+	"path"
 	"regexp"
 	"time"
 )
 
-const (
-	kubectlBinPath = "/usr/bin/kubectl"
+var (
+	kubectlBinPath = path.Join(fs.GetSwanBinPath(), "kubectl")
 )
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
 
-	SkipConvey("While having local executor", t, func() {
+	Convey("While having local executor", t, func() {
 		local := executor.NewLocal()
 		Convey("We are able to launch kubernetes cluster on one node", func() {
 			k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())

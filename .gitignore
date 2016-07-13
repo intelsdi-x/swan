@@ -1,6 +1,8 @@
 *.pyc
 *.idea
 .*.swp
+/**/stderr
+/**/stdout
 autom4te.cache/
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/low-level-aggressors/l1d
@@ -14,15 +16,13 @@ autom4te.cache/
 /build
 /vendor
 **/debug.test
+/misc/bin/
+/misc/lib/
 /misc/dev/vagrant/singlenode/.bundle/
 /misc/snap-on-docker/snap/snap-plugin-publisher-cassandra
 /misc/snap-plugin-collector-mutilate/mutilate-src
 /misc/snap-plugin-collector-mutilate/snap-plugin-collector-mutilate
 /misc/snap-plugin-publisher-session-test/snap-plugin-publisher-session-test
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
-/misc/snap-plugin-processor-session-tagging/snap-plugin-processor-session-tagging
-/experiments/memcached/baseline_local/baseline_local
 /misc/**/*log
 /integration_tests/**/*log
-/integration_tests/**/remote_memcached_*
-/integration_tests/**/local_snapd_*

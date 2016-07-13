@@ -280,7 +280,7 @@ func TestClusterTaskHandle(t *testing.T) {
 					})
 				})
 
-				Convey("And create ClusterTaskHandle with one agent and add another in further step", func() {
+				Convey("And create ClusterTaskHandle with one agent and add another", func() {
 					handle := executor.NewClusterTaskHandle(
 						mMasterHandle, []executor.TaskHandle{
 							mAgent1Handle,
@@ -374,7 +374,7 @@ func TestClusterTaskHandle(t *testing.T) {
 						mAgent2Handle.On("Stop").Return(nil).Once()
 						So(handle.Wait(0), ShouldEqual, true)
 
-						// Having errors during one stop should not break stopping all agents.
+						// Having errors during one stop should not preventing stopping all agents.
 						mMasterHandle.On("Wait", 0*time.Microsecond).Return(true).Once()
 						mAgent1Handle.On("Stop").Return(errors.New("test")).Once()
 						mAgent2Handle.On("Stop").Return(nil).Once()

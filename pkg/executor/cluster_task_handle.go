@@ -26,7 +26,7 @@ func NewClusterTaskHandle(master TaskHandle, agents []TaskHandle) *ClusterTaskHa
 	}
 }
 
-// AddAgent gives possibility to dynamically add agent to already handled agents.
+// AddAgent dynamically adds agent to already handled agents.
 func (m *ClusterTaskHandle) AddAgent(agent TaskHandle) {
 	m.agents = append(m.agents, agent)
 }
