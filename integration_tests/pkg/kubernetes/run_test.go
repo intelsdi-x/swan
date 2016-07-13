@@ -4,14 +4,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"path"
 	"testing"
 	"time"
-)
-
-var (
-	kubectlBinPath = path.Join(fs.GetSwanBinPath(), "kubectl")
 )
 
 func check(err error) {
@@ -23,7 +17,7 @@ func check(err error) {
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesRun(t *testing.T) {
-	logrus.SetLevel(logrus.ErrorLevel)
+	logrus.SetLevel(logrus.DebugLevel)
 
 	local := executor.NewLocal()
 	k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
@@ -31,9 +25,9 @@ func TestLocalKubernetesRun(t *testing.T) {
 	check(err)
 
 	defer func() {
-		err := k8sHandle.Stop()
-		err = k8sHandle.Clean()
-		err = k8sHandle.EraseOutput()
+		k8sHandle.Stop()
+		k8sHandle.Clean()
+		k8sHandle.EraseOutput()
 	}()
 
 	k8sHandle.Wait(0 * time.Millisecond)
