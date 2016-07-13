@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -119,17 +118,6 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	}()
 
 	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked), nil
-}
-
-func logLines(r *strings.Reader) {
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		log.Error(scanner.Text())
-	}
-	err := scanner.Err()
-	if err != nil {
-		log.Errorf("Printing output failed: %q", err.Error())
-	}
 }
 
 // localTaskHandle implements TaskHandle interface.

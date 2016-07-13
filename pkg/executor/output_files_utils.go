@@ -1,12 +1,14 @@
 package executor
 
 import (
+	"bufio"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -74,4 +76,15 @@ func readTail(filePath string) (tail string, err error) {
 	}
 
 	return string(output), nil
+}
+
+func logLines(r *strings.Reader) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		log.Error(scanner.Text())
+	}
+	err := scanner.Err()
+	if err != nil {
+		log.Errorf("Printing from reader failed: %q", err.Error())
+	}
 }
