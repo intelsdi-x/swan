@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -8,8 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"bufio"
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
