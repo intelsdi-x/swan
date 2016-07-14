@@ -44,29 +44,32 @@ $ make integration_test
 
 ## Configuration and tuning
 
+As the experiments measures sub-millisecond response times, there are a myriad of sources of interference which silently can cause misleading measurements.
+To get insight into some of these, please refer to [Kozyrakis, Jacob Leverich Christos. "Reconciling High Server Utilization and Sub-millisecond Quality-of-Service"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.713.5120&rep=rep1&type=pdf).
 
+Much of the configuration guidelines here are targeted eliminating as many of these (unintentional) sources of interference as possible.
 
-Sensitive
-Measure in microseconds
-
-Many sources of interference
-Try to eliminate as many as possible
-Swan will aim for this but needs input
-Reference mutilate paper
+Swan has built in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
+However, Swan needs some input from the user about the environment to adjust these. The sections below will go over the recommended
 
 ### Machine configuration
 
-Server with hyper threading enabled
-Example setup here is a 32 hyper threads on 16 cores over 2 sockets.
+We recommend the following machine topology:
 
-10gb links between load generators and memcached is recommended
+| Type                  | Description                                                                                                                               | Machine                                                                                |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| Target machine        | Machine where swan is run and thus where memcached will be run. Snapd should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
+| Load generator master | Machine where mutilate master will be running and thus the machine which coordinates all mutilate agent machines.                         | 1 x 10Gb link, 20 or more hyper threads in total                                       |
+| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 3 x 10Gb link, 20 or more hyper threads in total                                       |
+| Service machine       | Machine where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
 
-machine topology
 
 file descriptors
 SYN cookies
 Power control
 Reduce number of background processes
+
+#### Service machine
 
 ### memcached configuration
 
@@ -117,6 +120,10 @@ Run with different log levels
 ## Explore experiment data
 
 Reference jupyter
+
+## Example configuration
+
+
 
 ## Hints for debugging
 
