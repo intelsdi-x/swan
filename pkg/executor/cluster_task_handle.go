@@ -26,18 +26,23 @@ func NewClusterTaskHandle(master TaskHandle, agents []TaskHandle) *ClusterTaskHa
 	}
 }
 
+// AddAgent dynamically adds agent to already handled agents.
+func (m *ClusterTaskHandle) AddAgent(agent TaskHandle) {
+	m.agents = append(m.agents, agent)
+}
+
 // StdoutFile returns a file handle for the master's stdout file.
-func (m ClusterTaskHandle) StdoutFile() (*os.File, error) {
+func (m *ClusterTaskHandle) StdoutFile() (*os.File, error) {
 	return m.master.StdoutFile()
 }
 
 // StderrFile returns a file handle for the master's stderr file.
-func (m ClusterTaskHandle) StderrFile() (*os.File, error) {
+func (m *ClusterTaskHandle) StderrFile() (*os.File, error) {
 	return m.master.StderrFile()
 }
 
 // Stop terminates the master firstly and then all the agents.
-func (m ClusterTaskHandle) Stop() (err error) {
+func (m *ClusterTaskHandle) Stop() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	// Stop master.
@@ -58,19 +63,19 @@ func (m ClusterTaskHandle) Stop() (err error) {
 }
 
 // Status returns the state of the master.
-func (m ClusterTaskHandle) Status() TaskState {
+func (m *ClusterTaskHandle) Status() TaskState {
 	return m.master.Status()
 }
 
 // ExitCode returns the master exitCode. If master is not terminated it returns error.
-func (m ClusterTaskHandle) ExitCode() (int, error) {
+func (m *ClusterTaskHandle) ExitCode() (int, error) {
 	return m.master.ExitCode()
 }
 
 // Wait does the blocking wait for the master completion in case of 0 timeout time.
 // Wait is a helper for waiting with a given timeout time.
 // It returns true if all tasks are terminated.
-func (m ClusterTaskHandle) Wait(timeout time.Duration) bool {
+func (m *ClusterTaskHandle) Wait(timeout time.Duration) bool {
 	// Wait for master first.
 	isMasterTerminated := m.master.Wait(timeout)
 	if isMasterTerminated {
@@ -88,7 +93,7 @@ func (m ClusterTaskHandle) Wait(timeout time.Duration) bool {
 
 // Clean cleans master and agents temporary resources.
 // It also closes the tasks' stdout & stderr files.
-func (m ClusterTaskHandle) Clean() (err error) {
+func (m *ClusterTaskHandle) Clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.Clean()
@@ -106,7 +111,7 @@ func (m ClusterTaskHandle) Clean() (err error) {
 }
 
 // EraseOutput removes master's and agents' stdout & stderr files.
-func (m ClusterTaskHandle) EraseOutput() (err error) {
+func (m *ClusterTaskHandle) EraseOutput() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.EraseOutput()
@@ -124,6 +129,6 @@ func (m ClusterTaskHandle) EraseOutput() (err error) {
 }
 
 // Address returns address of master task.
-func (m ClusterTaskHandle) Address() string {
+func (m *ClusterTaskHandle) Address() string {
 	return m.master.Address()
 }

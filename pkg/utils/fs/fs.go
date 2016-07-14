@@ -28,3 +28,8 @@ func GetSwanWorkloadsPath() string {
 func GetSwanExperimentPath() string {
 	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "experiments")
 }
+
+// GetSwanBinPath returns absolute path to Swan misc/bin directory.
+func GetSwanBinPath() string {
+	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "misc", "bin")
+}
