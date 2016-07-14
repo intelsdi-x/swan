@@ -177,7 +177,7 @@ func (e *Experiment) configureGenericExperiment() error {
 	}
 
 	var err error
-	config :=  experiment.Configuration{e.logLevel, e.configuration.StopOnError, e.logLevel == log.ErrorLevel}
+	config := experiment.Configuration{e.logLevel, e.configuration.StopOnError, e.logLevel == log.ErrorLevel}
 	e.exp, err = experiment.NewExperiment(e.name, allMeasurements, os.TempDir(), config)
 	if err != nil {
 		return err

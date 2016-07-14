@@ -5,15 +5,16 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetSiblingThread(t *testing.T) {
 	allThreads, err := topo.Discover()
-	check(err)
+	errutil.Check(err)
 
 	socket, err := allThreads.Sockets(1)
-	check(err)
+	errutil.Check(err)
 
 	if len(socket.AvailableThreads()) == len(socket.AvailableCores()) {
 		t.Skipf("Cores do not seem to have hyper threading enabled. Skipping sibling test.")
@@ -24,10 +25,10 @@ func TestGetSiblingThread(t *testing.T) {
 	}
 
 	coreThreads, err := socket.Cores(2)
-	check(err)
+	errutil.Check(err)
 
 	hpThreads, err := coreThreads.Threads(2)
-	check(err)
+	errutil.Check(err)
 
 	Convey("When obtaining siblings of hyperthread", t, func() {
 		siblings := getSiblingThreadsOfThreadSet(hpThreads)

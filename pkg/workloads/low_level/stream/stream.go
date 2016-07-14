@@ -60,7 +60,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (l stream) buildCommand() string {
-	return fmt.Sprintf("OMP_NUM_THREADS=%d %s", l.conf.NumThreads, l.conf.Path)
+	return fmt.Sprintf("sh -c 'OMP_NUM_THREADS=%d %s'", l.conf.NumThreads, l.conf.Path)
 }
 
 // Launch starts a workload.
