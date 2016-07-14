@@ -2,7 +2,7 @@
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
 
-import collections
+import pandas as pd
 
 class Profile(object):
     """
@@ -11,59 +11,70 @@ class Profile(object):
     codes each cell based on it's slack (quality of service head room) or violation.
     """
 
-    def __init__(self, samples, slo):
+    def __init__(self, data_frame, slo):
         """
         Initializes a sensivity profile with given list of Sample objects and visualized against the
         specified slo (performance target).
         """
-        # TODO: slo should be read from database.
-        self.slo = slo
-        self.sensivity_rows = collections.OrderedDict()
-        self.phase_to_aggressor = {}
 
-        for sample_row in samples:
-            # Categorize for sensitivity profile.
-            if 'swan_loadpoint_qps' in sample_row.tags:
-                phase = sample_row.tags['swan_phase']
+        # TODO: Remove 'jp7-1' from query below.
+        p99  = data_frame.loc[data_frame['ns'] == '/intel/swan/mutilate/jp7-1/percentile/99th']
+        p99_by_aggressor = p99.groupby('swan_aggressor_name')
+        columns = None
+        data = []
+        index = []
 
-                # Ugly hack. Phase names are repeated and specialized from Swan side.
-                # Should be fixed when we introduce configuration unfolding.
-                phase = phase.split('_id_')[0]
+        def percentage_of_slo(x):
+            print 'value: %f slo: %f result: %f' % (x['value'], slo, (x['value'] / slo) * 100   )
+            return x['swan_loadpoint_qps'], (x['value'] / slo) * 100
 
-                if 'swan_aggressor_name' in sample_row.tags:
-                    self.phase_to_aggressor[phase] = sample_row.tags['swan_aggressor_name']
+        for name, df in p99_by_aggressor:
+            index.append(name)
 
-                load_point = int(sample_row.tags['swan_loadpoint_qps'])
+            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
 
-                if phase not in self.sensivity_rows:
-                    self.sensivity_rows[phase] = collections.OrderedDict()
+            violations = aggressor_frame.apply(percentage_of_slo, axis=1)
 
-                if load_point not in self.sensivity_rows[phase]:
-                    self.sensivity_rows[phase][load_point] = {}
+            # Store columns for data frame from the target QPSes.
+            # In case of partial measurements, we only use the columns from this aggressor
+            # if it is bigger than the current one.
+            qps = aggressor_frame['swan_loadpoint_qps'].tolist()
+            if columns is None:
+                columns = qps
+            elif len(columns) < len(qps):
+                columns = qps
 
-                self.sensivity_rows[phase][load_point][sample_row.metric_name()] = sample_row
+            data.append(violations)
+
+        # Apply filter to columns to enable other formatting.
+        peak = max(columns)
+        def percentage_of_peak(qps):
+            return (qps / peak) * 100
+        columns = map(percentage_of_peak, columns)
+
+        profile = pd.DataFrame(data, columns=columns, index=index)
+
+        self.frame = profile
 
     def _repr_html_(self):
-        # HTML styling constants
         no_border = 'border: 0'
         black_border = '1px solid black'
 
         html_out = ''
-        html_out += '<table style="border: 0;">'
+        html_out += '<table style="%s">' % no_border
         html_out += '<tr style="%s">' % no_border
         html_out += '<th style="%s; border-bottom: %s; border-right: %s;">Scenario / Load</th>' % \
             (no_border, black_border, black_border)
 
-        for load_percentage in range(5, 100, 10):
+        for column in self.frame:
             html_out += '<th style="border: 0; border-bottom: 1px solid black;">%s%%</th>' % \
-                load_percentage
+                column
 
         html_out += '</tr>'
 
-        for phase in self.sensivity_rows:
+        for index, row in self.frame.iterrows():
             html_out += '<tr style="%s">' % no_border
-
-            aggressor = self.phase_to_aggressor[phase]
+            aggressor = index
             if aggressor == 'None':
                 label = 'Baseline'
             else:
@@ -72,25 +83,18 @@ class Profile(object):
             html_out += '<td style="%s; border-right: %s;">%s</td>' % \
                 (no_border, black_border, label)
 
-            for load_points in self.sensivity_rows[phase]:
-                samples = self.sensivity_rows[phase][load_points]
-
-                if 'percentile/99th' in samples:
-                    latency = samples['percentile/99th']
-                    violation = ((latency.doubleval / self.slo) * 100)
-                    style = '%s; ' % no_border
-
-                    if violation > 150:
-                        style += 'background-color: #a9341f; color: white;'
-                    elif violation > 100:
-                        style += 'background-color: #ffeda0;'
-                    else:
-                        style += 'background-color: #98cc70;'
-
-                    html_out += '<td style="%s">%.1f%%</td>' % (style, violation)
+            for value in row:
+                style = '%s; ' % no_border
+                if value > 150:
+                    style += 'background-color: #a9341f; color: white;'
+                elif value > 100:
+                    style += 'background-color: #ffeda0;'
                 else:
-                    html_out += '<td style="%s"></td>' % no_border
-                    html_out += '</tr>'
+                    style += 'background-color: #98cc70;'
+
+                html_out += '<td style="%s">%.1f%%</td>' % (style, value)
+
+            html_out += '</tr>'
 
         html_out += '</table>'
 

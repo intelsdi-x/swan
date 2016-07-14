@@ -20,27 +20,30 @@ sudo pip install -r requirements.txt
 Start Jupyter by running the following in the `swan/scripts/jupyter` directory:
 
 ```sh
-jupyter notebook --ip=111.222.333.444
+jupyter notebook --ip=0.0.0.0
 ```
-**NOTE** Remember to replace `111.222.333.444` with the IP of the host.
 
-From that point on, you should be able to navigate to [http://111.222.333.444:8888/](http://111.222.333.444:8888/)
+If run locally, the command will bring up the default browser.
+If not, connect to http://hostname:8888/ through your browser.
 
 ## Explore data using Jupyter
 
-First, import the experiments module:
+From within the Jupyter interface, create a new notebook by clicking on 'New' and 'Python 2'.
+
+![experiments list](docs/new_notebook.png)
+
+Within the new notebook, import the experiments module by typing:
 
 ```
 from experiments import *
 ```
 
+And evaluate the expression by clicking shift and enter.
 Then, connect to the Cassandra database and load the list of experiments:
 
 ```
 experiments = Experiments(['address to Cassandra server'])
 ```
-From here, you can list the available experiments by simply having Jupyter render it:
-![experiments list](docs/experiments_list.png)
 
 To load the available samples for an experiment, run:
 ```
@@ -53,7 +56,7 @@ Showing the available samples can be done in the similar manner:
 
 To render a sensitivity profile from the loaded samples, run:
 ```
-profile = experiment.profile(500)
+profile = experiment.profile(slo=500)
 ```
 
 Where 500 is the target latency in micro seconds.

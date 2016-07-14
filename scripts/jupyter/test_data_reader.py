@@ -31,10 +31,10 @@ def strip_quotation(input):
 
     return output
 
-def is_null(input):
+def convert_null(input):
     """
     The test metrics files need to have a way to express that a value is absent.
-    This is done by setting the value to 'null'. is_null converts this to a None type.
+    This is done by setting the value to 'null'. convert_null converts this to a None type.
     """
 
     if input == 'null':
@@ -60,15 +60,15 @@ def read(path):
             if len(row) != 9:
                 continue
 
-            sample.ns = is_null(row[0])
+            sample.ns = convert_null(row[0])
             sample.ver = int(row[1])
-            sample.host = is_null(strip_quotation(row[2]))
-            sample.time = is_null(strip_quotation(row[3]))
-            sample.boolval = bool(is_null(row[4]))
-            sample.doubleval = float(is_null(row[5]))
-            sample.strval = is_null(strip_quotation(row[6]))
-            sample.tags = json.loads(is_null(strip_quotation(row[7])))
-            sample.valtype = is_null(strip_quotation(row[8]))
+            sample.host = convert_null(strip_quotation(row[2]))
+            sample.time = convert_null(strip_quotation(row[3]))
+            sample.boolval = bool(convert_null(row[4]))
+            sample.doubleval = float(convert_null(row[5]))
+            sample.strval = convert_null(strip_quotation(row[6]))
+            sample.tags = json.loads(convert_null(strip_quotation(row[7])))
+            sample.valtype = convert_null(strip_quotation(row[8]))
 
             output.append(sample)
 

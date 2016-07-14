@@ -29,7 +29,7 @@ class Sample(object):
         self.ns = ns
         self.ver = ver
         self.host = host
-        self.time = time
+        self.time = str(time)
         self.boolval = boolval
         self.doubleval = doubleval
         self.strval = strval
@@ -76,7 +76,7 @@ class Sample(object):
              self.host,
              self.time,
              value,
-             json.dumps(self.tags, sort_keys=True, indent=4, separators=(',', ': ')))
+             json.dumps(dict(self.tags), sort_keys=True, indent=4, separators=(',', ': ')))
 
         html_out += '</table>'
 
@@ -91,6 +91,6 @@ class Sample(object):
             'boolval': self.boolval,
             'doubleval': self.doubleval,
             'strval': self.strval,
-            'tags': self.tags,
+            'tags': dict(self.tags),
             'valtype': self.valtype
         })
