@@ -25,7 +25,6 @@ RUN yum install -y epel-release && \
         which && \
     (cd workload_deps_centos && ./install_deps.sh) && \
     yum clean all && \
-    wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp && \
     wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
     tar xfvv go.tar.gz && \
