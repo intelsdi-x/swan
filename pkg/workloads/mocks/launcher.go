@@ -1,6 +1,6 @@
 package mocks
 
-import "github.com/stretchr/testify/mock"
+import "github.com/intelsdi-x/testify/mock"
 
 import "github.com/intelsdi-x/swan/pkg/executor"
 
