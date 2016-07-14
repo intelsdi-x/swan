@@ -44,6 +44,13 @@ $ vagrant ssh
 - The project directory is mounted in the guest file system: edit with your
   preferred tools in the host OS!
 
+## Setup
+1. Make sure you have the newest [vagrant](https://www.vagrantup.com/downloads.html) version with VirtualBox as provider
+1. `vagrant plugin install vagrant-vbguest`
+1. `vagrant reload`
+1. `cd $GOPATH/github.com/intelsdi-x/swan/misc/dev/vagrant/singlenode`
+1. `vagrant up`
+
 ## Running the integration tests
 
 1. SSH into the VM: `vagrant ssh`
