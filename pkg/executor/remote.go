@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"strings"
@@ -9,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/kubernetes/kubernetes/pkg/util/rand"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
