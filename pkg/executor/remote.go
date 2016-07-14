@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
@@ -17,23 +18,44 @@ import (
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
-	sshConfig         *SSHConfig
+	sshConfig *SSHConfig
+	// Note that by default on Decorate PID isolation is added at the end.
 	commandDecorators isolation.Decorators
+	// Unique ID for the command which will be searched on the remote host.
+	unshareUUID string
 }
 
 // NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
+	var uuidStr string
+
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		uuidStr = string(time.Now().Unix())
+	} else {
+		uuidStr = uuid.String()
+	}
 	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: []isolation.Decorator{},
+		unshareUUID:       uuidStr,
 	}
 }
 
 // NewRemoteIsolated returns a Remote instance.
 func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Remote {
+	var uuidStr string
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		uuidStr = string(time.Now().Unix())
+	} else {
+		uuidStr = uuid.String()
+	}
+
 	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: decorators,
+		unshareUUID:       uuidStr,
 	}
 }
 
@@ -50,21 +72,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			remote.sshConfig.ClientConfig.User, connectionCommand, command)
 	}
 
-	session, err := connection.NewSession()
+	session, err := newSessionWithPty(connection)
 	if err != nil {
-		return nil, errors.Wrapf(err, "connection.NewSession for command %q failed", command)
-	}
-
-	terminal := ssh.TerminalModes{
-		ssh.ECHO:          0,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
-
-	err = session.RequestPty("xterm", 80, 40, terminal)
-	if err != nil {
-		session.Close()
-		return nil, errors.Wrapf(err, "session.RequestPty for command %q failed", command)
+		return nil, errors.Wrapf(err, "connection.sewSessionWithPty for command %q failed with error %v", command, err)
 	}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
@@ -83,10 +93,13 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
 	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
 
-	log.Debug("Starting '", stringForSh, "' remotely")
+	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
+	// On the server the example command will look the following:
+	// unshare --fork --pid --mount-proc sh -c /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
+	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c '%s #%s'`, stringForSh, remote.unshareUUID)
 
-	// huponexit` ensures that the process will be killed when ssh connection will be closed.
-	err = session.Start(fmt.Sprintf("shopt -s huponexit; sh -c '%s'", stringForSh))
+	log.Debug("Starting '", stringForSh, "' remotely")
+	err = session.Start(stringForSh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "session.Start for command %q failed", command)
 	}
@@ -107,10 +120,11 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	// Wait for remote task in go routine.
 	go func() {
-		defer close(hasProcessExited)
-		defer session.Close() // Closing a session is not enough to close connection.
-		defer connection.Close()
-
+		defer func() {
+			close(hasProcessExited)
+			session.Close()
+			connection.Close()
+		}()
 		*exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
@@ -155,21 +169,26 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			log.Errorf("%4d Last %d lines of stderr", id, lineCount)
 			logLines(strings.NewReader(stderrTail), id)
 		}
-
 	}()
 
-	return newRemoteTaskHandle(session, stdoutFile, stderrFile,
-		remote.sshConfig.Host, exitCode, hasProcessExited, hasStopOrWaitInvoked), nil
+	return newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
+		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited, hasStopOrWaitInvoked), nil
 }
 
+// Final wait for the command to exit
 const killTimeout = 5 * time.Second
+
+// Period between sending SIGTERM  and SIGKILL
+const killWaitTimeout = 100 * time.Millisecond
 
 // remoteTaskHandle implements TaskHandle interface.
 type remoteTaskHandle struct {
 	session    *ssh.Session
+	connection *ssh.Client
 	stdoutFile *os.File
 	stderrFile *os.File
 	host       string
+	uuid       string
 	exitCode   *int
 
 	// This channel is closed immediately when process exits.
@@ -187,17 +206,21 @@ type remoteTaskHandle struct {
 // newRemoteTaskHandle returns a remoteTaskHandle instance.
 func newRemoteTaskHandle(
 	session *ssh.Session,
+	connection *ssh.Client,
 	stdoutFile *os.File,
 	stderrFile *os.File,
 	host string,
+	uuid string,
 	exitCode *int,
 	processHasExited chan struct{},
 	hasStopOrWaitInvoked chan struct{}) *remoteTaskHandle {
 	return &remoteTaskHandle{
 		session:                 session,
+		connection:              connection,
 		stdoutFile:              stdoutFile,
 		stderrFile:              stderrFile,
 		host:                    host,
+		uuid:                    uuid,
 		exitCode:                exitCode,
 		hasProcessExited:        processHasExited,
 		hasStopOrWaitInvoked:    hasStopOrWaitInvoked,
@@ -219,28 +242,34 @@ func (taskHandle *remoteTaskHandle) isTerminated() bool {
 
 // Stop terminates the remote task.
 func (taskHandle *remoteTaskHandle) Stop() error {
-	taskHandle.stopOrWaitInvoked()
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return nil
 	}
-
-	// Kill session.
-	// NOTE: We need to find here a better way to stop task, since
-	// closing channel just close the ssh session and some processes can be still running.
-	// Some other approaches:
-	// - sending Ctrl+C (very time based and not working currently)
-	// - session.Signal does not work.
-	// - gathering PID & killing the pid in separate session
-	err := taskHandle.session.Close()
+	err := killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGTERM")
 	if err != nil {
-		return errors.Wrap(err, "session.Close failed")
+		// Error here means that kill did not send signal.
+		return errors.Wrapf(err, "remoteTaskHandle.Stop() failed to kill remote task with uuid %d at %s with signal SIGTERM", taskHandle.Address(), taskHandle.uuid)
 	}
 
-	// Checking if kill was successful.
-	isTerminated := taskHandle.Wait(killTimeout)
+	// Wait for the Execute's go routine to update status.
+	// If Wait exits with terminated status then there is no problem.
+	// If Wait exits with not-terminated status then:
+	//    a) task ignored SIGTERM
+	//    b) task is killed but status has not changed yet - race here.
+	isTerminated := taskHandle.Wait(killWaitTimeout)
 	if !isTerminated {
-		return errors.New("cannot terminate task")
+		// Task is not terminated. Try kill it with SIGKILL.
+		// Note that race can occur here so ignore errors.
+		// Go routine may close session any time (defers).
+		_ = killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGKILL")
 
+		// Checking if kill was successful.
+		isTerminated = taskHandle.Wait(killTimeout)
+		if !isTerminated {
+			return errors.Wrapf(err, "remoteTaskHandle.Stop() probably failed to kill remote task at %s with signal SIGKILL. Verify by 'ps aux | grep %s' on that host.", taskHandle.Address(), taskHandle.uuid)
+
+		}
 	}
 	// No error, task terminated.
 	return nil
@@ -317,7 +346,7 @@ func (taskHandle *remoteTaskHandle) EraseOutput() error {
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
 func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
-	taskHandle.stopOrWaitInvoked()
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return true
 	}
@@ -342,11 +371,120 @@ func (taskHandle *remoteTaskHandle) Address() string {
 	return taskHandle.host
 }
 
-func (taskHandle *remoteTaskHandle) stopOrWaitInvoked() {
+func (taskHandle *remoteTaskHandle) signalStopOrWaitInvocation() {
 	if taskHandle.stopOrWaitChannelClosed {
 		return
 	}
 
 	close(taskHandle.hasStopOrWaitInvoked)
 	taskHandle.stopOrWaitChannelClosed = true
+}
+
+// Killing the remote process related helper functions.
+func newSessionWithPty(connection *ssh.Client) (*ssh.Session, error) {
+	session, err := connection.NewSession()
+	if err != nil {
+		return nil, errors.Wrapf(err, "newSessionWithPty: connection.NewSession failed")
+	}
+
+	terminal := ssh.TerminalModes{
+		ssh.ECHO:          0,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	err = session.RequestPty("xterm", 80, 40, terminal)
+	if err != nil {
+		session.Close()
+		return nil, errors.Wrapf(err, "newSessionWithPty: session.RequestPty failed")
+	}
+	return session, nil
+}
+
+func getRemoteCmdOutput(connection *ssh.Client, cmd string) (string, error) {
+	session, err := newSessionWithPty(connection)
+	if err != nil {
+		return "", errors.Wrapf(err, "getRemoteCmdOutput: newSessionWithPty failed")
+	}
+	defer session.Close()
+
+	output, err := session.Output(cmd)
+	if err != nil {
+		return "", errors.Wrapf(err, "getRemoteCmdOutput: session.Output failed for '%s'", cmd)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func getUnshareProcessID(connection *ssh.Client, uuid string) (string, error) {
+	// Get unshare process that in command line has also given uuid.
+	// 1. ps -o pid -o cmd ax
+	//    - prints only PID and CMD collumns. 'a' - all process,
+	//      'x' - even if they are not attached to terminal.
+	// Example:
+	// [root@localhost]$ ps -o pid -o cmd ax
+	//   PID CMD
+	//     1 /usr/lib/systemd/systemd --switched-root --system --deserialize 21
+	//     2 [kthreadd]
+	//     3 [ksoftirqd/0]
+	//   ...
+	// 23403 sshd: root@notty
+	// 23406 unshare --fork --pid --mount-proc sh -c /home/vagrant/.../mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
+	// 23411 /home/vagrant/.../mutilate -A
+	//
+	// 2. Grep for 'unshare'. '[e]' prevents grep to find itself in proceess list.
+	//
+	// 3. Second grep searches for given uuid in all found 'unshare' process.
+	// Note that there could be more that one 'unshare' that's why uuid is
+	// added as a comment to command.
+	cmd := fmt.Sprintf(`ps -o pid -o cmd ax | grep unshar[e] | grep -e %q`, uuid)
+	// Grep returns 0 - success, 1 - pattern not found, 2 - error.
+	output, err := getRemoteCmdOutput(connection, cmd)
+	if err != nil {
+		return "", errors.Wrapf(err, "getUnshareProcessID getRemoteCmdOutput failed for command '%s'", cmd)
+	}
+	// Output from search is '<pid> <full command>'.
+	unsharePid := strings.Split(output, " ")[0]
+	return unsharePid, nil
+}
+
+func getPidNamespaceInit(connection *ssh.Client, unsharePid string) (string, error) {
+	// Find process to which 'unsharePid' is a parent. Print only found pit.
+	cmd := "ps -opid= --ppid " + unsharePid
+	output, err := getRemoteCmdOutput(connection, cmd)
+	if err != nil {
+		return "", errors.Wrapf(err, "getPidNamespaceInit getRemoteCmdOutput failed for command '%s'", cmd)
+	}
+	childPid := strings.TrimSpace(output)
+	return childPid, nil
+}
+
+func killRemotePid(connection *ssh.Client, sig string, pid string) error {
+	session, err := newSessionWithPty(connection)
+	if err != nil {
+		return errors.Wrapf(err, "killRemotePid newSessionWithPty failed.")
+	}
+	defer session.Close()
+	err = session.Run(fmt.Sprintf("kill -%s %s", sig, pid))
+	// Kill return 'success' if signal was sent
+	return err
+}
+
+func killRemoteTaskWithID(connection *ssh.Client, uuid string, signal string) error {
+	// 1. Find 'unshare' process which has 'uuid' in command line attached. Return pid of that 'unshare'.
+	unsharePid, err := getUnshareProcessID(connection, uuid)
+	if err != nil {
+		return errors.Wrapf(err, "killRemoteTaskWithID: getUnshareProcessID failed for uuid '%s'", uuid)
+	}
+	// 2. Find 'unshare' child - this will be init process in the PID namespace and killing it
+	//    will result in killing all processes in that namespace.
+	initPid, err := getPidNamespaceInit(connection, unsharePid)
+	if err != nil {
+		return errors.Wrapf(err, "killRemoteTaskWithID: getPidNamespaceInit failed for unsharePid '%s'", unsharePid)
+	}
+	// 3. Send kill signal to unshare's child - namespace init process.
+	err = killRemotePid(connection, signal, initPid)
+	if err != nil {
+		return errors.Wrapf(err, "killRemoteTaskWithID: failed to send signal %s to process '%s'", signal, initPid)
+	}
+	return err
 }
