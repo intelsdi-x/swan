@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"strings"
@@ -123,36 +124,36 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 				*exitCode = exitError.Waitmsg.ExitStatus()
 			}
 		}
+		stdoutFile.Sync()
+		stderrFile.Sync()
 
-		stdoutTail, err := readTail(stdoutFile.Name())
+		lineCount := 3
+		stdoutTail, err := readTail(stdoutFile.Name(), lineCount)
 		if err != nil {
 			stdoutTail = fmt.Sprintf("%v", err)
 		}
-		stderrTail, err := readTail(stderrFile.Name())
+		stderrTail, err := readTail(stderrFile.Name(), lineCount)
 		if err != nil {
 			stderrTail = fmt.Sprintf("%v", err)
 		}
+
+		id := rand.Intn(9999)
 		select {
 		// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
 		case <-hasStopOrWaitInvoked:
-			log.Debugf("Command %s ended on remote host %s", command, remote.sshConfig.Host)
-			log.Debugf("Stdout stored in %q", stdoutFile.Name())
-			log.Debugf("Stderr stored in %q", stderrFile.Name())
-			log.Debugf("Exit code: %d", exitCode)
-			log.Debugf("Last 10 lines of stdout")
-			logLines(strings.NewReader(stdoutTail))
-			log.Debugf("Last 10 lines of stderr")
-			logLines(strings.NewReader(stderrTail))
+			log.Debugf("%4d Command %s ended on remote host %s", id, command, remote.sshConfig.Host)
+			log.Debugf("%4d Stdout stored in %q", id, stdoutFile.Name())
+			log.Debugf("%4d Stderr stored in %q", id, stderrFile.Name())
+			log.Debugf("%4d Exit code: %d", id, exitCode)
 		default:
-
-			log.Errorf("Command %s might have ended prematurely on remote host %s", command, remote.sshConfig.Host)
-			log.Errorf("Stdout stored in %q", stdoutFile.Name())
-			log.Errorf("Stderr stored in %q", stderrFile.Name())
-			log.Errorf("Exit code: %d", exitCode)
-			log.Debugf("Last 10 lines of stdout")
-			logLines(strings.NewReader(stdoutTail))
-			log.Debugf("Last 10 lines of stderr")
-			logLines(strings.NewReader(stderrTail))
+			log.Errorf("%4d Command %s might have ended prematurely on remote host %s", id, command, remote.sshConfig.Host)
+			log.Errorf("%4d Stdout stored in %q", id, stdoutFile.Name())
+			log.Errorf("%4d Stderr stored in %q", id, stderrFile.Name())
+			log.Errorf("%4d Exit code: %d", id, exitCode)
+			log.Errorf("%4d Last %d lines of stdout", id, lineCount)
+			logLines(strings.NewReader(stdoutTail), id)
+			log.Errorf("%4d Last %d lines of stderr", id, lineCount)
+			logLines(strings.NewReader(stderrTail), id)
 		}
 
 	}()
