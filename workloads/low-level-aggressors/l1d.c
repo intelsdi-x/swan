@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <sched.h>
 
 // #define CACHE_SIZE 32*1024
 #define NS_PER_S (1000000000L)
@@ -69,7 +70,8 @@ int main(int argc, char **argv) {
 
 	while (getNs() < usr_timer) {
 		memcpy(block, block+CACHE_SIZE/2, CACHE_SIZE/2);
-		sleep((float)(usr_timer-getNs())/usr_timer);
+		// note: replaced original throttling sleep with yielding that gives chance ther workloads to run
+		sched_yield(); // sleep((float)(usr_timer-time_spent)/usr_timer);
 	}
 	return 0;
 }
