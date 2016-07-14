@@ -82,38 +82,38 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		// Flush write buffers to disk to prevent a race with the caller.
 		stdoutFile.Sync()
 		stderrFile.Sync()
+
+		lineCount := 3
+		stdoutTail, err := readTail(stdoutFile.Name(), lineCount)
+		if err != nil {
+			stdoutTail = fmt.Sprintf("%v", err)
+		}
+		stderrTail, err := readTail(stderrFile.Name(), lineCount)
+		if err != nil {
+			stderrTail = fmt.Sprintf("%v", err)
+		}
 
 		pid := cmd.Process.Pid
 		select {
 		// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
 		case <-hasStopOrWaitInvoked:
 			// logrus escapes newline, making this log unreadable otherwise
-			log.Debugf("%d Process %q ended\n", pid, strings.Join(cmd.Args, " "))
-			log.Debugf("%d Stdout stored in %q", pid, stdoutFile.Name())
-			log.Debugf("%d Stderr stored in %q", pid, stderrFile.Name())
-			log.Debugf("%d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			log.Debugf("%4d Process %q ended\n", pid, strings.Join(cmd.Args, " "))
+			log.Debugf("%4d Stdout stored in %q", pid, stdoutFile.Name())
+			log.Debugf("%4d Stderr stored in %q", pid, stderrFile.Name())
+			log.Debugf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
 		default:
 			// If process exited before Wait or Stop, it might have ended prematurely.
-			stdoutTail, err := readTail(stdoutFile.Name())
-			if err != nil {
-				stdoutTail = fmt.Sprintf("%v", err)
-			}
-			stderrTail, err := readTail(stderrFile.Name())
-			if err != nil {
-				stderrTail = fmt.Sprintf("%v", err)
-			}
-
-			log.Errorf("%d Process %q might have ended prematurely", pid, strings.Join(cmd.Args, " "))
-			log.Errorf("%d Stdout stored in %q", pid, stdoutFile.Name())
-			log.Errorf("%d Stderr stored in %q", pid, stderrFile.Name())
-			log.Errorf("%d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
-			log.Errorf("%d Last 10 lines of stdout:", pid)
-			logLines(strings.NewReader(stdoutTail))
-			log.Errorf("%d Last 10 lines of stderr:", pid)
-			logLines(strings.NewReader(stderrTail))
+			log.Errorf("%4d Process %q might have ended prematurely", pid, strings.Join(cmd.Args, " "))
+			log.Errorf("%4d Stdout stored in %q", pid, stdoutFile.Name())
+			log.Errorf("%4d Stderr stored in %q", pid, stderrFile.Name())
+			log.Errorf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			log.Errorf("%4d Last %d lines of stdout:", pid, lineCount)
+			logLines(strings.NewReader(stdoutTail), pid)
+			log.Errorf("%4d Last %d lines of stderr:", pid, lineCount)
+			logLines(strings.NewReader(stderrTail), pid)
 		}
 	}()
 

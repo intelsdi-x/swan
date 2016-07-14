@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
@@ -68,8 +69,9 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 	return stdout, stderr, err
 }
 
-func readTail(filePath string) (tail string, err error) {
-	output, err := exec.Command("tail", "-n 3", filePath).CombinedOutput()
+func readTail(filePath string, lineCount int) (tail string, err error) {
+	lineCountParam := fmt.Sprintf("-n %d", lineCount)
+	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
 
 	if err != nil {
 		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
@@ -78,13 +80,13 @@ func readTail(filePath string) (tail string, err error) {
 	return string(output), nil
 }
 
-func logLines(r *strings.Reader) {
+func logLines(r *strings.Reader, logId int) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		log.Error(scanner.Text())
+		log.Errorf("%4d %s", logId, scanner.Text())
 	}
 	err := scanner.Err()
 	if err != nil {
-		log.Errorf("Printing from reader failed: %q", err.Error())
+		log.Errorf("%4d Printing from reader failed: %q", logId, err.Error())
 	}
 }
