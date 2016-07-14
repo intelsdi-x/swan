@@ -92,7 +92,9 @@ EOF
       scons \
       tree \
       vim \
-      wget 
+      wget \
+      psmisc \
+      pssh
     . $HOME_DIR/go/src/github.com/intelsdi-x/swan/workloads/deep_learning/caffe/caffe_deps_centos.sh
     if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
