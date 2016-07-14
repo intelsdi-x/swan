@@ -69,7 +69,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 }
 
 func readTail(filePath string) (tail string, err error) {
-	output, err := exec.Command("tail", "-n 3", filePath).CombinedOutput()
+	output, err := exec.Command("tail", "-n 10", filePath).CombinedOutput()
 
 	if err != nil {
 		return "", errors.Wrapf(err, "could not read tail of %q", filePath)

@@ -92,9 +92,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	log.Debug("Started remote command")
 
-	// hasStopOrWaitInvoked channel is for checking the status of the Wait and Stop. If this channel is closed,
-	// it means that the wait/stop is completed (either with error or not).
-	// This channel will not be used for passing any message.
+	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
 	hasStopOrWaitInvoked := make(chan struct{})
 
@@ -135,9 +133,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			stderrTail = fmt.Sprintf("%v", err)
 		}
 		select {
-		// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
+		// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
 		case <-hasStopOrWaitInvoked:
-			log.Debugf("Command %s might have ended prematurely on remote host %s", command, remote.sshConfig.Host)
+			log.Debugf("Command %s ended on remote host %s", command, remote.sshConfig.Host)
 			log.Debugf("Stdout stored in %q", stdoutFile.Name())
 			log.Debugf("Stderr stored in %q", stderrFile.Name())
 			log.Debugf("Exit code: %d", exitCode)
