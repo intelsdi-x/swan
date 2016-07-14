@@ -80,13 +80,13 @@ func readTail(filePath string, lineCount int) (tail string, err error) {
 	return string(output), nil
 }
 
-func logLines(r *strings.Reader, logId int) {
+func logLines(r *strings.Reader, logID int) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		log.Errorf("%4d %s", logId, scanner.Text())
+		log.Errorf("%4d %s", logID, scanner.Text())
 	}
 	err := scanner.Err()
 	if err != nil {
-		log.Errorf("%4d Printing from reader failed: %q", logId, err.Error())
+		log.Errorf("%4d Printing from reader failed: %q", logID, err.Error())
 	}
 }
