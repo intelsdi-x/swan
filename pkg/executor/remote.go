@@ -92,10 +92,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	log.Debug("Started remote command")
 
-	// Wait End channel is for checking the status of the Wait. If this channel is closed,
-	// it means that the wait is completed (either with error or not)
-	// This channel will not be used for passing any message.
-	waitEndChannel := make(chan struct{})
+	// hasProcessExited channel is closed when launched process exits.
+	hasProcessExited := make(chan struct{})
+	hasStopOrWaitInvoked := make(chan struct{})
 
 	// TODO(bplotka): Move exit code constants to global executor scope.
 	const successExitCode = int(0)
@@ -105,9 +104,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	var exitCode *int
 	exitCode = &exitCodeInt
 
-	// Wait for local task in go routine.
+	// Wait for remote task in go routine.
 	go func() {
-		defer close(waitEndChannel)
+		defer close(hasProcessExited)
 		defer session.Close() // Closing a session is not enough to close connection.
 		defer connection.Close()
 
@@ -125,47 +124,91 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		log.Debug(
-			"Ended ", command,
-			" with output in file: ", stdoutFile.Name(),
-			" with err output in file: ", stderrFile.Name(),
-			" with status code: ", *exitCode)
+		stdoutTail, err := readTail(stdoutFile.Name())
+		if err != nil {
+			stdoutTail = fmt.Sprintf("%v", err)
+		}
+		stderrTail, err := readTail(stderrFile.Name())
+		if err != nil {
+			stderrTail = fmt.Sprintf("%v", err)
+		}
+		select {
+		// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
+		case <-hasStopOrWaitInvoked:
+			log.Debugf("Command %s ended on remote host %s", command, remote.sshConfig.Host)
+			log.Debugf("Stdout stored in %q", stdoutFile.Name())
+			log.Debugf("Stderr stored in %q", stderrFile.Name())
+			log.Debugf("Exit code: %d", exitCode)
+			log.Debugf("Last 10 lines of stdout")
+			logLines(strings.NewReader(stdoutTail))
+			log.Debugf("Last 10 lines of stderr")
+			logLines(strings.NewReader(stderrTail))
+		default:
+
+			log.Errorf("Command %s might have ended prematurely on remote host %s", command, remote.sshConfig.Host)
+			log.Errorf("Stdout stored in %q", stdoutFile.Name())
+			log.Errorf("Stderr stored in %q", stderrFile.Name())
+			log.Errorf("Exit code: %d", exitCode)
+			log.Debugf("Last 10 lines of stdout")
+			logLines(strings.NewReader(stdoutTail))
+			log.Debugf("Last 10 lines of stderr")
+			logLines(strings.NewReader(stderrTail))
+		}
+
 	}()
 
 	return newRemoteTaskHandle(session, stdoutFile, stderrFile,
-		remote.sshConfig.Host, waitEndChannel, exitCode), nil
+		remote.sshConfig.Host, exitCode, hasProcessExited, hasStopOrWaitInvoked), nil
 }
 
 const killTimeout = 5 * time.Second
 
 // remoteTaskHandle implements TaskHandle interface.
 type remoteTaskHandle struct {
-	session        *ssh.Session
-	stdoutFile     *os.File
-	stderrFile     *os.File
-	host           string
-	waitEndChannel chan struct{}
-	exitCode       *int
+	session    *ssh.Session
+	stdoutFile *os.File
+	stderrFile *os.File
+	host       string
+	exitCode   *int
+
+	// This channel is closed immediately when process exits.
+	// It is used to signal task termination.
+	hasProcessExited chan struct{}
+
+	// This channel is closed when Stop or Wait has been invoked on TaskHandle.
+	// It is used to signal that process exit is expected by user.
+	hasStopOrWaitInvoked chan struct{}
+
+	// internal flag controlling closing of hasStopOrWaitInvoked channel
+	stopOrWaitChannelClosed bool
 }
 
 // newRemoteTaskHandle returns a remoteTaskHandle instance.
-func newRemoteTaskHandle(session *ssh.Session, stdoutFile *os.File, stderrFile *os.File,
-	host string, waitEndChannel chan struct{}, exitCode *int) *remoteTaskHandle {
+func newRemoteTaskHandle(
+	session *ssh.Session,
+	stdoutFile *os.File,
+	stderrFile *os.File,
+	host string,
+	exitCode *int,
+	processHasExited chan struct{},
+	hasStopOrWaitInvoked chan struct{}) *remoteTaskHandle {
 	return &remoteTaskHandle{
-		session:        session,
-		stdoutFile:     stdoutFile,
-		stderrFile:     stderrFile,
-		host:           host,
-		waitEndChannel: waitEndChannel,
-		exitCode:       exitCode,
+		session:                 session,
+		stdoutFile:              stdoutFile,
+		stderrFile:              stderrFile,
+		host:                    host,
+		exitCode:                exitCode,
+		hasProcessExited:        processHasExited,
+		hasStopOrWaitInvoked:    hasStopOrWaitInvoked,
+		stopOrWaitChannelClosed: false,
 	}
 }
 
-// isTerminated checks if waitEndChannel is closed. If it is closed, it means
+// isTerminated checks if channel processHasExited is closed. If it is closed, it means
 // that wait ended and task is in terminated state.
 func (taskHandle *remoteTaskHandle) isTerminated() bool {
 	select {
-	case <-taskHandle.waitEndChannel:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	default:
@@ -175,6 +218,7 @@ func (taskHandle *remoteTaskHandle) isTerminated() bool {
 
 // Stop terminates the remote task.
 func (taskHandle *remoteTaskHandle) Stop() error {
+	taskHandle.stopOrWaitInvoked()
 	if taskHandle.isTerminated() {
 		return nil
 	}
@@ -272,6 +316,7 @@ func (taskHandle *remoteTaskHandle) EraseOutput() error {
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
 func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
+	taskHandle.stopOrWaitInvoked()
 	if taskHandle.isTerminated() {
 		return true
 	}
@@ -283,7 +328,7 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 	}
 
 	select {
-	case <-taskHandle.waitEndChannel:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	case <-timeoutChannel:
@@ -294,4 +339,13 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 
 func (taskHandle *remoteTaskHandle) Address() string {
 	return taskHandle.host
+}
+
+func (taskHandle *remoteTaskHandle) stopOrWaitInvoked() {
+	if taskHandle.stopOrWaitChannelClosed {
+		return
+	}
+
+	close(taskHandle.hasStopOrWaitInvoked)
+	taskHandle.stopOrWaitChannelClosed = true
 }
