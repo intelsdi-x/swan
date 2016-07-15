@@ -60,27 +60,70 @@ We recommend the following machine topology:
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | Target machine        | Machine where swan is run and thus where memcached will be run. Snapd should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
 | Load generator master | Machine where mutilate master will be running and thus the machine which coordinates all mutilate agent machines.                         | 1 x 10Gb link, 20 or more hyper threads in total                                       |
-| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 3 x 10Gb link, 20 or more hyper threads in total                                       |
-| Service machine       | Machine where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
+| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 4 x 10Gb link, 20 or more hyper threads in total                                       |
+| Service machines      | Machines where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
 
 
-file descriptors
-SYN cookies
-Power control
-Reduce number of background processes
+#### File descriptors
 
-#### Service machine
+As the both mutilate and memcached will create many connections, it is important that the number of available file descriptors is high enough. It should be in the high 10.000s.
+To check the current limit, run:
+
+```bash
+$ ulimit -n
+256
+```
+
+and set a new value with:
+
+```bash
+$ ulimit -n 65536
+```
+
+#### DDoS protection
+
+Sometimes, the Linux kernel applies anti-denial of service measures, like introducing [TCP SYN cookies](https://en.wikipedia.org/wiki/SYN_cookies). This will break the mutilate load generators and should be turned off on the target machine:
+
+```bash
+$ sudo sysctl net.ipv4.tcp_syncookies=0
+```
+
+#### Power control
+
+To avoid power saving policies to kick in while carrying out the experiments, set the power governor policy to 'performance':
+
+```bash
+$ sudo cpupower frequency-set -g performance
+```
+
+#### Misc
+
+In general, look at all running processes at the mutilate master, agents and on the target machine. Try to reduce the number of processes running at any time to reduce the likelihood of interference.
+memcached and mutilate are sensitive to processes which use any network bandwidth and otherwise may interfere with normal execution speed. Example of these are tracing tools like `iftop`. Therefore, be cautious using instrumentation tools while conducting experiments.
 
 ### memcached configuration
 
-Thread count
-Recommend half core count per socket
+One of the most important configuration options for memcached is the thread count. We recommend _half physical core count per socket_. In a machine with 32 hyper threads over 16 cores and 2 sockets, this equals 4 memcached threads.
+This is set with the `--memcached_threads` flag or through the `SWAN_MEMCACHED_THREADS` environment variable.
+The rationale for this number is explained in the 'Isolation configuration' section below.
+Lastly, the maximum number of connections to memcached can be set with the `--memcached_connections` flag or through the `SWAN_MEMCACHED_THREADS` environment variable.
 
 ### Isolation configuration
 
-Aggressor and memcached pinning
+To give insight into the placement of aggressor workloads, and motivate the thread count selection in memcached, let us start with an example topology:
 
-![Example topology](../../docs/topology.png)
+![Empty topology](../../docs/topology-1.png)
+
+Using half the number of physical cores on one socket leaves us with 1 memcached thread:
+
+![Memcached topology](../../docs/topology-2.png)
+
+We do this, partly so we can introduce isolated aggressors on the L1 caches:
+![Memcached + L1 topology](../../docs/topology-3.png)
+
+_and_ introduce L3 aggressors with the same setup of memcached, in order to compare latency measurements between both aggressor types:
+
+![Memcached + L3 topology](../../docs/topology-4.png)
 
 ### Aggressor configuration
 
@@ -129,6 +172,8 @@ Reference jupyter
 
 Roughly 100k-200k QPS per thread at peak
 At low loads, don't worry - numbers may not differ
+
+Insert example sensitivity profile.
 
 Co-existing with docker and systemd.
 Exclusive cpusets.
