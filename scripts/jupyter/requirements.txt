@@ -3,3 +3,4 @@ cassandra-driver
 jupyter
 numpy
 pylint
+pandas
