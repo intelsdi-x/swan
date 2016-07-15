@@ -27,19 +27,19 @@ function workload() {
             ;;
         "l1d")
             WD="./workloads/low-level-aggressors/"
-            BIN="./l1d"
+            BIN="./l1d $BINPARAMETERS"
             ;;
         "l1i")
             WD="./workloads/low-level-aggressors/"
-            BIN="./l1i"
+            BIN="./l1i $BINPARAMETERS"
             ;;
         "l3")
             WD="./workloads/low-level-aggressors/"
-            BIN="./l3"
+            BIN="./l3 $BINPARAMETERS"
             ;;
         "membw")
             WD="./workloads/low-level-aggressors/"
-            BIN="./memBw"
+            BIN="./memBw $BINPARAMETERS"
             ;;
         *)
             echo "You must provide scenario for 'workload' target"
