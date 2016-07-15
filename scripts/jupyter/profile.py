@@ -17,23 +17,26 @@ class Profile(object):
         specified slo (performance target).
         """
 
-        # TODO: Remove 'jp7-1' from query below.
-        p99  = data_frame.loc[data_frame['ns'] == '/intel/swan/mutilate/jp7-1/percentile/99th']
+        p99  = data_frame.loc[data_frame['ns'].str.contains('/percentile/99th')]
         p99_by_aggressor = p99.groupby('swan_aggressor_name')
         columns = None
+        profile = None
         data = []
         index = []
 
         def percentage_of_slo(x):
-            print 'value: %f slo: %f result: %f' % (x['value'], slo, (x['value'] / slo) * 100   )
-            return x['swan_loadpoint_qps'], (x['value'] / slo) * 100
+            return (x / slo) * 100
 
         for name, df in p99_by_aggressor:
+            # Overwrite the 'None' aggressor with 'Baseline'
+            if name == 'None':
+                name = 'Baseline'
+
             index.append(name)
 
             aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
 
-            violations = aggressor_frame.apply(percentage_of_slo, axis=1)
+            violations = aggressor_frame['value'].apply(percentage_of_slo)
 
             # Store columns for data frame from the target QPSes.
             # In case of partial measurements, we only use the columns from this aggressor
@@ -44,15 +47,17 @@ class Profile(object):
             elif len(columns) < len(qps):
                 columns = qps
 
-            data.append(violations)
+            data.append(violations.tolist())
 
-        # Apply filter to columns to enable other formatting.
-        peak = max(columns)
-        def percentage_of_peak(qps):
-            return (qps / peak) * 100
-        columns = map(percentage_of_peak, columns)
+        if columns is not None:
+            # Apply filter to columns to enable other formatting.
+            peak = max(columns)
+            def percentage_of_peak(qps):
+                return (qps / peak) * 100
+            columns = map(percentage_of_peak, columns)
 
-        profile = pd.DataFrame(data, columns=columns, index=index)
+            profile = pd.DataFrame(data, columns=columns, index=index).sort_index()
+
 
         self.frame = profile
 
