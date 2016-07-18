@@ -6,8 +6,7 @@ _Scheduler Workloads ANalysis_
 
 [![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan)
 
-Swan is a distributed experimentation framework for automated experiments and data collection
-targeted enhanced performance isolation and resource oversubscription.
+Swan is a distributed experimentation framework for automated experiments and data collection targeting performance isolation studies.
 
 Swan use [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment data in [Cassandra](http://cassandra.apache.org/).
 From here, we provide a [Jupyter](http://jupyter.org/) environment to explore and visualize experiment data.
