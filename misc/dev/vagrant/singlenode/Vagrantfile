@@ -143,7 +143,7 @@ SCRIPT
     systemctl restart cassandra.service
 SCRIPT
 
-  config.vm.provision "shell", inline: $get_kubernetes, env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
