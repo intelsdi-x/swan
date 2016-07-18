@@ -1,16 +1,48 @@
-package executor
+/* manuall run
 
-import "testing"
+cd kubernetes
+https://github.com/kubernetes/kubernetes/blob/master/docs/devel/running-locally.md
+
+./hack/local-up-cluster.sh
+
+go test -run K8s -v github.com/intelsdi-x/swan/pkg/executor
+
+cluster/kubectl.sh get pod stress1
+cluster/kubectl.sh delete pod stress1
+*/
+package executor_test
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/intelsdi-x/swan/pkg/executor"
+)
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestK8s(t *testing.T) {
 
-	/* setup
-	https://github.com/kubernetes/kubernetes/blob/master/docs/devel/running-locally.md
-	./hack/local-up-cluster.sh
-	*/
+	println("BLE !!!")
+	fmt.Println("client....")
 
-	k8s := NewKubernetesExectuor("http://127.0.0.1:8080", "stress1")
+	k8s, err := executor.NewKubernetesExectuor("http://127.0.0.1:8080", "stress1")
+	check(err)
+	println("BLE !!!")
+
+	fmt.Printf("k8s = %+v\n", k8s)
+
+	fmt.Println("schedule a pod....")
 	th := k8s.Execute("stress -c 1")
+	println("BLE !!!")
+
+	fmt.Println("scheduled")
+	fmt.Printf("th = %+v\n", th)
+
 	th.Wait(0)
 	// play with
 	/*

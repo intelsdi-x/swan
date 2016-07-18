@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
 
@@ -51,7 +50,7 @@ type kubernetesExecutor struct {
 	client *client.Client
 }
 
-func NewKubernetesExectuor(url, podName string, options ...kubernetesExecutorOption) (*kubernetesExecutor, error) {
+func NewKubernetesExectuor(address, podName string, options ...kubernetesExecutorOption) (*kubernetesExecutor, error) {
 
 	// new
 	k8s := &kubernetesExecutor{address: address, podName: podName}
@@ -62,19 +61,20 @@ func NewKubernetesExectuor(url, podName string, options ...kubernetesExecutorOpt
 	}
 
 	config := &restclient.Config{
-		Host: url,
+		Host: address,
 		// Username: "test", // TODO authorization
 		// Password: "password",
 	}
+	var err error
 	k8s.client, err = client.New(config)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't initilize kubernetes Client for host = %q", host)
+		return nil, errors.Wrapf(err, "can't initilize kubernetes Client for host = %q", address)
 	}
 
-	return k8s
+	return k8s, nil
 }
 
-func (k8s *kubernetesExecutor) Execute(command string) *kuberentesTaskHandle {
+func (k8s *kubernetesExecutor) Execute(command string) *kubernetesTaskHandle {
 
 	// TODO: do we want own namespace ?
 	ns := api.NamespaceDefault
@@ -94,15 +94,14 @@ func (k8s *kubernetesExecutor) Execute(command string) *kuberentesTaskHandle {
 				api.Container{
 					Name:    k8s.podName,
 					Image:   "jess/stress", // replace with image of swan
-					Command: "sh",
-					Args:    []string{"-c", command},
+					Command: []string{"sh", "-c", command},
 				},
 			},
 		},
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't schedule pod %q ns=%q", k8s.podName, ns)
+		panic(fmt.Sprintf("can't schedule pod %q ns=%q: %s", k8s.podName, ns, err))
 	}
 
 	// Wait.
@@ -132,11 +131,11 @@ func (k8s *kubernetesExecutor) Execute(command string) *kuberentesTaskHandle {
 		}
 	}
 
-	return &kuberentesTaskHandle{pod, watch}
+	return &kubernetesTaskHandle{pod, watch}
 }
 
 // --------------------  task handle -------------------------
-type kuberentesTaskHandle struct {
+type kubernetesTaskHandle struct {
 	pod   *api.Pod
 	watch watch.Interface // TODO: use that to spot our PodTerminated (in background gorountien)
 }
@@ -145,7 +144,7 @@ func (k8s *kubernetesTaskHandle) Stop() error {
 	panic("not implemented")
 }
 
-func (k8s *kubernetesTaskHandle) Status() executor.TaskState {
+func (k8s *kubernetesTaskHandle) Status() TaskState {
 	panic("not implemented")
 }
 
