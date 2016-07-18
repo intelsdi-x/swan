@@ -92,6 +92,8 @@ EOF
       libevent-devel \
       nmap-ncat \
       perf \
+      python-pip \
+      python-devel \
       scons \
       tree \
       vim \
