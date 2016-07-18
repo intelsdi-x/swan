@@ -169,7 +169,7 @@ func (e *Experiment) createExperimentDir() error {
 	e.experimentDirectory = path.Join(
 		e.startingDirectory,
 		e.name,
-		time.Now().Format("2006-01-02T15h04m05s_")+e.uuid)
+		e.uuid)
 
 	err := os.MkdirAll(e.experimentDirectory, 0777)
 	if err != nil {
