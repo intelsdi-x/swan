@@ -37,7 +37,7 @@ where:
 
 To build, test or run swan workload inside Docker container run:
 
-`docker run --privileged -i -t -e GIT_LOGIN=<*your_github_id*> -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*>`
+`docker run --privileged -i -t -e GIT_LOGIN=<*your_github_id*> -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*> -n <*numactl_configuration*>`
 
 where:
 
@@ -52,6 +52,7 @@ where:
     - for 'workload' target: \['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw'\] (default: 'memcached')
 - `params` - Pass parameters to workload binaries. Only for 'workload' target. (optional)
 - `-l` - Don't close container after command execution. (optional)
+- `-d` - Decorate workload with custom command. Only for 'workload' target. Empty option doesn't set decorator. Default: ""
 
 *Note: If you pass the repository as a volume into container then cloning source code from GitHub will be skipped*
 
@@ -78,3 +79,7 @@ Run centos based container for unit_test. Source code is provided as a volume:
 Run centos based container with memcached workload. Source code is provided as a volume:
 
 `docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image -t workload -s memcached`
+
+Run centos based container with l1d aggressor, which is executing only on 3rd CPU. Source code is provided as a volume.
+
+`docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image -t workload -s l1d -d "numactl -C 3"`

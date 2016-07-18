@@ -46,9 +46,10 @@ function workload() {
             exit
             ;;
     esac
-    printInfo "Executing $BIN from $WD"
+    printInfo "Executing $DECORATOR $BIN from $WD"
+
     cd $WD
-    $BIN
+    $DECORATOR $BIN
     lockWorkload
 }
 
