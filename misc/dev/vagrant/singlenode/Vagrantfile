@@ -105,12 +105,6 @@ EOF
     fi
 SCRIPT
 
-  $get_kubernetes = <<SCRIPT
-    echo Getting Kubernetes binaries
-    chmod +x $HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/kubernetes/install_binaries.sh
-    $HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/kubernetes/install_binaries.sh
-SCRIPT
-
   $configure_docker = <<SCRIPT
     echo Configuring Docker
     systemctl enable docker
@@ -149,8 +143,6 @@ SCRIPT
     systemctl restart cassandra.service
 SCRIPT
 
-
-  config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $get_kubernetes, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
