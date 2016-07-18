@@ -107,8 +107,8 @@ SCRIPT
 
   $get_kubernetes = <<SCRIPT
     echo Getting Kubernetes binaries
-    chmod +x $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/install_kubernetes_binaries.sh
-    $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/install_kubernetes_binaries.sh
+    chmod +x $HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/kubernetes/install_binaries.sh
+    $HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/kubernetes/install_binaries.sh
 SCRIPT
 
   $configure_docker = <<SCRIPT
