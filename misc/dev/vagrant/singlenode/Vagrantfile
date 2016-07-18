@@ -71,7 +71,7 @@ Vagrant.configure(2) do |config|
     tee /etc/yum.repos.d/docker.repo <<-'EOF'
 [dockerrepo]
 name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+baseurl=https://yum.dockerproject.org/repo/main/centos/7/
 enabled=1
 gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
@@ -103,6 +103,12 @@ EOF
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
     fi
+SCRIPT
+
+  $get_kubernetes = <<SCRIPT
+    echo Getting Kubernetes binaries
+    chmod +x $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/install_kubernetes_binaries.sh
+    $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/install_kubernetes_binaries.sh
 SCRIPT
 
   $configure_docker = <<SCRIPT
@@ -145,6 +151,7 @@ SCRIPT
 
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", inline: $get_kubernetes, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
