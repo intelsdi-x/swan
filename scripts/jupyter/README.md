@@ -35,19 +35,13 @@ From within the Jupyter interface, create a new notebook by clicking on 'New' an
 Within the new notebook, import the experiments module by typing:
 
 ```
-from experiments import *
+from experiment import *
 ```
 
 And evaluate the expression by clicking shift and enter.
-Then, connect to the Cassandra database and load the list of experiments:
-
+Then, connect to the Cassandra database and load the available samples for an experiment, run:
 ```
-experiments = Experiments(['address to Cassandra server'])
-```
-
-To load the available samples for an experiment, run:
-```
-experiment = experiments.experiment('uuid of experiment')
+experiment = experiments.experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment')
 ```
 
 Showing the available samples can be done in the similar manner:
@@ -56,7 +50,7 @@ Showing the available samples can be done in the similar manner:
 
 To render a sensitivity profile from the loaded samples, run:
 ```
-profile = experiment.profile(slo=500)
+profile = Profile(experiment.frame, slo=500)
 ```
 
 Where 500 is the target latency in micro seconds.

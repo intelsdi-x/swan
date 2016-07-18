@@ -4,7 +4,6 @@ This module contains a helper to generate list of Sample objects from a comma se
 
 import csv
 import json
-from sample import Sample
 
 def strip_quotation(input):
     """
@@ -52,23 +51,26 @@ def read(path):
     with open(path, 'rb') as csvfile:
         sample_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
         for row in sample_reader:
-            sample = Sample()
-
             if row[0] == '#ns':
                 continue
 
             if len(row) != 9:
                 continue
 
-            sample.ns = convert_null(row[0])
-            sample.ver = int(row[1])
-            sample.host = convert_null(strip_quotation(row[2]))
-            sample.time = convert_null(strip_quotation(row[3]))
-            sample.boolval = bool(convert_null(row[4]))
-            sample.doubleval = float(convert_null(row[5]))
-            sample.strval = convert_null(strip_quotation(row[6]))
-            sample.tags = json.loads(convert_null(strip_quotation(row[7])))
-            sample.valtype = convert_null(strip_quotation(row[8]))
+            class Sample:
+                pass
+
+            sample = Sample()
+
+            setattr(sample, 'ns', convert_null(row[0]))
+            setattr(sample, 'ver', int(row[1]))
+            setattr(sample, 'host', convert_null(strip_quotation(row[2])))
+            setattr(sample, 'time', convert_null(strip_quotation(row[3])))
+            setattr(sample, 'boolval', bool(convert_null(row[4])))
+            setattr(sample, 'doubleval', float(convert_null(row[5])))
+            setattr(sample, 'strval', convert_null(strip_quotation(row[6])))
+            setattr(sample, 'tags', json.loads(convert_null(strip_quotation(row[7]))))
+            setattr(sample, 'valtype', convert_null(strip_quotation(row[8])))
 
             output.append(sample)
 
