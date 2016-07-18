@@ -25,7 +25,7 @@ func TestErrorCollection(t *testing.T) {
 			errCollection.Add(errors.New("test error1"))
 			errCollection.Add(errors.New("test error2"))
 			So(errCollection.GetErrIfAny(), ShouldNotBeNil)
-			So(errCollection.GetErrIfAny().Error(), ShouldEqual, "test error; test error1; test error2")
+			So(errCollection.GetErrIfAny().Error(), ShouldEqual, "test error;\n test error1;\n test error2")
 		})
 	})
 }

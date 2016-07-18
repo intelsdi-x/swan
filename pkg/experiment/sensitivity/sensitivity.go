@@ -16,6 +16,7 @@ var (
 	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
 	loadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
 	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	stopOnErrorFlag     = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
 	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
 	peakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
@@ -38,6 +39,8 @@ type Configuration struct {
 	Repetitions int
 	// PeakLoad. If set >0 skip tuning phase.
 	PeakLoad int
+	// Stop experiment in a case if any error happen
+	StopOnError bool
 }
 
 // DefaultConfiguration returns default configuration for experiment from Conf flags.
@@ -48,6 +51,7 @@ func DefaultConfiguration() Configuration {
 		LoadPointsCount: loadPointsCountFlag.Value(),
 		Repetitions:     repetitionsFlag.Value(),
 		PeakLoad:        peakLoadFlag.Value(),
+		StopOnError:     stopOnErrorFlag.Value(),
 	}
 }
 
@@ -159,7 +163,7 @@ func (e *Experiment) configureGenericExperiment() error {
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
 	} else {
-		log.Debugf("skipping Tunning phase (peakload=%d)", e.configuration.PeakLoad)
+		log.Infof("Skipping Tunning phase, using peakload %d", e.configuration.PeakLoad)
 	}
 
 	// Include Baseline Phase.
@@ -173,7 +177,8 @@ func (e *Experiment) configureGenericExperiment() error {
 	}
 
 	var err error
-	e.exp, err = experiment.NewExperiment(e.name, allMeasurements, os.TempDir(), e.logLevel)
+	config := experiment.Configuration{e.logLevel, e.configuration.StopOnError, e.logLevel == log.ErrorLevel}
+	e.exp, err = experiment.NewExperiment(e.name, allMeasurements, os.TempDir(), config)
 	if err != nil {
 		return err
 	}
@@ -191,7 +196,7 @@ func (e *Experiment) Run() error {
 
 	err = e.exp.Run()
 	defer e.exp.Finalize()
-	if err != nil {
+	if err != nil && e.configuration.StopOnError {
 		return err
 	}
 

@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"sync"
 	"testing"
 	"time"
 
@@ -71,50 +70,9 @@ func testExecutor(t *testing.T, executor Executor) {
 				exitcode, err := taskHandle.ExitCode()
 				So(err, ShouldBeNil)
 				// -1 for Local executor.
-				// 129 for Remote executor.
+				// 137 for Remote executor (process killed).
 				// TODO: Unify exit code constants in next PR.
-				So(exitcode, ShouldBeIn, -1, 129)
-			})
-		})
-
-		Convey("When multiple go routines waits for task termination", func() {
-			var wg sync.WaitGroup
-			wg.Add(5)
-			for i := 0; i < 5; i++ {
-				go func() {
-					taskHandle.Wait(0)
-					wg.Done()
-				}()
-			}
-
-			allWaitsAreDone := make(chan struct{})
-
-			go func() {
-				wg.Wait()
-				close(allWaitsAreDone)
-			}()
-
-			Convey("All waits should be blocked", func() {
-				waitsDone := false
-				select {
-				case <-allWaitsAreDone:
-					waitsDone = true
-				case <-time.After(100 * time.Millisecond):
-				}
-
-				err := taskHandle.Stop()
-				So(err, ShouldBeNil)
-				So(waitsDone, ShouldBeFalse)
-
-				Convey("After stop every wait should unblock", func() {
-					select {
-					case <-allWaitsAreDone:
-						waitsDone = true
-					case <-time.After(100 * time.Millisecond):
-					}
-
-					So(waitsDone, ShouldBeTrue)
-				})
+				So(exitcode, ShouldBeIn, -1, 137)
 			})
 		})
 	})

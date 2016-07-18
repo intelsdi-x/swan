@@ -116,6 +116,17 @@ func (s ThreadSet) Sockets(n int) (ThreadSet, error) {
 	return s.Filter(func(t Thread) bool { return sockets.Contains(t.Socket()) }), nil
 }
 
+// FromThreads returns a newly allocated thread set containing all threads with
+// the supplied IDs. If any of the supplied thread IDs are invalid, returns
+// an error.
+func (s ThreadSet) FromThreads(threadIDs ...int) (ThreadSet, error) {
+	threads := isolation.NewIntSet(threadIDs...)
+	if !threads.Subset(s.AvailableThreads()) {
+		return nil, fmt.Errorf("invalid thread id(s): available threads are %s", s.AvailableThreads().AsRangeString())
+	}
+	return s.Filter(func(t Thread) bool { return threads.Contains(t.ID()) }), nil
+}
+
 // FromCores returns a newly allocated thread set containing all threads from
 // the supplied cores. If any of the supplied cores are invalid, returns
 // an error.
@@ -136,4 +147,26 @@ func (s ThreadSet) FromSockets(socketIDs ...int) (ThreadSet, error) {
 		return nil, fmt.Errorf("invalid socket id(s): available sockets are %s", s.AvailableSockets().AsRangeString())
 	}
 	return s.Filter(func(t Thread) bool { return sockets.Contains(t.Socket()) }), nil
+}
+
+// Contains returns true iff this set contains the supplied thread.
+func (s ThreadSet) Contains(t Thread) bool {
+	for _, elem := range s {
+		if elem.Equals(t) {
+			return true
+		}
+	}
+	return false
+}
+
+// Difference returns a newly allocated thread set containing all threads from
+// this set except those contained in the supplied set.
+func (s ThreadSet) Difference(ts ThreadSet) ThreadSet {
+	return s.Filter(func(t Thread) bool { return !ts.Contains(t) })
+}
+
+// Remove returns a newly allocated thread set containing all threads from
+// this set except the supplied thread.
+func (s ThreadSet) Remove(t Thread) ThreadSet {
+	return s.Filter(func(elem Thread) bool { return !elem.Equals(t) })
 }

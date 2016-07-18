@@ -1,8 +1,6 @@
 package sensitivity
 
 import (
-	"fmt"
-
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
@@ -11,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
+	"github.com/pkg/errors"
 )
 
 // AggressorFactory is factory for creating aggressor launchers with local executor
@@ -69,7 +68,7 @@ func (f AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 		aggressor = NewLauncherWithoutSession(
 			stream.New(exec, stream.DefaultConfig()))
 	default:
-		return aggressor, fmt.Errorf("Aggressor '%s' not found", name)
+		return aggressor, errors.Errorf("aggressor %q not found", name)
 	}
 
 	return aggressor, nil

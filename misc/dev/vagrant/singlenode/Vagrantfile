@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # q -*- mode: ruby -*-
 # vi: set ft=ruby :
 
@@ -30,7 +31,7 @@ Vagrant.configure(2) do |config|
   # argument is a set of non-required options.
   if ! only_cache_dependencies
     home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
-    config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan"
+    config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
   config.vm.provider "virtualbox" do |vb|
@@ -82,9 +83,11 @@ EOF
     echo Installing packages
     yum install -y \
       docker-engine \
+      etcd \
       gcc-g++ \
       gengetopt \
       git \
+      iptables \
       libcgroup-tools \
       libevent-devel \
       nmap-ncat \
@@ -94,8 +97,10 @@ EOF
       scons \
       tree \
       vim \
-      wget
-    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/integration_tests/docker/workload_deps_centos/caffe_deps.sh
+      wget \
+      psmisc \
+      pssh
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/workloads/deep_learning/caffe/caffe_deps_centos.sh
     if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
@@ -139,7 +144,6 @@ SCRIPT
     systemctl enable cassandra.service
     systemctl restart cassandra.service
 SCRIPT
-
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies

@@ -4,11 +4,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path"
 	"regexp"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"path"
 )
 
 const (
@@ -78,7 +78,7 @@ func ValidateSSHConfig(host string, user *user.User) error {
 // NewSSHConfig creates a new ssh config for user.
 // NOTE: Assumed that private key & authorized host is available in default dirs (<home_dir>/.ssh/).
 func NewSSHConfig(host string, port int, user *user.User) (*SSHConfig, error) {
-	authMethod, err := getAuthMethod(user.HomeDir + defaultRelativeSSHKeyPath)
+	authMethod, err := getAuthMethod(path.Join(user.HomeDir, defaultRelativeSSHKeyPath))
 	if err != nil {
 		return nil, err
 	}

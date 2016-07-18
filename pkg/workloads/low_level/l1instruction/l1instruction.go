@@ -7,7 +7,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 	"github.com/pkg/errors"
 )
 
@@ -15,7 +14,7 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID                = "l1i"
 	name              = "L1 Instruction"
-	defaultIterations = 2147483648 // 2^31
+	defaultIterations = 2147483647 // 2^31-1
 	defaultIntensity  = 20
 	// {min,max}Intensity are hardcoded values in l1i binary
 	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan repository
@@ -55,7 +54,7 @@ type l1i struct {
 }
 
 // New is a constructor for l1i aggressor.
-func New(exec executor.Executor, config Config) workloads.Launcher {
+func New(exec executor.Executor, config Config) executor.Launcher {
 	return l1i{
 		exec: exec,
 		conf: config,

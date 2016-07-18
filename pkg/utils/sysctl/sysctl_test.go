@@ -24,7 +24,7 @@ func TestSysctl(t *testing.T) {
 
 		Convey("Should return an error", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "open /proc/sys/foo/bar/baz: no such file or directory")
+			So(err.Error(), ShouldContainSubstring, "open /proc/sys/foo/bar/baz: no such file or directory")
 
 			Convey("And the value should be empty", func() {
 				So(value, ShouldEqual, "")

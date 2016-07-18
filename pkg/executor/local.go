@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -27,7 +28,7 @@ func NewLocal() Local {
 
 // NewLocalIsolated returns a Local instance with some isolators set.
 func NewLocalIsolated(decorator isolation.Decorator) Local {
-	return Local{decorator}
+	return Local{commandDecorators: decorator}
 }
 
 // Execute runs the command given as input.
@@ -58,14 +59,13 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	log.Debug("Started with pid ", cmd.Process.Pid)
 
-	// Wait End channel is for checking the status of the Wait. If this channel is closed,
-	// it means that the wait is completed (either with error or not)
-	// This channel will not be used for passing any message.
-	waitEndChannel := make(chan struct{})
+	// hasProcessExited channel is closed when launched process exits.
+	hasProcessExited := make(chan struct{})
+	hasStopOrWaitInvoked := make(chan struct{})
 
 	// Wait for local task in go routine.
 	go func() {
-		defer close(waitEndChannel)
+		defer close(hasProcessExited)
 
 		// Wait for task completion.
 		// NOTE: Wait() returns an error. We grab the process state in any case
@@ -82,48 +82,85 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		// Flush write buffers to disk to prevent a race with the caller.
 		stdoutFile.Sync()
 		stderrFile.Sync()
 
-		log.Debug(
-			"Ended ", strings.Join(cmd.Args, " "),
-			" with output in file: ", stdoutFile.Name(),
-			" with err output in file: ", stderrFile.Name(),
-			" with status code: ",
-			(cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+		lineCount := 3
+		stdoutTail, err := readTail(stdoutFile.Name(), lineCount)
+		if err != nil {
+			stdoutTail = fmt.Sprintf("%v", err)
+		}
+		stderrTail, err := readTail(stderrFile.Name(), lineCount)
+		if err != nil {
+			stderrTail = fmt.Sprintf("%v", err)
+		}
+
+		pid := cmd.Process.Pid
+		select {
+		// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
+		case <-hasStopOrWaitInvoked:
+			// logrus escapes newline, making this log unreadable otherwise
+			log.Debugf("%4d Process %q ended\n", pid, strings.Join(cmd.Args, " "))
+			log.Debugf("%4d Stdout stored in %q", pid, stdoutFile.Name())
+			log.Debugf("%4d Stderr stored in %q", pid, stderrFile.Name())
+			log.Debugf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+		default:
+			// If process exited before Wait or Stop, it might have ended prematurely.
+			log.Errorf("%4d Process %q might have ended prematurely", pid, strings.Join(cmd.Args, " "))
+			log.Errorf("%4d Stdout stored in %q", pid, stdoutFile.Name())
+			log.Errorf("%4d Stderr stored in %q", pid, stderrFile.Name())
+			log.Errorf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			log.Errorf("%4d Last %d lines of stdout:", pid, lineCount)
+			logLines(strings.NewReader(stdoutTail), pid)
+			log.Errorf("%4d Last %d lines of stderr:", pid, lineCount)
+			logLines(strings.NewReader(stderrTail), pid)
+		}
 	}()
 
-	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, waitEndChannel), nil
+	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked), nil
 }
 
 // localTaskHandle implements TaskHandle interface.
 type localTaskHandle struct {
-	cmdHandler     *exec.Cmd
-	stdoutFile     *os.File
-	stderrFile     *os.File
-	waitEndChannel chan struct{}
+	cmdHandler *exec.Cmd
+	stdoutFile *os.File
+	stderrFile *os.File
+
+	// This channel is closed immediately when process exits.
+	// It is used to signal task termination.
+	hasProcessExited chan struct{}
+
+	// This channel is closed when Stop or Wait has been invoked on TaskHandle.
+	// It is used to signal that process exit is expected by user.
+	hasStopOrWaitInvoked chan struct{}
+	// internal flag controlling closing of hasStopOrWaitInvoked channel
+	stopOrWaitChannelClosed bool
 }
 
 // newLocalTaskHandle returns a localTaskHandle instance.
-func newLocalTaskHandle(cmdHandler *exec.Cmd, stdoutFile *os.File, stderrFile *os.File,
-	waitEndChannel chan struct{}) *localTaskHandle {
+func newLocalTaskHandle(
+	cmdHandler *exec.Cmd,
+	stdoutFile *os.File,
+	stderrFile *os.File,
+	hasProcessExited chan struct{},
+	hasStopOrWaitBeenInvoked chan struct{}) *localTaskHandle {
 	t := &localTaskHandle{
-		cmdHandler:     cmdHandler,
-		stdoutFile:     stdoutFile,
-		stderrFile:     stderrFile,
-		waitEndChannel: waitEndChannel,
+		cmdHandler:           cmdHandler,
+		stdoutFile:           stdoutFile,
+		stderrFile:           stderrFile,
+		hasProcessExited:     hasProcessExited,
+		hasStopOrWaitInvoked: hasStopOrWaitBeenInvoked,
 	}
 	return t
 }
 
-// isTerminated checks if waitEndChannel is closed. If it is closed, it means
+// isTerminated checks if channel processHasExited is closed. If it is closed, it means
 // that wait ended and task is in terminated state.
 // NOTE: If it's true then ProcessState is not nil. ProcessState contains information
 // about an exited process available after call to Wait or Run.
 func (taskHandle *localTaskHandle) isTerminated() bool {
 	select {
-	case <-taskHandle.waitEndChannel:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	default:
@@ -137,6 +174,7 @@ func (taskHandle *localTaskHandle) getPid() int {
 
 // Stop terminates the local task.
 func (taskHandle *localTaskHandle) Stop() error {
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return nil
 	}
@@ -232,6 +270,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
 func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
+	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return true
 	}
@@ -243,7 +282,7 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 	}
 
 	select {
-	case <-taskHandle.waitEndChannel:
+	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
 		return true
 	case <-timeoutChannel:
@@ -254,4 +293,13 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 
 func (taskHandle *localTaskHandle) Address() string {
 	return "127.0.0.1"
+}
+
+func (taskHandle *localTaskHandle) signalStopOrWaitInvocation() {
+	if taskHandle.stopOrWaitChannelClosed {
+		return
+	}
+
+	close(taskHandle.hasStopOrWaitInvoked)
+	taskHandle.stopOrWaitChannelClosed = true
 }

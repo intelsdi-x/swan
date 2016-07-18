@@ -17,6 +17,7 @@ RUN apt-get update && \
         git \
         libevent-dev \
         libcgroup-dev \
+        libzmq5-dev \
         netcat \
         scons \
         sudo \
@@ -33,7 +34,7 @@ RUN apt-get update && \
     mkdir /opt/gopath
 
 WORKDIR /opt/gopath/src/github.com/intelsdi-x
-ADD start.sh /start.sh
+ADD swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
-CMD ["integration_test"]
+CMD ["-t make -s integration_tests"]

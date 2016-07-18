@@ -1,21 +1,25 @@
 package executor
 
 import (
+	"bufio"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
 func getBinaryNameFromCommand(command string) (string, error) {
-	_, name := path.Split(command)
-	nameSplit := strings.Split(name, " ")
-	if len(nameSplit) == 0 {
+	argsSplit := strings.Split(command, " ")
+	if len(argsSplit) == 0 {
 		return "", errors.Errorf("failed to extract command name from %q", command)
 	}
-	return nameSplit[0], nil
+	_, name := path.Split(argsSplit[0])
+	return name, nil
 }
 
 func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File, err error) {
@@ -63,4 +67,26 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 	}
 
 	return stdout, stderr, err
+}
+
+func readTail(filePath string, lineCount int) (tail string, err error) {
+	lineCountParam := fmt.Sprintf("-n %d", lineCount)
+	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
+
+	if err != nil {
+		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
+	}
+
+	return string(output), nil
+}
+
+func logLines(r *strings.Reader, logID int) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		log.Errorf("%4d %s", logID, scanner.Text())
+	}
+	err := scanner.Err()
+	if err != nil {
+		log.Errorf("%4d Printing from reader failed: %q", logID, err.Error())
+	}
 }

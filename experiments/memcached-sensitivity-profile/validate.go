@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
 )
 
@@ -32,7 +33,7 @@ func checkCPUPowerGovernor() {
 		cpuGovernorFile := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", i)
 		governorBytes, err := ioutil.ReadFile(cpuGovernorFile)
 		governor := strings.TrimSuffix(string(governorBytes), "\n")
-		check(err)
+		errutil.Check(err)
 		logrus.Debugf("governor cpu%d: %q", i, governor)
 		if string(governor) != PERFORMANCE {
 			logrus.Warnf("scaling_governor=%q (%q) should be set to 'performance' policy to mitigate wakeup penalty (causes variability in measurements at moderate load). You can change this value with 'cpupower frequency-set -g performance'as root.", governor, cpuGovernorFile)
@@ -47,7 +48,7 @@ func checkCPUPowerGovernor() {
 func checkMaximumNumberOfOpenDescriptors() {
 	rlimit := &syscall.Rlimit{}
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, rlimit)
-	check(err)
+	errutil.Check(err)
 	logrus.Debugf("maximum file descriptor number: cur=%d (max=%d)", rlimit.Cur, rlimit.Max)
 	if rlimit.Cur <= 1024 {
 		logrus.Warnf("Maximum number of open file descriptors is low = %d. You can change this value eg. ulimit -n 100000 or modifying /etc/security/limits.conf.", rlimit.Cur)

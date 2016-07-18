@@ -79,6 +79,8 @@ build_workloads:
 	(cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/)
 	(cd ./workloads/deep_learning/caffe/caffe_src && make -j4 all)
 	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
+	# Install kubernetes binaries.
+	(bash ./misc/kubernetes/install_binaries.sh)
 
 cleanup:
 	rm -fr misc/**/*log

@@ -2,3 +2,6 @@
 	path = workloads/deep_learning/caffe/caffe_src
 	url = https://github.com/BVLC/caffe
 	ignore = dirty
+[submodule "workloads/data_caching/memcached/cppzmq"]
+	path = workloads/data_caching/memcached/cppzmq
+	url = https://github.com/zeromq/cppzmq

@@ -7,7 +7,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/workloads"
 )
 
 const (
@@ -53,7 +52,7 @@ type stream struct {
 // Working set size should be more than 4x the size of sum of all last-level cache used in the run
 // If you need more consider rebuilding stream with STREAM_ARRAY_SIZE adjusted accordingly.
 // Check stream.c "Instructions" for more details.
-func New(exec executor.Executor, config Config) workloads.Launcher {
+func New(exec executor.Executor, config Config) executor.Launcher {
 	return stream{
 		exec: exec,
 		conf: config,
@@ -61,7 +60,7 @@ func New(exec executor.Executor, config Config) workloads.Launcher {
 }
 
 func (l stream) buildCommand() string {
-	return fmt.Sprintf("OMP_NUM_THREADS=%d %s", l.conf.NumThreads, l.conf.Path)
+	return fmt.Sprintf("sh -c 'OMP_NUM_THREADS=%d %s'", l.conf.NumThreads, l.conf.Path)
 }
 
 // Launch starts a workload.
