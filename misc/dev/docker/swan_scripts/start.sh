@@ -110,7 +110,7 @@ function usage() {
         "workload"
     printOption "s" "Selected scenario for target. Possible choices:" \
         "for 'make' target options are specified in swan's Makefile; default: 'integration_test'" \
-        "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate']; default: 'memcached'"
+        "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw']; default: 'memcached'"
     printOption "p" "Pass parameters to workload binaries. Only for 'workload' target. There is no default parameter."
     printOption "l" "Lock state after executed command has been stopped. Default: false"
 }

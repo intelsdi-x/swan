@@ -48,7 +48,7 @@ where:
 - `target` - Run selected target. Possible choices are: 'make' and 'workload'. (Default: 'make')
 - `scenario` - Selected scenario for target. Possible choices are:
     - for 'make' target: options are specified in swan's Makefile (default: 'integration_test')
-    - for 'workload' target: \['caffe', 'memcached', 'mutilate'\] (default: 'memcached')
+    - for 'workload' target: \['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw'\] (default: 'memcached')
 - `params` - Pass parameters to workload binaries. Only for 'workload' target. (optional)
 - `-l` - Don't close container after command execution. (optional)
 
