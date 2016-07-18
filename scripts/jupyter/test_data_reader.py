@@ -47,7 +47,6 @@ def read(path):
     """
 
     output = []
-    field_to_name = {}
     with open(path, 'rb') as csvfile:
         sample_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
         for row in sample_reader:
