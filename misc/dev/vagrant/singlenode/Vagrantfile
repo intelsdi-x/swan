@@ -83,9 +83,11 @@ EOF
     echo Installing packages
     yum install -y \
       docker-engine \
+      etcd \
       gcc-g++ \
       gengetopt \
       git \
+      iptables \
       libcgroup-tools \
       libevent-devel \
       nmap-ncat \
@@ -140,7 +142,6 @@ SCRIPT
     systemctl enable cassandra.service
     systemctl restart cassandra.service
 SCRIPT
-
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
