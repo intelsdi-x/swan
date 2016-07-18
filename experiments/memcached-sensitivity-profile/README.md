@@ -125,11 +125,22 @@ _and_ introduce L3 aggressors with the same setup of memcached, in order to comp
 
 ![Memcached + L3 topology](../../docs/topology-4.png)
 
+Exclusive cpu sets
+Avoid CFS scheduling hazards
+
 ### Aggressor configuration
 
-Number of aggressor threads
-Per aggressor, describe desired effect
-Reference ibench paper
+| Source of interference | Aggressor description |
+|------------------------|-----------------------|
+| L1 instruction         |                       |
+| L1 data                |                       |
+| L3 data                |                       |
+| Memory bandwidth       |                       |
+
+To ensure a proper intensity of the aggressors, we recommend running as many threads of the aggressors as memcached.
+For L1 aggressors, this means running on all logical sibling cores and one physical core per L3 aggressor.
+
+For more information, please refer to [Delimitrou, Christina, and Christos Kozyrakis. "ibench: Quantifying interference for datacenter applications." Workload Characterization (IISWC), 2013 IEEE International Symposium on. IEEE, 2013.](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf).
 
 ### mutilate configuration
 
@@ -166,7 +177,62 @@ Reference jupyter
 
 ## Example configuration
 
+Where the machines are configured in the following topology:
 
+
+
+```bash
+## --- aggressors ---
+export SWAN_AGGR=l1d,l1i,stream,membw,caffe
+
+## --- isolations ---
+export SWAN_HP_EXCLUSIVE_CORES=true
+export SWAN_BE_EXCLUSIVE_CORES=true
+export SWAN_HP_CPUS=4
+export SWAN_BE_CPUS=4
+export SWAN_NICE=0
+
+## --- memcached configuration ---
+export SWAN_MEMCACHED_PATH=$GOPATH/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached
+export SWAN_MEMCACHED_IP=192.168.10.9
+export SWAN_MEMCACHED_THREADS=4
+export SWAN_MEMCACHED_CONNECTIONS=16000
+
+## --- mutilate configuration ---
+# master
+export SWAN_MUTILATE_PATH=/usr/local/bin/mutilate
+export SWAN_MUTILATE_MASTER=192.168.10.1
+export SWAN_MUTILATE_MASTER_THREADS=4
+export SWAN_MUTILATE_MASTER_CONNECTIONS=4
+export SWAN_MUTILATE_MASTER_CONNECTIONS_DEPTH=4
+export SWAN_MUTILATE_MASTER_BLOCKING=true
+export SWAN_MUTILATE_MASTER_QPS=1000
+export SWAN_MUTILATE_WARMUP_TIME=15s
+
+# agent
+export SWAN_MUTILATE_AGENT=192.168.10.3,192.168.10.4,192.168.10.5,192.168.10.6
+export SWAN_MUTILATE_AGENT_THREADS=20
+export SWAN_MUTILATE_AGENT_CONNECTIONS=10
+export SWAN_MUTILATE_AGENT_CONNECTIONS_DEPTH=4
+export SWAN_MUTILATE_AGENT_BLOCKING=true
+export SWAN_MUTILATE_AGENT_AFFINITY=true
+export SWAN_MUTILATE_AGENT_PORT=6556
+
+## --- experiment configuration ---
+export SWAN_SLO=500
+export SWAN_LOAD_DURATION=15s
+export SWAN_PEAK_LOAD=650000
+export SWAN_LOAD_POINTS=10
+export SWAN_REPS=1
+export SWAN_LOG=error
+
+## --- snap configuration
+export SWAN_SNAPD_ADDR=192.168.10.9
+
+## --- cassandra configuration
+export SWAN_CASSANDRA_ADDR=192.168.10.10
+export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassandra
+```
 
 ## Hints for debugging
 
