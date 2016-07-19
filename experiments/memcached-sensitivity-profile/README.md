@@ -213,28 +213,61 @@ From the peak load, Swan computes load points from 5% to 100%.
 
 Swan ships with a tuning step where swan use the `--search` capability in mutilate to find the highest load point which is under the given SLO (us latency for the specified percentile).
 
-Using swan for red lining
-Alternatively, mutilate scan
+If you want to hold the peak capacity fixed. You can use the mutilate's `--scan` feature to find the peak capacity manually and specify
+
+Roughly 100k-200k QPS per thread at peak
 
 ## Running
 
-From the root of Swan, run the following:
+First, make sure no memcached instances or aggressors are running on the host before starting any experiments:
 ```bash
-$ make build
-$ ./build/experiments/memcached/memcached-sensitivity-profile
+$ killall memcached
+$ killall l1i
+$ killall l1d
+$ killall l3
+$ killall stream
+$ killall membw
 ```
+
+You can list the available command line flags by running the profile binary with `--help`:
 
 ```bash
 $ make build
 $ ./build/experiments/memcached/memcached-sensitivity-profile --help
 ```
 
+You can start an experiment by rerunning the binary with the flags appended. For example, to change the number of cores for memcached:
+
 ```bash
-$ make build
+$ ./build/experiments/memcached/memcached-sensitivity-profile --hp_cpus=4
+```
+
+Alternatively, you can set the option through environment variables. This tend to be useful when setting many options.
+For the `--hp_cpus=` flag, the corresponding environment variable is called `SWAN_HP_CPUS`.
+Assuming that you have set flags through environment variables, you can start the experiment like this:
+
+```bash
+$ ./build/experiments/memcached/memcached-sensitivity-profile
+```
+
+If you want to change the verbosity of the output, you can choose a more detailed log level:
+
+```bash
 $ ./build/experiments/memcached/memcached-sensitivity-profile --log=debug
 ```
 
+When the experiment has started, you should see a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` which will be the identifier for this experiment and be the way to get hold of the experiment data.
+
 ## Explore experiment data
+
+While the experiment is running, you can access the experiment data in Cassandra.
+Swan ships with a Jupyter setup which provides an environment for loading the samples and generating sensitivity profiles.
+For instructions on how to run Jupyter, please refer to the [Jupyter user guide](../../scripts/jupyter/README.md).
+
+At low loads, don't worry - numbers may not differ
+Baseline should not violate SLO at any load point.
+
+Insert example sensitivity profile.
 
 Reference jupyter
 
@@ -299,10 +332,6 @@ export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassand
 
 ## Hints for debugging
 
-Roughly 100k-200k QPS per thread at peak
-At low loads, don't worry - numbers may not differ
-
-Insert example sensitivity profile.
 
 Co-existing with docker and systemd.
 Exclusive cpusets.
