@@ -8,11 +8,11 @@ import (
 
 // Numa stores information about numactl configuration.
 type Numa struct {
-	isAll bool
+	isAll        bool
 	isLocalalloc bool
-	
-	interleave []int
-	membind []int
+
+	interleave  []int
+	membind     []int
 	cpunodebind []int
 	physcpubind []int
 
@@ -22,11 +22,11 @@ type Numa struct {
 // NewNuma is a constructor which returns Numa object.
 func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind []int, preffered int) Numa {
 	return Numa{
-		isAll: all,
+		isAll:        all,
 		isLocalalloc: localalloc,
 
-		interleave: interleave,
-		membind: membind,
+		interleave:  interleave,
+		membind:     membind,
 		cpunodebind: cpunodebind,
 		physcpubind: physcpubind,
 
@@ -56,13 +56,13 @@ func (n *Numa) Decorate(command string) string {
 		numaOptions = append(numaOptions, fmt.Sprintf("-i %s", intsToStrings(n.interleave)))
 	}
 	if len(n.membind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-m %s", intsToStrings(n.membind)))		
+		numaOptions = append(numaOptions, fmt.Sprintf("-m %s", intsToStrings(n.membind)))
 	}
 	if len(n.physcpubind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-C %s", intsToStrings(n.physcpubind)))		
+		numaOptions = append(numaOptions, fmt.Sprintf("-C %s", intsToStrings(n.physcpubind)))
 	}
 	if len(n.cpunodebind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-N %s", intsToStrings(n.cpunodebind)))	
+		numaOptions = append(numaOptions, fmt.Sprintf("-N %s", intsToStrings(n.cpunodebind)))
 	}
 	if n.preffered > 0 {
 		numaOptions = append(numaOptions, fmt.Sprintf("--preffered=%d", n.preffered))

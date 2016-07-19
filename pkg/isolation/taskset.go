@@ -14,7 +14,7 @@ type TasksetDecorator struct {
 
 // NewTasksetDecorator is a constructor for TasksetDecorator object.
 func NewTasksetDecorator(cpus []int) TasksetDecorator {
-	return tasksetDecorator{
+	return TasksetDecorator{
 		cpus: cpus,
 	}
 }
