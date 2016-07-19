@@ -6,30 +6,36 @@ import (
 	"strings"
 )
 
-const (
-	// ALL - Unset default cpuset awareness.
-	ALL = 1 << iota
-	// INTERLEAVE - Set a memory interleave policy. Memory will be allocated using round robin on nodes.
-	INTERLEAVE
-	// MEMBIND - Only allocate memory from nodes.
-	MEMBIND
-	// CPUNODEBIND - Only execute command on the CPUs of nodes.
-	CPUNODEBIND
-	// PHYSCPUBIND - Only execute process on cpus.
-	PHYSCPUBIND
-	// LOCALALLOC - Always allocate on the current node.
-	LOCALALLOC
-	// PREFFERED - Preferably allocate memory on node, but if memory cannot be allocated there fall back to other nodes.
-	PREFFERED
-)
-
 // Numa stores information about numactl configuration.
 type Numa struct {
-	numaOpts map[int]string
+	isAll bool
+	isLocalalloc bool
+	
+	interleave []int
+	membind []int
+	cpunodebind []int
+	physcpubind []int
+
+	preffered int
 }
 
 // NewNuma is a constructor which returns Numa object.
 func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind []int, preffered int) Numa {
+	return Numa{
+		isAll: all,
+		isLocalalloc: localalloc,
+
+		interleave: interleave,
+		membind: membind,
+		cpunodebind: cpunodebind,
+		physcpubind: physcpubind,
+
+		preffered: preffered,
+	}
+}
+
+// Decorate implements Decorator interface.
+func (n *Numa) Decorate(command string) string {
 
 	intsToStrings := func(ints []int) []string {
 		strs := make([]string, len(ints))
@@ -39,43 +45,28 @@ func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind
 		return strs
 	}
 
-	numaOpts := make(map[int]string)
-	if all {
-		numaOpts[ALL] = "-a"
-	}
-	if localalloc {
-		numaOpts[LOCALALLOC] = "-l"
-	}
-
-	if len(interleave) > 0 {
-		numaOpts[INTERLEAVE] = fmt.Sprintf("-i %s", strings.Join(intsToStrings(interleave), ","))
-	}
-
-	if len(membind) > 0 {
-		numaOpts[MEMBIND] = fmt.Sprintf("-m %s", strings.Join(intsToStrings(membind), ","))
-	}
-
-	if len(cpunodebind) > 0 {
-		numaOpts[CPUNODEBIND] = fmt.Sprintf("-N %s", strings.Join(intsToStrings(cpunodebind), ","))
-	}
-
-	if len(physcpubind) > 0 {
-		numaOpts[PHYSCPUBIND] = fmt.Sprintf("-C %s", strings.Join(intsToStrings(physcpubind), ","))
-	}
-
-	numaOpts[PREFFERED] = strconv.Itoa(preffered)
-
-	return Numa{
-		numaOpts: numaOpts,
-	}
-
-}
-
-// Decorate implements Decorator interface.
-func (n *Numa) Decorate(command string) string {
 	var numaOptions []string
-	for _, numaOption := range n.numaOpts {
-		numaOptions = append(numaOptions, numaOption)
+	if n.isAll {
+		numaOptions = append(numaOptions, "-a")
 	}
+	if n.isLocalalloc {
+		numaOptions = append(numaOptions, "-l")
+	}
+	if len(n.interleave) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("-i %s", intsToStrings(n.interleave)))
+	}
+	if len(n.membind) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("-m %s", intsToStrings(n.membind)))		
+	}
+	if len(n.physcpubind) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("-C %s", intsToStrings(n.physcpubind)))		
+	}
+	if len(n.cpunodebind) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("-N %s", intsToStrings(n.cpunodebind)))	
+	}
+	if n.preffered > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--preffered=%d", n.preffered))
+	}
+
 	return fmt.Sprintf("numactl %s %s", strings.Join(numaOptions, " "), command)
 }
