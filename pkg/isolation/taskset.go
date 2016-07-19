@@ -21,10 +21,20 @@ func NewTasksetDecorator(cpus []int) TasksetDecorator {
 
 // Decorate implements Decorator interface.
 func (t *TasksetDecorator) Decorate(command string) string {
-	cpusStr := make([]string, len(t.cpus))
-	for idx, value := range t.cpus {
-		cpusStr[idx] = strconv.Itoa(value)
+	var cpuList string
+
+	var cpusStr []string
+	for _, value := range t.cpus {
+		if value >= 0 {
+			cpusStr = append(cpusStr, strconv.Itoa(value))
+		}
 	}
 
-	return fmt.Sprintf("taskset -c %s %s", strings.Join(cpusStr, " "), command)
+	if len(cpusStr) > 0 {
+		cpuList = strings.Join(cpusStr, ",")
+	} else {
+		cpuList = "0"
+	}
+
+	return fmt.Sprintf("taskset -c %s %s", cpuList, command)
 }
