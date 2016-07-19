@@ -181,6 +181,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
 
+	// Validate mutilate cluster environment.
+	validateMutilateClusterEnvironment(
+		masterLoadGeneratorExecutor,
+		agentsLoadGeneratorExecutors,
+	)
+
 	mutilateLoadGenerator := mutilate.NewCluster(
 		masterLoadGeneratorExecutor,
 		agentsLoadGeneratorExecutors,

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
+	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
 )
@@ -41,25 +42,44 @@ func checkCPUPowerGovernor() {
 	}
 }
 
-// checkMaximumNumberOfOpenDescriptors check maximum file descriptor number that can be opened by this process.
-// Swan require at least to handle remote connections for mutilate cluster, but also it is inherited by workloads.
-// Expect more than default 1024.
-// http://man7.org/linux/man-pages/man2/setrlimit.2.html
-func checkMaximumNumberOfOpenDescriptors() {
-	rlimit := &syscall.Rlimit{}
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, rlimit)
-	errutil.Check(err)
-	logrus.Debugf("maximum file descriptor number: cur=%d (max=%d)", rlimit.Cur, rlimit.Max)
-	if rlimit.Cur <= 1024 {
-		logrus.Warnf("Maximum number of open file descriptors is low = %d. You can change this value eg. ulimit -n 100000 or modifying /etc/security/limits.conf.", rlimit.Cur)
+// checkNOFILE checks if number of maximum file descriptors that can be opened by process is more than default.
+// Swan requires more than default for mutilate cluster.
+// The name NOFILE is based on "limits.conf" and defintion from setrlimit.
+func checkNOFILE(nofile int) {
+	if nofile <= 1024 {
+		logrus.Warnf("Maximum number of open file descriptors is low = %d. You can change this value eg. ulimit -n 100000 or modifying /etc/security/limits.conf.", nofile)
 	}
 
 }
 
-// validateOS check experiment local OS environment to help identify potential issues.
+// validateOS checks experiment local OS environment to help identify potential issues.
 // Note: in case of some requirements not met, only warns user.
 func validateOS() {
 	checkTCPSyncookies()
 	checkCPUPowerGovernor()
-	checkMaximumNumberOfOpenDescriptors()
+	checkNOFILE(getNOFILE(executor.NewLocal()))
+}
+
+// validateMutilateClusterEnvironments validates is environment capable of running distributed
+// mutilate cluster (ulimits, binaries existence).
+func validateMutilateClusterEnvironment(master executor.Executor, agents []executor.Executor) {
+	for _, executor := range append(agents, master) {
+		checkNOFILE(getNOFILE(executor))
+	}
+}
+
+// getNOFILE is helper to retrieve resource limit for NOFILE using given executor.
+func getNOFILE(executor executor.Executor) (nofile int) {
+	th, err := executor.Execute("ulimit -n")
+	errutil.Check(err)
+	defer th.Clean()
+	defer th.EraseOutput()
+	th.Wait(0)
+	outFile, err := th.StdoutFile()
+	errutil.Check(err)
+	output, err := ioutil.ReadAll(outFile)
+	errutil.Check(err)
+	nofile, err = strconv.Atoi(strings.Trim(string(output), "\n\r"))
+	errutil.Check(err)
+	return
 }
