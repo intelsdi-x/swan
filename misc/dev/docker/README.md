@@ -37,7 +37,7 @@ where:
 
 To build, test or run swan workload inside Docker container run:
 
-`docker run --privileged -i -t -e GIT_LOGIN=<*your_github_id*> -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*> -n <*numactl_configuration*>`
+`docker run --privileged -i -t -e GIT_LOGIN=<*your_github_id*> -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*> -d <*decorator_definition*>`
 
 where:
 
