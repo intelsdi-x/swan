@@ -25,18 +25,16 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 
 	Convey("While having local executor", t, func() {
 		local := executor.NewLocal()
+
 		Convey("We are able to launch kubernetes cluster on one node", func() {
 			k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
+			So(k8sLauncher, ShouldNotBeNil)
+
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
 			defer func() {
-				err := k8sHandle.Stop()
-				So(err, ShouldBeNil)
-				err = k8sHandle.Clean()
-				So(err, ShouldBeNil)
-				err = k8sHandle.EraseOutput()
-				So(err, ShouldBeNil)
+				stopCleanCheckError(k8sHandle)
 			}()
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
@@ -46,9 +44,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				defer func() {
-					taskHandle.Stop()
-					taskHandle.Clean()
-					taskHandle.EraseOutput()
+					stopCleanCheckError(taskHandle)
 				}()
 
 				taskHandle.Wait(0)
@@ -74,7 +70,55 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(match, ShouldNotBeNil)
 			})
 
-			// TODO(bp): Create pod & remove. Not a part of SCE-504.
+			Convey("And we are able to create and remove pod", func() {
+				// Command kubectl 'run' creates a Deployment named “nginx” on Kubernetes cluster.
+				podCreateHandle, err := local.Execute(fmt.Sprintf("%s run test --image=nginx", kubectlBinPath))
+				So(err, ShouldBeNil)
+
+				defer func() {
+					stopCleanCheckError(podCreateHandle)
+				}()
+
+				podCreateHandle.Wait(0)
+
+				file, err := podCreateHandle.StdoutFile()
+				So(err, ShouldBeNil)
+				So(file, ShouldNotBeNil)
+
+				data, readErr := ioutil.ReadFile(file.Name())
+				So(readErr, ShouldBeNil)
+
+				// Output should equal:
+				// deployment "test" created
+				So(string(data), ShouldEqual, "deployment \"test\" created\n")
+
+				//Remove created pod.
+				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s delete deployment test", kubectlBinPath))
+				So(err, ShouldBeNil)
+
+				defer func() {
+					stopCleanCheckError(podRemoveHandle)
+				}()
+
+				podRemoveHandle.Wait(0)
+			})
 		})
 	})
+}
+
+func stopCleanCheckError(taskHandle executor.TaskHandle) {
+	var errors []string
+	err := taskHandle.Stop()
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+	err = taskHandle.Clean()
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+	err = taskHandle.EraseOutput()
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+	So(len(errors), ShouldEqual, 0)
 }
