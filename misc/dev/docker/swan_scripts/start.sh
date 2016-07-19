@@ -9,6 +9,7 @@ BINPARAMETERS=""
 LOCKSTATE=false
 COLORTERMINAL=false
 GIT_REPO_LOCATION=""
+CMD=/bin/bash
 
 . /make.sh
 . /workload.sh
@@ -114,21 +115,26 @@ function usage() {
     echo "Swan's Docker image provides complex solution for building, running and testing swan or running experiment's workloads inside Docker container."
     echo "Usage:"
     printOption "t" "Run selected target. Possible choices are(default: make):" \
+        "command" \
         "make" \
         "workload"
     printOption "s" "Selected scenario for target. Possible choices:" \
         "for 'make' target options are specified in swan's Makefile; default: 'integration_test'" \
         "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw']; default: 'memcached'"
     printOption "p" "Pass parameters to workload binaries. Only for 'workload' target. There is no default parameter."
+    printOption "c" "Pass command to execute"
     printOption "l" "Lock state after executed command has been stopped. Default: false"
 }
 
 function parseArguments() {
     printStep "Parsing arguments"
-    while getopts "t:s:p:l" opt; do
+    while getopts "t:c:s:p:l" opt; do
     case $opt in
         t)
             TARGET=$OPTARG
+            ;;
+        c)
+            CMD="$OPTARG"
             ;;
         s)
             SCENARIO=$OPTARG
@@ -156,6 +162,11 @@ function main() {
     case $TARGET in
         "workload")
             workload
+            ;;
+        "command")
+            printInfo "Running $CMD"
+            $CMD
+            verifyStatus
             ;;
         *)
             runAndPrepareMakeTarget
