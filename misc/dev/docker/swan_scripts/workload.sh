@@ -9,7 +9,6 @@ function buildWorkloads() {
 function workload() {
     printStep "Running workload: $SCENARIO"
     cd swan
-    buildWorkloads
     BIN=""
     WD=""
     case $SCENARIO in
