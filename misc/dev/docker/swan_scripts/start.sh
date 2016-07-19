@@ -9,6 +9,7 @@ BINPARAMETERS=""
 LOCKSTATE=false
 COLORTERMINAL=false
 GIT_REPO_LOCATION=""
+DECORATOR=""
 
 . /make.sh
 . /workload.sh
@@ -121,17 +122,21 @@ function usage() {
         "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw']; default: 'memcached'"
     printOption "p" "Pass parameters to workload binaries. Only for 'workload' target. There is no default parameter."
     printOption "l" "Lock state after executed command has been stopped. Default: false"
+    printOption "d" "Decorate workload with custom command. Only for 'workload' target. Empty option doesn't set decorator. Default: \"\""
 }
 
 function parseArguments() {
     printStep "Parsing arguments"
-    while getopts "t:s:p:l" opt; do
+    while getopts "t:s:p:d:l" opt; do
     case $opt in
         t)
             TARGET=$OPTARG
             ;;
         s)
             SCENARIO=$OPTARG
+            ;;
+        d)
+            DECORATOR="$OPTARG"
             ;;
         p)
             BINPARAMETERS="$OPTARG"
