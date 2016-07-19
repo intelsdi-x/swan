@@ -1,8 +1,9 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
-
 import pandas as pd
+import numpy as np
+
 
 class Profile(object):
     """
@@ -10,22 +11,18 @@ class Profile(object):
     quality metric against a target performance). The HTML representation of the profile color
     codes each cell based on it's slack (quality of service head room) or violation.
     """
-
-    def __init__(self, data_frame, slo):
+    def __init__(self, exp, slo):
         """
         Initializes a sensivity profile with given list of Sample objects and visualized against the
         specified slo (performance target).
         """
 
-        p99  = data_frame.loc[data_frame['ns'].str.contains('/percentile/99th')]
+        data_frame = exp.frame
+        p99 = data_frame.loc[data_frame['ns'].str.contains('/percentile/99th')]
         p99_by_aggressor = p99.groupby('swan_aggressor_name')
         columns = None
-        profile = None
         data = []
         index = []
-
-        def percentage_of_slo(x):
-            return (x / slo) * 100
 
         for name, df in p99_by_aggressor:
             # Overwrite the 'None' aggressor with 'Baseline'
@@ -36,30 +33,19 @@ class Profile(object):
 
             aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
 
-            violations = aggressor_frame['value'].apply(percentage_of_slo)
+            violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
 
             # Store columns for data frame from the target QPSes.
             # In case of partial measurements, we only use the columns from this aggressor
             # if it is bigger than the current one.
-            qps = aggressor_frame['swan_loadpoint_qps'].tolist()
-            if columns is None:
-                columns = qps
-            elif len(columns) < len(qps):
+            qps = aggressor_frame['swan_loadpoint_qps'].apply(lambda x: float(x)).tolist()
+            if columns is None or len(columns) < len(qps):
                 columns = qps
 
             data.append(violations.tolist())
 
-        if columns is not None:
-            # Apply filter to columns to enable other formatting.
-            peak = max(columns)
-            def percentage_of_peak(qps):
-                return (qps / peak) * 100
-            columns = map(percentage_of_peak, columns)
-
-            profile = pd.DataFrame(data, columns=columns, index=index).sort_index()
-
-
-        self.frame = profile
+        columns = sorted(map(lambda qps: (qps / max(columns)) * 100, columns))
+        self.frame = pd.DataFrame(data, columns=columns, index=index).sort_index()
 
     def _repr_html_(self):
         no_border = 'border: 0'
@@ -94,6 +80,9 @@ class Profile(object):
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
+                elif np.isnan(value):
+                    value = 0
+                    style += 'background-color: #a9341f; color: white;'
                 else:
                     style += 'background-color: #98cc70;'
 
@@ -104,3 +93,11 @@ class Profile(object):
         html_out += '</table>'
 
         return html_out
+
+
+if __name__ == '__main__':
+    from experiment import Experiment
+
+    exp = Experiment(experiment_id='57d25f69-d6d7-43e1-5c4e-3b5f5208acdc', cassandra_cluster=['127.0.0.1'], port=19042)
+    p = Profile(exp, slo=500)
+    p._repr_html_()

@@ -1,9 +1,10 @@
 """
 This module contains a helper to generate list of Sample objects from a comma separated file.
 """
-
 import csv
 import json
+import collections
+
 
 def strip_quotation(input):
     """
@@ -14,39 +15,29 @@ def strip_quotation(input):
     the sample.
     """
 
-    if input is None:
-        return input
-
-    output = input.strip()
-
-    if len(input) < 2:
-        return input
-
-    if output[0] == '\'':
-        output = output[1:]
-
-    if output[-1] == '\'':
-        output = output[:-1]
+    if input:
+        output = input.strip()
+        if len(input) < 2:
+            return input
+        if output.startswith('\''):
+            output = output[1:]
+        if  output.endswith('\''):
+            output = output[:-1]
 
     return output
 
-def convert_null(input):
-    """
-    The test metrics files need to have a way to express that a value is absent.
-    This is done by setting the value to 'null'. convert_null converts this to a None type.
-    """
-
-    if input == 'null':
-        return None
-
-    return input
 
 def read(path):
     """
     read returns a list of Samples
     """
 
-    output = []
+    rows = {}
+    qps = {}
+
+    convert_null = lambda i: None if i == 'null' else i
+    Sample = collections.namedtuple('Sample', 'ns ver host time boolval doubleval strval tags valtype')
+
     with open(path, 'rb') as csvfile:
         sample_reader = csv.reader(csvfile, delimiter=',', quotechar='\'')
         for row in sample_reader:
@@ -56,21 +47,17 @@ def read(path):
             if len(row) != 9:
                 continue
 
-            class Sample:
-                pass
+            sample = Sample(ns=convert_null(row[0]), ver=int(row[1]), host=convert_null(strip_quotation(row[2])),
+                            time=convert_null(strip_quotation(row[3])), boolval=bool(convert_null(row[4])),
+                            doubleval=float(convert_null(row[5])), strval=convert_null(strip_quotation(row[6])),
+                            tags=json.loads(convert_null(strip_quotation(row[7]))),
+                            valtype=convert_null(strip_quotation(row[8])))
 
-            sample = Sample()
+            if 'qps' in row[0]:
+                qps[sample.host + sample.tags['swan_phase'] + sample.tags['swan_repetition']] = sample.doubleval
+            elif '99th' in row[0]:
+                k = sample.host + sample.tags['swan_aggressor_name'] + \
+                    sample.tags['swan_phase'] + sample.tags['swan_repetition']
+                rows[k] = sample
 
-            setattr(sample, 'ns', convert_null(row[0]))
-            setattr(sample, 'ver', int(row[1]))
-            setattr(sample, 'host', convert_null(strip_quotation(row[2])))
-            setattr(sample, 'time', convert_null(strip_quotation(row[3])))
-            setattr(sample, 'boolval', bool(convert_null(row[4])))
-            setattr(sample, 'doubleval', float(convert_null(row[5])))
-            setattr(sample, 'strval', convert_null(strip_quotation(row[6])))
-            setattr(sample, 'tags', json.loads(convert_null(strip_quotation(row[7]))))
-            setattr(sample, 'valtype', convert_null(strip_quotation(row[8])))
-
-            output.append(sample)
-
-    return output
+    return rows, qps
