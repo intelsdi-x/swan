@@ -130,7 +130,8 @@ Swan will be default try to aim for the core configuration above.
 Swan does this by creating separate exclusive [cgroup cpu sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) for the high priority and best effort processes.
 By creating exclusive cpu sets, Swan can reduce interference from other background processes which may get scheduled on the high priority cores.
 
-Conflicts in overlapping cpusets
+Using exclusive cpu sets can be challenging if other systems on the host are using cpu sets. Exclusive cpu sets cannot share cores with any other cgroup and setting the desired cores will cause an error from the kernel.
+An example of such conflicting and potential overlapping cpu sets could be systems with [docker](https://www.docker.com/) installed. Docker creates a cpuset cgroup which contain all logical cores and thus will conflict with Swan, if Swan attempts to create exclusive cpu sets.
 
 ### Aggressor configuration
 
@@ -264,24 +265,38 @@ While the experiment is running, you can access the experiment data in Cassandra
 Swan ships with a Jupyter setup which provides an environment for loading the samples and generating sensitivity profiles.
 For instructions on how to run Jupyter, please refer to the [Jupyter user guide](../../scripts/jupyter/README.md).
 
-At low loads, don't worry - numbers may not differ
-Baseline should not violate SLO at any load point.
+A few pointers to validate the experiment data:
 
-Insert example sensitivity profile.
+ - Baseline measurements should not violate SLO at any load point.
+ - At low loads, don't worry - numbers may not differ for baseline and co-located scenarios. The differences should be in _when_ you see saturation. For the co-located scenarios, this should become evident at higher loads.
+ - Verify the achieved load. If mutilate has been misconfigured or is overloading memcached, the target QPS may divert significantly from the actual QPS.
 
-Reference jupyter
+Below is an example of the sensitivity profile could be:
+
+![Sensitivity profile](../../docs/sensitivity-profile.png)
 
 ## Example configuration
 
-Where the machines are configured in the following topology:
+Below is an example configuration using environment variables to set up the experiment where the machines are configured in the following topology:
 
-Using environment variables:
+|   Machine     |                  Role                  |
+|---------------|----------------------------------------|
+| 192.168.10.9  | Target host running `snapd` and `swan` |
+| 192.168.10.1  | Mutilate master host                   |
+| 192.168.10.3  | Mutilate agent host #1                 |
+| 192.168.10.4  | Mutilate agent host #2                 |
+| 192.168.10.5  | Mutilate agent host #3                 |
+| 192.168.10.6  | Mutilate agent host #4                 |
+| 192.168.10.10 | Service host running Cassandra         |
+
+The target host has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description above, this leaves 4 threads and logical cores for memcached.
+Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (same calculation as in the mutilate configuration section above).
 
 ```bash
 ## --- aggressors ---
 export SWAN_AGGR=l1d,l1i,stream,membw,caffe
 
-## --- isolations ---
+## --- isolation ---
 export SWAN_HP_EXCLUSIVE_CORES=true
 export SWAN_BE_EXCLUSIVE_CORES=true
 export SWAN_HP_CPUS=4
@@ -329,15 +344,3 @@ export SWAN_SNAPD_ADDR=192.168.10.9
 export SWAN_CASSANDRA_ADDR=192.168.10.10
 export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassandra
 ```
-
-## Hints for debugging
-
-
-Co-existing with docker and systemd.
-Exclusive cpusets.
-
-snap plugin logs
-
-snapd log
-
-snapctl
