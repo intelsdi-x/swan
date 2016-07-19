@@ -1,9 +1,14 @@
 /* manuall run
 
 cd kubernetes
-https://github.com/kubernetes/kubernetes/blob/master/docs/devel/running-locally.md
+# https://github.com/kubernetes/kubernetes/blob/master/docs/devel/running-locally.md
 
-./hack/local-up-cluster.sh
+j kubernetes
+sudo -s
+export GOPATH="/home/ppalucki/work/gopath"
+export PATH=${PATH}:/home/ppalucki/work/gopath/src/k8s.io/kubernetes/third_party/etcd
+hack/local-up-cluster.sh
+hack/local-up-cluster.sh -o _output/bin
 
 go test -run K8s -v github.com/intelsdi-x/swan/pkg/executor
 

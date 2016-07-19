@@ -131,6 +131,12 @@ func (k8s *kubernetesExecutor) Execute(command string) *kubernetesTaskHandle {
 		}
 	}
 
+	// start a gorutines that copies logs from kuberntes to local file
+	go func() {
+		podsapi.GetLogs(k8s.podName, nil)
+
+	}()
+
 	return &kubernetesTaskHandle{pod, watch}
 }
 
