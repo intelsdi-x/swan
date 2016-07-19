@@ -23,12 +23,12 @@ const (
 	PREFFERED
 )
 
-// Numa defines input data
+// Numa stores information about numactl configuration.
 type Numa struct {
 	numaOpts map[int]string
 }
 
-// NewNuma is
+// NewNuma is a constructor which returns Numa object.
 func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind []int, preffered int) Numa {
 
 	intsToStrings := func(ints []int) []string {

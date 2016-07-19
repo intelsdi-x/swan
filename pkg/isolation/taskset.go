@@ -7,19 +7,20 @@ import (
 	"strings"
 )
 
-type tasksetDecorator struct {
+// TasksetDecorator defines taskset decorator configuration.
+type TasksetDecorator struct {
 	cpus []int
 }
 
 // NewTasksetDecorator is a constructor for TasksetDecorator object.
-func NewTasksetDecorator(cpus []int) tasksetDecorator {
+func NewTasksetDecorator(cpus []int) TasksetDecorator {
 	return tasksetDecorator{
 		cpus: cpus,
 	}
 }
 
 // Decorate implements Decorator interface.
-func (t *tasksetDecorator) Decorate(command string) string {
+func (t *TasksetDecorator) Decorate(command string) string {
 	cpusStr := make([]string, len(t.cpus))
 	for idx, value := range t.cpus {
 		cpusStr[idx] = strconv.Itoa(value)
