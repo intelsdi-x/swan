@@ -1,14 +1,17 @@
 # Memcached sensitivity experiment
 
-The first experiment which comes with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called sensitivity profile, which describes the violation of Quality of Service under certain conditions, such as cpu cache or network bandwidth interference. An example of this can be seen below.
+The first experiment which comes with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called sensitivity profile, which describes the violation of Quality of Service under certain conditions, such as cpu cache or network bandwidth interference.
+An example of this can be seen below.
 
-![Swan diagram](../../docs/swan.png)
+![Sensitivity profile](../../docs/sensitivity-profile.png)
 
 Swan does this by carefully controlling execution of memcached and its co-location with aggressor processes i.e. noisy neighbors or antagonists. From this point on, Swan coordinates execution of a distributed load generator called [mutilate](https://github.com/leverich/mutilate). Snap plugins and tasks are coordinated by swan to collect latency and load metrics and tags them with experiment identifiers.
 
-The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers Quality of Service metrics like latency, so-called Service Level Indicators or SLI for short, and the achieved load in terms of Request per Second, RPS or Queries Per Second (QPS).
+![Swan diagram](../../docs/swan.png)
 
-The conditions, currently, involve co-location of memcached with a list of specialized aggressors and one deep-learning workload:
+The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers Quality of Service metrics like latency, so-called Service Level Indicators or SLI for short, and the achieved load in terms of Request per Second (RPS) or Queries Per Second (QPS).
+
+The conditions, currently, involve co-location of memcached with a list of specialized aggressors and one deep-learning workload.
 
 ## Prerequisites
 
@@ -35,7 +38,7 @@ Additionally, be careful if not used with docker volume mounts as you may experi
 
 ### Validation
 
-It is recommended to ensure that all integration test are working on your machine before running experiment.
+It is recommended to ensure that all integration tests are working on your machine before running experiment.
 After following the steps in the [Swan installation guide](../docs/install.md), run:
 
 ```bash
@@ -126,7 +129,7 @@ _and_ introduce L3 aggressors with the same setup of memcached, in order to comp
 ![Memcached + L3 topology](../../docs/topology-4.png)
 
 
-Swan will be default try to aim for the core configuration above.
+Swan will by default try to aim for the core configuration above.
 Swan does this by creating separate exclusive [cgroup cpu sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) for the high priority and best effort processes.
 By creating exclusive cpu sets, Swan can reduce interference from other background processes which may get scheduled on the high priority cores.
 
@@ -196,10 +199,10 @@ The above is configured with the following flags:
 ```
 
 In essence, it is unfortunately very easy to see high latency measurements due to unintended interference and client side queuing in mutilate.
-On top of the recommendations on top, we have found that reducing the number agent threads and connections and increasing the measurement time with the `--load_duration` flag helps.
+On top of the recommendations, we have found that reducing the number agent threads and connections and increasing the measurement time to around 30 seconds with the `--load_duration` flag helps.
 To accommodate for the fewer connections per agent, you can safely add more agents.
 
-Another option to increase precision of the latency measurements, mutilate give the option to use blocking vs non-blocking IO. Enabling this increase the precision but increase the cpu load on the mutilate agents.
+Another option to increase precision of the latency measurements, mutilate gives the option to use blocking vs non-blocking IO. Enabling this increase the precision but increase the cpu load on the mutilate agents.
 
 #### Known issues with mutilate
 

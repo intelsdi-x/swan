@@ -35,6 +35,8 @@ $ popd
 
 ## Build experiment binary
 
+From within the swan checkout, run the following:
+
 ```
 $ make build
 ```
