@@ -42,7 +42,7 @@ list_env:
 	@ env
 	@ echo ""
 
-integration_test: list_env plugins unit_test build_workloads build
+integration_test: list_env plugins unit_test build_workloads build build_jupyter
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
@@ -56,7 +56,7 @@ integration_test_on_docker:
 	(cd integration_tests/docker; ./inside-docker-tests.sh)
 
 # building
-build: build_jupyter
+build: 
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	mkdir -p build/viewer
