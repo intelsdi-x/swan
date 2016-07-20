@@ -8,16 +8,12 @@ import (
 	"time"
 
 	production "github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParallel(t *testing.T) {
 	Convey("When I use Parallel to decorate local executor", t, func() {
-		unshare, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
-		So(err, ShouldBeNil)
-
-		parallel := production.NewLocalIsolated(isolation.Decorators{production.NewParallel(5), unshare})
+		parallel := production.NewLocalIsolated(production.NewParallel(5))
 		Convey("Process should be executed 5 times", func() {
 			task, err := parallel.Execute("sleep inf")
 

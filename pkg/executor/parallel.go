@@ -2,13 +2,14 @@ package executor
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // Parallel allows to run same command using same executor multiple times.
 // Using Parallel decorator will mix output from all the commands executed.
-// You should ALWAYS use this decorator in conjuction with isolation.namespace. See integration tests for use example.
 type Parallel struct {
 	clones int
 }
@@ -27,7 +28,13 @@ func (p Parallel) Decorate(command string) string {
 		values = append(values, i)
 		decorated += " %d"
 	}
-	decorated = fmt.Sprintf(decorated, values...)
+	// You need to run parallel in new PID namespace to make sure that all the children are killed.
+	unshare, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	if err != nil {
+		logrus.Errorf("Impossible to create namespace decorator: %q", err)
+		return command
+	}
+	decorated = unshare.Decorate(fmt.Sprintf(decorated, values...))
 	logrus.Debug("Running parallelized command: " + decorated)
 	logrus.Debug("Be aware that using Parallel decorator will mix output from all the commands executed")
 
