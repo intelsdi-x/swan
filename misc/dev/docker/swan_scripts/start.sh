@@ -153,7 +153,7 @@ function parseArguments() {
     done
 }
 
-func codeSynchronization() {
+function codeSynchronization() {
     printInfo "Configuring source code repository"
     setGitHubCredentials
     getCode
