@@ -8,30 +8,32 @@ import (
 
 // Numa stores information about numactl configuration.
 type Numa struct {
-	isAll        bool
-	isLocalalloc bool
+	isDisabledCPUAwareness bool
+	shouldAllocOnLocalNode bool
 
-	interleave  []int
-	membind     []int
-	cpunodebind []int
-	physcpubind []int
+	interleavePolicy   []int
+	memoryNodes        []int
+	cpusNodes          []int
+	processCPUAffinity []int
 
-	preffered int
+	preferredMemoryNode int
 }
 
 // NewNuma is a constructor which returns Numa object.
 // For further information please take a look into numactl manual.
-func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind []int, preffered int) Numa {
+func NewNuma(isDisabledCPUAwareness, shouldAllocOnLocalNode bool,
+	interleavePolicy, memoryNodes, cpusNodes,
+	processCPUAffinity []int, preferredMemoryNode int) Numa {
 	return Numa{
-		isAll:        all,
-		isLocalalloc: localalloc,
+		isDisabledCPUAwareness: isDisabledCPUAwareness,
+		shouldAllocOnLocalNode: shouldAllocOnLocalNode,
 
-		interleave:  interleave,
-		membind:     membind,
-		cpunodebind: cpunodebind,
-		physcpubind: physcpubind,
+		interleavePolicy:   interleavePolicy,
+		memoryNodes:        memoryNodes,
+		cpusNodes:          cpusNodes,
+		processCPUAffinity: processCPUAffinity,
 
-		preffered: preffered,
+		preferredMemoryNode: preferredMemoryNode,
 	}
 }
 
@@ -49,26 +51,26 @@ func (n *Numa) Decorate(command string) string {
 	}
 
 	var numaOptions []string
-	if n.isAll {
+	if n.isDisabledCPUAwareness {
 		numaOptions = append(numaOptions, "--all")
 	}
-	if n.isLocalalloc {
+	if n.shouldAllocOnLocalNode {
 		numaOptions = append(numaOptions, "--localalloc")
 	}
-	if len(n.interleave) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleave)))
+	if len(n.interleavePolicy) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleavePolicy)))
 	}
-	if len(n.membind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.membind)))
+	if len(n.memoryNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.memoryNodes)))
 	}
-	if len(n.physcpubind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.physcpubind)))
+	if len(n.processCPUAffinity) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.processCPUAffinity)))
 	}
-	if len(n.cpunodebind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpunodebind)))
+	if len(n.cpusNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpusNodes)))
 	}
-	if n.preffered > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--preffered=%d", n.preffered))
+	if n.preferredMemoryNode > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--preferred=%d", n.preferredMemoryNode))
 	}
 
 	return fmt.Sprintf("numactl %s -- %s", strings.Join(numaOptions, " "), command)
