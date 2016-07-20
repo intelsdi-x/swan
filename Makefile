@@ -13,7 +13,6 @@ deps:
 	go get github.com/stretchr/testify
 	go get github.com/vektra/mockery/.../
 	godep restore -v
-	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
@@ -64,6 +63,7 @@ build: build_jupyter
 	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
 
 build_jupyter:
+	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 	(cd scripts/jupyter; py.test)
 
 build_workloads:
