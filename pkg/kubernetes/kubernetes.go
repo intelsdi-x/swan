@@ -14,7 +14,7 @@ import (
 const serviceListenTimeout = 5 * time.Second
 
 var (
-	// path flags contain paths to kubernetes services' binaries. See REAMDE.md for details.
+	// path flags contain paths to kubernetes services' binaries. See README.md for details.
 	pathKubeAPIServerFlag  = conf.NewFileFlag("kube_apiserver_path", "Path to kube-apiserver binary", path.Join(fs.GetSwanBinPath(), "kube-apiserver"))
 	pathKubeControllerFlag = conf.NewFileFlag("kube_controller_path", "Path to kube-controller-manager binary", path.Join(fs.GetSwanBinPath(), "kube-controller-manager"))
 	pathKubeletFlag        = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetSwanBinPath(), "kubelet"))
