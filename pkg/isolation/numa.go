@@ -38,12 +38,14 @@ func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind
 // Decorate implements Decorator interface.
 func (n *Numa) Decorate(command string) string {
 
-	intsToStrings := func(ints []int) []string {
-		strs := make([]string, len(ints))
-		for idx, value := range ints {
-			strs[idx] = strconv.Itoa(value)
+	intsToStrings := func(ints []int) string {
+		var strs []string
+		for _, value := range ints {
+			if value >= 0 {
+				strs = append(strs, strconv.Itoa(value))
+			}
 		}
-		return strs
+		return strings.Join(strs, ",")
 	}
 
 	var numaOptions []string
