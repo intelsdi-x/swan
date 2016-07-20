@@ -21,7 +21,7 @@ func NewParallel(clones int) Parallel {
 // Decorate implements isolation.Decorator interface by adding invocation of parallel to a command.
 func (p Parallel) Decorate(command string) string {
 	var values []interface{}
-	values = append(values, p.clones, "sleep inf")
+	values = append(values, p.clones, command)
 	decorated := "parallel -j%d sh -c %q --"
 	for i := 0; i < p.clones; i++ {
 		values = append(values, i)
