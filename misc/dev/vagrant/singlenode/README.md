@@ -63,13 +63,20 @@ $ vagrant ssh
 1. Run the integration tests: `make integration_test`
 
 ## Troubleshooting
-
+- Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
+  works fine with this Vagrant version
+- If you can't make deps because of unautorized error, make sure you don't
+  have in gitconfig:
+  `[url "https://"]
+           insteadOf = git://`
 - The integration tests require cassandra to be running. In this
   environment, systemd is responsible for keeping it alive. You can see
   how it's doing by running `systemctl status cassandra` and
   `journalctl -fu cassandra`
 - If you get permission errors when trying to run the integration tests,
   you may need to remove build artifacts first by running `make clean`.
+- If you get Caffe errors during building workloads saying
+  'libcaffe.o cant not find "xxx"', go into caffe_src dir and run 'make clean'
 - If you get a connection error when attempting to SSH into the guest
   VM and you're behind a proxy you may need to add an override rule to ignore
   SSH traffic to localhost.
