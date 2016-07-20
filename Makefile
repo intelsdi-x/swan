@@ -28,7 +28,6 @@ unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
-	(cd scripts/jupyter; py.test)
 
 plugins:
 	mkdir -p build
@@ -58,11 +57,14 @@ integration_test_on_docker:
 	(cd integration_tests/docker; ./inside-docker-tests.sh)
 
 # building
-build:
+build: build_jupyter
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	mkdir -p build/viewer
 	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
+
+build_jupyter:
+	(cd scripts/jupyter; py.test)
 
 build_workloads:
 	(cd workloads/data_caching/memcached && ./build.sh)
