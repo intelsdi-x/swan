@@ -10,21 +10,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Plugin ...
+// Plugin is an enum specifying plugin to load.
 type Plugin int
 
 const (
-	// MutilateCollector ...
+	// MutilateCollector is an enum specifying plugin to load.
 	MutilateCollector Plugin = iota
-	// KubesnapDockerCollector ...
+	// KubesnapDockerCollector is an enum specifying plugin to load.
 	KubesnapDockerCollector
 
-	// CassandraPublisher ...
+	// CassandraPublisher is an enum specifying plugin to load.
 	CassandraPublisher
 )
 
-// DefaultPluginFactoryConfig ...
-func DefaultPluginFactoryConfig() PluginLoaderConfig {
+// DefaultPluginLoaderConfig returns default config for PluginLoader.
+func DefaultPluginLoaderConfig() PluginLoaderConfig {
 	goPath := os.Getenv("GOPATH")
 
 	defaultMutilateCollectorPath := path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-mutilate")
@@ -39,7 +39,7 @@ func DefaultPluginFactoryConfig() PluginLoaderConfig {
 	}
 }
 
-// PluginFactoryConfig ...
+// PluginLoaderConfig contains configuration for PluginLoader.
 type PluginLoaderConfig struct {
 	SnapdAddress string
 
@@ -49,17 +49,20 @@ type PluginLoaderConfig struct {
 	CassandraPublisherPath string
 }
 
-// PluginFactory
+// PluginLoader is used to simplify Snap plugin loading.
 type PluginLoader struct {
 	plugins *Plugins
 	config  PluginLoaderConfig
 }
 
+// NewDefaultPluginLoader returns PluginLoader with DefaultPluginLoaderConfig.
+// Returns error when could not connect to Snap.
 func NewDefaultPluginLoader() (*PluginLoader, error) {
-	return NewPluginLoader(DefaultPluginFactoryConfig())
+	return NewPluginLoader(DefaultPluginLoaderConfig())
 }
 
-// NewPluginFactory constructs
+// NewPluginFactory constructs PluginLoader with given config.
+// Returns error when could not connect to Snap.
 func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	snapClient, err := client.New(config.SnapdAddress, "v1", true)
 	if err != nil {
