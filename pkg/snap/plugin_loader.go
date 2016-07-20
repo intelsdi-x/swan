@@ -51,8 +51,8 @@ type PluginLoaderConfig struct {
 
 // PluginLoader is used to simplify Snap plugin loading.
 type PluginLoader struct {
-	plugins *Plugins
-	config  PluginLoaderConfig
+	pluginsClient *Plugins
+	config        PluginLoaderConfig
 }
 
 // NewDefaultPluginLoader returns PluginLoader with DefaultPluginLoaderConfig.
@@ -71,20 +71,20 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	plugins := NewPlugins(snapClient)
 
 	return &PluginLoader{
-		plugins: plugins,
-		config:  config,
+		pluginsClient: plugins,
+		config:        config,
 	}, nil
 }
 
 // LoadPlugin loads selected plugin.
-func (f PluginLoader) LoadPlugin(plugin Plugin) error {
+func (l PluginLoader) LoadPlugin(plugin Plugin) error {
 	switch plugin {
 	case MutilateCollector:
-		return f.plugins.LoadPlugin(f.config.MutilateCollectorPath)
+		return l.pluginsClient.LoadPlugin(l.config.MutilateCollectorPath)
 	case KubesnapDockerCollector:
-		return f.plugins.LoadPlugin(f.config.KubernetesCollectorPath)
+		return l.pluginsClient.LoadPlugin(l.config.KubernetesCollectorPath)
 	case CassandraPublisher:
-		return f.plugins.LoadPlugin(f.config.CassandraPublisherPath)
+		return l.pluginsClient.LoadPlugin(l.config.CassandraPublisherPath)
 
 	default:
 		return errors.Errorf("plugin %q is not available", plugin)
