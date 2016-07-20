@@ -65,7 +65,7 @@ $ vagrant ssh
 ## Troubleshooting
 - Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
   works fine with this Vagrant version
-- If you can't make deps because of unautorized error, make sure you don't
+- If you can't run `make deps` because of unautorized error, make sure you don't
   have in gitconfig:
   `[url "https://"]
            insteadOf = git://`
