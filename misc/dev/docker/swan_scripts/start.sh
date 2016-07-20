@@ -153,23 +153,28 @@ function parseArguments() {
     done
 }
 
-function main() {
-    determineColors
+func codeSynchronization() {
     printInfo "Configuring source code repository"
     setGitHubCredentials
     getCode
+}
+
+function main() {
+    determineColors
     parseArguments "$@"
     case $TARGET in
         "workload")
+            codeSynchronization
             workload
             ;;
-        "command")
+        "make")
+            codeSynchronization
+            runAndPrepareMakeTarget
+            ;;
+        *)
             printInfo "Running $CMD"
             $CMD
             verifyStatus
-            ;;
-        *)
-            runAndPrepareMakeTarget
             ;;
     esac
 }

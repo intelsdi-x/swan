@@ -64,7 +64,7 @@ where:
 
 ### Example scenarios:
 
-Run centos based container for integration_tests. Source code is provided as a volume:
+Run centos based container with running shell. Source code is provided as a volume:
 
 `docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image`
 
