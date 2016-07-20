@@ -56,7 +56,7 @@ integration_test_on_docker:
 	(cd integration_tests/docker; ./inside-docker-tests.sh)
 
 # building
-build: 
+build:
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	mkdir -p build/viewer
