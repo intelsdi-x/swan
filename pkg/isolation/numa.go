@@ -20,6 +20,7 @@ type Numa struct {
 }
 
 // NewNuma is a constructor which returns Numa object.
+// For further information please take a look into numactl manual.
 func NewNuma(all, localalloc bool, interleave, membind, cpunodebind, physcpubind []int, preffered int) Numa {
 	return Numa{
 		isAll:        all,
@@ -68,5 +69,5 @@ func (n *Numa) Decorate(command string) string {
 		numaOptions = append(numaOptions, fmt.Sprintf("--preffered=%d", n.preffered))
 	}
 
-	return fmt.Sprintf("numactl %s %s", strings.Join(numaOptions, " "), command)
+	return fmt.Sprintf("numactl %s -- %s", strings.Join(numaOptions, " "), command)
 }
