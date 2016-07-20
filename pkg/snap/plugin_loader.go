@@ -61,7 +61,7 @@ func NewDefaultPluginLoader() (*PluginLoader, error) {
 	return NewPluginLoader(DefaultPluginLoaderConfig())
 }
 
-// NewPluginFactory constructs PluginLoader with given config.
+// NewPluginLoader constructs PluginLoader with given config.
 // Returns error when could not connect to Snap.
 func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	snapClient, err := client.New(config.SnapdAddress, "v1", true)
