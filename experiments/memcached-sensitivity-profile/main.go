@@ -89,7 +89,7 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 			if _, err := os.Stat(pluginPath); err != nil && os.IsNotExist(err) {
 				logrus.Error("Cannot find snap cassandra plugin at %q", pluginPath)
 			}
-			err = plugins.Load([]string{pluginPath})
+			err = plugins.LoadPlugins([]string{pluginPath})
 			errutil.Check(err)
 		}
 

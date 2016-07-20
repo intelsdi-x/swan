@@ -66,7 +66,7 @@ func (s *MutilateSnapSessionLauncher) LaunchSession(
 	if !loaded {
 		pluginPath :=
 			[]string{path.Join(s.mutilateCollectorBuildPath, "snap-plugin-collector-mutilate")}
-		err := plugins.Load(pluginPath)
+		err := plugins.LoadPlugins(pluginPath)
 		if err != nil {
 			return nil, err
 		}

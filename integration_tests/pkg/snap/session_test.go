@@ -83,7 +83,7 @@ func TestSnap(t *testing.T) {
 				pluginPath := []string{
 					path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-session-test"),
 				}
-				err := plugins.Load(pluginPath)
+				err := plugins.LoadPlugins(pluginPath)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -108,7 +108,7 @@ func TestSnap(t *testing.T) {
 
 					pluginPath := []string{path.Join(
 						fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
-					err := plugins.Load(pluginPath)
+					err := plugins.LoadPlugins(pluginPath)
 					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("session-test", 1)

@@ -18,9 +18,13 @@ func NewPlugins(pClient *client.Client) *Plugins {
 	}
 }
 
-// Load plugin binary.
-// TODO(skonefal): Currently accepts only absolute path.
-func (p *Plugins) Load(pluginPaths []string) error {
+// LoadPlugin loads plugin binary.
+func (p *Plugins) LoadPlugin(pluginPath string) error {
+	return p.LoadPlugins([]string{pluginPath})
+}
+
+// LoadPlugins loads multiple snap plugins.
+func (p *Plugins) LoadPlugins(pluginPaths []string) error {
 	r := p.pClient.LoadPlugin(pluginPaths)
 	if r.Err != nil {
 		return errors.Wrapf(r.Err, "could not load plugin from path %q", pluginPaths)

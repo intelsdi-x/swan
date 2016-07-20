@@ -130,7 +130,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 		goPath := os.Getenv("GOPATH")
 		pluginPath := []string{path.Join(
 			goPath, "bin", "snap-plugin-processor-tag")}
-		err = plugins.Load(pluginPath)
+		err = plugins.LoadPlugins(pluginPath)
 		if err != nil {
 			return err
 		}

@@ -76,7 +76,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				pluginPath := []string{
 					path.Join(fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
 				}
-				plugins.Load(pluginPath)
+				plugins.LoadPlugins(pluginPath)
 
 				publisher = wmap.NewPublishNode("session-test", 1)
 
