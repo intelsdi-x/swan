@@ -42,4 +42,3 @@ WORKDIR /opt/gopath/src/github.com/intelsdi-x
 ADD misc/dev/docker/swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
-CMD ["-c"]
