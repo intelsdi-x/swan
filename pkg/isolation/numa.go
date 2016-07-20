@@ -50,22 +50,22 @@ func (n *Numa) Decorate(command string) string {
 
 	var numaOptions []string
 	if n.isAll {
-		numaOptions = append(numaOptions, "-a")
+		numaOptions = append(numaOptions, "--all")
 	}
 	if n.isLocalalloc {
-		numaOptions = append(numaOptions, "-l")
+		numaOptions = append(numaOptions, "--localalloc")
 	}
 	if len(n.interleave) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-i %s", intsToStrings(n.interleave)))
+		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleave)))
 	}
 	if len(n.membind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-m %s", intsToStrings(n.membind)))
+		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.membind)))
 	}
 	if len(n.physcpubind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-C %s", intsToStrings(n.physcpubind)))
+		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.physcpubind)))
 	}
 	if len(n.cpunodebind) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("-N %s", intsToStrings(n.cpunodebind)))
+		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpunodebind)))
 	}
 	if n.preffered > 0 {
 		numaOptions = append(numaOptions, fmt.Sprintf("--preffered=%d", n.preffered))
