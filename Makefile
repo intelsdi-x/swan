@@ -21,7 +21,6 @@ lint:
 	fgt golint ./experiments/...
 	fgt golint ./misc/...
 	fgt golint ./integration_tests/...
-	fgt golint ./scripts/...
 
 unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/...
@@ -59,8 +58,6 @@ integration_test_on_docker:
 build:
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
-	mkdir -p build/viewer
-	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
 
 build_jupyter:
 	(cd scripts/jupyter; sudo pip install -r requirements.txt)
