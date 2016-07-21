@@ -281,28 +281,21 @@ func startWatching(watcher watch.Interface) (started, stopped chan struct{}) {
 	go func() {
 		var once sync.Once
 		for event := range watcher.ResultChan() {
+			log.Debugf("event: %s", event.Type)
+
 			pod, ok := event.Object.(*api.Pod)
 			// http://kubernetes.io/docs/user-guide/pod-states/
 			if ok {
-				log.Debugf("pod event: %v", pod)
-				switch pod.Status.Phase {
-				case api.PodPending:
-					log.Debugf("pod %q is pending", pod.Name)
-				// case api.PodRunning:
-				// 	log.Debugf("pod %q running (closed=%v)", pod.Name, startedAlreadyClosed)
-				// 	if !startedAlreadyClosed { // we get two events about running, but I can close channel only once.
-				// 		startedAlreadyClosed = true
-				// 		close(started)
-				// 	} else {
-				// 		// ignore second event about running (why we get it? on stop ???WTF?)
-				// 		log.Warn("WTF? why another running event !!!")
-				// 	}
-				case api.PodFailed, api.PodSucceeded, api.PodUnknown:
-					log.Debugf("pod %q stopped: with status: %+v", pod.Name, pod.Status)
-					return
-				}
-				if api.IsPodReady(pod) {
-					once.Do((func() { close(started) }))
+				log.Debugf("pod event: %v '%s'", pod, pod.Status.Phase)
+				switch event.Type {
+				case watch.Added:
+				case watch.Modified:
+					if api.IsPodReady(pod) {
+						once.Do((func() { close(started) }))
+					}
+
+				case watch.Deleted:
+					close(stopped)
 				}
 			}
 		}

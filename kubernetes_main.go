@@ -46,7 +46,7 @@ func main() {
 	check(err)
 	log.Printf("k8s = %+v\n", k8s)
 
-	log.Println("exectute...")
+	log.Println("execute...")
 	th, err := k8s.Execute("stress -c 1")
 	// th, err := k8s.Execute("stress -c 1 -t 10")
 	check(err)
@@ -77,5 +77,5 @@ func main() {
 	log.Println("stdout: ", pr(th.StdoutFile()))
 
 	// missing
-	th.ExitCode()
+	// th.ExitCode()
 }
