@@ -15,13 +15,11 @@ cluster/kubectl.sh delete pod stress1
 cluster/kubectl.sh delete pods --all
 cluster/kubectl.sh get pod stress1
 */
-package executor_test
+package main
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
-	"testing"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -34,11 +32,11 @@ func check(err error) {
 	}
 }
 
-func TestK8s(t *testing.T) {
-	log.SetFormatter(&log.TextFormatter{})
+func main() {
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	log.SetLevel(log.DebugLevel)
 
-	fmt.Println("new executor")
+	log.Println("new executor")
 	k8s, err := executor.NewKubernetesExectuor(
 		executor.KubernetesConfig{
 			Address: "http://127.0.0.1:8080",
@@ -49,17 +47,24 @@ func TestK8s(t *testing.T) {
 	log.Printf("k8s = %+v\n", k8s)
 
 	log.Println("exectute...")
-	th, err := k8s.Execute("stress -c 1 -t 15")
+	th, err := k8s.Execute("stress -c 1")
+	// th, err := k8s.Execute("stress -c 1 -t 10")
 	check(err)
+
 	log.Printf("th = %+v\n", th)
+	log.Printf("th.Status() = %v\n", th.Status())
 
-	log.Println("wait...")
+	log.Println("wait for 2 seconds result:", th.Wait(2*time.Second))
 
-	log.Println("wait result:", th.Wait(5*time.Second))
-
+	log.Println("stop ...")
+	// wait()
 	err = th.Stop() // delete pod
 	check(err)
+	log.Println("stopped with status:", th.Status())
 
+	log.Println("hostip:", th.Address())
+
+	log.Println("outputs")
 	// just helper function
 	pr := func(r io.Reader, err error) string {
 		check(err)

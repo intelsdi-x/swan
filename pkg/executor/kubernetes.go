@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -209,7 +211,11 @@ func (th *kubernetesTaskHandle) Stop() error {
 }
 
 func (th *kubernetesTaskHandle) Status() TaskState {
-	panic("not implemented")
+	if th.isTerminated() {
+		return TERMINATED
+	} else {
+		return RUNNING
+	}
 }
 
 func (th *kubernetesTaskHandle) ExitCode() (int, error) {
@@ -235,15 +241,24 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 }
 
 func (th *kubernetesTaskHandle) Clean() error {
-	panic("not implemented")
+	for _, f := range []*os.File{th.stderr, th.stdout} {
+		if err := f.Close(); err != nil {
+			return errors.Wrapf(err, "close on file %q failed", f.Name())
+		}
+	}
+	return nil
 }
 
 func (th *kubernetesTaskHandle) EraseOutput() error {
-	panic("not implemented")
+	outputDir, _ := path.Split(th.stderr.Name())
+	if err := os.RemoveAll(outputDir); err != nil {
+		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
+	}
+	return nil
 }
 
 func (th *kubernetesTaskHandle) Address() string {
-	panic("not implemented")
+	return th.pod.Status.HostIP
 }
 
 // ---------------------
@@ -251,11 +266,11 @@ func (th *kubernetesTaskHandle) Address() string {
 
 // StdoutFile return local file from stream
 func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
-	panic("not implemented")
+	return th.stdout, nil
 }
 
 func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
-	panic("not implemented")
+	return th.stderr, nil
 }
 
 // ---------------------
@@ -264,7 +279,7 @@ func startWatching(watcher watch.Interface) (started, stopped chan struct{}) {
 	started, stopped = make(chan struct{}), make(chan struct{})
 
 	go func() {
-		var startedAlreadyClosed bool //guard to not close "started" channel twice.
+		var once sync.Once
 		for event := range watcher.ResultChan() {
 			pod, ok := event.Object.(*api.Pod)
 			// http://kubernetes.io/docs/user-guide/pod-states/
@@ -273,17 +288,21 @@ func startWatching(watcher watch.Interface) (started, stopped chan struct{}) {
 				switch pod.Status.Phase {
 				case api.PodPending:
 					log.Debugf("pod %q is pending", pod.Name)
-				case api.PodRunning:
-					log.Debugf("pod %q running (closed=%v)", pod.Name, startedAlreadyClosed)
-					if !startedAlreadyClosed { // we get two events about running, but I can close channel only once.
-						close(started)
-					} else {
-						log.Fatal("WTF?")
-					}
+				// case api.PodRunning:
+				// 	log.Debugf("pod %q running (closed=%v)", pod.Name, startedAlreadyClosed)
+				// 	if !startedAlreadyClosed { // we get two events about running, but I can close channel only once.
+				// 		startedAlreadyClosed = true
+				// 		close(started)
+				// 	} else {
+				// 		// ignore second event about running (why we get it? on stop ???WTF?)
+				// 		log.Warn("WTF? why another running event !!!")
+				// 	}
 				case api.PodFailed, api.PodSucceeded, api.PodUnknown:
 					log.Debugf("pod %q stopped: with status: %+v", pod.Name, pod.Status)
-					close(stopped)
 					return
+				}
+				if api.IsPodReady(pod) {
+					once.Do((func() { close(started) }))
 				}
 			}
 		}
