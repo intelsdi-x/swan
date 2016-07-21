@@ -21,6 +21,7 @@ func NewParallel(clones int) Parallel {
 
 // Decorate implements isolation.Decorator interface by adding invocation of parallel to a command.
 func (p Parallel) Decorate(command string) string {
+	logrus.Debugf("Attempting to run command %q %d times", command, p.clones)
 	var values []interface{}
 	values = append(values, p.clones, command)
 	decorated := "parallel -j%d sh -c %q --"
@@ -35,7 +36,7 @@ func (p Parallel) Decorate(command string) string {
 		return command
 	}
 	decorated = unshare.Decorate(fmt.Sprintf(decorated, values...))
-	logrus.Debug("Running parallelized command: " + decorated)
+	logrus.Debugf("Running parallelized command: %q", decorated)
 	logrus.Debug("Be aware that using Parallel decorator will mix output from all the commands executed")
 
 	return decorated

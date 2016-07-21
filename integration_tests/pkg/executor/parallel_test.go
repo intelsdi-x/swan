@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
-	production "github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParallel(t *testing.T) {
-	Convey("When I use Parallel to decorate local executor", t, func() {
-		parallel := production.NewLocalIsolated(production.NewParallel(5))
+	Convey("When using Parallel to decorate local executor", t, func() {
+		parallel := executor.NewLocalIsolated(executor.NewParallel(5))
 		Convey("Process should be executed 5 times", func() {
 			task, err := parallel.Execute("sleep inf")
 
 			So(err, ShouldBeNil)
 			So(task, ShouldNotBeNil)
-			// Yes, this is evil. We have to wait a bit for parallel to launch commands, though.
+			// NOTE: We have to wait a bit for parallel to launch commands, though.
 			isStopped := task.Wait(1000 * time.Millisecond)
 			So(isStopped, ShouldBeFalse)
 
