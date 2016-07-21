@@ -5,10 +5,7 @@ language: go
 sudo: required
 go:
 - 1.6
-before_install:
-- make deps
 script:
-- make lint
-- make unit_test
+- make build_and_test_unit
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
