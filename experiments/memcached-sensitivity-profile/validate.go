@@ -13,6 +13,14 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
 )
 
+const (
+	// The minimal value for the maximum number of open file descriptors that will
+	// be enough to handle distributed mutilate cluster when generating sensible load
+	// and enough to run production tasks like memcached that handle a lot of
+	// number simultaneous connections.
+	minimalNOFILERequirment = 10 * 1024
+)
+
 // checkTCPSyncookies warn user about potential issue with SYN flooding of victim machine.
 func checkTCPSyncookies() {
 	value, err := sysctl.Get("net.ipv4.tcp_syncookies")
@@ -42,12 +50,12 @@ func checkCPUPowerGovernor() {
 	}
 }
 
-// checkNOFILE checks if number of maximum file descriptors that can be opened by process is more than default.
-// Swan requires more than default for mutilate cluster.
-// The name NOFILE is based on "limits.conf" and defintion from setrlimit.
-func checkNOFILE(nofile int) {
-	if nofile <= 1024 {
-		logrus.Warnf("Maximum number of open file descriptors is low = %d. You can change this value eg. ulimit -n 100000 or modifying /etc/security/limits.conf.", nofile)
+// checkNOFILE checks if the number of maximum file descriptors
+// opened by a process is more than minimum requested.
+// The name NOFILE is based on "limits.conf" and definition from setrlimit.
+func checkNOFILE(nofile, minimum int) {
+	if nofile <= minimum {
+		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d). You can change this value eg. ulimit -n %d or modifying /etc/security/limits.conf.", nofile, minimum)
 	}
 
 }
@@ -57,29 +65,42 @@ func checkNOFILE(nofile int) {
 func validateOS() {
 	checkTCPSyncookies()
 	checkCPUPowerGovernor()
-	checkNOFILE(getNOFILE(executor.NewLocal()))
+	checkNOFILE(
+		getNOFILE(executor.NewLocal()),
+		minimalNOFILERequirment,
+	)
 }
 
-// validateMutilateClusterEnvironments validates is environment capable of running distributed
-// mutilate cluster (ulimits, binaries existence).
-func validateMutilateClusterEnvironment(master executor.Executor, agents []executor.Executor) {
-	for _, executor := range append(agents, master) {
-		checkNOFILE(getNOFILE(executor))
+// validateExecutorsNOFILELimit validates is environment provided by executors can run
+// distributed application that requires large number of open file descriptors.
+func validateExecutorsNOFILELimit(executors []executor.Executor) {
+	for _, executor := range executors {
+		checkNOFILE(
+			getNOFILE(executor),
+			minimalNOFILERequirment,
+		)
 	}
 }
 
 // getNOFILE is helper to retrieve resource limit for NOFILE using given executor.
-func getNOFILE(executor executor.Executor) (nofile int) {
-	th, err := executor.Execute("ulimit -n")
+func getNOFILE(executor executor.Executor) int {
+
+	// Run ulimit and wait.
+	taskHandle, err := executor.Execute("ulimit -n")
 	errutil.Check(err)
-	defer th.Clean()
-	defer th.EraseOutput()
-	th.Wait(0)
-	outFile, err := th.StdoutFile()
+	defer taskHandle.Clean()
+	defer taskHandle.EraseOutput()
+	taskHandle.Wait(0)
+
+	// Retrieve output.
+	outFile, err := taskHandle.StdoutFile()
 	errutil.Check(err)
 	output, err := ioutil.ReadAll(outFile)
 	errutil.Check(err)
-	nofile, err = strconv.Atoi(strings.Trim(string(output), "\n\r"))
+
+	// Parse and return.
+	nofile, err := strconv.Atoi(strings.Trim(string(output), "\n\r"))
 	errutil.Check(err)
-	return
+
+	return nofile
 }
