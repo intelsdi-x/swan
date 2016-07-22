@@ -18,7 +18,7 @@ const (
 	// be enough to handle distributed mutilate cluster when generating sensible load
 	// and enough to run production tasks like memcached that handle a lot of
 	// number simultaneous connections.
-	minimalNOFILERequirment = 10 * 1024
+	minimalNOFILERequirement = 10 * 1024
 )
 
 // checkTCPSyncookies warn user about potential issue with SYN flooding of victim machine.
@@ -67,17 +67,17 @@ func validateOS() {
 	checkCPUPowerGovernor()
 	checkNOFILE(
 		getNOFILE(executor.NewLocal()),
-		minimalNOFILERequirment,
+		minimalNOFILERequirement,
 	)
 }
 
-// validateExecutorsNOFILELimit validates is environment provided by executors can run
+// validateExecutorsNOFILELimit validates if environment provided by executors can run
 // distributed application that requires large number of open file descriptors.
 func validateExecutorsNOFILELimit(executors []executor.Executor) {
 	for _, executor := range executors {
 		checkNOFILE(
 			getNOFILE(executor),
-			minimalNOFILERequirment,
+			minimalNOFILERequirement,
 		)
 	}
 }

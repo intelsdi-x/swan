@@ -181,7 +181,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
 
-	// Validate mutilate cluster executors and theirs limit of
+	// Validate mutilate cluster executors and their limit of
 	// number of open file descriptors. Sane mutilate configuration requires
 	// more than default (1024) for mutilate cluster.
 	validateExecutorsNOFILELimit(
