@@ -44,14 +44,14 @@ func checkCPUPowerGovernor() {
 		logrus.Warnf("Validation of CPU power governor failed! - %q not available (check `dmesg | grep acpi_cpufreq` entry for hardware support).", cpu0GovernorFile)
 		return
 	}
-	const PERFORMANCE = "performance"
+	const performance = "performance"
 	for i := 0; i < runtime.NumCPU(); i++ {
 		cpuGovernorFile := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", i)
 		governorBytes, err := ioutil.ReadFile(cpuGovernorFile)
 		governor := strings.TrimSuffix(string(governorBytes), "\n")
 		errutil.Check(err)
 		logrus.Debugf("governor cpu%d: %q", i, governor)
-		if string(governor) != PERFORMANCE {
+		if string(governor) != performance {
 			logrus.Warnf("scaling_governor=%q (%q) should be set to 'performance' policy to mitigate wakeup penalty (causes variability in measurements at moderate load). You can change this value with 'cpupower frequency-set -g performance'as root.", governor, cpuGovernorFile)
 		}
 	}
