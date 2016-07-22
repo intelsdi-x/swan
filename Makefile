@@ -13,7 +13,6 @@ deps:
 	go get github.com/stretchr/testify
 	go get github.com/vektra/mockery/.../
 	godep restore -v
-	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
@@ -22,13 +21,11 @@ lint:
 	fgt golint ./experiments/...
 	fgt golint ./misc/...
 	fgt golint ./integration_tests/...
-	fgt golint ./scripts/...
 
 unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
-	(cd scripts/jupyter; py.test)
 
 plugins:
 	mkdir -p build
@@ -49,7 +46,7 @@ list_env:
 	@ env
 	@ echo ""
 
-integration_test: list_env plugins unit_test build_workloads build
+integration_test: list_env plugins unit_test build_workloads build build_jupyter
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
@@ -66,8 +63,10 @@ integration_test_on_docker:
 build:
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
-	mkdir -p build/viewer
-	(cd build/viewer; go build ../../scripts/sensitivity_viewer)
+
+build_jupyter:
+	(cd scripts/jupyter; sudo pip install -r requirements.txt)
+	(cd scripts/jupyter; py.test)
 
 build_workloads:
 	(cd workloads/data_caching/memcached && ./build.sh)
