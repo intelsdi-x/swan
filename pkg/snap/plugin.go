@@ -21,12 +21,12 @@ func NewPlugins(pClient *client.Client) *Plugins {
 	}
 }
 
-// LoadPlugin loads plugin binary.
+// LoadPlugin loads plugin binary from path.
 func (p *Plugins) LoadPlugin(pluginPath string) error {
 	return p.LoadPlugins([]string{pluginPath})
 }
 
-// LoadPlugins loads multiple snap plugins.
+// LoadPlugins loads plugins binaries from path.
 func (p *Plugins) LoadPlugins(pluginPaths []string) error {
 	r := p.pClient.LoadPlugin(pluginPaths)
 	if r.Err != nil {
