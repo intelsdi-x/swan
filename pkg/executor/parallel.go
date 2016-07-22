@@ -10,22 +10,23 @@ import (
 
 // Parallel allows to run same command using same executor multiple times.
 // Using Parallel decorator will mix output from all the commands executed.
+// Parallel is run in new PID namespace (using isolation.Namespace) as children might not be killed correctly otherwise.
 type Parallel struct {
-	clones int
+	numberOfClones int
 }
 
-// NewParallel prepares instance of Executor that allows to run tasks in Parallel.
-func NewParallel(clones int) Parallel {
-	return Parallel{clones: clones}
+// NewParallel prepares instance of Decorator that allows to ran tasks in parallel.
+func NewParallel(numberOfClones int) Parallel {
+	return Parallel{numberOfClones: numberOfClones}
 }
 
 // Decorate implements isolation.Decorator interface by adding invocation of parallel to a command.
 func (p Parallel) Decorate(command string) string {
-	logrus.Debugf("Attempting to run command %q %d times", command, p.clones)
+	logrus.Debugf("Attempting to run command %q %d times", command, p.numberOfClones)
 	var values []interface{}
-	values = append(values, p.clones, command)
+	values = append(values, p.numberOfClones, command)
 	decorated := "parallel -j%d sh -c %q --"
-	for i := 0; i < p.clones; i++ {
+	for i := 0; i < p.numberOfClones; i++ {
 		values = append(values, i)
 		decorated += " %d"
 	}
@@ -36,7 +37,7 @@ func (p Parallel) Decorate(command string) string {
 		return command
 	}
 	decorated = unshare.Decorate(fmt.Sprintf(decorated, values...))
-	logrus.Debugf("Running parallelized command: %q", decorated)
+	logrus.Debugf("Parallelized command prepared: %q", decorated)
 	logrus.Debug("Be aware that using Parallel decorator will mix output from all the commands executed")
 
 	return decorated
