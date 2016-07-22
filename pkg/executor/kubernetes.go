@@ -178,6 +178,16 @@ func (th *kubernetesTaskHandle) watch() error {
 					case api.PodFailed:
 						log.Debugf("modified event: '%s' in PodFailed phase", pod.Name)
 						exitCode := int(1)
+
+						// Look for an exit status from the container.
+						for _, status := range(pod.Status.ContainerStatuses) {
+							if status.State.Terminated == nil {
+								continue
+							}
+
+							exitCode = int(status.State.Terminated.ExitCode)
+						}
+
 						th.exitCode = &exitCode
 						close(th.stopped)
 
