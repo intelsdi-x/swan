@@ -338,7 +338,7 @@ export SWAN_LOAD_DURATION=15s
 export SWAN_PEAK_LOAD=650000
 export SWAN_LOAD_POINTS=10
 export SWAN_REPS=1
-export SWAN_LOG=error
+export SWAN_LOG=warn
 
 ## --- snap configuration
 export SWAN_SNAPD_ADDR=192.168.10.9
