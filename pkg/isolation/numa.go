@@ -6,39 +6,38 @@ import (
 	"strings"
 )
 
-// Numa stores information about numactl configuration.
-type Numa struct {
-	isDisabledCPUAwareness bool
-	shouldAllocOnLocalNode bool
+// Numactl stores information about numactl configuration.
+// All parameters are described in numactl manual.
+// http://linux.die.net/man/8/numactl
+type Numactl struct {
+	isAll        bool
+	isLocalalloc bool
 
-	interleavePolicy   []int
-	memoryNodes        []int
-	cpusNodes          []int
-	processCPUAffinity []int
+	interleaveNodes  []int
+	membindNodes     []int
+	cpunodebindNodes []int
+	physcpubindCPUS  []int
 
-	preferredMemoryNode int
+	preferredNode int
 }
 
-// NewNuma is a constructor which returns Numa object.
-// For further information please take a look into numactl manual.
-func NewNuma(isDisabledCPUAwareness, shouldAllocOnLocalNode bool,
-	interleavePolicy, memoryNodes, cpusNodes,
-	processCPUAffinity []int, preferredMemoryNode int) Numa {
-	return Numa{
-		isDisabledCPUAwareness: isDisabledCPUAwareness,
-		shouldAllocOnLocalNode: shouldAllocOnLocalNode,
+// NewNumactl is a constructor which returns Numa object.
+func NewNumactl(isAll, isLocalalloc bool, interleaveNodes, membindNodes, cpunodebindNodes, physcpubindCPUS []int, preferredNode int) Numactl {
+	return Numactl {
+		isAll:        isAll,
+		isLocalalloc: isLocalalloc,
 
-		interleavePolicy:   interleavePolicy,
-		memoryNodes:        memoryNodes,
-		cpusNodes:          cpusNodes,
-		processCPUAffinity: processCPUAffinity,
+		interleaveNodes:  interleaveNodes,
+		membindNodes:     membindNodes,
+		cpunodebindNodes: cpunodebindNodes,
+		physcpubindCPUS:  physcpubindCPUS,
 
-		preferredMemoryNode: preferredMemoryNode,
+		preferredNode: preferredNode,
 	}
 }
 
 // Decorate implements Decorator interface.
-func (n *Numa) Decorate(command string) string {
+func (n *Numactl) Decorate(command string) string {
 
 	intsToStrings := func(ints []int) string {
 		var strs []string
@@ -51,26 +50,26 @@ func (n *Numa) Decorate(command string) string {
 	}
 
 	var numaOptions []string
-	if n.isDisabledCPUAwareness {
+	if n.isAll {
 		numaOptions = append(numaOptions, "--all")
 	}
-	if n.shouldAllocOnLocalNode {
+	if n.isLocalalloc {
 		numaOptions = append(numaOptions, "--localalloc")
 	}
-	if len(n.interleavePolicy) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleavePolicy)))
+	if len(n.interleaveNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleaveNodes)))
 	}
-	if len(n.memoryNodes) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.memoryNodes)))
+	if len(n.membindNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.membindNodes)))
 	}
-	if len(n.processCPUAffinity) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.processCPUAffinity)))
+	if len(n.physcpubindCPUS) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.physcpubindCPUS)))
 	}
-	if len(n.cpusNodes) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpusNodes)))
+	if len(n.cpunodebindNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpunodebindNodes)))
 	}
-	if n.preferredMemoryNode > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--preferred=%d", n.preferredMemoryNode))
+	if n.preferredNode > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--preferred=%d", n.preferredNode))
 	}
 
 	return fmt.Sprintf("numactl %s -- %s", strings.Join(numaOptions, " "), command)
