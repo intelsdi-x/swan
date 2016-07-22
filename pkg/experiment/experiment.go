@@ -87,23 +87,22 @@ func (e *Experiment) Run() error {
 	// Adds progress bar and some brief output when experiment is run in non-verbose
 	// mode.
 	var bar *pb.ProgressBar
-	var increment int
 	if e.configuration.TextUI {
 		fmt.Printf("Experiment %q with uuid %q\n", e.name, e.uuid)
-		bar = pb.StartNew(100)
-		bar.ShowCounters = false
-		bar.ShowTimeLeft = true
 		totalPhases := 0
 		for _, phase := range e.phases {
 			totalPhases += phase.Repetitions()
 		}
-		increment = 100 / totalPhases
+		bar = pb.StartNew(totalPhases)
+		bar.ShowCounters = false
+		bar.ShowTimeLeft = true
 	}
 
 	for id, phase := range e.phases {
 		if e.configuration.TextUI {
 			prefix := fmt.Sprintf("[%02d / %02d] %s ", id, len(e.phases), phase.Name())
 			bar.Prefix(prefix)
+			bar.Add(1)
 		}
 
 		repetition := 0
@@ -135,10 +134,6 @@ func (e *Experiment) Run() error {
 			} else {
 				log.Info("Ended ", phase.Name(), " repetition ", repetition,
 					" in ", time.Since(phaseStartingTime))
-			}
-
-			if e.configuration.TextUI {
-				bar.Add(increment)
 			}
 		}
 
@@ -174,7 +169,7 @@ func (e *Experiment) createExperimentDir() error {
 	e.experimentDirectory = path.Join(
 		e.startingDirectory,
 		e.name,
-		time.Now().Format("2006-01-02T15h04m05s_")+e.uuid)
+		e.uuid)
 
 	err := os.MkdirAll(e.experimentDirectory, 0777)
 	if err != nil {

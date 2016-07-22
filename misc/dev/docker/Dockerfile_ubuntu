@@ -6,8 +6,8 @@ ENV GOPATH=/opt/gopath \
     PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
     GIT_TERMINAL_PROMPT=1
 
-ADD workload_deps_ubuntu/ /workload_deps_ubuntu/
-ADD install_deps.sh /workload_deps_ubuntu/
+ADD misc/dev/docker/workload_deps_ubuntu/ /workload_deps_ubuntu/
+ADD misc/dev/docker/install_deps.sh /workload_deps_ubuntu/
 
 RUN apt-get update && \
     apt-get install -y build-essential \
@@ -30,11 +30,15 @@ RUN apt-get update && \
     cp /usr/sbin/useradd /usr/sbin/adduser && \
     wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
-    tar xfvv go.tar.gz && \
-    mkdir /opt/gopath
+    tar xfvv go.tar.gz
+
+ADD . /opt/gopath/src/github.com/intelsdi-x/swan
+RUN cd /opt/gopath/src/github.com/intelsdi-x/swan && \
+    adduser memcached && \
+    make build_workloads
 
 WORKDIR /opt/gopath/src/github.com/intelsdi-x
-ADD swan_scripts /
+ADD misc/dev/docker/swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
 CMD ["-t make -s integration_tests"]

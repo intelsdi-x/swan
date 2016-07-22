@@ -20,15 +20,15 @@ With `-l` parameter container stays running after command execution.
 
 ## Building
 
-To build Docker images just run:
+To build Docker images just run following commands from swan root:
 
 - based on Ubuntu image:
 
-`docker build -t <image_tag> ./integration_tests/docker/ubuntu/`
+`docker build -t <image_tag> -f ./misc/dev/docker/Dockerfile_ubuntu` .
 
 - based on Centos image:
 
-`docker build -t <image_tag> ./integration_tests/docker/centos/`
+`docker build -t <image_tag> -f ./misc/dev/docker/Dockerfile_centos` .
 
 where:
 - `image_tag` means friendly name for docker image
@@ -37,10 +37,11 @@ where:
 
 To build, test or run swan workload inside Docker container run:
 
-`docker run --privileged -i -t -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*>`
+`docker run --privileged -i -t -e GIT_LOGIN=<*your_github_id*> -e GIT_TOKEN=<*your_git_token*> -e GIT_BRANCH=<*target_branch*> -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host <*image_name*> -t <*target*> -s <*scenario*> -l -p <*params*>`
 
 where:
 
+- `your_github_id` - github account username
 - `your_git_token` - per git account token for access to private repositories (if you don't provide it, you will be asked for GitHub credentials during tests)
 - `path_to_repo` - absolute path to swan source code (optional)
 - `target_branch` - select swan branch for test(s). (default: master)
@@ -48,7 +49,7 @@ where:
 - `target` - Run selected target. Possible choices are: 'make' and 'workload'. (Default: 'make')
 - `scenario` - Selected scenario for target. Possible choices are:
     - for 'make' target: options are specified in swan's Makefile (default: 'integration_test')
-    - for 'workload' target: \['caffe', 'memcached', 'mutilate'\] (default: 'memcached')
+    - for 'workload' target: \['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw'\] (default: 'memcached')
 - `params` - Pass parameters to workload binaries. Only for 'workload' target. (optional)
 - `-l` - Don't close container after command execution. (optional)
 

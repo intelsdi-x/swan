@@ -8,6 +8,7 @@ SCENARIO=""
 BINPARAMETERS=""
 LOCKSTATE=false
 COLORTERMINAL=false
+GIT_REPO_LOCATION=""
 
 . /make.sh
 . /workload.sh
@@ -59,24 +60,33 @@ function verifyStatus() {
 
 function setGitHubCredentials() {
     printStep "Set GitHub credentials"
-    if [[ $GIT_TOKEN != "" ]]; then
-        git config --global url."https://$GIT_TOKEN:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-        printInfo "Token for GitHub has been set"
+    if [[ $GIT_TOKEN != "" && $GIT_LOGIN != "" ]]; then
+        echo -e "machine github.com\nlogin $GIT_LOGIN\npassword $GIT_TOKEN" > ~/.netrc
+        printInfo "Token for GitHub has been set for user $GIT_LOGIN"
     fi
 }
 
-function cloneCode() {
-    printStep "Clone source code from github"
-
+function setRemoteRepo() {
+    printStep "Setting up remote repository"
+    
     if [[ $GIT_BRANCH == "" ]]; then
         GIT_BRANCH="master"
     fi
-
-    printInfo "Selected branch: $GIT_BRANCH"
-    git clone -b $GIT_BRANCH  https://$REPOSITORY_URL
-
+       
     verifyStatus
-    printInfo "Clone source code has been completed"
+    printInfo "Remote repository configuration has been set"
+}
+
+function setLocalRepo() {
+    printStep "Setting up local source repository"
+
+    pushd /swan
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    popd
+    git remote remove $GIT_REPO_LOCATION &> /dev/null
+    git remote add $GIT_REPO_LOCATION /swan/.git
+    verifyStatus
+    printInfo "Local repository configuration has been set"
 }
 
 function prepareEnvironment() {
@@ -86,20 +96,18 @@ function prepareEnvironment() {
     printInfo "All dependencies have been downloaded"
 }
 
-function getCodeFromDir() {
-    printStep "Binding source code from /swan to proper directory in \$GOPATH"
-    mkdir swan
-    mount -o bind /swan ./swan
-    verifyStatus
-    printInfo "Binding has been completed"
-}
-
 function getCode() {
+    cd swan
     if [[ -d "/swan" ]]; then
-        getCodeFromDir
+        GIT_REPO_LOCATION="local_repo"
+        setLocalRepo
     else
-        cloneCode
+        GIT_REPO_LOCATION="origin"
+        setRemoteRepo
     fi
+    git pull $GIT_REPO_LOCATION $GIT_BRANCH
+    git checkout -b $GIT_REPO_LOCATION/$GIT_BRANCH
+    cd ..
 }
 
 function usage() {
@@ -110,7 +118,7 @@ function usage() {
         "workload"
     printOption "s" "Selected scenario for target. Possible choices:" \
         "for 'make' target options are specified in swan's Makefile; default: 'integration_test'" \
-        "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate']; default: 'memcached'"
+        "for 'workload' target possible options are: ['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw']; default: 'memcached'"
     printOption "p" "Pass parameters to workload binaries. Only for 'workload' target. There is no default parameter."
     printOption "l" "Lock state after executed command has been stopped. Default: false"
 }

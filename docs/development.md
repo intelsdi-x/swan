@@ -11,6 +11,13 @@ $ make              # lint unit_test build
 $ make run
 ```
 
+
+### Vagrant (Virtualbox) development environment
+
+Instead of building Swan in your own environment, you can build and run it in a development VM.
+Follow the [Vagrant instructions](../misc/dev/vagrant/singlenode/README.md) to
+create a Linux virtual machine pre-configured for developing Swan.
+
 ### Detailed options for tests
 ```
 $ make test TEST_OPT="-v -run <specific test>"
