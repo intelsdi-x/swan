@@ -4,12 +4,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
+	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
+)
+
+const (
+	// The minimal value for the maximum number of open file descriptors that will
+	// be enough to handle distributed mutilate cluster when generating sensible load
+	// and enough to run production tasks like memcached that handle a lot of
+	// number simultaneous connections.
+	minimalNOFILERequirement = 10 * 1024
 )
 
 // checkTCPSyncookies warn user about potential issue with SYN flooding of victim machine.
@@ -41,25 +50,57 @@ func checkCPUPowerGovernor() {
 	}
 }
 
-// checkMaximumNumberOfOpenDescriptors check maximum file descriptor number that can be opened by this process.
-// Swan require at least to handle remote connections for mutilate cluster, but also it is inherited by workloads.
-// Expect more than default 1024.
-// http://man7.org/linux/man-pages/man2/setrlimit.2.html
-func checkMaximumNumberOfOpenDescriptors() {
-	rlimit := &syscall.Rlimit{}
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, rlimit)
-	errutil.Check(err)
-	logrus.Debugf("maximum file descriptor number: cur=%d (max=%d)", rlimit.Cur, rlimit.Max)
-	if rlimit.Cur <= 1024 {
-		logrus.Warnf("Maximum number of open file descriptors is low = %d. You can change this value eg. ulimit -n 100000 or modifying /etc/security/limits.conf.", rlimit.Cur)
+// checkNOFILE checks if the number of maximum file descriptors
+// opened by a process is more than minimum requested.
+// The name NOFILE is based on "limits.conf" and definition from setrlimit.
+func checkNOFILE(nofile, minimum int) {
+	if nofile <= minimum {
+		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d). You can change this value eg. ulimit -n %d or modifying /etc/security/limits.conf.", nofile, minimum)
 	}
 
 }
 
-// validateOS check experiment local OS environment to help identify potential issues.
+// validateOS checks experiment local OS environment to help identify potential issues.
 // Note: in case of some requirements not met, only warns user.
 func validateOS() {
 	checkTCPSyncookies()
 	checkCPUPowerGovernor()
-	checkMaximumNumberOfOpenDescriptors()
+	checkNOFILE(
+		getNOFILE(executor.NewLocal()),
+		minimalNOFILERequirement,
+	)
+}
+
+// validateExecutorsNOFILELimit validates if environment provided by executors can run
+// distributed application that requires large number of open file descriptors.
+func validateExecutorsNOFILELimit(executors []executor.Executor) {
+	for _, executor := range executors {
+		checkNOFILE(
+			getNOFILE(executor),
+			minimalNOFILERequirement,
+		)
+	}
+}
+
+// getNOFILE is helper to retrieve resource limit for NOFILE using given executor.
+func getNOFILE(executor executor.Executor) int {
+
+	// Run ulimit and wait.
+	taskHandle, err := executor.Execute("ulimit -n")
+	errutil.Check(err)
+	defer taskHandle.Clean()
+	defer taskHandle.EraseOutput()
+	taskHandle.Wait(0)
+
+	// Retrieve output.
+	outFile, err := taskHandle.StdoutFile()
+	errutil.Check(err)
+	output, err := ioutil.ReadAll(outFile)
+	errutil.Check(err)
+
+	// Parse and return.
+	nofile, err := strconv.Atoi(strings.Trim(string(output), "\n\r"))
+	errutil.Check(err)
+
+	return nofile
 }
