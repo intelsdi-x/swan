@@ -17,7 +17,7 @@ type Snapd struct {
 	apiPort int
 }
 
-// NewSnapd constructs Snapd.
+// NewSnapd constructs Snapd on random high port.
 func NewSnapd() *Snapd {
 	randomHighPort := rand.Intn(32768-10000) + 10000
 	return NewSnapdOnPort(randomHighPort)

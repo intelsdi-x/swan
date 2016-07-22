@@ -6,47 +6,41 @@ import (
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/pkg/errors"
 )
 
-// Plugin is an enum specifying plugin to load.
-type Plugin int
-
 const (
-	// MutilateCollector is an enum specifying plugin to load.
-	MutilateCollector Plugin = iota
-	// KubesnapDockerCollector is an enum specifying plugin to load.
-	KubesnapDockerCollector
+	// MutilateCollector is name of snap plugin binary.
+	MutilateCollector string = "snap-plugin-collector-mutilate"
+	// KubesnapDockerCollector is name of snap plugin binary.
+	KubesnapDockerCollector = "kubesnap-plugin-collector-docker"
 
-	// CassandraPublisher is an enum specifying plugin to load.
-	CassandraPublisher
+	// CassandraPublisher is name of snap plugin binary.
+	CassandraPublisher = "snap-plugin-publisher-cassandra"
+	// SessionPublisher is name of snap plugin binary.
+	SessionPublisher = "snap-plugin-publisher-session"
+)
+
+var (
+	goPath = os.Getenv("GOPATH")
+
+	defaultPluginsPath = path.Join(goPath, "bin")
+
+	snapdAddress = conf.NewStringFlag("snapd_address", "Address to snapd in `http://%s:%s` format", "http://127.0.0.1:8181")
+	pluginsPath  = conf.NewFileFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
 )
 
 // DefaultPluginLoaderConfig returns default config for PluginLoader.
 func DefaultPluginLoaderConfig() PluginLoaderConfig {
-	goPath := os.Getenv("GOPATH")
-
-	defaultMutilateCollectorPath := path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-mutilate")
-	defaultKubesnapCollectorPath := path.Join(goPath, "bin", "kubesnap-plugin-collector-docker")
-	defaultCassandraPublisherPath := path.Join(path.Join(goPath, "bin", "snap-plugin-publisher-cassandra"))
-
 	return PluginLoaderConfig{
-		SnapdAddress:            conf.NewStringFlag("snapd_address", "Address to snapd in `http://%s:%s` format", "http://127.0.0.1:8181").Value(),
-		MutilateCollectorPath:   conf.NewFileFlag("mutilate_collector_path", "Path to Mutilate collector binary", defaultMutilateCollectorPath).Value(),
-		KubernetesCollectorPath: conf.NewFileFlag("kubesnap_docker_collector_path", "Path to Kubesnap Docker collector binary", defaultKubesnapCollectorPath).Value(),
-		CassandraPublisherPath:  conf.NewFileFlag("cassandra_publisher_path", "Path to Cassandra publisher binary", defaultCassandraPublisherPath).Value(),
+		SnapdAddress: snapdAddress.Value(),
+		PluginsPath:  pluginsPath.Value(),
 	}
 }
 
 // PluginLoaderConfig contains configuration for PluginLoader.
 type PluginLoaderConfig struct {
 	SnapdAddress string
-
-	MutilateCollectorPath   string
-	KubernetesCollectorPath string
-
-	CassandraPublisherPath string
+	PluginsPath  string
 }
 
 // PluginLoader is used to simplify Snap plugin loading.
@@ -76,17 +70,19 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	}, nil
 }
 
-// LoadPlugin loads selected plugin.
-func (l PluginLoader) LoadPlugin(plugin Plugin) error {
-	switch plugin {
-	case MutilateCollector:
-		return l.pluginsClient.LoadPlugin(l.config.MutilateCollectorPath)
-	case KubesnapDockerCollector:
-		return l.pluginsClient.LoadPlugin(l.config.KubernetesCollectorPath)
-	case CassandraPublisher:
-		return l.pluginsClient.LoadPlugin(l.config.CassandraPublisherPath)
+// LoadPlugin loads selected plugin from plugin path.
+func (l PluginLoader) LoadPlugin(plugin string) error {
+	pluginName, pluginType := GetPluginNameAndType(plugin)
 
-	default:
-		return errors.Errorf("plugin %q is not available", plugin)
+	isPluginLoaded, err := l.pluginsClient.IsLoaded(pluginType, pluginName)
+	if err != nil {
+		return err
 	}
+
+	if isPluginLoaded {
+		return nil
+	}
+
+	pluginPath := path.Join(l.config.PluginsPath, plugin)
+	return l.pluginsClient.LoadPlugin(pluginPath)
 }
