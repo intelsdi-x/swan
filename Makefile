@@ -19,6 +19,9 @@ deps_godeps:
 	godep restore -v
 
 deps_all: deps_godeps
+	# Some workloads are Git Submodules
+	git submodule update --init --recursive
+	# Jupyter building
 	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 	# Install kubernetes binaries.
 	(bash ./misc/kubernetes/install_binaries.sh)
@@ -70,10 +73,6 @@ test_integration: build_swan
 
 test_integration_on_docker:
 	(cd integration_tests/docker; ./inside-docker-tests.sh)	
-
-update_submodules:
-	# Some workloads are Git Submodules
-	git submodule update --init --recursive
 
 cleanup:
 	rm -fr misc/**/*log
