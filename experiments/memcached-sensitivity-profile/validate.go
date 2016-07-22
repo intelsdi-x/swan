@@ -38,7 +38,6 @@ func checkTCPSyncookies() {
 // governor path: https://www.kernel.org/doc/Documentation/cpu-freq/user-guide.txt
 // performance,powersave constants: http://lxr.free-electrons.com/source/drivers/cpufreq/cpufreq.c#L484
 func checkCPUPowerGovernor() {
-
 	const cpu0GovernorFile = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" // Assume at least one CPU exists!.
 	if _, err := os.Stat(cpu0GovernorFile); os.IsNotExist(err) {
 		logrus.Warnf("Validation of CPU power governor failed! - %q not available (check `dmesg | grep acpi_cpufreq` entry for hardware support).", cpu0GovernorFile)
