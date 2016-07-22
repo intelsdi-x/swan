@@ -39,7 +39,7 @@ type kubernetesExecutor struct {
 	client *client.Client
 }
 
-// NewkubernetesExecutor returns an executor which lets the user run commands in pods in a
+// NewKubernetesExecutor returns an executor which lets the user run commands in pods in a
 // kubernetes cluster.
 func NewKubernetesExecutor(config KubernetesConfig) (Executor, error) {
 	k8s := &kubernetesExecutor{
