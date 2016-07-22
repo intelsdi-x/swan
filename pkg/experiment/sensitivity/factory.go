@@ -14,30 +14,30 @@ import (
 )
 
 const (
-	l1ddefaultProcessNumber = 1
-	l1idefaultProcessNumber = 1
-	l3defaultProcessNumber  = 1
+	l1dDefaultProcessNumber = 1
+	l1iDefaultProcessNumber = 1
+	l3DefaultProcessNumber  = 1
 )
 
 // L1dProcessNumber represents number of L1 data cache aggressor processes to be run
 var L1dProcessNumber = conf.NewIntFlag(
 	"l1d_process_number",
 	"Number of L1 data cache aggressors to be run",
-	l1ddefaultProcessNumber,
+	l1dDefaultProcessNumber,
 )
 
 // L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
 var L1iProcessNumber = conf.NewIntFlag(
 	"l1i_process_number",
 	"Number of L1 instruction cache aggressors to be run",
-	l1idefaultProcessNumber,
+	l1iDefaultProcessNumber,
 )
 
 // L3ProcessNumber represents number of L3 data cache aggressor processes to be run
 var L3ProcessNumber = conf.NewIntFlag(
 	"l3_process_number",
 	"Number of L3 data cache aggressors to be run",
-	l3defaultProcessNumber,
+	l3DefaultProcessNumber,
 )
 
 // AggressorFactory is factory for creating aggressor launchers with local executor

@@ -42,7 +42,7 @@ func TestParallel(t *testing.T) {
 
 				So(err, ShouldBeNil)
 				Convey("All the child processes should be stopped", func() {
-					isStopped := task.Wait(0 * time.Nanosecond)
+					isStopped := task.Wait(0)
 					So(isStopped, ShouldBeTrue)
 					cmd = exec.Command("pgrep", "sleep")
 					err = cmd.Run()
