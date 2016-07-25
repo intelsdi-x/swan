@@ -28,20 +28,13 @@ unit_test:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
 
 plugins:
-	mkdir -p build
-	# TODO(skonefal): Remove go build when we will load plugins from single place in code.
-	(cd build; go build ../misc/snap-plugin-collector-session-test)
-	(cd build; go build ../misc/snap-plugin-publisher-session-test)
-	(cd build; go build ../misc/snap-plugin-collector-mutilate)
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
-	(go install github.com/intelsdi-x/snap-plugin-publisher-cassandra)
-	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
+	(go get github.com/intelsdi-x/snap-plugin-processor-tag)
 	(go get github.com/intelsdi-x/kubesnap-plugin-collector-docker)
 	(go install github.com/intelsdi-x/kubesnap-plugin-collector-docker)
 	(go install ./misc/snap-plugin-collector-session-test)
 	(go install ./misc/snap-plugin-publisher-session-test)
 	(go install ./misc/snap-plugin-collector-mutilate)
-
 
 list_env:
 	@ echo Environment variables:
