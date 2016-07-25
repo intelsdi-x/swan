@@ -44,7 +44,9 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	loader, err := snap.NewDefaultPluginLoader()
+	loaderConfig := snap.DefaultPluginLoaderConfig()
+	loaderConfig.SnapdAddress = config.SnapdAddress
+	loader, err := snap.NewPluginLoader(loaderConfig)
 	if err != nil {
 		return nil, err
 	}
