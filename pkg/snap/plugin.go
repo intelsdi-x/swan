@@ -68,12 +68,12 @@ func (p *Plugins) Unload(t string, name string, version int) error {
 // GetPluginNameAndType takes plugin binary name like "snap-plugin-collector-mutilate"
 // and returns it's name and type inferred from binary name.
 // Name must conform convention "*snap-plugin-(type)-(name)"
-func GetPluginNameAndType(pluginBinary string) (name string, pluginType string) {
-	regex := regexp.MustCompile(".*?snap-plugin.([a-z]+)-([a-z]+)")
-	matches := regex.FindStringSubmatch(pluginBinary)
+func GetPluginNameAndType(filename string) (name string, pluginType string) {
+	regex := regexp.MustCompile(".*?snap-plugin.([a-z]+)-(.+)")
+	matches := regex.FindStringSubmatch(filename)
 
 	if len(matches) != 3 {
-		logrus.Panicf("GetPluginNameAndType regex failed on %q", pluginBinary)
+		logrus.Panicf("GetPluginNameAndType regex failed on %q", filename)
 	}
 
 	name = matches[2]

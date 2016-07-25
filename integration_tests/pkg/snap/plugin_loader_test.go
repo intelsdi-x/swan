@@ -4,10 +4,18 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var plugins = []string{
+	snap.KubesnapDockerCollector,
+	snap.MutilateCollector,
+	snap.CassandraPublisher,
+	snap.SessionPublisher,
+}
 
 func TestPluginLoader(t *testing.T) {
 	snapd := testhelpers.NewSnapd()
@@ -25,39 +33,32 @@ func TestPluginLoader(t *testing.T) {
 		t.Fail()
 	}
 
+	snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapdPort)
 	config := snap.DefaultPluginLoaderConfig()
-	config.SnapdAddress = fmt.Sprintf("http://%s:%d", "127.0.0.1", snapdPort)
+	config.SnapdAddress = snapdAddress
 	loader, err := snap.NewPluginLoader(config)
 	if err != nil {
 		t.Fail()
 	}
+	c, err := client.New(snapdAddress, "v1", true)
+	pluginClient := snap.NewPlugins(c)
 
 	Convey("While having Snapd running", t, func() {
-		Convey("We try to load Kubesnap Docker Publisher plugin", func() {
-			err = loader.LoadPlugin(snap.KubesnapDockerCollector)
-			So(err, ShouldBeNil)
-		})
+		for index, plugin := range plugins {
+			testPluginLoader(t, index, plugin, loader, pluginClient)
+		}
+	})
+}
 
-		Convey("We try to load Mutilate Collector plugin", func() {
-			err = loader.LoadPlugin(snap.MutilateCollector)
+func testPluginLoader(t *testing.T, index int, pluginName string, loader *snap.PluginLoader, pluginClient *snap.Plugins) {
+	Convey(fmt.Sprintf("We try to load %s plugin (%d)", pluginName, index), func() {
+		err := loader.LoadPlugin(pluginName)
+		So(err, ShouldBeNil)
+		Convey("Check if plugin is properly loaded", func() {
+			pluginName, pluginType := snap.GetPluginNameAndType(pluginName)
+			isLoaded, err := pluginClient.IsLoaded(pluginType, pluginName)
 			So(err, ShouldBeNil)
-		})
-
-		Convey("We try to load Cassandra Publisher plugin", func() {
-			err = loader.LoadPlugin(snap.CassandraPublisher)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("We try to load Session Publisher plugin", func() {
-			err = loader.LoadPlugin(snap.SessionPublisher)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("We try to load Cassandra Publisher twice", func() {
-			err = loader.LoadPlugin(snap.CassandraPublisher)
-			So(err, ShouldBeNil)
-			err = loader.LoadPlugin(snap.CassandraPublisher)
-			So(err, ShouldBeNil)
+			So(isLoaded, ShouldBeTrue)
 		})
 	})
 }

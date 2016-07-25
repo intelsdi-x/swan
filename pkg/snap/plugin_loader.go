@@ -17,7 +17,7 @@ const (
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
 	// SessionPublisher is name of snap plugin binary.
-	SessionPublisher = "snap-plugin-publisher-session"
+	SessionPublisher = "snap-plugin-publisher-session-test"
 )
 
 var (

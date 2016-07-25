@@ -1,14 +1,10 @@
 package main
 
 import (
-	//"os"
 	"os/user"
-	//"path"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	//"github.com/intelsdi-x/snap/scheduler/wmap"
-	//"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -16,7 +12,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
-	//"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
@@ -35,12 +30,6 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
-
-	// Snap path.
-	//snapCassandraPluginPath = conf.NewFileFlag(
-	//	"snap_cassandra_plugin_path",
-	//	"Path to snap cassandra plugin.",
-	//	path.Join(os.Getenv("GOPATH"), "bin", "snap-plugin-publisher-cassandra"))
 
 	mutilateMasterFlagDefault = "local"
 )
@@ -62,50 +51,12 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.SnapdHTTPEndpoint.Value() != "none" {
-
 		// Create connection with Snap.
 		logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
 		// TODO(bp): Make helper for passing host:port or only host option here.
 
-		//snapConnection, err := client.New(
-		//	fmt.Sprintf("http://%s:%s", snap.AddrFlag.Value(), snap.DefaultDaemonPort),
-		//	"v1",
-		//	true,
-		//)
-		//errutil.Check(err)
-
-		// Load the snap cassandra publisher plugin if not yet loaded.
-		// TODO(bp): Make helper for that.
-		//logrus.Debug("Checking if publisher cassandra is loaded.")
-		//plugins := snap.NewPlugins(snapConnection)
-		//loaded, err := plugins.IsLoaded("publisher", "cassandra")
-		//errutil.Check(err)
-		//
-		//if !loaded {
-		//	pluginPath := snapCassandraPluginPath.Value()
-		//	if _, err := os.Stat(pluginPath); err != nil && os.IsNotExist(err) {
-		//		logrus.Error("Cannot find snap cassandra plugin at %q", pluginPath)
-		//	}
-		//	err = plugins.LoadPlugins([]string{pluginPath})
-		//	errutil.Check(err)
-		//}
-
-		// Define publisher.
-		//publisher := wmap.NewPublishNode("cassandra", 2)
-		//if publisher == nil {
-		//	logrus.Fatal("Failed to create Publish Node for cassandra")
-		//}
-		//
-		//publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
-
-		// Initialize Mutilate Snap Session.
-		//pp := path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-mutilate")
-		//logrus.Info("new snap session with mutilate plugin path:", pp)
-		//if _, err := os.Stat(pp); err != nil && os.IsNotExist(err) {
-		//	logrus.Fatalf("snap-plugin-collector-mutilate not found at %q", pp)
-		//}
-
 		mutilateConfig := mutilatesession.DefaultConfig()
+		mutilateConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
 		mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
 		errutil.Check(err)
 		return mutilateSnapSession

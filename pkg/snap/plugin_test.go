@@ -18,4 +18,10 @@ func TestGetPluginNameAndType(t *testing.T) {
 		So(name, ShouldEqual, "docker")
 		So(pluginType, ShouldEqual, "collector")
 	})
+
+	Convey("snap-plugin-publisher-session-test should return type publisher and name session-test", t, func() {
+		name, pluginType := GetPluginNameAndType(SessionPublisher)
+		So(name, ShouldEqual, "session-test")
+		So(pluginType, ShouldEqual, "publisher")
+	})
 }
