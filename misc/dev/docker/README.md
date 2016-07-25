@@ -6,7 +6,7 @@ Swan's Docker image provides complex solution for building, running and testing 
 
 ### Building swan and run integration tests
 
-Swan's image is able to run all Makefile's targets. Due to swan's architecture, container is building and runnning (snap)[https://github.com/intelsdi-x/snap]
+Swan's image is able to run all Makefile's targets. Due to swan's architecture, container is building and runnning [snap](https://github.com/intelsdi-x/snap)
 
 ### Running swan's workloads
 
@@ -46,12 +46,13 @@ where:
 - `path_to_repo` - absolute path to swan source code (optional)
 - `target_branch` - select swan branch for test(s). (default: master)
 - `image_name` - image tag which was given during building
-- `target` - Run selected target. Possible choices are: 'make' and 'workload'. (Default: 'make')
+- `target` - Run selected target. Possible choices are: 'make', 'command' and 'workload'. (Default: 'make')
 - `scenario` - Selected scenario for target. Possible choices are:
     - for 'make' target: options are specified in swan's Makefile (default: 'integration_test')
     - for 'workload' target: \['caffe', 'memcached', 'mutilate', 'l1d', 'l1i', 'l3', 'membw'\] (default: 'memcached')
 - `params` - Pass parameters to workload binaries. Only for 'workload' target. (optional)
 - `-l` - Don't close container after command execution. (optional)
+- `-c` - Custom command which should be run inside container. Only for 'command' target. Default: `bash`.
 
 *Note: If you pass the repository as a volume into container then cloning source code from GitHub will be skipped*
 
@@ -63,7 +64,7 @@ where:
 
 ### Example scenarios:
 
-Run centos based container for integration_tests. Source code is provided as a volume:
+Run centos based container with default command: `bash`. Source code is provided as a volume:
 
 `docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image`
 
@@ -78,3 +79,7 @@ Run centos based container for unit_test. Source code is provided as a volume:
 Run centos based container with memcached workload. Source code is provided as a volume:
 
 `docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image -t workload -s memcached`
+
+Run centos based container with custom command. Source code is provided as a volume:
+
+`docker run --privileged -i -t -v <*path_to_repo*>:/swan -v /sys/fs/cgroup:/sys/fs/cgroup/:rw --net=host centos_swan_image -t command -c /bin/bash`
