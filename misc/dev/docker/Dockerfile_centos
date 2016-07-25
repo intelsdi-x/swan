@@ -19,6 +19,7 @@ RUN yum install -y epel-release && \
         libcgroup \
         libcgroup-tools \
         nc \
+        numactl \
         scons \
         sudo \
         wget \
@@ -38,4 +39,3 @@ WORKDIR /opt/gopath/src/github.com/intelsdi-x
 ADD misc/dev/docker/swan_scripts /
 
 ENTRYPOINT ["/start.sh"]
-CMD ["-t make -s integration_tests"]
