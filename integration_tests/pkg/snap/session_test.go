@@ -3,24 +3,18 @@ package snap
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
+	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
-	"io/ioutil"
-	"os"
-	"path"
-	"strings"
-	"testing"
-	"time"
-)
-
-const (
-	snapSessionTestAPIPort = 12345
 )
 
 func TestSnap(t *testing.T) {
@@ -55,7 +49,7 @@ func TestSnap(t *testing.T) {
 	}
 
 	Convey("While having Snapd running", t, func() {
-		snapd = testhelpers.NewSnapdOnPort(snapSessionTestAPIPort)
+		snapd = testhelpers.NewSnapd()
 		err := snapd.Start()
 		So(err, ShouldBeNil)
 
@@ -70,24 +64,23 @@ func TestSnap(t *testing.T) {
 
 		// Wait until snap is up.
 		So(snapd.Connected(), ShouldBeTrue)
+		snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
 
 		Convey("We are able to connect with snapd", func() {
-			c, err := client.New(
-				fmt.Sprintf("http://127.0.0.1:%d", snapSessionTestAPIPort), "v1", true)
+			c, err := client.New(snapdAddress, "v1", true)
+			So(err, ShouldBeNil)
+
+			loaderConfig := snap.DefaultPluginLoaderConfig()
+			loaderConfig.SnapdAddress = snapdAddress
+			pluginLoader, err := snap.NewPluginLoader(loaderConfig)
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				plugins := snap.NewPlugins(c)
-				So(plugins, ShouldNotBeNil)
-
-				pluginPath := []string{
-					path.Join(fs.GetSwanBuildPath(), "snap-plugin-collector-session-test"),
-				}
-				err := plugins.LoadPlugins(pluginPath)
+				err = pluginLoader.LoadPlugin(snap.SessionCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
-				retries := 10
+				retries := 50
 				found := false
 				for i := 0; i < retries && !found; i++ {
 					m := c.GetMetricCatalog()
@@ -98,17 +91,12 @@ func TestSnap(t *testing.T) {
 							break
 						}
 					}
-					time.Sleep(500 * time.Millisecond)
+					time.Sleep(100 * time.Millisecond)
 				}
 				So(found, ShouldBeTrue)
 
 				Convey("Loading publishers", func() {
-					plugins := snap.NewPlugins(c)
-					So(plugins, ShouldNotBeNil)
-
-					pluginPath := []string{path.Join(
-						fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test")}
-					err := plugins.LoadPlugins(pluginPath)
+					pluginLoader.LoadPlugin(snap.SessionPublisher)
 					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("session-test", 1)

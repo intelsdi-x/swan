@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"io/ioutil"
 	"os"
@@ -15,8 +14,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -37,17 +35,13 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	So(expectedValue, ShouldEqual, value)
 }
 
-const (
-	snapMutilateSessionTestAPIPort = 12346
-)
-
 func TestSnapMutilateSession(t *testing.T) {
 	var snapd *testhelpers.Snapd
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
 	Convey("While having Snapd running", t, func() {
-		snapd = testhelpers.NewSnapdOnPort(snapMutilateSessionTestAPIPort)
+		snapd = testhelpers.NewSnapd()
 		err := snapd.Start()
 		So(err, ShouldBeNil)
 
@@ -64,36 +58,35 @@ func TestSnapMutilateSession(t *testing.T) {
 		// Wait until snap is up.
 		So(snapd.Connected(), ShouldBeTrue)
 
+		snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
+
+		loaderConfig := snap.DefaultPluginLoaderConfig()
+		loaderConfig.SnapdAddress = snapdAddress
+		loader, err := snap.NewPluginLoader(loaderConfig)
+		So(err, ShouldBeNil)
+
 		Convey("We are able to connect with snapd", func() {
-			c, err := client.New(
-				fmt.Sprintf("http://127.0.0.1:%d", snapMutilateSessionTestAPIPort), "v1", true)
-			So(err, ShouldBeNil)
-
 			Convey("Loading test publisher", func() {
-				plugins := snap.NewPlugins(c)
-				So(plugins, ShouldNotBeNil)
-
-				pluginPath := []string{
-					path.Join(fs.GetSwanBuildPath(), "snap-plugin-publisher-session-test"),
-				}
-				plugins.LoadPlugins(pluginPath)
-
-				publisher = wmap.NewPublishNode("session-test", 1)
-
-				So(publisher, ShouldNotBeNil)
-
 				tmpFile, err := ioutil.TempFile("", "session_test")
 				So(err, ShouldBeNil)
 				tmpFile.Close()
 
 				metricsFile = tmpFile.Name()
 
+				loader.LoadPlugin(snap.SessionPublisher)
+				pluginName, _ := snap.GetPluginNameAndType(snap.SessionCollector)
+
+				publisher = wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
+				So(publisher, ShouldNotBeNil)
+
 				publisher.AddConfigItem("file", metricsFile)
 
 				Convey("While launching MutilateSnapSession", func() {
-					mutilateSnapSession := sessions.NewMutilateSnapSessionLauncher(
-						fs.GetSwanBuildPath(), 1*time.Second, c, publisher,
-					)
+					mutilateSessionConfig := mutilatesession.DefaultConfig()
+					mutilateSessionConfig.SnapdAddress = snapdAddress
+					mutilateSessionConfig.Publisher = publisher
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
+					So(err, ShouldBeNil)
 
 					mockedTaskInfo := new(mocks.TaskInfo)
 					mutilateStdoutPath := path.Join(
@@ -139,10 +132,10 @@ func TestSnapMutilateSession(t *testing.T) {
 						}
 
 						Convey("Reading samples from file", func() {
-							retries := 5
+							retries := 50
 							found := false
 							for i := 0; i < retries; i++ {
-								time.Sleep(500 * time.Millisecond)
+								time.Sleep(100 * time.Millisecond)
 
 								dat, err := ioutil.ReadFile(metricsFile)
 								if err != nil {

@@ -128,9 +128,8 @@ func (s *Session) Start(phaseSession phase.Session) error {
 
 	if !loaded {
 		goPath := os.Getenv("GOPATH")
-		pluginPath := []string{path.Join(
-			goPath, "bin", "snap-plugin-processor-tag")}
-		err = plugins.LoadPlugins(pluginPath)
+		pluginPath := path.Join(goPath, "bin", "snap-plugin-processor-tag")
+		err = plugins.LoadPlugin(pluginPath)
 		if err != nil {
 			return err
 		}

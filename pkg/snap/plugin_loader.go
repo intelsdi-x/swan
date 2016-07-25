@@ -9,10 +9,15 @@ import (
 )
 
 const (
-	// MutilateCollector is name of snap plugin binary.
-	MutilateCollector string = "snap-plugin-collector-mutilate"
 	// KubesnapDockerCollector is name of snap plugin binary.
 	KubesnapDockerCollector = "kubesnap-plugin-collector-docker"
+	// MutilateCollector is name of snap plugin binary.
+	MutilateCollector string = "snap-plugin-collector-mutilate"
+	// SessionCollector is name of snap plugin binary.
+	SessionCollector string = "snap-plugin-collector-session-test"
+
+	// TagProcessor is name of snap plugin binary.
+	TagProcessor string = "snap-plugin-processor-tag"
 
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"

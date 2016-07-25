@@ -91,7 +91,7 @@ func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded 
 }
 
 func loadPlugin(pluginClient *snap.Plugins, pluginPath string) {
-	err := pluginClient.LoadPlugins([]string{pluginPath})
+	err := pluginClient.LoadPlugin(pluginPath)
 	if err != nil {
 		panic(fmt.Errorf("Could not load plugin in path: %s; %s\n",
 			pluginPath, err.Error()))

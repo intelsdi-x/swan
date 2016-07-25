@@ -8,6 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// PluginAnyVersion identifies any version of plugin that can be passed to Snap API.
+	PluginAnyVersion = -1
+)
+
 // Plugins provides a 'manager' like abstraction for plugin operations.
 type Plugins struct {
 	// Client to Snapd
@@ -23,14 +28,9 @@ func NewPlugins(pClient *client.Client) *Plugins {
 
 // LoadPlugin loads plugin binary from path.
 func (p *Plugins) LoadPlugin(pluginPath string) error {
-	return p.LoadPlugins([]string{pluginPath})
-}
-
-// LoadPlugins loads plugins binaries from path.
-func (p *Plugins) LoadPlugins(pluginPaths []string) error {
-	r := p.pClient.LoadPlugin(pluginPaths)
+	r := p.pClient.LoadPlugin([]string{pluginPath})
 	if r.Err != nil {
-		return errors.Wrapf(r.Err, "could not load plugin from path %q", pluginPaths)
+		return errors.Wrapf(r.Err, "could not load plugin from %q", pluginPath)
 	}
 
 	return nil
