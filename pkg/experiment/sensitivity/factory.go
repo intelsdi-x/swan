@@ -1,6 +1,7 @@
 package sensitivity
 
 import (
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
@@ -10,6 +11,33 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 	"github.com/pkg/errors"
+)
+
+const (
+	l1dDefaultProcessNumber = 1
+	l1iDefaultProcessNumber = 1
+	l3DefaultProcessNumber  = 1
+)
+
+// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
+var L1dProcessNumber = conf.NewIntFlag(
+	"l1d_process_number",
+	"Number of L1 data cache aggressors to be run",
+	l1dDefaultProcessNumber,
+)
+
+// L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
+var L1iProcessNumber = conf.NewIntFlag(
+	"l1i_process_number",
+	"Number of L1 instruction cache aggressors to be run",
+	l1iDefaultProcessNumber,
+)
+
+// L3ProcessNumber represents number of L3 data cache aggressor processes to be run
+var L3ProcessNumber = conf.NewIntFlag(
+	"l3_process_number",
+	"Number of L3 data cache aggressors to be run",
+	l3DefaultProcessNumber,
 )
 
 // AggressorFactory is factory for creating aggressor launchers with local executor
@@ -80,9 +108,23 @@ func (f AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 func (f AggressorFactory) createIsolatedExecutor(name string) executor.Executor {
 	switch name {
 	case l1data.ID:
-		return executor.NewLocalIsolated(f.l1AggressorIsolation)
+		decorators := isolation.Decorators{f.l1AggressorIsolation}
+		if L1dProcessNumber.Value() != 1 {
+			decorators = append(decorators, executor.NewParallel(L1dProcessNumber.Value()))
+		}
+		return executor.NewLocalIsolated(decorators)
 	case l1instruction.ID:
-		return executor.NewLocalIsolated(f.l1AggressorIsolation)
+		decorators := isolation.Decorators{f.l1AggressorIsolation}
+		if L1iProcessNumber.Value() != 1 {
+			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
+		}
+		return executor.NewLocalIsolated(decorators)
+	case l3data.ID:
+		decorators := isolation.Decorators{f.otherAggressorIsolation}
+		if L3ProcessNumber.Value() != 1 {
+			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
+		}
+		return executor.NewLocalIsolated(decorators)
 	default:
 		return executor.NewLocalIsolated(f.otherAggressorIsolation)
 	}
