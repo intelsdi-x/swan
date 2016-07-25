@@ -268,28 +268,24 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, errors.Wrap(err, "executing Mutilate Agents failed")
 	}
 
-	defer func() {
-		logrus.Debug("Stopping %d agents", len(agentHandles))
+	// Run master with tuning option.
+	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
+	masterHandle, err := m.master.Execute(tuneCmd)
+	if err != nil {
 		stopAgents(agentHandles)
 		cleanAgents(agentHandles)
 		if m.config.EraseTuneOutput {
 			eraseAgentOutputs(agentHandles)
 		}
-	}()
-
-	// Run master with tuning option.
-	tuneCmd := getTuneCommand(m.config, slo, agentHandles)
-	masterHandle, err := m.master.Execute(tuneCmd)
-	if err != nil {
 		return qps, achievedSLI, errors.Wrapf(
 			err, "mutilate Master Tune failed; Command: %q", tuneCmd)
 	}
 
 	taskHandle := executor.NewClusterTaskHandle(masterHandle, agentHandles)
 
-	// Blocking wait for master.
+	// Blocking wait for master (agents will be killed then).
 	if !taskHandle.Wait(0) {
-		return qps, achievedSLI, errors.Errorf("cannot terminate the Mutilate master. Stopping agents.")
+		return qps, achievedSLI, errors.Errorf("cannot terminate the Mutilate master. Leaving agents running.")
 	}
 
 	exitCode, err := taskHandle.ExitCode()
@@ -315,11 +311,12 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 	err = taskHandle.Clean()
 	if err != nil {
+		logrus.Error("mutilate.Tune(): Clean on master failed: ", err)
 		return 0, 0, err
 	}
-
 	if m.config.EraseTuneOutput {
-		if err := taskHandle.EraseOutput(); err != nil {
+		if err = taskHandle.EraseOutput(); err != nil {
+			logrus.Error("mutilate.Tune(): EraseOutput on master failed: ", err)
 			return 0, 0, err
 		}
 	}
