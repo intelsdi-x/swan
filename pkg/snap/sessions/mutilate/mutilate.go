@@ -30,14 +30,14 @@ type Config struct {
 	Interval     time.Duration
 }
 
-// MutilateSnapSessionLauncher configures & launches snap workflow for gathering
+// SessionLauncher configures & launches snap workflow for gathering
 // SLIs from Mutilate.
 type SessionLauncher struct {
 	session    *snap.Session
 	snapClient *client.Client
 }
 
-// NewMutilateSnapSessionLauncher constructs MutilateSnapSessionLauncher.
+// NewSessionLauncher constructs MutilateSnapSessionLauncher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapdAddress, "v1", true)
 	if err != nil {

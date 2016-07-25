@@ -60,9 +60,9 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 		mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
 		errutil.Check(err)
 		return mutilateSnapSession
-	} else {
-		logrus.Warn("Warn: snap workflows disabled!")
 	}
+
+	logrus.Warn("Warn: snap workflows disabled!")
 	return mutilateSnapSession
 }
 

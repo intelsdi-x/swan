@@ -14,12 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//const (
-//	 DefaultDaemonPort represents default port on which snapd listen.
-//DefaultDaemonPort = "8181"
-//)
-
-// AddrFlag represents snap daemon address flag.
+// SnapdHTTPEndpoint represents snap daemon address flag.
 var SnapdHTTPEndpoint = conf.NewStringFlag("snapd_addr", "Snapd HTTP Endpoint", "http://127.0.0.1:8181")
 
 type task struct {
