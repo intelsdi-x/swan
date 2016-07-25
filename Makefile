@@ -36,9 +36,12 @@ plugins:
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go install github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go install github.com/intelsdi-x/snap-plugin-processor-tag)
+	(go get github.com/intelsdi-x/kubesnap-plugin-collector-docker)
+	(go install github.com/intelsdi-x/kubesnap-plugin-collector-docker)
 	(go install ./misc/snap-plugin-collector-session-test)
 	(go install ./misc/snap-plugin-publisher-session-test)
 	(go install ./misc/snap-plugin-collector-mutilate)
+
 
 list_env:
 	@ echo Environment variables:
