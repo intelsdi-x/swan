@@ -1,32 +1,60 @@
-package sessions
+package mutilatesession
 
 import (
-	"path"
 	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/cassandra"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
+// DefaultConfig returns default configuration for Mutilate Collector session.
+func DefaultConfig() Config {
+	publisher := wmap.NewPublishNode("cassandra", 2)
+	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
+
+	return Config{
+		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
+		Interval:     1 * time.Second,
+		Publisher:    publisher,
+	}
+}
+
+// Config contains configuration for Mutilate Collector session.
+type Config struct {
+	SnapdAddress string
+	Publisher    *wmap.PublishWorkflowMapNode
+	Interval     time.Duration
+}
+
 // MutilateSnapSessionLauncher configures & launches snap workflow for gathering
 // SLIs from Mutilate.
-type MutilateSnapSessionLauncher struct {
-	session                    *snap.Session
-	snapClient                 *client.Client
-	mutilateCollectorBuildPath string
+type SessionLauncher struct {
+	session    *snap.Session
+	snapClient *client.Client
 }
 
 // NewMutilateSnapSessionLauncher constructs MutilateSnapSessionLauncher.
-func NewMutilateSnapSessionLauncher(
-	mutilateCollectorBuildPath string,
-	interval time.Duration,
-	snapClient *client.Client,
-	publisher *wmap.PublishWorkflowMapNode) *MutilateSnapSessionLauncher {
+func NewSessionLauncher(config Config) (*SessionLauncher, error) {
+	snapClient, err := client.New(config.SnapdAddress, "v1", true)
+	if err != nil {
+		return nil, err
+	}
 
-	return &MutilateSnapSessionLauncher{
+	loader, err := snap.NewDefaultPluginLoader()
+	if err != nil {
+		return nil, err
+	}
+
+	err = loadPlugins(loader)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SessionLauncher{
 		session: snap.NewSession(
 			[]string{
 				"/intel/swan/mutilate/*/avg",
@@ -42,37 +70,20 @@ func NewMutilateSnapSessionLauncher(
 				//It shall be redesigned ASAP
 				"/intel/swan/mutilate/*/percentile/*/custom",
 			},
-			interval,
+			config.Interval,
 			snapClient,
-			publisher,
+			config.Publisher,
 		),
-		snapClient:                 snapClient,
-		mutilateCollectorBuildPath: mutilateCollectorBuildPath,
-	}
+		snapClient: snapClient,
+	}, nil
 }
 
 // LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *MutilateSnapSessionLauncher) LaunchSession(
-	task executor.TaskInfo, phaseSession phase.Session) (snap.SessionHandle, error) {
+func (s *SessionLauncher) LaunchSession(
+	task executor.TaskInfo,
+	phaseSession phase.Session) (snap.SessionHandle, error) {
 
-	// Check if Mutilate collector plugin is loaded.
-	plugins := snap.NewPlugins(s.snapClient)
-	loaded, err := plugins.IsLoaded("collector", "mutilate")
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO(skonefal): We should have factory for plugins. This code will be repeated many times.
-	if !loaded {
-		pluginPath :=
-			[]string{path.Join(s.mutilateCollectorBuildPath, "snap-plugin-collector-mutilate")}
-		err := plugins.LoadPlugins(pluginPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Getting FileName.
+	// Obtain Mutilate output file.
 	stdoutFile, err := task.StdoutFile()
 	if err != nil {
 		return nil, err
@@ -94,4 +105,18 @@ func (s *MutilateSnapSessionLauncher) LaunchSession(
 	}
 
 	return s.session, nil
+}
+
+func loadPlugins(loader *snap.PluginLoader) (err error) {
+	err = loader.LoadPlugin(snap.MutilateCollector)
+	if err != nil {
+		return err
+	}
+
+	err = loader.LoadPlugin(snap.CassandraPublisher)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
