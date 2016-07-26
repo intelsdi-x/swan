@@ -101,10 +101,12 @@ type Config struct {
 
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
+	memcachedConf := memcached.DefaultConfig()
 	return Config{
-		PathToBinary:  pathFlag.Value(),
-		MemcachedHost: memcached.IPFlag.Value(),
-		MemcachedPort: memcached.PortFlag.Value(),
+		PathToBinary: pathFlag.Value(),
+
+		MemcachedHost: memcachedConf.IP,
+		MemcachedPort: memcachedConf.Port,
 
 		WarmupTime:        warmupTimeFlag.Value(),
 		TuningTime:        tuningTimeFlag.Value(),

@@ -39,9 +39,9 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		decorators = append(decorators, unshare)
 
 		Convey("While using Memcached launcher", func() {
-			config := DefaultMemcachedConfig()
+			config := DefaultConfig()
 
-			config.PathToBinary = "test"
+			config.Path = "test"
 			memcachedLauncher := New(
 				mockedExecutor,
 				config)

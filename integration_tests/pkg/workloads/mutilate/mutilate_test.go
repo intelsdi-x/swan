@@ -33,7 +33,7 @@ func TestMutilateWithExecutor(t *testing.T) {
 	//log.SetOutput(os.Stderr)
 
 	// Memcached setup.
-	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig := memcached.DefaultConfig()
 	memcachedConfig.User = env.GetOrDefault("USER", memcachedConfig.User)
 	memcachedConfig.Port = memachedPort
 	mcAddress := fmt.Sprintf("127.0.0.1:%d", memcachedConfig.Port)
