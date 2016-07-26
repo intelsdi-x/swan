@@ -15,14 +15,13 @@ const (
 	TERMINATED
 )
 
-// TaskHandle represents a process which can be stopped or monitored.
+// TaskHandle represents an abstraction to control task lifecycle and status.
 type TaskHandle interface {
 	TaskInfo
 	TaskControl
 }
 
-// TaskInfo represents process from which information like Stdout can be retrieved.
-// NOTE: In future it can include other info like `Address`.
+// TaskInfo represents task's address, status and output information.
 type TaskInfo interface {
 	// Location returns address where task was located.
 	Address() string
@@ -36,6 +35,7 @@ type TaskInfo interface {
 	StderrFile() (*os.File, error)
 }
 
+// TaskControl controls task's lifecycle and garbage collection.
 type TaskControl interface {
 	// Stops a task.
 	Stop() error
