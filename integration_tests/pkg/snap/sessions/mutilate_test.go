@@ -74,7 +74,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				metricsFile = tmpFile.Name()
 
 				loader.Load(snap.SessionPublisher)
-				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionCollector)
+				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 				So(err, ShouldBeNil)
 
 				publisher = wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
