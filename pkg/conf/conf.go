@@ -41,7 +41,7 @@ var (
 func SetHelpPath(readmePath string) {
 	readmeData, err := ioutil.ReadFile(readmePath)
 	if err != nil {
-		panic(errors.Wrapf(err, "reading %s failed", readmePath))
+		panic(errors.Wrapf(err, "Reading %s failed", readmePath))
 	}
 	app.Help = string(readmeData)[:]
 }
@@ -73,7 +73,7 @@ func LogLevel() logrus.Level {
 	}
 
 	// Programmer error.
-	panic(errors.Wrap(err, "parsing log level failed"))
+	panic(errors.Wrap(err, "Parsing log level failed"))
 }
 
 // AppName returns specified app name.
@@ -90,7 +90,7 @@ func ParseFlags() error {
 		return nil
 	}
 
-	return errors.Wrapf(err, "could not parse command line flags")
+	return errors.Wrapf(err, "Could not parse command line flags")
 }
 
 // ParseEnv parse the environment for arguments.
@@ -101,5 +101,5 @@ func ParseEnv() error {
 		return nil
 	}
 
-	return errors.Wrapf(err, "could not parse enviroment flags")
+	return errors.Wrapf(err, "Could not parse environment flags")
 }
