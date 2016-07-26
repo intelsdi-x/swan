@@ -42,6 +42,59 @@ func TestFlags(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
+
+			Convey("When we define custom environment variable with the same name we should get the same variable", func() {
+				duplicatedCustomFlag := NewStringFlag("custom_string_arg", "help2", "default")
+
+				So(duplicatedCustomFlag, ShouldResemble, customFlag)
+
+				Convey("When we do not define any environment variable we should have default values in both variables after parse", func() {
+					err := ParseEnv()
+					So(err, ShouldBeNil)
+					So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
+					So(duplicatedCustomFlag.Value(), ShouldEqual, customFlag.defaultValue)
+				})
+
+				Convey("When we define custom environment variable we should have custom values in both variables after parse", func() {
+					customValue := "customContent"
+					os.Setenv(customFlag.envName(), customValue)
+
+					err := ParseEnv()
+					So(err, ShouldBeNil)
+					So(customFlag.Value(), ShouldEqual, customValue)
+					So(duplicatedCustomFlag.Value(), ShouldEqual, customValue)
+				})
+			})
+
+			Convey("When we define custom environment variable with the same name but different type it should panic", func() {
+				defer func() {
+					if r := recover(); r != nil {
+						err, ok := r.(string)
+						So(ok, ShouldBeTrue)
+						So(err, ShouldEqual, "Flag was redefined but with different type. Unify the type.")
+					} else {
+						t.Fatal("Code did not panic")
+					}
+				}()
+
+				// Trying to define File type on the same flag name which was used for String name.
+				NewFileFlag("custom_string_arg", "help2", "default2")
+			})
+
+			Convey("When we define custom environment variable with the same name and type but different default it should panic", func() {
+				defer func() {
+					if r := recover(); r != nil {
+						err, ok := r.(string)
+						So(ok, ShouldBeTrue)
+						So(err, ShouldEqual, "Flag was redefined but with different default value. Unify the default.")
+					} else {
+						t.Fatal("Code did not panic")
+					}
+				}()
+
+				// Trying to define File type on the same flag name which was used for String name.
+				NewStringFlag("custom_string_arg", "help2", "default2")
+			})
 		})
 
 		Convey("When some custom File Flag is defined", func() {
@@ -119,7 +172,7 @@ func TestFlags(t *testing.T) {
 			Convey("When we do not define any environment variable we should have default value after parse", func() {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
+				So(len(customFlag.Value()), ShouldEqual, len(customFlag.defaultValue))
 			})
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
