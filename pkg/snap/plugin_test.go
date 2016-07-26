@@ -8,19 +8,22 @@ import (
 
 func TestGetPluginNameAndType(t *testing.T) {
 	Convey("snap-plugin-publisher-cassandra should return type publisher and name cassandra", t, func() {
-		name, pluginType := GetPluginNameAndType(CassandraPublisher)
+		name, pluginType, err := GetPluginNameAndType(CassandraPublisher)
+		So(err, ShouldBeNil)
 		So(name, ShouldEqual, "cassandra")
 		So(pluginType, ShouldEqual, "publisher")
 	})
 
 	Convey("kubesnap-plugin-collector-docker should return type collector and name docker", t, func() {
-		name, pluginType := GetPluginNameAndType(KubesnapDockerCollector)
+		name, pluginType, err := GetPluginNameAndType(KubesnapDockerCollector)
+		So(err, ShouldBeNil)
 		So(name, ShouldEqual, "docker")
 		So(pluginType, ShouldEqual, "collector")
 	})
 
 	Convey("snap-plugin-publisher-session-test should return type publisher and name session-test", t, func() {
-		name, pluginType := GetPluginNameAndType(SessionPublisher)
+		name, pluginType, err := GetPluginNameAndType(SessionPublisher)
+		So(err, ShouldBeNil)
 		So(name, ShouldEqual, "session-test")
 		So(pluginType, ShouldEqual, "publisher")
 	})

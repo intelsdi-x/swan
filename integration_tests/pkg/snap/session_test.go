@@ -76,7 +76,7 @@ func TestSnap(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				err = pluginLoader.LoadPlugin(snap.SessionCollector)
+				err = pluginLoader.Load(snap.SessionCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -96,7 +96,7 @@ func TestSnap(t *testing.T) {
 				So(found, ShouldBeTrue)
 
 				Convey("Loading publishers", func() {
-					pluginLoader.LoadPlugin(snap.SessionPublisher)
+					pluginLoader.Load(snap.SessionPublisher)
 					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("session-test", 1)

@@ -65,12 +65,12 @@ func loadSnapPlugins(snapdAddress string) (err error) {
 		return err
 	}
 
-	err = pluginLoader.LoadPlugin(snap.CassandraPublisher)
+	err = pluginLoader.Load(snap.CassandraPublisher)
 	if err != nil {
 		return err
 	}
 
-	err = pluginLoader.LoadPlugin(snap.SessionCollector)
+	err = pluginLoader.Load(snap.SessionCollector)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,10 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 }
 
 func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
-	cassandraName, _ := snap.GetPluginNameAndType(snap.CassandraPublisher)
+	cassandraName, _, err := snap.GetPluginNameAndType(snap.CassandraPublisher)
+	if err != nil {
+		return err
+	}
 	cassandraPublisher := wmap.NewPublishNode(cassandraName, snap.PluginAnyVersion)
 	cassandraPublisher.AddConfigItem("server", "localhost")
 

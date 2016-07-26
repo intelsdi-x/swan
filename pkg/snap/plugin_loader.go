@@ -75,9 +75,12 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	}, nil
 }
 
-// LoadPlugin loads selected plugin from plugin path.
-func (l PluginLoader) LoadPlugin(plugin string) error {
-	pluginName, pluginType := GetPluginNameAndType(plugin)
+// Load loads selected plugin from plugin path.
+func (l PluginLoader) Load(plugin string) error {
+	pluginName, pluginType, err := GetPluginNameAndType(plugin)
+	if err != nil {
+		return err
+	}
 
 	isPluginLoaded, err := l.pluginsClient.IsLoaded(pluginType, pluginName)
 	if err != nil {

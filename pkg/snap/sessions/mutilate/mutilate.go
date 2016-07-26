@@ -110,12 +110,12 @@ func (s *SessionLauncher) LaunchSession(
 }
 
 func loadPlugins(loader *snap.PluginLoader) (err error) {
-	err = loader.LoadPlugin(snap.MutilateCollector)
+	err = loader.Load(snap.MutilateCollector)
 	if err != nil {
 		return err
 	}
 
-	err = loader.LoadPlugin(snap.CassandraPublisher)
+	err = loader.Load(snap.CassandraPublisher)
 	if err != nil {
 		return err
 	}

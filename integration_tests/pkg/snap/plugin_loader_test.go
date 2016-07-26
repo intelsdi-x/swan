@@ -48,7 +48,7 @@ func TestPluginLoader(t *testing.T) {
 	Convey("While having Snapd running", t, func() {
 		for index, plugin := range plugins {
 			Convey(fmt.Sprintf("We try to load %s plugin (%d)", plugin, index), func() {
-				err := loader.LoadPlugin(plugin)
+				err := loader.Load(plugin)
 				So(err, ShouldBeNil)
 				Convey("Check if plugin is properly loaded", func() {
 					pluginName, pluginType := snap.GetPluginNameAndType(plugin)

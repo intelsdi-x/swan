@@ -61,8 +61,6 @@ func prepareSnapSessionLauncher() snap.SessionLauncher {
 		errutil.Check(err)
 		return mutilateSnapSession
 	}
-
-	logrus.Warn("Warn: snap workflows disabled!")
 	return mutilateSnapSession
 }
 

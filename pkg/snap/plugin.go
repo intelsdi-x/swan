@@ -3,7 +3,6 @@ package snap
 import (
 	"regexp"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/pkg/errors"
 )
@@ -68,16 +67,16 @@ func (p *Plugins) Unload(t string, name string, version int) error {
 // GetPluginNameAndType takes plugin binary name like "snap-plugin-collector-mutilate"
 // and returns it's name and type inferred from binary name.
 // Name must conform convention "*snap-plugin-(type)-(name)"
-func GetPluginNameAndType(filename string) (name string, pluginType string) {
+func GetPluginNameAndType(filename string) (name string, pluginType string, err error) {
 	regex := regexp.MustCompile(".*?snap-plugin.([a-z]+)-(.+)")
 	matches := regex.FindStringSubmatch(filename)
 
 	if len(matches) != 3 {
-		logrus.Panicf("GetPluginNameAndType regex failed on %q", filename)
+		return "", "", errors.Errorf("GetPluginNameAndType regex failed on %q", filename)
 	}
 
 	name = matches[2]
 	pluginType = matches[1]
 
-	return name, pluginType
+	return name, pluginType, err
 }
