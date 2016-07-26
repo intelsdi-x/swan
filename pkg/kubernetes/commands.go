@@ -52,6 +52,7 @@ func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --port=%d", config.KubeletPort),
+		fmt.Sprintf(" --read-only-port=0"),
 		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" %s", config.KubeletArgs),
 	)
@@ -63,6 +64,7 @@ func getKubeProxyCommand(kubeAPIAddr executor.TaskHandle, config Config) string 
 		fmt.Sprintf("%s", config.PathToKubeProxy),
 		fmt.Sprintf(" --bind-address=0.0.0.0"),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
+		fmt.Sprintf(" --healthz-port=%d", config.KubeProxyPort),
 		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
 		fmt.Sprintf(" %s", config.KubeProxyArgs),
 	)

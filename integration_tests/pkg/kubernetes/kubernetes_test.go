@@ -6,6 +6,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
@@ -71,8 +72,14 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			})
 
 			Convey("And we are able to create and remove pod", func() {
-				// Command kubectl 'run' creates a Deployment named “nginx” on Kubernetes cluster.
-				podCreateHandle, err := local.Execute(fmt.Sprintf("%s run test --image=nginx", kubectlBinPath))
+				// NOTE: We pick a unique deployment name to reduce the likelihood of interference between
+				// test runs.
+				deploymentName, err := uuid.NewV4()
+				So(err, ShouldBeNil)
+
+				// Command kubectl 'run' creates a Deployment with uuid above on Kubernetes cluster.
+				podCreateHandle, err := local.Execute(
+					fmt.Sprintf("%s run %s --image=nginx", kubectlBinPath, deploymentName.String()))
 				So(err, ShouldBeNil)
 
 				defer func() {
@@ -89,11 +96,11 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(readErr, ShouldBeNil)
 
 				// Output should equal:
-				// deployment "test" created
-				So(string(data), ShouldEqual, "deployment \"test\" created\n")
+				// deployment "<uuid of deployment>" created
+				So(string(data), ShouldEqual, fmt.Sprintf("deployment \"%s\" created\n", deploymentName.String()))
 
 				//Remove created pod.
-				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s delete deployment test", kubectlBinPath))
+				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s delete deployment %s", kubectlBinPath, deploymentName.String()))
 				So(err, ShouldBeNil)
 
 				defer func() {
