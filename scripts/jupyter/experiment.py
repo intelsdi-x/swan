@@ -21,11 +21,11 @@ class Experiment(object):
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
-        self.rows = {}
-        self.qps = {}
+        self.rows = {}  # keep temporary rows from query for later match with qps rows
+        self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
         self.data = []
         self.experiment_id = experiment_id
-        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps', 'achieved_qps',
+        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps', 'achieved_qps_percent',
                         'swan_experiment', 'swan_aggressor_name', 'swan_phase', 'swan_repetition']
 
         port = kwargs['port'] if 'port' in kwargs else 9042
@@ -38,7 +38,7 @@ class Experiment(object):
         elif 'read_csv' in kwargs:
             self.rows, self.qps = test_data_reader.read(kwargs['read_csv'])
 
-        self.add_rows()
+        self.populate_data()
         self.frame = pd.DataFrame(self.data, columns=self.columns)
 
     def match_qps(self):
@@ -46,19 +46,20 @@ class Experiment(object):
             FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
         statement = SimpleStatement(query, fetch_size=100)
         for row_count, row in enumerate(self.session.execute(statement), start=1):
-            k = ''.join((row.ns, row.tags['swan_aggressor_name'],
-                         row.tags['swan_phase'], row.tags['swan_repetition']))
+            k = (row.ns, row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             self.rows[k] = row
-            if 'qps' in row.ns:
-                self.qps[''.join((row.host, row.tags['swan_phase'], row.tags['swan_repetition']))] = row.doubleval
+            if row.ns == "/intel/swan/mutilate/%s/qps" % row.host:
+                self.qps[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])] = row.doubleval
 
-    def add_rows(self):
+    def populate_data(self):
         for row in self.rows.itervalues():
             if row.valtype == "doubleval":
-                achived_qps = self.qps[row.host + row.tags['swan_phase'] + row.tags['swan_repetition']] / \
-                              float(row.tags['swan_loadpoint_qps'])
+                ns = "/intel/swan/mutilate/%s/qps" % row.host
+                achived_qps = (self.qps[(ns, row.tags['swan_phase'], row.tags['swan_repetition'])] /
+                               float(row.tags['swan_loadpoint_qps']))
+                percent_qps = '{percent:.2%}'.format(percent=achived_qps)
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
-                          row.tags['swan_loadpoint_qps'], achived_qps, row.tags['swan_experiment'],
+                          row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
                           row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition']]
 
                 self.data.append(values)
@@ -67,10 +68,10 @@ class Experiment(object):
         return self.frame
 
     def _repr_html_(self):
-        p99 = self.frame.loc[self.frame['ns'].str.contains('/percentile/99th')]
-        p99.groupby(['swan_aggressor_name', 'swan_phase', 'swan_repetition'])
-        return p99.to_html(index=False)
+        df_of_99th = self.frame.loc[self.frame['ns'].str.contains('/percentile/99th')]
+        df_of_99th.groupby(['swan_aggressor_name', 'swan_phase', 'swan_repetition'])
+        return df_of_99th.to_html(index=False)
 
 
 if __name__ == '__main__':
-    Experiment(experiment_id='57d25f69-d6d7-43e1-5c4e-3b5f5208acdc', cassandra_cluster=['127.0.0.1'], port=19042)
+    Experiment(experiment_id='57d25f69-d6d7-43e1-5c4e-3b5f5208acdc', cassandra_cluster=['127.0.0.1'], port=9042)

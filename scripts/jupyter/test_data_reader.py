@@ -53,11 +53,10 @@ def read(path):
                             tags=json.loads(convert_null(strip_quotation(row[7]))),
                             valtype=convert_null(strip_quotation(row[8])))
 
-            if 'qps' in row[0]:
-                qps[sample.host + sample.tags['swan_phase'] + sample.tags['swan_repetition']] = sample.doubleval
-            elif '99th' in row[0]:
-                k = sample.host + sample.tags['swan_aggressor_name'] + \
-                    sample.tags['swan_phase'] + sample.tags['swan_repetition']
-                rows[k] = sample
+            if "/intel/swan/mutilate/%s/qps" % sample.host == row[0]:
+                qps[(sample.ns, sample.tags['swan_phase'], sample.tags['swan_repetition'])] = sample.doubleval
+            k = (sample.ns, sample.tags['swan_aggressor_name'], sample.tags['swan_phase'],
+                 sample.tags['swan_repetition'])
+            rows[k] = sample
 
     return rows, qps
