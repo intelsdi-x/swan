@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+# q -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+#Scripts used in provisioning.
+  $install_packages = <<SCRIPT
+    echo Adding the docker yum repository
+    tee /etc/yum.repos.d/docker.repo <<-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.dockerproject.org/gpg
+EOF
+    echo Updating package lists
+    yum update -y
+    yum install -y epel-release  # Enables EPEL repo
+    yum clean all
+    echo Installing packages
+    yum install -y \
+      docker-engine \
+      etcd \
+      gcc-g++ \
+      gengetopt \
+      git \
+      iptables \
+      libcgroup-tools \
+      libevent-devel \
+      moreutils-parallel \
+      nmap-ncat \
+      perf \
+      psmisc \
+      pssh \
+      python-pip \
+      python-devel \
+      scons \
+      tree \
+      vim \
+      wget \
+      cppzmq-devel 
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/workloads/deep_learning/caffe/caffe_deps_centos.sh
+    if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
+      wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
+      tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
+    fi
+SCRIPT
+
+  $configure_etcd = <<SCRIPT
+    echo Configuring etcd
+    systemctl enable etcd
+    systemctl restart etcd
+SCRIPT
+
+  $configure_docker = <<SCRIPT
+    echo Configuring Docker
+    systemctl enable docker
+    # Add the vagrant user to the docker group
+    gpasswd -a $VAGRANT_USER docker
+    systemctl restart docker
+SCRIPT
+
+  $setup_user_env = <<SCRIPT
+    echo "Setting up user environment"
+    # Vagrant user owns $GOPATH
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR/go
+    # Create convenient symlinks in the home directory
+    ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
+    # Add GOPATH and Go binaries to PATH in profile
+    echo "export GOPATH=\"$HOME_DIR/go\"" >> $HOME_DIR/.bash_profile
+    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
+    # Add key to SSH agent
+    #ssh-add -l
+    # Rewrite github URLs for fetching private repos
+    sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
+SCRIPT
+  
+  $setup_for_aggressors = <<SCRIPT
+  echo "Setting up access for aggressors agents"
+  echo "Enabling root login"
+  echo PermitRootLogin yes >> /etc/ssh/sshd_config
+  systemctl restart sshd
+  echo "Changing root password to 'vagrant'"
+  echo -e "vagrant\nvagrant\n" | passwd --stdin root
+SCRIPT
+
+  $configure_cassandra = <<SCRIPT
+    echo "Setting up cassandra"
+    # Set up data directory
+    mkdir -p /var/data/cassandra
+    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
+    # Create and enable systemd unit
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
+    mkdir -p /opt/swan/resources
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/keyspace.cql /opt/swan/resources
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/table.cql /opt/swan/resources
+    systemctl daemon-reload
+    systemctl enable cassandra.service
+    systemctl restart cassandra.service
+SCRIPT
+
+
+  #defined virtual machines
+  vms = [
+    {
+      :name => "aggressor1",
+      :eth => "10.141.141.20"
+    },
+    {
+      :name => "aggressor2",
+      :eth => "10.141.141.21"
+    },
+    {
+      :name => "aggressor3",
+      :eth => "10.141.141.22"
+    }
+  ]
+
+  # All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+
+  vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
+  # if this env is set, it means that we are not building
+  # out a full image, but just bringing up an image with
+  # some of the dependencies installed on it. This is being
+  # used to cache dependencies on an AMI.
+  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] && ENV['BUILD_CACHED_IMAGE'] != '') || false
+
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
+
+  config.vm.box = "centos/7"
+  config.vm.box_check_update = false
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  if ! only_cache_dependencies
+    home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
+    config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  end
+
+  config.vm.provider :aws do |aws, override|
+    require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
+    file = "#{ENV['HOME']}/.vagrant/aws-creds"
+    if File.exists?(file)
+      data = YAML.load_file(file)
+    else
+      data = {}
+    end
+    override.nfs.functional = false
+    aws.access_key_id = data['access_key_id']
+    aws.secret_access_key = data['secret_access_key']
+    override.vm.box = "aws"
+    # requiretty cannot be set in sudoers for vagrant to work
+    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+    # centos7 for us-east
+    aws.ami = (only_cache_dependencies && data['base_ami']) || data['ami'] || "ami-6d1c2007"
+    aws.keypair_name = data['keypair_name'] || "snapbot-private"
+    aws.instance_type = data['instance_type'] || "m3.medium"
+    override.ssh.username = data['ssh_username'] || "centos"
+    override.ssh.private_key_path = data['ssh_private_key_path'] || nil
+    override.ssh.keys_only = data['keys_only'] || true
+  end
+
+
+  #Default VM - Swan
+  config.vm.define "swan", primary: true do |config|
+    config.vm.hostname = "swan"
+    config.vm.network "private_network", ip: "10.141.141.10"
+    config.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.cpus = 2       # NOTE: integration tests fail with less than 2
+      vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    end
+
+    config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
+    if ! only_cache_dependencies
+      config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+      config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+      config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    end
+  end
+  # Aggressors - use the same shared folder. They just use mutilated (as agent)
+  vms.each do |opts|
+    config.vm.define opts[:name] do |config|
+      config.vm.hostname = opts[:name]
+      config.vm.network "private_network", ip: opts[:eth]
+      config.vm.provider "virtualbox" do |vb|
+        vb.gui = false
+        vb.cpus = 1
+        vb.memory = 512
+      end
+      config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
+      if ! only_cache_dependencies
+        config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+      end
+      config.vm.provision "shell", inline: $setup_for_aggressors, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    end
+  end
+
+end
