@@ -47,20 +47,16 @@ func TestPluginLoader(t *testing.T) {
 
 	Convey("While having Snapd running", t, func() {
 		for index, plugin := range plugins {
-			testPluginLoader(t, index, plugin, loader, pluginClient)
+			Convey(fmt.Sprintf("We try to load %s plugin (%d)", plugin, index), func() {
+				err := loader.LoadPlugin(plugin)
+				So(err, ShouldBeNil)
+				Convey("Check if plugin is properly loaded", func() {
+					pluginName, pluginType := snap.GetPluginNameAndType(plugin)
+					isLoaded, err := pluginClient.IsLoaded(pluginType, pluginName)
+					So(err, ShouldBeNil)
+					So(isLoaded, ShouldBeTrue)
+				})
+			})
 		}
-	})
-}
-
-func testPluginLoader(t *testing.T, index int, pluginName string, loader *snap.PluginLoader, pluginClient *snap.Plugins) {
-	Convey(fmt.Sprintf("We try to load %s plugin (%d)", pluginName, index), func() {
-		err := loader.LoadPlugin(pluginName)
-		So(err, ShouldBeNil)
-		Convey("Check if plugin is properly loaded", func() {
-			pluginName, pluginType := snap.GetPluginNameAndType(pluginName)
-			isLoaded, err := pluginClient.IsLoaded(pluginType, pluginName)
-			So(err, ShouldBeNil)
-			So(isLoaded, ShouldBeTrue)
-		})
 	})
 }
