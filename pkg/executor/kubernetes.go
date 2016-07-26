@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"time"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -27,22 +28,22 @@ const (
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
 type KubernetesConfig struct {
-	PodName    string // unique pod identifier.
-	Address    string // no default must be specifed or TODO: DefaultKubenertesConfig
-	CPURequest int64  // k8s/.../resource.DecimalSi unit
-	CPULimit   int64  // k8s/.../resouce.DecimalSi unit
+	PodName    string
+	Address    string
+	CPURequest int64
+	CPULimit   int64
 	Decorators isolation.Decorators
 }
 
-type kubernetesExecutor struct {
+type kubernetes struct {
 	config KubernetesConfig
 	client *client.Client
 }
 
-// NewKubernetesExecutor returns an executor which lets the user run commands in pods in a
+// NewKubernetes returns an executor which lets the user run commands in pods in a
 // kubernetes cluster.
-func NewKubernetesExecutor(config KubernetesConfig) (Executor, error) {
-	k8s := &kubernetesExecutor{
+func NewKubernetes(config KubernetesConfig) (Executor, error) {
+	k8s := &kubernetes{
 		config: config,
 	}
 
@@ -51,6 +52,7 @@ func NewKubernetesExecutor(config KubernetesConfig) (Executor, error) {
 		// Username: "test", // TODO authorization
 		// Password: "password",
 	}
+
 	var err error
 	k8s.client, err = client.New(restClientConfig)
 	if err != nil {
@@ -60,15 +62,15 @@ func NewKubernetesExecutor(config KubernetesConfig) (Executor, error) {
 	return k8s, nil
 }
 
-// prepareContainerResources helper to create ResourceRequirments for container.
-func prepareContainerResources(CPULimit, CPURequest int64) api.ResourceRequirements {
+// prepareContainerResources helper to create ResourceRequirments for the container.
+func (k8s *kubernetes) prepareContainerResources() api.ResourceRequirements {
 	resourceListLimits := api.ResourceList{}
 	resourceListRequests := api.ResourceList{}
-	if CPULimit > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(CPULimit, resource.DecimalSI)
+	if k8s.config.CPULimit > 0 {
+		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(k8s.config.CPULimit, resource.DecimalSI)
 	}
-	if CPURequest > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(CPURequest, resource.DecimalSI)
+	if k8s.config.CPURequest > 0 {
+		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(k8s.config.CPURequest, resource.DecimalSI)
 	}
 	return api.ResourceRequirements{
 		Limits:   resourceListLimits,
@@ -78,7 +80,7 @@ func prepareContainerResources(CPULimit, CPURequest int64) api.ResourceRequireme
 
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
-func (k8s *kubernetesExecutor) Execute(command string) (TaskHandle, error) {
+func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	podsAPI := k8s.client.Pods(swanKubernetesNamespace)
 
 	for _, decorator := range k8s.config.Decorators {
@@ -100,7 +102,7 @@ func (k8s *kubernetesExecutor) Execute(command string) (TaskHandle, error) {
 					Name:      defaultContainerName,
 					Image:     "jess/stress", // replace with image of swan
 					Command:   []string{"sh", "-c", command},
-					Resources: prepareContainerResources(k8s.config.CPULimit, k8s.config.CPURequest),
+					Resources: k8s.prepareContainerResources(),
 				},
 			},
 		},
@@ -129,7 +131,6 @@ type kubernetesTaskHandle struct {
 	started  chan struct{}
 	stdout   *os.File
 	stderr   *os.File
-	errCh    chan error
 	exitCode *int
 }
 
@@ -160,13 +161,16 @@ func (th *kubernetesTaskHandle) watch() error {
 	th.stopped = make(chan struct{})
 
 	go func() {
-		// var once sync.Once
+		var onceStarted sync.Once
+		var onceStopped sync.Once
+
 		for event := range watcher.ResultChan() {
 			pod, ok := event.Object.(*api.Pod)
 			if ok {
 				// Update with latest status.
 				th.pod = pod
 
+				// TODO: Refactor switch below.
 				switch event.Type {
 				case watch.Added:
 					// NOTE: Replicate switch statement below.
@@ -177,19 +181,22 @@ func (th *kubernetesTaskHandle) watch() error {
 						log.Debugf("modified event: '%s' in PodPending phase", pod.Name)
 					case api.PodFailed:
 						log.Debugf("modified event: '%s' in PodFailed phase", pod.Name)
-						exitCode := int(1)
+						onceStopped.Do(func() {
+							exitCode := int(1)
 
-						// Look for an exit status from the container.
-						for _, status := range(pod.Status.ContainerStatuses) {
-							if status.State.Terminated == nil {
-								continue
+							// Look for an exit status from the container.
+							for _, status := range pod.Status.ContainerStatuses {
+								if status.State.Terminated == nil {
+									continue
+								}
+
+								exitCode = int(status.State.Terminated.ExitCode)
 							}
 
-							exitCode = int(status.State.Terminated.ExitCode)
-						}
+							th.exitCode = &exitCode
 
-						th.exitCode = &exitCode
-						close(th.stopped)
+							close(th.stopped)
+						})
 
 						// Try to delete the failed pod to avoid conflicts and having to call Stop()
 						// after the stopped channel has been closed.
@@ -199,22 +206,37 @@ func (th *kubernetesTaskHandle) watch() error {
 						})
 					case api.PodSucceeded:
 						log.Debugf("modified event: '%s' in PodSucceeded phase", pod.Name)
-						exitCode := int(0)
-						th.exitCode = &exitCode
-						close(th.stopped)
+						onceStopped.Do(func() {
+							exitCode := int(0)
+							th.exitCode = &exitCode
+							close(th.stopped)
+						})
 
 					case api.PodRunning:
 						log.Debugf("modified event: '%s' in PodRunning phase", pod.Name)
 
 						if api.IsPodReady(pod) {
-							close(th.started)
+							onceStarted.Do(func() { close(th.started) })
 						}
 					default:
 						log.Debugf("unknown pod.Status.Phase '%d' for pod '%s'", pod.Status.Phase, pod.Name)
 					}
 				case watch.Deleted:
 					log.Debugf("pod '%s' deleted", pod.Name)
-					close(th.stopped)
+					onceStopped.Do(func() {
+						exitCode := int(1)
+
+						// Look for an exit status from the container.
+						for _, status := range pod.Status.ContainerStatuses {
+							if status.State.Terminated == nil {
+								continue
+							}
+
+							exitCode = int(status.State.Terminated.ExitCode)
+						}
+						th.exitCode = &exitCode
+						close(th.stopped)
+					})
 				default:
 					log.Debugf("unknown event.Type")
 				}
@@ -246,14 +268,13 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 
 	th.stdout = stdoutFile
 	th.stderr = stderrFile
-	th.errCh = make(chan error)
 
 	// a goroutine that copies data from streamer to local files.
 	go func() {
 		mw := io.MultiWriter(stdoutFile, stderrFile)
 		_, err := io.Copy(mw, logStream)
 		if err != nil {
-			th.errCh <- err
+			log.Debug("Failed to copy container log stream to task outpur: %s", err.Error())
 		}
 	}()
 

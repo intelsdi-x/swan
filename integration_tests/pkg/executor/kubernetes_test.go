@@ -20,6 +20,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		// have been shut down, ports may be in CLOSE_WAIT state.
 		config := kubernetes.DefaultConfig()
 		ports := testhelpers.RandomPorts(36000, 40000, 5)
+		So(len(ports), ShouldEqual, 5)
 		config.KubeAPIPort = ports[0]
 		config.KubeletPort = ports[1]
 		config.KubeControllerPort = ports[2]
@@ -32,14 +33,34 @@ func TestKubernetesExecutor(t *testing.T) {
 		k8sHandle, err := k8sLauncher.Launch()
 		So(err, ShouldBeNil)
 
+		// Make sure cluster is shut down and cleaned up.
 		defer func() {
-			stopCleanCheckError(k8sHandle)
+			var errors []string
+			err := k8sHandle.Stop()
+			if err != nil {
+				t.Logf(err.Error())
+				errors = append(errors, err.Error())
+			}
+
+			err = k8sHandle.Clean()
+			if err != nil {
+				t.Logf(err.Error())
+				errors = append(errors, err.Error())
+			}
+
+			err = k8sHandle.EraseOutput()
+			if err != nil {
+				t.Logf(err.Error())
+				errors = append(errors, err.Error())
+			}
+
+			So(len(errors), ShouldEqual, 0)
 		}()
 
 		podName, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 
-		k8sexecutor, err := executor.NewKubernetesExecutor(
+		k8sexecutor, err := executor.NewKubernetes(
 			executor.KubernetesConfig{
 				Address: fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort),
 				PodName: podName.String(),
@@ -51,7 +72,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			taskHandle, err := k8sexecutor.Execute("sleep 1 && exit 0")
 			So(err, ShouldBeNil)
 
-			Convey("And after at most 2 seconds", func() {
+			// TODO: Verify that pod is running using kubectl (we have one second to do this).
+
+			Convey("And after at most 5 seconds", func() {
 				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
 
 				Convey("The exit status should be zero", func() {
@@ -66,8 +89,8 @@ func TestKubernetesExecutor(t *testing.T) {
 			taskHandle, err := k8sexecutor.Execute("sleep 1 && exit 5")
 			So(err, ShouldBeNil)
 
-			Convey("And after at most 2 seconds", func() {
-				So(taskHandle.Wait(2*time.Second), ShouldBeTrue)
+			Convey("And after at most 5 seconds", func() {
+				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
 
 				Convey("The exit status should be 5", func() {
 					exitCode, err := taskHandle.ExitCode()
@@ -77,21 +100,4 @@ func TestKubernetesExecutor(t *testing.T) {
 			})
 		})
 	})
-}
-
-func stopCleanCheckError(taskHandle executor.TaskHandle) {
-	var errors []string
-	err := taskHandle.Stop()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	err = taskHandle.Clean()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	err = taskHandle.EraseOutput()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	So(len(errors), ShouldEqual, 0)
 }

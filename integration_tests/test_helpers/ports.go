@@ -1,7 +1,7 @@
 package testhelpers
 
 import (
-  "math/rand"
+	"math/rand"
 )
 
 // RandomPorts returns count random ports between start and end.
@@ -13,7 +13,7 @@ func RandomPorts(start int, end int, count int) []int {
 	}
 
 	out := []int{}
-	for port, _ := range ports {
+	for port := range ports {
 		out = append(out, port)
 	}
 
