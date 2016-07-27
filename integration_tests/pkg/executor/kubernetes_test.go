@@ -28,8 +28,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		config.KubeProxyPort = ports[4]
 
 		k8sLauncher := kubernetes.New(local, local, config)
-		So(k8sLauncher, ShouldNotBeNil)
-
 		k8sHandle, err := k8sLauncher.Launch()
 		So(err, ShouldBeNil)
 

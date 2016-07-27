@@ -63,14 +63,13 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 		config: config,
 	}
 
-	restClientConfig := &restclient.Config{
-		Host: config.Address,
-		// Username: "test", // TODO authorization
-		// Password: "password",
-	}
-
 	var err error
-	k8s.client, err = client.New(restClientConfig)
+	k8s.client, err = client.New(&restclient.Config{
+		Host:     config.Address,
+		Username: config.Username,
+		Password: config.Password,
+	})
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't initilize kubernetes client for host '%s'", config.Address)
 	}
@@ -139,8 +138,17 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	case <-th.started:
 		// Pod succesfully started.
 	case <-th.stopped:
-		// TODO: Look into exit state to determine if start up failed or completed immediately.
-		return th, errors.Errorf("failed to start pod: terminated during startup")
+		// Look into exit state to determine if start up failed or completed immediately.
+		exitCode, err := th.ExitCode()
+		if err != nil {
+			return th, errors.Errorf("failed to start pod: cannot get exit code")
+		}
+
+		if exitCode != 0 {
+			return th, errors.Errorf("failed to start pod: failed with exit code %d", exitCode)
+		}
+
+		return th, nil
 	}
 
 	th.setupLogs()
