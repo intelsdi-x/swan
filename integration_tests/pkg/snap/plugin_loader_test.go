@@ -23,24 +23,22 @@ func TestPluginLoader(t *testing.T) {
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
 	if err != nil {
-		t.Fail()
+		t.Fatalf("snapd creation failed: %q", err)
 	}
 	defer snapd.Stop()
 	defer snapd.CleanAndEraseOutput()
-
-	snapdPort := snapd.Port()
+	snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapd.Port())
 
 	// Wait until snap is up.
 	if !snapd.Connected() {
-		t.Fail()
+		t.Fatalf("failed to connect to snapd on %q", snapdAddress)
 	}
 
-	snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapdPort)
 	config := snap.DefaultPluginLoaderConfig()
 	config.SnapdAddress = snapdAddress
 	loader, err := snap.NewPluginLoader(config)
 	if err != nil {
-		t.Fail()
+		t.Fatalf("snap plugin loading failed: %q", err)
 	}
 	c, err := client.New(snapdAddress, "v1", true)
 	pluginClient := snap.NewPlugins(c)
@@ -51,7 +49,8 @@ func TestPluginLoader(t *testing.T) {
 				err := loader.Load(plugin)
 				So(err, ShouldBeNil)
 				Convey("Check if plugin is properly loaded", func() {
-					pluginName, pluginType := snap.GetPluginNameAndType(plugin)
+					pluginName, pluginType, err := snap.GetPluginNameAndType(plugin)
+					So(err, ShouldBeNil)
 					isLoaded, err := pluginClient.IsLoaded(pluginType, pluginName)
 					So(err, ShouldBeNil)
 					So(isLoaded, ShouldBeTrue)
