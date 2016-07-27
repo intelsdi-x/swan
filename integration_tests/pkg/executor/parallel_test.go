@@ -1,8 +1,8 @@
 package executor
 
 import (
-	"bytes"
 	"os/exec"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -31,11 +31,7 @@ func TestParallel(t *testing.T) {
 			output, err := cmd.CombinedOutput()
 			So(err, ShouldBeNil)
 
-			// Remove trailing new line
-			output = bytes.TrimRight(output, "\n")
-			// Split by new line
-			pids := bytes.Split(output, []byte{10})
-			// In some cases pgrep might not display the most recently created process
+			pids := strings.Split(strings.TrimSpace(string(output)), "\n")
 			So(len(pids), ShouldBeGreaterThan, 0)
 			Convey("When I stop parallel process", func() {
 				err = task.Stop()
