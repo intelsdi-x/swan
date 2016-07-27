@@ -33,7 +33,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		k8sHandle, err := k8sLauncher.Launch()
 		So(err, ShouldBeNil)
 
-		// Make sure cluster is shut down and cleaned up.
+		// Make sure cluster is shut down and cleaned up when test ends.
 		defer func() {
 			var errors []string
 			err := k8sHandle.Stop()
@@ -60,12 +60,10 @@ func TestKubernetesExecutor(t *testing.T) {
 		podName, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 
-		k8sexecutor, err := executor.NewKubernetes(
-			executor.KubernetesConfig{
-				Address: fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort),
-				PodName: podName.String(),
-			},
-		)
+		executorConfig := executor.DefaultKubernetesConfig()
+		executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
+		executorConfig.PodName = podName.String()
+		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
 		Convey("Running a command with a successful exit status", func() {

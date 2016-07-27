@@ -23,29 +23,31 @@ import (
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
 type KubernetesConfig struct {
-	PodName       string
-	Address       string
-	Username      string
-	Password      string
-	CPURequest    int64
-	CPULimit      int64
-	Decorators    isolation.Decorators
-	ContainerName string
-	Namespace     string
+	PodName        string
+	Address        string
+	Username       string
+	Password       string
+	CPURequest     int64
+	CPULimit       int64
+	Decorators     isolation.Decorators
+	ContainerName  string
+	ContainerImage string
+	Namespace      string
 }
 
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
-		PodName:       "swan",
-		Address:       "127.0.0.1:8080",
-		Username:      "",
-		Password:      "",
-		CPURequest:    0,
-		CPULimit:      0,
-		Decorators:    []isolation.Decorators{},
-		ContainerName: "swan",
-		Namespace:     api.NamespaceDefault,
+		PodName:        "swan",
+		Address:        "127.0.0.1:8080",
+		Username:       "",
+		Password:       "",
+		CPURequest:     0,
+		CPULimit:       0,
+		Decorators:     isolation.Decorators{},
+		ContainerName:  "swan",
+		ContainerImage: "jess/stress",
+		Namespace:      api.NamespaceDefault,
 	}
 }
 
@@ -95,7 +97,7 @@ func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
-	podsAPI := k8s.client.Pods(swanKubernetesNamespace)
+	podsAPI := k8s.client.Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
@@ -103,15 +105,15 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		TypeMeta: unversioned.TypeMeta{},
 		ObjectMeta: api.ObjectMeta{
 			Name:      k8s.config.PodName,
-			Namespace: swanKubernetesNamespace,
+			Namespace: k8s.config.Namespace,
 			Labels:    map[string]string{"name": k8s.config.PodName},
 		},
 		Spec: api.PodSpec{
 			RestartPolicy: "Never",
 			Containers: []api.Container{
 				api.Container{
-					Name:      defaultContainerName,
-					Image:     "jess/stress", // replace with image of swan
+					Name:      k8s.config.ContainerName,
+					Image:     k8s.config.ContainerImage,
 					Command:   []string{"sh", "-c", command},
 					Resources: k8s.containerResources(),
 				},
@@ -120,7 +122,8 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot schedule pod %q ns=%q: %s", k8s.config.PodName, swanKubernetesNamespace, err)
+		return nil, errors.Wrapf(err, "cannot schedule pod %q with namespace %q",
+			k8s.config.PodName, k8s.config.Namespace)
 	}
 
 	th := &kubernetesTaskHandle{
@@ -167,7 +170,7 @@ func (th *kubernetesTaskHandle) watch() error {
 	// Prepare events watcher.
 	watcher, err := th.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create a watcher over selector")
+		return errors.Wrapf(err, "cannot create watcher over selector")
 	}
 
 	th.started = make(chan struct{})
@@ -252,7 +255,7 @@ func (th *kubernetesTaskHandle) watch() error {
 func (th *kubernetesTaskHandle) setupLogs() error {
 	// Wire up logs to task handle stdout.
 	logStream, err := th.podsAPI.GetLogs(th.pod.Name, &api.PodLogOptions{
-		Container: defaultContainerName,
+		Container: th.pod.Spec.Containers[0].Name,
 	}).Stream()
 	if err != nil {
 		return errors.Wrapf(err, "cannot create a stream")
@@ -261,9 +264,10 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	// Prepare local files
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(th.command, "local")
 	if err != nil {
-		return errors.Wrapf(err, "createExecutorOutputFiles for pod %q failed", th.pod.Name)
+		return errors.Wrapf(err, "cannot create output files for pod %q", th.pod.Name)
 	}
-	log.Debug("created temporary files stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
+	log.Debugf("created temporary files stdout path: %q stderr path: %q",
+		stdoutFile.Name(), stderrFile.Name())
 
 	th.stdout = stdoutFile
 	// NOTE: As logs are unified in one stream in Kubernetes, we only write it to stdout.
@@ -273,7 +277,7 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	go func() {
 		_, err := io.Copy(stdoutFile, logStream)
 		if err != nil {
-			log.Debug("Failed to copy container log stream to task output: %s", err.Error())
+			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
 		}
 	}()
 
