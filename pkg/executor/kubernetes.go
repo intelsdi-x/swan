@@ -21,23 +21,32 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-const (
-	swanKubernetesNamespace = api.NamespaceDefault
-	defaultContainerName    = "swan"
-)
-
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
 type KubernetesConfig struct {
-	PodName    string
-	Address    string
-	CPURequest int64
-	CPULimit   int64
-	Decorators isolation.Decorators
+	PodName       string
+	Address       string
+	Username      string
+	Password      string
+	CPURequest    int64
+	CPULimit      int64
+	Decorators    isolation.Decorators
+	ContainerName string
+	Namespace     string
 }
 
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
-	return KubernetesConfig{}
+	return KubernetesConfig{
+		PodName:       "swan",
+		Address:       "127.0.0.1:8080",
+		Username:      "",
+		Password:      "",
+		CPURequest:    0,
+		CPULimit:      0,
+		Decorators:    []isolation.Decorators{},
+		ContainerName: "swan",
+		Namespace:     api.NamespaceDefault,
+	}
 }
 
 type kubernetes struct {
@@ -61,14 +70,14 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	var err error
 	k8s.client, err = client.New(restClientConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't initilize kubernetes Client for host = %q", config.Address)
+		return nil, errors.Wrapf(err, "can't initilize kubernetes client for host '%s'", config.Address)
 	}
 
 	return k8s, nil
 }
 
-// prepareContainerResources helper to create ResourceRequirments for the container.
-func (k8s *kubernetes) prepareContainerResources() api.ResourceRequirements {
+// containerResources helper to create ResourceRequirments for the container.
+func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 	resourceListLimits := api.ResourceList{}
 	resourceListRequests := api.ResourceList{}
 	if k8s.config.CPULimit > 0 {
@@ -104,7 +113,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 					Name:      defaultContainerName,
 					Image:     "jess/stress", // replace with image of swan
 					Command:   []string{"sh", "-c", command},
-					Resources: k8s.prepareContainerResources(),
+					Resources: k8s.containerResources(),
 				},
 			},
 		},
@@ -114,10 +123,15 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "cannot schedule pod %q ns=%q: %s", k8s.config.PodName, swanKubernetesNamespace, err)
 	}
 
-	th := newKubernetesTaskHandle(command, podsAPI, pod)
+	th := &kubernetesTaskHandle{
+		command: command,
+		podsAPI: podsAPI,
+		pod:     pod,
+	}
+
+	th.watch()
 
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
-	// TODO: Switch
 	select {
 	case <-th.started:
 		// Pod succesfully started.
@@ -143,27 +157,17 @@ type kubernetesTaskHandle struct {
 	exitCode *int
 }
 
-func newKubernetesTaskHandle(command string, podsAPI client.PodInterface, pod *api.Pod) *kubernetesTaskHandle {
-	th := &kubernetesTaskHandle{
-		command: command,
-		podsAPI: podsAPI,
-		pod:     pod,
-	}
-	th.watch()
-	return th
-}
-
 func (th *kubernetesTaskHandle) watch() error {
 	selectorRaw := fmt.Sprintf("name=%s", th.pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
-		return errors.Wrapf(err, "cannot create an selector err:%s", selectorRaw)
+		return errors.Wrapf(err, "cannot create an selector")
 	}
 
 	// Prepare events watcher.
 	watcher, err := th.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create a watcher over selector: %v", selector)
+		return errors.Wrapf(err, "cannot create a watcher over selector")
 	}
 
 	th.started = make(chan struct{})
@@ -226,7 +230,7 @@ func (th *kubernetesTaskHandle) watch() error {
 						terminated(pod)
 						return
 					default:
-						log.Debugf("unknown pod.Status.Phase '%d' for pod '%s'", pod.Status.Phase, pod.Name)
+						log.Debugf("unknown pod.Status.Phase '%d' for pod %q", pod.Status.Phase, pod.Name)
 					}
 
 				case watch.Deleted:
@@ -257,7 +261,7 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	// Prepare local files
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(th.command, "local")
 	if err != nil {
-		return errors.Wrapf(err, "createExecutorOutputFiles for pod '%s' failed", th.pod.Name)
+		return errors.Wrapf(err, "createExecutorOutputFiles for pod %q failed", th.pod.Name)
 	}
 	log.Debug("created temporary files stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
@@ -291,19 +295,19 @@ func (th *kubernetesTaskHandle) Stop() error {
 		return nil
 	}
 
-	log.Debugf("deleting pod '%s'", th.pod.Name)
+	log.Debugf("deleting pod %q", th.pod.Name)
 
 	var GracePeriodSeconds int64
 	err := th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
 		GracePeriodSeconds: &GracePeriodSeconds,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "cannot delete pod %s", th.pod.Name)
+		return errors.Wrapf(err, "cannot delete pod %q", th.pod.Name)
 	}
 
-	log.Debugf("waiting for pod '%s' to stop", th.pod.Name)
+	log.Debugf("waiting for pod %q to stop", th.pod.Name)
 	<-th.stopped
-	log.Debugf("pod '%s' stopped", th.pod.Name)
+	log.Debugf("pod %q stopped", th.pod.Name)
 
 	return nil
 }
