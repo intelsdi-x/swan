@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 	"path"
-	"time"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -33,6 +33,11 @@ type KubernetesConfig struct {
 	CPURequest int64
 	CPULimit   int64
 	Decorators isolation.Decorators
+}
+
+// DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
+func DefaultKubernetesConfig() KubernetesConfig {
+	return KubernetesConfig{}
 }
 
 type kubernetes struct {
@@ -82,10 +87,7 @@ func (k8s *kubernetes) prepareContainerResources() api.ResourceRequirements {
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	podsAPI := k8s.client.Pods(swanKubernetesNamespace)
-
-	for _, decorator := range k8s.config.Decorators {
-		command = decorator.Decorate(command)
-	}
+	command = k8s.config.Decorators.Decorate(command)
 
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
 	pod, err := podsAPI.Create(&api.Pod{
@@ -115,7 +117,14 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	th := newKubernetesTaskHandle(command, podsAPI, pod)
 
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
-	<-th.started
+	// TODO: Switch
+	select {
+	case <-th.started:
+		// Pod succesfully started.
+	case <-th.stopped:
+		// TODO: Look into exit state to determine if start up failed or completed immediately.
+		return th, errors.Errorf("failed to start pod: terminated during startup")
+	}
 
 	th.setupLogs()
 
@@ -162,81 +171,68 @@ func (th *kubernetesTaskHandle) watch() error {
 
 	go func() {
 		var onceStarted sync.Once
+		started := func(pod *api.Pod) {
+			if api.IsPodReady(pod) {
+				onceStarted.Do(func() {
+					close(th.started)
+				})
+			}
+		}
+
 		var onceStopped sync.Once
+		terminated := func(pod *api.Pod) {
+			onceStopped.Do(func() {
+				exitCode := 1
+
+				// Look for an exit status from the container.
+				// If more than one container is present, the last takes precedence.
+				for _, status := range pod.Status.ContainerStatuses {
+					if status.State.Terminated == nil {
+						continue
+					}
+
+					exitCode = int(status.State.Terminated.ExitCode)
+				}
+
+				// NOTE: We may want to have a lock/read barrier on the exit code to ensure consistent read in ExitCode().
+				th.exitCode = &exitCode
+
+				close(th.stopped)
+			})
+
+			// Try to delete the failed pod to avoid conflicts and having to call Stop()
+			// after the stopped channel has been closed.
+			var GracePeriodSeconds int64
+			th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
+				GracePeriodSeconds: &GracePeriodSeconds,
+			})
+		}
 
 		for event := range watcher.ResultChan() {
 			pod, ok := event.Object.(*api.Pod)
 			if ok {
 				// Update with latest status.
+				// NOTE: May want to make this synchronized.
 				th.pod = pod
 
-				// TODO: Refactor switch below.
 				switch event.Type {
-				case watch.Added:
-					// NOTE: Replicate switch statement below.
-
-				case watch.Modified:
+				case watch.Added, watch.Modified:
 					switch pod.Status.Phase {
 					case api.PodPending:
-						log.Debugf("modified event: '%s' in PodPending phase", pod.Name)
-					case api.PodFailed:
-						log.Debugf("modified event: '%s' in PodFailed phase", pod.Name)
-						onceStopped.Do(func() {
-							exitCode := int(1)
-
-							// Look for an exit status from the container.
-							for _, status := range pod.Status.ContainerStatuses {
-								if status.State.Terminated == nil {
-									continue
-								}
-
-								exitCode = int(status.State.Terminated.ExitCode)
-							}
-
-							th.exitCode = &exitCode
-
-							close(th.stopped)
-						})
-
-						// Try to delete the failed pod to avoid conflicts and having to call Stop()
-						// after the stopped channel has been closed.
-						var GracePeriodSeconds int64
-						th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
-							GracePeriodSeconds: &GracePeriodSeconds,
-						})
-					case api.PodSucceeded:
-						log.Debugf("modified event: '%s' in PodSucceeded phase", pod.Name)
-						onceStopped.Do(func() {
-							exitCode := int(0)
-							th.exitCode = &exitCode
-							close(th.stopped)
-						})
-
+						// Noop for now.
 					case api.PodRunning:
-						log.Debugf("modified event: '%s' in PodRunning phase", pod.Name)
-
-						if api.IsPodReady(pod) {
-							onceStarted.Do(func() { close(th.started) })
-						}
+						started(pod)
+					case api.PodFailed, api.PodSucceeded:
+						terminated(pod)
+						return
 					default:
 						log.Debugf("unknown pod.Status.Phase '%d' for pod '%s'", pod.Status.Phase, pod.Name)
 					}
+
 				case watch.Deleted:
-					log.Debugf("pod '%s' deleted", pod.Name)
-					onceStopped.Do(func() {
-						exitCode := int(1)
-
-						// Look for an exit status from the container.
-						for _, status := range pod.Status.ContainerStatuses {
-							if status.State.Terminated == nil {
-								continue
-							}
-
-							exitCode = int(status.State.Terminated.ExitCode)
-						}
-						th.exitCode = &exitCode
-						close(th.stopped)
-					})
+					// Pod phase will still be 'running', so we disregard the phase at this point.
+					terminated(pod)
+					return
 				default:
 					log.Debugf("unknown event.Type")
 				}
@@ -251,12 +247,11 @@ func (th *kubernetesTaskHandle) watch() error {
 // channel has been closed by watch().
 func (th *kubernetesTaskHandle) setupLogs() error {
 	// Wire up logs to task handle stdout.
-	logsRequest := th.podsAPI.GetLogs(th.pod.Name, &api.PodLogOptions{
+	logStream, err := th.podsAPI.GetLogs(th.pod.Name, &api.PodLogOptions{
 		Container: defaultContainerName,
-	})
-	logStream, err := logsRequest.Stream()
+	}).Stream()
 	if err != nil {
-		return errors.Wrapf(err, "cannot create a stream to get logsRequest selector: %+v", logsRequest)
+		return errors.Wrapf(err, "cannot create a stream")
 	}
 
 	// Prepare local files
@@ -267,14 +262,14 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	log.Debug("created temporary files stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
 	th.stdout = stdoutFile
+	// NOTE: As logs are unified in one stream in Kubernetes, we only write it to stdout.
+	// Therefore, stderr will always be empty.
 	th.stderr = stderrFile
 
-	// a goroutine that copies data from streamer to local files.
 	go func() {
-		mw := io.MultiWriter(stdoutFile, stderrFile)
-		_, err := io.Copy(mw, logStream)
+		_, err := io.Copy(stdoutFile, logStream)
 		if err != nil {
-			log.Debug("Failed to copy container log stream to task outpur: %s", err.Error())
+			log.Debug("Failed to copy container log stream to task output: %s", err.Error())
 		}
 	}()
 
@@ -347,6 +342,7 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 		// In case of wait with timeout set the timeout channel.
 		timeoutChannel = time.After(timeout)
 	}
+
 	select {
 	case <-th.stopped:
 		return true
