@@ -34,9 +34,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
-			defer func() {
-				stopCleanCheckError(k8sHandle)
-			}()
+			defer stopCleanCheckError(k8sHandle)
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
@@ -44,9 +42,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				taskHandle, err := local.Execute(fmt.Sprintf("%s get nodes", kubectlBinPath))
 				So(err, ShouldBeNil)
 
-				defer func() {
-					stopCleanCheckError(taskHandle)
-				}()
+				defer stopCleanCheckError(taskHandle)
 
 				taskHandle.Wait(0)
 
@@ -82,9 +78,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 					fmt.Sprintf("%s run %s --image=nginx", kubectlBinPath, deploymentName.String()))
 				So(err, ShouldBeNil)
 
-				defer func() {
-					stopCleanCheckError(podCreateHandle)
-				}()
+				defer stopCleanCheckError(podCreateHandle)
 
 				podCreateHandle.Wait(0)
 
@@ -103,9 +97,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s delete deployment %s", kubectlBinPath, deploymentName.String()))
 				So(err, ShouldBeNil)
 
-				defer func() {
-					stopCleanCheckError(podRemoveHandle)
-				}()
+				defer stopCleanCheckError(podRemoveHandle)
 
 				podRemoveHandle.Wait(0)
 			})
