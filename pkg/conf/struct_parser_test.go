@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -50,11 +51,12 @@ type CorrectTestConfig struct {
 
 func setEnvFromFieldName(fieldName, value string) error {
 	flagID := nameFromFieldName(fieldName)
+	fmt.Println(flagID)
 	flag := definedFlags[flagID]
 	if flag == nil {
 		return errors.Errorf("No flag is defined with id: %s", flagID)
 	}
-
+	fmt.Println(flag.envName())
 	return os.Setenv(flag.envName(), value)
 }
 
@@ -65,6 +67,8 @@ func clearFlags() {
 	}
 	// Modifying a package variable.
 	definedFlags = map[string]flagType{}
+
+	app = kingpin.New("test", "No help available")
 }
 
 func TestStructTagFlags(t *testing.T) {
@@ -74,7 +78,10 @@ func TestStructTagFlags(t *testing.T) {
 			tmpFile, err := ioutil.TempFile(os.TempDir(), "structTag")
 			So(err, ShouldBeNil)
 
-			defer tmpFile.Close()
+			defer func() {
+				tmpFile.Close()
+				os.Remove(tmpFile.Name())
+			}()
 
 			// Process struct.
 			config := &CorrectTestConfig{
@@ -157,7 +164,10 @@ func TestStructTagFlags(t *testing.T) {
 
 						tmpFile2, err := ioutil.TempFile(os.TempDir(), "structTag")
 						So(err, ShouldBeNil)
-						defer tmpFile2.Close()
+						defer func() {
+							tmpFile2.Close()
+							os.Remove(tmpFile2.Name())
+						}()
 						err = setEnvFromFieldName(config.flagPrefix+"FileArg", tmpFile2.Name())
 						So(err, ShouldBeNil)
 						err = setEnvFromFieldName(config.flagPrefix+"IPArg", "255.255.255.200")
@@ -222,8 +232,8 @@ type TestConfigWithUnsupportedType struct {
 }
 
 func TestIncorrectStructTags(t *testing.T) {
-	clearFlags()
 	Convey("While using Conf flags", t, func() {
+		clearFlags()
 		Convey("When we specify IntFlag in struct with not parsable default we expect error", func() {
 			err := Process(&TestConfigWithWrongIntDefault{})
 			So(err, ShouldNotBeNil)
@@ -260,25 +270,16 @@ func TestIncorrectStructTags(t *testing.T) {
 
 			err = ParseEnv()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "Could not parse environment flags: path '/etc/notExistingFile' does not exist")
-
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "structTag")
-			So(err, ShouldBeNil)
-
-			defer tmpFile.Close()
-
-			// Make next test case possible.
-			setEnvFromFieldName("FileArg", tmpFile.Name())
-
-			Convey("When we specify IPFlag in struct with default containing not parsable IP address we expect error", func() {
-				err := Process(&TestConfigWithWrongIPDefault{})
-				So(err, ShouldBeNil)
-
-				err = ParseEnv()
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEndWith, "is not an IP address")
-			})
+			So(err.Error(), ShouldEndWith, "Could not parse environment flags: path '/etc/notExistingFile' does not exist")
 		})
 
+		Convey("When we specify IPFlag in struct with default containing not parsable IP address we expect error", func() {
+			err := Process(&TestConfigWithWrongIPDefault{})
+			So(err, ShouldBeNil)
+
+			err = ParseEnv()
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEndWith, "is not an IP address")
+		})
 	})
 }

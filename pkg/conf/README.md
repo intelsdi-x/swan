@@ -11,9 +11,10 @@ This package uses `kinping.v2` go package underneath.
   - just a string
   - file (checks if file exists)
   - ip (checks if it is parsable IP address)
-- bool
+- bool (`true` or `false`)
 - int
-- []string
+- time.Duration ([format](https://golang.org/pkg/time/#ParseDuration))
+- []string (in a form of comma decimeter string, eg: `A,B,C,D`)
 
 To parse only environment variables use:
 
@@ -63,7 +64,7 @@ type SomeConfig struct {
 	DurationArg    time.Duration `help:"test duration" default:"5s"`
 	BoolArg        bool          `help:"test bool" default:"true"`
 	StringSliceArg []string      `help:"test slice"`
-	FileArg        string        `help:"test file" type:"file" default:"/etc/shadow"`
+	FileArg        string        `help:"test file" type:"file" default:"some existing file"`
 	IPArg          string        `help:"test IP" type:"ip" default:"255.255.255.255"`
 
 	// Prefix optional field.
@@ -91,6 +92,9 @@ func DefaultConfig() SomeConfig {
 	return defaultConfig
 }
 ```
+
+Thanks of that in the begginng of parsing this golang file, runtime will define the var and run the `init` function with struct registration.
+Afterwards in place where you will use your file you can run `parseFlags()` and fetch the filled struct using `DefaultConfig` function.
 
 ### Output of help
 
