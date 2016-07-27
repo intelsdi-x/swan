@@ -14,7 +14,7 @@ This package uses `kinping.v2` go package underneath.
 - bool (`true` or `false`)
 - int
 - time.Duration ([format](https://golang.org/pkg/time/#ParseDuration))
-- []string (in a form of comma decimeter string, eg: `A,B,C,D`)
+- []string (in a form of comma delimited string, eg: `A,B,C,D`)
 
 To parse only environment variables use:
 

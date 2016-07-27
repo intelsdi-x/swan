@@ -51,12 +51,11 @@ type CorrectTestConfig struct {
 
 func setEnvFromFieldName(fieldName, value string) error {
 	flagID := nameFromFieldName(fieldName)
-	fmt.Println(flagID)
 	flag := definedFlags[flagID]
 	if flag == nil {
 		return errors.Errorf("No flag is defined with id: %s", flagID)
 	}
-	fmt.Println(flag.envName())
+
 	return os.Setenv(flag.envName(), value)
 }
 
