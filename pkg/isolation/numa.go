@@ -23,7 +23,7 @@ type Numactl struct {
 
 // NewNumactl is a constructor which returns Numa object.
 func NewNumactl(isAll, isLocalalloc bool, interleaveNodes, membindNodes, cpunodebindNodes, physcpubindCPUS []int, preferredNode int) Numactl {
-	return Numactl {
+	return Numactl{
 		isAll:        isAll,
 		isLocalalloc: isLocalalloc,
 
