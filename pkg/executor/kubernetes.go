@@ -304,7 +304,8 @@ func (th *kubernetesTaskHandle) isTerminated() bool {
 // Stop will delete the pod and block caller until done.
 func (th *kubernetesTaskHandle) Stop() error {
 	if th.isTerminated() {
-		return nil
+		return ni
+l
 	}
 
 	log.Debugf("deleting pod %q", th.pod.Name)

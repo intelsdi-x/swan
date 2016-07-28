@@ -1,12 +1,17 @@
 package executor
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
+	"os/exec"
+	"path"
+	"strings"
 	"testing"
 	"time"
 )
@@ -64,11 +69,16 @@ func TestKubernetesExecutor(t *testing.T) {
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
-		Convey("Running a command with a successful exit status", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 1 && exit 0")
+		Convey("Running a command with a successful exit status should leave one pod running", func() {
+			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 0")
 			So(err, ShouldBeNil)
 
-			// TODO: Verify that pod is running using kubectl (we have one second to do this).
+			out, err := kubectl(executorConfig.Address, "get pods")
+			So(err, ShouldBeNil)
+
+			// Output from kubectl includes a header line. Therefore, with one pod entry, we expect a
+			// line count of 2.
+			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
 			Convey("And after at most 5 seconds", func() {
 				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
@@ -78,12 +88,22 @@ func TestKubernetesExecutor(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 0)
 				})
+
+				Convey("And there should be zero pods", func() {
+					out, err = kubectl(executorConfig.Address, "get pods")
+					So(err, ShouldBeNil)
+					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+				})
 			})
 		})
 
-		Convey("Running a command with an unsuccessful exit status", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 1 && exit 5")
+		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
+			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 5")
 			So(err, ShouldBeNil)
+
+			out, err := kubectl(executorConfig.Address, "get pods")
+			So(err, ShouldBeNil)
+			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
 			Convey("And after at most 5 seconds", func() {
 				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
@@ -93,7 +113,26 @@ func TestKubernetesExecutor(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 5)
 				})
+
+				Convey("And there should be zero pods", func() {
+					out, err = kubectl(executorConfig.Address, "get pods")
+					So(err, ShouldBeNil)
+					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+				})
 			})
 		})
 	})
+}
+
+func kubectl(server string, subcommand string) (string, error) {
+	kubectlBinPath := path.Join(fs.GetSwanBinPath(), "kubectl")
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s -s %s %s", kubectlBinPath, server, subcommand))
+	cmd.Stdout = buf
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(buf.String()), nil
 }
