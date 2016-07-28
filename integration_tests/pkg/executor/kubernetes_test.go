@@ -73,7 +73,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		// no pod entry, we expect a line count of 1.
 		out, err := kubectl(executorConfig.Address, "get pods")
 		So(err, ShouldBeNil)
-		t.Logf(out)
 		So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
@@ -82,7 +81,6 @@ func TestKubernetesExecutor(t *testing.T) {
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
-			t.Logf(out)
 			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
 			Convey("And after at most 5 seconds", func() {
@@ -96,7 +94,6 @@ func TestKubernetesExecutor(t *testing.T) {
 
 				Convey("And there should be zero pods", func() {
 					out, err = kubectl(executorConfig.Address, "get pods")
-					t.Logf(out)
 					So(err, ShouldBeNil)
 					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 				})
@@ -108,7 +105,6 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			out, err := kubectl(executorConfig.Address, "get pods")
-			t.Logf(out)
 			So(err, ShouldBeNil)
 			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
@@ -123,7 +119,6 @@ func TestKubernetesExecutor(t *testing.T) {
 
 				Convey("And there should be zero pods", func() {
 					out, err = kubectl(executorConfig.Address, "get pods")
-					t.Logf(out)
 					So(err, ShouldBeNil)
 					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 				})
