@@ -2,7 +2,9 @@ package cassandra
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	"testing"
+	"time"
+
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
@@ -10,15 +12,9 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
-	"os"
-	"path"
-	"testing"
-	"time"
 )
 
 func TestCassandraPublisher(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
-
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
 	if err != nil {
@@ -37,7 +33,7 @@ func TestCassandraPublisher(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = loadSnapPlugins(snapClient)
+	err = loadSnapPlugins(snapdAddress)
 	if err != nil {
 		t.Error(err)
 	}
@@ -61,67 +57,25 @@ func TestCassandraPublisher(t *testing.T) {
 	})
 }
 
-func loadSnapPlugins(snapClient *client.Client) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("Recovered from panic: %v\n", r)
-			err = r.(error)
-		}
-	}()
+func loadSnapPlugins(snapdAddress string) (err error) {
+	pluginLoaderConfig := snap.DefaultPluginLoaderConfig()
+	pluginLoaderConfig.SnapdAddress = snapdAddress
+	pluginLoader, err := snap.NewPluginLoader(pluginLoaderConfig)
+	if err != nil {
+		return err
+	}
 
-	pluginClient := snap.NewPlugins(snapClient)
-	requiredPlugins := getRequiredPlugins()
+	err = pluginLoader.Load(snap.CassandraPublisher)
+	if err != nil {
+		return err
+	}
 
-	for _, plugin := range requiredPlugins {
-		if isNotPluginLoaded(pluginClient, plugin) {
-			loadPlugin(pluginClient, plugin.pluginPath)
-		}
+	err = pluginLoader.Load(snap.SessionCollector)
+	if err != nil {
+		return err
 	}
 
 	return err
-}
-
-func isNotPluginLoaded(pluginClient *snap.Plugins, pi snapPluginInfo) (isLoaded bool) {
-	isLoaded, err := pluginClient.IsLoaded(pi.pluginType, pi.pluginName)
-	if err != nil {
-		panic(fmt.Errorf("Error while checking if plugin %s:%s is loaded: %s\n",
-			pi.pluginType, pi.pluginName, err.Error()))
-	}
-	return !isLoaded
-}
-
-func loadPlugin(pluginClient *snap.Plugins, pluginPath string) {
-	err := pluginClient.Load([]string{pluginPath})
-	if err != nil {
-		panic(fmt.Errorf("Could not load plugin in path: %s; %s\n",
-			pluginPath, err.Error()))
-	}
-}
-
-// Small struct for storing information for loading plugins.
-type snapPluginInfo struct {
-	pluginName string
-	pluginType string
-	pluginPath string
-}
-
-func getRequiredPlugins() (plugins []snapPluginInfo) {
-	goPath := os.Getenv("GOPATH")
-	plugins = make([]snapPluginInfo, 0, 2)
-	plugins = append(plugins, snapPluginInfo{
-		pluginName: "mock",
-		pluginType: "collector",
-		pluginPath: path.Join(
-			goPath, "src", "github.com", "intelsdi-x", "swan",
-			"build", "snap-plugin-collector-session-test"),
-	})
-	plugins = append(plugins, snapPluginInfo{
-		pluginName: "cassandra",
-		pluginType: "publisher",
-		pluginPath: path.Join(goPath, "bin",
-			"snap-plugin-publisher-cassandra"),
-	})
-	return plugins
 }
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
@@ -143,7 +97,11 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 }
 
 func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
-	cassandraPublisher := wmap.NewPublishNode("cassandra", 2)
+	cassandraName, _, err := snap.GetPluginNameAndType(snap.CassandraPublisher)
+	if err != nil {
+		return err
+	}
+	cassandraPublisher := wmap.NewPublishNode(cassandraName, snap.PluginAnyVersion)
 	cassandraPublisher.AddConfigItem("server", "localhost")
 
 	snapSession := snap.NewSession(
