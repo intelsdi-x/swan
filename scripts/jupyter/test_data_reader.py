@@ -1,9 +1,9 @@
 """
 This module contains a helper to generate list of Sample objects from a comma separated file.
 """
+import collections
 import csv
 import json
-import collections
 
 
 def strip_quotation(input):
@@ -21,7 +21,7 @@ def strip_quotation(input):
             return input
         if output.startswith('\''):
             output = output[1:]
-        if  output.endswith('\''):
+        if output.endswith('\''):
             output = output[:-1]
 
     return output

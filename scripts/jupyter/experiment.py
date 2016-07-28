@@ -17,6 +17,11 @@ class Experiment(object):
     """
     def __init__(self, experiment_id, **kwargs):
         """
+        :param experiment_id: string of experiment_id gathered from cassandra
+        :param cassandra_cluster: ip of cassandra cluster in a string format
+        :param port: endpoint od cassandra cluster [int]
+        :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
+
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.

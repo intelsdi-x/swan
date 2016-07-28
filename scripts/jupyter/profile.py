@@ -1,8 +1,8 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class Profile(object):
@@ -13,7 +13,10 @@ class Profile(object):
     """
     def __init__(self, e, slo):
         """
-        Initializes a sensivity profile with given list of Sample objects and visualized against the
+        :param e: an Experiment class object
+        :param slo: performance target [int]
+
+        Initializes a sensivity profile with `e` experiment object and visualize it against the
         specified slo (performance target).
         """
 
