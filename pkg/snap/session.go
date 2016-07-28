@@ -14,13 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// DefaultDaemonPort represents default port on which snapd listen.
-	DefaultDaemonPort = "8181"
-)
-
-// AddrFlag represents snap daemon address flag.
-var AddrFlag = conf.NewStringFlag("snapd_addr", "IP of Snap Daemon", "127.0.0.1")
+// SnapdHTTPEndpoint represents snap daemon address flag.
+var SnapdHTTPEndpoint = conf.NewStringFlag("snapd_addr", "Snapd HTTP Endpoint", "http://127.0.0.1:8181")
 
 type task struct {
 	Version  int
@@ -128,9 +123,8 @@ func (s *Session) Start(phaseSession phase.Session) error {
 
 	if !loaded {
 		goPath := os.Getenv("GOPATH")
-		pluginPath := []string{path.Join(
-			goPath, "bin", "snap-plugin-processor-tag")}
-		err = plugins.Load(pluginPath)
+		pluginPath := path.Join(goPath, "bin", "snap-plugin-processor-tag")
+		err = plugins.LoadPlugin(pluginPath)
 		if err != nil {
 			return err
 		}
