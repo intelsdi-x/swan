@@ -136,7 +136,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
 	select {
 	case <-th.started:
-		// Pod succesfully started.
+	// Pod succesfully started.
 	case <-th.stopped:
 		// Look into exit state to determine if start up failed or completed immediately.
 		exitCode, err := th.ExitCode()
@@ -209,7 +209,8 @@ func (th *kubernetesTaskHandle) watch() error {
 					exitCode = int(status.State.Terminated.ExitCode)
 				}
 
-				// NOTE: We may want to have a lock/read barrier on the exit code to ensure consistent read in ExitCode().
+				// NOTE: We may want to have a lock/read barrier on the exit code to ensure consistent read
+				// in ExitCode().
 				th.exitCode = &exitCode
 
 				close(th.stopped)
@@ -225,32 +226,34 @@ func (th *kubernetesTaskHandle) watch() error {
 
 		for event := range watcher.ResultChan() {
 			pod, ok := event.Object.(*api.Pod)
-			if ok {
-				// Update with latest status.
-				// NOTE: May want to make this synchronized.
-				th.pod = pod
+			if !ok {
+				continue
+			}
 
-				switch event.Type {
-				case watch.Added, watch.Modified:
-					switch pod.Status.Phase {
-					case api.PodPending:
-						// Noop for now.
-					case api.PodRunning:
-						started(pod)
-					case api.PodFailed, api.PodSucceeded:
-						terminated(pod)
-						return
-					default:
-						log.Debugf("unknown pod.Status.Phase '%d' for pod %q", pod.Status.Phase, pod.Name)
-					}
+			// Update with latest status.
+			// NOTE: May want to make this synchronized.
+			th.pod = pod
 
-				case watch.Deleted:
-					// Pod phase will still be 'running', so we disregard the phase at this point.
+			switch event.Type {
+			case watch.Added, watch.Modified:
+				switch pod.Status.Phase {
+				case api.PodPending:
+				// Noop for now.
+				case api.PodRunning:
+					started(pod)
+				case api.PodFailed, api.PodSucceeded:
 					terminated(pod)
 					return
 				default:
-					log.Debugf("unknown event.Type")
+					log.Debugf("unknown phase '%d' for pod %q", pod.Status.Phase, pod.Name)
 				}
+
+			case watch.Deleted:
+				// Pod phase will still be 'running', so we disregard the phase at this point.
+				terminated(pod)
+				return
+			default:
+				log.Debugf("unknown event type")
 			}
 		}
 	}()
@@ -381,7 +384,7 @@ func (th *kubernetesTaskHandle) Clean() error {
 func (th *kubernetesTaskHandle) EraseOutput() error {
 	outputDir, _ := path.Split(th.stderr.Name())
 	if err := os.RemoveAll(outputDir); err != nil {
-		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
+		return errors.Wrapf(err, "cannot remove directory %q", outputDir)
 	}
 	return nil
 }

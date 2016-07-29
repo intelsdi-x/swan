@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -47,6 +49,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		tmpFile, err := ioutil.TempFile("", "session_test")
 		So(err, ShouldBeNil)
+		tmpFileName := tmpFile.Name()
+		logrus.Errorf("Result file: %q", tmpFileName)
 		tmpFile.Close()
 
 		resultFile := tmpFile.Name()
@@ -57,12 +61,21 @@ func TestSnapKubesnapSession(t *testing.T) {
 		// Run Kubernetes
 		exec := executor.NewLocal()
 		kubernetesLauncher := kubernetes.New(exec, exec, kubernetes.DefaultConfig())
-		kuberntesHandle, err := kubernetesLauncher.Launch()
+		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)
-		defer kuberntesHandle.Clean()
-		defer kuberntesHandle.EraseOutput()
+		defer kubernetesHandle.Stop()
+		defer kubernetesHandle.Clean()
+		defer kubernetesHandle.EraseOutput()
 
 		// Waiting for Kubernetes Executor.
+		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
+		So(err, ShouldBeNil)
+
+		podHandle, err := kubeExecutor.Execute("1")
+		So(err, ShouldNotBeNil)
+		defer podHandle.Stop()
+		//defer podHandle.Clean() // Panic!
+		//defer podHandle.EraseOutput()
 
 		// Run Prepare Kubesnap Session.
 		kubesnapConfig := kubesnap.DefaultConfig()
@@ -78,9 +91,16 @@ func TestSnapKubesnapSession(t *testing.T) {
 			},
 		)
 		So(err, ShouldBeNil)
+		So(kubesnapHandle.IsRunning(), ShouldBeTrue)
+		//kubesnapHandle.Wait()
+		time.Sleep(20 * time.Second)
 
-		kubesnapHandle.Wait()
+		kubesnapHandle.Stop()
 
 		// Check results here.
+
+		content, err := ioutil.ReadFile(tmpFileName)
+		So(err, ShouldBeNil)
+		logrus.Errorf("File content: %q", string(content))
 	})
 }
