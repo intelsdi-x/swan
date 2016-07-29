@@ -23,7 +23,8 @@ const (
 	maxIntensity = 20
 
 	// -1 (or absence of iteration argument) means infinite iterations in l1i.
-	defaultIterations = -1
+	infiniteIterations = -1
+	defaultIterations = infiniteIterations
 )
 
 // PathFlag represents l1i path flag.
@@ -76,7 +77,7 @@ func (l l1i) verifyConfiguration() error {
 			minIntensity,
 			maxIntensity)
 	}
-	if l.conf.Iterations <= 0 {
+	if l.conf.Iterations <= 0 && l.conf.Iterations != infiniteIterations {
 		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
