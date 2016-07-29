@@ -9,10 +9,10 @@ On Centos 7, install the following packages with:
 sudo yum install python-pip python-devel
 ```
 
-After this, install the python dependencies with `pip` with:
+After this, install the python dependencies with `make` with:
 
 ```sh
-sudo pip install -r requirements.txt
+make build_jupyter
 ```
 
 ## Launching jupyter
@@ -28,29 +28,30 @@ If not, connect to http://hostname:8888/ through your browser.
 
 ## Explore data using Jupyter
 
-From within the Jupyter interface, create a new notebook by clicking on 'New' and 'Python 2'.
+From within the Jupyter interface, open a template notebook by clicking on `Open` and `example.ipynb`, or you can open a new natebook like below:
 
-![experiments list](docs/new_notebook.png)
+![experiment](docs/new_notebook.png)
 
-Within the new notebook, import the experiments module by typing:
+Within the open tamplate notebook:
+- set the `IP`, `PORT` of cassandra cluster and `EXPERIMENT_ID`
+- focus on first `import` python statement:
 
 ```
 from experiment import *
 ```
 
-And evaluate the expression by clicking shift and enter.
-Then, connect to the Cassandra database and load the available samples for an experiment, run:
+And evaluate the expressions by clicking shift and enter on each other.
 ```
-experiment = experiments.experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment')
+exp = Experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment', port=9042)
 ```
 
-Showing the available samples can be done in the similar manner:
+Code above shows the available samples. Be aware that if a experiments has large data, it can take a while:
 
 ![sample list](docs/sample_list.png)
 
 To render a sensitivity profile from the loaded samples, run:
 ```
-profile = Profile(experiment.frame, slo=500)
+Profile(exp, slo=500)
 ```
 
 Where 500 is the target latency in micro seconds.
