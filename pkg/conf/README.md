@@ -41,8 +41,8 @@ will be omitted and _no flag will be exposed_.
 Optional tags:
 - default: Default value of the flag when not specified in env or CLI.
 - defaultFromField: Name of the field in current struct where the default value for the flag is defined.
-It is extremely useful when default value is calculated in run time (e.g based on some environment variable)
-- name: Overrides name of the flag. By default it takes name of the field and change camelCase to lower case snake_case.
+It is useful when default value is calculated in run time (e.g based on some environment variable)
+- name: Overrides name of the flag. By default it takes the name of the field and change camelCase to lower case snake_case.
 It is suggested to make the value of this tag uppercase to work properly with the prefix
 - required: If specified, the flag will be required. If there is no default value and it is not specified in
 env or CLI, parse will return error.
