@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
 	switch (intensity) {
       case 0:  { REPEAT(iterations) { INTENSITY(1);      } } break;
-	    case 1:  { REPEAT(iterations) { INTENSITY(2);      } } break;
+      case 1:  { REPEAT(iterations) { INTENSITY(2);      } } break;
       case 2:  { REPEAT(iterations) { INTENSITY(4);      } } break;
       case 3:  { REPEAT(iterations) { INTENSITY(8);      } } break;
       case 4:  { REPEAT(iterations) { INTENSITY(16);     } } break;
