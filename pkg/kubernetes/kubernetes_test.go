@@ -104,11 +104,11 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		// Mock current service's executor success.
 		s.mExecutor.On(
 			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[serviceIterator], nil).Once()
-
 		s.mTaskHandles[serviceIterator].On("StderrFile").Return(s.outputFile, nil).Once()
 		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
 		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
 		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
 
 		// Mock successful connection verifier for `iteration` iteration.
 		// It will fail for current service.
