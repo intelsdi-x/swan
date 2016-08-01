@@ -12,10 +12,14 @@ import (
 )
 
 func TestParallel(t *testing.T) {
-	SkipConvey("When using Parallel to decorate local executor", t, func() {
+	Convey("When using Parallel to decorate local executor", t, func() {
 		parallel := executor.NewLocalIsolated(executor.NewParallel(5))
 		Convey("Process should be executed 5 times", func() {
 			task, err := parallel.Execute("sleep inf")
+
+			defer task.Stop()
+			defer task.Clean()
+			defer task.EraseOutput()
 
 			So(err, ShouldBeNil)
 			So(task, ShouldNotBeNil)
@@ -23,9 +27,6 @@ func TestParallel(t *testing.T) {
 			isStopped := task.Wait(1000 * time.Millisecond)
 			So(isStopped, ShouldBeFalse)
 
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
 
 			cmd := exec.Command("pgrep", "sleep")
 			output, err := cmd.CombinedOutput()

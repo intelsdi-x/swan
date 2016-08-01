@@ -100,7 +100,13 @@ func (m kubernetes) Name() string {
 // launchService executes service and check if it is listening on it's endpoint.
 func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
 	handle, err := exec.Execute(command)
+
 	if err != nil {
+		if handle != nil {
+			handle.Stop()
+			handle.Clean()
+			handle.EraseOutput()
+		}
 		return nil, errors.Wrapf(err, "Execution of service failed; Command: %s", command)
 	}
 
@@ -113,9 +119,9 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 			// lines of this output (when some flag will be specified to do so).
 			details = fmt.Sprintf(" Check %s file for details", file.Name())
 		}
-
 		handle.Stop()
 		handle.Clean()
+		handle.EraseOutput()
 		return nil, errors.Errorf("Failed to connect to service on instance. "+
 			"Timeout on connection to %q.%s", address, details)
 	}

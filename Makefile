@@ -45,6 +45,7 @@ integration_test: list_env plugins unit_test build_workloads build build_jupyter
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/...
+	@ tree
 
 # For development purposes we need to do integration test faster on already built components.
 integration_test_no_build: list_env unit_test build
