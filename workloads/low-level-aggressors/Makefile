@@ -13,7 +13,7 @@ memBw:
 	g++ -o memBw memBw.c
 
 l1i:
-	g++ -o l1i l1i.cpp
+	g++ -o l1i l1i.c
 
 l1d:
 	g++ -o l1d l1d.c -lrt
