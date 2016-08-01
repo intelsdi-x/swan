@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/intelsdi-x/swan",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
+	"GodepVersion": "v71",
 	"Packages": [
 		"./..."
 	],
@@ -183,6 +183,10 @@
 		{
 			"ImportPath": "github.com/ghodss/yaml",
 			"Rev": "c3eb24aeea63668ebdac08d2e252f20df8b6b1ae"
+		},
+		{
+			"ImportPath": "github.com/fatih/camelcase",
+			"Rev": "f6a740d52f961c60348ebb109adde9f4635d7540"
 		},
 		{
 			"ImportPath": "github.com/gocql/gocql",
@@ -393,7 +397,6 @@
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
-			"Comment": "v4.2.0",
 			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
 		},
 		{

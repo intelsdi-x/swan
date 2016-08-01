@@ -102,7 +102,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Initialize Memcached Launcher.
 	localForHP := executor.NewLocalIsolated(hpIsolation)
-	memcachedConfig := memcached.DefaultMemcachedConfig()
+	memcachedConfig := memcached.DefaultConfig()
 	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.

@@ -21,7 +21,6 @@ type StringListValue []string
 func (s *StringListValue) Set(value string) error {
 	// Split string from input to slice and merge with saved slice.
 	*s = append(*s, strings.Split(value, stringListDelimiter)...)
-	// TODO(bp): Remove duplicates?
 	return nil
 }
 

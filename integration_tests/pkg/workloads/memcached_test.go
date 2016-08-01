@@ -22,7 +22,7 @@ func TestMemcachedWithExecutor(t *testing.T) {
 
 	Convey("While using Local Shell in Memcached launcher", t, func() {
 		l := executor.NewLocal()
-		config := memcached.DefaultMemcachedConfig()
+		config := memcached.DefaultConfig()
 		// Prefer to run memcached locally using the current user,
 		// if it can be determined from the environment.
 		config.User = env.GetOrDefault("USER", config.User)

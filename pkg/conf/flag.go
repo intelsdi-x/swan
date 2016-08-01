@@ -2,69 +2,137 @@ package conf
 
 import (
 	"fmt"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"net"
 	"os"
 	"strings"
 	"time"
 )
 
+// flagType is an internal interface for all flags.
+// Every flag should have method for creating `envName` from its name and `clear` method
+// for clearing corresponding environment variable from env.
+type flagType interface {
+	envName() string
+	clear()
+}
+
+// definedFlags is a package variable which stores all the defined flags. It helps to find
+// duplicates when defining flag with the same name.
+var definedFlags = map[string]flagType{}
+
 // flag represents option's definition from CLI and Environment variable.
-type flag struct {
-	name        string
-	description string
+// It stores generic data for each defined flag.
+// It implements swan flagType interface.
+type cliAndEnvFlag struct {
+	*kingpin.FlagClause
+}
+
+func newCliAndEnvFlag(flagName string, description string, defaultValues ...string) *cliAndEnvFlag {
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		panic("This flag was already defined. Flag definition is lack of duplicate check.")
+	}
+
+	c := &cliAndEnvFlag{FlagClause: app.Flag(flagName, description)}
+	c.OverrideDefaultFromEnvar(c.envName())
+
+	for _, defaultValue := range defaultValues {
+		if defaultValue == "" {
+			continue
+		}
+		c.Default(defaultValue)
+	}
+
+	return c
 }
 
 // envName returns name converted to swan environment variable name.
 // In order to create environment variable name from flag we need to make it uppercase
 // and add SWAN prefix. For instance: "cassandra_host" will be "SWAN_CASSANDRA_HOST".
-func (f flag) envName() string {
-	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(f.name))
+func (f *cliAndEnvFlag) envName() string {
+	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(f.Model().Name))
 }
 
 // clear unset the corresponded environment variable.
-func (f flag) clear() {
+func (f *cliAndEnvFlag) clear() {
 	os.Unsetenv(f.envName())
 }
 
 // StringFlag represents flag with string value.
 type StringFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue string
 	value        *string
 }
 
 // NewStringFlag is a constructor of StringFlag struct.
-func NewStringFlag(flagName string, description string, defaultValue string) StringFlag {
-	strFlag := StringFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewStringFlag(flagName string, description string, defaultValue string) *StringFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*StringFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	strFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).String()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &StringFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, defaultValue),
+		defaultValue:  defaultValue,
+	}
 
-	return strFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.String()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
+}
+
+// FileFlag represents flag with string value.
+type FileFlag struct {
+	*StringFlag
 }
 
 // NewFileFlag is a constructor of StringFlag struct which checks if file exists.
-func NewFileFlag(flagName string, description string, defaultValue string) StringFlag {
-	strFlag := StringFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewFileFlag(flagName string, description string, defaultValue string) *FileFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*FileFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	strFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).ExistingFile()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &FileFlag{
+		StringFlag: &StringFlag{
+			cliAndEnvFlag: newCliAndEnvFlag(flagName, description, defaultValue),
+			defaultValue:  defaultValue,
+		},
+	}
 
-	return strFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.ExistingFile()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.
@@ -79,26 +147,40 @@ func (s StringFlag) Value() string {
 
 // IntFlag represents flag with int value.
 type IntFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue int
 	value        *int
 }
 
 // NewIntFlag is a constructor of IntFlag struct.
-func NewIntFlag(flagName string, description string, defaultValue int) IntFlag {
-	intFlag := IntFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewIntFlag(flagName string, description string, defaultValue int) *IntFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*IntFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	intFlag.value = app.Flag(flagName, description).
-		Default(fmt.Sprintf("%d", defaultValue)).OverrideDefaultFromEnvar(intFlag.envName()).Int()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &IntFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, fmt.Sprintf("%d", defaultValue)),
+		defaultValue:  defaultValue,
+	}
 
-	return intFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.Int()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.
@@ -113,25 +195,42 @@ func (i IntFlag) Value() int {
 
 // SliceFlag represents flag with slice value.
 type SliceFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue []string
 	value        *[]string
 }
 
 // NewSliceFlag is a constructor of SliceFlag struct.
-func NewSliceFlag(flagName string, description string) SliceFlag {
-	sliceFlag := SliceFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
+func NewSliceFlag(flagName string, description string, elemsInDefaultSlice ...string) *SliceFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*SliceFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		for i, elem := range elemsInDefaultSlice {
+			if flagDef.defaultValue[i] != elem {
+				panic("Flag was redefined but with different default value. Unify the default.")
+			}
+		}
+
+		return flagDef
 	}
 
-	sliceFlag.value =
-		StringList(app.Flag(flagName, description).OverrideDefaultFromEnvar(sliceFlag.envName()))
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &SliceFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, strings.Join(elemsInDefaultSlice, ",")),
+		defaultValue:  elemsInDefaultSlice,
+	}
 
-	return sliceFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = StringList(flagDef)
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.
@@ -145,26 +244,40 @@ func (s SliceFlag) Value() []string {
 
 // BoolFlag represents flag with bool value.
 type BoolFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue bool
 	value        *bool
 }
 
 // NewBoolFlag is a constructor of BoolFlag struct.
-func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFlag {
-	boolFlag := BoolFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewBoolFlag(flagName string, description string, defaultValue bool) *BoolFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*BoolFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	boolFlag.value = app.Flag(flagName, description).Default(fmt.Sprintf("%v", defaultValue)).
-		OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &BoolFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, fmt.Sprintf("%v", defaultValue)),
+		defaultValue:  defaultValue,
+	}
 
-	return boolFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.Bool()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.
@@ -179,26 +292,40 @@ func (b BoolFlag) Value() bool {
 
 // DurationFlag represents flag with duration value.
 type DurationFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue time.Duration
 	value        *time.Duration
 }
 
 // NewDurationFlag is a constructor of DurationFlag struct.
-func NewDurationFlag(flagName string, description string, defaultValue time.Duration) DurationFlag {
-	durationFlag := DurationFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewDurationFlag(flagName string, description string, defaultValue time.Duration) *DurationFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*DurationFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	durationFlag.value = app.Flag(flagName, description).Default(defaultValue.String()).
-		OverrideDefaultFromEnvar(durationFlag.envName()).Duration()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &DurationFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, defaultValue.String()),
+		defaultValue:  defaultValue,
+	}
 
-	return durationFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.Duration()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.
@@ -213,26 +340,40 @@ func (d DurationFlag) Value() time.Duration {
 
 // IPFlag represents flag with IP value.
 type IPFlag struct {
-	flag
+	*cliAndEnvFlag
 	defaultValue string
 	value        *net.IP
 }
 
 // NewIPFlag is a constructor of IPFlag struct.
-func NewIPFlag(flagName string, description string, defaultValue string) IPFlag {
-	ipFlag := IPFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
+func NewIPFlag(flagName string, description string, defaultValue string) *IPFlag {
+	// Check for duplicates and use it if it defines the same type of flag.
+	duplicatedFlag := definedFlags[flagName]
+	if duplicatedFlag != nil {
+		// Check if the type is the same.
+		flagDef, ok := duplicatedFlag.(*IPFlag)
+		if !ok {
+			panic("Flag was redefined but with different type. Unify the type.")
+		}
+
+		if flagDef.defaultValue != defaultValue {
+			panic("Flag was redefined but with different default value. Unify the default.")
+		}
+
+		return flagDef
 	}
 
-	ipFlag.value = app.Flag(flagName, description).Default(net.ParseIP(defaultValue).String()).
-		OverrideDefaultFromEnvar(ipFlag.envName()).IP()
-	isEnvParsed = false
+	// Flag is not yet defined, so create one.
+	flagDef := &IPFlag{
+		cliAndEnvFlag: newCliAndEnvFlag(flagName, description, net.ParseIP(defaultValue).String()),
+		defaultValue:  defaultValue,
+	}
 
-	return ipFlag
+	// Define type of the flag and register in internal map.
+	flagDef.value = flagDef.IP()
+	definedFlags[flagName] = flagDef
+	isEnvParsed = false
+	return flagDef
 }
 
 // Value returns value of defined flag after parse.

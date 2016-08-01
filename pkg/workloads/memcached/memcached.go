@@ -5,36 +5,18 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	"path"
 )
 
 const (
-	name = "Memcached"
-	// DefaultPort represents default memcached port.
-	defaultPort           = 11211
-	defaultUser           = "memcached"
-	defaultNumThreads     = 4
-	defaultMaxMemoryMB    = 64
-	defaultNumConnections = 1024
-	defaultListenIP       = "127.0.0.1"
-)
-
-var (
-	pathFlag = conf.NewFileFlag("memcached_path", "Path to memcached binary",
-		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"))
-	// PortFlag returns port which will be specified for workload services as endpoints.
-	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
-	// IPFlag returns IP which will be specified for workload services as endpoints.
-	IPFlag             = conf.NewIPFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
-	userFlag           = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
-	numThreadsFlag     = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
-	maxConnectionsFlag = conf.NewIntFlag("memcached_connections", "Number of maximum connections for mutilate (-c)", defaultNumConnections)
+	name               = "Memcached"
+	defaultMaxMemoryMB = 64
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -49,26 +31,32 @@ var (
 //-vvv          extremely verbose (also print internal state transitions)
 //-t <num>      number of threads to use (default: 4)
 type Config struct {
-	PathToBinary   string
-	Port           int
-	User           string
-	NumThreads     int
-	MaxMemoryMB    int
-	NumConnections int
-	IP             string
+	Path           string `help:"Path to memcached binary" type:"file" defaultFromField:"defaultPath"`
+	defaultPath    string
+	Port           int    `help:"Port for memcached to listen on. (-p)" default:"11211"`
+	User           string `help:"Username for memcached process (-u)" default:"memcached"`
+	NumThreads     int    `help:"Number of threads for mutilate (-t)" name:"Threads" default:"4"`
+	NumConnections int    `help:"Number of maximum connections for mutilate (-c)" name:"Connections" default:"1024"`
+	IP             string `help:"IP of interface memcached is listening on." type:"ip" default:"127.0.0.1"`
+
+	MaxMemoryMB int
+	flagPrefix  string
 }
 
-// DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
-func DefaultMemcachedConfig() Config {
-	return Config{
-		PathToBinary:   pathFlag.Value(),
-		Port:           PortFlag.Value(),
-		User:           userFlag.Value(),
-		NumThreads:     numThreadsFlag.Value(),
-		MaxMemoryMB:    defaultMaxMemoryMB,
-		NumConnections: maxConnectionsFlag.Value(),
-		IP:             IPFlag.Value(),
-	}
+var defaultConfig = Config{
+	MaxMemoryMB: defaultMaxMemoryMB,
+	defaultPath: path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"),
+	flagPrefix:  name,
+}
+
+func init() {
+	conf.Process(&defaultConfig)
+}
+
+// DefaultConfig is a constructor for MemcachedConfig with default parameters.
+func DefaultConfig() Config {
+	conf.Process(&defaultConfig)
+	return defaultConfig
 }
 
 // Memcached is a launcher for the memcached data caching application v 1.4.25.
@@ -89,7 +77,7 @@ func New(exec executor.Executor, config Config) Memcached {
 }
 
 func (m Memcached) buildCommand() string {
-	return fmt.Sprint(m.conf.PathToBinary,
+	return fmt.Sprint(m.conf.Path,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
 		" -t ", m.conf.NumThreads,
