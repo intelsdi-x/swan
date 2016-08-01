@@ -24,14 +24,13 @@
 #define ICPRESSURE65536  ICPRESSURE32768;  ICPRESSURE32768
 #define ICPRESSURE131072 ICPRESSURE65536;  ICPRESSURE65536
 #define ICPRESSURE262144 ICPRESSURE131072; ICPRESSURE131072
-#define ICPRESSURE524288 ICPRESSURE262144; ICPRESSURE262144
 
 #define INTENSITY(X) ICPRESSURE ## X
 #define REPEAT(N) for (int iteration = 0; (N == infinite) || (iteration < N); iteration++)
 
 int main(int argc, char **argv) {
   if ((argc < 2) || (argc > 3)) {
-    fprintf(stderr, "usage: l1i <intensity 1-20(highest)> (<iterations>)\n");
+    fprintf(stderr, "usage: l1i <intensity 0-19(highest)> (<iterations>)\n");
     return 1;
   }
 
@@ -49,6 +48,11 @@ int main(int argc, char **argv) {
 
   int intensity = 0;
   intensity = atoi(argv[1]);
+  if ((intensity < 0) || (intensity > 19)) {
+    fprintf(stderr, "intensity needs to be an integer between 0 and 19\n");
+    return 1;
+  }
+
   printf("intensity: %d\n", intensity);
 
   int x = 0xf0;
@@ -75,7 +79,6 @@ int main(int argc, char **argv) {
       case 17: { REPEAT(iterations) { INTENSITY(131072); } } break;
       case 18: { REPEAT(iterations) { INTENSITY(131072); } } break;
       case 19: { REPEAT(iterations) { INTENSITY(262144); } } break;
-      case 20: { REPEAT(iterations) { INTENSITY(524288); } } break;
   }
 
   clock_t end = clock();
