@@ -14,7 +14,7 @@ import (
 func TestParallel(t *testing.T) {
 	Convey("When using Parallel to decorate local executor", t, func() {
 		parallel := executor.NewLocalIsolated(executor.NewParallel(5))
-		Convey("Process should be executed 5 times", func() {
+		SkipConvey("Process should be executed 5 times", func() {
 			task, err := parallel.Execute("sleep inf")
 
 			defer task.Stop()
