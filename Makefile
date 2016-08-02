@@ -31,7 +31,7 @@ plugins:
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go get github.com/intelsdi-x/snap-plugin-processor-tag)
 	(go get github.com/intelsdi-x/kubesnap-plugin-collector-docker)
-	(cd ../kubesnap-plugin-collector-docker && patch -p1 --forward -s --merge < ../swan/misc/kubesnap_docker_collector.patch)
+	(cd $(GOPATH)/src/github.com/intelsdi-x/kubesnap-plugin-collector-docker && patch -p1 --forward -s --merge < ../swan/misc/kubesnap_docker_collector.patch)
 	(go install ./misc/snap-plugin-collector-session-test)
 	(go install ./misc/snap-plugin-publisher-session-test)
 	(go install ./misc/snap-plugin-collector-mutilate)
