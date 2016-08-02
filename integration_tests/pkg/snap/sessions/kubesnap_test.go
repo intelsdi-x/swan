@@ -3,6 +3,8 @@ package sessions
 import (
 	"fmt"
 	"io/ioutil"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -19,16 +21,14 @@ import (
 
 func TestSnapKubesnapSession(t *testing.T) {
 	var snapd *testhelpers.Snapd
-	//var publisher *wmap.PublishWorkflowMapNode
-	//var metricsFile string
 
 	Convey("While having Snapd running", t, func() {
 		snapd = testhelpers.NewSnapd()
 		err := snapd.Start()
 		So(err, ShouldBeNil)
 
-		defer snapd.Stop()
 		defer snapd.CleanAndEraseOutput()
+		defer snapd.Stop()
 
 		// Wait until snap is up.
 		So(snapd.Connected(), ShouldBeTrue)
@@ -63,9 +63,9 @@ func TestSnapKubesnapSession(t *testing.T) {
 		kubernetesLauncher := kubernetes.New(exec, exec, kubernetes.DefaultConfig())
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)
-		defer kubernetesHandle.Stop()
-		defer kubernetesHandle.Clean()
 		defer kubernetesHandle.EraseOutput()
+		defer kubernetesHandle.Clean()
+		defer kubernetesHandle.Stop()
 
 		// Waiting for Kubernetes Executor.
 		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
@@ -73,13 +73,14 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		podHandle, err := kubeExecutor.Execute("1")
 		So(err, ShouldNotBeNil)
+		//defer podHandle.EraseOutput() // Panic!
+		//defer podHandle.Clean()       // Panic!
 		defer podHandle.Stop()
-		//defer podHandle.Clean() // Panic!
-		//defer podHandle.EraseOutput()
 
 		// Run Prepare Kubesnap Session.
 		kubesnapConfig := kubesnap.DefaultConfig()
 		kubesnapConfig.SnapdAddress = snapdAddress
+		kubesnapConfig.Publisher = publisher
 		kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
 		So(err, ShouldBeNil)
 		kubesnapHandle, err := kubesnapLauncher.LaunchSession(
@@ -92,15 +93,28 @@ func TestSnapKubesnapSession(t *testing.T) {
 		)
 		So(err, ShouldBeNil)
 		So(kubesnapHandle.IsRunning(), ShouldBeTrue)
-		//kubesnapHandle.Wait()
-		time.Sleep(20 * time.Second)
-
+		kubesnapHandle.Wait()
+		time.Sleep(2 * time.Second) // One hit does not always yield results.
 		kubesnapHandle.Stop()
 
 		// Check results here.
-
 		content, err := ioutil.ReadFile(tmpFileName)
 		So(err, ShouldBeNil)
-		logrus.Errorf("File content: %q", string(content))
+
+		// Check CPU total usage for container.
+		cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
+		cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
+		So(len(cpuStatsMatches), ShouldEqual, 2)
+		cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
+		So(err, ShouldBeNil)
+		So(cpuUsage, ShouldBeGreaterThan, 0)
+
+		// Check Memory usage for container.
+		memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\s+\S+\s+(\d+)`)
+		memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
+		So(len(memoryUsageMatches), ShouldEqual, 2)
+		memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])
+		So(err, ShouldBeNil)
+		So(memoryUsage, ShouldBeGreaterThan, 0)
 	})
 }

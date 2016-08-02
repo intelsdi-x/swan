@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -18,8 +19,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
-	tags string, value string) {
+func soMetricRowIsValid(
+	expectedMetrics map[string]string,
+	namespace string,
+	tags string,
+	value string) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
@@ -32,7 +36,14 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	namespaceSplitted := strings.Split(namespace, "/")
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
 	So(ok, ShouldBeTrue)
-	So(expectedValue, ShouldEqual, value)
+
+	// Reduce string-encoded-float to common precision for comparison.
+	expectedValueFloat, err := strconv.ParseFloat(expectedValue, 64)
+	So(err, ShouldBeNil)
+	valueFloat, err := strconv.ParseFloat(value, 64)
+	So(err, ShouldBeNil)
+
+	So(fmt.Sprintf("%.5f", expectedValueFloat), ShouldEqual, fmt.Sprintf("%.5f", valueFloat))
 }
 
 func TestSnapMutilateSession(t *testing.T) {
