@@ -39,7 +39,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		// Make sure cluster is shut down and cleaned up when test ends.
 		defer func() {
 			var errors []string
-			fmt.Println("ASDASD", k8sHandle)
 			err := k8sHandle.Stop()
 			if err != nil {
 				t.Logf(err.Error())
