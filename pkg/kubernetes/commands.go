@@ -12,6 +12,7 @@ func getKubeAPIServerCommand(config Config) string {
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --allow-privileged=false"), // Privileged containers are not allowed.
 		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
+		fmt.Sprintf(" --etcd-prefix=%s",  config.ETCDPrefix),
 		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
 		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
 		fmt.Sprintf(" --kubelet-timeout=5s"), // Default for now.

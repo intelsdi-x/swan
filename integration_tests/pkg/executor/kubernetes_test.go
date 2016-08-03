@@ -3,22 +3,23 @@ package executor
 import (
 	"bytes"
 	"fmt"
+	"os/exec"
+	"path"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
-	"os/exec"
-	"path"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestKubernetesExecutor(t *testing.T) {
 	// NOTE: skipping test as it is currently flaky.
-	SkipConvey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
+	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
 		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
@@ -32,6 +33,11 @@ func TestKubernetesExecutor(t *testing.T) {
 		config.KubeControllerPort = ports[2]
 		config.KubeSchedulerPort = ports[3]
 		config.KubeProxyPort = ports[4]
+
+		// Create unique etcd prefix to avoid interference with any parallel tests which use same
+		// etcd cluster.
+		etcdPrefix, err := uuid.NewV4()
+		config.ETCDPrefix = path.Join("/swan/", etcdPrefix.String())
 
 		k8sLauncher := kubernetes.New(local, local, config)
 		k8sHandle, err := k8sLauncher.Launch()
@@ -67,6 +73,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		executorConfig := executor.DefaultKubernetesConfig()
 		executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 		executorConfig.PodName = podName.String()
+
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
@@ -91,12 +98,12 @@ func TestKubernetesExecutor(t *testing.T) {
 					exitCode, err := taskHandle.ExitCode()
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 0)
-				})
 
-				Convey("And there should be zero pods", func() {
-					out, err = kubectl(executorConfig.Address, "get pods")
-					So(err, ShouldBeNil)
-					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					Convey("And there should be zero pods", func() {
+						out, err = kubectl(executorConfig.Address, "get pods")
+						So(err, ShouldBeNil)
+						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					})
 				})
 			})
 		})
@@ -116,12 +123,12 @@ func TestKubernetesExecutor(t *testing.T) {
 					exitCode, err := taskHandle.ExitCode()
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 5)
-				})
 
-				Convey("And there should be zero pods", func() {
-					out, err = kubectl(executorConfig.Address, "get pods")
-					So(err, ShouldBeNil)
-					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					Convey("And there should be zero pods", func() {
+						out, err = kubectl(executorConfig.Address, "get pods")
+						So(err, ShouldBeNil)
+						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					})
 				})
 			})
 		})
