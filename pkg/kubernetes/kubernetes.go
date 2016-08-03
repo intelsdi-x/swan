@@ -58,7 +58,7 @@ type Config struct {
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
-func DefaultConfig() Config (Config, error)  {
+func DefaultConfig() (Config, error) {
 	// Create unique etcd prefix to avoid interference with any parallel tests which use same
 	// etcd cluster.
 	etcdPrefix, err := uuid.NewV4()
