@@ -17,7 +17,8 @@ import (
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
+	// NOTE: skipping test as it is currently flaky.
+	SkipConvey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
 		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
