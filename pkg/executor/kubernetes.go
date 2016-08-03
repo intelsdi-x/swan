@@ -310,7 +310,6 @@ func (th *kubernetesTaskHandle) Stop() error {
 		return nil
 	}
 
-
 	log.Debugf("deleting pod %q", th.pod.Name)
 
 	var GracePeriodSeconds int64
