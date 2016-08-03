@@ -14,12 +14,17 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID                = "l1i"
 	name              = "L1 Instruction"
-	defaultIterations = 2147483647 // 2^31-1
-	defaultIntensity  = 20
+	defaultIntensity  = 19
+
 	// {min,max}Intensity are hardcoded values in l1i binary
-	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan repository
-	minIntensity = 1
+	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan
+	// repository.
+	minIntensity = 0
 	maxIntensity = 20
+
+	// -1 (or absence of iteration argument) means infinite iterations in l1i.
+	infiniteIterations = -1
+	defaultIterations = infiniteIterations
 )
 
 // PathFlag represents l1i path flag.
@@ -62,7 +67,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (l l1i) buildCommand() string {
-	return fmt.Sprintf("%s %v %v", l.conf.Path, l.conf.Iterations, l.conf.Intensity)
+	return fmt.Sprintf("%s %d %d", l.conf.Path, l.conf.Intensity, l.conf.Iterations)
 }
 
 func (l l1i) verifyConfiguration() error {
@@ -72,7 +77,7 @@ func (l l1i) verifyConfiguration() error {
 			minIntensity,
 			maxIntensity)
 	}
-	if l.conf.Iterations <= 0 {
+	if l.conf.Iterations <= 0 && l.conf.Iterations != infiniteIterations {
 		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
