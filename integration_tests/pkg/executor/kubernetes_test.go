@@ -25,7 +25,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		// have been shut down, ports may be in CLOSE_WAIT state.
 		config := kubernetes.DefaultConfig()
 		ports := testhelpers.RandomPorts(36000, 40000, 5)
-		for i, _ := range ports {
+		for i := range ports {
 			fmt.Println(ports[i])
 		}
 		So(len(ports), ShouldEqual, 5)
