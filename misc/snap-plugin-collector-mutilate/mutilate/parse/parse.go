@@ -3,6 +3,7 @@ package parse
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -53,17 +54,20 @@ func File(path string) (Results, error) {
 	if err != nil {
 		return newResults(), err
 	}
-	return parse(file)
+	return Parse(file)
 }
 
 // OpenedFile parse the file from given file handle and gather all metrics
 // including (custom percentile). It leaves the responsibilities of this handler to the caller.
 // NOTE: Public to allow use it without snap infrastructure.
 func OpenedFile(file *os.File) (Results, error) {
-	return parse(file)
+	return Parse(file)
 }
 
-func parse(file *os.File) (Results, error) {
+// Parse retrieves latency metrics from mutilate output. Following format is expected:
+// #type       avg     std     min     5th    10th    90th    95th    99th
+// read      109.6   231.8    17.4    49.4    55.9   137.2   216.1   916.0
+func Parse(file io.Reader) (Results, error) {
 	metrics := newResults()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
