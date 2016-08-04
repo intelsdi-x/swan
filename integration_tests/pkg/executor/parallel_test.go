@@ -26,6 +26,9 @@ func TestParallel(t *testing.T) {
 		Convey("Process should be executed 5 times", func() {
 			cmdStr := fmt.Sprintf("tailf %s", file.Name())
 			task, err := parallel.Execute(cmdStr)
+			defer task.Stop()
+			defer task.Clean()
+			defer task.EraseOutput()
 
 			So(err, ShouldBeNil)
 			So(task, ShouldNotBeNil)
