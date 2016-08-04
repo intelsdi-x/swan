@@ -18,7 +18,7 @@ import (
 
 func TestKubernetesExecutor(t *testing.T) {
 	// NOTE: skipping test as it is currently flaky.
-	SkipConvey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
+	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 		// assign a collection of ports to the services. Eventhough previous kubernetes processes
@@ -78,8 +78,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 0")
 			So(err, ShouldBeNil)
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
@@ -105,8 +103,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 5")
 			So(err, ShouldBeNil)
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
