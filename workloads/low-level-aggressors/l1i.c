@@ -4,9 +4,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#define ICPRESSURE do { x ^= y; } while (0)
+#define ICPRESSURE1 do { x ^= y; } while (0)
 
-#define ICPRESSURE2      ICPRESSURE;       ICPRESSURE
+#define ICPRESSURE2      ICPRESSURE1;      ICPRESSURE1
 #define ICPRESSURE4      ICPRESSURE2;      ICPRESSURE2
 #define ICPRESSURE8      ICPRESSURE4;      ICPRESSURE4
 #define ICPRESSURE16     ICPRESSURE8;      ICPRESSURE8
@@ -25,54 +25,65 @@
 #define ICPRESSURE131072 ICPRESSURE65536;  ICPRESSURE65536
 #define ICPRESSURE262144 ICPRESSURE131072; ICPRESSURE131072
 
+#define INTENSITY(X) ICPRESSURE ## X
+#define REPEAT(N) for (int iteration = 0; (N == infinite) || (iteration < N); iteration++)
+
 int main(int argc, char **argv) {
+  if ((argc < 2) || (argc > 3)) {
+    fprintf(stderr, "usage: l1i <intensity 0-19(highest)> (<iterations>)\n");
+    return 1;
+  }
+
+  clock_t begin = clock();
+
+  const int infinite = -1;
+  int iterations = infinite;
+
+  if (argc == 3) {
+    iterations = atoi(argv[2]);
+    printf("iterations: %d\n", iterations);
+  } else {
+    printf("iterations: infinite\n");
+  }
+
+  int intensity = 0;
+  intensity = atoi(argv[1]);
+  if ((intensity < 0) || (intensity > 19)) {
+    fprintf(stderr, "intensity needs to be an integer between 0 and 19\n");
+    return 1;
+  }
+
+  printf("intensity: %d\n", intensity);
+
   int x = 0xf0;
   int y = 0x0f;
 
-  int usr_timer = atoi(argv[1]);
-  printf ("%d\n", usr_timer); 
-
-  clock_t begin, end;
-  double time_spent;
-
-  begin = clock();
-
-  int intensity = 0; 
-
-  intensity = atoi(argv[2]);
-
-  printf("%d\n", intensity); 
-
-  //for (int j = 0; j < 10*usr_timer; j++) { 
-  for (int j = 0; j < 1500; j++) { 
-	switch (intensity) {
-	    case 0:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE; } //sleep(0.1); } //intensity = 1; 
-	    case 1:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE2; } //sleep(0.1); } //intensity = 2;
-	    case 2:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE4; } //intensity = 3; //while(1) { ICPRESSURE4; }
-	    case 3:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE8; } //intensity = 4;
-	    case 4:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE16; } //intensity = 5;
-	    case 5:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE32; } //intensity = 6;
-	    case 6:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE64; } //intensity = 7;
-	    case 7:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE128; } //intensity = 8;
-	    case 8:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE256; } //intensity = 9;
-	    case 9:  for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE512; } //intensity = 10;
-	    case 10: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE1024; } //intensity = 11;
-	    case 11: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE2048; } //intensity = 12;
-	    case 12: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE4096; } //intensity = 13;
-	    case 13: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE8192; } //intensity = 14;
-	    case 14: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE16384; } //intensity = 15;
-	    case 15: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE32768; } //intensity = 16;
-	    case 16: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE65536; } //intensity = 17;
-	    case 17: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE131072; } //intensity = 18;
-	    case 18: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE262144; } //intensity = 19;
-	    case 19: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE262144; } //intensity = 20;
-	    case 20: for (int i = 0; i < int(usr_timer); i++) { ICPRESSURE262144; } 
-  	}
+  switch (intensity) {
+      case 0:  { REPEAT(iterations) { INTENSITY(1);      } } break;
+      case 1:  { REPEAT(iterations) { INTENSITY(2);      } } break;
+      case 2:  { REPEAT(iterations) { INTENSITY(4);      } } break;
+      case 3:  { REPEAT(iterations) { INTENSITY(8);      } } break;
+      case 4:  { REPEAT(iterations) { INTENSITY(16);     } } break;
+      case 5:  { REPEAT(iterations) { INTENSITY(32);     } } break;
+      case 6:  { REPEAT(iterations) { INTENSITY(64);     } } break;
+      case 7:  { REPEAT(iterations) { INTENSITY(128);    } } break;
+      case 8:  { REPEAT(iterations) { INTENSITY(256);    } } break;
+      case 9:  { REPEAT(iterations) { INTENSITY(512);    } } break;
+      case 10: { REPEAT(iterations) { INTENSITY(1024);   } } break;
+      case 11: { REPEAT(iterations) { INTENSITY(2048);   } } break;
+      case 12: { REPEAT(iterations) { INTENSITY(4096);   } } break;
+      case 13: { REPEAT(iterations) { INTENSITY(8192);   } } break;
+      case 14: { REPEAT(iterations) { INTENSITY(16384);  } } break;
+      case 15: { REPEAT(iterations) { INTENSITY(32768);  } } break;
+      case 16: { REPEAT(iterations) { INTENSITY(65536);  } } break;
+      case 17: { REPEAT(iterations) { INTENSITY(131072); } } break;
+      case 18: { REPEAT(iterations) { INTENSITY(131072); } } break;
+      case 19: { REPEAT(iterations) { INTENSITY(262144); } } break;
   }
 
-  end = clock();
-  time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-  printf("Time spent: %f\n", time_spent);
-  
+  clock_t end = clock();
+  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  printf("time spent: %f seconds\n", time_spent);
+
   return 0;
 }
