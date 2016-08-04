@@ -25,6 +25,9 @@ func TestKubernetesExecutor(t *testing.T) {
 		// have been shut down, ports may be in CLOSE_WAIT state.
 		config := kubernetes.DefaultConfig()
 		ports := testhelpers.RandomPorts(36000, 40000, 5)
+		for i, _ := range ports {
+			fmt.Println(ports[i])
+		}
 		So(len(ports), ShouldEqual, 5)
 		config.KubeAPIPort = ports[0]
 		config.KubeletPort = ports[1]
@@ -43,18 +46,21 @@ func TestKubernetesExecutor(t *testing.T) {
 			if err != nil {
 				t.Logf(err.Error())
 				errors = append(errors, err.Error())
+				fmt.Println(err.Error())
 			}
 
 			err = k8sHandle.Clean()
 			if err != nil {
 				t.Logf(err.Error())
 				errors = append(errors, err.Error())
+				fmt.Println(err.Error())
 			}
 
 			err = k8sHandle.EraseOutput()
 			if err != nil {
 				t.Logf(err.Error())
 				errors = append(errors, err.Error())
+				fmt.Println(err.Error())
 			}
 
 			So(len(errors), ShouldEqual, 0)
@@ -72,6 +78,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		// Make sure no pods are running. Output from kubectl includes a header line. Therefore, with
 		// no pod entry, we expect a line count of 1.
 		out, err := kubectl(executorConfig.Address, "get pods")
+		fmt.Println("get pods ", out)
 		So(err, ShouldBeNil)
 		So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 
