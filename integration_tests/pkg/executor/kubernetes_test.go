@@ -78,7 +78,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		// Make sure no pods are running. Output from kubectl includes a header line. Therefore, with
 		// no pod entry, we expect a line count of 1.
 		out, err := kubectl(executorConfig.Address, "get pods")
-		fmt.Println("get pods ", out)
+		fmt.Println(out)
 		So(err, ShouldBeNil)
 		So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 
