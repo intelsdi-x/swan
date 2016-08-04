@@ -59,7 +59,7 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 }
 
 // Name returns user-friendly name of executor.
-func (r Remote) Name() string {
+func (remote Remote) Name() string {
 	return "Remote Executor"
 }
 

@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"math/rand"
+	"os/exec"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/pkg/errors"
 )
 
 // LogSuccessfulExecution is helper function for logging standard output and standard error
@@ -69,11 +70,11 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 	}
 
 	lineCount := 3
-	stdoutTail, err := fs.ReadTail(stdoutFileName, lineCount)
+	stdoutTail, err := readTail(stdoutFileName, lineCount)
 	if err != nil {
 		stdoutTail = fmt.Sprintf("%v", err)
 	}
-	stderrTail, err := fs.ReadTail(stderrFileName, lineCount)
+	stderrTail, err := readTail(stderrFileName, lineCount)
 	if err != nil {
 		stderrTail = fmt.Sprintf("%v", err)
 	}
@@ -107,4 +108,15 @@ func ErrorLogLines(r *strings.Reader, logID int) {
 	if err != nil {
 		logrus.Errorf("%4d Printing from reader failed: %q", logID, err.Error())
 	}
+}
+
+func readTail(filePath string, lineCount int) (tail string, err error) {
+	lineCountParam := fmt.Sprintf("-n %d", lineCount)
+	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
+
+	if err != nil {
+		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
+	}
+
+	return string(output), nil
 }
