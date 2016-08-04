@@ -219,6 +219,7 @@ func (th *kubernetesTaskHandle) watch() error {
 			// Try to delete the failed pod to avoid conflicts and having to call Stop()
 			// after the stopped channel has been closed.
 			var GracePeriodSeconds int64
+			GracePeriodSeconds = int64(0)
 			th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
 				GracePeriodSeconds: &GracePeriodSeconds,
 			})
@@ -309,7 +310,6 @@ func (th *kubernetesTaskHandle) Stop() error {
 	if th.isTerminated() {
 		return nil
 	}
-
 
 	log.Debugf("deleting pod %q", th.pod.Name)
 
