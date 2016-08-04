@@ -11,7 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
-
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/unversioned"
@@ -93,6 +92,11 @@ func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 	}
 }
 
+// Name returns user-friendly name of executor.
+func (k8s *kubernetes) Name() string {
+	return "Kubernetes Executor"
+}
+
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
@@ -140,14 +144,15 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	case <-th.stopped:
 		// Look into exit state to determine if start up failed or completed immediately.
 		exitCode, err := th.ExitCode()
-		if err != nil {
-			return th, errors.Errorf("failed to start pod: cannot get exit code")
+		if err != nil || exitCode != 0 {
+			LogUnsucessfulExecution(command, k8s.Name(), th)
+			return th, errors.Errorf(
+				"failed to start command %q on %q on %q",
+				command, k8s.Name(), th.Address(),
+			)
 		}
 
-		if exitCode != 0 {
-			return th, errors.Errorf("failed to start pod: failed with exit code %d", exitCode)
-		}
-
+		LogSuccessfulExecution(command, k8s.Name(), th)
 		return th, nil
 	}
 
@@ -309,7 +314,6 @@ func (th *kubernetesTaskHandle) Stop() error {
 	if th.isTerminated() {
 		return nil
 	}
-
 
 	log.Debugf("deleting pod %q", th.pod.Name)
 
