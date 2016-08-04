@@ -80,7 +80,6 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer taskHandle.EraseOutput()
 			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
@@ -108,7 +107,6 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer taskHandle.EraseOutput()
 			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
