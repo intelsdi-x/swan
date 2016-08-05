@@ -164,7 +164,8 @@ type kubernetesTaskHandle struct {
 	stopped  chan struct{}
 	started  chan struct{}
 	stdout   *os.File
-	stderr   *os.File
+	stderr   *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir   string
 	exitCode *int
 }
 
@@ -285,6 +286,9 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	// Therefore, stderr will always be empty.
 	th.stderr = stderrFile
 
+	outputDir, _ := path.Split(th.stdout.Name())
+	th.logdir = outputDir
+
 	go func() {
 		_, err := io.Copy(stdoutFile, logStream)
 		if err != nil {
@@ -373,8 +377,10 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 // Clean closes file descriptors but leaves stdout and stderr files intact.
 func (th *kubernetesTaskHandle) Clean() error {
 	for _, f := range []*os.File{th.stderr, th.stdout} {
-		if err := f.Close(); err != nil {
-			return errors.Wrapf(err, "close on file %q failed", f.Name())
+		if f != nil {
+			if err := f.Close(); err != nil {
+				return errors.Wrapf(err, "close of file %q failed", f.Name())
+			}
 		}
 	}
 	return nil
@@ -382,10 +388,13 @@ func (th *kubernetesTaskHandle) Clean() error {
 
 // EraseOutput deletes the stdout and stderr files.
 func (th *kubernetesTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(th.stderr.Name())
-	if err := os.RemoveAll(outputDir); err != nil {
-		return errors.Wrapf(err, "cannot remove directory %q", outputDir)
+	_, err := os.Stat(th.logdir)
+	if err == nil {
+		if err := os.RemoveAll(th.logdir); err != nil {
+			return errors.Wrapf(err, "cannot remove directory %q", th.logdir)
+		}
 	}
+
 	return nil
 }
 

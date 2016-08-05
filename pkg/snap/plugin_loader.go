@@ -6,6 +6,7 @@ import (
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 )
 
 const (
@@ -75,8 +76,21 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	}, nil
 }
 
-// Load loads selected plugin from plugin path.
-func (l PluginLoader) Load(plugin string) error {
+// LoadPlugins loads supplied plugin names from plugin path and returns slice of
+// encountered errors.
+func (l PluginLoader) LoadPlugins(plugins ...string) error {
+	var errors errcollection.ErrorCollection
+	for _, plugin := range plugins {
+		err := l.loadPlugin(plugin)
+		if err != nil {
+			errors.Add(err)
+		}
+	}
+	return errors.GetErrIfAny()
+}
+
+// loadPlugin loads selected plugin from plugin path.
+func (l PluginLoader) loadPlugin(plugin string) error {
 	pluginName, pluginType, err := GetPluginNameAndType(plugin)
 	if err != nil {
 		return err
@@ -86,7 +100,6 @@ func (l PluginLoader) Load(plugin string) error {
 	if err != nil {
 		return err
 	}
-
 	if isPluginLoaded {
 		return nil
 	}

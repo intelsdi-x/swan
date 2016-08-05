@@ -3,6 +3,7 @@ package sessions
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
+	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -40,18 +42,15 @@ func TestSnapKubesnapSession(t *testing.T) {
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
-		err = loader.Load(snap.KubesnapDockerCollector)
-		So(err, ShouldBeNil)
-
-		err = loader.Load(snap.SessionPublisher)
+		err = loader.LoadPlugins(snap.KubesnapDockerCollector, snap.SessionPublisher)
 		So(err, ShouldBeNil)
 		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 
 		tmpFile, err := ioutil.TempFile("", "session_test")
 		So(err, ShouldBeNil)
 		tmpFileName := tmpFile.Name()
-		logrus.Errorf("Result file: %q", tmpFileName)
 		tmpFile.Close()
+		defer os.Remove(tmpFileName)
 
 		resultFile := tmpFile.Name()
 		publisher := wmap.NewPublishNode(publisherPluginName, snap.PluginAnyVersion)
@@ -73,11 +72,16 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		podHandle, err := kubeExecutor.Execute("1")
 		So(err, ShouldNotBeNil)
-		//defer podHandle.EraseOutput() // Panic!
-		//defer podHandle.Clean()       // Panic!
+		defer podHandle.EraseOutput()
+		defer podHandle.Clean()
 		defer podHandle.Stop()
 
 		// Run Prepare Kubesnap Session.
+		experimentID, err := uuid.NewV4()
+		So(err, ShouldBeNil)
+		phaseID, err := uuid.NewV4()
+		So(err, ShouldBeNil)
+
 		kubesnapConfig := kubesnap.DefaultConfig()
 		kubesnapConfig.SnapdAddress = snapdAddress
 		kubesnapConfig.Publisher = publisher
@@ -86,8 +90,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 		kubesnapHandle, err := kubesnapLauncher.LaunchSession(
 			nil,
 			phase.Session{
-				ExperimentID: "foobar",
-				PhaseID:      "barbaz",
+				ExperimentID: experimentID.String(),
+				PhaseID:      phaseID.String(),
 				RepetitionID: 1,
 			},
 		)
@@ -100,11 +104,15 @@ func TestSnapKubesnapSession(t *testing.T) {
 		// Check results here.
 		content, err := ioutil.ReadFile(tmpFileName)
 		So(err, ShouldBeNil)
+		So(string(content), ShouldNotEqual, "")
+		logrus.Errorf("Content: %q\n", string(content))
+		logrus.Errorf("Filename: %q\n", tmpFileName)
 
 		// Check CPU total usage for container.
 		cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
 		cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
-		So(len(cpuStatsMatches), ShouldEqual, 2)
+		logrus.Errorf("cpuMatches: %+v", cpuStatsMatches)
+		So(len(cpuStatsMatches), ShouldBeGreaterThanOrEqualTo, 2)
 		cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
 		So(err, ShouldBeNil)
 		So(cpuUsage, ShouldBeGreaterThan, 0)
@@ -112,7 +120,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 		// Check Memory usage for container.
 		memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\s+\S+\s+(\d+)`)
 		memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
-		So(len(memoryUsageMatches), ShouldEqual, 2)
+		logrus.Errorf("memoryUsageMatches: %+v", cpuStatsMatches)
+		So(len(memoryUsageMatches), ShouldBeGreaterThanOrEqualTo, 2)
 		memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])
 		So(err, ShouldBeNil)
 		So(memoryUsage, ShouldBeGreaterThan, 0)

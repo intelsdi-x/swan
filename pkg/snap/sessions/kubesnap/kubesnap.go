@@ -11,7 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
-// DefaultConfig returns default configuration.
+// DefaultConfig returns default configuration for Kubesnap Session Launcher.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", 2)
 	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
@@ -23,7 +23,7 @@ func DefaultConfig() Config {
 	}
 }
 
-// Config contains configuration.
+// Config contains configuration for Kubesnap Session Launcher.
 type Config struct {
 	SnapdAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
@@ -36,7 +36,7 @@ type SessionLauncher struct {
 	snapClient *client.Client
 }
 
-// NewSessionLauncher constructs MutilateSnapSessionLauncher.
+// NewSessionLauncher constructs Kubesnap Session Launcher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapdAddress, "v1", true)
 	if err != nil {
@@ -50,7 +50,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	err = loadPlugins(loader)
+	err = loader.LoadPlugins(snap.KubesnapDockerCollector, snap.CassandraPublisher)
 	if err != nil {
 		return nil, err
 	}
@@ -77,18 +77,4 @@ func (s *SessionLauncher) LaunchSession(
 	}
 
 	return s.session, nil
-}
-
-func loadPlugins(loader *snap.PluginLoader) (err error) {
-	err = loader.Load(snap.KubesnapDockerCollector)
-	if err != nil {
-		return err
-	}
-
-	err = loader.Load(snap.CassandraPublisher)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

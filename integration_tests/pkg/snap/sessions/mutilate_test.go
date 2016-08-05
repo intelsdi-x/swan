@@ -43,7 +43,8 @@ func soMetricRowIsValid(
 	valueFloat, err := strconv.ParseFloat(value, 64)
 	So(err, ShouldBeNil)
 
-	So(fmt.Sprintf("%.5f", expectedValueFloat), ShouldEqual, fmt.Sprintf("%.5f", valueFloat))
+	epsilon := 0.00001
+	So(valueFloat, ShouldAlmostEqual, expectedValueFloat, epsilon)
 }
 
 func TestSnapMutilateSession(t *testing.T) {
@@ -84,7 +85,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 				metricsFile = tmpFile.Name()
 
-				loader.Load(snap.SessionPublisher)
+				loader.LoadPlugins(snap.SessionPublisher)
 				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 				So(err, ShouldBeNil)
 
