@@ -1,6 +1,9 @@
 package executor
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -12,10 +15,20 @@ import (
 )
 
 func TestParallel(t *testing.T) {
-	SkipConvey("When using Parallel to decorate local executor", t, func() {
+	file, err := ioutil.TempFile(".", "parallel")
+	if err != nil {
+		t.Fail()
+	}
+	defer os.Remove(file.Name())
+
+	Convey("When using Parallel to decorate local executor", t, func() {
 		parallel := executor.NewLocalIsolated(executor.NewParallel(5))
 		Convey("Process should be executed 5 times", func() {
-			task, err := parallel.Execute("sleep inf")
+			cmdStr := fmt.Sprintf("tailf %s", file.Name())
+			task, err := parallel.Execute(cmdStr)
+			defer task.EraseOutput()
+			defer task.Clean()
+			defer task.Stop()
 
 			So(err, ShouldBeNil)
 			So(task, ShouldNotBeNil)
@@ -23,11 +36,7 @@ func TestParallel(t *testing.T) {
 			isStopped := task.Wait(1000 * time.Millisecond)
 			So(isStopped, ShouldBeFalse)
 
-			defer task.Stop()
-			defer task.Clean()
-			defer task.EraseOutput()
-
-			cmd := exec.Command("pgrep", "sleep")
+			cmd := exec.Command("pgrep", "-f", cmdStr)
 			output, err := cmd.CombinedOutput()
 			So(err, ShouldBeNil)
 
@@ -40,7 +49,7 @@ func TestParallel(t *testing.T) {
 				Convey("All the child processes should be stopped", func() {
 					isStopped := task.Wait(0)
 					So(isStopped, ShouldBeTrue)
-					cmd = exec.Command("pgrep", "sleep")
+					cmd = exec.Command("pgrep", "-f", cmdStr)
 					err = cmd.Run()
 
 					So(err, ShouldNotBeNil)
