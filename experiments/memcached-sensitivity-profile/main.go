@@ -9,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -30,6 +31,7 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
+	isRunOnK8s = conf.NewBoolFlag("kubernetes_hp_be", "Launch HP and BE tasks on Kubernetes.", false)
 
 	mutilateMasterFlagDefault = "local"
 )
@@ -100,10 +102,25 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	defer hpIsolation.Clean()
 
+	var HPExecutor executor.Executor
+	if isRunOnK8s.Value() {
+		var err error
+		// Kubernetes cluster setup and initialize k8s executor
+		HPExecutor = executor.NewLocal()
+		config := kubernetes.DefaultConfig()
+		k8sLauncher := kubernetes.New(HPExecutor, HPExecutor, config)
+		taskHandle, err := k8sLauncher.Launch()
+		errutil.Check(err)
+		taskHandle.Wait(0)
+
+		errutil.Check(err)
+	} else {
+		HPExecutor = executor.NewLocalIsolated(hpIsolation)
+	}
+
 	// Initialize Memcached Launcher.
-	localForHP := executor.NewLocalIsolated(hpIsolation)
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
+	memcachedLauncher := memcached.New(HPExecutor, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.
 	mutilateConfig := mutilate.DefaultMutilateConfig()
@@ -142,10 +159,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggressorName)
+		aggressor, err := aggressorFactory.Create(aggressorName, isRunOnK8s.Value())
 		errutil.Check(err)
 
-		aggressors = append(aggressors, aggressor)
+		aggressors = append(aggressors, sensitivity.NewLauncherWithoutSession(aggressor))
 	}
 
 	// Snap Session for mutilate.

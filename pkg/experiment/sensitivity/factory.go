@@ -4,6 +4,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
@@ -70,33 +71,28 @@ func NewMultiIsolationAggressorFactory(
 	}
 }
 
-// Create returns aggressor of chosen type with Snap session.
-func (f AggressorFactory) Create(name string) (LauncherSessionPair, error) {
-	var aggressor LauncherSessionPair
+// Create returns aggressor of chosen type.
+func (f AggressorFactory) Create(name string, onK8s bool) (executor.Launcher, error) {
+	var aggressor executor.Launcher
 
-	exec := f.createIsolatedExecutor(name)
+	exec, err := f.createIsolatedExecutor(name, onK8s)
+	errutil.Check(err)
 
 	switch name {
 	case l1data.ID:
-		aggressor = NewLauncherWithoutSession(
-			l1data.New(exec, l1data.DefaultL1dConfig()))
+		aggressor = l1data.New(exec, l1data.DefaultL1dConfig())
 	case l1instruction.ID:
-		aggressor = NewLauncherWithoutSession(
-			l1instruction.New(exec, l1instruction.DefaultL1iConfig()))
+		aggressor = l1instruction.New(exec, l1instruction.DefaultL1iConfig())
 	case memoryBandwidth.ID:
-		aggressor = NewLauncherWithoutSession(
-			memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig()))
+		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
-		aggressor = NewLauncherWithoutSession(
-			caffe.New(exec, caffe.DefaultConfig()))
+		aggressor = caffe.New(exec, caffe.DefaultConfig())
 	case l3data.ID:
-		aggressor = NewLauncherWithoutSession(
-			l3data.New(exec, l3data.DefaultL3Config()))
+		aggressor = l3data.New(exec, l3data.DefaultL3Config())
 	case stream.ID:
-		aggressor = NewLauncherWithoutSession(
-			stream.New(exec, stream.DefaultConfig()))
+		aggressor = stream.New(exec, stream.DefaultConfig())
 	default:
-		return aggressor, errors.Errorf("aggressor %q not found", name)
+		return nil, errors.Errorf("aggressor %q not found", name)
 	}
 
 	return aggressor, nil
@@ -105,27 +101,38 @@ func (f AggressorFactory) Create(name string) (LauncherSessionPair, error) {
 // CreateIsolatedExecutor returns local executor with prepared isolation.
 // L1-Data and L1-Instruction cache aggressor receives l1AggressorIsolation
 // Other aggressors receive otherAggressorIsolation
-func (f AggressorFactory) createIsolatedExecutor(name string) executor.Executor {
+func (f AggressorFactory) createIsolatedExecutor(name string, isRunOnK8s bool) (executor.Executor, error) {
 	switch name {
 	case l1data.ID:
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		if L1dProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1dProcessNumber.Value()))
 		}
-		return executor.NewLocalIsolated(decorators)
+		return f.getSpecializedExecutor(isRunOnK8s, decorators)
 	case l1instruction.ID:
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		if L1iProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
 		}
-		return executor.NewLocalIsolated(decorators)
+		return f.getSpecializedExecutor(isRunOnK8s, decorators)
 	case l3data.ID:
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
 		}
-		return executor.NewLocalIsolated(decorators)
+		return f.getSpecializedExecutor(isRunOnK8s, decorators)
 	default:
-		return executor.NewLocalIsolated(f.otherAggressorIsolation)
+		return f.getSpecializedExecutor(isRunOnK8s, isolation.Decorators{f.otherAggressorIsolation})
 	}
+}
+
+// Create specific executor dependent of enviroment.
+func (f AggressorFactory) getSpecializedExecutor(isRunOnK8s bool, decorators isolation.Decorators) (executor.Executor, error)  {
+	if isRunOnK8s {
+		config := executor.DefaultKubernetesConfig()
+		config.Decorators = decorators
+		return executor.NewKubernetes(config)
+	}
+
+	return executor.NewLocalIsolated(decorators), nil
 }
