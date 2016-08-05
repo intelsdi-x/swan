@@ -86,6 +86,9 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 0")
 			So(err, ShouldBeNil)
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
@@ -111,6 +114,9 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 5")
 			So(err, ShouldBeNil)
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
