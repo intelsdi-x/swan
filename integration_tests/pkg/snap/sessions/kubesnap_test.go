@@ -70,7 +70,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		So(err, ShouldBeNil)
 
-		podHandle, err := kubeExecutor.Execute("1")
+		podHandle, err := kubeExecutor.Execute("sleep 60")
 		So(err, ShouldNotBeNil)
 		defer podHandle.EraseOutput()
 		defer podHandle.Clean()
@@ -98,7 +98,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(kubesnapHandle.IsRunning(), ShouldBeTrue)
 		kubesnapHandle.Wait()
-		time.Sleep(300 * time.Second) // One hit does not always yield results.
+		time.Sleep(2 * time.Second) // One hit does not always yield results.
 		kubesnapHandle.Stop()
 
 		// Check results here.
