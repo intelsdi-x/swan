@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
     int step = atoi(step_ptr);
 
     printf("%-7s %7s %7s %7s %7s %7s %7s %7s %7s %8s %8s\n",
-           "#type", "avg", "min", "1st", "5th", "10th",
+           "#type", "avg", "std", "min", "5th", "10th",
            "90th", "95th", "99th", "QPS", "target");
 
     for (int q = min; q <= max; q += step) {
