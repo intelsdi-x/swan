@@ -106,7 +106,7 @@ func readTails(stdoutFileName string, stderrFileName string, lineCount int) (std
 func readTail(filePath string, lineCount int) (tail string, err error) {
 	_, err = os.Stat(filePath)
 	if err != nil {
-		return "file does not exists"
+		return "", errors.New("file does not exists")
 	}
 
 	lineCountParam := fmt.Sprintf("-n %d", lineCount)
