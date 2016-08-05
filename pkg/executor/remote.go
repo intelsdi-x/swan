@@ -122,7 +122,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	var exitCode *int
 	exitCode = &exitCodeInt
 
-	th := newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
+	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
 		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited, hasStopOrWaitInvoked)
 
 	// Wait for remote task in go routine.
@@ -151,14 +151,14 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		select {
 		case <-hasStopOrWaitInvoked:
 			// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
-			LogSuccessfulExecution(command, remote.Name(), th)
+			LogSuccessfulExecution(command, remote.Name(), taskHandle)
 		default:
 			// If process exited before Wait or Stop, it might have ended prematurely.
-			LogUnsucessfulExecution(command, remote.Name(), th)
+			LogUnsucessfulExecution(command, remote.Name(), taskHandle)
 		}
 	}()
 
-	return th, nil
+	return taskHandle, nil
 }
 
 // Final wait for the command to exit

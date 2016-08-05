@@ -66,7 +66,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	hasProcessExited := make(chan struct{})
 	hasStopOrWaitInvoked := make(chan struct{})
 
-	th := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked)
+	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked)
 
 	// Wait for local task in go routine.
 	go func() {
@@ -93,15 +93,15 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		select {
 		case <-hasStopOrWaitInvoked:
 			// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
-			LogSuccessfulExecution(command, l.Name(), th)
+			LogSuccessfulExecution(command, l.Name(), taskHandle)
 
 		default:
 			// If process exited before Wait or Stop, it might have ended prematurely.
-			LogUnsucessfulExecution(command, l.Name(), th)
+			LogUnsucessfulExecution(command, l.Name(), taskHandle)
 		}
 	}()
 
-	return th, nil
+	return taskHandle, nil
 }
 
 // localTaskHandle implements TaskHandle interface.
