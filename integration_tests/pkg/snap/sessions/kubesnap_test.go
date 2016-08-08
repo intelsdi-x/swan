@@ -70,8 +70,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		So(err, ShouldBeNil)
 
-		podHandle, err := kubeExecutor.Execute("sleep 60")
-		So(err, ShouldNotBeNil)
+		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")
+		So(err, ShouldBeNil)
 		defer podHandle.EraseOutput()
 		defer podHandle.Clean()
 		defer podHandle.Stop()
@@ -106,7 +106,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		logrus.Errorf("Content: %q\n", string(content))
 		logrus.Errorf("Filename: %q\n", tmpFileName)
-		//So(string(content), ShouldNotEqual, "")
+		So(string(content), ShouldNotEqual, "")
 
 		// Check CPU total usage for container.
 		cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
