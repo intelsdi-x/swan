@@ -11,7 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
-
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/unversioned"
@@ -93,6 +92,11 @@ func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 	}
 }
 
+// Name returns user-friendly name of executor.
+func (k8s *kubernetes) Name() string {
+	return "Kubernetes Executor"
+}
+
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
@@ -125,35 +129,41 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 			k8s.config.PodName, k8s.config.Namespace)
 	}
 
-	th := &kubernetesTaskHandle{
+	taskHandle := &kubernetesTaskHandle{
 		command: command,
 		podsAPI: podsAPI,
 		pod:     pod,
 	}
 
-	th.watch()
+	taskHandle.watch()
 
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
 	select {
-	case <-th.started:
+	case <-taskHandle.started:
 		// Pod succesfully started.
-	case <-th.stopped:
+	case <-taskHandle.stopped:
 		// Look into exit state to determine if start up failed or completed immediately.
-		exitCode, err := th.ExitCode()
-		if err != nil {
-			return th, errors.Errorf("failed to start pod: cannot get exit code")
+		// TODO(skonefal): We don't have stdout & stderr when pod fails.
+		exitCode, err := taskHandle.ExitCode()
+		if err != nil || exitCode != 0 {
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
+
+			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
+			return nil, errors.Errorf(
+				"failed to start command %q on %q on %q",
+				command, k8s.Name(), taskHandle.Address(),
+			)
 		}
 
-		if exitCode != 0 {
-			return th, errors.Errorf("failed to start pod: failed with exit code %d", exitCode)
-		}
-
-		return th, nil
+		LogSuccessfulExecution(command, k8s.Name(), taskHandle)
+		return taskHandle, nil
 	}
 
-	th.setupLogs()
+	taskHandle.setupLogs()
 
-	return th, nil
+	return taskHandle, nil
 }
 
 // kubernetesTaskHandle implements the TaskHandle interface
@@ -310,7 +320,6 @@ func (th *kubernetesTaskHandle) Stop() error {
 		return nil
 	}
 
-
 	log.Debugf("deleting pod %q", th.pod.Name)
 
 	var GracePeriodSeconds int64
@@ -398,10 +407,16 @@ func (th *kubernetesTaskHandle) Address() string {
 
 // StdoutFile returns a file handle to the stdout file for the pod.
 func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
+	if th.stdout == nil {
+		return nil, errors.New("stdout file has been already closed or it is not created yet")
+	}
 	return th.stdout, nil
 }
 
 // StderrFile returns a file handle to the stderr file for the pod.
 func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
+	if th.stdout == nil {
+		return nil, errors.New("srderr file has been already closed or it is not created yet")
+	}
 	return th.stderr, nil
 }

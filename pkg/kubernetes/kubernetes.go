@@ -101,23 +101,20 @@ func (m kubernetes) Name() string {
 func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
 	handle, err := exec.Execute(command)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Execution of service failed; Command: %s", command)
+		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
 	}
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), port)
 	if !m.isListening(address, serviceListenTimeout) {
-		file, fileErr := handle.StderrFile()
-		details := ""
-		if fileErr == nil {
-			// NOTE: Here we could implement helper for catting last three
-			// lines of this output (when some flag will be specified to do so).
-			details = fmt.Sprintf(" Check %s file for details", file.Name())
-		}
+		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
-		handle.Stop()
-		handle.Clean()
-		return nil, errors.Errorf("Failed to connect to service on instance. "+
-			"Timeout on connection to %q.%s", address, details)
+		defer handle.EraseOutput()
+		defer handle.Clean()
+		defer handle.Stop()
+
+		return nil, errors.Errorf(
+			"failed to connect to service %q on %q: timeout on connection to %q",
+			command, exec.Name(), address)
 	}
 
 	return handle, nil
