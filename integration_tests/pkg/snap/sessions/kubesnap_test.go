@@ -98,7 +98,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(kubesnapHandle.IsRunning(), ShouldBeTrue)
 		kubesnapHandle.Wait()
-		time.Sleep(2 * time.Second) // One hit does not always yield results.
+		time.Sleep(120 * time.Second) // One hit does not always yield results.
 		kubesnapHandle.Stop()
 
 		// Check results here.
