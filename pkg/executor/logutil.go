@@ -14,17 +14,13 @@ import (
 )
 
 // LogLinesCount is the number of lines printed from stderr & stdout in case of task failure.
-var LogLinesCount = conf.NewIntFlag("output_lines_count", "Number of lines printed from stderr & stdout in case of task unsucessful termination", 3)
+var LogLinesCount = conf.NewIntFlag("output_lines_count", "Number of lines printed from stderr & stdout in case of task unsucessful termination", 5)
 
 // LogSuccessfulExecution is helper function for logging standard output and standard error
 // file names
 func LogSuccessfulExecution(whatWasExecuted string, whereWasExecuted string, handle TaskHandle) {
-	stdoutFileName, stderrFileName := readStdoutFilenames(handle, whatWasExecuted, whereWasExecuted)
-
 	id := rand.Intn(9999)
 	logrus.Debugf("%4d Process %q on %q on %q has ended\n", id, whatWasExecuted, whereWasExecuted, handle.Address())
-	logrus.Debugf("%4d Stdout stored in %q", id, stdoutFileName)
-	logrus.Debugf("%4d Stderr stored in %q", id, stderrFileName)
 
 	exitCode, err := handle.ExitCode()
 	if err != nil {
@@ -43,8 +39,6 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 
 	id := rand.Intn(9999)
 	logrus.Errorf("%4d Command %q might have ended prematurely on %q on address %q", id, whatWasExecuted, whereWasExecuted, handle.Address())
-	logrus.Errorf("%4d Stdout stored in %q", id, stdoutFileName)
-	logrus.Errorf("%4d Stderr stored in %q", id, stderrFileName)
 	logrus.Errorf("%4d Last %d lines of stdout", id, lineCount)
 	ErrorLogLines(strings.NewReader(stdoutTail), id)
 	logrus.Errorf("%4d Last %d lines of stderr", id, lineCount)
@@ -90,12 +84,12 @@ func readStdoutFilenames(handle TaskHandle, what string, where string) (stdoutFi
 	return stdoutFileName, stderrFileName
 }
 
-func readTails(stdoutFileName string, stderrFileName string, lineCount int) (stdoutFileTail string, stderrFileTail string) {
+func readTails(stdoutFileName string, stderrFileName string, lineCount int) (stdoutTail string, stderrTail string) {
 	stdoutTail, err := readTail(stdoutFileName, lineCount)
 	if err != nil {
 		stdoutTail = fmt.Sprintf("%v", err)
 	}
-	stderrTail, err := readTail(stderrFileName, lineCount)
+	stderrTail, err = readTail(stderrFileName, lineCount)
 	if err != nil {
 		stderrTail = fmt.Sprintf("%v", err)
 	}
