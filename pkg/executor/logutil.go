@@ -28,7 +28,7 @@ func LogSuccessfulExecution(whatWasExecuted string, whereWasExecuted string, han
 
 	exitCode, err := handle.ExitCode()
 	if err != nil {
-		logrus.Debugf("%4d Could not read exit code: %v", err)
+		logrus.Debugf("%4d Could not read exit code: %v", id, err)
 	} else {
 		logrus.Debugf("%4d Exit code: %d", id, exitCode)
 	}
@@ -52,7 +52,7 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 
 	exitCode, err := handle.ExitCode()
 	if err != nil {
-		logrus.Errorf("%4d Could not read exit code: %v", err)
+		logrus.Errorf("%4d Could not read exit code: %v", id, err)
 	} else {
 		logrus.Errorf("%4d Exit code: %d", id, exitCode)
 	}
