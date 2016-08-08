@@ -38,17 +38,17 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 
 	lineCount := LogLinesCount.Value()
 
-	stdoutFilePath, stdoutErr := handle.StdoutFile()
-	stderrFilePath, stderrErr := handle.StderrFile()
+	stdoutFile, stdoutErr := handle.StdoutFile()
+	stderrFile, stderrErr := handle.StderrFile()
 
 	if stdoutErr == nil {
-		stdoutTail, err = readTail(stdoutFilePath, lineCount)
+		stdoutTail, err = readTail(stdoutFile.Name(), lineCount)
 		if err != nil {
 			stdoutErr = err
 		}
 	}
 	if stderrErr == nil {
-		stdoutTail, err = readTail(stderrFilePath, lineCount)
+		stdoutTail, err = readTail(stderrFile.Name(), lineCount)
 		if err != nil {
 			stderrErr = err
 		}
