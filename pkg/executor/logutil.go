@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"os"
 	"os/exec"
 	"strings"
 
