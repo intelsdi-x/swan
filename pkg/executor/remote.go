@@ -2,7 +2,6 @@ package executor
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"path"
 	"strings"
@@ -57,6 +56,11 @@ func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Re
 		commandDecorators: decorators,
 		unshareUUID:       uuidStr,
 	}
+}
+
+// Name returns user-friendly name of executor.
+func (remote Remote) Name() string {
+	return "Remote Executor"
 }
 
 // Execute runs the command given as input.
@@ -118,6 +122,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	var exitCode *int
 	exitCode = &exitCodeInt
 
+	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
+		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited, hasStopOrWaitInvoked)
+
 	// Wait for remote task in go routine.
 	go func() {
 		defer func() {
@@ -141,38 +148,17 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		stdoutFile.Sync()
 		stderrFile.Sync()
 
-		lineCount := 3
-		stdoutTail, err := readTail(stdoutFile.Name(), lineCount)
-		if err != nil {
-			stdoutTail = fmt.Sprintf("%v", err)
-		}
-		stderrTail, err := readTail(stderrFile.Name(), lineCount)
-		if err != nil {
-			stderrTail = fmt.Sprintf("%v", err)
-		}
-
-		id := rand.Intn(9999)
 		select {
-		// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
 		case <-hasStopOrWaitInvoked:
-			log.Debugf("%4d Command %s ended on remote host %s", id, command, remote.sshConfig.Host)
-			log.Debugf("%4d Stdout stored in %q", id, stdoutFile.Name())
-			log.Debugf("%4d Stderr stored in %q", id, stderrFile.Name())
-			log.Debugf("%4d Exit code: %d", id, exitCode)
+			// If Wait or Stop has been invoked on TaskHandle, then process exit is expected.
+			LogSuccessfulExecution(command, remote.Name(), taskHandle)
 		default:
-			log.Errorf("%4d Command %s might have ended prematurely on remote host %s", id, command, remote.sshConfig.Host)
-			log.Errorf("%4d Stdout stored in %q", id, stdoutFile.Name())
-			log.Errorf("%4d Stderr stored in %q", id, stderrFile.Name())
-			log.Errorf("%4d Exit code: %d", id, exitCode)
-			log.Errorf("%4d Last %d lines of stdout", id, lineCount)
-			logLines(strings.NewReader(stdoutTail), id)
-			log.Errorf("%4d Last %d lines of stderr", id, lineCount)
-			logLines(strings.NewReader(stderrTail), id)
+			// If process exited before Wait or Stop, it might have ended prematurely.
+			LogUnsucessfulExecution(command, remote.Name(), taskHandle)
 		}
 	}()
 
-	return newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
-		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited, hasStopOrWaitInvoked), nil
+	return taskHandle, nil
 }
 
 // Final wait for the command to exit

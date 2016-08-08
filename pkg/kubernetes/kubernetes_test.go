@@ -82,6 +82,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		// Mock current service's executor failure.
 		s.mExecutor.On(
 			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail")).Once()
+		s.mExecutor.On("Name").Return("Local")
 
 		// Mock successful connection verifier for `iteration+1` iteration.
 		// It will succeed for current service.
@@ -96,7 +97,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		So(err, ShouldNotBeNil)
 		// Error should wrap the initial reason.
 		So(err.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
-		So(err.Error(), ShouldContainSubstring, "Execution of service failed")
+		So(err.Error(), ShouldContainSubstring, "execution of command")
 		So(err.Error(), ShouldContainSubstring, "executor-fail")
 	})
 
@@ -104,11 +105,15 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		// Mock current service's executor success.
 		s.mExecutor.On(
 			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[serviceIterator], nil).Once()
+		s.mExecutor.On("Name").Return("Local")
 
-		s.mTaskHandles[serviceIterator].On("StderrFile").Return(s.outputFile, nil).Once()
-		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
-		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
-		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("StderrFile").Return(s.outputFile, nil)
+		s.mTaskHandles[serviceIterator].On("StdoutFile").Return(s.outputFile, nil)
+		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator])
+		s.mTaskHandles[serviceIterator].On("Stop").Return(nil)
+		s.mTaskHandles[serviceIterator].On("Clean").Return(nil)
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil)
+		s.mTaskHandles[serviceIterator].On("ExitCode").Return(1, nil)
 
 		// Mock successful connection verifier for `iteration` iteration.
 		// It will fail for current service.
@@ -122,7 +127,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		So(k8sHandle, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
-		So(err.Error(), ShouldContainSubstring, "Failed to connect to service on instance.")
+		So(err.Error(), ShouldContainSubstring, "failed to connect to service")
 	})
 
 	Convey(fmt.Sprintf("When %q execute successfully", serviceNames[serviceIterator]), func() {
