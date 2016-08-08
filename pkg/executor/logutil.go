@@ -33,16 +33,43 @@ func LogSuccessfulExecution(whatWasExecuted string, whereWasExecuted string, han
 // LogUnsucessfulExecution is helper function for logging standard output and standard error
 // of task handles
 func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, handle TaskHandle) {
+	var stdoutTail, stderrTail string
+	var err error
+
 	lineCount := LogLinesCount.Value()
-	stdoutFileName, stderrFileName := readStdoutFilenames(handle, whatWasExecuted, whereWasExecuted)
-	stdoutTail, stderrTail := readTails(stdoutFileName, stderrFileName, lineCount)
+
+	stdoutFilePath, stdoutErr := handle.StdoutFile()
+	stderrFilePath, stderrErr := handle.StderrFile()
+
+	if stdoutErr == nil {
+		stdoutTail, err = readTail(stdoutFilePath, lineCount)
+		if err != nil {
+			stdoutErr = err
+		}
+	}
+	if stderrErr == nil {
+		stdoutTail, err = readTail(stderrFilePath, lineCount)
+		if err != nil {
+			stderrErr = err
+		}
+	}
 
 	id := rand.Intn(9999)
+
 	logrus.Errorf("%4d Command %q might have ended prematurely on %q on address %q", id, whatWasExecuted, whereWasExecuted, handle.Address())
-	logrus.Errorf("%4d Last %d lines of stdout", id, lineCount)
-	ErrorLogLines(strings.NewReader(stdoutTail), id)
-	logrus.Errorf("%4d Last %d lines of stderr", id, lineCount)
-	ErrorLogLines(strings.NewReader(stderrTail), id)
+	if stdoutErr == nil {
+		logrus.Errorf("%4d Last %d lines of stdout", id, lineCount)
+		ErrorLogLines(strings.NewReader(stdoutTail), id)
+	} else {
+		logrus.Errorf("%4d could not read stdout: %v", id, stdoutErr)
+	}
+
+	if stderrErr == nil {
+		logrus.Errorf("%4d Last %d lines of stderr", id, lineCount)
+		ErrorLogLines(strings.NewReader(stderrTail), id)
+	} else {
+		logrus.Errorf("%4d could not read stderr: %v", id, stderrErr)
+	}
 
 	exitCode, err := handle.ExitCode()
 	if err != nil {
@@ -66,41 +93,10 @@ func ErrorLogLines(r *strings.Reader, logID int) {
 	}
 }
 
-func readStdoutFilenames(handle TaskHandle, what string, where string) (stdoutFileName string, stderrFileName string) {
-	stdoutFile, err := handle.StdoutFile()
-	if err != nil {
-		stdoutFileName = fmt.Sprintf("Could not read stdout filename for command %s on %s: %v", what, where, err)
-	} else {
-		stdoutFileName = stdoutFile.Name()
-	}
-
-	stderrFile, err := handle.StderrFile()
-	if err != nil {
-		stdoutFileName = fmt.Sprintf("Could not read stderr filename for command %s on %s: %v", what, where, err)
-	} else {
-		stderrFileName = stderrFile.Name()
-	}
-
-	return stdoutFileName, stderrFileName
-}
-
-func readTails(stdoutFileName string, stderrFileName string, lineCount int) (stdoutTail string, stderrTail string) {
-	stdoutTail, err := readTail(stdoutFileName, lineCount)
-	if err != nil {
-		stdoutTail = fmt.Sprintf("%v", err)
-	}
-	stderrTail, err = readTail(stderrFileName, lineCount)
-	if err != nil {
-		stderrTail = fmt.Sprintf("%v", err)
-	}
-
-	return stdoutTail, stderrTail
-}
-
 func readTail(filePath string, lineCount int) (tail string, err error) {
 	_, err = os.Stat(filePath)
 	if err != nil {
-		return "", errors.New("file does not exists")
+		return "", errors.Errorf("file %q does not exists", filePath)
 	}
 
 	lineCountParam := fmt.Sprintf("-n %d", lineCount)
