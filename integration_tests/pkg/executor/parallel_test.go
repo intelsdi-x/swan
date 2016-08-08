@@ -54,6 +54,7 @@ func TestParallel(t *testing.T) {
 
 					So(err, ShouldNotBeNil)
 					So(cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), ShouldEqual, 0)
+
 				})
 			})
 		})
