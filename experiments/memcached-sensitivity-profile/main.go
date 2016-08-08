@@ -103,24 +103,30 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer hpIsolation.Clean()
 
 	var HPExecutor executor.Executor
+	var memcachedLauncher memcached.Memcached  // Initialize Memcached Launcher.
+	memcachedConfig := memcached.DefaultMemcachedConfig()
+
 	if isRunOnK8s.Value() {
 		var err error
 		// Kubernetes cluster setup and initialize k8s executor
-		HPExecutor = executor.NewLocal()
+		clusterExecutor := executor.NewLocal()
 		config := kubernetes.DefaultConfig()
-		k8sLauncher := kubernetes.New(HPExecutor, HPExecutor, config)
+		k8sLauncher := kubernetes.New(clusterExecutor, clusterExecutor, config)
 		taskHandle, err := k8sLauncher.Launch()
 		errutil.Check(err)
-		taskHandle.Wait(0)
+		if taskHandle.Wait(60) {
+			c, err := taskHandle.ExitCode()
+			errutil.Check(err)
+			logrus.Fatal("Can't prepare K8s cluster. Exit code: ", c)
 
+		}
+
+		HPExecutor, err = executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		errutil.Check(err)
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
-
-	// Initialize Memcached Launcher.
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(HPExecutor, memcachedConfig)
+	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig)
 
 	// Initialize Mutilate Load Generator.
 	mutilateConfig := mutilate.DefaultMutilateConfig()
