@@ -3,14 +3,15 @@ package executor
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
-	"os"
 )
 
 // LogLinesCount is the number of lines printed from stderr & stdout in case of task failure.
@@ -59,14 +60,14 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 	logrus.Errorf("%4d Command %q might have ended prematurely on %q on address %q", id, whatWasExecuted, whereWasExecuted, handle.Address())
 	if stdoutErr == nil {
 		logrus.Errorf("%4d Last %d lines of stdout", id, lineCount)
-		ErrorLogLines(strings.NewReader(stdoutTail), id)
+		errorLogLines(strings.NewReader(stdoutTail), id)
 	} else {
 		logrus.Errorf("%4d could not read stdout: %v", id, stdoutErr)
 	}
 
 	if stderrErr == nil {
 		logrus.Errorf("%4d Last %d lines of stderr", id, lineCount)
-		ErrorLogLines(strings.NewReader(stderrTail), id)
+		errorLogLines(strings.NewReader(stderrTail), id)
 	} else {
 		logrus.Errorf("%4d could not read stderr: %v", id, stderrErr)
 	}
@@ -82,7 +83,7 @@ func LogUnsucessfulExecution(whatWasExecuted string, whereWasExecuted string, ha
 // ErrorLogLines takes reader and some ID (eg. PID) and prints each line
 // from reader in a separate log.Errorf("%4d <line>", pid, line) .
 // Rationale behind this function is fact, that logrus does not support multi-line logs.
-func ErrorLogLines(r *strings.Reader, logID int) {
+func errorLogLines(r io.Reader, logID int) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		logrus.Errorf("%4d %s", logID, scanner.Text())
