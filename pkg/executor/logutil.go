@@ -95,11 +95,6 @@ func errorLogLines(r io.Reader, logID int) {
 }
 
 func readTail(filePath string, lineCount int) (tail string, err error) {
-	_, err = os.Stat(filePath)
-	if err != nil {
-		return "", errors.Errorf("file %q does not exists", filePath)
-	}
-
 	lineCountParam := fmt.Sprintf("-n %d", lineCount)
 	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
 
