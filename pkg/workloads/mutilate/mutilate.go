@@ -242,7 +242,7 @@ func (m mutilate) Populate() (err error) {
 }
 
 func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSLI int, err error) {
-	results, err := parse.OpenedFile(stdoutFile)
+	results, err := parse.Parse(stdoutFile)
 	if err != nil {
 		return qps, achievedSLI, errors.Wrap(err, "could not retrieve QPS from Mutilate Tune output")
 	}
