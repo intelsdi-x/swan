@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
@@ -174,7 +175,8 @@ type kubernetesTaskHandle struct {
 	stopped  chan struct{}
 	started  chan struct{}
 	stdout   *os.File
-	stderr   *os.File
+	stderr   *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir   string
 	exitCode *int
 }
 
@@ -182,13 +184,13 @@ func (th *kubernetesTaskHandle) watch() error {
 	selectorRaw := fmt.Sprintf("name=%s", th.pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
-		return errors.Wrapf(err, "cannot create an selector")
+		return errors.Wrapf(err, "cannot create selector %q", selector)
 	}
 
 	// Prepare events watcher.
 	watcher, err := th.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create watcher over selector")
+		return errors.Wrapf(err, "cannot create watcher over selector %q", selector)
 	}
 
 	th.started = make(chan struct{})
@@ -248,22 +250,27 @@ func (th *kubernetesTaskHandle) watch() error {
 			case watch.Added, watch.Modified:
 				switch pod.Status.Phase {
 				case api.PodPending:
-					// Noop for now.
+				// Noop for now.
 				case api.PodRunning:
 					started(pod)
 				case api.PodFailed, api.PodSucceeded:
 					terminated(pod)
 					return
+				case api.PodUnknown:
+					log.Warnf("Pod %q with command %q is in unknown phase. "+
+						"Probably state of the pod could not be obtained, "+
+						"typically due to an error in communicating with the host of the pod", pod.Name, th.command)
 				default:
-					log.Debugf("unknown phase '%d' for pod %q", pod.Status.Phase, pod.Name)
+					log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
 				}
-
 			case watch.Deleted:
 				// Pod phase will still be 'running', so we disregard the phase at this point.
 				terminated(pod)
 				return
+			case watch.Error:
+				log.Errorf("Kubernetes pod error event: %v", event.Object)
 			default:
-				log.Debugf("unknown event type")
+				log.Warnf("Unhandled event type: %v", event.Type)
 			}
 		}
 	}()
@@ -294,6 +301,9 @@ func (th *kubernetesTaskHandle) setupLogs() error {
 	// NOTE: As logs are unified in one stream in Kubernetes, we only write it to stdout.
 	// Therefore, stderr will always be empty.
 	th.stderr = stderrFile
+
+	outputDir, _ := path.Split(th.stdout.Name())
+	th.logdir = outputDir
 
 	go func() {
 		_, err := io.Copy(stdoutFile, logStream)
@@ -382,20 +392,26 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 
 // Clean closes file descriptors but leaves stdout and stderr files intact.
 func (th *kubernetesTaskHandle) Clean() error {
+	var errs errcollection.ErrorCollection
 	for _, f := range []*os.File{th.stderr, th.stdout} {
-		if err := f.Close(); err != nil {
-			return errors.Wrapf(err, "close on file %q failed", f.Name())
+		if f != nil {
+			if err := f.Close(); err != nil {
+				errs.Add(errors.Wrapf(err, "close of file %q failed", f.Name()))
+			}
 		}
 	}
-	return nil
+
+	return errs.GetErrIfAny()
 }
 
 // EraseOutput deletes the stdout and stderr files.
 func (th *kubernetesTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(th.stderr.Name())
-	if err := os.RemoveAll(outputDir); err != nil {
-		return errors.Wrapf(err, "cannot remove directory %q", outputDir)
+	if _, err := os.Stat(th.logdir); os.IsExist(err) {
+		if err := os.RemoveAll(th.logdir); err != nil {
+			return errors.Wrapf(err, "cannot remove directory %q", th.logdir)
+		}
 	}
+
 	return nil
 }
 

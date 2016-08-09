@@ -1,4 +1,4 @@
-package mutilatesession
+package kubesnap
 
 import (
 	"time"
@@ -11,7 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
-// DefaultConfig returns default configuration for Mutilate Collector session.
+// DefaultConfig returns default configuration for Kubesnap Session Launcher.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", 2)
 	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
@@ -23,21 +23,20 @@ func DefaultConfig() Config {
 	}
 }
 
-// Config contains configuration for Mutilate Collector session.
+// Config contains configuration for Kubesnap Session Launcher.
 type Config struct {
 	SnapdAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
 	Interval     time.Duration
 }
 
-// SessionLauncher configures & launches snap workflow for gathering
-// SLIs from Mutilate.
+// SessionLauncher configures & launches snap workflow for gathering Kubernetes Docker containers metrics.
 type SessionLauncher struct {
 	session    *snap.Session
 	snapClient *client.Client
 }
 
-// NewSessionLauncher constructs MutilateSnapSessionLauncher.
+// NewSessionLauncher constructs Kubesnap Session Launcher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapdAddress, "v1", true)
 	if err != nil {
@@ -51,27 +50,13 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	err = loader.Load(snap.MutilateCollector, snap.CassandraPublisher)
+	err = loader.Load(snap.KubesnapDockerCollector, snap.CassandraPublisher)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession(
-			[]string{
-				"/intel/swan/mutilate/*/avg",
-				"/intel/swan/mutilate/*/std",
-				"/intel/swan/mutilate/*/min",
-				"/intel/swan/mutilate/*/percentile/5th",
-				"/intel/swan/mutilate/*/percentile/10th",
-				"/intel/swan/mutilate/*/percentile/90th",
-				"/intel/swan/mutilate/*/percentile/95th",
-				"/intel/swan/mutilate/*/percentile/99th",
-				"/intel/swan/mutilate/*/qps",
-				//TODO: Fetch the 99_999th value from MUTILATE task itself!
-				//It shall be redesigned ASAP
-				"/intel/swan/mutilate/*/percentile/*/custom",
-			},
+		session: snap.NewSession([]string{"/intel/docker/*/cgroups/*"},
 			config.Interval,
 			snapClient,
 			config.Publisher,
@@ -85,23 +70,8 @@ func (s *SessionLauncher) LaunchSession(
 	task executor.TaskInfo,
 	phaseSession phase.Session) (snap.SessionHandle, error) {
 
-	// Obtain Mutilate output file.
-	stdoutFile, err := task.StdoutFile()
-	if err != nil {
-		return nil, err
-	}
-
-	// Configuring Mutilate collector.
-	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
-		snap.CollectNodeConfigItem{
-			Ns:    "/intel/swan/mutilate",
-			Key:   "stdout_file",
-			Value: stdoutFile.Name(),
-		},
-	}
-
 	// Start session.
-	err = s.session.Start(phaseSession)
+	err := s.session.Start(phaseSession)
 	if err != nil {
 		return nil, err
 	}
