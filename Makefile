@@ -64,11 +64,12 @@ build_jupyter:
 	(cd scripts/jupyter; py.test)
 
 build_workloads:
+	# Some workloads are Git Submodules
+	git submodule update --init --recursive
+
 	(cd workloads/data_caching/memcached && ./build.sh)
 	(cd workloads/low-level-aggressors && make -j4)
 
-	# Some workloads are Git Submodules
-	git submodule update --init --recursive
 
 	# Prepare & Build Caffe workload.
 	(cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/)
