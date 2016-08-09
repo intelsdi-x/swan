@@ -65,17 +65,7 @@ func loadSnapPlugins(snapdAddress string) (err error) {
 		return err
 	}
 
-	err = pluginLoader.Load(snap.CassandraPublisher)
-	if err != nil {
-		return err
-	}
-
-	err = pluginLoader.Load(snap.SessionCollector)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return pluginLoader.Load(snap.CassandraPublisher, snap.SessionCollector)
 }
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
