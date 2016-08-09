@@ -11,6 +11,7 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
+	"syscall"
 )
 
 func TestParallel(t *testing.T) {
@@ -51,7 +52,8 @@ func TestParallel(t *testing.T) {
 					cmd = exec.Command("pgrep", "-f", cmdStr)
 					err = cmd.Run()
 
-					So(err, ShouldBeNil)
+					So(err, ShouldNotBeNil)
+					So(cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), ShouldEqual, 1)
 				})
 			})
 		})
