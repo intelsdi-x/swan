@@ -53,7 +53,9 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, DefaultConfig()).(kubernetes)
+			config, err := DefaultConfig()
+			So(err, ShouldBeNil)
+			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
 
 			s.k8sLauncher = &k8sLauncher

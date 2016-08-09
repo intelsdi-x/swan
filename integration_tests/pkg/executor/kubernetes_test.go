@@ -25,7 +25,8 @@ func TestKubernetesExecutor(t *testing.T) {
 		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 		// assign a collection of ports to the services. Eventhough previous kubernetes processes
 		// have been shut down, ports may be in CLOSE_WAIT state.
-		config := kubernetes.DefaultConfig()
+		config, err := kubernetes.DefaultConfig()
+		So(err, ShouldBeNil)
 		ports := testhelpers.RandomPorts(36000, 40000, 5)
 		So(len(ports), ShouldEqual, 5)
 		config.KubeAPIPort = ports[0]
@@ -33,11 +34,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		config.KubeControllerPort = ports[2]
 		config.KubeSchedulerPort = ports[3]
 		config.KubeProxyPort = ports[4]
-
-		// Create unique etcd prefix to avoid interference with any parallel tests which use same
-		// etcd cluster.
-		etcdPrefix, err := uuid.NewV4()
-		config.ETCDPrefix = path.Join("/swan/", etcdPrefix.String())
 
 		k8sLauncher := kubernetes.New(local, local, config)
 		k8sHandle, err := k8sLauncher.Launch()

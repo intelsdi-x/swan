@@ -28,7 +28,9 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 		local := executor.NewLocal()
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
-			k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
+			config, err := kubernetes.DefaultConfig()
+			So(err, ShouldBeNil)
+			k8sLauncher := kubernetes.New(local, local, config)
 			So(k8sLauncher, ShouldNotBeNil)
 
 			k8sHandle, err := k8sLauncher.Launch()

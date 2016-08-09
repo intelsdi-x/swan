@@ -52,8 +52,7 @@ func TestParallel(t *testing.T) {
 					cmd = exec.Command("pgrep", "-f", cmdStr)
 					err = cmd.Run()
 
-					So(err, ShouldNotBeNil)
-					So(cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), ShouldEqual, 0)
+					So(err, ShouldBeNil)
 				})
 			})
 		})
