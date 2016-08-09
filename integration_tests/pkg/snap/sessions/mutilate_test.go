@@ -21,9 +21,7 @@ import (
 
 func soMetricRowIsValid(
 	expectedMetrics map[string]string,
-	namespace string,
-	tags string,
-	value string) {
+	namespace, tags, value string) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")

@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
@@ -385,20 +386,21 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 
 // Clean closes file descriptors but leaves stdout and stderr files intact.
 func (th *kubernetesTaskHandle) Clean() error {
+	var errs errcollection.ErrorCollection
 	for _, f := range []*os.File{th.stderr, th.stdout} {
 		if f != nil {
 			if err := f.Close(); err != nil {
-				return errors.Wrapf(err, "close of file %q failed", f.Name())
+				errs.Add(errors.Wrapf(err, "close of file %q failed", f.Name()))
 			}
 		}
 	}
-	return nil
+
+	return errs.GetErrIfAny()
 }
 
 // EraseOutput deletes the stdout and stderr files.
 func (th *kubernetesTaskHandle) EraseOutput() error {
-	_, err := os.Stat(th.logdir)
-	if err == nil {
+	if _, err := os.Stat(th.logdir); os.IsExist(err) {
 		if err := os.RemoveAll(th.logdir); err != nil {
 			return errors.Wrapf(err, "cannot remove directory %q", th.logdir)
 		}

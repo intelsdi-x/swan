@@ -21,7 +21,7 @@ import (
 )
 
 func TestSnapKubesnapSession(t *testing.T) {
-	Convey("Preparing Snap enviroment", t, func() {
+	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
 		snapd := testhelpers.NewSnapd()
 		err := snapd.Start()
 		So(err, ShouldBeNil)
@@ -42,17 +42,16 @@ func TestSnapKubesnapSession(t *testing.T) {
 		err = loader.Load(snap.KubesnapDockerCollector, snap.SessionPublisher)
 		So(err, ShouldBeNil)
 		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
-
-		tmpFile, err := ioutil.TempFile("", "session_test")
 		So(err, ShouldBeNil)
-		tmpFileName := tmpFile.Name()
-		defer os.Remove(tmpFileName)
-		tmpFile.Close()
 
-		resultFile := tmpFile.Name()
+		resultsFile, err := ioutil.TempFile("", "session_test")
+		So(err, ShouldBeNil)
+		resultsFileName := resultsFile.Name()
+		defer os.Remove(resultsFileName)
+		resultsFile.Close()
+
 		publisher := wmap.NewPublishNode(publisherPluginName, snap.PluginAnyVersion)
-		So(publisher, ShouldNotBeNil)
-		publisher.AddConfigItem("file", resultFile)
+		publisher.AddConfigItem("file", resultsFileName)
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
@@ -100,9 +99,9 @@ func TestSnapKubesnapSession(t *testing.T) {
 			kubesnapHandle.Stop()
 
 			// Check results here.
-			content, err := ioutil.ReadFile(tmpFileName)
+			content, err := ioutil.ReadFile(resultsFileName)
 			So(err, ShouldBeNil)
-			So(string(content), ShouldNotEqual, "")
+			So(string(content), ShouldNotBeEmpty)
 
 			Convey("There should be CPU results of docker containers on Kubernetes", func() {
 				cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
