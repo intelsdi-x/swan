@@ -83,7 +83,6 @@ EOF
     yum clean all
     echo Installing packages
     yum install -y \
-      cppzmq-devel \
       docker-engine \
       etcd \
       gcc-g++ \
