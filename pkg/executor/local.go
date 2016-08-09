@@ -1,11 +1,9 @@
 package executor
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"syscall"
 	"time"
 
@@ -29,6 +27,11 @@ func NewLocal() Local {
 // NewLocalIsolated returns a Local instance with some isolators set.
 func NewLocalIsolated(decorator isolation.Decorator) Local {
 	return Local{commandDecorators: decorator}
+}
+
+// Name returns user-friendly name of executor.
+func (l Local) Name() string {
+	return "Local Executor"
 }
 
 // Execute runs the command given as input.
@@ -63,6 +66,8 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	hasProcessExited := make(chan struct{})
 	hasStopOrWaitInvoked := make(chan struct{})
 
+	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked)
+
 	// Wait for local task in go routine.
 	go func() {
 		defer close(hasProcessExited)
@@ -85,39 +90,18 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		stdoutFile.Sync()
 		stderrFile.Sync()
 
-		lineCount := 3
-		stdoutTail, err := readTail(stdoutFile.Name(), lineCount)
-		if err != nil {
-			stdoutTail = fmt.Sprintf("%v", err)
-		}
-		stderrTail, err := readTail(stderrFile.Name(), lineCount)
-		if err != nil {
-			stderrTail = fmt.Sprintf("%v", err)
-		}
-
-		pid := cmd.Process.Pid
 		select {
-		// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
 		case <-hasStopOrWaitInvoked:
-			// logrus escapes newline, making this log unreadable otherwise
-			log.Debugf("%4d Process %q ended\n", pid, strings.Join(cmd.Args, " "))
-			log.Debugf("%4d Stdout stored in %q", pid, stdoutFile.Name())
-			log.Debugf("%4d Stderr stored in %q", pid, stderrFile.Name())
-			log.Debugf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
+			// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
+			LogSuccessfulExecution(command, l.Name(), taskHandle)
+
 		default:
 			// If process exited before Wait or Stop, it might have ended prematurely.
-			log.Errorf("%4d Process %q might have ended prematurely", pid, strings.Join(cmd.Args, " "))
-			log.Errorf("%4d Stdout stored in %q", pid, stdoutFile.Name())
-			log.Errorf("%4d Stderr stored in %q", pid, stderrFile.Name())
-			log.Errorf("%4d Exit code: %d", pid, (cmd.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus())
-			log.Errorf("%4d Last %d lines of stdout:", pid, lineCount)
-			logLines(strings.NewReader(stdoutTail), pid)
-			log.Errorf("%4d Last %d lines of stderr:", pid, lineCount)
-			logLines(strings.NewReader(stderrTail), pid)
+			LogUnsucessfulExecution(command, l.Name(), taskHandle)
 		}
 	}()
 
-	return newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked), nil
+	return taskHandle, nil
 }
 
 // localTaskHandle implements TaskHandle interface.
