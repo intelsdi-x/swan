@@ -65,10 +65,12 @@ $ vagrant ssh
 ## Troubleshooting
 - Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
   works fine with this Vagrant version
-- If you can't run `make deps` because of unautorized error, make sure you don't
+- If you can't run `make deps` because of unauthorized error, make sure you don't
   have in gitconfig:
   `[url "https://"]
            insteadOf = git://`
+  Warning: removing this will disable ssh-agent authorization and in effect private repositories like cassandra plugin will become inaccessible.
+  Note: (if you using proxying) make sure that your proxy can handle ssh connections.
 - The integration tests require cassandra to be running. In this
   environment, systemd is responsible for keeping it alive. You can see
   how it's doing by running `systemctl status cassandra` and
