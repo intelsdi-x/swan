@@ -105,6 +105,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var HPExecutor executor.Executor
 	var memcachedLauncher memcached.Memcached  // Initialize Memcached Launcher.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
+	mutilateConfig := mutilate.DefaultMutilateConfig() // Initialize Mutilate Load Generator.
 
 	if isRunOnK8s.Value() {
 		var err error
@@ -123,13 +124,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 		HPExecutor, err = executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		errutil.Check(err)
+
+		mutilateConfig.PathToBinary =
+			"/opt/gopath/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/mutilate/mutilate"
+		memcachedConfig.PathToBinary = "/opt/gopath/data_caching/memcached/memcached-1.4.25/build/memcached"
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
 	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig)
 
-	// Initialize Mutilate Load Generator.
-	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
 	mutilateConfig.LatencyPercentile = percentileFlag.Value()
