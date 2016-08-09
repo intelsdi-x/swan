@@ -256,15 +256,21 @@ func (th *kubernetesTaskHandle) watch() error {
 				case api.PodFailed, api.PodSucceeded:
 					terminated(pod)
 					return
+				case api.PodUnknown:
+					log.Warnf("Pod %q with command %q is in unknown phase. "+
+						"Probably state of the pod could not be obtained, "+
+						"typically due to an error in communicating with the host of the pod", pod.Name, th.command)
 				default:
-					log.Warnf("unknown pod phase %q for pod %q", pod.Status.Phase, pod.Name)
+					log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
 				}
 			case watch.Deleted:
 				// Pod phase will still be 'running', so we disregard the phase at this point.
 				terminated(pod)
 				return
+			case watch.Error:
+				log.Errorf("error event: %v", event.Object)
 			default:
-				log.Warnf("kubernetes executor: unknown event type: %v", event.Type)
+				log.Warnf("Unhandled event type: %v", event.Type)
 			}
 		}
 	}()
