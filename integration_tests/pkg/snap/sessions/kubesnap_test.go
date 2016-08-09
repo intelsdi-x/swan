@@ -16,6 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
+	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
