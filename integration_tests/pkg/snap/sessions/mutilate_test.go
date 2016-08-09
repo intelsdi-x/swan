@@ -84,6 +84,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				tmpFile.Close()
 
 				metricsFile = tmpFile.Name()
+				defer os.Remove(metricsFile)
 
 				loader.LoadPlugins(snap.SessionPublisher)
 				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)

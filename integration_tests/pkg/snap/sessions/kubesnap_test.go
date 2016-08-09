@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -22,10 +21,8 @@ import (
 )
 
 func TestSnapKubesnapSession(t *testing.T) {
-	var snapd *testhelpers.Snapd
-
-	Convey("While having Snapd running", t, func() {
-		snapd = testhelpers.NewSnapd()
+	Convey("Preparing Snap enviroment", t, func() {
+		snapd := testhelpers.NewSnapd()
 		err := snapd.Start()
 		So(err, ShouldBeNil)
 
@@ -49,8 +46,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 		tmpFile, err := ioutil.TempFile("", "session_test")
 		So(err, ShouldBeNil)
 		tmpFileName := tmpFile.Name()
-		tmpFile.Close()
 		defer os.Remove(tmpFileName)
+		tmpFile.Close()
 
 		resultFile := tmpFile.Name()
 		publisher := wmap.NewPublishNode(publisherPluginName, snap.PluginAnyVersion)
@@ -76,54 +73,54 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer podHandle.Clean()
 		defer podHandle.Stop()
 
-		// Run Prepare Kubesnap Session.
+		// Prepare Kubesnap Session.
 		experimentID, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 		phaseID, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 
-		kubesnapConfig := kubesnap.DefaultConfig()
-		kubesnapConfig.SnapdAddress = snapdAddress
-		kubesnapConfig.Publisher = publisher
-		kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
-		So(err, ShouldBeNil)
-		kubesnapHandle, err := kubesnapLauncher.LaunchSession(
-			nil,
-			phase.Session{
-				ExperimentID: experimentID.String(),
-				PhaseID:      phaseID.String(),
-				RepetitionID: 1,
-			},
-		)
-		So(err, ShouldBeNil)
-		So(kubesnapHandle.IsRunning(), ShouldBeTrue)
-		kubesnapHandle.Wait()
-		time.Sleep(120 * time.Second) // One hit does not always yield results.
-		kubesnapHandle.Stop()
+		Convey("Launching Kubesnap Session", func() {
+			kubesnapConfig := kubesnap.DefaultConfig()
+			kubesnapConfig.SnapdAddress = snapdAddress
+			kubesnapConfig.Publisher = publisher
+			kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
+			So(err, ShouldBeNil)
+			kubesnapHandle, err := kubesnapLauncher.LaunchSession(
+				nil,
+				phase.Session{
+					ExperimentID: experimentID.String(),
+					PhaseID:      phaseID.String(),
+					RepetitionID: 1,
+				},
+			)
+			So(err, ShouldBeNil)
+			So(kubesnapHandle.IsRunning(), ShouldBeTrue)
+			kubesnapHandle.Wait()
+			time.Sleep(5 * time.Second) // One hit does not always yield results.
+			kubesnapHandle.Stop()
 
-		// Check results here.
-		content, err := ioutil.ReadFile(tmpFileName)
-		So(err, ShouldBeNil)
-		logrus.Errorf("Content: %q\n", string(content))
-		logrus.Errorf("Filename: %q\n", tmpFileName)
-		So(string(content), ShouldNotEqual, "")
+			// Check results here.
+			content, err := ioutil.ReadFile(tmpFileName)
+			So(err, ShouldBeNil)
+			So(string(content), ShouldNotEqual, "")
 
-		// Check CPU total usage for container.
-		cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
-		cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
-		logrus.Errorf("cpuMatches: %+v", cpuStatsMatches)
-		So(len(cpuStatsMatches), ShouldBeGreaterThanOrEqualTo, 2)
-		cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
-		So(err, ShouldBeNil)
-		So(cpuUsage, ShouldBeGreaterThan, 0)
+			Convey("There should be CPU results of docker containers on Kubernetes", func() {
+				cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
+				cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
+				So(len(cpuStatsMatches), ShouldBeGreaterThanOrEqualTo, 2)
+				cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
+				So(err, ShouldBeNil)
+				So(cpuUsage, ShouldBeGreaterThan, 0)
 
-		// Check Memory usage for container.
-		memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\s+\S+\s+(\d+)`)
-		memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
-		logrus.Errorf("memoryUsageMatches: %+v", cpuStatsMatches)
-		So(len(memoryUsageMatches), ShouldBeGreaterThanOrEqualTo, 2)
-		memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])
-		So(err, ShouldBeNil)
-		So(memoryUsage, ShouldBeGreaterThan, 0)
+				Convey("There should be Memory results of docker containers on Kubernetes", func() {
+					memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\s+\S+\s+(\d+)`)
+					memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
+					So(len(memoryUsageMatches), ShouldBeGreaterThanOrEqualTo, 2)
+					memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])
+					So(err, ShouldBeNil)
+					So(memoryUsage, ShouldBeGreaterThan, 0)
+				})
+			})
+		})
 	})
 }

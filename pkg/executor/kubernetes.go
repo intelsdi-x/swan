@@ -140,7 +140,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
 	select {
 	case <-taskHandle.started:
-	// Pod succesfully started.
+		// Pod succesfully started.
 	case <-taskHandle.stopped:
 		// Look into exit state to determine if start up failed or completed immediately.
 		// TODO(skonefal): We don't have stdout & stderr when pod fails.
@@ -183,13 +183,13 @@ func (th *kubernetesTaskHandle) watch() error {
 	selectorRaw := fmt.Sprintf("name=%s", th.pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
-		return errors.Wrapf(err, "cannot create an selector")
+		return errors.Wrapf(err, "cannot create selector %q", selector)
 	}
 
 	// Prepare events watcher.
 	watcher, err := th.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create watcher over selector")
+		return errors.Wrapf(err, "cannot create watcher over selector %q", selector)
 	}
 
 	th.started = make(chan struct{})
@@ -256,15 +256,14 @@ func (th *kubernetesTaskHandle) watch() error {
 					terminated(pod)
 					return
 				default:
-					log.Debugf("unknown phase '%d' for pod %q", pod.Status.Phase, pod.Name)
+					log.Warnf("unknown pod phase %q for pod %q", pod.Status.Phase, pod.Name)
 				}
-
 			case watch.Deleted:
 				// Pod phase will still be 'running', so we disregard the phase at this point.
 				terminated(pod)
 				return
 			default:
-				log.Debugf("unknown event type")
+				log.Warnf("kubernetes executor: unknown event type: %v", event.Type)
 			}
 		}
 	}()
