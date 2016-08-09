@@ -268,7 +268,7 @@ func (th *kubernetesTaskHandle) watch() error {
 				terminated(pod)
 				return
 			case watch.Error:
-				log.Errorf("error event: %v", event.Object)
+				log.Errorf("Kubernetes pod error event: %v", event.Object)
 			default:
 				log.Warnf("Unhandled event type: %v", event.Type)
 			}
