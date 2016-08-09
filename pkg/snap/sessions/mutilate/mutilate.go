@@ -51,7 +51,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	err = loader.LoadPlugins(snap.MutilateCollector, snap.CassandraPublisher)
+	err = loader.Load(snap.MutilateCollector, snap.CassandraPublisher)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
-	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -39,7 +38,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
-		err = loader.LoadPlugins(snap.KubesnapDockerCollector, snap.SessionPublisher)
+		err = loader.Load(snap.KubesnapDockerCollector, snap.SessionPublisher)
 		So(err, ShouldBeNil)
 		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 

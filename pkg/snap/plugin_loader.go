@@ -78,10 +78,10 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 
 // LoadPlugins loads supplied plugin names from plugin path and returns slice of
 // encountered errors.
-func (l PluginLoader) LoadPlugins(plugins ...string) error {
+func (l PluginLoader) Load(plugins ...string) error {
 	var errors errcollection.ErrorCollection
 	for _, plugin := range plugins {
-		err := l.loadPlugin(plugin)
+		err := l.load(plugin)
 		if err != nil {
 			errors.Add(err)
 		}
@@ -90,7 +90,7 @@ func (l PluginLoader) LoadPlugins(plugins ...string) error {
 }
 
 // loadPlugin loads selected plugin from plugin path.
-func (l PluginLoader) loadPlugin(plugin string) error {
+func (l PluginLoader) load(plugin string) error {
 	pluginName, pluginType, err := GetPluginNameAndType(plugin)
 	if err != nil {
 		return err

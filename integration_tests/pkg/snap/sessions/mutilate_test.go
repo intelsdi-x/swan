@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
+
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -86,7 +85,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				metricsFile = tmpFile.Name()
 				defer os.Remove(metricsFile)
 
-				loader.LoadPlugins(snap.SessionPublisher)
+				loader.Load(snap.SessionPublisher)
 				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 				So(err, ShouldBeNil)
 

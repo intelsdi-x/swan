@@ -50,7 +50,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	err = loader.LoadPlugins(snap.KubesnapDockerCollector, snap.CassandraPublisher)
+	err = loader.Load(snap.KubesnapDockerCollector, snap.CassandraPublisher)
 	if err != nil {
 		return nil, err
 	}

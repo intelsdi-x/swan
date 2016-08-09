@@ -8,7 +8,6 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
@@ -65,7 +64,7 @@ func loadSnapPlugins(snapdAddress string) (err error) {
 		return err
 	}
 
-	return pluginLoader.LoadPlugins(snap.CassandraPublisher, snap.SessionCollector)
+	return pluginLoader.Load(snap.CassandraPublisher, snap.SessionCollector)
 }
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
