@@ -131,6 +131,7 @@ func (f AggressorFactory) getSpecializedExecutor(isRunOnK8s bool, decorators iso
 	if isRunOnK8s {
 		config := executor.DefaultKubernetesConfig()
 		config.Decorators = decorators
+		config.PodName = "swan-aggr"
 		return executor.NewKubernetes(config)
 	}
 
