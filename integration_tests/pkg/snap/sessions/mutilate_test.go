@@ -2,14 +2,15 @@ package sessions
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
@@ -18,8 +19,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
-	tags string, value string) {
+func soMetricRowIsValid(
+	expectedMetrics map[string]string,
+	namespace, tags, value string) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
@@ -32,7 +34,15 @@ func soMetricRowIsValid(expectedMetrics map[string]string, namespace string,
 	namespaceSplitted := strings.Split(namespace, "/")
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
 	So(ok, ShouldBeTrue)
-	So(expectedValue, ShouldEqual, value)
+
+	// Reduce string-encoded-float to common precision for comparison.
+	expectedValueFloat, err := strconv.ParseFloat(expectedValue, 64)
+	So(err, ShouldBeNil)
+	valueFloat, err := strconv.ParseFloat(value, 64)
+	So(err, ShouldBeNil)
+
+	epsilon := 0.00001
+	So(valueFloat, ShouldAlmostEqual, expectedValueFloat, epsilon)
 }
 
 func TestSnapMutilateSession(t *testing.T) {
@@ -72,6 +82,7 @@ func TestSnapMutilateSession(t *testing.T) {
 				tmpFile.Close()
 
 				metricsFile = tmpFile.Name()
+				defer os.Remove(metricsFile)
 
 				loader.Load(snap.SessionPublisher)
 				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)

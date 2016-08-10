@@ -31,6 +31,8 @@ plugins:
 	(go get github.com/intelsdi-x/snap-plugin-publisher-cassandra)
 	(go get github.com/intelsdi-x/snap-plugin-processor-tag)
 	(go get github.com/intelsdi-x/kubesnap-plugin-collector-docker)
+	(cd $(GOPATH)/src/github.com/intelsdi-x/kubesnap-plugin-collector-docker && patch -p1 --forward -s --merge < ../swan/misc/kubesnap_docker_collector.patch)
+	(go install github.com/intelsdi-x/kubesnap-plugin-collector-docker)
 	(go install ./misc/snap-plugin-collector-session-test)
 	(go install ./misc/snap-plugin-publisher-session-test)
 	(go install ./misc/snap-plugin-collector-mutilate)
@@ -64,11 +66,12 @@ build_jupyter:
 	(cd scripts/jupyter; py.test)
 
 build_workloads:
+	# Some workloads are Git Submodules
+	git submodule update --init --recursive
+
 	(cd workloads/data_caching/memcached && ./build.sh)
 	(cd workloads/low-level-aggressors && make -j4)
 
-	# Some workloads are Git Submodules
-	git submodule update --init --recursive
 
 	# Prepare & Build Caffe workload.
 	(cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/)

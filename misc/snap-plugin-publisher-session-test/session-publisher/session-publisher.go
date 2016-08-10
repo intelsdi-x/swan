@@ -56,7 +56,7 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 		// Make row: Namespace\t Tags\t Values\n.
 		w.WriteString(
 			fmt.Sprintf(
-				"%s\t%s\t%0.5f\n",
+				"%s\t%s\t%v\n",
 				"/"+strings.Join(m.Namespace().Strings(), "/"),
 				strings.Join(tags, ","),
 				m.Data(),
