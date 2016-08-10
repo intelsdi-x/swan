@@ -18,7 +18,6 @@ import (
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	// NOTE: skipping test as it is currently flaky.
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
