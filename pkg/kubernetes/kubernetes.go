@@ -35,6 +35,7 @@ type Config struct {
 	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
 	ETCDServers        string
+	ETCDPrefix         string
 	LogLevel           int // 0 is debug.
 	KubeAPIPort        int
 	KubeControllerPort int
@@ -61,6 +62,7 @@ func DefaultConfig() Config {
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
 		ETCDServers:          "http://127.0.0.1:2379",
+		ETCDPrefix:           "/registry",
 		LogLevel:             logLevelFlag.Value(),
 		KubeAPIPort:          8080,
 		KubeletPort:          10250,
