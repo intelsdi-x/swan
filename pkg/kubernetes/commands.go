@@ -11,7 +11,11 @@ func getKubeAPIServerCommand(config Config) string {
 	return fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToKubeAPIServer),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
+<<<<<<< 914cac0cb61bd7219cf5bfe2818d84ea1b720ecd
 		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
+=======
+		fmt.Sprintf(" --allow-privileged=true"), // Privileged containers are allowed.
+>>>>>>> SCE-455: privileged containers are allowed in kubelet and api-services
 		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
 		fmt.Sprintf(" --etcd-prefix=%s", config.ETCDPrefix),
 		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
@@ -50,7 +54,11 @@ func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) str
 func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToKubelet),
+<<<<<<< 914cac0cb61bd7219cf5bfe2818d84ea1b720ecd
 		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
+=======
+		fmt.Sprintf(" --allow-privileged=true"), // Privileged containers are allowed.
+>>>>>>> SCE-455: privileged containers are allowed in kubelet and api-services
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --port=%d", config.KubeletPort),
