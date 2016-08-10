@@ -247,7 +247,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 	return eraseOutput(taskHandle.stdoutFile)
 }
 
-func eraseOutput(stdFile *io.File) error {
+func eraseOutput(stdFile *os.File) error {
 	outputDir, _ := path.Split(stdFile.Name())
 
 	// Remove temporary directory created for stdout and stderr.
