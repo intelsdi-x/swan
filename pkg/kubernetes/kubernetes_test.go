@@ -3,14 +3,15 @@ package kubernetes
 import (
 	"errors"
 	"fmt"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 var serviceNames = []string{
@@ -64,6 +65,22 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 			for _, mTaskHandle := range s.mTaskHandles {
 				So(mTaskHandle.AssertExpectations(s.T()), ShouldBeTrue)
 			}
+		})
+	})
+
+	Convey("Check configuration privileged flag", s.T(), func() {
+		config := DefaultConfig()
+		handle := &mocks.TaskHandle{}
+		handle.On("Address").Return("127.0.0.1")
+		Convey("default disallow run privileged containers", func() {
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=false")
+			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=false")
+
+		})
+		Convey("but can be changed to allow.", func() {
+			config.AllowPrivileged = true
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
+			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
 		})
 	})
 }
