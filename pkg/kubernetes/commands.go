@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"fmt"
+
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
@@ -10,7 +11,7 @@ func getKubeAPIServerCommand(config Config) string {
 	return fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToKubeAPIServer),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --allow-privileged=false"), // Privileged containers are not allowed.
+		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
 		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
 		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
 		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
@@ -48,7 +49,7 @@ func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) str
 func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToKubelet),
-		fmt.Sprintf(" --allow-privileged=false"), // Privileged containers are not allowed.
+		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --port=%d", config.KubeletPort),
