@@ -41,9 +41,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 	// Start memcached and make sure it is a new one.
 	memcachedLauncher := memcached.New(executor.NewLocal(), memcachedConfig)
 	mcHandle, err := memcachedLauncher.Launch()
-	if err != nil {
-		t.Fatal("cannot start memcached:" + err.Error())
-	}
 
 	// Clean after memcached ...
 	defer func() {
@@ -61,6 +58,10 @@ func TestMutilateWithExecutor(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+
+	if err != nil {
+		t.Fatal("cannot start memcached:" + err.Error())
+	}
 
 	// Give memcached chance to start and possibly die.
 	if stopped := mcHandle.Wait(1 * time.Second); stopped {
