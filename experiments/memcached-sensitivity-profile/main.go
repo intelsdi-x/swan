@@ -125,9 +125,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		HPExecutor, err = executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		errutil.Check(err)
 
-		mutilateConfig.PathToBinary =
-			"/opt/gopath/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/mutilate/mutilate"
-		memcachedConfig.PathToBinary = "/opt/gopath/data_caching/memcached/memcached-1.4.25/build/memcached"
+		// :TODO (woodbor): Change later to get the same gopath in a docker like in a vagrant
+		memcachedConfig.PathToBinary =
+			"/opt/gopath/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
