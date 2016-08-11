@@ -71,6 +71,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("When test connection to memcached fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(nil)
 						mockedTaskHandle.On("Clean").Return(nil)
+						mockedTaskHandle.On("EraseOutput").Return(nil)
 						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
@@ -81,6 +82,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 					Convey("When test connection to memcached fails and task.Stop fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(errors.New("Test error code for stop"))
 						mockedTaskHandle.On("Clean").Return(nil)
+						mockedTaskHandle.On("EraseOutput").Return(nil)
 						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
@@ -88,9 +90,10 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 
 						mockedExecutor.AssertExpectations(t)
 					})
-					Convey("When test connection to memcached fails, task.Stop succeeds and task.Clean fails task handle shall be nil and error shall be return", func() {
+					Convey("When test connection to memcached fails, task.Stop and task.EraseOutput succeeds but task.Clean fails task handle shall be nil and error shall be return", func() {
 						mockedTaskHandle.On("Stop").Return(nil)
 						mockedTaskHandle.On("Clean").Return(errors.New("Test error code for clean"))
+						mockedTaskHandle.On("EraseOutput").Return(nil)
 						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
 						task, err := memcachedLauncher.Launch()
 						So(err, ShouldNotBeNil)
@@ -98,6 +101,18 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 
 						mockedExecutor.AssertExpectations(t)
 					})
+					Convey("When test connection to memcached fails, task.Stop and task.Clean succeeds but task.EraseOutput fails task handle shall be nil and error shall be return", func() {
+						mockedTaskHandle.On("Stop").Return(nil)
+						mockedTaskHandle.On("Clean").Return(nil)
+						mockedTaskHandle.On("EraseOutput").Return(errors.New("Test error code for erasing output"))
+						memcachedLauncher.isMemcachedUp = IsEndpointListeningMockedFailure
+						task, err := memcachedLauncher.Launch()
+						So(err, ShouldNotBeNil)
+						So(task, ShouldBeNil)
+
+						mockedExecutor.AssertExpectations(t)
+					})
+
 
 				})
 
