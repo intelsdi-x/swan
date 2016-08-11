@@ -122,12 +122,12 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	return handle, nil
 }
 
-func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle executor.ClusterTaskHandle) errcollection.ErrorCollection {
-	if clusterTaskHandle == nil {
-		return nil
-	}
-
+func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
 	var errorCollection errcollection.ErrorCollection
+
+	if clusterTaskHandle == nil {
+		return errorCollection
+	}
 
 	errorCollection.Add(clusterTaskHandle.Stop())
 	errorCollection.Add(clusterTaskHandle.Clean())
