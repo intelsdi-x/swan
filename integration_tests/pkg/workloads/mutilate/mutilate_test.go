@@ -12,6 +12,7 @@ import (
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/env"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,23 +46,24 @@ func TestMutilateWithExecutor(t *testing.T) {
 	// Clean after memcached ...
 	defer func() {
 		// ... prevent before stopping, cleaning up and erasing output from empty task handle ...
-		if mcHandle == nil {
-			return
-		}
+		So(mcHandle, ShouldNotBeNil)
 
+		var errCollection errcollection.ErrorCollection
 		// and our memcached instance was closed properly.
-		if err := mcHandle.Stop(); err != nil {
-			t.Fatal(err)
-		}
+		errCollection.Add(mcHandle.Stop())
 		mcHandle.Wait(0)
-		if ec, err := mcHandle.ExitCode(); err != nil || ec != -1 {
+
+		ec, err := mcHandle.ExitCode()
+		errCollection.Add(err)
+		if ec != -1 {
 			// Expect -1 on SIGKILL (TODO: change to zero, after Stop "graceful stop fix").
 			t.Fatalf("memcached was stopped incorrectly err %s exit-code: %d", err, ec)
 		}
+
 		// Make sure temp files removal was successful.
-		if err := mcHandle.EraseOutput(); err != nil {
-			t.Fatal(err)
-		}
+		errCollection.Add(mcHandle.EraseOutput())
+
+		So(errCollection.GetErrIfAny(), ShouldBeNil)
 	}()
 
 	if err != nil {
