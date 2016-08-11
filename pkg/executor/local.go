@@ -46,7 +46,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
-		eraseOutput(stdoutFile)
+		eraseOutput(stdoutFile.Name())
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -58,7 +58,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		eraseOutput(stdoutFile)
+		eraseOutput(stdoutFile.Name())
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
@@ -244,12 +244,11 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	return eraseOutput(taskHandle.stdoutFile)
+	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+	return eraseOutput(outputDir)
 }
 
-func eraseOutput(stdFile *os.File) error {
-	outputDir, _ := path.Split(stdFile.Name())
-
+func eraseOutput(outputDir string) error {
 	// Remove temporary directory created for stdout and stderr.
 	if err := os.RemoveAll(outputDir); err != nil {
 		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
