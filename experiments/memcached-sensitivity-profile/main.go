@@ -9,12 +9,12 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
-	isRunOnK8s = conf.NewBoolFlag("kubernetes_hp_be", "Launch HP and BE tasks on Kubernetes.", false)
+	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
 	mutilateMasterFlagDefault = "local"
 )
@@ -72,6 +72,7 @@ func isManualPolicy() bool {
 
 // Check README.md for details of this experiment.
 func main() {
+	const waitForK8sClusterStart = 60 // Wait 60s fot start k8s cluster.
 	// Setup conf.
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
@@ -103,35 +104,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer hpIsolation.Clean()
 
 	var HPExecutor executor.Executor
-	var memcachedLauncher memcached.Memcached  // Initialize Memcached Launcher.
+	var err error
+	var memcachedLauncher memcached.Memcached
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	mutilateConfig := mutilate.DefaultMutilateConfig() // Initialize Mutilate Load Generator.
+	mutilateConfig := mutilate.DefaultMutilateConfig()
 
-	if isRunOnK8s.Value() {
-		var err error
-		// Kubernetes cluster setup and initialize k8s executor
-		clusterExecutor := executor.NewLocal()
-		config := kubernetes.DefaultConfig()
-		k8sLauncher := kubernetes.New(clusterExecutor, clusterExecutor, config)
-		taskHandle, err := k8sLauncher.Launch()
-		errutil.Check(err)
-		if taskHandle.Wait(60) {
-			c, err := taskHandle.ExitCode()
-			errutil.Check(err)
-			logrus.Fatal("Can't prepare K8s cluster. Exit code: ", c)
-
-		}
-
+	if runOnKubernetesFlag.Value() {
+		err := kubernetes.NewCluster(waitForK8sClusterStart)
 		HPExecutor, err = executor.NewKubernetes(executor.DefaultKubernetesConfig())
 		errutil.Check(err)
-
-		// :TODO (woodbor): Change later to get the same gopath in a docker like in a vagrant
-		memcachedConfig.PathToBinary =
-			"/opt/gopath/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
-	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig)
+	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig)  // Initialize Memcached Launcher.
 
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
@@ -160,6 +145,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		append(agentsLoadGeneratorExecutors, masterLoadGeneratorExecutor),
 	)
 
+	 // Initialize Mutilate Load Generator.
 	mutilateLoadGenerator := mutilate.NewCluster(
 		masterLoadGeneratorExecutor,
 		agentsLoadGeneratorExecutors,
@@ -168,7 +154,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggressorName, isRunOnK8s.Value())
+		aggressor, err := aggressorFactory.Create(aggressorName, runOnKubernetesFlag.Value())
 		errutil.Check(err)
 
 		aggressors = append(aggressors, sensitivity.NewLauncherWithoutSession(aggressor))
@@ -188,6 +174,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 
 	// Run Experiment.
-	err := sensitivityExperiment.Run()
+	err = sensitivityExperiment.Run()
 	errutil.Check(err)
 }

@@ -102,37 +102,38 @@ func (f AggressorFactory) Create(name string, onK8s bool) (executor.Launcher, er
 // L1-Data and L1-Instruction cache aggressor receives l1AggressorIsolation
 // Other aggressors receive otherAggressorIsolation
 func (f AggressorFactory) createIsolatedExecutor(name string, isRunOnK8s bool) (executor.Executor, error) {
+	// Create specific executor dependent of enviroment.
+	getSpecializedExecutor := func(decorators isolation.Decorators) (executor.Executor, error) {
+		if isRunOnK8s {
+			config := executor.DefaultKubernetesConfig()
+			// TODO (woodbor): hack for disable isolations in k8s. Isolation configuration method needs change
+			config.Decorators = isolation.Decorators{}
+			config.PodName = "swan-aggr"
+			return executor.NewKubernetes(config)
+		}
+		return executor.NewLocalIsolated(decorators), nil
+	}
+
 	switch name {
 	case l1data.ID:
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		if L1dProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1dProcessNumber.Value()))
 		}
-		return f.getSpecializedExecutor(isRunOnK8s, decorators)
+		return getSpecializedExecutor(decorators)
 	case l1instruction.ID:
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		if L1iProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
 		}
-		return f.getSpecializedExecutor(isRunOnK8s, decorators)
+		return getSpecializedExecutor(decorators)
 	case l3data.ID:
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
 		}
-		return f.getSpecializedExecutor(isRunOnK8s, decorators)
+		return getSpecializedExecutor(decorators)
 	default:
-		return f.getSpecializedExecutor(isRunOnK8s, isolation.Decorators{f.otherAggressorIsolation})
+		return getSpecializedExecutor(isolation.Decorators{f.otherAggressorIsolation})
 	}
-}
-
-// Create specific executor dependent of enviroment.
-func (f AggressorFactory) getSpecializedExecutor(isRunOnK8s bool, decorators isolation.Decorators) (executor.Executor, error)  {
-	if isRunOnK8s {
-		config := executor.DefaultKubernetesConfig()
-		config.PodName = "swan-aggr"
-		return executor.NewKubernetes(config)
-	}
-
-	return executor.NewLocalIsolated(decorators), nil
 }
