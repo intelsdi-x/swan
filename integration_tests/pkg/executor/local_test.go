@@ -1,4 +1,4 @@
-package executor_test // avoids import cycle when importing from cgroup package
+package executor
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	. "github.com/intelsdi-x/swan/pkg/executor"
-	isolation "github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
