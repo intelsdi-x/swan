@@ -83,6 +83,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mExecutor.On(
 			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail")).Once()
 		s.mExecutor.On("Name").Return("Local")
+		s.mExecutor.On("EraseOutput").Return(nil)
 
 		// Mock successful connection verifier for `iteration+1` iteration.
 		// It will succeed for current service.
