@@ -59,9 +59,9 @@ Vagrant.configure(2) do |config|
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
-    aws.ami = (only_cache_dependencies && data['base_ami']) || data['ami'] || "ami-6d1c2007"
+    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI']) || data['ami'] || "ami-6d1c2007"
+    aws.instance_type = (ENV['SWAN_INSTANCE_TYPE'] != '' && ENV['SWAN_INSTANCE_TYPE']) || data['instance_type'] || "m3.medium"
     aws.keypair_name = data['keypair_name'] || "snapbot-private"
-    aws.instance_type = data['instance_type'] || "m3.medium"
     override.ssh.username = data['ssh_username'] || "centos"
     override.ssh.private_key_path = data['ssh_private_key_path'] || nil
     override.ssh.keys_only = data['keys_only'] || true

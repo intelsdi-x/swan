@@ -2,13 +2,14 @@ package kubernetes
 
 import (
 	"fmt"
+	"path"
+	"time"
+
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/pkg/errors"
-	"path"
-	"time"
 )
 
 const serviceListenTimeout = 5 * time.Second
@@ -22,6 +23,7 @@ var (
 	pathKubeSchedulerFlag  = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetSwanBinPath(), "kube-scheduler"))
 	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
+	allowPrivilegedFlag    = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
 )
 
 // Config contains all data for running kubernetes master & kubelet.
@@ -35,12 +37,13 @@ type Config struct {
 	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
 	ETCDServers        string
-	LogLevel           int // 0 is debug.
+	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
 	KubeAPIPort        int
 	KubeControllerPort int
 	KubeSchedulerPort  int
 	KubeProxyPort      int
 	KubeletPort        int
+	AllowPrivileged    bool // Defaults to false.
 	// Address range to use for services.
 	ServiceAddresses string
 
@@ -62,6 +65,7 @@ func DefaultConfig() Config {
 		PathToKubelet:        pathKubeletFlag.Value(),
 		ETCDServers:          "http://127.0.0.1:2379",
 		LogLevel:             logLevelFlag.Value(),
+		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,
 		KubeletPort:          10250,
 		KubeControllerPort:   10252,
