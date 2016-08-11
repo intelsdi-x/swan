@@ -60,6 +60,8 @@ func TestMutilateWithExecutor(t *testing.T) {
 			t.Fatalf("memcached was stopped incorrectly err %s exit-code: %d", err, ec)
 		}
 
+		// Make sure that fd are closed
+		errCollection.Add(mcHandle.Clean())
 		// Make sure temp files removal was successful.
 		errCollection.Add(mcHandle.EraseOutput())
 
