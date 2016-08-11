@@ -44,6 +44,11 @@ func TestMutilateWithExecutor(t *testing.T) {
 
 	// Clean after memcached ...
 	defer func() {
+		// ... prevent before stopping, cleaning up and erasing output from empty task handle ...
+		if mcHandle == nil {
+			return
+		}
+
 		// and our memcached instance was closed properly.
 		if err := mcHandle.Stop(); err != nil {
 			t.Fatal(err)
