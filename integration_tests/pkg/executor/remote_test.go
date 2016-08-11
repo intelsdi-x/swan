@@ -88,6 +88,9 @@ func testRemoteProcessPidIsolation() {
 				So(err, ShouldBeNil)
 				soProcessIsNotRunning(client, pids[0])
 				soProcessIsNotRunning(client, pids[1])
+
+				So(task.Clean(), ShouldBeNil)
+				So(task.EraseOutput(), ShouldBeNil)
 			})
 	})
 
