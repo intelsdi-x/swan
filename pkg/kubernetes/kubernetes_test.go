@@ -71,7 +71,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config := DefaultConfig()
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default disallow run privileged containers", func() {
