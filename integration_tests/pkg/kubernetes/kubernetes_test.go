@@ -29,7 +29,6 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 		local := executor.NewLocal()
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
-
 			config, err := kubernetes.DefaultConfig()
 			So(err, ShouldBeNil)
 			ports := testhelpers.RandomPorts(16000, 20000, 5)
