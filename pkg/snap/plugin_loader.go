@@ -32,7 +32,7 @@ var (
 	defaultPluginsPath = path.Join(goPath, "bin")
 
 	snapdAddress = conf.NewStringFlag("snapd_address", "Address to snapd in `http://%s:%s` format", "http://127.0.0.1:8181")
-	pluginsPath  = conf.NewFileFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
+	pluginsPath  = conf.NewDirFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
 )
 
 // DefaultPluginLoaderConfig returns default config for PluginLoader.
