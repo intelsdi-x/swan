@@ -21,6 +21,10 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
+const (
+	defaultContainerImage = "jess/stress" // TODO: replace with "centos_swan_image" when available.
+)
+
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
 type KubernetesConfig struct {
 	PodName        string
@@ -33,6 +37,8 @@ type KubernetesConfig struct {
 	ContainerName  string
 	ContainerImage string
 	Namespace      string
+	Privileged     bool
+	HostNetwork    bool
 }
 
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
@@ -46,8 +52,10 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		CPULimit:       0,
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
-		ContainerImage: "jess/stress",
+		ContainerImage: defaultContainerImage,
 		Namespace:      api.NamespaceDefault,
+		Privileged:     false,
+		HostNetwork:    false,
 	}
 }
 
@@ -113,13 +121,16 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 			Labels:    map[string]string{"name": k8s.config.PodName},
 		},
 		Spec: api.PodSpec{
-			RestartPolicy: "Never",
+			RestartPolicy:   "Never",
+			SecurityContext: &api.PodSecurityContext{HostNetwork: true},
 			Containers: []api.Container{
 				api.Container{
-					Name:      k8s.config.ContainerName,
-					Image:     k8s.config.ContainerImage,
-					Command:   []string{"sh", "-c", command},
-					Resources: k8s.containerResources(),
+					Name:            k8s.config.ContainerName,
+					Image:           k8s.config.ContainerImage,
+					Command:         []string{"sh", "-c", command},
+					Resources:       k8s.containerResources(),
+					ImagePullPolicy: api.PullIfNotPresent, // Default because swan image is not published yet.
+					SecurityContext: &api.SecurityContext{Privileged: &k8s.config.Privileged},
 				},
 			},
 		},
