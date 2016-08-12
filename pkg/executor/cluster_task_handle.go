@@ -47,16 +47,12 @@ func (m *ClusterTaskHandle) Stop() (err error) {
 
 	// Stop master.
 	err = m.master.Stop()
-	if err != nil {
-		errCollection.Add(err)
-	}
+	errCollection.Add(err)
 
 	// Stop agents.
 	for _, handle := range m.agents {
 		err = handle.Stop()
-		if err != nil {
-			errCollection.Add(err)
-		}
+		errCollection.Add(err)
 	}
 
 	return errCollection.GetErrIfAny()
@@ -97,14 +93,10 @@ func (m *ClusterTaskHandle) Clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.Clean()
-	if err != nil {
-		errCollection.Add(err)
-	}
+	errCollection.Add(err)
 	for _, handle := range m.agents {
 		err = handle.Clean()
-		if err != nil {
-			errCollection.Add(err)
-		}
+		errCollection.Add(err)
 	}
 
 	return errCollection.GetErrIfAny()
@@ -115,14 +107,10 @@ func (m *ClusterTaskHandle) EraseOutput() (err error) {
 	var errCollection errcollection.ErrorCollection
 
 	err = m.master.EraseOutput()
-	if err != nil {
-		errCollection.Add(err)
-	}
+	errCollection.Add(err)
 	for _, handle := range m.agents {
 		err = handle.EraseOutput()
-		if err != nil {
-			errCollection.Add(err)
-		}
+		errCollection.Add(err)
 	}
 
 	return errCollection.GetErrIfAny()

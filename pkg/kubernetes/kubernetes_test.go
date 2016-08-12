@@ -83,7 +83,6 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mExecutor.On(
 			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail")).Once()
 		s.mExecutor.On("Name").Return("Local")
-		s.mExecutor.On("EraseOutput").Return(nil)
 
 		// Mock successful connection verifier for `iteration+1` iteration.
 		// It will succeed for current service.
@@ -139,6 +138,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
 		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
 		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
 
 		// Check if it is the last service.
 		if serviceIterator < len(serviceNames)-1 {
@@ -164,6 +164,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 
 				So(k8sHandle.Stop(), ShouldBeNil)
 				So(k8sHandle.Clean(), ShouldBeNil)
+				So(k8sHandle.EraseOutput(), ShouldBeNil)
 			})
 		}
 	})

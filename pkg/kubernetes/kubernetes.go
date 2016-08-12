@@ -128,7 +128,6 @@ func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTas
 	if clusterTaskHandle == nil {
 		return errorCollection
 	}
-
 	errorCollection.Add(clusterTaskHandle.Stop())
 	errorCollection.Add(clusterTaskHandle.Clean())
 	errorCollection.Add(clusterTaskHandle.EraseOutput())
