@@ -4,12 +4,12 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
+	"github.com/intelsdi-x/swan/pkg/launchers/caffe"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/l1data"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/l1instruction"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/memoryBandwidth"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/stream"
 	"github.com/pkg/errors"
 )
 

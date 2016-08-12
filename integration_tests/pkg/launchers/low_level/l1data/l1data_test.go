@@ -5,22 +5,21 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/l1data"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TestMemBwDataWithExecutor is an integration test with local executor
+// TestL1DataWithExecutor is an integration test with local executor
 // You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
-func TestMemBwDataWithExecutor(t *testing.T) {
+func TestL1DataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	Convey("While using Local Shell in Memory Bandwidth launcher", t, func() {
+	Convey("While using Local Shell in L1Data launcher", t, func() {
 		l := executor.NewLocal()
-		memBwDataLauncher := memoryBandwidth.New(
-			l, memoryBandwidth.DefaultMemBwConfig())
+		l1DataLauncher := l1data.New(l, l1data.DefaultL1dConfig())
 
-		Convey("When memBwd binary is launched", func() {
-			taskHandle, err := memBwDataLauncher.Launch()
+		Convey("When l1d binary is launched", func() {
+			taskHandle, err := l1DataLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
 				defer taskHandle.Clean()
@@ -34,11 +33,11 @@ func TestMemBwDataWithExecutor(t *testing.T) {
 				So(stopErr, ShouldBeNil)
 			})
 
-			Convey("MemBwData should be running", func() {
+			Convey("L1Data should be running", func() {
 				So(taskHandle.Status(), ShouldEqual, executor.RUNNING)
 			})
 
-			Convey("When we stop the memBw task", func() {
+			Convey("When we stop the l1d task", func() {
 				err := taskHandle.Stop()
 				Convey("There should be no error", func() {
 					So(err, ShouldBeNil)
