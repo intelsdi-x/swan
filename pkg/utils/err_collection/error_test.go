@@ -15,7 +15,7 @@ func TestErrorCollection(t *testing.T) {
 		})
 		Convey("When nil error was passed, GetErr should return nil", func() {
 			errCollection.Add(nil)
-			So(errCollection.GetErrIfAny(), shouldBeNil)
+			So(errCollection.GetErrIfAny(), ShouldBeNil)
 		})
 
 		Convey("When we pass one error, GetErr should return error with exact message", func() {
