@@ -39,13 +39,13 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			config.KubeSchedulerPort = ports[3]
 			config.KubeProxyPort = ports[4]
 
+			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
+
 			k8sLauncher := kubernetes.New(local, local, config)
 			So(k8sLauncher, ShouldNotBeNil)
 
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
-
-			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
 			defer stopCleanCheckError(k8sHandle)
 

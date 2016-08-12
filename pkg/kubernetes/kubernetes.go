@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -13,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const serviceListenTimeout = 5 * time.Second
+const serviceListenTimeout = 30 * time.Second
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
@@ -120,6 +121,10 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), port)
 	if !m.isListening(address, serviceListenTimeout) {
+		logrus.Errorf(
+			"failed to connect to service %q on %q: timeout on connection to %q",
+			command, exec.Name(), address)
+
 		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
 		defer handle.EraseOutput()
