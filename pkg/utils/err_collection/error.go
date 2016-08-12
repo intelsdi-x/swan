@@ -17,7 +17,9 @@ type ErrorCollection struct {
 
 // Add inserts new error to collection.
 func (e *ErrorCollection) Add(err error) {
-	e.errorList = append(e.errorList, err)
+	if err != nil {
+		e.errorList = append(e.errorList, err)
+	}
 }
 
 // GetErrIfAny returns error with combined message from all given errors.

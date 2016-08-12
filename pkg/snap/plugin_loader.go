@@ -82,9 +82,7 @@ func (l PluginLoader) Load(plugins ...string) error {
 	var errors errcollection.ErrorCollection
 	for _, plugin := range plugins {
 		err := l.load(plugin)
-		if err != nil {
-			errors.Add(err)
-		}
+		errors.Add(err)
 	}
 	return errors.GetErrIfAny()
 }

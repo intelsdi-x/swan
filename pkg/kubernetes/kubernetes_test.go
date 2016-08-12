@@ -158,6 +158,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
 		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
 		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
 
 		// Check if it is the last service.
 		if serviceIterator < len(serviceNames)-1 {
@@ -183,6 +184,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 
 				So(k8sHandle.Stop(), ShouldBeNil)
 				So(k8sHandle.Clean(), ShouldBeNil)
+				So(k8sHandle.EraseOutput(), ShouldBeNil)
 			})
 		}
 	})
