@@ -3,7 +3,8 @@ package executor
 import (
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -46,7 +47,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
-		eraseOutput(stdoutFile.Name())
+		eraseOutput(filepath.Dir(stdoutFile.Name()))
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -58,7 +59,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		eraseOutput(stdoutFile.Name())
+		eraseOutput(filepath.Dir(stdoutFile.Name()))
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
@@ -244,7 +245,7 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+	outputDir := filepath.Dir(taskHandle.stdoutFile.Name())
 	return eraseOutput(outputDir)
 }
 
