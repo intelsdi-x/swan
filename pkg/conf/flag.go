@@ -67,6 +67,23 @@ func NewFileFlag(flagName string, description string, defaultValue string) Strin
 	return strFlag
 }
 
+// NewDirFlag is a constructor of StringFlag struct which checks if dir exists.
+func NewDirFlag(flagName string, description string, defaultValue string) StringFlag {
+	strFlag := StringFlag{
+		flag: flag{
+			name:        flagName,
+			description: description,
+		},
+		defaultValue: defaultValue,
+	}
+
+	strFlag.value = app.Flag(flagName, description).
+		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).ExistingDir()
+	isEnvParsed = false
+
+	return strFlag
+}
+
 // Value returns value of defined flag after parse.
 // NOTE: If conf is not parsed it returns default value (!)
 func (s StringFlag) Value() string {
