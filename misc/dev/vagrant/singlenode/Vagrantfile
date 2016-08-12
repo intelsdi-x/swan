@@ -121,6 +121,8 @@ SCRIPT
     # Add the vagrant user to the docker group
     gpasswd -a $VAGRANT_USER docker
     systemctl restart docker
+    echo "docker.service status:"
+    systemctl show -p SubState docker.service
 SCRIPT
 
   $setup_user_env = <<SCRIPT
@@ -132,10 +134,10 @@ SCRIPT
     # Add GOPATH and Go binaries to PATH in profile
     echo "export GOPATH=\"$HOME_DIR/go\"" >> $HOME_DIR/.bash_profile
     echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
-    # Add key to SSH agent
-    ssh-add -l
-    # Rewrite github URLs for fetching private repos
+    # Rewrite github URLs for fetching private repos (requires ssh-agent)
     sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
+    # Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
+    ssh-add -l 
 SCRIPT
 
   $configure_cassandra = <<SCRIPT
@@ -144,13 +146,16 @@ SCRIPT
     mkdir -p /var/data/cassandra
     chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
     # Create and enable systemd unit
-    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /usr/lib/systemd/system/
+    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /etc/systemd/system
     mkdir -p /opt/swan/resources
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/keyspace.cql /opt/swan/resources
     cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/table.cql /opt/swan/resources
     systemctl daemon-reload
     systemctl enable cassandra.service
-    systemctl restart cassandra.service
+    echo "Restarting cassandra..."
+    systemctl restart cassandra.service 
+    echo "cassandra.service status:"
+    systemctl show -p SubState cassandra.service 
 SCRIPT
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
