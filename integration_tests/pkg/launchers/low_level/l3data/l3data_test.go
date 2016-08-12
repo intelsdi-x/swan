@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/launchers/low_level/l3data"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

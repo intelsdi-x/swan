@@ -9,11 +9,11 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/launchers/memcached"
+	"github.com/intelsdi-x/swan/pkg/launchers/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
 
 var (

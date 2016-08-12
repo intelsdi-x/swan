@@ -2,18 +2,19 @@ package kubernetes
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/nu7hatch/gouuid"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/launchers/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/nu7hatch/gouuid"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (

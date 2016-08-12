@@ -6,7 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
+	"github.com/intelsdi-x/swan/pkg/launchers/caffe"
 	"time"
 )
 
