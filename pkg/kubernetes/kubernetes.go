@@ -121,10 +121,6 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), port)
 	if !m.isListening(address, serviceListenTimeout) {
-		logrus.Errorf(
-			"failed to connect to service %q on %q: timeout on connection to %q",
-			command, exec.Name(), address)
-
 		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
 		defer handle.EraseOutput()
