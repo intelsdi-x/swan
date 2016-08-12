@@ -13,6 +13,10 @@ func TestErrorCollection(t *testing.T) {
 		Convey("When no error was passed, GetErr should return nil", func() {
 			So(errCollection.GetErrIfAny(), ShouldBeNil)
 		})
+		Convey("When nil error was passed, GetErr should return nil", func() {
+			errCollection.Add(nil)
+			So(errCollection.GetErrIfAny(), shouldBeNil)
+		})
 
 		Convey("When we pass one error, GetErr should return error with exact message", func() {
 			errCollection.Add(errors.New("test error"))
