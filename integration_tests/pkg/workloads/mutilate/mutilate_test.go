@@ -46,7 +46,9 @@ func TestMutilateWithExecutor(t *testing.T) {
 	// Clean after memcached ...
 	defer func() {
 		// ... prevent before stopping, cleaning up and erasing output from empty task handle ...
-		So(mcHandle, ShouldNotBeNil)
+		if mcHandle == nil {
+			t.Fatal("memcached's TaskHandle is empty, but it shouldn't be!")
+		}
 
 		var errCollection errcollection.ErrorCollection
 		// and our memcached instance was closed properly.
@@ -64,8 +66,9 @@ func TestMutilateWithExecutor(t *testing.T) {
 		errCollection.Add(mcHandle.Clean())
 		// Make sure temp files removal was successful.
 		errCollection.Add(mcHandle.EraseOutput())
-
-		So(errCollection.GetErrIfAny(), ShouldBeNil)
+		if err := errCollection.GetErrIfAny(); err != nil {
+			t.Fatalf("Cleaning up procedures fails: %s", err)
+		}
 	}()
 
 	if err != nil {
