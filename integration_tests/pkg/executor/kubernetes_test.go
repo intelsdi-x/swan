@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/launchers/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
