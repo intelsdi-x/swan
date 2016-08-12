@@ -92,7 +92,7 @@ func DefaultConfig() (Config, error) {
 func NewCluster(waitForK8sClusterStart time.Duration) (error) {
 	// Kubernetes cluster setup and initialize k8s executor
 	clusterExecutor := executor.NewLocal()
-	config := DefaultConfig()
+	config, err := DefaultConfig()
 	k8sLauncher := New(clusterExecutor, clusterExecutor, config)
 	taskHandle, err := k8sLauncher.Launch()
 	if err != nil {

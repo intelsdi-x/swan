@@ -106,6 +106,7 @@ func (f AggressorFactory) createIsolatedExecutor(name string, isRunOnK8s bool) (
 	getSpecializedExecutor := func(decorators isolation.Decorators) (executor.Executor, error) {
 		if isRunOnK8s {
 			config := executor.DefaultKubernetesConfig()
+			config.ContainerImage = "centos_swan_image"
 			// TODO (woodbor): hack for disable isolations in k8s. Isolation configuration method needs change
 			config.Decorators = isolation.Decorators{}
 			config.PodName = "swan-aggr"

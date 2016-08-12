@@ -111,7 +111,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	if runOnKubernetesFlag.Value() {
 		err := kubernetes.NewCluster(waitForK8sClusterStart)
-		HPExecutor, err = executor.NewKubernetes(executor.DefaultKubernetesConfig())
+		executorConf := executor.DefaultKubernetesConfig()
+		executorConf.ContainerImage = "centos_swan_image"
+		HPExecutor, err = executor.NewKubernetes(executorConf)
 		errutil.Check(err)
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
