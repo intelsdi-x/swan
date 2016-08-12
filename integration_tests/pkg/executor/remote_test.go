@@ -83,6 +83,11 @@ func testRemoteProcessPidIsolation() {
 
 	Convey("I should be able to execute remote command and see the processes running", func() {
 		task, err := launcher.Launch()
+		defer func() {
+			task.Stop()
+			task.Clean()
+			task.EraseOutput()
+		}()
 
 		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
 		So(err, ShouldBeNil)
