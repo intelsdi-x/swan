@@ -53,7 +53,9 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, DefaultConfig()).(kubernetes)
+			config, err := DefaultConfig()
+			So(err, ShouldBeNil)
+			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
 
 			s.k8sLauncher = &k8sLauncher
@@ -69,7 +71,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config := DefaultConfig()
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default disallow run privileged containers", func() {

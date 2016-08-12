@@ -55,7 +55,9 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		kubernetesLauncher := kubernetes.New(exec, exec, kubernetes.DefaultConfig())
+		config, err := kubernetes.DefaultConfig()
+		So(err, ShouldBeNil)
+		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)
 		defer kubernetesHandle.EraseOutput()
