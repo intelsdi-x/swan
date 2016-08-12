@@ -40,7 +40,7 @@ const (
 
 var (
 	// pathFlag represents mutilate path flag.
-	pathFlag = conf.NewStringFlag("mutilate_path", "Path to mutilate binary",
+	pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
 		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)

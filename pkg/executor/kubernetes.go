@@ -52,11 +52,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		CPULimit:       0,
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
-<<<<<<< b757da55108c8c833f3c428c032d3922e4766261
 		ContainerImage: defaultContainerImage,
-=======
-		ContainerImage: "centos_swan_image",
->>>>>>> SCE-455: change ImagePullPolicy on K8s executor
 		Namespace:      api.NamespaceDefault,
 		Privileged:     false,
 		HostNetwork:    false,
@@ -129,20 +125,12 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 			SecurityContext: &api.PodSecurityContext{HostNetwork: true},
 			Containers: []api.Container{
 				api.Container{
-<<<<<<< b757da55108c8c833f3c428c032d3922e4766261
 					Name:            k8s.config.ContainerName,
 					Image:           k8s.config.ContainerImage,
 					Command:         []string{"sh", "-c", command},
 					Resources:       k8s.containerResources(),
 					ImagePullPolicy: api.PullIfNotPresent, // Default because swan image is not published yet.
 					SecurityContext: &api.SecurityContext{Privileged: &k8s.config.Privileged},
-=======
-					Name:      k8s.config.ContainerName,
-					Image:     k8s.config.ContainerImage,
-					Command:   []string{"sh", "-c", command},
-					Resources: k8s.containerResources(),
-					ImagePullPolicy: api.PullIfNotPresent,
->>>>>>> SCE-455: change ImagePullPolicy on K8s executor
 				},
 			},
 		},
