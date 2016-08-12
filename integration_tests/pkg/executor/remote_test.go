@@ -3,17 +3,18 @@ package executor
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
 	"testing"
 
-	"golang.org/x/crypto/ssh"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	. "github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
-	"os/user"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -23,41 +24,49 @@ const (
 	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
 )
 
-var terminal ssh.TerminalModes
+// This tests required following setup:
+// - id_rsa ssh keys in user home directory. [command ssh-keygen]
+// - no password ssh session. [command ssh-copy-id localhost]
+func TestRemote(t *testing.T) {
+	log.SetLevel(log.ErrorLevel)
 
-func init() {
-	terminal = ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
+	Convey("While getting the information abut the test user", t, func() {
+		user, err := user.Current()
+
+		Convey("There should be no error", func() {
+			So(err, ShouldBeNil)
+		})
+
+		Convey("When creating ssh configuration with proper data", func() {
+			err = ValidateSSHConfig("127.0.0.1", user)
+			if err != nil {
+				// Skip test if setup is not wel configured.
+				t.Skip("Skipping test: " + err.Error())
+			}
+
+			sshConfig, err := NewSSHConfig("127.0.0.1", DefaultSSHPort, user)
+			if err != nil {
+				// Skip test if setup is not wel configured.
+				t.Skip("Skipping test: " + err.Error())
+			}
+
+			Convey("There should be no error", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And while using Remote Shell, the generic Executor test should pass", func() {
+				testExecutor(t, NewRemote(sshConfig))
+			})
+		})
+	})
 }
 
-// TODO(bp): Remove remote test from unit_test and test remote connection to localhost here.
 func TestRemoteProcessPidIsolation(t *testing.T) {
 	if isEnvironmentReady() {
-		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
 	} else {
 		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
 	}
-}
-
-func isEnvironmentReady() bool {
-	if value := os.Getenv(EnvHost); value == "" {
-		return false
-	}
-	if value := os.Getenv(EnvUser); value == "" {
-		return false
-	}
-
-	if value := os.Getenv(EnvMemcachedPath); value == "" {
-		return false
-	}
-	if value := os.Getenv(EnvMemcachedUser); value == "" {
-		return false
-	}
-
-	return true
 }
 
 func testRemoteProcessPidIsolation() {
@@ -90,31 +99,34 @@ func testRemoteProcessPidIsolation() {
 				soProcessIsNotRunning(client, pids[1])
 			})
 	})
-
 }
 
-func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
-	decors := isolation.Decorators{}
-	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-	decors = append(decors, unshare)
-	exec := executor.NewRemoteIsolated(&sshConfig, decors)
+func isEnvironmentReady() bool {
+	if value := os.Getenv(EnvHost); value == "" {
+		return false
+	}
+	if value := os.Getenv(EnvUser); value == "" {
+		return false
+	}
 
-	return multipleMemcached{exec}
+	if value := os.Getenv(EnvMemcachedPath); value == "" {
+		return false
+	}
+	if value := os.Getenv(EnvMemcachedUser); value == "" {
+		return false
+	}
+
+	return true
 }
 
-type multipleMemcached struct {
-	executor executor.Executor
-}
+var terminal ssh.TerminalModes
 
-func (m multipleMemcached) Name() string {
-	return "remote memcached"
-}
-
-func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
-	bin := os.Getenv(EnvMemcachedPath)
-	username := os.Getenv(EnvMemcachedUser)
-	return m.executor.Execute(
-		fmt.Sprintf("/bin/bash -c \"%s -u %s -d && %s -u %s -p 54321\"", bin, username, bin, username))
+func init() {
+	terminal = ssh.TerminalModes{
+		ssh.ECHO:          1,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
 }
 
 func soProcessesAreRunning(client *ssh.Client, processName string, noOfPids int) (pids []string) {
@@ -150,4 +162,28 @@ func soProcessIsNotRunning(client *ssh.Client, pid string) {
 	So(err, ShouldNotBeNil)
 	So(err.Error(), ShouldStartWith, "Process exited with: 1")
 
+}
+
+func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
+	decors := isolation.Decorators{}
+	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+	decors = append(decors, unshare)
+	exec := executor.NewRemoteIsolated(&sshConfig, decors)
+
+	return multipleMemcached{exec}
+}
+
+type multipleMemcached struct {
+	executor executor.Executor
+}
+
+func (m multipleMemcached) Name() string {
+	return "remote memcached"
+}
+
+func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
+	bin := os.Getenv(EnvMemcachedPath)
+	username := os.Getenv(EnvMemcachedUser)
+	return m.executor.Execute(
+		fmt.Sprintf("/bin/bash -c \"%s -u %s -d && %s -u %s -p 54321\"", bin, username, bin, username))
 }
