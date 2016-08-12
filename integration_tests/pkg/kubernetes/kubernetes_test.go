@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -28,7 +29,19 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 		local := executor.NewLocal()
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
-			k8sLauncher := kubernetes.New(local, local, kubernetes.DefaultConfig())
+			config, err := kubernetes.DefaultConfig()
+			So(err, ShouldBeNil)
+			ports := testhelpers.RandomPorts(16000, 20000, 5)
+			So(len(ports), ShouldEqual, 5)
+			config.KubeAPIPort = ports[0]
+			config.KubeletPort = ports[1]
+			config.KubeControllerPort = ports[2]
+			config.KubeSchedulerPort = ports[3]
+			config.KubeProxyPort = ports[4]
+
+			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
+
+			k8sLauncher := kubernetes.New(local, local, config)
 			So(k8sLauncher, ShouldNotBeNil)
 
 			k8sHandle, err := k8sLauncher.Launch()
@@ -39,7 +52,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
 
-				taskHandle, err := local.Execute(fmt.Sprintf("%s get nodes", kubectlBinPath))
+				taskHandle, err := local.Execute(fmt.Sprintf("%s -s %s get nodes", kubectlBinPath, kubernetesAddress))
 				So(err, ShouldBeNil)
 
 				defer stopCleanCheckError(taskHandle)
@@ -75,7 +88,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 
 				// Command kubectl 'run' creates a Deployment with uuid above on Kubernetes cluster.
 				podCreateHandle, err := local.Execute(
-					fmt.Sprintf("%s run %s --image=nginx", kubectlBinPath, deploymentName.String()))
+					fmt.Sprintf("%s -s %s run %s --image=nginx", kubectlBinPath, kubernetesAddress, deploymentName.String()))
 				So(err, ShouldBeNil)
 
 				defer stopCleanCheckError(podCreateHandle)
@@ -94,7 +107,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(string(data), ShouldEqual, fmt.Sprintf("deployment \"%s\" created\n", deploymentName.String()))
 
 				//Remove created pod.
-				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s delete deployment %s", kubectlBinPath, deploymentName.String()))
+				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s -s %s delete deployment %s", kubectlBinPath, kubernetesAddress, deploymentName.String()))
 				So(err, ShouldBeNil)
 
 				defer stopCleanCheckError(podRemoveHandle)
