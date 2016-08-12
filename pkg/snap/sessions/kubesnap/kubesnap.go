@@ -5,7 +5,7 @@ import (
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/cassandra"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/snap"
@@ -14,7 +14,7 @@ import (
 // DefaultConfig returns default configuration for Kubesnap Session Launcher.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", 2)
-	publisher.AddConfigItem("server", cassandra.AddrFlag.Value())
+	publisher.AddConfigItem("server", conf.CassandraAddress.Value())
 
 	return Config{
 		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
