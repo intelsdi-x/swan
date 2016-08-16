@@ -110,10 +110,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 
 	if runOnKubernetesFlag.Value() {
-		err := kubernetes.NewCluster(waitForK8sClusterStart)
+		clusterTaskHandle, err := kubernetes.NewCluster(waitForK8sClusterStart)
+		defer clusterTaskHandle.Stop()
+		defer clusterTaskHandle.Clean()
+		defer clusterTaskHandle.EraseOutput()
+
 		executorConf := executor.DefaultKubernetesConfig()
 		executorConf.ContainerImage = "centos_swan_image"
 		HPExecutor, err = executor.NewKubernetes(executorConf)
+
 		errutil.Check(err)
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
