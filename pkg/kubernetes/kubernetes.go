@@ -10,6 +10,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	"github.com/intelsdi-x/swan/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )
@@ -59,7 +60,9 @@ type Config struct {
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
-func DefaultConfig() (Config, error) {
+// startPort is a first value in a range, from which random ports are selected.
+// endPort is a last value in a range, from which random ports are selected.
+func DefaultConfig(startPort int, endPort int) (Config, error) {
 	// Create unique etcd prefix to avoid interference with any parallel tests which use same
 	// etcd cluster.
 	etcdPrefix, err := uuid.NewV4()
@@ -67,6 +70,17 @@ func DefaultConfig() (Config, error) {
 		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
 	}
 	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
+
+	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
+	// assign a collection of ports to the services. Eventhough previous kubernetes processes
+	// have been shut down, ports may be in CLOSE_WAIT state.
+	ports := random.Ports(startPort, endPort, 5)
+	KubeAPIPort := ports[0]
+	KubeletPort := ports[1]
+	KubeControllerPort := ports[2]
+	KubeSchedulerPort := ports[3]
+	KubeProxyPort := ports[4]
+
 	return Config{
 		PathToKubeAPIServer:  pathKubeAPIServerFlag.Value(),
 		PathToKubeController: pathKubeControllerFlag.Value(),
@@ -77,11 +91,11 @@ func DefaultConfig() (Config, error) {
 		ETCDPrefix:           ETCDPrefix,
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
-		KubeAPIPort:          8080,
-		KubeletPort:          10250,
-		KubeControllerPort:   10252,
-		KubeSchedulerPort:    10251,
-		KubeProxyPort:        10249,
+		KubeAPIPort:          KubeAPIPort,
+		KubeletPort:          KubeletPort,
+		KubeControllerPort:   KubeControllerPort,
+		KubeSchedulerPort:    KubeSchedulerPort,
+		KubeProxyPort:        KubeProxyPort,
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
 	}, nil
