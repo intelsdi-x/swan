@@ -7,12 +7,14 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )
 
-const serviceListenTimeout = 5 * time.Second
+const serviceListenTimeout = 30 * time.Second
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
@@ -37,6 +39,7 @@ type Config struct {
 	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
 	ETCDServers        string
+	ETCDPrefix         string
 	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
 	KubeAPIPort        int
 	KubeControllerPort int
@@ -56,7 +59,14 @@ type Config struct {
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
-func DefaultConfig() Config {
+func DefaultConfig() (Config, error) {
+	// Create unique etcd prefix to avoid interference with any parallel tests which use same
+	// etcd cluster.
+	etcdPrefix, err := uuid.NewV4()
+	if err != nil {
+		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
+	}
+	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
 	return Config{
 		PathToKubeAPIServer:  pathKubeAPIServerFlag.Value(),
 		PathToKubeController: pathKubeControllerFlag.Value(),
@@ -64,6 +74,7 @@ func DefaultConfig() Config {
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
 		ETCDServers:          "http://127.0.0.1:2379",
+		ETCDPrefix:           ETCDPrefix,
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,
@@ -73,7 +84,7 @@ func DefaultConfig() Config {
 		KubeProxyPort:        10249,
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
-	}
+	}, nil
 }
 
 type kubernetes struct {
@@ -124,6 +135,19 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	return handle, nil
 }
 
+func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
+	var errorCollection errcollection.ErrorCollection
+
+	if clusterTaskHandle == nil {
+		return errorCollection
+	}
+	errorCollection.Add(clusterTaskHandle.Stop())
+	errorCollection.Add(clusterTaskHandle.Clean())
+	errorCollection.Add(clusterTaskHandle.EraseOutput())
+
+	return errorCollection
+}
+
 // Launch starts the kubernetes cluster. It returns a cluster
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a cluster.
@@ -140,9 +164,9 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	controllerHandle, err := m.launchService(
 		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
-		clusterTaskHandle.Stop()
-		clusterTaskHandle.Clean()
-		return nil, err
+		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol.Add(err)
+		return nil, errCol.GetErrIfAny()
 	}
 	clusterTaskHandle.AddAgent(controllerHandle)
 
@@ -150,9 +174,9 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	schedulerHandle, err := m.launchService(
 		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
-		clusterTaskHandle.Stop()
-		clusterTaskHandle.Clean()
-		return nil, err
+		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol.Add(err)
+		return nil, errCol.GetErrIfAny()
 	}
 	clusterTaskHandle.AddAgent(schedulerHandle)
 
@@ -161,9 +185,9 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	proxyHandle, err := m.launchService(
 		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
-		clusterTaskHandle.Stop()
-		clusterTaskHandle.Clean()
-		return nil, err
+		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol.Add(err)
+		return nil, errCol.GetErrIfAny()
 	}
 	clusterTaskHandle.AddAgent(proxyHandle)
 
@@ -171,9 +195,9 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	kubeletHandle, err := m.launchService(
 		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
-		clusterTaskHandle.Stop()
-		clusterTaskHandle.Clean()
-		return nil, err
+		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol.Add(err)
+		return nil, errCol.GetErrIfAny()
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
 

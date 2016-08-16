@@ -53,7 +53,9 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, DefaultConfig()).(kubernetes)
+			config, err := DefaultConfig()
+			So(err, ShouldBeNil)
+			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
 
 			s.k8sLauncher = &k8sLauncher
@@ -69,7 +71,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config := DefaultConfig()
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default disallow run privileged containers", func() {
@@ -155,6 +158,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
 		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
 		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
 
 		// Check if it is the last service.
 		if serviceIterator < len(serviceNames)-1 {
@@ -180,6 +184,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 
 				So(k8sHandle.Stop(), ShouldBeNil)
 				So(k8sHandle.Clean(), ShouldBeNil)
+				So(k8sHandle.EraseOutput(), ShouldBeNil)
 			})
 		}
 	})

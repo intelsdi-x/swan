@@ -3,28 +3,29 @@ package executor
 import (
 	"bytes"
 	"fmt"
+	"os/exec"
+	"path"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
-	"os/exec"
-	"path"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	// NOTE: skipping test as it is currently flaky.
-	SkipConvey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
+	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
 		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 		// assign a collection of ports to the services. Eventhough previous kubernetes processes
 		// have been shut down, ports may be in CLOSE_WAIT state.
-		config := kubernetes.DefaultConfig()
+		config, err := kubernetes.DefaultConfig()
+		So(err, ShouldBeNil)
 		ports := testhelpers.RandomPorts(36000, 40000, 5)
 		So(len(ports), ShouldEqual, 5)
 		config.KubeAPIPort = ports[0]
@@ -67,6 +68,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		executorConfig := executor.DefaultKubernetesConfig()
 		executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 		executorConfig.PodName = podName.String()
+
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
@@ -79,6 +81,9 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 0")
 			So(err, ShouldBeNil)
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
@@ -91,12 +96,12 @@ func TestKubernetesExecutor(t *testing.T) {
 					exitCode, err := taskHandle.ExitCode()
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 0)
-				})
 
-				Convey("And there should be zero pods", func() {
-					out, err = kubectl(executorConfig.Address, "get pods")
-					So(err, ShouldBeNil)
-					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					Convey("And there should be zero pods", func() {
+						out, err = kubectl(executorConfig.Address, "get pods")
+						So(err, ShouldBeNil)
+						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					})
 				})
 			})
 		})
@@ -104,6 +109,9 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 5")
 			So(err, ShouldBeNil)
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
 
 			out, err := kubectl(executorConfig.Address, "get pods")
 			So(err, ShouldBeNil)
@@ -116,12 +124,12 @@ func TestKubernetesExecutor(t *testing.T) {
 					exitCode, err := taskHandle.ExitCode()
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 5)
-				})
 
-				Convey("And there should be zero pods", func() {
-					out, err = kubectl(executorConfig.Address, "get pods")
-					So(err, ShouldBeNil)
-					So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					Convey("And there should be zero pods", func() {
+						out, err = kubectl(executorConfig.Address, "get pods")
+						So(err, ShouldBeNil)
+						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+					})
 				})
 			})
 		})
