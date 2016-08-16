@@ -19,7 +19,7 @@ const (
 )
 
 // PathFlag represents l3data path flag.
-var PathFlag = conf.NewFileFlag(
+var PathFlag = conf.NewStringFlag(
 	"membw_path",
 	"Path to Memory Bandwidth binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/memBw"),
