@@ -42,10 +42,10 @@ type KubernetesConfig struct {
 }
 
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
-func DefaultKubernetesConfig() KubernetesConfig {
+func DefaultKubernetesConfig(apiPort int) KubernetesConfig {
 	return KubernetesConfig{
 		PodName:        "swan",
-		Address:        "127.0.0.1:8080",
+		Address:        fmt.Sprintf("127.0.0.1:%d", apiPort),
 		Username:       "",
 		Password:       "",
 		CPURequest:     0,

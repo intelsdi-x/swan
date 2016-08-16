@@ -54,7 +54,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		podName, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 
-		executorConfig := executor.DefaultKubernetesConfig()
+		executorConfig := executor.DefaultKubernetesConfig(config.KubeAPIPort)
 		executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 		executorConfig.PodName = podName.String()
 

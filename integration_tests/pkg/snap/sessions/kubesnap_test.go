@@ -65,7 +65,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer kubernetesHandle.Stop()
 
 		// Waiting for Kubernetes Executor.
-		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
+		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig(config.KubeAPIPort))
 		So(err, ShouldBeNil)
 
 		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")
