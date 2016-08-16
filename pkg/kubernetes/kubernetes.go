@@ -89,21 +89,36 @@ func DefaultConfig() (Config, error) {
 
 // NewCluster returns a new K8s cluster
 // and wait waitForK8sClusterStart to get up.
-func NewCluster(waitForK8sClusterStart time.Duration) (error) {
+func NewCluster(waitForK8sClusterStart time.Duration) (executor.TaskHandle, error) {
 	// Kubernetes cluster setup and initialize k8s executor
 	clusterExecutor := executor.NewLocal()
 	config, err := DefaultConfig()
 	k8sLauncher := New(clusterExecutor, clusterExecutor, config)
 	taskHandle, err := k8sLauncher.Launch()
 	if err != nil {
-		return errors.Wrapf(err, "Can't get K8s task handle: ", err)
+		return nil, errors.Wrapf(err, "Can't get K8s task handle: ", err)
 	}
 	taskHandle.Wait(waitForK8sClusterStart)
 	if c, err := taskHandle.ExitCode(); err != nil {
-		return errors.Wrapf(err, "Can't prepare K8s cluster: ", err, c)
+		return nil, errors.Wrapf(err, "Can't prepare K8s cluster: ", err, c)
 	}
 
-	return nil
+	return taskHandle, nil
+}
+
+// StopAndCleanupCluster stop a K8s cluster and clean after it.
+// It's used during fail launch k8s or after end of experiment.
+func StopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
+	var errorCollection errcollection.ErrorCollection
+
+	if clusterTaskHandle == nil {
+		return errorCollection
+	}
+	errorCollection.Add(clusterTaskHandle.Stop())
+	errorCollection.Add(clusterTaskHandle.Clean())
+	errorCollection.Add(clusterTaskHandle.EraseOutput())
+
+	return errorCollection
 }
 
 type kubernetes struct {
@@ -154,19 +169,6 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	return handle, nil
 }
 
-func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
-	var errorCollection errcollection.ErrorCollection
-
-	if clusterTaskHandle == nil {
-		return errorCollection
-	}
-	errorCollection.Add(clusterTaskHandle.Stop())
-	errorCollection.Add(clusterTaskHandle.Clean())
-	errorCollection.Add(clusterTaskHandle.EraseOutput())
-
-	return errorCollection
-}
-
 // Launch starts the kubernetes cluster. It returns a cluster
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a cluster.
@@ -183,7 +185,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	controllerHandle, err := m.launchService(
 		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -193,7 +195,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	schedulerHandle, err := m.launchService(
 		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -204,7 +206,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	proxyHandle, err := m.launchService(
 		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -214,7 +216,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	kubeletHandle, err := m.launchService(
 		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
