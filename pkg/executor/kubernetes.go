@@ -158,9 +158,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		// TODO(skonefal): We don't have stdout & stderr when pod fails.
 		exitCode, err := taskHandle.ExitCode()
 		if err != nil || exitCode != 0 {
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
+			defer StopCleanAndErase(taskHandle)
 
 			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
 			return nil, errors.Errorf(
