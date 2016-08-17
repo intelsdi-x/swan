@@ -59,10 +59,14 @@ type Config struct {
 	KubeProxyArgs      string
 }
 
+// PortRange is a range from which ports for Kubernetes are randomly chosen.
+type PortRange struct {
+	Start int
+	End   int
+}
+
 // DefaultConfig is a constructor for Config with default parameters.
-// startPort is a first value in a range, from which random ports are selected.
-// endPort is a last value in a range, from which random ports are selected.
-func DefaultConfig(startPort int, endPort int) (Config, error) {
+func DefaultConfig(portRange *PortRange) (Config, error) {
 	// Create unique etcd prefix to avoid interference with any parallel tests which use same
 	// etcd cluster.
 	etcdPrefix, err := uuid.NewV4()
@@ -74,7 +78,7 @@ func DefaultConfig(startPort int, endPort int) (Config, error) {
 	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 	// assign a collection of ports to the services. Eventhough previous kubernetes processes
 	// have been shut down, ports may be in CLOSE_WAIT state.
-	ports := random.Ports(startPort, endPort, 5)
+	ports := random.Ports(portRange.Start, portRange.End, 5)
 	KubeAPIPort := ports[0]
 	KubeletPort := ports[1]
 	KubeControllerPort := ports[2]

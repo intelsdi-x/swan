@@ -20,7 +20,8 @@ func TestKubernetesExecutor(t *testing.T) {
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
-		config, err := kubernetes.DefaultConfig(36000, 40000)
+		portRange := kubernetes.PortRange{Start: 36000, End: 40000}
+		config, err := kubernetes.DefaultConfig(&portRange)
 		So(err, ShouldBeNil)
 
 		k8sLauncher := kubernetes.New(local, local, config)
