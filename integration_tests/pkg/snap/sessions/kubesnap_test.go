@@ -55,7 +55,8 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		config, err := kubernetes.DefaultConfig()
+		portRange := kubernetes.PortRange{Start: 26000, End: 30000}
+		config, err := kubernetes.DefaultConfig(&portRange)
 		So(err, ShouldBeNil)
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
@@ -65,7 +66,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer kubernetesHandle.Stop()
 
 		// Waiting for Kubernetes Executor.
-		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
+		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig(config.KubeAPIPort))
 		So(err, ShouldBeNil)
 
 		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")

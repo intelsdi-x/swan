@@ -53,7 +53,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			config, err := DefaultConfig()
+			portRange := PortRange{Start: 16000, End: 20000}
+			config, err := DefaultConfig(&portRange)
 			So(err, ShouldBeNil)
 			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
@@ -71,7 +72,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config, err := DefaultConfig()
+		portRange := PortRange{Start: 26000, End: 30000}
+		config, err := DefaultConfig(&portRange)
 		So(err, ShouldBeNil)
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
