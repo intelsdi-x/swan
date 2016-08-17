@@ -20,6 +20,7 @@ func DefaultConfig() Config {
 		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
 		Interval:     1 * time.Second,
 		Publisher:    publisher,
+		Metrics:      []string{"/intel/docker/*/cgroups/*"},
 	}
 }
 
@@ -28,6 +29,7 @@ type Config struct {
 	SnapdAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
 	Interval     time.Duration
+	Metrics      []string
 }
 
 // SessionLauncher configures & launches snap workflow for gathering Kubernetes Docker containers metrics.
@@ -56,7 +58,8 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession([]string{"/intel/docker/*/cgroups/*"},
+		session: snap.NewSession(
+			config.Metrics,
 			config.Interval,
 			snapClient,
 			config.Publisher,
