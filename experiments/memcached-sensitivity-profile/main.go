@@ -15,6 +15,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
 )
 
 var (
@@ -118,6 +119,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var HPExecutor executor.Executor
 	var err error
 	var memcachedLauncher memcached.Memcached
+	var kubesnapLauncher kubesnap.SessionLauncher
+
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 
@@ -132,6 +135,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		executorConf := executor.DefaultKubernetesConfig()
 		executorConf.ContainerImage = "centos_swan_image"
 		HPExecutor, err = executor.NewKubernetes(executorConf)
+
+		kubesnapConfig := kubesnap.DefaultConfig()
+		kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
+
+
 		errutil.Check(err)
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
@@ -183,12 +191,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Snap Session for mutilate.
 	mutilateSnapSession := prepareSnapSessionLauncher()
 
+	var sensitivityLauncher sensitivity.LauncherSessionPair
+	if runOnKubernetesFlag.Value() {
+		sensitivityLauncher = sensitivity.NewMonitoredLauncher(memcachedLauncher, kubesnapLauncher)
+	} else {
+		sensitivity.NewLauncherWithoutSession(memcachedLauncher)
+	}
+
 	// Create Experiment configuration from Conf.
 	sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),
 		conf.LogLevel(),
 		sensitivity.DefaultConfiguration(),
-		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
+		sensitivityLauncher,
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
 	)
