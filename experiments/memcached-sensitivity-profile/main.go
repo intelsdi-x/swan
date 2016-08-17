@@ -136,7 +136,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
-
 	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig) // Initialize Memcached Launcher.
 
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
@@ -193,8 +192,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
 	)
-
 	// Run Experiment.
-	err = sensitivityExperiment.Run()
+	_ = sensitivityExperiment
+	// err = sensitivityExperiment.Run()
 	errutil.Check(err)
 }

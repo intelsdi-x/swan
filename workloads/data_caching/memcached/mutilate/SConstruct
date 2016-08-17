@@ -6,7 +6,7 @@ env = Environment(ENV = os.environ)
 
 env['HAVE_POSIX_BARRIER'] = True
 
-env.Append(CPPPATH = ['../cppzmq', '/usr/local/include', '/opt/local/include'])
+env.Append(CPPPATH = ['../cppzmq', '/usr/local/include', '/opt/local/include', '/usr/include'])
 env.Append(LIBPATH = ['/opt/local/lib'])
 env.Append(CCFLAGS = '-std=c++11 -D_GNU_SOURCE')
 if sys.platform == 'darwin':
@@ -31,7 +31,8 @@ if not conf.CheckLibWithHeader("pthread", "pthread.h", "C++"):
     print "pthread required"
     Exit(1)
 conf.CheckLib("rt", "clock_gettime", language="C++")
-conf.CheckLibWithHeader("zmq", "zmq.hpp", "C++")
+if not conf.CheckLibWithHeader("zmq", "zmq.hpp", "C++"):
+    Exit(1)
 if not conf.CheckFunc('pthread_barrier_init'):
     conf.env['HAVE_POSIX_BARRIER'] = False
 
