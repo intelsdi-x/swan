@@ -119,7 +119,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var HPExecutor executor.Executor
 	var err error
 	var memcachedLauncher memcached.Memcached
-	var kubesnapLauncher kubesnap.SessionLauncher
+	var kubesnapLauncher *kubesnap.SessionLauncher
 
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	mutilateConfig := mutilate.DefaultMutilateConfig()
@@ -137,7 +137,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		HPExecutor, err = executor.NewKubernetes(executorConf)
 
 		kubesnapConfig := kubesnap.DefaultConfig()
-		kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
+		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
 
 
 		errutil.Check(err)
