@@ -53,8 +53,7 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			config, err := DefaultConfig()
-			So(err, ShouldBeNil)
+			config := DefaultConfig()
 			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
 
@@ -71,8 +70,7 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config, err := DefaultConfig()
-		So(err, ShouldBeNil)
+		config := DefaultConfig()
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default disallow run privileged containers", func() {
@@ -88,8 +86,7 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration etcd servers flag", s.T(), func() {
-		config, err := DefaultConfig()
-		So(err, ShouldBeNil)
+		config := DefaultConfig()
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default etcd server points to localhost", func() {

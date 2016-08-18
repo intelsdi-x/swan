@@ -10,6 +10,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	"github.com/intelsdi-x/swan/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )
@@ -60,14 +61,7 @@ type Config struct {
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
-func DefaultConfig() (Config, error) {
-	// Create unique etcd prefix to avoid interference with any parallel tests which use same
-	// etcd cluster.
-	etcdPrefix, err := uuid.NewV4()
-	if err != nil {
-		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
-	}
-	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
+func DefaultConfig() Config {
 	return Config{
 		PathToKubeAPIServer:  pathKubeAPIServerFlag.Value(),
 		PathToKubeController: pathKubeControllerFlag.Value(),
@@ -75,7 +69,7 @@ func DefaultConfig() (Config, error) {
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
 		EtcdServers:          kubeEtcdServersFlag.Value(),
-		EtcdPrefix:           ETCDPrefix,
+		EtcdPrefix:           "/registry",
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,
@@ -85,7 +79,32 @@ func DefaultConfig() (Config, error) {
 		KubeProxyPort:        10249,
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
-	}, nil
+	}
+}
+
+// UniqueConfig is a constructor for Config with default parameters and random ports and random etcd prefix.
+func UniqueConfig() (Config, error) {
+	config := DefaultConfig()
+	// Create unique etcd prefix to avoid interference with any parallel tests which use same
+	// etcd cluster.
+	etcdPrefix, err := uuid.NewV4()
+	if err != nil {
+		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
+	}
+	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
+	config.EtcdPrefix = ETCDPrefix
+
+	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
+	// assign a collection of ports to the services. Eventhough previous kubernetes processes
+	// have been shut down, ports may be in CLOSE_WAIT state.
+	ports := random.Ports(22768, 32768, 5)
+	config.KubeAPIPort = ports[0]
+	config.KubeletPort = ports[1]
+	config.KubeControllerPort = ports[2]
+	config.KubeSchedulerPort = ports[3]
+	config.KubeProxyPort = ports[4]
+
+	return config, nil
 }
 
 type kubernetes struct {

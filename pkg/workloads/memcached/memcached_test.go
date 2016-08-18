@@ -113,7 +113,6 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 						mockedExecutor.AssertExpectations(t)
 					})
 
-
 				})
 
 			})

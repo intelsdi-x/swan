@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -29,15 +28,8 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 		local := executor.NewLocal()
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
-			config, err := kubernetes.DefaultConfig()
+			config, err := kubernetes.UniqueConfig()
 			So(err, ShouldBeNil)
-			ports := testhelpers.RandomPorts(16000, 20000, 5)
-			So(len(ports), ShouldEqual, 5)
-			config.KubeAPIPort = ports[0]
-			config.KubeletPort = ports[1]
-			config.KubeControllerPort = ports[2]
-			config.KubeSchedulerPort = ports[3]
-			config.KubeProxyPort = ports[4]
 
 			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 

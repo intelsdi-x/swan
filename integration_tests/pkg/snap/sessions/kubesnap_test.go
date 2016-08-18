@@ -55,7 +55,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		config, err := kubernetes.DefaultConfig()
+		config, err := kubernetes.UniqueConfig()
 		So(err, ShouldBeNil)
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
@@ -65,7 +65,9 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer kubernetesHandle.Stop()
 
 		// Waiting for Kubernetes Executor.
-		kubeExecutor, err := executor.NewKubernetes(executor.DefaultKubernetesConfig())
+		kubernetesConfig := executor.DefaultKubernetesConfig()
+		kubernetesConfig.Address = fmt.Sprintf("127.0.0.1:%d", config.KubeAPIPort)
+		kubeExecutor, err := executor.NewKubernetes(kubernetesConfig)
 		So(err, ShouldBeNil)
 
 		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")
