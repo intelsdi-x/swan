@@ -7,7 +7,6 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/nu7hatch/gouuid"
@@ -124,9 +123,7 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	if !m.isListening(address, serviceListenTimeout) {
 		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
-		defer handle.EraseOutput()
-		defer handle.Clean()
-		defer handle.Stop()
+		defer executor.StopCleanAndErase(handle)
 
 		return nil, errors.Errorf(
 			"failed to connect to service %q on %q: timeout on connection to %q",
@@ -134,19 +131,6 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	}
 
 	return handle, nil
-}
-
-func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
-	var errorCollection errcollection.ErrorCollection
-
-	if clusterTaskHandle == nil {
-		return errorCollection
-	}
-	errorCollection.Add(clusterTaskHandle.Stop())
-	errorCollection.Add(clusterTaskHandle.Clean())
-	errorCollection.Add(clusterTaskHandle.EraseOutput())
-
-	return errorCollection
 }
 
 // Launch starts the kubernetes cluster. It returns a cluster
@@ -165,7 +149,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	controllerHandle, err := m.launchService(
 		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -175,7 +159,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	schedulerHandle, err := m.launchService(
 		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -186,7 +170,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	proxyHandle, err := m.launchService(
 		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -196,7 +180,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	kubeletHandle, err := m.launchService(
 		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
