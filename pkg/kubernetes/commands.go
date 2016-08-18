@@ -18,6 +18,7 @@ func getKubeAPIServerCommand(config Config) string {
 		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
 		fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
 		fmt.Sprintf(" --service-cluster-ip-range=%s", config.ServiceAddresses),
+		fmt.Sprintf(" --admission_control=%s", "AddToleration"),
 		fmt.Sprintf(" %s", config.KubeAPIArgs),
 	)
 }
