@@ -11,25 +11,29 @@ const (
 
 // GetSwanPath returns absolute path to Swan root directory.
 func GetSwanPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", swanPkg)
+	gopathLocation := os.Getenv("GOPATH")
+	if os.Getenv("KUBERNETES") != "" {
+		gopathLocation = "$GOPATH"
+	}
+	return path.Join(gopathLocation, "src", swanPkg)
 }
 
 // GetSwanBuildPath returns absolute path to Swan build directory.
 func GetSwanBuildPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "build")
+	return path.Join(GetSwanPath(), "build")
 }
 
 // GetSwanWorkloadsPath returns absolute path to Swan workloads directory.
 func GetSwanWorkloadsPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "workloads")
+	return path.Join(GetSwanPath(), "workloads")
 }
 
 // GetSwanExperimentPath returns absolute path to Swan experiment directory.
 func GetSwanExperimentPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "experiments")
+	return path.Join(GetSwanPath(), "experiments")
 }
 
 // GetSwanBinPath returns absolute path to Swan misc/bin directory.
 func GetSwanBinPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "misc", "bin")
+	return path.Join(GetSwanPath(), "misc", "bin")
 }
