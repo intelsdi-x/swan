@@ -29,7 +29,7 @@ $ vagrant ssh
   - docker
   - gengetopt
   - git
-  - golang 1.6
+  - golang 1.7
   - libcgroup-tools
   - libevent-devel
   - nmap-ncat
