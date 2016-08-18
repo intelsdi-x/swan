@@ -3,6 +3,8 @@ package executor
 import (
 	"os"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 )
 
 // TaskState is an enum presenting current task state.
@@ -48,4 +50,13 @@ type TaskControl interface {
 	Clean() error
 	// EraseOutput removes task's stdout & stderr files.
 	EraseOutput() error
+}
+
+// StopCleanAndErase run stop, clean and eraseOutput on taskHandle and add errors to errorCollection
+func StopCleanAndErase(handle TaskHandle) (errorCollection errcollection.ErrorCollection) {
+	errorCollection.Add(handle.Stop())
+	errorCollection.Add(handle.Clean())
+	errorCollection.Add(handle.EraseOutput())
+
+	return
 }
