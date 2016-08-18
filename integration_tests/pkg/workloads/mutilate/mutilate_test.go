@@ -12,6 +12,7 @@ import (
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/env"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,26 +42,38 @@ func TestMutilateWithExecutor(t *testing.T) {
 	// Start memcached and make sure it is a new one.
 	memcachedLauncher := memcached.New(executor.NewLocal(), memcachedConfig)
 	mcHandle, err := memcachedLauncher.Launch()
-	if err != nil {
-		t.Fatal("cannot start memcached:" + err.Error())
-	}
 
 	// Clean after memcached ...
 	defer func() {
-		// and our memcached instance was closed properly.
-		if err := mcHandle.Stop(); err != nil {
-			t.Fatal(err)
+		// Prevent before stopping, cleaning up and erasing output from empty task handle ...
+		if mcHandle == nil {
+			t.Fatal("memcached's TaskHandle is empty, but it shouldn't be!")
 		}
+
+		var errCollection errcollection.ErrorCollection
+		// and our memcached instance was closed properly.
+		errCollection.Add(mcHandle.Stop())
 		mcHandle.Wait(0)
-		if ec, err := mcHandle.ExitCode(); err != nil || ec != -1 {
+
+		ec, err := mcHandle.ExitCode()
+		errCollection.Add(err)
+		if ec != -1 {
 			// Expect -1 on SIGKILL (TODO: change to zero, after Stop "graceful stop fix").
 			t.Fatalf("memcached was stopped incorrectly err %s exit-code: %d", err, ec)
 		}
+
+		// Make sure that file desciptors are closed.
+		errCollection.Add(mcHandle.Clean())
 		// Make sure temp files removal was successful.
-		if err := mcHandle.EraseOutput(); err != nil {
-			t.Fatal(err)
+		errCollection.Add(mcHandle.EraseOutput())
+		if err := errCollection.GetErrIfAny(); err != nil {
+			t.Fatalf("Cleaning up procedures fails: %s", err)
 		}
 	}()
+
+	if err != nil {
+		t.Fatal("cannot start memcached:" + err.Error())
+	}
 
 	// Give memcached chance to start and possibly die.
 	if stopped := mcHandle.Wait(1 * time.Second); stopped {

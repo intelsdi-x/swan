@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	pathFlag = conf.NewFileFlag("memcached_path", "Path to memcached binary",
+	pathFlag = conf.NewStringFlag("memcached_path", "Path to memcached binary",
 		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"))
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
@@ -108,18 +108,19 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
 	if !m.isMemcachedUp(address, 5*time.Second) {
-		err := errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
-			address)
+		if err := task.Stop(); err != nil {
+			log.Errorf("failed to stop memcached instance. Error: %q", err.Error())
+		}
 
-		err1 := task.Stop()
-		if err1 != nil {
-			log.Errorf("failed to stop memcached instance. Error: %q", err1.Error())
+		if err := task.Clean(); err != nil {
+			log.Errorf("failed to cleanup memcached task. Error: %q", err.Error())
 		}
-		err1 = task.Clean()
-		if err1 != nil {
-			log.Errorf("failed to cleanup memcached task. Error: %q", err1.Error())
+
+		if err := task.EraseOutput(); err != nil {
+			log.Errorf("failed to erase output of memcached task. Error: %q", err.Error())
 		}
-		return nil, err
+		return nil, errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
+			address)
 	}
 	return task, nil
 }

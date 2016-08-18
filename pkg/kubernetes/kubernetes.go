@@ -26,6 +26,7 @@ var (
 	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 	allowPrivilegedFlag    = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
+	kubeEtcdServersFlag    = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 )
 
 // Config contains all data for running kubernetes master & kubelet.
@@ -38,8 +39,8 @@ type Config struct {
 
 	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
-	ETCDServers        string
-	ETCDPrefix         string
+	EtcdServers        string
+	EtcdPrefix         string
 	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
 	KubeAPIPort        int
 	KubeControllerPort int
@@ -73,8 +74,8 @@ func DefaultConfig() (Config, error) {
 		PathToKubeScheduler:  pathKubeSchedulerFlag.Value(),
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
-		ETCDServers:          "http://127.0.0.1:2379",
-		ETCDPrefix:           ETCDPrefix,
+		EtcdServers:          kubeEtcdServersFlag.Value(),
+		EtcdPrefix:           ETCDPrefix,
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,

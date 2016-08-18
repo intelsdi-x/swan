@@ -86,6 +86,21 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
 		})
 	})
+
+	Convey("Check configuration etcd servers flag", s.T(), func() {
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
+		handle := &mocks.TaskHandle{}
+		handle.On("Address").Return("127.0.0.1")
+		Convey("default etcd server points to localhost", func() {
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
+
+		})
+		Convey("but can be changed to allow specify own etcd servers.", func() {
+			config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
+		})
+	})
 }
 
 // testServiceCasesRecursively tests three cases which can happen for single service during
