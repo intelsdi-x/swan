@@ -53,7 +53,9 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 		defer s.outputFile.Close()
 
 		Convey("While launching k8s cluster with default configuration", func() {
-			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, DefaultConfig()).(kubernetes)
+			config, err := DefaultConfig()
+			So(err, ShouldBeNil)
+			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
 			So(ok, ShouldBeTrue)
 
 			s.k8sLauncher = &k8sLauncher
@@ -69,7 +71,8 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 	})
 
 	Convey("Check configuration privileged flag", s.T(), func() {
-		config := DefaultConfig()
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
 		Convey("default disallow run privileged containers", func() {
@@ -81,6 +84,21 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 			config.AllowPrivileged = true
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
 			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
+		})
+	})
+
+	Convey("Check configuration etcd servers flag", s.T(), func() {
+		config, err := DefaultConfig()
+		So(err, ShouldBeNil)
+		handle := &mocks.TaskHandle{}
+		handle.On("Address").Return("127.0.0.1")
+		Convey("default etcd server points to localhost", func() {
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
+
+		})
+		Convey("but can be changed to allow specify own etcd servers.", func() {
+			config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
 		})
 	})
 }
@@ -155,6 +173,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
 		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
 		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
+		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
 
 		// Check if it is the last service.
 		if serviceIterator < len(serviceNames)-1 {
@@ -180,6 +199,7 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 
 				So(k8sHandle.Stop(), ShouldBeNil)
 				So(k8sHandle.Clean(), ShouldBeNil)
+				So(k8sHandle.EraseOutput(), ShouldBeNil)
 			})
 		}
 	})

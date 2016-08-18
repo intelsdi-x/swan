@@ -12,10 +12,11 @@ func getKubeAPIServerCommand(config Config) string {
 		fmt.Sprintf("%s", config.PathToKubeAPIServer),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
-		fmt.Sprintf(" --etcd-servers=%s", config.ETCDServers),
+		fmt.Sprintf(" --etcd-servers=%s", config.EtcdServers),
+		fmt.Sprintf(" --etcd-prefix=%s", config.EtcdPrefix),
 		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
 		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
-		fmt.Sprintf(" --kubelet-timeout=5s"), // Default for now.
+		fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
 		fmt.Sprintf(" --service-cluster-ip-range=%s", config.ServiceAddresses),
 		fmt.Sprintf(" %s", config.KubeAPIArgs),
 	)

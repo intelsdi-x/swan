@@ -12,9 +12,9 @@ import (
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
-	ID                = "l1i"
-	name              = "L1 Instruction"
-	defaultIntensity  = 19
+	ID               = "l1i"
+	name             = "L1 Instruction"
+	defaultIntensity = 19
 
 	// {min,max}Intensity are hardcoded values in l1i binary
 	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan
@@ -24,11 +24,11 @@ const (
 
 	// -1 (or absence of iteration argument) means infinite iterations in l1i.
 	infiniteIterations = -1
-	defaultIterations = infiniteIterations
+	defaultIterations  = infiniteIterations
 )
 
 // PathFlag represents l1i path flag.
-var PathFlag = conf.NewFileFlag(
+var PathFlag = conf.NewStringFlag(
 	"l1i_path",
 	"Path to L1 instruction binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1i"),
