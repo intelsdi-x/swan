@@ -5,3 +5,6 @@
 [submodule "workloads/data_caching/memcached/cppzmq"]
 	path = workloads/data_caching/memcached/cppzmq
 	url = https://github.com/zeromq/cppzmq
+[submodule "misc/serenity2"]
+	path = misc/serenity2
+	url = git@github.com:intelsdi-x/serenity2
