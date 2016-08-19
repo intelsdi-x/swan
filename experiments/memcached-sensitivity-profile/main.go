@@ -9,6 +9,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -30,6 +31,7 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
+	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
 	mutilateMasterFlagDefault = "local"
 )
@@ -68,6 +70,14 @@ func isManualPolicy() bool {
 	return hpSetsFlag.Value() != "" && beSetsFlag.Value() != ""
 }
 
+// DecoratorFunc is a dummy decorator as a workaround for a isolation for inside a docker.
+type DecoratorFunc func(string) string
+
+// Decorate wrap method for a command.
+func (df DecoratorFunc) Decorate(command string) string {
+	return df(command)
+}
+
 // Check README.md for details of this experiment.
 func main() {
 	// Setup conf.
@@ -87,26 +97,48 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// TODO: needs update for different isolation per cpu
 	var hpIsolation, beIsolation, l1Isolation, llcIsolation isolation.Isolation
 	var aggressorFactory sensitivity.AggressorFactory
-	if isManualPolicy() {
-		hpIsolation, beIsolation = manualPolicy()
-		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
-		defer beIsolation.Clean()
+
+	if runOnKubernetesFlag.Value() {
+		var dummyIsolation DecoratorFunc = func(s string) string { return s }
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(dummyIsolation)
+	} else if isManualPolicy() {
+	 	hpIsolation, beIsolation = manualPolicy()
+	 	aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+	 	defer beIsolation.Clean()
+		defer hpIsolation.Clean()
 	} else {
-		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
-		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
-		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-		defer l1Isolation.Clean()
-		defer llcIsolation.Clean()
+	 	// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
+	 	hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+	 	aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+	 	defer l1Isolation.Clean()
+	 	defer llcIsolation.Clean()
+		defer hpIsolation.Clean()
 	}
-	defer hpIsolation.Clean()
 
-	// Initialize Memcached Launcher.
-	localForHP := executor.NewLocalIsolated(hpIsolation)
+	var HPExecutor executor.Executor
+	var err error
+	var memcachedLauncher memcached.Memcached
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
-
-	// Initialize Mutilate Load Generator.
 	mutilateConfig := mutilate.DefaultMutilateConfig()
+
+	if runOnKubernetesFlag.Value() {
+
+		k8sConfig, err := kubernetes.DefaultConfig()
+		errutil.Check(err)
+		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
+		k8sClusterTaskHandle, err := k8sLauncher.Launch()
+		defer executor.StopCleanAndErase(k8sClusterTaskHandle)
+
+		executorConf := executor.DefaultKubernetesConfig()
+		executorConf.ContainerImage = "centos_swan_image"
+		HPExecutor, err = executor.NewKubernetes(executorConf)
+		errutil.Check(err)
+	} else {
+		HPExecutor = executor.NewLocalIsolated(hpIsolation)
+	}
+
+	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig) // Initialize Memcached Launcher.
+
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
 	mutilateConfig.LatencyPercentile = percentileFlag.Value()
@@ -134,6 +166,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		append(agentsLoadGeneratorExecutors, masterLoadGeneratorExecutor),
 	)
 
+	// Initialize Mutilate Load Generator.
 	mutilateLoadGenerator := mutilate.NewCluster(
 		masterLoadGeneratorExecutor,
 		agentsLoadGeneratorExecutors,
@@ -142,10 +175,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggressorName)
+		aggressor, err := aggressorFactory.Create(aggressorName, runOnKubernetesFlag.Value())
 		errutil.Check(err)
 
-		aggressors = append(aggressors, aggressor)
+		aggressors = append(aggressors, sensitivity.NewLauncherWithoutSession(aggressor))
 	}
 
 	// Snap Session for mutilate.
@@ -162,6 +195,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 
 	// Run Experiment.
-	err := sensitivityExperiment.Run()
+	err = sensitivityExperiment.Run()
 	errutil.Check(err)
 }
