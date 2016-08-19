@@ -17,6 +17,7 @@ func DefaultConfig() Config {
 	publisher.AddConfigItem("server", conf.CassandraAddress.Value())
 
 	return Config{
+		Metrics: []string{"/intel/docker/*/cgroups/*"},
 		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
 		Interval:     1 * time.Second,
 		Publisher:    publisher,
@@ -25,6 +26,7 @@ func DefaultConfig() Config {
 
 // Config contains configuration for Kubesnap Session Launcher.
 type Config struct {
+	Metrics	[]string
 	SnapdAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
 	Interval     time.Duration
@@ -56,7 +58,8 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession([]string{"/intel/docker/*/cgroups/*"},
+		session: snap.NewSession(
+			config.Metrics,
 			config.Interval,
 			snapClient,
 			config.Publisher,

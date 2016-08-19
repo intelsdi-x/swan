@@ -34,6 +34,8 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
+	kubernetesMetricsFlag = conf.NewSliceFlag("kubernetes_metrics", "Select kubesnap metrics")
+
 	mutilateMasterFlagDefault = "local"
 )
 
@@ -137,6 +139,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 
 		kubesnapConfig := kubesnap.DefaultConfig()
+		if len(kubernetesMetricsFlag) > 0 {
+			kubesnapConfig.Metrics = kubernetesMetricsFlag
+		}
 		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
 
 		errutil.Check(err)

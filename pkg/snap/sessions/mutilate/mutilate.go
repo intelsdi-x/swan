@@ -17,6 +17,20 @@ func DefaultConfig() Config {
 	publisher.AddConfigItem("server", conf.CassandraAddress.Value())
 
 	return Config{
+		Metrics: []string{
+			"/intel/swan/mutilate/*/avg",
+			"/intel/swan/mutilate/*/std",
+			"/intel/swan/mutilate/*/min",
+			"/intel/swan/mutilate/*/percentile/5th",
+			"/intel/swan/mutilate/*/percentile/10th",
+			"/intel/swan/mutilate/*/percentile/90th",
+			"/intel/swan/mutilate/*/percentile/95th",
+			"/intel/swan/mutilate/*/percentile/99th",
+			"/intel/swan/mutilate/*/qps",
+			//TODO: Fetch the 99_999th value from MUTILATE task itself!
+			//It shall be redesigned ASAP
+			"/intel/swan/mutilate/*/percentile/*/custom",
+		},
 		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
 		Interval:     1 * time.Second,
 		Publisher:    publisher,
@@ -25,6 +39,7 @@ func DefaultConfig() Config {
 
 // Config contains configuration for Mutilate Collector session.
 type Config struct {
+	Metrics	[]string
 	SnapdAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
 	Interval     time.Duration
@@ -58,20 +73,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 
 	return &SessionLauncher{
 		session: snap.NewSession(
-			[]string{
-				"/intel/swan/mutilate/*/avg",
-				"/intel/swan/mutilate/*/std",
-				"/intel/swan/mutilate/*/min",
-				"/intel/swan/mutilate/*/percentile/5th",
-				"/intel/swan/mutilate/*/percentile/10th",
-				"/intel/swan/mutilate/*/percentile/90th",
-				"/intel/swan/mutilate/*/percentile/95th",
-				"/intel/swan/mutilate/*/percentile/99th",
-				"/intel/swan/mutilate/*/qps",
-				//TODO: Fetch the 99_999th value from MUTILATE task itself!
-				//It shall be redesigned ASAP
-				"/intel/swan/mutilate/*/percentile/*/custom",
-			},
+			config.Metrics,
 			config.Interval,
 			snapClient,
 			config.Publisher,
