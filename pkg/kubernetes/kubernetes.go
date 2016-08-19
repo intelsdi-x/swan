@@ -7,6 +7,7 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/nu7hatch/gouuid"
@@ -25,7 +26,6 @@ var (
 	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 	allowPrivilegedFlag    = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
-	kubeEtcdServersFlag    = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 )
 
 // Config contains all data for running kubernetes master & kubelet.
@@ -38,8 +38,8 @@ type Config struct {
 
 	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
-	EtcdServers        string
-	EtcdPrefix         string
+	ETCDServers        string
+	ETCDPrefix         string
 	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
 	KubeAPIPort        int
 	KubeControllerPort int
@@ -73,8 +73,8 @@ func DefaultConfig() (Config, error) {
 		PathToKubeScheduler:  pathKubeSchedulerFlag.Value(),
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
-		EtcdServers:          kubeEtcdServersFlag.Value(),
-		EtcdPrefix:           ETCDPrefix,
+		ETCDServers:          "http://127.0.0.1:2379",
+		ETCDPrefix:           ETCDPrefix,
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,
@@ -89,21 +89,36 @@ func DefaultConfig() (Config, error) {
 
 // NewCluster returns a new K8s cluster
 // and wait waitForK8sClusterStart to get up.
-func NewCluster(waitForK8sClusterStart time.Duration) (error) {
+func NewCluster(waitForK8sClusterStart time.Duration) (executor.TaskHandle, error) {
 	// Kubernetes cluster setup and initialize k8s executor
 	clusterExecutor := executor.NewLocal()
 	config, err := DefaultConfig()
 	k8sLauncher := New(clusterExecutor, clusterExecutor, config)
 	taskHandle, err := k8sLauncher.Launch()
 	if err != nil {
-		return errors.Wrapf(err, "Can't get K8s task handle: ", err)
+		return nil, errors.Wrapf(err, "Can't get K8s task handle: ", err)
 	}
 	taskHandle.Wait(waitForK8sClusterStart)
 	if c, err := taskHandle.ExitCode(); err != nil {
-		return errors.Wrapf(err, "Can't prepare K8s cluster: ", err, c)
+		return nil, errors.Wrapf(err, "Can't prepare K8s cluster: ", err, c)
 	}
 
-	return nil
+	return taskHandle, nil
+}
+
+// StopAndCleanupCluster stop a K8s cluster and clean after it.
+// It's used during fail launch k8s or after end of experiment.
+func StopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
+	var errorCollection errcollection.ErrorCollection
+
+	if clusterTaskHandle == nil {
+		return errorCollection
+	}
+	errorCollection.Add(clusterTaskHandle.Stop())
+	errorCollection.Add(clusterTaskHandle.Clean())
+	errorCollection.Add(clusterTaskHandle.EraseOutput())
+
+	return errorCollection
 }
 
 type kubernetes struct {
@@ -142,7 +157,9 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	if !m.isListening(address, serviceListenTimeout) {
 		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
-		defer executor.StopCleanAndErase(handle)
+		defer handle.EraseOutput()
+		defer handle.Clean()
+		defer handle.Stop()
 
 		return nil, errors.Errorf(
 			"failed to connect to service %q on %q: timeout on connection to %q",
@@ -168,7 +185,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	controllerHandle, err := m.launchService(
 		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -178,7 +195,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	schedulerHandle, err := m.launchService(
 		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -189,7 +206,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	proxyHandle, err := m.launchService(
 		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -199,7 +216,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	kubeletHandle, err := m.launchService(
 		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := StopAndCleanupCluster(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
