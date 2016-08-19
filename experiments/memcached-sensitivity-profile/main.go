@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
@@ -102,22 +103,24 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		var dummyIsolation DecoratorFunc = func(s string) string { return s }
 		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(dummyIsolation)
 	} else if isManualPolicy() {
-	 	hpIsolation, beIsolation = manualPolicy()
-	 	aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
-	 	defer beIsolation.Clean()
+		hpIsolation, beIsolation = manualPolicy()
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+		defer beIsolation.Clean()
 		defer hpIsolation.Clean()
 	} else {
-	 	// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
-	 	hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
-	 	aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	 	defer l1Isolation.Clean()
-	 	defer llcIsolation.Clean()
+		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
+		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+		defer l1Isolation.Clean()
+		defer llcIsolation.Clean()
 		defer hpIsolation.Clean()
 	}
 
 	var hpExecutor executor.Executor
 	var err error
+	var kubesnapLauncher *kubesnap.SessionLauncher
 	var memcachedLauncher memcached.Memcached
+
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 
@@ -132,6 +135,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
 		hpExecutorConfig.PodName = "swan-hp"
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
+
+		kubesnapConfig := kubesnap.DefaultConfig()
+		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
+
 		errutil.Check(err)
 	} else {
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
@@ -184,12 +191,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Snap Session for mutilate.
 	mutilateSnapSession := prepareSnapSessionLauncher()
 
+	var memcacheAndKubesnapLauncher sensitivity.LauncherSessionPair
+	if runOnKubernetesFlag.Value() {
+		memcacheAndKubesnapLauncher = sensitivity.NewMonitoredLauncher(memcachedLauncher, kubesnapLauncher)
+	} else {
+		memcacheAndKubesnapLauncher = sensitivity.NewLauncherWithoutSession(memcachedLauncher)
+	}
+
 	// Create Experiment configuration from Conf.
 	sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),
 		conf.LogLevel(),
 		sensitivity.DefaultConfiguration(),
-		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
+		memcacheAndKubesnapLauncher,
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
 	)
