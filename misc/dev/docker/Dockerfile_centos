@@ -20,6 +20,7 @@ RUN yum install -y epel-release && \
         libcgroup-tools \
         nc \
         numactl \
+        moreutils-parallel \
         scons \
         sudo \
         wget \
