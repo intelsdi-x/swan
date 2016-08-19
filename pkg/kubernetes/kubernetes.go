@@ -87,6 +87,37 @@ func DefaultConfig() (Config, error) {
 	}, nil
 }
 
+// NewCluster returns a new K8s cluster
+// and wait waitForK8sClusterStart to get up.
+func NewCluster(waitForK8sClusterStart time.Duration) (executor.TaskHandle, error) {
+	// Kubernetes cluster setup and initialize k8s executor
+	clusterExecutor := executor.NewLocal()
+	config, err := DefaultConfig()
+	k8sLauncher := New(clusterExecutor, clusterExecutor, config)
+	taskHandle, err := k8sLauncher.Launch()
+	if err != nil {
+		return nil, errors.Wrapf(err, "Can't get K8s task handle: ", err)
+	}
+	// taskHandle.Wait(waitForK8sClusterStart)
+
+	return taskHandle, nil
+}
+
+// StopAndCleanupCluster stop a K8s cluster and clean after it.
+// It's used during fail launch k8s or after end of experiment.
+func StopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
+	var errorCollection errcollection.ErrorCollection
+
+	if clusterTaskHandle == nil {
+		return errorCollection
+	}
+	errorCollection.Add(clusterTaskHandle.Stop())
+	errorCollection.Add(clusterTaskHandle.Clean())
+	errorCollection.Add(clusterTaskHandle.EraseOutput())
+
+	return errorCollection
+}
+
 type kubernetes struct {
 	master      executor.Executor
 	minion      executor.Executor

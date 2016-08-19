@@ -11,11 +11,11 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
 )
 
 var (
@@ -140,7 +140,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		kubesnapConfig := kubesnap.DefaultConfig()
 		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
 
-
 		errutil.Check(err)
 	} else {
 		HPExecutor = executor.NewLocalIsolated(hpIsolation)
@@ -209,7 +208,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		aggressors,
 	)
 	// Run Experiment.
-	_ = sensitivityExperiment
-	// err = sensitivityExperiment.Run()
+	err = sensitivityExperiment.Run()
 	errutil.Check(err)
 }
