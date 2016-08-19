@@ -20,6 +20,7 @@ RUN apt-get update && \
         libzmq5-dev \
         netcat \
         numactl \
+        moreutils-parallel \
         scons \
         sudo \
         wget && \
