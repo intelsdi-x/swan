@@ -139,8 +139,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 
 		kubesnapConfig := kubesnap.DefaultConfig()
-		if len(kubernetesMetricsFlag) > 0 {
-			kubesnapConfig.Metrics = kubernetesMetricsFlag
+		if len(kubernetesMetricsFlag.Value()) > 0 {
+			kubesnapConfig.Metrics = kubernetesMetricsFlag.Value()
 		}
 		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
 
