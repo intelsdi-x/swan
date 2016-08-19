@@ -97,6 +97,11 @@
 			"Rev": "60ec3488bfea7cca02b021d106d9911120d25fe9"
 		},
 		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "v1.18.0-47-g168c954",
+			"Rev": "168c95418e66e019fe17b8f4f5c45aa62ff80e23"
+		},
+		{
 			"ImportPath": "github.com/coreos/go-oidc/http",
 			"Rev": "48c41f8e5a608ae49cbff1d977dd060815a8bb9f"
 		},
@@ -278,113 +283,128 @@
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/client",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/cpolicy",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encoding",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/encrypter",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/control/plugin/rpc",
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/control/strategy",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/cdata",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/control_event",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/ctypes",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/core/serror",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/grpc/common",
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/grpc/controlproxy/rpc",
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/client",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/rbody",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
-		},
-		{
-			"ImportPath": "github.com/intelsdi-x/snap/mgmt/rest/request",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/mgmt/tribe/agreement",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/aci",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/chrono",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/ctree",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/psigning",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/snap/pkg/rpcutil",
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/pkg/schedule",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/intelsdi-x/snap/scheduler/wmap",
-			"Comment": "v0.13.0-beta-120-g7e41c44",
-			"Rev": "7e41c44c284bc5ee411ac01510733016d0d8b148"
+			"Comment": "v0.15.0-beta",
+			"Rev": "c78752606ed2d27df26ed767a1d6f0b55be0359e"
 		},
 		{
 			"ImportPath": "github.com/jonboulle/clockwork",
@@ -399,11 +419,6 @@
 		{
 			"ImportPath": "github.com/juju/ratelimit",
 			"Rev": "77ed1c8a01217656d2080ad51981f6e99adaa177"
-		},
-		{
-			"ImportPath": "github.com/mattn/go-runewidth",
-			"Comment": "v0.0.1",
-			"Rev": "d6bea18f789704b5f83375793155289da36a3c7f"
 		},
 		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
@@ -422,10 +437,6 @@
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
 			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
-		},
-		{
-			"ImportPath": "github.com/olekukonko/tablewriter",
-			"Rev": "279fecc91ba77130f753d073259d7f9e246acdda"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/cgroups",
@@ -467,6 +478,7 @@
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
@@ -623,7 +635,15 @@
 			"Rev": "5916dcb167ed985a5b9e6871fbfd74848a4c170b"
 		},
 		{
+			"ImportPath": "golang.org/x/net/internal/timeseries",
+			"Rev": "5916dcb167ed985a5b9e6871fbfd74848a4c170b"
+		},
+		{
 			"ImportPath": "golang.org/x/net/lex/httplex",
+			"Rev": "5916dcb167ed985a5b9e6871fbfd74848a4c170b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/trace",
 			"Rev": "5916dcb167ed985a5b9e6871fbfd74848a4c170b"
 		},
 		{
@@ -689,6 +709,51 @@
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "4f1a5ca1c906ba5ff5ff9fba3bee49d526a8d03f"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/codes",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/credentials",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/grpclog",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/internal",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/metadata",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/naming",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/peer",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/transport",
+			"Comment": "v1.0.0-183-g231b4cf",
+			"Rev": "231b4cfea0e79843053a33f5fe90bd4d84b23cd3"
 		},
 		{
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
