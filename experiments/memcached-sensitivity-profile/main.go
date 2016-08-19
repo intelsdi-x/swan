@@ -14,7 +14,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	//"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 var (
@@ -72,7 +72,6 @@ func isManualPolicy() bool {
 
 // Check README.md for details of this experiment.
 func main() {
-	const waitForK8sClusterStart = 60 // Wait 60s fot start k8s cluster.
 	// Setup conf.
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
@@ -110,14 +109,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 
 	if runOnKubernetesFlag.Value() {
-		clusterTaskHandle, err := kubernetes.NewCluster(waitForK8sClusterStart)
-		defer clusterTaskHandle.Stop()
-		defer clusterTaskHandle.Clean()
-		defer clusterTaskHandle.EraseOutput()
+		//clusterTaskHandle, err := kubernetes.New()
+		//defer
 
-		executorConf := executor.DefaultKubernetesConfig()
-		executorConf.ContainerImage = "centos_swan_image"
-		HPExecutor, err = executor.NewKubernetes(executorConf)
+		//executorConf := executor.DefaultKubernetesConfig()
+		//executorConf.ContainerImage = "centos_swan_image"
+		//HPExecutor, err = executor.NewKubernetes(executorConf)
 
 		errutil.Check(err)
 	} else {

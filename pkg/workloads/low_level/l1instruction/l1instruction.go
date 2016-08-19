@@ -28,7 +28,7 @@ const (
 )
 
 // PathFlag represents l1i path flag.
-var PathFlag = conf.NewFileFlag(
+var PathFlag = conf.NewStringFlag(
 	"l1i_path",
 	"Path to L1 instruction binary",
 	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1i"),

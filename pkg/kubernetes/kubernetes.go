@@ -87,25 +87,6 @@ func DefaultConfig() (Config, error) {
 	}, nil
 }
 
-// NewCluster returns a new K8s cluster
-// and wait waitForK8sClusterStart to get up.
-func NewCluster(waitForK8sClusterStart time.Duration) (error) {
-	// Kubernetes cluster setup and initialize k8s executor
-	clusterExecutor := executor.NewLocal()
-	config, err := DefaultConfig()
-	k8sLauncher := New(clusterExecutor, clusterExecutor, config)
-	taskHandle, err := k8sLauncher.Launch()
-	if err != nil {
-		return errors.Wrapf(err, "Can't get K8s task handle: ", err)
-	}
-	taskHandle.Wait(waitForK8sClusterStart)
-	if c, err := taskHandle.ExitCode(); err != nil {
-		return errors.Wrapf(err, "Can't prepare K8s cluster: ", err, c)
-	}
-
-	return nil
-}
-
 type kubernetes struct {
 	master      executor.Executor
 	minion      executor.Executor
