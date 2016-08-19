@@ -14,6 +14,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	//"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 var (
@@ -30,6 +31,7 @@ var (
 	mutilateAgentsFlag = conf.NewSliceFlag(
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
+	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
 	mutilateMasterFlagDefault = "local"
 )
@@ -100,13 +102,26 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	defer hpIsolation.Clean()
 
-	// Initialize Memcached Launcher.
-	localForHP := executor.NewLocalIsolated(hpIsolation)
+	var HPExecutor executor.Executor
+	var err error
+	var memcachedLauncher memcached.Memcached
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(localForHP, memcachedConfig)
-
-	// Initialize Mutilate Load Generator.
 	mutilateConfig := mutilate.DefaultMutilateConfig()
+
+	if runOnKubernetesFlag.Value() {
+		//clusterTaskHandle, err := kubernetes.New()
+		//defer
+
+		//executorConf := executor.DefaultKubernetesConfig()
+		//executorConf.ContainerImage = "centos_swan_image"
+		//HPExecutor, err = executor.NewKubernetes(executorConf)
+
+		errutil.Check(err)
+	} else {
+		HPExecutor = executor.NewLocalIsolated(hpIsolation)
+	}
+	memcachedLauncher = memcached.New(HPExecutor, memcachedConfig)  // Initialize Memcached Launcher.
+
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
 	mutilateConfig.LatencyPercentile = percentileFlag.Value()
@@ -134,6 +149,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		append(agentsLoadGeneratorExecutors, masterLoadGeneratorExecutor),
 	)
 
+	 // Initialize Mutilate Load Generator.
 	mutilateLoadGenerator := mutilate.NewCluster(
 		masterLoadGeneratorExecutor,
 		agentsLoadGeneratorExecutors,
@@ -142,10 +158,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialize aggressors with BE isolation.
 	aggressors := []sensitivity.LauncherSessionPair{}
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressor, err := aggressorFactory.Create(aggressorName)
+		aggressor, err := aggressorFactory.Create(aggressorName, runOnKubernetesFlag.Value())
 		errutil.Check(err)
 
-		aggressors = append(aggressors, aggressor)
+		aggressors = append(aggressors, sensitivity.NewLauncherWithoutSession(aggressor))
 	}
 
 	// Snap Session for mutilate.
@@ -162,6 +178,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 
 	// Run Experiment.
-	err := sensitivityExperiment.Run()
+	err = sensitivityExperiment.Run()
 	errutil.Check(err)
 }
