@@ -47,7 +47,12 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
-		eraseOutput(filepath.Dir(stdoutFile.Name()))
+		if stdoutFile != nil {
+			eraseOutput(filepath.Dir(stdoutFile.Name()))
+		} else if stderrFile != nil {
+			eraseOutput(filepath.Dir(stderrFile.Name()))
+		}
+
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
