@@ -16,6 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 )
 
 var (
@@ -196,11 +197,18 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Snap Session for mutilate.
 	mutilateSnapSession := prepareSnapSessionLauncher()
 
-	var memcacheAndKubesnapLauncher sensitivity.LauncherSessionPair
+
+
 	if runOnKubernetesFlag.Value() {
+		expSession := phase.Session{
+			PhaseID: 0,
+			AggressorName: "",
+			ExperimentID: "experiment",
+			LoadPointQPS: 0,
+			RepetitionID: 0,
+		}
+		kubesnapLauncher.LaunchSession(executor.TaskInfo{}, expSession)
 		memcacheAndKubesnapLauncher = sensitivity.NewMonitoredLauncher(memcachedLauncher, kubesnapLauncher)
-	} else {
-		memcacheAndKubesnapLauncher = sensitivity.NewLauncherWithoutSession(memcachedLauncher)
 	}
 
 	// Create Experiment configuration from Conf.
@@ -208,11 +216,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		conf.AppName(),
 		conf.LogLevel(),
 		sensitivity.DefaultConfiguration(),
-		memcacheAndKubesnapLauncher,
+		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
 	)
-
 	// Run Experiment.
 	err = sensitivityExperiment.Run()
 	errutil.Check(err)
