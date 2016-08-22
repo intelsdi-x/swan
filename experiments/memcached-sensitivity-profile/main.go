@@ -201,14 +201,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	if runOnKubernetesFlag.Value() {
 		expSession := phase.Session{
-			PhaseID: 0,
+			PhaseID: "launch",
 			AggressorName: "",
 			ExperimentID: "experiment",
 			LoadPointQPS: 0,
 			RepetitionID: 0,
 		}
-		kubesnapLauncher.LaunchSession(executor.TaskInfo{}, expSession)
-		memcacheAndKubesnapLauncher = sensitivity.NewMonitoredLauncher(memcachedLauncher, kubesnapLauncher)
+		kubesnapLauncher.LaunchSession(nil, expSession)
 	}
 
 	// Create Experiment configuration from Conf.
