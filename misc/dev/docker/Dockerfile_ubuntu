@@ -30,7 +30,7 @@ RUN apt-get update && \
     ln -s /usr/bin/aclocal /usr/bin/aclocal-1.13 && \
     ln -s /usr/bin/autoconf /usr/bin/autoconf-1.13 && \
     cp /usr/sbin/useradd /usr/sbin/adduser && \
-    wget https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
+    wget https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz -O /usr/local/go.tar.gz && \
     cd /usr/local/ && \
     tar xfvv go.tar.gz
 
