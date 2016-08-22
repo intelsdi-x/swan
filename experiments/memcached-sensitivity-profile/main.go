@@ -122,8 +122,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 
 	if runOnKubernetesFlag.Value() {
-		k8sConfig, err := kubernetes.DefaultConfig()
-		errutil.Check(err)
+		k8sConfig := kubernetes.DefaultConfig()
 		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
 		k8sClusterTaskHandle, err := k8sLauncher.Launch()
 		defer executor.StopCleanAndErase(k8sClusterTaskHandle)
