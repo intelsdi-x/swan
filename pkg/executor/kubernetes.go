@@ -177,9 +177,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		return taskHandle, nil
 
 	case <-timeoutChannel:
-		defer taskHandle.EraseOutput()
-		defer taskHandle.Clean()
-		defer taskHandle.Stop()
+		defer taskHandle.StopCleanAndErase()
 
 		LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
 		return nil, errors.Errorf(
