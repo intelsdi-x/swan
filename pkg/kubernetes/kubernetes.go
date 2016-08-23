@@ -7,9 +7,9 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	"github.com/intelsdi-x/swan/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )
@@ -60,14 +60,7 @@ type Config struct {
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
-func DefaultConfig() (Config, error) {
-	// Create unique etcd prefix to avoid interference with any parallel tests which use same
-	// etcd cluster.
-	etcdPrefix, err := uuid.NewV4()
-	if err != nil {
-		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
-	}
-	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
+func DefaultConfig() Config {
 	return Config{
 		PathToKubeAPIServer:  pathKubeAPIServerFlag.Value(),
 		PathToKubeController: pathKubeControllerFlag.Value(),
@@ -75,7 +68,7 @@ func DefaultConfig() (Config, error) {
 		PathToKubeProxy:      pathKubeProxyFlag.Value(),
 		PathToKubelet:        pathKubeletFlag.Value(),
 		EtcdServers:          kubeEtcdServersFlag.Value(),
-		EtcdPrefix:           ETCDPrefix,
+		EtcdPrefix:           "/registry",
 		LogLevel:             logLevelFlag.Value(),
 		AllowPrivileged:      allowPrivilegedFlag.Value(),
 		KubeAPIPort:          8080,
@@ -85,7 +78,32 @@ func DefaultConfig() (Config, error) {
 		KubeProxyPort:        10249,
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
-	}, nil
+	}
+}
+
+// UniqueConfig is a constructor for Config with default parameters and random ports and random etcd prefix.
+func UniqueConfig() (Config, error) {
+	config := DefaultConfig()
+	// Create unique etcd prefix to avoid interference with any parallel tests which use same
+	// etcd cluster.
+	etcdPrefix, err := uuid.NewV4()
+	if err != nil {
+		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
+	}
+	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
+	config.EtcdPrefix = ETCDPrefix
+
+	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
+	// assign a collection of ports to the services. Eventhough previous kubernetes processes
+	// have been shut down, ports may be in CLOSE_WAIT state.
+	ports := random.Ports(22768, 32768, 5)
+	config.KubeAPIPort = ports[0]
+	config.KubeletPort = ports[1]
+	config.KubeControllerPort = ports[2]
+	config.KubeSchedulerPort = ports[3]
+	config.KubeProxyPort = ports[4]
+
+	return config, nil
 }
 
 type kubernetes struct {
@@ -124,9 +142,7 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	if !m.isListening(address, serviceListenTimeout) {
 		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
 
-		defer handle.EraseOutput()
-		defer handle.Clean()
-		defer handle.Stop()
+		defer executor.StopCleanAndErase(handle)
 
 		return nil, errors.Errorf(
 			"failed to connect to service %q on %q: timeout on connection to %q",
@@ -134,19 +150,6 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	}
 
 	return handle, nil
-}
-
-func (m kubernetes) stopAndCleanupCluster(clusterTaskHandle *executor.ClusterTaskHandle) errcollection.ErrorCollection {
-	var errorCollection errcollection.ErrorCollection
-
-	if clusterTaskHandle == nil {
-		return errorCollection
-	}
-	errorCollection.Add(clusterTaskHandle.Stop())
-	errorCollection.Add(clusterTaskHandle.Clean())
-	errorCollection.Add(clusterTaskHandle.EraseOutput())
-
-	return errorCollection
 }
 
 // Launch starts the kubernetes cluster. It returns a cluster
@@ -165,7 +168,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	controllerHandle, err := m.launchService(
 		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -175,7 +178,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	schedulerHandle, err := m.launchService(
 		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -186,7 +189,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	proxyHandle, err := m.launchService(
 		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}
@@ -196,7 +199,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	kubeletHandle, err := m.launchService(
 		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
 	if err != nil {
-		errCol := m.stopAndCleanupCluster(clusterTaskHandle)
+		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errCol.GetErrIfAny()
 	}

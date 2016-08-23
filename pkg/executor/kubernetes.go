@@ -147,6 +147,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		pod:     pod,
 	}
 
+	taskHandle.setupLogs()
 	taskHandle.watch()
 
 	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
@@ -158,9 +159,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		// TODO(skonefal): We don't have stdout & stderr when pod fails.
 		exitCode, err := taskHandle.ExitCode()
 		if err != nil || exitCode != 0 {
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
+			defer StopCleanAndErase(taskHandle)
 
 			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
 			return nil, errors.Errorf(
@@ -172,8 +171,6 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		LogSuccessfulExecution(command, k8s.Name(), taskHandle)
 		return taskHandle, nil
 	}
-
-	taskHandle.setupLogs()
 
 	return taskHandle, nil
 }

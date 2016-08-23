@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
@@ -21,18 +20,8 @@ func TestKubernetesExecutor(t *testing.T) {
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
-		// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
-		// assign a collection of ports to the services. Eventhough previous kubernetes processes
-		// have been shut down, ports may be in CLOSE_WAIT state.
-		config, err := kubernetes.DefaultConfig()
+		config, err := kubernetes.UniqueConfig()
 		So(err, ShouldBeNil)
-		ports := testhelpers.RandomPorts(36000, 40000, 5)
-		So(len(ports), ShouldEqual, 5)
-		config.KubeAPIPort = ports[0]
-		config.KubeletPort = ports[1]
-		config.KubeControllerPort = ports[2]
-		config.KubeSchedulerPort = ports[3]
-		config.KubeProxyPort = ports[4]
 
 		k8sLauncher := kubernetes.New(local, local, config)
 		k8sHandle, err := k8sLauncher.Launch()
