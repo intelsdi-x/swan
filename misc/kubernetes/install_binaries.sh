@@ -16,7 +16,10 @@ pushd `dirname $0`
     if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_BIN}.kube-services-${K8S_VERSION} ] ; then
         pushd ${SWAN_BIN}
             wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-apiserver
+
+            # wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-apiserver
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kube-apiserver.v1.4.0-alpha.2-serenity -O kube-apiserver
+
             wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-controller-manager
             wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-proxy
             wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-scheduler

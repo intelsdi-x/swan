@@ -90,10 +90,10 @@ func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 	resourceListLimits := api.ResourceList{}
 	resourceListRequests := api.ResourceList{}
 	if k8s.config.CPULimit > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(k8s.config.CPULimit, resource.DecimalSI)
+		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
 	}
 	if k8s.config.CPURequest > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewQuantity(k8s.config.CPURequest, resource.DecimalSI)
+		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
 	}
 	return api.ResourceRequirements{
 		Limits:   resourceListLimits,
@@ -415,10 +415,13 @@ func (th *kubernetesTaskHandle) Clean() error {
 
 // EraseOutput deletes the stdout and stderr files.
 func (th *kubernetesTaskHandle) EraseOutput() error {
-	if _, err := os.Stat(th.logdir); os.IsExist(err) {
+	directory, err := os.Lstat(th.logdir)
+	if err == nil && directory.IsDir() {
 		if err := os.RemoveAll(th.logdir); err != nil {
 			return errors.Wrapf(err, "cannot remove directory %q", th.logdir)
 		}
+	} else {
+		return errors.Wrapf(err, "cannot remove directory %q", th.logdir)
 	}
 
 	return nil
