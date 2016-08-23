@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -46,12 +47,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
 	if err != nil {
-		if stdoutFile != nil {
-			eraseOutput(filepath.Dir(stdoutFile.Name()))
-		} else if stderrFile != nil {
-			eraseOutput(filepath.Dir(stderrFile.Name()))
-		}
-
+		eraseOutput(stdoutFile)
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -63,7 +59,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		eraseOutput(filepath.Dir(stdoutFile.Name()))
+		eraseOutput(stdoutFile)
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
@@ -249,12 +245,16 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	outputDir := filepath.Dir(taskHandle.stdoutFile.Name())
-	return eraseOutput(outputDir)
+	return eraseOutput(taskHandle.stdoutFile)
 }
 
-func eraseOutput(outputDir string) error {
+// eraseOutput requires only one file from stdout and stderr files. It's looking for parent dir and remove it.
+func eraseOutput(outputFile *os.File) error {
 	// Remove temporary directory created for stdout and stderr.
+	if outputFile != nil {
+		return fmt.Errorf("Output file doesn't exist.")
+	}
+	outputDir := filepath.Dir(outputFile.Name())
 	if err := os.RemoveAll(outputDir); err != nil {
 		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
 	}
