@@ -252,7 +252,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 func eraseOutput(outputFile *os.File) error {
 	// Remove temporary directory created for stdout and stderr.
 	if outputFile != nil {
-		return fmt.Errorf("Output file doesn't exist.")
+		return nil
 	}
 	outputDir := filepath.Dir(outputFile.Name())
 	if err := os.RemoveAll(outputDir); err != nil {
