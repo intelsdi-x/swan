@@ -1,0 +1,35 @@
+---
+  version: 1
+  schedule:
+    type: "simple"
+    interval: "1s"
+  max-failures: 10
+  workflow:
+    collect:
+      metrics:
+        /intel/serenity2/lc/slo: {}
+        /intel/serenity2/lc/slo/peakload: {}
+        /intel/serenity2/lc/sli/targetmetric: {}
+        /intel/serenity2/lc/sli/targetloadmetric: {}
+        /intel/serenity2/memcached/*: {}
+      config:
+        /intel/serenity2/lc:
+          slo: 750
+          peakload: 15000
+          targetmetric: "/intel/mutilate/p99"
+          targetloadmetric: "/intel/memcached/load"
+        /intel/serenity2/memcached:
+          host: "127.0.0.1"
+          path: "/opt/gopath/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/mutilate/mutilate"
+          id: "some-random-instance"
+          window: 1
+      publish:
+        -
+          plugin_name: "file"
+          config:
+            file: "/tmp/serenity-metrics.log"
+            debug: true
+        -
+          plugin_name: "cassandra"
+          config:
+            server: "127.0.0.1"
