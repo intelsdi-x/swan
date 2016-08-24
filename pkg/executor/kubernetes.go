@@ -39,6 +39,7 @@ type KubernetesConfig struct {
 	Namespace      string
 	Privileged     bool
 	HostNetwork    bool
+	LaunchTimeout  time.Duration
 }
 
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
@@ -56,6 +57,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Namespace:      api.NamespaceDefault,
 		Privileged:     false,
 		HostNetwork:    false,
+		LaunchTimeout:  0,
 	}
 }
 
@@ -150,7 +152,11 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	taskHandle.setupLogs()
 	taskHandle.watch()
 
-	// NOTE: We should have timeout for the amount of time we want to wait for the pod to appear.
+	var timeoutChannel <-chan time.Time
+	if k8s.config.LaunchTimeout != 0 {
+		timeoutChannel = time.After(k8s.config.LaunchTimeout)
+	}
+
 	select {
 	case <-taskHandle.started:
 		// Pod succesfully started.
@@ -170,6 +176,15 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 
 		LogSuccessfulExecution(command, k8s.Name(), taskHandle)
 		return taskHandle, nil
+
+	case <-timeoutChannel:
+		defer StopCleanAndErase(taskHandle)
+
+		LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
+		return nil, errors.Errorf(
+			"failed to start command %q on %q on %q: timed out before started event was received",
+			command, k8s.Name(), taskHandle.Address(),
+		)
 	}
 
 	return taskHandle, nil
