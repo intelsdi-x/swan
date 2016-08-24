@@ -250,7 +250,7 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 // eraseOutput requires only one file from stdout and stderr files. It's looking for parent dir and remove it.
 func eraseOutput(outputFile *os.File) error {
 	// Remove temporary directory created for stdout and stderr.
-	if outputFile != nil {
+	if outputFile == nil {
 		return nil
 	}
 	outputDir := filepath.Dir(outputFile.Name())
