@@ -56,7 +56,10 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession([]string{"/intel/docker/*/cgroups/*"},
+		session: snap.NewSession([]string{
+			// "/intel/docker/*/cgroups/*"
+			"/intel/docker/*", // should include labels
+		},
 			config.Interval,
 			snapClient,
 			config.Publisher,

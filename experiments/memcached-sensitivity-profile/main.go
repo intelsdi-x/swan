@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/kubesnap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
@@ -102,24 +103,25 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		var dummyIsolation DecoratorFunc = func(s string) string { return s }
 		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(dummyIsolation)
 	} else if isManualPolicy() {
-	 	hpIsolation, beIsolation = manualPolicy()
-	 	aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
-	 	defer beIsolation.Clean()
+		hpIsolation, beIsolation = manualPolicy()
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+		defer beIsolation.Clean()
 		defer hpIsolation.Clean()
 	} else {
-	 	// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
-	 	hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
-	 	aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	 	defer l1Isolation.Clean()
-	 	defer llcIsolation.Clean()
+		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
+		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+		defer l1Isolation.Clean()
+		defer llcIsolation.Clean()
 		defer hpIsolation.Clean()
 	}
 
 	var hpExecutor executor.Executor
 	var err error
-	var memcachedLauncher memcached.Memcached
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	mutilateConfig := mutilate.DefaultMutilateConfig()
+
+	var memcachedSnapLauncher sensitivity.LauncherSessionPair
 
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
@@ -133,11 +135,34 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutorConfig.PodName = "swan-hp"
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 		errutil.Check(err)
+
+		// kubesnap integration (warning: bug with unloading)
+		var kubesnapLauncher *kubesnap.SessionLauncher
+		kubesnapConfig := kubesnap.DefaultConfig()
+		kubesnapConfig.Interval = 1 * time.Second
+		kubesnapLauncher, err = kubesnap.NewSessionLauncher(kubesnapConfig)
+
+		// ONE RUN FOR WHOLE SESSION
+		// expSession := phase.Session{
+		// 	PhaseID:       "N/A",
+		// 	AggressorName: "N/A",
+		// 	ExperimentID:  "UUID here", // TODO: don't have uuid
+		// 	LoadPointQPS:  0,
+		// 	RepetitionID:  0,
+		// }
+		// var ti executor.TaskInfo
+		// sess, err := kubesnapLauncher.LaunchSession(ti, expSession)
+		// errutil.Check(err)
+		// defer sess.Stop()
+
+		// wire togheterh
+		memcachedLauncher := memcached.New(hpExecutor, memcachedConfig)
+		memcachedSnapLauncher = sensitivity.NewMonitoredLauncher(memcachedLauncher, kubesnapLauncher)
 	} else {
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
+		memcachedLauncher := memcached.New(hpExecutor, memcachedConfig)
+		memcachedSnapLauncher = sensitivity.NewLauncherWithoutSession(memcachedLauncher)
 	}
-
-	memcachedLauncher = memcached.New(hpExecutor, memcachedConfig) // Initialize Memcached Launcher.
 
 	mutilateConfig.MemcachedHost = memcachedConfig.IP
 	mutilateConfig.MemcachedPort = memcachedConfig.Port
@@ -189,7 +214,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		conf.AppName(),
 		conf.LogLevel(),
 		sensitivity.DefaultConfiguration(),
-		sensitivity.NewLauncherWithoutSession(memcachedLauncher),
+		memcachedSnapLauncher,
 		sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession),
 		aggressors,
 	)
