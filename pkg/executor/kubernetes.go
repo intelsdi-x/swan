@@ -42,6 +42,18 @@ type KubernetesConfig struct {
 	LaunchTimeout  time.Duration
 }
 
+// LaunchTimedOutError is the error type returned when launching new pods exceed
+// the timeout value defined in kubernetes.Config.LaunchTimeout.
+type LaunchTimedOutError struct {
+	errorMessage string
+}
+
+// Error is one method needed to implement the error interface. Here, we just return
+// an the error message.
+func (err *LaunchTimedOutError) Error() string {
+	return err.errorMessage
+}
+
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
@@ -181,10 +193,13 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		defer StopCleanAndErase(taskHandle)
 
 		LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
-		return nil, errors.Errorf(
+		errorMessage := fmt.Sprintf(
 			"failed to start command %q on %q on %q: timed out before started event was received",
-			command, k8s.Name(), taskHandle.Address(),
-		)
+			command, k8s.Name(), taskHandle.Address())
+
+		return nil, &LaunchTimedOutError{
+			errorMessage: errorMessage,
+		}
 	}
 
 	return taskHandle, nil
