@@ -1,5 +1,5 @@
 hash: 39d047a758417bdd04fe4a162e998263e28435ebd990c59c97dd968a722bc36b
-updated: 2016-08-26T16:03:09.635769636+02:00
+updated: 2016-08-26T17:53:43.23001808+02:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -111,7 +111,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
 - name: github.com/intelsdi-x/athena
-  version: ba1b4dd3e5961045efd836f4dfd03735e64c2716
+  version: 9737dc1847c1f8510948a509aaf61a06cecd6791
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -233,12 +233,10 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: 351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93
+  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
   subpackages:
   - cast5
   - curve25519
-  - ed25519
-  - ed25519/internal/edwards25519
   - openpgp
   - openpgp/armor
   - openpgp/elgamal
@@ -349,7 +347,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/kubernetes
-  version: cce68024e4cfbe71b73eff9c22815d2ea1e45ceb
+  version: b44b716965db2d54c8c7dfcdbcb1d54792ab8559
   subpackages:
   - pkg/api
   - pkg/api/endpoints
