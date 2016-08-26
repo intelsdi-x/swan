@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	snapMocks "github.com/intelsdi-x/athena/pkg/snap/mocks"
 	executorMocks "github.com/intelsdi-x/athena/pkg/executor/mocks"
+	snapMocks "github.com/intelsdi-x/athena/pkg/snap/mocks"
 )
 
 type SensitivityTestSuite struct {
@@ -374,7 +374,7 @@ func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
 
 func (s *SensitivityTestSuite) mockSingleLcSessionExecution() {
 	s.mockedLcSessionLauncher.On(
-		"LaunchSession", s.mockedLcTask, mock.AnythingOfType("phase.Session")).Return(
+		"LaunchSession", s.mockedLcTask, mock.AnythingOfType("string")).Return(
 		s.mockedLcSessionHandle, nil).Once()
 	s.mockedLcSessionHandle.On("Stop").Return(nil).Once()
 	s.mockedLcSessionHandle.On("Wait").Return(nil).Once()
@@ -382,7 +382,7 @@ func (s *SensitivityTestSuite) mockSingleLcSessionExecution() {
 
 func (s *SensitivityTestSuite) mockSingleLoadGeneratorSessionExecution() {
 	s.mockedLoadGeneratorSessionLauncher.On(
-		"LaunchSession", s.mockedLoadGeneratorTask, mock.AnythingOfType("phase.Session")).Return(
+		"LaunchSession", s.mockedLoadGeneratorTask, mock.AnythingOfType("string")).Return(
 		s.mockedLoadGeneratorSessionHandle, nil).Once()
 	s.mockedLoadGeneratorSessionHandle.On("Stop").Return(nil).Once()
 	s.mockedLoadGeneratorSessionHandle.On("Wait").Return(nil).Once()
@@ -390,7 +390,7 @@ func (s *SensitivityTestSuite) mockSingleLoadGeneratorSessionExecution() {
 
 func (s *SensitivityTestSuite) mockSingleAggressorSessionExecution() {
 	s.mockedAggressorSessionLauncher.On(
-		"LaunchSession", s.mockedAggressorTask, mock.AnythingOfType("phase.Session")).Return(
+		"LaunchSession", s.mockedAggressorTask, mock.AnythingOfType("string")).Return(
 		s.mockedAggressorSessionHandle, nil).Once()
 	s.mockedAggressorSessionHandle.On("Stop").Return(nil).Once()
 	s.mockedAggressorSessionHandle.On("Wait").Return(nil).Once()
@@ -441,7 +441,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 					s.mockedLcSessionLauncher.On(
 						"LaunchSession",
 						s.mockedLcTask,
-						mock.AnythingOfType("phase.Session"),
+						mock.AnythingOfType("string"),
 					).Return(
 						nil, errors.New("Production task's session can't be launched")).Once()
 
@@ -460,7 +460,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 						s.mockedAggressorSessionLauncher.On(
 							"LaunchSession",
 							s.mockedAggressorTask,
-							mock.AnythingOfType("phase.Session")).Return(
+							mock.AnythingOfType("string")).Return(
 							nil, errors.New("Aggressor's session can't be launched")).Once()
 
 						err := s.sensitivityExperiment.Run()
@@ -479,7 +479,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 							s.mockedLoadGeneratorSessionLauncher.On(
 								"LaunchSession",
 								s.mockedLoadGeneratorTask,
-								mock.AnythingOfType("phase.Session")).Return(
+								mock.AnythingOfType("string")).Return(
 								nil, errors.New("LoadGenerator session can't be launched")).Once()
 
 							err := s.sensitivityExperiment.Run()
