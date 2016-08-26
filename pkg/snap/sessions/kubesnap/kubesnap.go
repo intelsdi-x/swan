@@ -5,10 +5,10 @@ import (
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/experiment/phase"
+	"github.com/intelsdi-x/athena/pkg/snap"
 )
 
 // DefaultConfig returns default configuration for Kubesnap Session Launcher.

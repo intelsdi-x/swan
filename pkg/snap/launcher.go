@@ -1,8 +1,8 @@
 package snap
 
 import (
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 )
 
 // SessionHandle is handle for Snap Collection session. It can be stopped from here.

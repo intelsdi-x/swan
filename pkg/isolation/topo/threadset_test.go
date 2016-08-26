@@ -5,7 +5,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/isolation"
 )
 
 func syntheticThreadSet() ThreadSet {

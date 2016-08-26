@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/kubernetes"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 )

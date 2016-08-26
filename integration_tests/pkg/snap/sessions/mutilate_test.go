@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
+	"github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/experiment/phase"
+	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -102,7 +102,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 					mockedTaskInfo := new(mocks.TaskInfo)
 					mutilateStdoutPath := path.Join(
-						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
+						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/athena/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
 
 					file, err := os.Open(mutilateStdoutPath)
 
@@ -128,7 +128,7 @@ func TestSnapMutilateSession(t *testing.T) {
 						So(handle.IsRunning(), ShouldBeTrue)
 
 						// These are results from test output file
-						// in "src/github.com/intelsdi-x/swan/misc/
+						// in "src/github.com/intelsdi-x/athena/misc/
 						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
 						expectedMetrics := map[string]string{
 							"avg":    "20.80000",

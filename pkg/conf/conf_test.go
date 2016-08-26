@@ -2,7 +2,7 @@ package conf
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"

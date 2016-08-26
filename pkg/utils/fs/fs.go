@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	swanPkg = "github.com/intelsdi-x/swan"
+	swanPkg = "github.com/intelsdi-x/athena"
 )
 
 // GetSwanPath returns absolute path to Swan root directory.

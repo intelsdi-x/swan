@@ -2,7 +2,7 @@ package conf
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 	"os"
 	"path"

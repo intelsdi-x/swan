@@ -9,8 +9,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"

@@ -3,7 +3,7 @@ package topo
 import (
 	"fmt"
 
-	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/isolation"
 )
 
 // ThreadSet represents a subset of the available hyperthreads on a system.

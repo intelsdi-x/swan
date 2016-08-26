@@ -9,8 +9,8 @@ import (
 	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 	"github.com/pkg/errors"
 )
 

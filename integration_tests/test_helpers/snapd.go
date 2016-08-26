@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/executor"
 	"math/rand"
 	"os"
 	"path"

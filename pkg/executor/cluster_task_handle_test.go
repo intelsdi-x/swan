@@ -2,8 +2,8 @@ package executor_test
 
 import (
 	"errors"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"

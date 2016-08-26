@@ -5,8 +5,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/isolation/topo"
 )
 
 const lscpu1 = `# The following is the parsable format, which can be fed to other

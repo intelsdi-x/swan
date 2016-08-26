@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 )
 
 // TaskState is an enum presenting current task state.

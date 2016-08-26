@@ -5,11 +5,11 @@ import (
 	"path"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/pkg/utils/netutil"
-	"github.com/intelsdi-x/swan/pkg/utils/random"
+	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/athena/pkg/utils/netutil"
+	"github.com/intelsdi-x/athena/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )

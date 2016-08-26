@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 )
 
 // ClusterTaskHandle is a task handle for composition of master and multiple agents.
