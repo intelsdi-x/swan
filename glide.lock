@@ -1,5 +1,5 @@
-hash: aa947d2fb7418e976dfc0b9453972355e9bdb91e76e0953b271d20c06c890ceb
-updated: 2016-08-26T15:04:59.391551472+02:00
+hash: 39d047a758417bdd04fe4a162e998263e28435ebd990c59c97dd968a722bc36b
+updated: 2016-08-26T16:03:09.635769636+02:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -33,8 +33,6 @@ imports:
   version: 60ec3488bfea7cca02b021d106d9911120d25fe9
 - name: github.com/cloudfoundry-incubator/candiedyaml
   version: 99c3df83b51532e3615f851d8c2dbb638f5313bf
-- name: github.com/codegangsta/cli
-  version: 05fe449c81eb7305a34e9253c321c960a1c5e057
 - name: github.com/coreos/go-oidc
   version: 5644a2f50e2d2d5ba0b474bc5bc55fea1925936d
   subpackages:
@@ -113,7 +111,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
 - name: github.com/intelsdi-x/athena
-  version: 68aa64394676e3f2e7084b3f1e54f3699eb2b254
+  version: ba1b4dd3e5961045efd836f4dfd03735e64c2716
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -136,7 +134,7 @@ imports:
 - name: github.com/intelsdi-x/gomit
   version: db68f6fda248706a71980abc58e969fcd63f5ea6
 - name: github.com/intelsdi-x/snap
-  version: 67417ef0fca51def9cf0eaf002d0dc42c0aee842
+  version: 506318ebb84a8fefc5ef966edc4318c9cf5b2002
   subpackages:
   - control
   - control/plugin
@@ -144,23 +142,20 @@ imports:
   - control/plugin/cpolicy
   - control/plugin/encoding
   - control/plugin/encrypter
-  - control/plugin/rpc
   - control/strategy
   - core
   - core/cdata
   - core/control_event
   - core/ctypes
   - core/serror
-  - grpc/common
-  - grpc/controlproxy/rpc
   - mgmt/rest/client
   - mgmt/rest/rbody
+  - mgmt/rest/request
   - mgmt/tribe/agreement
   - pkg/aci
   - pkg/chrono
   - pkg/ctree
   - pkg/psigning
-  - pkg/rpcutil
   - pkg/schedule
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-processor-tag
@@ -168,7 +163,7 @@ imports:
   subpackages:
   - tag
 - name: github.com/intelsdi-x/snap-plugin-utilities
-  version: 925bafffac36edcfaf4aff937dcb7d3d5659782d
+  version: 04621af7a3979bcb8aaf08c3b6542b43fe0bf6cf
   subpackages:
   - config
   - logger
@@ -191,7 +186,7 @@ imports:
 - name: github.com/pborman/uuid
   version: b984ec7fa9ff9e428bd0cf0abf429384dfbe3e37
 - name: github.com/pkg/errors
-  version: 17b591df37844cde689f4d5813e5cea0927d8dd2
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pmezard/go-difflib
   version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
@@ -215,7 +210,7 @@ imports:
 - name: github.com/robfig/cron
   version: ab4c16f3a09641bd19d65f55b3d8d6edda7a8e05
 - name: github.com/Sirupsen/logrus
-  version: 08a8a7c27e3d058a8989316a850daad1c10bf4ab
+  version: 081307d9bc1364753142d5962fc1d795c742baaf
 - name: github.com/spf13/pflag
   version: 103ce5cd2042f2fe629c1957abb64ab3e7f50235
 - name: github.com/stretchr/objx
@@ -258,9 +253,7 @@ imports:
   - context/ctxhttp
   - http2
   - http2/hpack
-  - internal/timeseries
   - lex/httplex
-  - trace
 - name: golang.org/x/oauth2
   version: 75e75ddc3d156dc8fc71c6f2ef3607cbdcfc8c27
   subpackages:
@@ -284,17 +277,6 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
-- name: google.golang.org/grpc
-  version: b7aa4e95cbb5ec9d07c52a7541ce178ef9626316
-  subpackages:
-  - codes
-  - credentials
-  - grpclog
-  - internal
-  - metadata
-  - naming
-  - peer
-  - transport
 - name: gopkg.in/alecthomas/kingpin.v2
   version: e5900212cbf65b181d3d8e08308ef06a01d117cf
 - name: gopkg.in/cheggaaa/pb.v1
@@ -484,7 +466,7 @@ testImports:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: 5db88ed452e937f2fd557de6f4f1af7f2eabed0b
+  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
   subpackages:
   - convey
   - convey/gotest
