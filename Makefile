@@ -7,12 +7,12 @@ all: lint unit_test build cleanup
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps:
-	go get github.com/tools/godep
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
 	go get github.com/stretchr/testify
 	go get github.com/vektra/mockery/.../
-	godep restore -v
+	go get github.com/Masterminds/glide
+	glide install
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)

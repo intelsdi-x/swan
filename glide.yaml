@@ -1,0 +1,50 @@
+package: github.com/intelsdi-x/swan
+import:
+- package: github.com/Sirupsen/logrus
+  version: 081307d9bc1364753142d5962fc1d795c742baaf
+- package: github.com/gocql/gocql
+- package: github.com/hailocab/gocassa
+- package: github.com/intelsdi-x/athena
+  version: athena
+  subpackages:
+  - pkg/conf
+  - pkg/executor
+  - pkg/isolation
+  - pkg/isolation/cgroup
+  - pkg/isolation/topo
+  - pkg/kubernetes
+  - pkg/snap
+  - pkg/snap/sessions/mutilate
+  - pkg/utils/env
+  - pkg/utils/err_collection
+  - pkg/utils/errutil
+  - pkg/utils/fs
+  - pkg/utils/netutil
+  - pkg/utils/sysctl
+- package: github.com/intelsdi-x/snap-plugin-utilities
+  version: 04621af7a3979bcb8aaf08c3b6542b43fe0bf6cf
+  subpackages:
+  - config
+  - logger
+- package: github.com/intelsdi-x/snap
+  version: ~0.14.0-beta
+  subpackages:
+  - control/plugin
+  - control/plugin/cpolicy
+  - core
+  - core/ctypes
+- package: github.com/montanaflynn/stats
+- package: github.com/nu7hatch/gouuid
+  version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
+- package: github.com/pkg/errors
+  version: a22138067af1c4942683050411a841ade67fe1eb
+- package: github.com/stretchr/testify
+  subpackages:
+  - mock
+- package: gopkg.in/cheggaaa/pb.v1
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
+  subpackages:
+  - convey
+- package: github.com/vektra/errors
