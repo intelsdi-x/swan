@@ -1,23 +1,30 @@
 package: github.com/intelsdi-x/athena
 import:
 - package: github.com/Sirupsen/logrus
+  version: 081307d9bc1364753142d5962fc1d795c742baaf
 - package: github.com/intelsdi-x/snap-plugin-processor-tag
   subpackages:
   - tag
 - package: github.com/intelsdi-x/snap
+  version: ~0.14.0-beta
   subpackages:
   - mgmt/rest/client
   - scheduler/wmap
 - package: github.com/nu7hatch/gouuid
+  version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - package: github.com/pkg/errors
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - package: github.com/stretchr/testify
   subpackages:
   - mock
 - package: golang.org/x/crypto
+  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
   subpackages:
   - ssh
 - package: gopkg.in/alecthomas/kingpin.v2
+  version: ~2.2.2
 - package: k8s.io/kubernetes
+  version: ~1.4.0-alpha.2
   subpackages:
   - pkg/api
   - pkg/api/resource
