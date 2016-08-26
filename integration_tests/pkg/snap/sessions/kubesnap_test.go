@@ -9,14 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/kubesnap"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -77,10 +75,10 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer podHandle.Stop()
 
 		// Prepare Kubesnap Session.
-		experimentID, err := uuid.NewV4()
+		/*experimentID, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 		phaseID, err := uuid.NewV4()
-		So(err, ShouldBeNil)
+		So(err, ShouldBeNil)*/
 
 		Convey("Launching Kubesnap Session", func() {
 			kubesnapConfig := kubesnap.DefaultConfig()
@@ -90,11 +88,12 @@ func TestSnapKubesnapSession(t *testing.T) {
 			So(err, ShouldBeNil)
 			kubesnapHandle, err := kubesnapLauncher.LaunchSession(
 				nil,
-				phase.Session{
+				/*phase.Session{
 					ExperimentID: experimentID.String(),
 					PhaseID:      phaseID.String(),
 					RepetitionID: 1,
-				},
+				},*/
+				"foo:bar",
 			)
 			So(err, ShouldBeNil)
 			So(kubesnapHandle.IsRunning(), ShouldBeTrue)

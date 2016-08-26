@@ -1,9 +1,6 @@
 package snap
 
-import (
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
-)
+import "github.com/intelsdi-x/athena/pkg/executor"
 
 // SessionHandle is handle for Snap Collection session. It can be stopped from here.
 // NOTE: In SnapSessionHandle Stop() method needs to ensure that the session has completed it's work.
@@ -16,5 +13,5 @@ type SessionHandle interface {
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.
 type SessionLauncher interface {
-	LaunchSession(executor.TaskInfo, phase.Session) (SessionHandle, error)
+	LaunchSession(executor.TaskInfo, string) (SessionHandle, error)
 }

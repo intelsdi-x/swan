@@ -3,12 +3,11 @@ package mutilatesession
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
 
 // DefaultConfig returns default configuration for Mutilate Collector session.
@@ -83,7 +82,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 // LaunchSession starts Snap Collection session and returns handle to that session.
 func (s *SessionLauncher) LaunchSession(
 	task executor.TaskInfo,
-	phaseSession phase.Session) (snap.SessionHandle, error) {
+	tags string) (snap.SessionHandle, error) {
 
 	// Obtain Mutilate output file.
 	stdoutFile, err := task.StdoutFile()
@@ -101,7 +100,7 @@ func (s *SessionLauncher) LaunchSession(
 	}
 
 	// Start session.
-	err = s.session.Start(phaseSession)
+	err = s.session.Start(tags)
 	if err != nil {
 		return nil, err
 	}

@@ -9,11 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
+	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
-	"github.com/intelsdi-x/athena/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -37,12 +36,10 @@ func TestSnap(t *testing.T) {
 		columns := strings.Split(lines[0], "\t")
 		So(len(columns), ShouldEqual, 3)
 		tags := strings.Split(columns[1], ",")
-		So(len(tags), ShouldEqual, 6)
+		So(tags, ShouldHaveLength, 1)
 
 		So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-		So("swan_experiment=foobar", ShouldBeIn, tags)
-		So("swan_phase=barbaz", ShouldBeIn, tags)
-		So("swan_repetition=1", ShouldBeIn, tags)
+		So("foo=bar", ShouldBeIn, tags)
 		host, err := os.Hostname()
 		So(err, ShouldBeNil)
 		So("plugin_running_on="+host, ShouldBeIn, tags)
@@ -120,11 +117,7 @@ func TestSnap(t *testing.T) {
 						)
 						So(s, ShouldNotBeNil)
 
-						err := s.Start(phase.Session{
-							ExperimentID: "foobar",
-							PhaseID:      "barbaz",
-							RepetitionID: 1,
-						})
+						err := s.Start("foo:bar")
 
 						So(err, ShouldBeNil)
 

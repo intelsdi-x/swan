@@ -10,12 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -25,10 +24,11 @@ func soMetricRowIsValid(
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
-	So(len(tagsSplitted), ShouldBeGreaterThan, 2)
-	So("swan_experiment=foobar", ShouldBeIn, tagsSplitted)
+	So(tagsSplitted, ShouldHaveLength, 1)
+	So("foo=bar", ShouldBeIn, tagsSplitted)
+	/*So("swan_experiment=foobar", ShouldBeIn, tagsSplitted)
 	So("swan_phase=barbaz", ShouldBeIn, tagsSplitted)
-	So("swan_repetition=1", ShouldBeIn, tagsSplitted)
+	So("swan_repetition=1", ShouldBeIn, tagsSplitted)*/
 
 	// Check namespace & values.
 	namespaceSplitted := strings.Split(namespace, "/")
@@ -110,13 +110,13 @@ func TestSnapMutilateSession(t *testing.T) {
 					defer file.Close()
 
 					mockedTaskInfo.On("StdoutFile").Return(file, nil)
-					session := phase.Session{
+					/*session := phase.Session{
 						ExperimentID: "foobar",
 						PhaseID:      "barbaz",
 						RepetitionID: 1,
-					}
+					}*/
 
-					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, session)
+					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
 					So(err, ShouldBeNil)
 
 					defer func() {

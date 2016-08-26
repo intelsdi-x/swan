@@ -6,11 +6,10 @@ import (
 	"path"
 	"time"
 
+	"github.com/intelsdi-x/athena/pkg/conf"
 	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/experiment/phase"
 	"github.com/pkg/errors"
 )
 
@@ -79,21 +78,8 @@ func NewSession(
 	}
 }
 
-func createTagConfigItem(phaseSession phase.Session) string {
-	// Constructing Tags config item as stated in
-	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
-	return fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-		phase.ExperimentKey, phaseSession.ExperimentID,
-		phase.PhaseKey, phaseSession.PhaseID,
-		phase.RepetitionKey, phaseSession.RepetitionID,
-		// TODO: Remove that when completing SCE-376
-		phase.LoadPointQPSKey, phaseSession.LoadPointQPS,
-		phase.AggressorNameKey, phaseSession.AggressorName,
-	)
-}
-
 // Start an experiment session.
-func (s *Session) Start(phaseSession phase.Session) error {
+func (s *Session) Start(tags string) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -131,7 +117,7 @@ func (s *Session) Start(phaseSession phase.Session) error {
 	}
 
 	pr := wmap.NewProcessNode(snapProcessorTag.Meta().Name, 3)
-	pr.AddConfigItem("tags", createTagConfigItem(phaseSession))
+	pr.AddConfigItem("tags", tags)
 
 	// Add specified publisher to workflow as well.
 	pr.Add(s.Publisher)
