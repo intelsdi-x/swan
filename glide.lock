@@ -1,5 +1,5 @@
-hash: 0145f0d0115b47be3017b07eca280e9a75e2826ea6af645afc84b44939fcfecc
-updated: 2016-08-26T13:19:22.926942438+02:00
+hash: 1c27cdc93dc195a27b86039b362cedde9fd0480e9483a427f73a51599c2b0488
+updated: 2016-08-26T16:29:11.931220358+02:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -81,8 +81,26 @@ imports:
   version: 8c5f0ad9360406a3807ce7de6bc73269a91a6e51
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
+- name: github.com/intelsdi-x/athena
+  version: ba1b4dd3e5961045efd836f4dfd03735e64c2716
+  subpackages:
+  - integration_tests/test_helpers
+  - pkg/conf
+  - pkg/executor
+  - pkg/executor/mocks
+  - pkg/isolation
+  - pkg/isolation/cgroup
+  - pkg/isolation/topo
+  - pkg/kubernetes
+  - pkg/snap
+  - pkg/snap/sessions/kubesnap
+  - pkg/snap/sessions/mutilate
+  - pkg/utils/err_collection
+  - pkg/utils/fs
+  - pkg/utils/netutil
+  - pkg/utils/random
 - name: github.com/intelsdi-x/snap
-  version: 67417ef0fca51def9cf0eaf002d0dc42c0aee842
+  version: 506318ebb84a8fefc5ef966edc4318c9cf5b2002
   subpackages:
   - control/plugin
   - control/plugin/cpolicy
@@ -94,6 +112,7 @@ imports:
   - core/serror
   - mgmt/rest/client
   - mgmt/rest/rbody
+  - mgmt/rest/request
   - mgmt/tribe/agreement
   - pkg/ctree
   - pkg/schedule
@@ -117,7 +136,7 @@ imports:
 - name: github.com/pborman/uuid
   version: b984ec7fa9ff9e428bd0cf0abf429384dfbe3e37
 - name: github.com/pkg/errors
-  version: 17b591df37844cde689f4d5813e5cea0927d8dd2
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pmezard/go-difflib
   version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
@@ -141,7 +160,7 @@ imports:
 - name: github.com/robfig/cron
   version: ab4c16f3a09641bd19d65f55b3d8d6edda7a8e05
 - name: github.com/Sirupsen/logrus
-  version: 08a8a7c27e3d058a8989316a850daad1c10bf4ab
+  version: 081307d9bc1364753142d5962fc1d795c742baaf
 - name: github.com/spf13/pflag
   version: 103ce5cd2042f2fe629c1957abb64ab3e7f50235
 - name: github.com/stretchr/objx
@@ -158,11 +177,9 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: 351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93
+  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
   subpackages:
   - curve25519
-  - ed25519
-  - ed25519/internal/edwards25519
   - ssh
 - name: golang.org/x/net
   version: 6c89f9617983ee917132513a791d8b5850fe90c5
@@ -265,7 +282,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/kubernetes
-  version: 83fa5dff5dafe71c89e39c42e63f9c09620f7ea7
+  version: b44b716965db2d54c8c7dfcdbcb1d54792ab8559
   subpackages:
   - pkg/api
   - pkg/api/endpoints
@@ -386,7 +403,7 @@ testImports:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: 5db88ed452e937f2fd557de6f4f1af7f2eabed0b
+  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
   subpackages:
   - convey
   - convey/gotest
