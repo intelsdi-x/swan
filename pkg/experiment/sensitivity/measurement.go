@@ -1,15 +1,16 @@
 package sensitivity
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/pkg/errors"
 )
 
@@ -157,7 +158,8 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 	// Check if Snap Session is specified.
 	if launcher != nil {
 		// Launch specified Snap Session.
-		sessionHandle, err := launcher.LaunchSession(taskInfo, session)
+		tags := createTagConfigItem(session)
+		sessionHandle, err := launcher.LaunchSession(taskInfo, tags)
 		if err != nil {
 			return err
 		}
@@ -251,4 +253,17 @@ func (m *measurementPhase) run(session phase.Session) error {
 func (m *measurementPhase) Finalize() error {
 	// All data should be aggregated in Snap. So nothing to do here.
 	return nil
+}
+
+func createTagConfigItem(phaseSession phase.Session) string {
+	// Constructing Tags config item as stated in
+	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
+	return fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
+		phase.ExperimentKey, phaseSession.ExperimentID,
+		phase.PhaseKey, phaseSession.PhaseID,
+		phase.RepetitionKey, phaseSession.RepetitionID,
+		// TODO: Remove that when completing SCE-376
+		phase.LoadPointQPSKey, phaseSession.LoadPointQPS,
+		phase.AggressorNameKey, phaseSession.AggressorName,
+	)
 }
