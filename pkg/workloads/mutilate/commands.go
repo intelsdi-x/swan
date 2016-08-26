@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/executor"
 )
 
 // getAgentCommand returns command for agent.

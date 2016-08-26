@@ -3,9 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/isolation/topo"
-	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/isolation/topo"
+	"github.com/intelsdi-x/athena/pkg/utils/errutil"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

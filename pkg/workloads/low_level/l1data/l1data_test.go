@@ -6,7 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

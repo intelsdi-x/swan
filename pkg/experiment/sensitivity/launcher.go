@@ -1,8 +1,8 @@
 package sensitivity
 
 import (
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/snap"
 )
 
 // LauncherSessionPair is a pair of Launcher and corresponding Session Launcher.

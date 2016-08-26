@@ -6,10 +6,10 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
 

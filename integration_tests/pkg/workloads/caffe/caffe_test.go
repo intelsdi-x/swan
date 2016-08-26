@@ -2,7 +2,7 @@ package integration
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 

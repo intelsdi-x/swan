@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/kubernetes"
+	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/athena/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
@@ -102,16 +102,16 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		var dummyIsolation DecoratorFunc = func(s string) string { return s }
 		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(dummyIsolation)
 	} else if isManualPolicy() {
-	 	hpIsolation, beIsolation = manualPolicy()
-	 	aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
-	 	defer beIsolation.Clean()
+		hpIsolation, beIsolation = manualPolicy()
+		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
+		defer beIsolation.Clean()
 		defer hpIsolation.Clean()
 	} else {
-	 	// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
-	 	hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
-	 	aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	 	defer l1Isolation.Clean()
-	 	defer llcIsolation.Clean()
+		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
+		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+		defer l1Isolation.Clean()
+		defer llcIsolation.Clean()
 		defer hpIsolation.Clean()
 	}
 
