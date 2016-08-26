@@ -1,0 +1,34 @@
+package: github.com/intelsdi-x/athena
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/intelsdi-x/snap-plugin-processor-tag
+  subpackages:
+  - tag
+- package: github.com/intelsdi-x/snap
+  subpackages:
+  - mgmt/rest/client
+  - scheduler/wmap
+- package: github.com/nu7hatch/gouuid
+- package: github.com/pkg/errors
+- package: github.com/stretchr/testify
+  subpackages:
+  - mock
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh
+- package: gopkg.in/alecthomas/kingpin.v2
+- package: k8s.io/kubernetes
+  subpackages:
+  - pkg/api
+  - pkg/api/resource
+  - pkg/api/unversioned
+  - pkg/client/restclient
+  - pkg/client/unversioned
+  - pkg/labels
+  - pkg/watch
+testImport:
+- package: github.com/gocql/gocql
+- package: github.com/pivotal-golang/bytefmt
+- package: github.com/smartystreets/goconvey
+  subpackages:
+  - convey
