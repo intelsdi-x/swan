@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	executorMocks "github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/snap"
 	snapMocks "github.com/intelsdi-x/athena/pkg/snap/mocks"
 )
 
@@ -443,7 +444,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 						s.mockedLcTask,
 						mock.AnythingOfType("string"),
 					).Return(
-						nil, errors.New("Production task's session can't be launched")).Once()
+						&snap.Session{}, errors.New("Production task's session can't be launched")).Once()
 
 					err := s.sensitivityExperiment.Run()
 					So(err, ShouldNotBeNil)
@@ -461,7 +462,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 							"LaunchSession",
 							s.mockedAggressorTask,
 							mock.AnythingOfType("string")).Return(
-							nil, errors.New("Aggressor's session can't be launched")).Once()
+							&snap.Session{}, errors.New("Aggressor's session can't be launched")).Once()
 
 						err := s.sensitivityExperiment.Run()
 						So(err, ShouldNotBeNil)
@@ -480,7 +481,7 @@ func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
 								"LaunchSession",
 								s.mockedLoadGeneratorTask,
 								mock.AnythingOfType("string")).Return(
-								nil, errors.New("LoadGenerator session can't be launched")).Once()
+								&snap.Session{}, errors.New("LoadGenerator session can't be launched")).Once()
 
 							err := s.sensitivityExperiment.Run()
 							So(err, ShouldNotBeNil)
