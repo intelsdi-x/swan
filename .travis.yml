@@ -6,6 +6,7 @@ sudo: required
 go:
 - 1.6
 before_install:
+- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
 - make deps
 script:
 - make lint
