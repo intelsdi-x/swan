@@ -5,6 +5,7 @@ import "github.com/stretchr/testify/mock"
 
 import "github.com/intelsdi-x/athena/pkg/executor"
 
+// SessionLauncher ...
 type SessionLauncher struct {
 	mock.Mock
 }
