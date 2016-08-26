@@ -2,12 +2,13 @@ package conf
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
-	. "github.com/smartystreets/goconvey/convey"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEnvFlag(t *testing.T) {
@@ -46,7 +47,7 @@ func TestFlags(t *testing.T) {
 
 		Convey("When some custom File Flag is defined", func() {
 			// Register custom flag.
-			defaultFilePath := path.Join(fs.GetSwanPath(), "README.md")
+			defaultFilePath := path.Join(fs.GetAthenaPath(), "README.md")
 			customFlag := NewFileFlag("custom_file_arg", "help", defaultFilePath)
 			customFlag.clear()
 			defer customFlag.clear()
@@ -62,7 +63,7 @@ func TestFlags(t *testing.T) {
 			})
 
 			Convey("When we define custom existing path we should have that value after parse", func() {
-				customValue := path.Join(fs.GetSwanPath(), "Makefile")
+				customValue := path.Join(fs.GetAthenaPath(), "Makefile")
 				os.Setenv(customFlag.envName(), customValue)
 
 				err := ParseEnv()
