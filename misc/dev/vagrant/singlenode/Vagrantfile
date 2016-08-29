@@ -34,11 +34,12 @@ Vagrant.configure(2) do |config|
     config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
-  config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
 
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
   config.vm.provider :aws do |aws, override|
@@ -158,11 +159,32 @@ SCRIPT
     systemctl show -p SubState cassandra.service 
 SCRIPT
 
+  $install_glide = <<SCRIPT
+    source $HOME_DIR/.bash_profile
+    go get github.com/Masterminds/glide
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
+SCRIPT
+
+  $install_snap = <<SCRIPT
+    source $HOME_DIR/.bash_profile
+    echo "Installing and building snap..."
+    go get -u github.com/intelsdi-x/snap
+    cd $GOPATH/src/github.com/intelsdi-x/snap
+    git checkout -f v0.14.0-beta
+    make
+    cp build/bin/snapd $GOPATH/bin/
+    cp build/bin/snapctl $GOPATH/bin/
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
+SCRIPT
+
+
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
