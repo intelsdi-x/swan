@@ -10,7 +10,6 @@ import (
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -100,12 +99,8 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		snapClient,
 		cassandraPublisher)
 
-	examplePhase := phase.Session{
-		ExperimentID: "example-experiment",
-		PhaseID:      "example-phase",
-		RepetitionID: 42,
-	}
-	err = snapSession.Start(examplePhase)
+	tags := "foo:bar"
+	err = snapSession.Start(tags)
 	if err != nil {
 		return fmt.Errorf("Snap session start failed: %s\n", err.Error())
 	}
