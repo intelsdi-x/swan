@@ -34,11 +34,12 @@ Vagrant.configure(2) do |config|
     config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
-  config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
 
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
   config.vm.provider :aws do |aws, override|
@@ -158,11 +159,18 @@ SCRIPT
     systemctl show -p SubState cassandra.service 
 SCRIPT
 
+  $install_glide = <<SCRIPT
+    source $HOME_DIR/.bash_profile
+    go get github.com/Masterminds/glide
+SCRIPT
+
+
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
