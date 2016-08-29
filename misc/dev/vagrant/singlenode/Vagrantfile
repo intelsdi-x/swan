@@ -162,6 +162,19 @@ SCRIPT
   $install_glide = <<SCRIPT
     source $HOME_DIR/.bash_profile
     go get github.com/Masterminds/glide
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
+SCRIPT
+
+  $install_snap = <<SCRIPT
+    source $HOME_DIR/.bash_profile
+    echo "Installing and building snap..."
+    go get -u github.com/intelsdi-x/snap
+    cd $GOPATH/src/github.com/intelsdi-x/snap
+    git checkout -f v0.14.0-beta
+    make
+    cp build/bin/snapd $GOPATH/bin/
+    cp build/bin/snapctl $GOPATH/bin/
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
 SCRIPT
 
 
@@ -172,5 +185,6 @@ SCRIPT
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
