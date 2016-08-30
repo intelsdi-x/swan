@@ -10,11 +10,11 @@ import (
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCassandraPublisher(t *testing.T) {
-	t.Skip("Should not be merged - skipping cassandra publisher test for now")
 
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
@@ -101,7 +101,11 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		snapClient,
 		cassandraPublisher)
 
-	tags := "foo:bar"
+	tags := fmt.Sprintf("%s:%s,%s:%s,%s:%d",
+		phase.ExperimentKey, "example-experiment",
+		phase.PhaseKey, "example-phase",
+		phase.RepetitionKey, 42)
+
 	err = snapSession.Start(tags)
 	if err != nil {
 		return fmt.Errorf("Snap session start failed: %s\n", err.Error())
