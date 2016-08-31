@@ -37,7 +37,7 @@ func NewNumactl(isAll, isLocalalloc bool, interleaveNodes, membindNodes, cpunode
 }
 
 // Decorate implements Decorator interface.
-func (n *Numactl) Decorate(command string) string {
+func (n Numactl) Decorate(command string) string {
 
 	intsToStrings := func(ints []int) string {
 		var strs []string
