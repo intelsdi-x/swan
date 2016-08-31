@@ -27,3 +27,4 @@ autom4te.cache/
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/**/*log
 /integration_tests/**/*log
+/vagrant/.vagrant

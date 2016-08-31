@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# q -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+
+  vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
+  # if this env is set, it means that we are not building
+  # out a full image, but just bringing up an image with
+  # some of the dependencies installed on it. This is being
+  # used to cache dependencies on an AMI.
+  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] && ENV['BUILD_CACHED_IMAGE'] != '') || false
+
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
+
+  config.vm.box = "centos/7"
+  config.vm.box_check_update = false
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network "private_network", ip: "10.141.141.10"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  if ! only_cache_dependencies
+    home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
+    config.vm.synced_folder "..", "#{home_dir}/go/src/github.com/intelsdi-x/athena", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  end
+
+  config.vm.provider "virtualbox" do |vb, override|
+    vb.gui = false
+    vb.name = "athena"
+
+    vb.cpus = 2       # NOTE: integration tests fail with less than 2
+    vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  end
+
+  $install_packages = <<SCRIPT
+    echo Adding the docker yum repository
+    tee /etc/yum.repos.d/docker.repo <<-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.dockerproject.org/gpg
+EOF
+    echo Updating package lists
+    yum update -y
+    yum install -y epel-release  # Enables EPEL repo
+    yum clean all
+    echo Installing packages
+    yum install -y \
+      docker-engine \
+      etcd \
+      gcc-g++ \
+      gengetopt \
+      git \
+      iptables \
+      libcgroup-tools \
+      libevent-devel \
+      moreutils-parallel \
+      nmap-ncat \
+      perf \
+      psmisc \
+      pssh \
+      python-pip \
+      python-devel \
+      scons \
+      tree \
+      vim \
+      wget 
+    if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
+      wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
+      tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
+    fi
+SCRIPT
+
+  $configure_etcd = <<SCRIPT
+    echo Configuring etcd
+    systemctl enable etcd
+    systemctl restart etcd
+SCRIPT
+
+  $configure_docker = <<SCRIPT
+    echo Configuring Docker
+    systemctl enable docker
+    # Add the vagrant user to the docker group
+    gpasswd -a $VAGRANT_USER docker
+    systemctl restart docker
+    echo "docker.service status:"
+    systemctl show -p SubState docker.service
+SCRIPT
+
+  $setup_user_env = <<SCRIPT
+    echo "Setting up user environment"
+    # Vagrant user owns $GOPATH
+    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR/go
+    # Create convenient symlinks in the home directory
+    ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/athena $HOME_DIR
+    # Add GOPATH and Go binaries to PATH in profile
+    echo "export GOPATH=\"$HOME_DIR/go\"" >> $HOME_DIR/.bash_profile
+    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
+    # Rewrite github URLs for fetching private repos (requires ssh-agent)
+    sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
+    # Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
+    ssh-add -l 
+SCRIPT
+
+  $configure_cassandra = <<SCRIPT
+    echo "Setting up cassandra"
+    # Set up data directory
+    mkdir -p /var/data/cassandra
+    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
+    # Create and enable systemd unit
+    cp $HOME_DIR/athena/vagrant/resources/cassandra.service /etc/systemd/system
+    mkdir -p /opt/athena/resources
+    cp $HOME_DIR/athena/vagrant/resources/keyspace.cql /opt/athena/resources
+    cp $HOME_DIR/athena/vagrant/resources/table.cql /opt/athena/resources
+    systemctl daemon-reload
+    systemctl enable cassandra.service
+    echo "Restarting cassandra..."
+    systemctl restart cassandra.service 
+    echo "cassandra.service status:"
+    systemctl show -p SubState cassandra.service 
+SCRIPT
+
+  $install_glide = <<SCRIPT
+  source $HOME_DIR/.bash_profile
+  go get github.com/Masterminds/glide
+SCRIPT
+
+  config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
+  if ! only_cache_dependencies
+    config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: "chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  end
+end
