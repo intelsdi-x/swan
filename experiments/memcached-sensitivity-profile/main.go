@@ -33,6 +33,18 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
+	// Should CPUs be used exclusively?
+	hpCPUExclusiveFlag = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
+	beCPUExclusiveFlag = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
+
+	// For CPU count based isolation policy flags.
+	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
+	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
+
+	// For manually provided isolation policy.
+	hpSetsFlag = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	beSetsFlag = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+
 	mutilateMasterFlagDefault = "local"
 )
 
@@ -95,24 +107,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Isolation configuration method.
 	// TODO: needs update for different isolation per cpu
-	var hpIsolation, beIsolation, l1Isolation, llcIsolation isolation.Isolation
+	var hpIsolation, beIsolation, l1Isolation, llcIsolation isolation.Decorator
 	var aggressorFactory sensitivity.AggressorFactory
 
-	if runOnKubernetesFlag.Value() {
-		var dummyIsolation DecoratorFunc = func(s string) string { return s }
-		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(dummyIsolation)
-	} else if isManualPolicy() {
-		hpIsolation, beIsolation = manualPolicy()
+	if isManualPolicy() {
+		manualTopology := newManualTopology(hpSetsFlag.Value(), beSetsFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		hpIsolation, beIsolation = createManualIsolation(manualTopology, runOnKubernetesFlag.Value())
 		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
-		defer beIsolation.Clean()
-		defer hpIsolation.Clean()
 	} else {
-		// NOTE: Temporary hack for having multiple isolations in Sensitivity Profile.
-		hpIsolation, l1Isolation, llcIsolation = sensitivityProfileIsolationPolicy()
+		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		hpIsolation, l1Isolation, llcIsolation = createDefaultIsolation(defaultTopology, runOnKubernetesFlag.Value())
 		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-		defer l1Isolation.Clean()
-		defer llcIsolation.Clean()
-		defer hpIsolation.Clean()
 	}
 
 	var hpExecutor executor.Executor
@@ -134,6 +139,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 		errutil.Check(err)
 	} else {
+		defer func() {
+			cleanIsolation(hpIsolation)
+			cleanIsolation(beIsolation)
+			cleanIsolation(l1Isolation)
+			cleanIsolation(llcIsolation)
+		}()
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
 

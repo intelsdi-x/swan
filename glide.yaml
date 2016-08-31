@@ -5,7 +5,7 @@ import:
 - package: github.com/gocql/gocql
 - package: github.com/hailocab/gocassa
 - package: github.com/intelsdi-x/athena
-  version: athena
+  version: c8776de5719c019d000dcd6903072e0b35eab806
   subpackages:
   - pkg/conf
   - pkg/executor
