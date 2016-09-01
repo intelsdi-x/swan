@@ -94,6 +94,7 @@ EOF
       libevent-devel \
       moreutils-parallel \
       nmap-ncat \
+      numactl \
       perf \
       psmisc \
       pssh \

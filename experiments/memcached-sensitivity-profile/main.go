@@ -112,11 +112,14 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	if isManualPolicy() {
 		manualTopology := newManualTopology(hpSetsFlag.Value(), beSetsFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
-		hpIsolation, beIsolation = createManualIsolation(manualTopology, runOnKubernetesFlag.Value())
+		hpIsolation = isolation.NewNumactl(false, false, []int{}, []int{}, []int{}, manualTopology.hpCPUs, manualTopology.hpNumaNodes[0])
+		beIsolation = isolation.NewNumactl(false, false, []int{}, []int{}, []int{}, manualTopology.beCPUs, manualTopology.beNumaNodes[0])
 		aggressorFactory = sensitivity.NewSingleIsolationAggressorFactory(beIsolation)
 	} else {
 		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
-		hpIsolation, l1Isolation, llcIsolation = createDefaultIsolation(defaultTopology, runOnKubernetesFlag.Value())
+		hpIsolation = isolation.NewNumactl(false, false, []int{}, []int{}, []int{}, defaultTopology.hpThreadIDs.AsSlice(), defaultTopology.numaNode)
+		l1Isolation = isolation.NewNumactl(false, false, []int{}, []int{}, []int{}, defaultTopology.siblingThreadsToHpThreads.AvailableThreads().AsSlice(), defaultTopology.numaNode)
+		llcIsolation = isolation.NewNumactl(false, false, []int{}, []int{}, []int{}, defaultTopology.sharingLLCButNotL1Threads.AsSlice(), defaultTopology.numaNode)
 		aggressorFactory = sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 	}
 
@@ -139,12 +142,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 		errutil.Check(err)
 	} else {
-		defer func() {
-			cleanIsolation(hpIsolation)
-			cleanIsolation(beIsolation)
-			cleanIsolation(l1Isolation)
-			cleanIsolation(llcIsolation)
-		}()
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
 	}
 
