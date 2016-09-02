@@ -4,99 +4,66 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/isolation"
-	"github.com/intelsdi-x/athena/pkg/isolation/cgroup"
 	"github.com/intelsdi-x/athena/pkg/isolation/topo"
 	"github.com/intelsdi-x/athena/pkg/utils/errutil"
 )
 
-var (
-	// For CPU count based isolation policy flags.
-	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
-	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
+type defaultTopology struct {
+	hpThreadIDs               isolation.IntSet
+	sharingLLCButNotL1Threads isolation.IntSet
+	siblingThreadsToHpThreads topo.ThreadSet
+	numaNode                  int
+	isHpCPUExclusive          bool
+	isBeCPUExclusive          bool
+}
 
-	// For manually provided isolation policy.
-	hpSetsFlag = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
-	beSetsFlag = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
-
-	hpCPUExclusiveFlag = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
-	beCPUExclusiveFlag = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
-)
-
-// sharedCacheIsolationPolicy TODO: describe intention of this policy.
-func sensitivityProfileIsolationPolicy() (
-	hpIsolation isolation.Isolation,
-	siblingThreadsToHpThreadsIsolation isolation.Isolation,
-	sharingLLCButNotL1Isolation isolation.Isolation) {
+func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) defaultTopology {
+	var topology defaultTopology
+	var err error
 
 	threadSet := sharedCacheThreads()
-	hpThreadIDs, err := threadSet.AvailableThreads().Take(hpCPUCountFlag.Value())
+	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
 	errutil.Check(err)
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
-	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(hpThreadIDs)
+	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.hpThreadIDs)
 	errutil.Check(err)
-	siblingThreadsToHpThreads := getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
+	topology.siblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
-	remaining := threadSet.AvailableThreads().Difference(hpThreadIDs)
-	sharingLLCButNotL1Threads, err := remaining.Take(beCPUCountFlag.Value())
+	remaining := threadSet.AvailableThreads().Difference(topology.hpThreadIDs)
+	topology.sharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
 	errutil.Check(err)
 
-	// TODO(CD): Verify that it's safe to assume NUMA node 0 contains all.
-	// memory banks (probably not).
-	numaZero := isolation.NewIntSet(0)
+	topology.isHpCPUExclusive = isHpCPUExclusive
+	topology.isBeCPUExclusive = isBeCPUExclusive
 
-	// Initialize Memcached Launcher with HP isolation.
-	hpIsolation, err = cgroup.NewCPUSet(
-		"hp",
-		hpThreadIDs,
-		numaZero,
-		hpCPUExclusiveFlag.Value(),
-		false)
-	errutil.Check(err)
+	return topology
+}
 
-	err = hpIsolation.Create()
-	errutil.Check(err)
+type manualTopology struct {
+	hpCPUs           []int
+	hpNumaNodes      []int
+	beCPUs           []int
+	beNumaNodes      []int
+	isHpCPUExclusive bool
+	isBeCPUExclusive bool
+}
 
-	// Initialize BE L1 isolation.
-	siblingThreadsToHpThreadsIsolation, err = cgroup.NewCPUSet(
-		"be-l1",
-		siblingThreadsToHpThreads.AvailableThreads(),
-		numaZero,
-		beCPUExclusiveFlag.Value(),
-		false)
-	errutil.Check(err)
+func newManualTopology(hpFlag, beFlag string, isHpCPUExclusive, isBeCPUExclusive bool) manualTopology {
+	topology := manualTopology{}
+	topology.hpCPUs, topology.hpNumaNodes = parseSlices(hpFlag)
+	topology.beCPUs, topology.beNumaNodes = parseSlices(beFlag)
+	topology.isHpCPUExclusive = isHpCPUExclusive
+	topology.isBeCPUExclusive = isBeCPUExclusive
 
-	err = siblingThreadsToHpThreadsIsolation.Create()
-	errutil.Check(err)
-
-	// Initialize BE LLC isolation.
-	sharingLLCButNotL1Isolation, err = cgroup.NewCPUSet(
-		"be",
-		sharingLLCButNotL1Threads,
-		numaZero,
-		beCPUExclusiveFlag.Value(),
-		false)
-	errutil.Check(err)
-
-	err = sharingLLCButNotL1Isolation.Create()
-	errutil.Check(err)
-
-	logrus.Infof("Sensitivity Profile Isolation:\n"+
-		"High Priority Job CpuThreads: %v\n"+
-		"L1 Cache Aggressor CpuThreads: %v\n"+
-		"L3 Cache  Aggressor CpuThreads: %v\n",
-		hpThreadIDs, siblingThreadsToHpThreads.AvailableThreads(), sharingLLCButNotL1Threads)
-
-	return hpIsolation, siblingThreadsToHpThreadsIsolation, sharingLLCButNotL1Isolation
+	return topology
 }
 
 // parseSlices helper accepts raw string in format "1,2,3:5,3,1" and returns two slices of ints
-func parseSlices(raw string) (s1, s2 []int) {
+func parseSlices(raw string) (CPUs, numaNodes []int) {
 	// helper to parse slice of strings and return slice of ints
 	parseInts := func(strings []string) (ints []int) {
 		for _, s := range strings {
@@ -109,30 +76,7 @@ func parseSlices(raw string) (s1, s2 []int) {
 	splits := strings.Split(raw, ":")
 	s1Strings := strings.Split(splits[0], ",")
 	s2Strings := strings.Split(splits[1], ",")
-	s1 = parseInts(s1Strings)
-	s2 = parseInts(s2Strings)
-	return
-}
-
-// manualPolicy helper to create HP and BE isolations based on manually provided flags (--hp_sets and --be_sets).
-func manualPolicy() (hpIsolation, beIsolation isolation.Isolation) {
-
-	// TODO: validation of input data: cpus and numa node overlap and no empty
-	hpCPUs, hpNUMAs := parseSlices(hpSetsFlag.Value())
-	beCPUs, beNUMAs := parseSlices(beSetsFlag.Value())
-
-	logrus.Debugf("HP: CPUs=%v NUMAs=%v", hpCPUs, hpNUMAs)
-	logrus.Debugf("BE: CPUs=%v NUMAs=%v", beCPUs, beNUMAs)
-
-	var err error
-	hpIsolation, err = cgroup.NewCPUSet("hp", isolation.NewIntSet(hpCPUs...), isolation.NewIntSet(hpNUMAs...), hpCPUExclusiveFlag.Value(), false)
-	errutil.Check(err)
-	beIsolation, err = cgroup.NewCPUSet("be", isolation.NewIntSet(beCPUs...), isolation.NewIntSet(beNUMAs...), beCPUExclusiveFlag.Value(), false)
-	errutil.Check(err)
-
-	err = hpIsolation.Create()
-	errutil.Check(err)
-	err = beIsolation.Create()
-	errutil.Check(err)
+	CPUs = parseInts(s1Strings)
+	numaNodes = parseInts(s2Strings)
 	return
 }
