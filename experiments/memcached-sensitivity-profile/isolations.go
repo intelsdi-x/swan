@@ -18,12 +18,12 @@ type defaultTopology struct {
 	isBeCPUExclusive          bool
 }
 
-func newDefaultTopology(hpCPUCouunt, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) defaultTopology {
+func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) defaultTopology {
 	var topology defaultTopology
 	var err error
 
 	threadSet := sharedCacheThreads()
-	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCouunt)
+	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
 	errutil.Check(err)
 
 	// Allocate sibling threads of HP workload to create L1 cache contention

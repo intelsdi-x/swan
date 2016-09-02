@@ -1,5 +1,5 @@
-hash: cd9bf5257460ecd5e0d2801758199a8308512bfd5938d047a6939f026c604ee1
-updated: 2016-09-01T04:03:57.582312198-04:00
+hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
+updated: 2016-09-02T07:20:43.361186138-04:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -111,7 +111,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
 - name: github.com/intelsdi-x/athena
-  version: c8776de5719c019d000dcd6903072e0b35eab806
+  version: f00e630bbd490000153d7354be4109a3b4486742
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
