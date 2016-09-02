@@ -138,8 +138,14 @@ SCRIPT
     echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
     # Rewrite github URLs for fetching private repos (requires ssh-agent)
     sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
-    # Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
-    ssh-add -l 
+    # list fingerprints to make sure, that ssh-agent authorize access to private repositories
+    ssh-add -l
+    # Add ssh keys for root - needed to run an experiment
+    ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+    cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+    chmod og-wx /root/.ssh/authorized_keys
+    ssh-keyscan localhost >> /root/.ssh/known_hosts
+
 SCRIPT
 
   $configure_cassandra = <<SCRIPT
