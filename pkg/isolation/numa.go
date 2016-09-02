@@ -10,30 +10,15 @@ import (
 // All parameters are described in numactl manual.
 // http://linux.die.net/man/8/numactl
 type Numactl struct {
-	isAll        bool
-	isLocalalloc bool
+	IsAll        bool
+	IsLocalalloc bool
 
-	interleaveNodes  []int
-	membindNodes     []int
-	cpunodebindNodes []int
-	physcpubindCPUS  []int
+	InterleaveNodes  []int
+	MembindNodes     []int
+	CPUnodebindNodes []int
+	PhyscpubindCPUs  []int
 
-	preferredNode int
-}
-
-// NewNumactl is a constructor which returns Numa object.
-func NewNumactl(isAll, isLocalalloc bool, interleaveNodes, membindNodes, cpunodebindNodes, physcpubindCPUS []int, preferredNode int) Numactl {
-	return Numactl{
-		isAll:        isAll,
-		isLocalalloc: isLocalalloc,
-
-		interleaveNodes:  interleaveNodes,
-		membindNodes:     membindNodes,
-		cpunodebindNodes: cpunodebindNodes,
-		physcpubindCPUS:  physcpubindCPUS,
-
-		preferredNode: preferredNode,
-	}
+	PreferredNode int
 }
 
 // Decorate implements Decorator interface.
@@ -50,26 +35,26 @@ func (n Numactl) Decorate(command string) string {
 	}
 
 	var numaOptions []string
-	if n.isAll {
+	if n.IsAll {
 		numaOptions = append(numaOptions, "--all")
 	}
-	if n.isLocalalloc {
+	if n.IsLocalalloc {
 		numaOptions = append(numaOptions, "--localalloc")
 	}
-	if len(n.interleaveNodes) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.interleaveNodes)))
+	if len(n.InterleaveNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--interleave=%s", intsToStrings(n.InterleaveNodes)))
 	}
-	if len(n.membindNodes) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.membindNodes)))
+	if len(n.MembindNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--membind=%s", intsToStrings(n.MembindNodes)))
 	}
-	if len(n.physcpubindCPUS) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.physcpubindCPUS)))
+	if len(n.PhyscpubindCPUs) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--physcpubind=%s", intsToStrings(n.PhyscpubindCPUs)))
 	}
-	if len(n.cpunodebindNodes) > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.cpunodebindNodes)))
+	if len(n.CPUnodebindNodes) > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--cpunodebind=%s", intsToStrings(n.CPUnodebindNodes)))
 	}
-	if n.preferredNode > 0 {
-		numaOptions = append(numaOptions, fmt.Sprintf("--preferred=%d", n.preferredNode))
+	if n.PreferredNode > 0 {
+		numaOptions = append(numaOptions, fmt.Sprintf("--preferred=%d", n.PreferredNode))
 	}
 
 	return fmt.Sprintf("numactl %s -- %s", strings.Join(numaOptions, " "), command)
