@@ -5,7 +5,7 @@
 `$SWAN_ROOT/workloads/web_serving/specjbb_deps_centos.sh`.
 It will install java-1.8.0-openjdk on your machine.
 1. Download and extract SPECjbb with a script
-`$SWAN_ROOT/cripts/get_specjbb.sh`.
+`$SWAN_ROOT/scripts/get_specjbb.sh`.
 It will download an iso file, mount it and copy its content into
 `$SWAN_ROOT/workloads/web_serving/`.
 1. SPECjbb can be run with a jar:
