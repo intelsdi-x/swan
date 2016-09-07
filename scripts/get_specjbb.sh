@@ -6,7 +6,7 @@ iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
 specjbb_path=workloads/web_serving
 mnt_path=/mnt/specjbb
 
-# Downlaod SPECjbb here, when we will have decision where to put it.
+# Download SPECjbb here, when we will have decision where to put it.
 
 if [ -e $iso_path ]
 then
