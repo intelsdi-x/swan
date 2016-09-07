@@ -107,7 +107,7 @@ func (k8s *kubernetes) containerResources() api.ResourceRequirements {
 		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
 	}
 	if k8s.config.CPURequest > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
+		resourceListLimits[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
 	}
 	return api.ResourceRequirements{
 		Limits:   resourceListLimits,
@@ -136,7 +136,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		},
 		Spec: api.PodSpec{
 			RestartPolicy:   "Never",
-			SecurityContext: &api.PodSecurityContext{HostNetwork: true},
+			SecurityContext: &api.PodSecurityContext{HostNetwork: k8s.config.HostNetwork},
 			Containers: []api.Container{
 				api.Container{
 					Name:            k8s.config.ContainerName,
