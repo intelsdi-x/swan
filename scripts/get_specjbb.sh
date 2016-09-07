@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x -e -o pipefail
+
 iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
 specjbb_path=workloads/web_serving
 mnt_path=/mnt/specjbb
