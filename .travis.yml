@@ -1,0 +1,15 @@
+sudo: required
+services:
+- docker
+language: go
+sudo: required
+go:
+- 1.6
+before_install:
+- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
+- make deps
+script:
+- make lint
+- make unit_test
+notifications:
+  slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3

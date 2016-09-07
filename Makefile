@@ -8,7 +8,7 @@ all: deps lint unit_test
 deps:
 	curl https://glide.sh/get | sh
 	go get github.com/golang/lint/golint
-	go get github.com/GeertJohan/fgt 
+	go get github.com/GeertJohan/fgt
 	glide install
 
 # testing
@@ -22,5 +22,3 @@ unit_test:
 
 integration_test:
 	go test $(TEST_OPT) ./integration_tests/...
-	
-
