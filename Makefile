@@ -67,7 +67,7 @@ build_jupyter:
 
 build_workloads:
 	# Get SPECjbb
-	(bash scripts/get_specjbb.sh)
+	(sudo bash scripts/get_specjbb.sh)
 
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
