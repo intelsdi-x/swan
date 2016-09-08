@@ -15,6 +15,7 @@ RUN yum install -y epel-release && \
         cppzmq-devel \
         gengetopt \
         git \
+        java-1.8.0-openjdk \
         libevent-devel \
         libcgroup \
         libcgroup-tools \

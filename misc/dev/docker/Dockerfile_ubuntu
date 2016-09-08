@@ -15,6 +15,7 @@ RUN apt-get update && \
         cgroup-bin \
         gengetopt \
         git \
+        openjdk-8-jre \
         libevent-dev \
         libcgroup-dev \
         libzmq5-dev \
