@@ -69,6 +69,7 @@ EOF
       libevent-devel \
       moreutils-parallel \
       nmap-ncat \
+      patch \
       perf \
       psmisc \
       pssh \
@@ -77,7 +78,7 @@ EOF
       scons \
       tree \
       vim \
-      wget 
+      wget
     if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
@@ -112,7 +113,7 @@ SCRIPT
     # Rewrite github URLs for fetching private repos (requires ssh-agent)
     sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
     # Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
-    ssh-add -l 
+    ssh-add -l
 SCRIPT
 
   $configure_cassandra = <<SCRIPT
@@ -128,9 +129,9 @@ SCRIPT
     systemctl daemon-reload
     systemctl enable cassandra.service
     echo "Restarting cassandra..."
-    systemctl restart cassandra.service 
+    systemctl restart cassandra.service
     echo "cassandra.service status:"
-    systemctl show -p SubState cassandra.service 
+    systemctl show -p SubState cassandra.service
 SCRIPT
 
   $install_glide = <<SCRIPT

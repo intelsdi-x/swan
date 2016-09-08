@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const retries = 5
+const retries = 30
 
 // IsListeningFunction is a function type for checking if http endpoint is responding.
 type IsListeningFunction func(address string, timeout time.Duration) bool

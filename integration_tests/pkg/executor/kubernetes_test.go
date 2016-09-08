@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
@@ -17,6 +18,8 @@ import (
 )
 
 func TestKubernetesExecutor(t *testing.T) {
+	log.SetLevel(log.ErrorLevel)
+
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
 		local := executor.NewLocal()
 
@@ -67,8 +70,12 @@ func TestKubernetesExecutor(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(strings.Split(out, "\n")), ShouldEqual, 1)
 
+		Convey("The generic Executor test should pass", func() {
+			testExecutor(t, k8sexecutor)
+		})
+
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 0")
+			taskHandle, err := k8sexecutor.Execute("sleep 4 && exit 0")
 			So(err, ShouldBeNil)
 			defer taskHandle.EraseOutput()
 			defer taskHandle.Clean()
@@ -96,7 +103,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		})
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 2 && exit 5")
+			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
 			So(err, ShouldBeNil)
 			defer taskHandle.EraseOutput()
 			defer taskHandle.Clean()
@@ -126,7 +133,7 @@ func TestKubernetesExecutor(t *testing.T) {
 }
 
 func kubectl(server string, subcommand string) (string, error) {
-	kubectlBinPath := path.Join(fs.GetSwanBinPath(), "kubectl")
+	kubectlBinPath := path.Join(fs.GetAthenaBinPath(), "kubectl")
 	buf := new(bytes.Buffer)
 	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s -s %s %s", kubectlBinPath, server, subcommand))
 	cmd.Stdout = buf

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	kubectlBinPath = path.Join(fs.GetSwanBinPath(), "kubectl")
+	kubectlBinPath = path.Join(fs.GetAthenaBinPath(), "kubectl")
 )
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.

@@ -19,6 +19,8 @@ import (
 )
 
 func TestSnapKubesnapSession(t *testing.T) {
+	t.Skipf("skipping test for now as snap plugins are not bundled with Athena")
+
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
 		snapd := testhelpers.NewSnapd()
 		err := snapd.Start()

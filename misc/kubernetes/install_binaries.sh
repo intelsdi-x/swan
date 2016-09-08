@@ -15,15 +15,13 @@ pushd `dirname $0`
     OPT=$1
     if [ "${OPT}" = "--force" ] || [ ! -f  ${ATHENA_BIN}.kube-services-${K8S_VERSION} ] ; then
         pushd ${ATHENA_BIN}
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
-
-            # wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-apiserver
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kubectl.v1.4.0-alpha.2-serenity -O kubectl
             wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kube-apiserver.v1.4.0-alpha.2-serenity -O kube-apiserver
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kube-controller-manager.v1.4.0-alpha.2-serenity -O kube-controller-manager
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kube-proxy.v1.4.0-alpha.2-serenity -O kube-proxy
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kube-scheduler.v1.4.0-alpha.2-serenity -O kube-scheduler
+            wget https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/kubelet.v1.4.0-alpha.2-serenity -O kubelet
 
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-controller-manager
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-proxy
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kube-scheduler
-            wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubelet
             chmod +x ./*
             touch .kube-services-${K8S_VERSION}
         popd

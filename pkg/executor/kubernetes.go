@@ -156,12 +156,14 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	}
 
 	taskHandle := &kubernetesTaskHandle{
-		command: command,
-		podsAPI: podsAPI,
-		pod:     pod,
+		command:       command,
+		podsAPI:       podsAPI,
+		pod:           pod,
+		podMutex:      &sync.Mutex{},
+		exitCodeMutex: &sync.Mutex{},
+		stdMutex:      &sync.Mutex{},
 	}
 
-	taskHandle.setupLogs()
 	taskHandle.watch()
 
 	var timeoutChannel <-chan time.Time
@@ -177,16 +179,11 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		// TODO(skonefal): We don't have stdout & stderr when pod fails.
 		exitCode, err := taskHandle.ExitCode()
 		if err != nil || exitCode != 0 {
-			defer StopCleanAndErase(taskHandle)
-
 			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
-			return nil, errors.Errorf(
-				"failed to start command %q on %q on %q",
-				command, k8s.Name(), taskHandle.Address(),
-			)
+		} else {
+			LogSuccessfulExecution(command, k8s.Name(), taskHandle)
 		}
 
-		LogSuccessfulExecution(command, k8s.Name(), taskHandle)
 		return taskHandle, nil
 
 	case <-timeoutChannel:
@@ -207,19 +204,125 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 
 // kubernetesTaskHandle implements the TaskHandle interface
 type kubernetesTaskHandle struct {
-	podsAPI  client.PodInterface
-	pod      *api.Pod
-	command  string
-	stopped  chan struct{}
-	started  chan struct{}
-	stdout   *os.File
-	stderr   *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
-	logdir   string
-	exitCode *int
+	podsAPI       client.PodInterface
+	command       string
+	stopped       chan struct{}
+	started       chan struct{}
+	logsReady     chan struct{}
+
+	// NOTE: Access to the pod structure must be done through setPod()
+	// and getPod() to avoid data races between caller and watcher routine.
+	pod           *api.Pod
+	podMutex      *sync.Mutex
+
+	// NOTE: Access to stdout and stderr must be done through setFileHandles()
+	// and getFileHandles() to avoid data races between caller and watcher
+	// routine.
+	stdout        *os.File
+	stderr        *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir        string
+	stdMutex      *sync.Mutex
+
+	// NOTE: Access to the exit code must be done through setExitCode()
+	// and getExitCode() to avoid data races between caller and watcher routine.
+	exitCode      *int
+	exitCodeMutex *sync.Mutex
+}
+
+// getPod provides a thread safe way to get the most recent pod structure.
+func (th *kubernetesTaskHandle) getPod() *api.Pod {
+	th.podMutex.Lock()
+	defer th.podMutex.Unlock()
+
+	return th.pod
+}
+
+// setPod provides a thread safe way to set the active pod structure.
+func (th *kubernetesTaskHandle) setPod(pod *api.Pod) {
+	th.podMutex.Lock()
+	defer th.podMutex.Unlock()
+
+	th.pod = pod
+}
+
+// getExitCode provides a thread safe way to get the most recent exit code.
+func (th *kubernetesTaskHandle) getExitCode() *int {
+	th.exitCodeMutex.Lock()
+	defer th.exitCodeMutex.Unlock()
+
+	return th.exitCode
+}
+
+// setExitCode provides a thread safe way to set the active exit code.
+func (th *kubernetesTaskHandle) setExitCode(exitCode *int) {
+	th.exitCodeMutex.Lock()
+	defer th.exitCodeMutex.Unlock()
+
+	th.exitCode = exitCode
+}
+
+// setFileHandles provides a thread safe way to set the file descriptors for
+// the stdout and stderr files.
+func (th *kubernetesTaskHandle) setFileHandles(stdoutFile *os.File, stderrFile *os.File) {
+	th.stdMutex.Lock()
+	defer th.stdMutex.Unlock()
+
+	th.stdout = stdoutFile
+	th.stderr = stderrFile
+
+	outputDir, _ := path.Split(th.stdout.Name())
+	th.logdir = outputDir
+}
+
+// setFileHandles provides a thread safe way to get the file descriptors for
+// the stdout and stderr files.
+func (th *kubernetesTaskHandle) getFileHandles() (*os.File, *os.File) {
+	th.stdMutex.Lock()
+	defer th.stdMutex.Unlock()
+
+	return th.stdout, th.stderr
+}
+
+func (th *kubernetesTaskHandle) setupLogs(pod *api.Pod) {
+	log.Debugf("Setting up logs for pod %q", pod.Name)
+
+	// Wire up logs to task handle stdout.
+	logStream, err := th.podsAPI.GetLogs(pod.Name, &api.PodLogOptions{}).Stream()
+	if err != nil {
+		log.Debug("cannot create a stream: %s", err.Error())
+		return
+	}
+
+	// Prepare local files
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(th.command, "kubernetes")
+
+	if err != nil {
+		log.Debug("cannot create output files for pod %q: %s", pod.Name, err.Error())
+		return
+	}
+
+	log.Debugf("created temporary files stdout path: %q stderr path: %q",
+		stdoutFile.Name(), stderrFile.Name())
+
+	go func() {
+		_, err := io.Copy(stdoutFile, logStream)
+		if err != nil {
+			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
+		}
+
+		stdoutFile.Sync()
+	}()
+
+	// Set file handles in task handle in a synchronized manner.
+	th.setFileHandles(stdoutFile, stderrFile)
+
+	close(th.logsReady)
 }
 
 func (th *kubernetesTaskHandle) watch() error {
-	selectorRaw := fmt.Sprintf("name=%s", th.pod.Name)
+	pod := th.getPod()
+
+	selectorRaw := fmt.Sprintf("name=%s", pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create selector %q", selector)
@@ -233,8 +336,11 @@ func (th *kubernetesTaskHandle) watch() error {
 
 	th.started = make(chan struct{})
 	th.stopped = make(chan struct{})
+	th.logsReady = make(chan struct{})
 
 	go func() {
+		var onceSetupLogs sync.Once
+
 		var onceStarted sync.Once
 		started := func(pod *api.Pod) {
 			if api.IsPodReady(pod) {
@@ -247,7 +353,7 @@ func (th *kubernetesTaskHandle) watch() error {
 		var onceStopped sync.Once
 		terminated := func(pod *api.Pod) {
 			onceStopped.Do(func() {
-				exitCode := 1
+				exitCode := -1
 
 				// Look for an exit status from the container.
 				// If more than one container is present, the last takes precedence.
@@ -259,9 +365,7 @@ func (th *kubernetesTaskHandle) watch() error {
 					exitCode = int(status.State.Terminated.ExitCode)
 				}
 
-				// NOTE: We may want to have a lock/read barrier on the exit code to ensure consistent read
-				// in ExitCode().
-				th.exitCode = &exitCode
+				th.setExitCode(&exitCode)
 
 				close(th.stopped)
 			})
@@ -269,7 +373,7 @@ func (th *kubernetesTaskHandle) watch() error {
 			// Try to delete the failed pod to avoid conflicts and having to call Stop()
 			// after the stopped channel has been closed.
 			var GracePeriodSeconds int64
-			th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
+			th.podsAPI.Delete(pod.Name, &api.DeleteOptions{
 				GracePeriodSeconds: &GracePeriodSeconds,
 			})
 		}
@@ -280,9 +384,7 @@ func (th *kubernetesTaskHandle) watch() error {
 				continue
 			}
 
-			// Update with latest status.
-			// NOTE: May want to make this synchronized.
-			th.pod = pod
+			th.setPod(pod)
 
 			switch event.Type {
 			case watch.Added, watch.Modified:
@@ -290,8 +392,16 @@ func (th *kubernetesTaskHandle) watch() error {
 				case api.PodPending:
 				// Noop for now.
 				case api.PodRunning:
+					onceSetupLogs.Do(func() {
+						th.setupLogs(pod)
+					})
+
 					started(pod)
 				case api.PodFailed, api.PodSucceeded:
+					onceSetupLogs.Do(func() {
+						th.setupLogs(pod)
+					})
+
 					terminated(pod)
 					return
 				case api.PodUnknown:
@@ -303,6 +413,10 @@ func (th *kubernetesTaskHandle) watch() error {
 				}
 			case watch.Deleted:
 				// Pod phase will still be 'running', so we disregard the phase at this point.
+				onceSetupLogs.Do(func() {
+					th.setupLogs(pod)
+				})
+
 				terminated(pod)
 				return
 			case watch.Error:
@@ -310,43 +424,6 @@ func (th *kubernetesTaskHandle) watch() error {
 			default:
 				log.Warnf("Unhandled event type: %v", event.Type)
 			}
-		}
-	}()
-
-	return nil
-}
-
-// NOTE: That setupLogs can only be called when the pod is running i.e. wait until the started
-// channel has been closed by watch().
-func (th *kubernetesTaskHandle) setupLogs() error {
-	// Wire up logs to task handle stdout.
-	logStream, err := th.podsAPI.GetLogs(th.pod.Name, &api.PodLogOptions{
-		Container: th.pod.Spec.Containers[0].Name,
-	}).Stream()
-	if err != nil {
-		return errors.Wrapf(err, "cannot create a stream")
-	}
-
-	// Prepare local files
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(th.command, "local")
-	if err != nil {
-		return errors.Wrapf(err, "cannot create output files for pod %q", th.pod.Name)
-	}
-	log.Debugf("created temporary files stdout path: %q stderr path: %q",
-		stdoutFile.Name(), stderrFile.Name())
-
-	th.stdout = stdoutFile
-	// NOTE: As logs are unified in one stream in Kubernetes, we only write it to stdout.
-	// Therefore, stderr will always be empty.
-	th.stderr = stderrFile
-
-	outputDir, _ := path.Split(th.stdout.Name())
-	th.logdir = outputDir
-
-	go func() {
-		_, err := io.Copy(stdoutFile, logStream)
-		if err != nil {
-			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
 		}
 	}()
 
@@ -368,19 +445,21 @@ func (th *kubernetesTaskHandle) Stop() error {
 		return nil
 	}
 
-	log.Debugf("deleting pod %q", th.pod.Name)
+	pod := th.getPod()
+
+	log.Debugf("deleting pod %q", pod.Name)
 
 	var GracePeriodSeconds int64
-	err := th.podsAPI.Delete(th.pod.Name, &api.DeleteOptions{
+	err := th.podsAPI.Delete(pod.Name, &api.DeleteOptions{
 		GracePeriodSeconds: &GracePeriodSeconds,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "cannot delete pod %q", th.pod.Name)
+		return errors.Wrapf(err, "cannot delete pod %q", pod.Name)
 	}
 
-	log.Debugf("waiting for pod %q to stop", th.pod.Name)
+	log.Debugf("waiting for pod %q to stop", pod.Name)
 	<-th.stopped
-	log.Debugf("pod %q stopped", th.pod.Name)
+	log.Debugf("pod %q stopped", pod.Name)
 
 	return nil
 }
@@ -400,11 +479,13 @@ func (th *kubernetesTaskHandle) ExitCode() (int, error) {
 		return 0, errors.New("task is still running")
 	}
 
-	if th.exitCode == nil {
+	exitCode := th.getExitCode()
+
+	if exitCode == nil {
 		return 0, errors.New("exit code unknown")
 	}
 
-	return *th.exitCode, nil
+	return *exitCode, nil
 }
 
 // Wait blocks until the pod terminates _or_ if timeout is provided, will exit ealier with
@@ -443,7 +524,10 @@ func (th *kubernetesTaskHandle) Clean() error {
 }
 
 // EraseOutput deletes the stdout and stderr files.
+// NOTE: EraseOutput will block until output directory is available.
 func (th *kubernetesTaskHandle) EraseOutput() error {
+	<-th.logsReady
+
 	directory, err := os.Lstat(th.logdir)
 	if err == nil && directory.IsDir() {
 		if err := os.RemoveAll(th.logdir); err != nil {
@@ -458,22 +542,33 @@ func (th *kubernetesTaskHandle) EraseOutput() error {
 
 // Address returns the host IP where the pod was scheduled.
 func (th *kubernetesTaskHandle) Address() string {
-	// NOTE: Could be th.pod.Status.PodIP as well.
-	return th.pod.Status.HostIP
+	// NOTE: Could be pod.Status.PodIP as well.
+	pod := th.getPod()
+	return pod.Status.HostIP
 }
 
 // StdoutFile returns a file handle to the stdout file for the pod.
+// NOTE: StdoutFile will block until stdout file is available.
 func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
-	if th.stdout == nil {
+	<-th.logsReady
+
+	stdout, _ := th.getFileHandles()
+
+	if stdout == nil {
 		return nil, errors.New("stdout file has been already closed or it is not created yet")
 	}
-	return th.stdout, nil
+	return stdout, nil
 }
 
 // StderrFile returns a file handle to the stderr file for the pod.
+// NOTE: StderrFile will block until stderr file is available.
 func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
-	if th.stdout == nil {
-		return nil, errors.New("srderr file has been already closed or it is not created yet")
+	<-th.logsReady
+
+	_, stderr := th.getFileHandles()
+
+	if stderr == nil {
+		return nil, errors.New("stderr file has been already closed or it is not created yet")
 	}
-	return th.stderr, nil
+	return stderr, nil
 }
