@@ -90,6 +90,7 @@ EOF
       gengetopt \
       git \
       iptables \
+      java-1.8.0-openjdk \
       libcgroup-tools \
       libevent-devel \
       moreutils-parallel \
