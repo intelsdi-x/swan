@@ -19,7 +19,9 @@ const (
 )
 
 func getUUID(outs []byte) string {
+	So(outs, ShouldNotBeNil)
 	lines := strings.Split(string(outs), "\n")
+	So(len(lines), ShouldBeGreaterThan, 0)
 	return string(lines[0])
 }
 
