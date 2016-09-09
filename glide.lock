@@ -1,5 +1,5 @@
 hash: 1c27cdc93dc195a27b86039b362cedde9fd0480e9483a427f73a51599c2b0488
-updated: 2016-08-26T16:29:11.931220358+02:00
+updated: 2016-09-07T08:34:59.819185427-04:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -81,24 +81,6 @@ imports:
   version: 8c5f0ad9360406a3807ce7de6bc73269a91a6e51
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
-- name: github.com/intelsdi-x/athena
-  version: ba1b4dd3e5961045efd836f4dfd03735e64c2716
-  subpackages:
-  - integration_tests/test_helpers
-  - pkg/conf
-  - pkg/executor
-  - pkg/executor/mocks
-  - pkg/isolation
-  - pkg/isolation/cgroup
-  - pkg/isolation/topo
-  - pkg/kubernetes
-  - pkg/snap
-  - pkg/snap/sessions/kubesnap
-  - pkg/snap/sessions/mutilate
-  - pkg/utils/err_collection
-  - pkg/utils/fs
-  - pkg/utils/netutil
-  - pkg/utils/random
 - name: github.com/intelsdi-x/snap
   version: 506318ebb84a8fefc5ef966edc4318c9cf5b2002
   subpackages:
@@ -213,7 +195,7 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/alecthomas/kingpin.v2
-  version: e5900212cbf65b181d3d8e08308ef06a01d117cf
+  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
@@ -282,7 +264,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/kubernetes
-  version: b44b716965db2d54c8c7dfcdbcb1d54792ab8559
+  version: 44368db9916cc345ebef8b6fbde3cdf0dc9d79dc
   subpackages:
   - pkg/api
   - pkg/api/endpoints

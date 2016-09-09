@@ -60,9 +60,6 @@ func TestSnap(t *testing.T) {
 				So(err2, ShouldBeNil)
 			}
 		}()
-
-		// Wait until snap is up.
-		So(snapd.Connected(), ShouldBeTrue)
 		snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
 
 		Convey("We are able to connect with snapd", func() {

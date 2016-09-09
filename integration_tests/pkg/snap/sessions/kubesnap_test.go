@@ -29,8 +29,6 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer snapd.CleanAndEraseOutput()
 		defer snapd.Stop()
 
-		// Wait until snap is up.
-		So(snapd.Connected(), ShouldBeTrue)
 		snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapd.Port())
 
 		// Load plugins.

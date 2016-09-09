@@ -1,14 +1,15 @@
 package testhelpers
 
 import (
-	"errors"
 	"fmt"
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/athena/pkg/executor"
 	"math/rand"
 	"os"
 	"path"
 	"time"
+
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/pkg/errors"
 )
 
 // Snapd represents Snap daemon used in tests.
@@ -28,21 +29,26 @@ func NewSnapdOnPort(apiPort int) *Snapd {
 	return &Snapd{apiPort: apiPort}
 }
 
-// Start starts Snap daemon.
+// Start starts Snap daemon and wait until it is responsive.
 func (s *Snapd) Start() error {
 	l := executor.NewLocal()
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		return errors.New("Cannot find GOPATH")
 	}
-
-	snapRoot := path.Join(
-		gopath, "src", "github.com", "intelsdi-x", "snap", "build", "bin", "snapd")
-	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapRoot, s.apiPort)
+	snapdPath := path.Join(gopath, "bin", "snapd")
+	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapdPath, s.apiPort)
 
 	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
 		return err
+	}
+
+	if !s.Connected() {
+		taskHandle.Stop()
+		taskHandle.Clean()
+		taskHandle.EraseOutput()
+		return errors.Errorf("could not connect to snapd on %q", s.getSnapdAddress())
 	}
 
 	s.task = taskHandle
@@ -72,7 +78,7 @@ func (s *Snapd) CleanAndEraseOutput() error {
 func (s *Snapd) Connected() bool {
 	retries := 100
 	isConnected := false
-	cli, err := client.New(fmt.Sprintf("http://127.0.0.1:%d", s.apiPort), "v1", true)
+	cli, err := client.New(s.getSnapdAddress(), "v1", true)
 	if err != nil {
 		return isConnected
 	}
@@ -90,4 +96,8 @@ func (s *Snapd) Connected() bool {
 // Port returns port Snapd is listening.
 func (s *Snapd) Port() int {
 	return s.apiPort
+}
+
+func (s *Snapd) getSnapdAddress() string {
+	return fmt.Sprintf("http://127.0.0.1:%d", s.apiPort)
 }
