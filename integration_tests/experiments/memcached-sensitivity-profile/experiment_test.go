@@ -48,14 +48,21 @@ func TestExperiment(t *testing.T) {
 		So(err, ShouldBeNil)
 		time.Sleep(1 * time.Second)
 
+		Reset(func() {
+			err := snapd.Process.Kill()
+			So(err, ShouldBeNil)
+			if err == nil {
+				os.RemoveAll(snapLogs)
+			}
+		})
+
 		Convey("While doing experiment", func() {
 			for k, v := range envs {
 				os.Setenv(k, v)
 			}
 
-			Convey("With proper configuration and empty phases", func() {
+			Convey("With proper configuration and without aggressor phases", func() {
 				exp := exec.Command(memcachedSensitivityProfileBin)
-
 				err := exp.Run()
 
 				Convey("Experiment should return with no errors", func() {
@@ -67,36 +74,56 @@ func TestExperiment(t *testing.T) {
 				args := []string{"--aggr", "l1d"}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
 
+				output, err := exp.Output()
+				So(err, ShouldBeNil)
+				experimentID := getUUID(output)
+
+				session, err := getCassandraSession()
+				So(err, ShouldBeNil)
+				defer session.Close()
+
 				Convey("Experiment should be stored in a Cassandra DB", func() {
 					var ns string
-					output, err := exp.Output()
+					var tags map[string]string
+					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
 					So(err, ShouldBeNil)
-					experimentID := getUUID(output)
-					cluster := gocql.NewCluster("127.0.0.1")
-					cluster.Keyspace = "snap"
-					cluster.ProtoVersion = 4
-					cluster.Timeout = 100 * time.Second
-					session, err := cluster.CreateSession()
-
-					defer session.Close()
-
-					session.Query(`SELECT ns FROM snap.metrics WHERE tags['swan_experiment'] = '?' ALLOW FILTERING`, experimentID).Scan(&ns)
-					So(ns, ShouldNotBeNil)
+					So(ns, ShouldNotBeBlank)
+					So(tags, ShouldNotBeEmpty)
+					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				})
 
 				Convey("While having two repetitions to phase", func() {
 					os.Setenv("SWAN_REPS", "2")
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					err := exp.Run()
-					os.Setenv("SWAN_REPS", "1")
+					output, err := exp.Output()
 					So(err, ShouldBeNil)
 
-					Convey("Experiment should succeed also with 2 load points", func() {
-						os.Setenv("SWAN_LOAD_POINTS", "2")
-						exp := exec.Command(memcachedSensitivityProfileBin, args...)
-						err := exp.Run()
-						So(err, ShouldBeNil)
-					})
+					experimentID := getUUID(output)
+					var ns string
+					var tags map[string]string
+					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
+					So(err, ShouldBeNil)
+					So(ns, ShouldNotBeBlank)
+					So(tags, ShouldNotBeEmpty)
+					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+					So(tags["swan_repetition"], ShouldEqual, "1")
+				})
+
+				Convey("Experiment should succeed also with 2 load points", func() {
+					os.Setenv("SWAN_LOAD_POINTS", "2")
+					exp := exec.Command(memcachedSensitivityProfileBin, args...)
+					output, err := exp.Output()
+					So(err, ShouldBeNil)
+					experimentID := getUUID(output)
+
+					var ns string
+					var tags map[string]string
+					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
+					So(err, ShouldBeNil)
+					So(ns, ShouldNotBeBlank)
+					So(tags, ShouldNotBeEmpty)
+					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+					So(tags["swan_phase"], ShouldEqual, "aggressor_nr_0_measurement_for_loadpoint_id_2")
 				})
 			})
 
@@ -126,13 +153,14 @@ func TestExperiment(t *testing.T) {
 				So(err, ShouldNotBeNil)
 			})
 		})
-
-		Reset(func() {
-			err := snapd.Process.Kill()
-			So(err, ShouldBeNil)
-			if err == nil {
-				os.RemoveAll(snapLogs)
-			}
-		})
 	})
+}
+
+func getCassandraSession() (*gocql.Session, error) {
+	cluster := gocql.NewCluster("127.0.0.1")
+	cluster.Keyspace = "snap"
+	cluster.ProtoVersion = 4
+	cluster.Timeout = 100 * time.Second
+	session, err := cluster.CreateSession()
+	return  session, err
 }
