@@ -61,6 +61,10 @@ func TestExperiment(t *testing.T) {
 				os.Setenv(k, v)
 			}
 
+			session, err := getCassandraSession()
+			So(err, ShouldBeNil)
+			defer session.Close()
+
 			Convey("With proper configuration and without aggressor phases", func() {
 				exp := exec.Command(memcachedSensitivityProfileBin)
 				err := exp.Run()
@@ -70,19 +74,14 @@ func TestExperiment(t *testing.T) {
 				})
 			})
 
-			Convey("With proper configuration and not empty phases", func() {
+			Convey("With proper configuration and with l1d aggressors", func() {
 				args := []string{"--aggr", "l1d"}
-				exp := exec.Command(memcachedSensitivityProfileBin, args...)
+				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+					exp := exec.Command(memcachedSensitivityProfileBin, args...)
+					output, err := exp.Output()
+					So(err, ShouldBeNil)
+					experimentID := getUUID(output)
 
-				output, err := exp.Output()
-				So(err, ShouldBeNil)
-				experimentID := getUUID(output)
-
-				session, err := getCassandraSession()
-				So(err, ShouldBeNil)
-				defer session.Close()
-
-				Convey("Experiment should be stored in a Cassandra DB", func() {
 					var ns string
 					var tags map[string]string
 					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
@@ -97,8 +96,8 @@ func TestExperiment(t *testing.T) {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
 					So(err, ShouldBeNil)
-
 					experimentID := getUUID(output)
+
 					var ns string
 					var tags map[string]string
 					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
