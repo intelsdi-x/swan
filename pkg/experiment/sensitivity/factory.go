@@ -71,11 +71,16 @@ func NewMultiIsolationAggressorFactory(
 	}
 }
 
-// Create returns aggressor of chosen type.
-func (f AggressorFactory) Create(name string, onK8s bool) (executor.Launcher, error) {
+// ExecutorFactoryFunc is a type of function that every call returns new instance of executor with decorators.
+type ExecutorFactoryFunc func(isolation.Decorators) (executor.Executor, error)
+
+// Create returns aggressor of chosen type using provided executorFactor to create executor.
+func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFunc) (executor.Launcher, error) {
 	var aggressor executor.Launcher
 
-	exec, err := f.createIsolatedExecutor(name, onK8s)
+	decorators := f.getDecorators(name)
+
+	exec, err := executorFactory(decorators)
 	errutil.Check(err)
 
 	switch name {
@@ -98,21 +103,10 @@ func (f AggressorFactory) Create(name string, onK8s bool) (executor.Launcher, er
 	return aggressor, nil
 }
 
-// CreateIsolatedExecutor returns local executor with prepared isolation.
+// getDecorators returns decorators that should be applied on executor.
 // L1-Data and L1-Instruction cache aggressor receives l1AggressorIsolation
 // Other aggressors receive otherAggressorIsolation
-func (f AggressorFactory) createIsolatedExecutor(name string, isRunOnK8s bool) (executor.Executor, error) {
-	// Create specific executor dependent of enviroment.
-	getSpecializedExecutor := func(decorators isolation.Decorators) (executor.Executor, error) {
-		if isRunOnK8s {
-			config := executor.DefaultKubernetesConfig()
-			config.ContainerImage = "centos_swan_image"
-			config.Decorators = decorators
-			config.PodName = "swan-aggr"
-			return executor.NewKubernetes(config)
-		}
-		return executor.NewLocalIsolated(decorators), nil
-	}
+func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 
 	switch name {
 	case l1data.ID:
@@ -120,20 +114,20 @@ func (f AggressorFactory) createIsolatedExecutor(name string, isRunOnK8s bool) (
 		if L1dProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1dProcessNumber.Value()))
 		}
-		return getSpecializedExecutor(decorators)
+		return decorators
 	case l1instruction.ID:
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		if L1iProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
 		}
-		return getSpecializedExecutor(decorators)
+		return decorators
 	case l3data.ID:
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
 		}
-		return getSpecializedExecutor(decorators)
+		return decorators
 	default:
-		return getSpecializedExecutor(isolation.Decorators{f.otherAggressorIsolation})
+		return isolation.Decorators{f.otherAggressorIsolation}
 	}
 }

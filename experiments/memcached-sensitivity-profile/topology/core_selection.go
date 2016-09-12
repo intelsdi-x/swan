@@ -1,4 +1,4 @@
-package main
+package topology
 
 import (
 	"github.com/intelsdi-x/athena/pkg/isolation/topo"

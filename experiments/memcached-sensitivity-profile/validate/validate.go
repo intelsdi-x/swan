@@ -1,4 +1,4 @@
-package main
+package validate
 
 import (
 	"fmt"
@@ -66,9 +66,9 @@ func checkNOFILE(nofile, minimum int) {
 
 }
 
-// validateOS checks experiment local OS environment to help identify potential issues.
+// OS checks experiment local OS environment to help identify potential issues.
 // Note: in case of some requirements not met, only warns user.
-func validateOS() {
+func OS() {
 	checkTCPSyncookies()
 	checkCPUPowerGovernor()
 	checkNOFILE(
@@ -77,9 +77,9 @@ func validateOS() {
 	)
 }
 
-// validateExecutorsNOFILELimit validates if environment provided by executors can run
+// ExecutorsNOFILELimit validates if environment provided by executors can run
 // distributed application that requires large number of open file descriptors.
-func validateExecutorsNOFILELimit(executors []executor.Executor) {
+func ExecutorsNOFILELimit(executors []executor.Executor) {
 	for _, executor := range executors {
 		checkNOFILE(
 			getNOFILE(executor),
