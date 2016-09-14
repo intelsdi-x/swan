@@ -4,7 +4,7 @@
 # scripts.
 set -x -e -o pipefail
 
-K8S_VERSION="v1.3.0"
+K8S_VERSION="v1.4.0-beta.0"
 
 pushd `dirname $0`
     SWAN_ROOT=`pwd`/../../
