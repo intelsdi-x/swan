@@ -2,30 +2,26 @@ package loadgenerator
 
 import (
 	"fmt"
-	"time"
 )
 
-func getControllerTuneCommand(pathToBinary string) string {
-	return fmt.Sprint("java -jar",
-		ControllerTypeProperty, "HBIR",
-		" ", pathToBinary,
-		" -m distcontroller")
-}
-
-func getControllerLoadCommand(pathToBinary string, injectionRate int, duration time.Duration) string {
+func getControllerLoadCommand(config Config, injectionRate int, duration int64) string {
 	return fmt.Sprint("java -jar",
 		ControllerTypeProperty, "PRESET",
 		InjectionRateProperty, injectionRate,
 		PresetDurationProperty, duration,
-		" ", pathToBinary,
-		" -m distcontroller")
+		CustomerNumberProperty, config.CustomerNumber,
+		ProductNumberProperty, config.ProductNumber,
+		" ", config.PathToBinary,
+		" -m distcontroller",
+		" -p ", config.PathToProps)
 }
 
-func getTxICommand(pathToBinary string, txIConfig Config) string {
+func getTxICommand(config Config, TxIJVMID int) string {
 	return fmt.Sprint("java -jar",
-		ControllerHostProperty, txIConfig.ControllerIP,
-		" ", pathToBinary,
+		ControllerHostProperty, config.ControllerIP,
+		" ", config.PathToBinary,
 		" -m txinjector",
 		" -G GRP1",
-		" -J JVM", txIConfig.JvmID)
+		" -J JVM", TxIJVMID,
+		" -p ", config.PathToProps)
 }

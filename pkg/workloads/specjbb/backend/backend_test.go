@@ -3,8 +3,10 @@ package backend
 import (
 	"testing"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -13,10 +15,11 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("When using Backend launcher", t, func() {
-		const (
-			expectedCommand = "java -jar -Dspecjbb.controller.host=127.0.0.1 test -m backend -G GRP1 -J JVM2"
-			expectedHost    = "127.0.0.1"
-		)
+
+		expectedCommand := fmt.Sprintf("java -jar -Dspecjbb.controller.host=127.0.0.1 test -m backend -G GRP1 -J JVM2"+
+			" -p %s/web_serving/specjbb/config/specjbb2015.props", fs.GetSwanWorkloadsPath())
+		expectedHost := "127.0.0.1"
+
 		mockedExecutor := new(mocks.Executor)
 		mockedTaskHandle := new(mocks.TaskHandle)
 		config := DefaultSPECjbbBackendConfig()

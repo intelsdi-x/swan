@@ -24,9 +24,9 @@ type Config struct {
 // DefaultSPECjbbBackendConfig is a constructor for Config with default parameters.
 func DefaultSPECjbbBackendConfig() Config {
 	return Config{
-		PathToBinary: loadgenerator.PathFlag.Value(),
+		PathToBinary: loadgenerator.PathToBinaryFlag.Value(),
 		IP:           loadgenerator.IPFlag.Value(),
-		JvmID:        loadgenerator.TxlCountFlag.Value() + defaultJVMNId,
+		JvmID:        loadgenerator.TxICountFlag.Value() + defaultJVMNId,
 	}
 }
 
@@ -51,7 +51,8 @@ func (b Backend) buildCommand() string {
 		" ", b.conf.PathToBinary,
 		" -m backend",
 		" -G GRP1",
-		" -J JVM", b.conf.JvmID)
+		" -J JVM", b.conf.JvmID,
+		" -p ", loadgenerator.PathToPropsFileFlag.Value())
 }
 
 // Launch starts the Backend component. It returns a Task Handle instance.
