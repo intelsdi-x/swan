@@ -19,8 +19,6 @@ import (
 )
 
 func TestSnapKubesnapSession(t *testing.T) {
-	t.Skipf("skipping test for now as snap plugins are not bundled with Athena")
-
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
 		snapd := testhelpers.NewSnapd()
 		err := snapd.Start()
@@ -37,9 +35,9 @@ func TestSnapKubesnapSession(t *testing.T) {
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
-		err = loader.Load(snap.KubesnapDockerCollector, snap.SessionPublisher)
+		err = loader.Load(snap.KubesnapDockerCollector, snap.FilePublisher)
 		So(err, ShouldBeNil)
-		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
+		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.FilePublisher)
 		So(err, ShouldBeNil)
 
 		resultsFile, err := ioutil.TempFile("", "session_test")
@@ -107,7 +105,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 			So(string(content), ShouldNotBeEmpty)
 
 			Convey("There should be CPU results of docker containers on Kubernetes", func() {
-				cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\s+\S+\s+(\d+)`)
+				cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\|(\d+)`)
 				cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
 				So(len(cpuStatsMatches), ShouldBeGreaterThanOrEqualTo, 2)
 				cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
@@ -115,7 +113,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 				So(cpuUsage, ShouldBeGreaterThan, 0)
 
 				Convey("There should be Memory results of docker containers on Kubernetes", func() {
-					memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\s+\S+\s+(\d+)`)
+					memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\|(\d+)`)
 					memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
 					So(len(memoryUsageMatches), ShouldBeGreaterThanOrEqualTo, 2)
 					memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])

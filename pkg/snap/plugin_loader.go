@@ -4,9 +4,9 @@ import (
 	"os"
 	"path"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 )
 
 const (
@@ -24,6 +24,11 @@ const (
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
 	// SessionPublisher is name of snap plugin binary.
 	SessionPublisher = "snap-plugin-publisher-session-test"
+
+	// FilePublisher is Snap testing file publisher
+	FilePublisher = "snap-publisher-file"
+	// MockCollector is Snap testing mock collector
+	MockCollector = "snap-collector-mock1"
 )
 
 var (

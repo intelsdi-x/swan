@@ -6,7 +6,7 @@ TEST_OPT?=
 all: deps lint unit_test
 
 deps:
-	curl https://glide.sh/get | sh
+	curl https://glide.sh/get | /bin/bash
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt
 	glide install
@@ -21,4 +21,4 @@ unit_test:
 	go test $(TEST_OPT) ./pkg/...
 
 integration_test:
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./integration_tests/...
+	./scripts/isolate-pid.sh go test -race $(TEST_OPT) -v ./integration_tests/...

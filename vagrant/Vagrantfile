@@ -112,8 +112,14 @@ SCRIPT
     echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
     # Rewrite github URLs for fetching private repos (requires ssh-agent)
     sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
+    git config --global url."git@github.com:".insteadOf "https://github.com/"
     # Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
     ssh-add -l
+    mkdir -p /root/.ssh
+    mkdir -p $HOME_DIR/.ssh
+    GITHUB_KEY=`ssh-keyscan github.com`
+    echo $GITHUB_KEY>>/root/.ssh/known_hosts
+    echo $GITHUB_KEY>>$HOME_DIR/.ssh/known_hosts
 SCRIPT
 
   $configure_cassandra = <<SCRIPT
@@ -135,8 +141,65 @@ SCRIPT
 SCRIPT
 
   $install_glide = <<SCRIPT
+  echo "Installing Glide..."
   source $HOME_DIR/.bash_profile
   go get github.com/Masterminds/glide
+SCRIPT
+
+  $install_godep = <<SCRIPT
+  echo "Installing Godep..."
+  source $HOME_DIR/.bash_profile
+  go get github.com/tools/godep
+SCRIPT
+
+
+  $install_kubernetes = <<SCRIPT
+  echo "Downloading Kubernernetes binaries..."
+  wget -O /tmp/kubernetes.tar.gz -c https://github.com/kubernetes/kubernetes/releases/download/v1.3.6/kubernetes.tar.gz
+  echo "Extracting Kubernetes binaries..."
+  tar zxf /tmp/kubernetes.tar.gz -C /tmp
+  tar zxf /tmp/kubernetes/server/kubernetes-server-linux-amd64.tar.gz -C /tmp
+  echo "Installing Kubernetes binaries..."
+  mkdir -p $HOME_DIR/go/src/github.com/intelsdi-x/athena/misc/bin/
+  cp -f /tmp/kubernetes/server/bin/* $HOME_DIR/go/src/github.com/intelsdi-x/athena/misc/bin/
+SCRIPT
+
+  $install_snap = <<SCRIPT
+  echo "Downloading Snap binaries..."
+  wget -O /tmp/snap.tar.gz -c https://github.com/intelsdi-x/snap/releases/download/v0.14.0-beta/snap-v0.14.0-beta-linux-amd64.tar.gz
+  wget -O /tmp/snap-plugins.tar.gz -c https://github.com/intelsdi-x/snap/releases/download/v0.14.0-beta/snap-plugins-v0.14.0-beta-linux-amd64.tar.gz
+  echo "Extracting Snap binaries..."
+  tar zxf /tmp/snap.tar.gz -C /tmp
+  tar zxf /tmp/snap-plugins.tar.gz -C /tmp
+  echo "Installing Snap binaries..."
+  cp -f /tmp/snap-v0.14.0-beta/bin/* $HOME_DIR/go/bin/
+  cp -f /tmp/snap-v0.14.0-beta/plugin/* $HOME_DIR/go/bin/
+SCRIPT
+
+  $install_kubesnap_collector = <<SCRIPT
+  echo "Installing kubesnap-plugin-collector-docker..."
+  source $HOME_DIR/.bash_profile
+  pushd $GOPATH/src/github.com/intelsdi-x/
+  git clone https://github.com/intelsdi-x/kubesnap-plugin-collector-docker
+  pushd kubesnap-plugin-collector-docker
+  git reset --hard 81a60d8276054a95dde4a72429bf320c89e31ded
+  patch -p1 --forward -s --merge < $GOPATH/src/github.com/intelsdi-x/athena/vagrant/resources/kubesnap-plugin-collector-docker.patch
+  make deps
+  popd
+  popd
+  go install github.com/intelsdi-x/kubesnap-plugin-collector-docker
+SCRIPT
+
+  $install_cassandra_publisher = <<SCRIPT
+  echo "Installing snap-plugin-publisher-cassandra..."
+  source $HOME_DIR/.bash_profile
+  go get github.com/intelsdi-x/snap-plugin-publisher-cassandra
+SCRIPT
+
+  $install_snap_tag_processor = <<SCRIPT
+  echo "Installing snap-plugin-processor-tag..."
+  source $HOME_DIR/.bash_profile
+  go get github.com/intelsdi-x/snap-plugin-processor-tag
 SCRIPT
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
@@ -145,7 +208,13 @@ SCRIPT
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_godep, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_kubernetes, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_snap, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_kubesnap_collector, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_cassandra_publisher, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_snap_tag_processor, env: {'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: "chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end

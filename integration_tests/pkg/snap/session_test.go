@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -17,8 +16,6 @@ import (
 )
 
 func TestSnap(t *testing.T) {
-	t.Skipf("skipping test for now as snap plugins are not bundled with Athena")
-
 	var snapd *testhelpers.Snapd
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
@@ -35,16 +32,17 @@ func TestSnap(t *testing.T) {
 
 		lines := strings.Split(string(dat), "\n")
 		So(len(lines), ShouldEqual, 1)
-		columns := strings.Split(lines[0], "\t")
+		columns := strings.Split(lines[0], "|")
 		So(len(columns), ShouldEqual, 3)
 		tags := strings.Split(columns[1], ",")
 		So(tags, ShouldHaveLength, 1)
 
-		So(columns[0], ShouldEqual, "/intel/swan/session/metric1")
-		So("foo=bar", ShouldBeIn, tags)
+		So(columns[1], ShouldEqual, "/intel/mock/foo")
+		//TODO (iwan) uncomment when we upgrade Snap (0.14 does not save tags in file publisher)
+		/*So("foo=bar", ShouldBeIn, tags)
 		host, err := os.Hostname()
 		So(err, ShouldBeNil)
-		So("plugin_running_on="+host, ShouldBeIn, tags)
+		So("plugin_running_on="+host, ShouldBeIn, tags)*/
 	}
 
 	Convey("While having Snapd running", t, func() {
@@ -72,7 +70,7 @@ func TestSnap(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				err = pluginLoader.Load(snap.SessionCollector)
+				err = pluginLoader.Load(snap.MockCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -82,7 +80,7 @@ func TestSnap(t *testing.T) {
 					m := c.GetMetricCatalog()
 					So(m.Err, ShouldBeNil)
 					for _, metric := range m.Catalog {
-						if metric.Namespace == "/intel/swan/session/metric1" {
+						if metric.Namespace == "/intel/mock/foo" {
 							found = true
 							break
 						}
@@ -92,10 +90,10 @@ func TestSnap(t *testing.T) {
 				So(found, ShouldBeTrue)
 
 				Convey("Loading publishers", func() {
-					pluginLoader.Load(snap.SessionPublisher)
+					err := pluginLoader.Load(snap.FilePublisher)
 					So(err, ShouldBeNil)
 
-					publisher = wmap.NewPublishNode("session-test", 1)
+					publisher = wmap.NewPublishNode("file", snap.PluginAnyVersion)
 
 					So(publisher, ShouldNotBeNil)
 
@@ -109,12 +107,13 @@ func TestSnap(t *testing.T) {
 
 					Convey("While starting a Snap experiment session", func() {
 						s = snap.NewSession(
-							[]string{"/intel/swan/session/metric1"},
+							[]string{"/intel/mock/foo"},
 							1*time.Second,
 							c,
 							publisher,
 						)
 						So(s, ShouldNotBeNil)
+						s.CollectNodeConfigItems = append(s.CollectNodeConfigItems, snap.CollectNodeConfigItem{Ns: "/intel/mock", Key: "password", Value: "some random password"})
 
 						err := s.Start("foo:bar")
 
