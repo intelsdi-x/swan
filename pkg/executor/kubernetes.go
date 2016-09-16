@@ -17,6 +17,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/kubelet/qos"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/watch"
 )
@@ -33,6 +34,8 @@ type KubernetesConfig struct {
 	Password       string
 	CPURequest     int64
 	CPULimit       int64
+	MemoryRequest  int64
+	MemoryLimit    int64
 	Decorators     isolation.Decorators
 	ContainerName  string
 	ContainerImage string
@@ -63,6 +66,8 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Password:       "",
 		CPURequest:     0,
 		CPULimit:       0,
+		MemoryRequest:  0,
+		MemoryLimit:    0,
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
@@ -101,17 +106,28 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 
 // containerResources helper to create ResourceRequirments for the container.
 func (k8s *kubernetes) containerResources() api.ResourceRequirements {
-	resourceListLimits := api.ResourceList{}
+
+	// requests
 	resourceListRequests := api.ResourceList{}
-	if k8s.config.CPULimit > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
-	}
 	if k8s.config.CPURequest > 0 {
-		resourceListLimits[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
+		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
 	}
+	if k8s.config.MemoryRequest > 0 {
+		resourceListRequests[api.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryRequest, resource.DecimalSI)
+	}
+
+	// limits
+	resourceListLimits := api.ResourceList{}
+	if k8s.config.CPULimit > 0 {
+		resourceListLimits[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
+	}
+	if k8s.config.MemoryLimit > 0 {
+		resourceListLimits[api.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryLimit, resource.DecimalSI)
+	}
+
 	return api.ResourceRequirements{
-		Limits:   resourceListLimits,
 		Requests: resourceListRequests,
+		Limits:   resourceListLimits,
 	}
 }
 
@@ -120,14 +136,13 @@ func (k8s *kubernetes) Name() string {
 	return "Kubernetes Executor"
 }
 
-// Execute creates a pod and runs the provided command in it. When the command completes, the pod
-// is stopped i.e. the container is not restarted automatically.
-func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
-	podsAPI := k8s.client.Pods(k8s.config.Namespace)
-	command = k8s.config.Decorators.Decorate(command)
+// newPod is a helper to build in-memory struture representing pod
+// before sending it as request to API server.
+func (k8s *kubernetes) newPod(command string) *api.Pod {
 
-	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
-	pod, err := podsAPI.Create(&api.Pod{
+	resources := k8s.containerResources()
+
+	return &api.Pod{
 		TypeMeta: unversioned.TypeMeta{},
 		ObjectMeta: api.ObjectMeta{
 			Name:      k8s.config.PodName,
@@ -142,13 +157,26 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 					Name:            k8s.config.ContainerName,
 					Image:           k8s.config.ContainerImage,
 					Command:         []string{"sh", "-c", command},
-					Resources:       k8s.containerResources(),
+					Resources:       resources,
 					ImagePullPolicy: api.PullIfNotPresent, // Default because swan image is not published yet.
 					SecurityContext: &api.SecurityContext{Privileged: &k8s.config.Privileged},
 				},
 			},
 		},
-	})
+	}
+}
+
+// Execute creates a pod and runs the provided command in it. When the command completes, the pod
+// is stopped i.e. the container is not restarted automatically.
+func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
+	podsAPI := k8s.client.Pods(k8s.config.Namespace)
+	command = k8s.config.Decorators.Decorate(command)
+
+	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
+	pod, err := podsAPI.Create(k8s.newPod(command))
+
+	log.Debugf("pod.Spec = %+v\n", pod.Spec)
+	log.Debugf("pod %q QoS class:", qos.GetPodQOS(pod))
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot schedule pod %q with namespace %q",
@@ -204,24 +232,24 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 
 // kubernetesTaskHandle implements the TaskHandle interface
 type kubernetesTaskHandle struct {
-	podsAPI       client.PodInterface
-	command       string
-	stopped       chan struct{}
-	started       chan struct{}
-	logsReady     chan struct{}
+	podsAPI   client.PodInterface
+	command   string
+	stopped   chan struct{}
+	started   chan struct{}
+	logsReady chan struct{}
 
 	// NOTE: Access to the pod structure must be done through setPod()
 	// and getPod() to avoid data races between caller and watcher routine.
-	pod           *api.Pod
-	podMutex      *sync.Mutex
+	pod      *api.Pod
+	podMutex *sync.Mutex
 
 	// NOTE: Access to stdout and stderr must be done through setFileHandles()
 	// and getFileHandles() to avoid data races between caller and watcher
 	// routine.
-	stdout        *os.File
-	stderr        *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
-	logdir        string
-	stdMutex      *sync.Mutex
+	stdout   *os.File
+	stderr   *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir   string
+	stdMutex *sync.Mutex
 
 	// NOTE: Access to the exit code must be done through setExitCode()
 	// and getExitCode() to avoid data races between caller and watcher routine.
