@@ -11,6 +11,7 @@ func getControllerLoadCommand(config Config, injectionRate int, duration int64) 
 		PresetDurationProperty, duration,
 		CustomerNumberProperty, config.CustomerNumber,
 		ProductNumberProperty, config.ProductNumber,
+		BinaryDataOutputDir, config.BinaryDataOutputDir,
 		" ", config.PathToBinary,
 		" -m distcontroller",
 		" -p ", config.PathToProps)

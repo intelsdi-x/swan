@@ -54,29 +54,34 @@ var (
 
 	// ProductNumberProperty represents total number of products.
 	ProductNumberProperty = " -Dspecjbb.input.number_products="
+
+	// BinaryDataOutputDir represents directory for storing binary log file of the run.
+	BinaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 )
 
 // Config is a config for a SPECjbb2015 Transaction Injector,
 // Supported options:
 // IP - property "-Dspecjbb.controller.host=" - IP address of a SPECjbb controller component (default:127.0.0.1)
 type Config struct {
-	ControllerIP   string
-	PathToBinary   string
-	PathToProps    string
-	TxICount       int
-	CustomerNumber int
-	ProductNumber  int
+	ControllerIP        string
+	PathToBinary        string
+	PathToProps         string
+	TxICount            int
+	CustomerNumber      int
+	ProductNumber       int
+	BinaryDataOutputDir string
 }
 
 // NewDefaultConfig is a constructor for Config with default parameters.
 func NewDefaultConfig() Config {
 	return Config{
-		ControllerIP:   IPFlag.Value(),
-		PathToBinary:   PathToBinaryFlag.Value(),
-		PathToProps:    PathToPropsFileFlag.Value(),
-		TxICount:       TxICountFlag.Value(),
-		CustomerNumber: CustomerNumberFlag.Value(),
-		ProductNumber:  ProductNumberFlag.Value(),
+		ControllerIP:        IPFlag.Value(),
+		PathToBinary:        PathToBinaryFlag.Value(),
+		PathToProps:         PathToPropsFileFlag.Value(),
+		TxICount:            TxICountFlag.Value(),
+		CustomerNumber:      CustomerNumberFlag.Value(),
+		ProductNumber:       ProductNumberFlag.Value(),
+		BinaryDataOutputDir: path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"),
 	}
 }
 
