@@ -146,12 +146,12 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 	return handles, nil
 }
 
-// Populate does not do nothing here.
+// Populate is not implemented.
 func (loadGenerator loadGenerator) Populate() (err error) {
 	return nil
 }
 
-// Tune doe ot do nothing here.
+// Tune is not implemented.
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
 	return qps, achievedSLI, err
 }
