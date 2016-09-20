@@ -32,18 +32,17 @@ Vagrant.configure(2) do |config|
   if ! only_cache_dependencies
     home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
     config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+    require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
+    file = "#{ENV['HOME']}/.vagrant/aws-creds"
+    if File.exists?(file)
+       data = YAML.load_file(file)
+    else
+       data = {}
+    end
   end
-
-   require 'yaml'
-   # load a file at this location that can be used to set aws specific
-   # information. This allows you to set your own credentials, but also
-   # custom what ami the job runs on.
-   file = "#{ENV['HOME']}/.vagrant/aws-creds"
-   if File.exists?(file)
-      data = YAML.load_file(file)
-   else
-      data = {}
-   end
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
