@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
   # out a full image, but just bringing up an image with
   # some of the dependencies installed on it. This is being
   # used to cache dependencies on an AMI.
-  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] && ENV['BUILD_CACHED_IMAGE'] != '') || false
+  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] == 'true')
 
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
@@ -43,6 +43,32 @@ Vagrant.configure(2) do |config|
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
+  config.vm.provider :aws do |aws, override|
+    require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
+    file = "#{ENV['HOME']}/.vagrant/aws-creds"
+    if File.exists?(file)
+      data = YAML.load_file(file)
+    else
+      data = {}
+    end
+    override.nfs.functional = false
+    aws.access_key_id = data['access_key_id']
+    aws.secret_access_key = data['secret_access_key']
+    override.vm.box = "aws"
+    # requiretty cannot be set in sudoers for vagrant to work
+    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+    # centos7 for us-east
+    aws.ami = (ENV['ATHENA_AMI'] != '' && ENV['ATHENA_AMI']) || data['ami'] || "ami-6d1c2007"
+    aws.instance_type = (ENV['ATHENA_INSTANCE_TYPE'] != '' && ENV['ATHENA_INSTANCE_TYPE']) || data['instance_type'] || "m3.medium"
+    aws.keypair_name = data['keypair_name'] || "snapbot-private"
+    override.ssh.username = data['ssh_username'] || "centos"
+    override.ssh.private_key_path = data['ssh_private_key_path'] || nil
+    override.ssh.keys_only = data['keys_only'] || true
+  end
+
   $install_packages = <<SCRIPT
     echo Adding the docker yum repository
     tee /etc/yum.repos.d/docker.repo <<-'EOF'
@@ -61,6 +87,7 @@ EOF
     yum install -y \
       docker-engine \
       etcd \
+      gcc \
       gcc-g++ \
       gengetopt \
       git \
@@ -154,14 +181,9 @@ SCRIPT
 
 
   $install_kubernetes = <<SCRIPT
-  echo "Downloading Kubernernetes binaries..."
-  wget -O /tmp/kubernetes.tar.gz -c https://github.com/kubernetes/kubernetes/releases/download/v1.3.6/kubernetes.tar.gz
-  echo "Extracting Kubernetes binaries..."
-  tar zxf /tmp/kubernetes.tar.gz -C /tmp
-  tar zxf /tmp/kubernetes/server/kubernetes-server-linux-amd64.tar.gz -C /tmp
-  echo "Installing Kubernetes binaries..."
-  mkdir -p $HOME_DIR/go/src/github.com/intelsdi-x/athena/misc/bin/
-  cp -f /tmp/kubernetes/server/bin/* $HOME_DIR/go/src/github.com/intelsdi-x/athena/misc/bin/
+  source $HOME_DIR/.bash_profile
+  cd $GOPATH/src/github.com/intelsdi-x/athena
+  ./misc/kubernetes/install_binaries.sh
 SCRIPT
 
   $install_snap = <<SCRIPT
@@ -210,7 +232,7 @@ SCRIPT
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_godep, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $install_kubernetes, env: {'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_kubernetes, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_snap, env: {'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_kubesnap_collector, env: {'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_cassandra_publisher, env: {'HOME_DIR' => home_dir}
