@@ -2,11 +2,21 @@
 
 set -x -e -o pipefail
 
+s3_iso_path=swan-artifacts/SPECjbb2015_1_00.iso
 iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
 specjbb_path=workloads/web_serving
 mnt_path=/mnt/specjbb
 
+yum install -y unzip
+wget -P /tmp/ https://github.com/s3tools/s3cmd/archive/master.zip
+unzip /tmp/master.zip -d /tmp/
+rm /tmp/master.zip
+pushd /tmp/s3cmd-master/
+python setup.py install
+popd
+
 # Download SPECjbb here, when we will have decision from where it can be downloaded.
+s3cmd sync s3://$s3_iso_path $iso_path
 
 if [ -e $iso_path ]
 then
