@@ -66,8 +66,22 @@ Vagrant.configure(2) do |config|
     override.ssh.username = data['ssh_username'] || "centos"
     override.ssh.private_key_path = data['ssh_private_key_path'] || nil
     override.ssh.keys_only = data['keys_only'] || true
-    aws --version
-    aws s3 sync s3://swan-artifacts/SPECjbb2015_1_00.iso #{home_dir}/go/src/github.com/intelsdi-x/swan/workloads/web_serving/
+
+    outputFile="/tmp/SPECjbb2015_1_00.iso"
+    amzFile="SPECjbb2015_1_00.iso"
+    bucket="swan-artifacts"
+    resource="/${bucket}/${amzFile}"
+    contentType="application/octetstream"
+    dateValue=`date -R`
+    stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
+    s3Key=data['access_key_id']
+    s3Secret=data['secret_access_key']
+    signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
+    curl  -H "Host: ${bucket}.s3.amazonaws.com" \
+         -H "Date: ${dateValue}" \
+         -H "Content-Type: ${contentType}" \
+         -H "Authorization: AWS ${s3Key}:${signature}" \
+         https://${bucket}.s3.amazonaws.com/${amzFile} -o $outputFile
   end
 
   $install_packages = <<SCRIPT
