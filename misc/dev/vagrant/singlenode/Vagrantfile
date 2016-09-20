@@ -202,7 +202,7 @@ SCRIPT
     chown -R $VAGRANT_USER:$VAGRANT_USER $ATHENA_DIR
 
   $download_specjbb = <<SCRIPT
-    ./$HOME_DIR/swan/scripts/get_specjbb.sh
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh
 SCRIPT
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
