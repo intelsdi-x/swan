@@ -201,7 +201,7 @@ SCRIPT
     cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh
     chown -R $VAGRANT_USER:$VAGRANT_USER $ATHENA_DIR
 
-$download_specjbb = <<SCRIPT
+  $download_specjbb = <<SCRIPT
     ./$HOME_DIR/swan/scripts/get_specjbb.sh
 SCRIPT
 

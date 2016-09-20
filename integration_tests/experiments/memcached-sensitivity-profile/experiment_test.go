@@ -4,9 +4,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"testing"
 	"time"
-	"strings"
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
@@ -163,5 +163,5 @@ func getCassandraSession() (*gocql.Session, error) {
 	cluster.ProtoVersion = 4
 	cluster.Timeout = 100 * time.Second
 	session, err := cluster.CreateSession()
-	return  session, err
+	return session, err
 }

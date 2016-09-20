@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
