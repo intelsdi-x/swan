@@ -67,21 +67,6 @@ Vagrant.configure(2) do |config|
     override.ssh.private_key_path = data['ssh_private_key_path'] || nil
     override.ssh.keys_only = data['keys_only'] || true
 
-    outputFile="/tmp/SPECjbb2015_1_00.iso"
-    amzFile="SPECjbb2015_1_00.iso"
-    bucket="swan-artifacts"
-    resource="/${bucket}/${amzFile}"
-    contentType="application/octetstream"
-    dateValue=`date -R`
-    stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
-    s3Key=data['access_key_id']
-    s3Secret=data['secret_access_key']
-    signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-    curl  -H "Host: ${bucket}.s3.amazonaws.com" \
-         -H "Date: ${dateValue}" \
-         -H "Content-Type: ${contentType}" \
-         -H "Authorization: AWS ${s3Key}:${signature}" \
-         https://${bucket}.s3.amazonaws.com/${amzFile} -o $outputFile
   end
 
   $install_packages = <<SCRIPT
@@ -127,6 +112,23 @@ EOF
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
     fi
+SCRIPT
+
+  download_specjbb = <<SCRIPT
+     s3_iso_path=swan-artifacts/SPECjbb2015_1_00.iso
+     iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
+     specjbb_path=workloads/web_serving
+     mnt_path=/mnt/specjbb
+
+     yum install -y unzip
+     wget -P /tmp/ https://github.com/s3tools/s3cmd/archive/master.zip
+     unzip /tmp/master.zip -d /tmp/
+     rm /tmp/master.zip
+     pushd /tmp/s3cmd-master/
+     python setup.py install
+     popd
+
+     s3cmd --access_key=$DATA_ACCESS_KEY --secret_key=$DATA_SECRET_ACCESS_KEY sync s3://$s3_iso_path $iso_path
 SCRIPT
 
   $configure_etcd = <<SCRIPT
@@ -225,6 +227,7 @@ SCRIPT
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
+    config.vm.provision "shell", inline: $download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'DATA_ACCESS_KEY' => data['access_key_id'], 'DATA_SECRET_ACCESS_KEY' => data['secret_access_key'] }
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
