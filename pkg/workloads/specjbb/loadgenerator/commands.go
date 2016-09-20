@@ -17,6 +17,17 @@ func getControllerLoadCommand(config Config, injectionRate int, duration int64) 
 		" -p ", config.PathToProps)
 }
 
+func getControllerHBIRCommand(config Config) string {
+	return fmt.Sprint("java -jar",
+		ControllerTypeProperty, "HBIR",
+		CustomerNumberProperty, config.CustomerNumber,
+		ProductNumberProperty, config.ProductNumber,
+		BinaryDataOutputDir, config.BinaryDataOutputDir,
+		" ", config.PathToBinary,
+		" -m distcontroller",
+		" -p ", config.PathToProps)
+}
+
 func getTxICommand(config Config, TxIJVMID int) string {
 	return fmt.Sprint("java -jar",
 		ControllerHostProperty, config.ControllerIP,

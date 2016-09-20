@@ -8,6 +8,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/parser"
 	"github.com/pkg/errors"
 )
 
@@ -153,12 +154,39 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 
 // Populate is not implemented.
 func (loadGenerator loadGenerator) Populate() (err error) {
+	logrus.Warn("Populate function is not implemented.")
 	return nil
 }
 
-// Tune is not implemented.
+// Tune calculates maximum capacity of a machine without any time constraints.
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
-	return qps, achievedSLI, err
+	hbirCommand := getControllerHBIRCommand(loadGenerator.config)
+	controllerHandle, err := loadGenerator.controller.Execute(hbirCommand)
+	if err != nil {
+		return 0, 0, errors.Wrapf(err, "execution of SPECjbb HBIR failed. command: %q", hbirCommand)
+	}
+	txIHandles, err := loadGenerator.runTransactionInjectors()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	controllerHandle.Wait(0)
+	stopTransactionInjectors(txIHandles)
+	eraseTransactionInjectors(txIHandles)
+	cleanTransactionInjectors(txIHandles)
+
+	out, err := controllerHandle.StdoutFile()
+	if err != nil {
+		return 0, 0, err
+	}
+	hbir, err := parser.FileWithHBIR(out.Name())
+	if err != nil {
+		return 0, 0, err
+	}
+	controllerHandle.EraseOutput()
+	controllerHandle.Clean()
+
+	return hbir, 0, err
 }
 
 // Load starts a load on the specific workload with the defined loadPoint (injection rate value).

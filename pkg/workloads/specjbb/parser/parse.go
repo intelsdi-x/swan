@@ -19,24 +19,60 @@ func newResults() Results {
 	}
 }
 
-// File parse the file from given path.
-func File(path string) (Results, error) {
+// FileWithLatencies parse the file with load output from given path.
+func FileWithLatencies(path string) (Results, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {
 		return newResults(), err
 	}
-	return Parse(file)
+	return ParseLatencies(file)
 }
 
-// Parse retrieves metrics from specjbb output represented as:
+// FileWithHBIR parse the file with HBIR output from given path.
+func FileWithHBIR(path string) (int, error) {
+	file, err := os.Open(path)
+	defer file.Close()
+	if err != nil {
+		return 0, err
+	}
+	return ParseHBIR(file)
+}
+
+// ParseHBIR retrieves HBIR from specjbb output represented as:
+//    559s: high-bound for max-jOPS is measured to be 6725
+func ParseHBIR(reader io.Reader) (int, error) {
+	var hbir, timeOfCalculation int
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return 0, err
+		}
+
+		// Remove whitespaces because SPECjbb adds different number of them to generate 'table'.
+		// To check whether a line contains specific string we must have constant format of it.
+		line := strings.Join(strings.Fields(scanner.Text()), "")
+		if strings.Contains(line, "high-boundformax-jOPSismeasuredtobe") {
+			const fields = 2
+			if numberOfItems, err := fmt.Sscanf(line, "%ds:high-boundformax-jOPSismeasuredtobe%d", &timeOfCalculation, &hbir); err != nil {
+				if numberOfItems != fields {
+					return 0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
+				}
+				return 0, err
+			}
+		}
+	}
+	return hbir, nil
+}
+
+// ParseLatencies retrieves metrics from specjbb output represented as:
 // 262s: Performance info:
 // Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
 // Overall,         122034,          0,          0,     115656,      42.09,
 // Response times:
 // Request,          Success,    Partial,     Failed,   SkipFail,     Probes,    Samples,      min,      p50,      p90,      p95,      p99,      max,
 // TotalPurchase,     128453,          0,          0,          0,        127,     171506,  3800000,  6600000,  7400000,  7400000,  7700000,  8000000,
-func Parse(reader io.Reader) (Results, error) {
+func ParseLatencies(reader io.Reader) (Results, error) {
 	metrics := newResults()
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
@@ -46,7 +82,7 @@ func Parse(reader io.Reader) (Results, error) {
 
 		line := strings.Join(strings.Fields(scanner.Text()), "")
 		if strings.HasPrefix(line, "TotalPurchase,") {
-			latencies, err := parseReadLatencies(line)
+			latencies, err := parseTotalPurchaseLatencies(line)
 			if err != nil {
 				return newResults(), err
 			}
@@ -59,7 +95,7 @@ func Parse(reader io.Reader) (Results, error) {
 // Parse line from specjbb with latencies of TotalPurchase. For example:
 // TotalPurchase,     128453,          0,          0,          0,        127,     171506,  3800000,  6600000,  7400000,  7400000,  7700000,  8000000,
 // Returns a map of {"Success": 128453, "Partial": 0, ...}.
-func parseReadLatencies(line string) (map[string]uint64, error) {
+func parseTotalPurchaseLatencies(line string) (map[string]uint64, error) {
 	fmt.Println(line)
 	var (
 		success  uint64

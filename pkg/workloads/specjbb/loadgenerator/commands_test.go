@@ -71,5 +71,27 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 				So(command, ShouldContainSubstring, propertiesFilePath)
 			})
 		})
+
+		Convey("and SPECjbb HBIR command", func() {
+			command := getControllerHBIRCommand(defaultConfig)
+			Convey("Should contain controller mode", func() {
+				So(command, ShouldContainSubstring, "-m distcontroller")
+			})
+			Convey("Should injection controller type property", func() {
+				So(command, ShouldContainSubstring, "-Dspecjbb.controller.type=HBIR")
+			})
+			Convey("Should contain customer number property", func() {
+				So(command, ShouldContainSubstring, fmt.Sprintf("-Dspecjbb.input.number_customers=%d", customerNumber))
+			})
+			Convey("Should contain product number property", func() {
+				So(command, ShouldContainSubstring, fmt.Sprintf("-Dspecjbb.input.number_products=%d", productsNumber))
+			})
+			Convey("Should contain path to binary", func() {
+				So(command, ShouldContainSubstring, jarPath)
+			})
+			Convey("Should contain path to properties file", func() {
+				So(command, ShouldContainSubstring, propertiesFilePath)
+			})
+		})
 	})
 }
