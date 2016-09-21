@@ -144,8 +144,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
 		hpExecutorConfig.HostNetwork = true
 		hpExecutorConfig.PodName = "swan-hp"
-		hpExecutorConfig.CPULimit = int64(hpCPUResourceFlag.Value())
-		hpExecutorConfig.MemoryLimit = int64(hpMemoryResourceFlag.Value())
+		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
+		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
 		// "Guranteed" class is when both resources and set for request and limit and equal.
 		hpExecutorConfig.CPURequest = hpExecutorConfig.CPULimit
 		hpExecutorConfig.MemoryRequest = hpExecutorConfig.MemoryLimit
