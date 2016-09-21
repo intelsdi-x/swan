@@ -15,6 +15,8 @@ const (
 	productsNumber           = 100
 	jarPath                  = "/swan/workloads/web_serving/specjbb/specjbb2015.jar"
 	propertiesFilePath       = "/swan/workloads/web_serving/specjbb/config/specjbb2015.props"
+	outputDir                = "/swan/workloads/web_serving/specjbb"
+	rawFileName              = "abc"
 )
 
 func TestCommandsWithDefaultConfig(t *testing.T) {
@@ -70,6 +72,9 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 			Convey("Should contain path to properties file", func() {
 				So(command, ShouldContainSubstring, propertiesFilePath)
 			})
+			Convey("Should contain path to output dir", func() {
+				So(command, ShouldContainSubstring, outputDir)
+			})
 		})
 
 		Convey("and SPECjbb HBIR RT command", func() {
@@ -91,6 +96,22 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 			})
 			Convey("Should contain path to properties file", func() {
 				So(command, ShouldContainSubstring, propertiesFilePath)
+			})
+			Convey("Should contain path to output dir", func() {
+				So(command, ShouldContainSubstring, outputDir)
+			})
+		})
+
+		Convey("and SPECjbb reporter command", func() {
+			command := getReporterCommand(defaultConfig, rawFileName)
+			Convey("Should contain reporter mode", func() {
+				So(command, ShouldContainSubstring, "-m reporter")
+			})
+			Convey("Should contain path to binary", func() {
+				So(command, ShouldContainSubstring, jarPath)
+			})
+			Convey("Should contain path to output dir", func() {
+				So(command, ShouldContainSubstring, fmt.Sprintf("%s/%s", outputDir, rawFileName))
 			})
 		})
 	})

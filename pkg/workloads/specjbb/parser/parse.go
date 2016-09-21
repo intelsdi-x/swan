@@ -19,6 +19,16 @@ func newResults() Results {
 	}
 }
 
+// FileWithRawFileName parse the file with raw file name from given path.
+func FileWithRawFileName(path string) (string, error) {
+	file, err := os.Open(path)
+	defer file.Close()
+	if err != nil {
+		return "", err
+	}
+	return ParseRawFileName(file)
+}
+
 // FileWithLatencies parse the file with load output from given path.
 func FileWithLatencies(path string) (Results, error) {
 	file, err := os.Open(path)
@@ -39,10 +49,45 @@ func FileWithHBIRRT(path string) (int, error) {
 	return ParseHBIRRT(file)
 }
 
+// ParseRawFileName retrieves name of raw file from specjbb output represented as:
+// 6s: Binary log file is /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
+func ParseRawFileName(reader io.Reader) (string, error) {
+	var rawFileName string
+	var found bool
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", err
+		}
+
+		// Remove whitespaces, as SPECjbb genarates random number of spaces to create a good-looking table.
+		// To parse output we need a constant form of it.
+		line := strings.Join(strings.Fields(scanner.Text()), "")
+		if strings.Contains(line, "Binarylogfileis/") {
+			lineSplitted := strings.Split(line, "/")
+			// Last element in a name of a raw file.
+			lastElement := lineSplitted[len(lineSplitted)-1]
+			const fields = 1
+			if numberOfItems, err := fmt.Sscanf(lastElement, "%s", &rawFileName); err != nil {
+				if numberOfItems != fields {
+					return "", fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
+				}
+				return "", err
+			}
+			found = true
+		}
+	}
+	if !found {
+		return "", fmt.Errorf("Raw file name not found")
+	}
+	return rawFileName, nil
+}
+
 // ParseHBIRRT retrieves geo mean of critical jops from specjbb output represented as:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func ParseHBIRRT(reader io.Reader) (int, error) {
 	var hbir int
+	var found bool
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -53,6 +98,7 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
 		if strings.Contains(line, "RUNRESULT:") && strings.Contains(line, "critical-jOPS") {
+			// Split output to have results in separate fields.
 			lineSplitted := strings.Split(line, ",")
 			// Last element in a line is always a critical jops.
 			lastElement := lineSplitted[len(lineSplitted)-1]
@@ -63,7 +109,11 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 				}
 				return 0, err
 			}
+			found = true
 		}
+	}
+	if !found {
+		return 0, fmt.Errorf("Run result not found")
 	}
 	return hbir, nil
 }

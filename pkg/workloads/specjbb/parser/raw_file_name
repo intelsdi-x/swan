@@ -1,0 +1,29 @@
+SPECjbb2015 Java Business Benchmark
+ (c) Standard Performance Evaluation Corporation, 2015
+
+Preparing to launch Standalone SPECjbb2015 Distributed Controller.
+
+Reading property file: /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/config/specjbb2015.props
+
+     0s: Enumerating plugins...
+     0s:    Connectivity:
+     0s:             HTTP_Grizzly: Grizzly HTTP server, JDK HTTP client
+     0s:              NIO_Grizzly: Grizzly NIO server, Grizzly NIO client
+     0s:               HTTP_Jetty: Jetty HTTP server, JDK HTTP client
+     0s:    Snapshot:
+     0s:                 InMemory: Stores snapshots in heap memory
+     0s:    Data Writers:
+     0s:                     Demo: Send all frame to listener
+     0s:                   InFile: Writing Data into file
+     0s:                   Silent: Drop all frames
+     0s: 
+     0s: Validating kit integrity...
+     0s: Kit validation had passed.
+     2s: 
+     2s: Tests are skipped.
+     2s: 
+     2s: Ladies and gentlemen, this is your Controller speaking.
+     6s: We are delighted in having you for benchmark run today.
+     6s: 
+     6s: Binary log file is /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
+     6s: 

@@ -4,6 +4,7 @@ import (
 	"path"
 	"time"
 
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
@@ -187,12 +188,30 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	if err != nil {
 		return 0, 0, err
 	}
+	rawFileName, err := parser.FileWithRawFileName(out.Name())
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if rawFileName == "" {
+		return 0, 0, fmt.Errorf("Could not get raw results file name from an output file %s", out.Name())
+	}
+
+	// Run reporter to calculate critical jops value from raw results.
+	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName)
+	reporterHandle, err := loadGenerator.controller.Execute(reporterCommand)
+	reporterHandle.Wait(0)
+
+	out, err = reporterHandle.StdoutFile()
+	if err != nil {
+		return 0, 0, err
+	}
 	hbirRt, err := parser.FileWithHBIRRT(out.Name())
 	if err != nil {
 		return 0, 0, err
 	}
-	controllerHandle.EraseOutput()
-	controllerHandle.Clean()
+	//controllerHandle.EraseOutput()
+	//controllerHandle.Clean()
 
 	return hbirRt, 0, err
 }

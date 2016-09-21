@@ -84,6 +84,37 @@ func TestStdoutParser(t *testing.T) {
 			So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 12 but got 0")
 		})
 	})
+	Convey("Opening non-existing file for raw file name should fail", t, func() {
+		fileName, err := FileWithRawFileName("/non/existing/file")
+
+		Convey("file name should be nil and the error should not be nil", func() {
+			So(fileName, ShouldEqual, "")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
+		})
+	})
+
+	Convey("Opening readable and correct file for raw file name", t, func() {
+		path, err := getCurrentDirFilePath("/raw_file_name")
+		So(err, ShouldBeNil)
+
+		Convey("should provide meaningful results", func() {
+			fileName, err := FileWithRawFileName(path)
+			So(err, ShouldBeNil)
+			So(fileName, ShouldEqual, "specjbb2015-D-20160921-00002.data.gz")
+		})
+	})
+
+	Convey("Attempting to read file without raw file name", t, func() {
+		path, err := getCurrentDirFilePath("/raw_file_name_not_given")
+		So(err, ShouldBeNil)
+		Convey("should result in an empty name and an error", func() {
+			fileName, err := FileWithRawFileName(path)
+			So(fileName, ShouldEqual, "")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "Raw file name not found")
+		})
+	})
 }
 
 func getCurrentDirFilePath(name string) (string, error) {
