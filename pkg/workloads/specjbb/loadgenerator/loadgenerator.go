@@ -159,11 +159,19 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 }
 
 // Tune calculates maximum capacity of a machine without any time constraints.
+// Then it builds RT curve (increase load from 1% of HBIR to 100%, step 1%).
+// By using RT curve it calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
+// We use critical jops value as maximum capacity (HBIR) is high above our desired SLA.
+// Exemplary output for machine capacity, HBIR = 12000:
+// critical-jOPS = Geomean ( jOPS @ 10000; 25000; 50000; 75000; 100000; SLAs )
+// Response time percentile is 99-th
+// SLA (us)	10000	25000	50000	75000	100000	Geomean
+// jOPS		1789	2588	2848	3080	3428	2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
-	hbirCommand := getControllerHBIRCommand(loadGenerator.config)
-	controllerHandle, err := loadGenerator.controller.Execute(hbirCommand)
+	hbirRtCommand := getControllerHBIRRTCommand(loadGenerator.config)
+	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "execution of SPECjbb HBIR failed. command: %q", hbirCommand)
+		return 0, 0, errors.Wrapf(err, "execution of SPECjbb HBIR RT failed. command: %q", hbirRtCommand)
 	}
 	txIHandles, err := loadGenerator.runTransactionInjectors()
 	if err != nil {
@@ -179,14 +187,14 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	if err != nil {
 		return 0, 0, err
 	}
-	hbir, err := parser.FileWithHBIR(out.Name())
+	hbirRt, err := parser.FileWithHBIRRT(out.Name())
 	if err != nil {
 		return 0, 0, err
 	}
 	controllerHandle.EraseOutput()
 	controllerHandle.Clean()
 
-	return hbir, 0, err
+	return hbirRt, 0, err
 }
 
 // Load starts a load on the specific workload with the defined loadPoint (injection rate value).

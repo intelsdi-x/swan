@@ -72,8 +72,8 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 			})
 		})
 
-		Convey("and SPECjbb HBIR command", func() {
-			command := getControllerHBIRCommand(defaultConfig)
+		Convey("and SPECjbb HBIR RT command", func() {
+			command := getControllerHBIRRTCommand(defaultConfig)
 			Convey("Should contain controller mode", func() {
 				So(command, ShouldContainSubstring, "-m distcontroller")
 			})

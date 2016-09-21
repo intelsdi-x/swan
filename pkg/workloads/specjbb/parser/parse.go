@@ -29,32 +29,35 @@ func FileWithLatencies(path string) (Results, error) {
 	return ParseLatencies(file)
 }
 
-// FileWithHBIR parse the file with HBIR output from given path.
-func FileWithHBIR(path string) (int, error) {
+// FileWithHBIRRT parse the file with HBIR output from given path.
+func FileWithHBIRRT(path string) (int, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if err != nil {
 		return 0, err
 	}
-	return ParseHBIR(file)
+	return ParseHBIRRT(file)
 }
 
-// ParseHBIR retrieves HBIR from specjbb output represented as:
-//    559s: high-bound for max-jOPS is measured to be 6725
-func ParseHBIR(reader io.Reader) (int, error) {
-	var hbir, timeOfCalculation int
+// ParseHBIRRT retrieves geo mean of critical jops from specjbb output represented as:
+// RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
+func ParseHBIRRT(reader io.Reader) (int, error) {
+	var hbir int
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return 0, err
 		}
 
-		// Remove whitespaces because SPECjbb adds different number of them to generate 'table'.
-		// To check whether a line contains specific string we must have constant format of it.
+		// Remove whitespaces, as SPECjbb genarates random number of spaces to create a good-looking table.
+		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if strings.Contains(line, "high-boundformax-jOPSismeasuredtobe") {
-			const fields = 2
-			if numberOfItems, err := fmt.Sscanf(line, "%ds:high-boundformax-jOPSismeasuredtobe%d", &timeOfCalculation, &hbir); err != nil {
+		if strings.Contains(line, "RUNRESULT:") && strings.Contains(line, "critical-jOPS") {
+			lineSplitted := strings.Split(line, ",")
+			// Last element in a line is always a critical jops.
+			lastElement := lineSplitted[len(lineSplitted)-1]
+			const fields = 1
+			if numberOfItems, err := fmt.Sscanf(lastElement, "critical-jOPS=%d", &hbir); err != nil {
 				if numberOfItems != fields {
 					return 0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
 				}
@@ -80,6 +83,8 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 			return newResults(), err
 		}
 
+		// Remove whitespaces, as SPECjbb genarates random number of spaces to create a good-looking table.
+		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
 		if strings.HasPrefix(line, "TotalPurchase,") {
 			latencies, err := parseTotalPurchaseLatencies(line)
@@ -96,7 +101,6 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 // TotalPurchase,     128453,          0,          0,          0,        127,     171506,  3800000,  6600000,  7400000,  7400000,  7700000,  8000000,
 // Returns a map of {"Success": 128453, "Partial": 0, ...}.
 func parseTotalPurchaseLatencies(line string) (map[string]uint64, error) {
-	fmt.Println(line)
 	var (
 		success  uint64
 		partial  uint64

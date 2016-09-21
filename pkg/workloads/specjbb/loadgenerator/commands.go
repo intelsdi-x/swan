@@ -17,9 +17,9 @@ func getControllerLoadCommand(config Config, injectionRate int, duration int64) 
 		" -p ", config.PathToProps)
 }
 
-func getControllerHBIRCommand(config Config) string {
+func getControllerHBIRRTCommand(config Config) string {
 	return fmt.Sprint("java -jar",
-		ControllerTypeProperty, "HBIR",
+		ControllerTypeProperty, "HBIR_RT",
 		CustomerNumberProperty, config.CustomerNumber,
 		ProductNumberProperty, config.ProductNumber,
 		BinaryDataOutputDir, config.BinaryDataOutputDir,
