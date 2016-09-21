@@ -210,8 +210,10 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	if err != nil {
 		return 0, 0, err
 	}
-	//controllerHandle.EraseOutput()
-	//controllerHandle.Clean()
+	controllerHandle.EraseOutput()
+	controllerHandle.Clean()
+	reporterHandle.EraseOutput()
+	reporterHandle.Clean()
 
 	return hbirRt, 0, err
 }
