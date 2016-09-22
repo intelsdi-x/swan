@@ -1,10 +1,10 @@
 package loadgenerator
 
 import (
+	"fmt"
 	"path"
 	"time"
 
-	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
@@ -25,7 +25,10 @@ var (
 	PathToBinaryFlag = conf.NewStringFlag("specjbb_path", "Path to SPECjbb jar", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
 	// PathToPropsFileFlag specifies path to a SPECjbb2015 properties file.
-	PathToPropsFileFlag = conf.NewStringFlag("specjbb_path", "Path to SPECjbb jar", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
+	PathToPropsFileFlag = conf.NewStringFlag("specjbb_props_path", "Path to SPECjbb properties file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
+
+	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
+	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "template-D.raw"))
 
 	// IPFlag specifies IP address of a controller component of SPECjbb2015 benchmark.
 	IPFlag = conf.NewIPFlag("specjbb_controller_ip", "IP address of a SPECjbb controller component", defaultControllerIP)
@@ -65,25 +68,39 @@ var (
 // Supported options:
 // IP - property "-Dspecjbb.controller.host=" - IP address of a SPECjbb controller component (default:127.0.0.1)
 type Config struct {
-	ControllerIP        string
-	PathToBinary        string
-	PathToProps         string
-	TxICount            int
-	CustomerNumber      int
-	ProductNumber       int
-	BinaryDataOutputDir string
+	ControllerIP         string
+	PathToBinary         string
+	PathToProps          string
+	TxICount             int
+	CustomerNumber       int
+	ProductNumber        int
+	BinaryDataOutputDir  string
+	PathToOutputTemplate string
 }
 
 // NewDefaultConfig is a constructor for Config with default parameters.
 func NewDefaultConfig() Config {
 	return Config{
-		ControllerIP:        IPFlag.Value(),
-		PathToBinary:        PathToBinaryFlag.Value(),
-		PathToProps:         PathToPropsFileFlag.Value(),
-		TxICount:            TxICountFlag.Value(),
-		CustomerNumber:      CustomerNumberFlag.Value(),
-		ProductNumber:       ProductNumberFlag.Value(),
-		BinaryDataOutputDir: path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"),
+		ControllerIP:         IPFlag.Value(),
+		PathToBinary:         PathToBinaryFlag.Value(),
+		PathToProps:          PathToPropsFileFlag.Value(),
+		TxICount:             TxICountFlag.Value(),
+		CustomerNumber:       CustomerNumberFlag.Value(),
+		ProductNumber:        ProductNumberFlag.Value(),
+		BinaryDataOutputDir:  path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"),
+		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
+	}
+}
+
+type reporter struct {
+	executor executor.Executor
+	config   Config
+}
+
+func newReporter(executor executor.Executor, config Config) reporter {
+	return reporter{
+		executor: executor,
+		config:   config,
 	}
 }
 
@@ -161,8 +178,9 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 
 // Tune calculates maximum capacity of a machine without any time constraints.
 // Then it builds RT curve (increase load from 1% of HBIR to 100%, step 1%).
-// By using RT curve it calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
-// We use critical jops value as maximum capacity (HBIR) is high above our desired SLA.
+// By using RT curve it generates report in which reporter
+// calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
+// We use critical jops value because maximum capacity (HBIR) is high above our desired SLA.
 // Exemplary output for machine capacity, HBIR = 12000:
 // critical-jOPS = Geomean ( jOPS @ 10000; 25000; 50000; 75000; 100000; SLAs )
 // Response time percentile is 99-th
@@ -184,32 +202,34 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	eraseTransactionInjectors(txIHandles)
 	cleanTransactionInjectors(txIHandles)
 
-	out, err := controllerHandle.StdoutFile()
+	outController, err := controllerHandle.StdoutFile()
 	if err != nil {
 		return 0, 0, err
 	}
-	rawFileName, err := parser.FileWithRawFileName(out.Name())
+	rawFileName, err := parser.FileWithRawFileName(outController.Name())
 	if err != nil {
 		return 0, 0, err
 	}
 
 	if rawFileName == "" {
-		return 0, 0, fmt.Errorf("Could not get raw results file name from an output file %s", out.Name())
+		return 0, 0, fmt.Errorf("Could not get raw results file name from an output file %s", outController.Name())
 	}
 
 	// Run reporter to calculate critical jops value from raw results.
 	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName)
-	reporterHandle, err := loadGenerator.controller.Execute(reporterCommand)
+	reporter := newReporter(executor.NewLocal(), loadGenerator.config)
+	reporterHandle, err := reporter.executor.Execute(reporterCommand)
 	reporterHandle.Wait(0)
 
-	out, err = reporterHandle.StdoutFile()
+	outReporter, err := reporterHandle.StdoutFile()
 	if err != nil {
 		return 0, 0, err
 	}
-	hbirRt, err := parser.FileWithHBIRRT(out.Name())
+	hbirRt, err := parser.FileWithHBIRRT(outReporter.Name())
 	if err != nil {
 		return 0, 0, err
 	}
+
 	controllerHandle.EraseOutput()
 	controllerHandle.Clean()
 	reporterHandle.EraseOutput()
@@ -219,9 +239,9 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 }
 
 // Load starts a load on the specific workload with the defined loadPoint (injection rate value).
-// The task will do the load for specified amount of time.
+// The task will do the load for specified amount of time (in milliseconds).
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
-	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration.Nanoseconds())
+	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, int(duration.Seconds())*1000)
 	controllerHandle, err := loadGenerator.controller.Execute(loadCommand)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execution of SPECjbb Load Generator failed. command: %q", loadCommand)

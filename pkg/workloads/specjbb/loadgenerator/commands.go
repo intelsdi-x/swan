@@ -4,7 +4,8 @@ import (
 	"fmt"
 )
 
-func getControllerLoadCommand(config Config, injectionRate int, duration int64) string {
+// Load command performs load of given injection rate for given duration.
+func getControllerLoadCommand(config Config, injectionRate int, duration int) string {
 	return fmt.Sprint("java -jar",
 		ControllerTypeProperty, "PRESET",
 		InjectionRateProperty, injectionRate,
@@ -17,6 +18,8 @@ func getControllerLoadCommand(config Config, injectionRate int, duration int64) 
 		" -p ", config.PathToProps)
 }
 
+// HBIR RT command looks for maximum capacity of a machine (high bound injection rate).
+// Then it performs load from 1% to 100% of calculated HBIR (step 1%).
 func getControllerHBIRRTCommand(config Config) string {
 	return fmt.Sprint("java -jar",
 		ControllerTypeProperty, "HBIR_RT",
@@ -28,13 +31,17 @@ func getControllerHBIRRTCommand(config Config) string {
 		" -p ", config.PathToProps)
 }
 
+// Reporter command allows to generate report from raw file (binary data).
 func getReporterCommand(config Config, rawFileName string) string {
 	return fmt.Sprint("java -jar",
 		" ", config.PathToBinary,
 		" -m reporter",
+		" -p ", config.PathToProps,
+		" -raw ", config.PathToOutputTemplate,
 		" -s ", config.BinaryDataOutputDir, "/", rawFileName)
 }
 
+// TxI command starts transaction injector.
 func getTxICommand(config Config, TxIJVMID int) string {
 	return fmt.Sprint("java -jar",
 		ControllerHostProperty, config.ControllerIP,
