@@ -186,6 +186,17 @@ SCRIPT
     chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
 SCRIPT
 
+  $install_athena = <<SCRIPT
+    source $HOME_DIR/.bash_profile
+    ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena
+    echo "Fetching Athena sources"
+    [ -d $ATHENA_DIR ] || (mkdir -p $ATHENA_DIR && git clone git@github.com:intelsdi-x/athena $ATHENA_DIR)
+    echo "Fetching kubernetes binaries for Athena"
+    cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh
+    chown -R vagrant:vagrant $ATHENA_DIR
+SCRIPT
+
+
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
@@ -195,5 +206,6 @@ SCRIPT
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $install_athena, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
