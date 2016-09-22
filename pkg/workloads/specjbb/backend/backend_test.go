@@ -1,9 +1,9 @@
 package backend
 
 import (
+	"fmt"
 	"testing"
 
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"

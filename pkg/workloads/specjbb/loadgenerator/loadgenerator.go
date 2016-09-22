@@ -122,8 +122,8 @@ func NewLoadGenerator(controller executor.Executor, transactionInjectors []execu
 	}
 }
 
-// stopTransactionInjectors stops all tasks that run as transaction injectors.
-func stopTransactionInjectors(transactionInjectorsHandles []executor.TaskHandle) {
+// stop stops all tasks that run as transaction injectors.
+func stop(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.Stop()
 		if err != nil {
@@ -132,8 +132,8 @@ func stopTransactionInjectors(transactionInjectorsHandles []executor.TaskHandle)
 	}
 }
 
-// cleanTransactionInjectors closes the transaction injectors tasks stdout & stderr files.
-func cleanTransactionInjectors(transactionInjectorsHandles []executor.TaskHandle) {
+// clean closes the transaction injectors tasks stdout & stderr files.
+func clean(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.Clean()
 		if err != nil {
@@ -142,8 +142,8 @@ func cleanTransactionInjectors(transactionInjectorsHandles []executor.TaskHandle
 	}
 }
 
-// eraseTransactionInjectors removes transaction injectors tasks stdout & stderr files.
-func eraseTransactionInjectors(transactionInjectorsHandles []executor.TaskHandle) {
+// erase removes transaction injectors tasks stdout & stderr files.
+func erase(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.EraseOutput()
 		if err != nil {
@@ -159,9 +159,9 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 		handle, err := txI.Execute(command)
 		if err != nil {
 			logrus.Errorf("Could not start TransactionInjector with command %s", command)
-			stopTransactionInjectors(handles)
-			cleanTransactionInjectors(handles)
-			eraseTransactionInjectors(handles)
+			stop(handles)
+			clean(handles)
+			erase(handles)
 			return nil, err
 		}
 		handles = append(handles, handle)
@@ -198,9 +198,9 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 
 	controllerHandle.Wait(0)
-	stopTransactionInjectors(txIHandles)
-	eraseTransactionInjectors(txIHandles)
-	cleanTransactionInjectors(txIHandles)
+	stop(txIHandles)
+	erase(txIHandles)
+	clean(txIHandles)
 
 	outController, err := controllerHandle.StdoutFile()
 	if err != nil {

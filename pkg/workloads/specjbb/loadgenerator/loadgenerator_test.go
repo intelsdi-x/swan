@@ -11,10 +11,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	testLoad     = 60
+	testDuration = 10 * time.Millisecond
+	testSlo      = 0 // Tune in specjbb does not accept any slo, we can set it to 0.
+)
+
 func TestSPECjbbLoadGenerator(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
-	load := 60
-	duration := 10 * time.Millisecond
 
 	Convey("When creating load generator", t, func() {
 		controller := new(mocks.Executor)
@@ -31,7 +35,7 @@ func TestSPECjbbLoadGenerator(t *testing.T) {
 
 			transactionInjector.On("Execute", mock.AnythingOfType("string")).Return(new(mocks.TaskHandle), nil)
 
-			loadGeneratorTaskHandle, err := loadGenerator.Load(load, duration)
+			loadGeneratorTaskHandle, err := loadGenerator.Load(testLoad, testDuration)
 
 			Convey("On success, error should be nil", func() {
 				So(err, ShouldBeNil)

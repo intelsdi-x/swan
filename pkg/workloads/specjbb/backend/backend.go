@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/loadgenerator"
 )
