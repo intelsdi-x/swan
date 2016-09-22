@@ -2,14 +2,15 @@ package loadgenerator
 
 import (
 	"fmt"
+	"time"
 )
 
 // Load command performs load of given injection rate for given duration.
-func getControllerLoadCommand(config Config, injectionRate int, duration int) string {
+func getControllerLoadCommand(config Config, injectionRate int, duration time.Duration) string {
 	return fmt.Sprint("java -jar",
 		ControllerTypeProperty, "PRESET",
 		InjectionRateProperty, injectionRate,
-		PresetDurationProperty, duration,
+		PresetDurationProperty, int(duration.Seconds())*1000, // [milliseconds] SPECjbb expects duration in milliseconds.
 		CustomerNumberProperty, config.CustomerNumber,
 		ProductNumberProperty, config.ProductNumber,
 		BinaryDataOutputDir, config.BinaryDataOutputDir,
@@ -38,7 +39,7 @@ func getReporterCommand(config Config, rawFileName string) string {
 		" -m reporter",
 		" -p ", config.PathToProps,
 		" -raw ", config.PathToOutputTemplate,
-		" -s ", config.BinaryDataOutputDir, "/", rawFileName)
+		" -s ", rawFileName)
 }
 
 // TxI command starts transaction injector.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/loadgenerator"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -27,7 +28,7 @@ func DefaultSPECjbbBackendConfig() Config {
 	return Config{
 		PathToBinary: loadgenerator.PathToBinaryFlag.Value(),
 		IP:           loadgenerator.IPFlag.Value(),
-		JvmID:        loadgenerator.TxICountFlag.Value() + defaultJVMNId,
+		JvmID:        loadgenerator.TxICountFlag.Value() + defaultJVMNId, // Backend JVM Id is always one more than number of TxI components.
 	}
 }
 
@@ -43,7 +44,6 @@ func NewBackend(exec executor.Executor, config Config) Backend {
 		exec: exec,
 		conf: config,
 	}
-
 }
 
 func (b Backend) buildCommand() string {
@@ -61,7 +61,7 @@ func (b Backend) buildCommand() string {
 func (b Backend) Launch() (executor.TaskHandle, error) {
 	task, err := b.exec.Execute(b.buildCommand())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "launch of SPECjbb backend failed. command: %q", b.buildCommand())
 	}
 	return task, nil
 }

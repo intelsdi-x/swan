@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultControllerIP   = "127.0.0.1"
-	defaultTxICount       = 1 //default number of Transaction Injector components
+	defaultTxICount       = 1 // Default number of Transaction Injector components.
 	defaultCustomerNumber = 100
 	defaultProductsNumber = 100
 )
@@ -42,16 +42,16 @@ var (
 	// ProductNumberFlag specifies number of products.
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
 
-	// ControllerHostProperty string name for property that specifies controller host.
+	// ControllerHostProperty - string name for property that specifies controller host.
 	ControllerHostProperty = " -Dspecjbb.controller.host="
 
-	// ControllerTypeProperty string name for property that specifies controller type.
+	// ControllerTypeProperty - string name for property that specifies controller type.
 	ControllerTypeProperty = " -Dspecjbb.controller.type="
 
-	// InjectionRateProperty string name for property that specifies ir.
+	// InjectionRateProperty - string name for property that specifies ir.
 	InjectionRateProperty = " -Dspecjbb.controller.preset.ir="
 
-	// PresetDurationProperty string name for property that specifies preset duration.
+	// PresetDurationProperty - string name for property that specifies preset duration.
 	PresetDurationProperty = " -Dspecjbb.controller.preset.duration="
 
 	// CustomerNumberProperty represents total number of customers.
@@ -64,9 +64,16 @@ var (
 	BinaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 )
 
-// Config is a config for a SPECjbb2015 Transaction Injector,
+// Config is a config for a SPECjbb2015 Load Generator.,
 // Supported options:
 // IP - property "-Dspecjbb.controller.host=" - IP address of a SPECjbb controller component (default:127.0.0.1)
+// PathToBinary - path to specjbb2015.jar
+// PathToProps - path to property file that stores basic configuration.
+// TxICount - number of Transaction Injectors in a group.
+// CustomerNumber - number of customers used to generate load.
+// ProductNuber - number of products used to generate load.
+// BinaryDataOutputDir - dir where binary raw data file is stored during run of SPECjbb.
+// PathToOutputTemplate - path to template used to generate report from.
 type Config struct {
 	ControllerIP         string
 	PathToBinary         string
@@ -127,7 +134,7 @@ func stop(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.Stop()
 		if err != nil {
-			logrus.Error(err.Error())
+			logrus.Errorf("Can't stop transaction injectors because of an error:%s", err.Error())
 		}
 	}
 }
@@ -137,7 +144,7 @@ func clean(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.Clean()
 		if err != nil {
-			logrus.Error(err.Error())
+			logrus.Errorf("Can't clean transaction injectors stdout/stderr files because of an error:%s", err.Error())
 		}
 	}
 }
@@ -147,9 +154,15 @@ func erase(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
 		err := handle.EraseOutput()
 		if err != nil {
-			logrus.Error(err.Error())
+			logrus.Errorf("Can't erase transaction injectors stdout/stderr files because of an error:%s", err.Error())
 		}
 	}
+}
+
+func clear(transactionInjectorsHandles []executor.TaskHandle) {
+	stop(transactionInjectorsHandles)
+	erase(transactionInjectorsHandles)
+	clean(transactionInjectorsHandles)
 }
 
 func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHandle, error) {
@@ -162,7 +175,7 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 			stop(handles)
 			clean(handles)
 			erase(handles)
-			return nil, err
+			return nil, errors.Wrapf(err, "Could not start TransactionInjector with command %s", command)
 		}
 		handles = append(handles, handle)
 	}
@@ -194,21 +207,19 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 	txIHandles, err := loadGenerator.runTransactionInjectors()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
 	}
 
 	controllerHandle.Wait(0)
-	stop(txIHandles)
-	erase(txIHandles)
-	clean(txIHandles)
+	clear(txIHandles)
 
 	outController, err := controllerHandle.StdoutFile()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrapf(err, "could not read controller output file %s", outController.Name())
 	}
 	rawFileName, err := parser.FileWithRawFileName(outController.Name())
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrapf(err, "could not get binary file name from controller output file %s", outController.Name())
 	}
 
 	if rawFileName == "" {
@@ -223,11 +234,11 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 
 	outReporter, err := reporterHandle.StdoutFile()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrapf(err, "could not read reporter output file %s", outReporter.Name())
 	}
 	hbirRt, err := parser.FileWithHBIRRT(outReporter.Name())
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrapf(err, "could not get critical jops from reporter output file %s", outReporter.Name())
 	}
 
 	controllerHandle.EraseOutput()
@@ -241,14 +252,14 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 // Load starts a load on the specific workload with the defined loadPoint (injection rate value).
 // The task will do the load for specified amount of time (in milliseconds).
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
-	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, int(duration.Seconds())*1000)
+	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
 	controllerHandle, err := loadGenerator.controller.Execute(loadCommand)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execution of SPECjbb Load Generator failed. command: %q", loadCommand)
 	}
 	txIHandles, err := loadGenerator.runTransactionInjectors()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
 	}
 
 	return executor.NewClusterTaskHandle(controllerHandle, txIHandles), nil

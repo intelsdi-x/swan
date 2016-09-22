@@ -1,8 +1,7 @@
 package parser
 
 import (
-	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -20,7 +19,7 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Opening readable and correct file for hbir rt", t, func() {
-		path, err := getCurrentDirFilePath("/criticaljops")
+		path, err := filepath.Abs("criticaljops")
 		So(err, ShouldBeNil)
 
 		Convey("should provide meaningful results", func() {
@@ -31,7 +30,7 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Attempting to read file without measured critical jops", t, func() {
-		path, err := getCurrentDirFilePath("/criticaljops_not_measured")
+		path, err := filepath.Abs("criticaljops_not_measured")
 		So(err, ShouldBeNil)
 		Convey("should return 0 value for jops and an error", func() {
 			jops, err := FileWithHBIRRT(path)
@@ -52,7 +51,7 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Opening readable and correct file for latencies", t, func() {
-		path, err := getCurrentDirFilePath("/latencies")
+		path, err := filepath.Abs("latencies")
 		So(err, ShouldBeNil)
 
 		Convey("should provide meaningful results", func() {
@@ -75,7 +74,7 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Attempting to read file without measured latencies", t, func() {
-		path, err := getCurrentDirFilePath("/latencies_not_measured")
+		path, err := filepath.Abs("latencies_not_measured")
 		So(err, ShouldBeNil)
 		Convey("should return 0 results and an error", func() {
 			results, err := FileWithLatencies(path)
@@ -95,18 +94,18 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Opening readable and correct file for raw file name", t, func() {
-		path, err := getCurrentDirFilePath("/raw_file_name")
+		path, err := filepath.Abs("raw_file_name")
 		So(err, ShouldBeNil)
 
 		Convey("should provide meaningful results", func() {
 			fileName, err := FileWithRawFileName(path)
 			So(err, ShouldBeNil)
-			So(fileName, ShouldEqual, "specjbb2015-D-20160921-00002.data.gz")
+			So(fileName, ShouldEqual, "/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz")
 		})
 	})
 
 	Convey("Attempting to read file without raw file name", t, func() {
-		path, err := getCurrentDirFilePath("/raw_file_name_not_given")
+		path, err := filepath.Abs("raw_file_name_not_given")
 		So(err, ShouldBeNil)
 		Convey("should result in an empty name and an error", func() {
 			fileName, err := FileWithRawFileName(path)
@@ -115,13 +114,4 @@ func TestStdoutParser(t *testing.T) {
 			So(err.Error(), ShouldEqual, "Raw file name not found")
 		})
 	})
-}
-
-func getCurrentDirFilePath(name string) (string, error) {
-	gwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	return path.Join(gwd, name), nil
 }

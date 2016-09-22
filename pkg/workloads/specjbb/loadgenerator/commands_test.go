@@ -3,6 +3,7 @@ package loadgenerator
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -10,8 +11,8 @@ import (
 const (
 	transactionInjectorIndex = 1
 	injectionRate            = 6000
-	duration                 = 100
 	customerNumber           = 100
+	duration                 = 100 * time.Second
 	productsNumber           = 100
 	jarPath                  = "/swan/workloads/web_serving/specjbb/specjbb2015.jar"
 	propertiesFilePath       = "/swan/workloads/web_serving/specjbb/config/specjbb2015.props"
@@ -20,7 +21,6 @@ const (
 )
 
 func TestCommandsWithDefaultConfig(t *testing.T) {
-
 	Convey("While having default config", t, func() {
 		defaultConfig := NewDefaultConfig()
 
@@ -55,7 +55,7 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 				So(command, ShouldContainSubstring, "-Dspecjbb.controller.type=PRESET")
 			})
 			Convey("Should contain injection rate property", func() {
-				So(command, ShouldContainSubstring, fmt.Sprintf("-Dspecjbb.controller.preset.duration=%d", duration))
+				So(command, ShouldContainSubstring, fmt.Sprintf("-Dspecjbb.controller.preset.duration=%d", int(duration.Seconds())*1000))
 			})
 			Convey("Should contain preset duration property", func() {
 				So(command, ShouldContainSubstring, fmt.Sprintf("-Dspecjbb.controller.preset.ir=%d", injectionRate))
@@ -111,7 +111,7 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 				So(command, ShouldContainSubstring, jarPath)
 			})
 			Convey("Should contain path to output dir", func() {
-				So(command, ShouldContainSubstring, fmt.Sprintf("%s/%s", outputDir, rawFileName))
+				So(command, ShouldContainSubstring, rawFileName)
 			})
 		})
 	})
