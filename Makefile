@@ -87,6 +87,9 @@ build_workloads:
 	# Install kubernetes binaries.
 	(bash ./misc/kubernetes/install_binaries.sh)
 
+build_docker:
+	docker build -t centos_swan_image -f ./misc/dev/docker/Dockerfile_centos .
+
 cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
