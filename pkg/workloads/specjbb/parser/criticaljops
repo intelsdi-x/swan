@@ -1,0 +1,47 @@
+  8036s: (load =  0%) ...|.......... (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+  8049s: Performance info:
+         Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
+         Response times:
+             Request,    Success,    Partial,     Failed,   SkipFail,     Probes,    Samples,      min,      p50,      p90,      p95,      p99,      max,
+
+  8049s: Restarting (term) (init) ... OK
+  8056s:
+  8056s:
+  8056s: Profiling......|.............................. (rIR:aIR:PR = 1164:1165:1165) (tPR = 16996) [OK]
+  8092s:  OK
+  8092s: (term... (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+  8095s: ) Tests are skipped.
+  8095s:
+  8095s: Generating level 0 report from ./specjbb2015-C-20160831-00001.data.gz
+
+
+SPECjbb2015 Java Business Benchmark
+ (c) Standard Performance Evaluation Corporation, 2015
+
+Preparing to launch SPECjbb2015 reporter.
+
+Reading property file: /root/athena/specjbb/16-08-31_070324/./config/specjbb2015.props
+Report directory is result/specjbb2015-C-20160831-00001/report-00001
+  8095s: Building report...
+
+      1221 msec: Pre-reading source
+         0 msec: Validation
+         3 msec: Dump run logs
+         0 msec: Printing JbbProperties
+         1 msec: Build report with HW/SW parameters
+         0 msec: Controller time verification
+        21 msec: Parsing attributes
+         1 msec: Parsing agent names
+        79 msec: Building throughput - response time curve
+RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
+        40 msec: Primary metrics calculation
+       126 msec: Render Allowed Failures
+      1057 msec: Max Delay during RT curve building
+      1117 msec: Render IR by probes tasks
+      1214 msec: Render IR/PR Accuracy
+      1100 msec: Request Mix accuracy
+      1192 msec: Overall RT curves
+         1 msec: Render RT
+         6 msec: Render template to file result/specjbb2015-C-20160831-00001/report-00001/data/specjbb2015-C-20160831-00001-runProperties.txt
+        28 msec: Render template to file result/specjbb2015-C-20160831-00001/report-00001/specjbb2015-C-20160831-00001.html
+Report generation finished. Wallclock = 2746 msecs, real = 7207 msecs, parallelism = 2.62x

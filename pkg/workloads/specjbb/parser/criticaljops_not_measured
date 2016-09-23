@@ -1,0 +1,43 @@
+p90,      p95,      p99,      max,
+
+   656s: Restarting (term) (init) ... OK
+   664s:
+   664s:
+   664s: Profiling....|.............................. (rIR:aIR:PR = 1200:1199:1199) (tPR = 17854) [OK]
+   698s:  OK
+   698s: (term... (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+   701s: ) Tests are skipped.
+   701s:
+   701s: Generating level 0 report from ./specjbb2015-C-20160831-00001.data.gz
+
+
+SPECjbb2015 Java Business Benchmark
+ (c) Standard Performance Evaluation Corporation, 2015
+
+Preparing to launch SPECjbb2015 reporter.
+
+Reading property file: /root/athena/specjbb/16-08-31_095108/./config/specjbb2015.props
+Report directory is result/specjbb2015-C-20160831-00001/report-00001
+   701s: Building report...
+
+       263 msec: Pre-reading source
+         1 msec: Dump run logs
+         0 msec: Building throughput - response time curve
+         0 msec: Validation
+RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = N/A, critical-jOPS = N/A
+         9 msec: Primary metrics calculation
+         7 msec: Render Allowed Failures
+        11 msec: Parsing attributes
+         1 msec: Printing JbbProperties
+         0 msec: Controller time verification
+         1 msec: Build report with HW/SW parameters
+         3 msec: Parsing agent names
+       449 msec: Render IR by probes tasks
+       521 msec: Render IR/PR Accuracy
+       505 msec: Overall RT curves
+         0 msec: Render RT
+       484 msec: Max Delay during RT curve building
+       503 msec: Request Mix accuracy
+         6 msec: Render template to file result/specjbb2015-C-20160831-00001/report-00001/data/specjbb2015-C-20160831-00001-runProperties.txt
+        22 msec: Render template to file result/specjbb2015-C-20160831-00001/report-00001/specjbb2015-C-20160831-00001.html
+Report generation finished. Wallclock = 919 msecs, real = 2786 msecs, parallelism = 3.03x
