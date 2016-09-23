@@ -2,13 +2,14 @@ package experiment
 
 import (
 	"errors"
+	"os"
+	"testing"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
-	"os"
-	"testing"
 )
 
 func TestExperiment(t *testing.T) {
