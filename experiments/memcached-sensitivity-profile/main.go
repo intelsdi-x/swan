@@ -2,6 +2,7 @@ package main
 
 import (
 	"os/user"
+	"runtime"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -32,6 +33,9 @@ var (
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+
+	hpKubernetesCPUResourceFlag    = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits & request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
+	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits & request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
 
 	// Should CPUs be used exclusively?
 	hpCPUExclusiveFlag = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
@@ -138,7 +142,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 		hpExecutorConfig := executor.DefaultKubernetesConfig()
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
+		hpExecutorConfig.HostNetwork = true
 		hpExecutorConfig.PodName = "swan-hp"
+		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
+		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
+		// "Guranteed" class is when both resources and set for request and limit and equal.
+		hpExecutorConfig.CPURequest = hpExecutorConfig.CPULimit
+		hpExecutorConfig.MemoryRequest = hpExecutorConfig.MemoryLimit
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 		errutil.Check(err)
 	} else {
