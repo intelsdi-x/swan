@@ -15,8 +15,7 @@ pushd /tmp/s3cmd-master/
 python setup.py install
 popd
 
-# Download SPECjbb here, when we will have decision from where it can be downloaded.
-s3cmd sync s3://$s3_iso_path $iso_path
+s3cmd sync --config=~/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
 
 if [ -e $iso_path ]
 then

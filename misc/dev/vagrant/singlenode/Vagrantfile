@@ -49,9 +49,9 @@ Vagrant.configure(2) do |config|
     # custom what ami the job runs on.
     file = "#{ENV['HOME']}/.vagrant/aws-creds"
     if File.exists?(file)
-       data = YAML.load_file(file)
+      data = YAML.load_file(file)
     else
-       data = {}
+      data = {}
     end
     override.nfs.functional = false
     aws.access_key_id = data['access_key_id']
@@ -111,23 +111,6 @@ EOF
       wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
       tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
     fi
-SCRIPT
-
-  download_specjbb = <<SCRIPT
-     s3_iso_path=swan-artifacts/SPECjbb2015_1_00.iso
-     iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
-     specjbb_path=workloads/web_serving
-     mnt_path=/mnt/specjbb
-
-     yum install -y unzip
-     wget -P /tmp/ https://github.com/s3tools/s3cmd/archive/master.zip
-     unzip /tmp/master.zip -d /tmp/
-     rm /tmp/master.zip
-     pushd /tmp/s3cmd-master/
-     python setup.py install
-     popd
-
-     s3cmd --access_key=$DATA_ACCESS_KEY --secret_key=$DATA_SECRET_ACCESS_KEY sync s3://$s3_iso_path $iso_path
 SCRIPT
 
   $configure_etcd = <<SCRIPT
@@ -217,6 +200,7 @@ SCRIPT
     echo "Fetching kubernetes binaries for Athena"
     cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh
     chown -R $VAGRANT_USER:$VAGRANT_USER $ATHENA_DIR
+SCRIPT
 
   $download_specjbb = <<SCRIPT
     . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh
@@ -225,13 +209,12 @@ SCRIPT
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
-    config.vm.provision "shell", inline: $download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'DATA_ACCESS_KEY' => data['access_key_id'], 'DATA_SECRET_ACCESS_KEY' => data['secret_access_key'] }
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_athena, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", inline: $download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
