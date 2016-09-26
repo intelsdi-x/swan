@@ -15,7 +15,7 @@ pushd /tmp/s3cmd-master/
 python setup.py install
 popd
 
-s3cmd sync -c ~/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
+s3cmd sync -c /home/centos/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
 
 if [ -e $iso_path ]
 then
