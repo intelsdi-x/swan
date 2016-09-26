@@ -203,18 +203,20 @@ SCRIPT
 SCRIPT
 
   $download_specjbb = <<SCRIPT
+    ls -la $HOME_DIR/swan_s3_creds/
+    ls -la ~/swan_s3_creds/
     . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh
 SCRIPT
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
   if ! only_cache_dependencies
+    config.vm.provision "shell", inline: $download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_athena, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $download_specjbb, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   end
 end
