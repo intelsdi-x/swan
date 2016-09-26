@@ -203,8 +203,9 @@ SCRIPT
 SCRIPT
 
   $download_specjbb = <<SCRIPT
-    ls -la $HOME_DIR/swan_s3_creds/
-    ls -la ~/swan_s3_creds/
+    ls -la /home/vagrant/swan_s3_creds/
+    find / -name 'swan_s3_creds' 2>>/dev/null
+    ls -la /swan_s3_creds/
     . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh
 SCRIPT
 
