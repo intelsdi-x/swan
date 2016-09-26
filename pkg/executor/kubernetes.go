@@ -189,7 +189,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		pod:           pod,
 		podMutex:      &sync.Mutex{},
 		exitCodeMutex: &sync.Mutex{},
-		stdMutex:      &sync.Mutex{},
+		outputMutex:   &sync.Mutex{},
 	}
 
 	taskHandle.watch()
@@ -246,10 +246,10 @@ type kubernetesTaskHandle struct {
 	// NOTE: Access to stdout and stderr must be done through setFileHandles()
 	// and getFileHandles() to avoid data races between caller and watcher
 	// routine.
-	stdout   *os.File
-	stderr   *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
-	logdir   string
-	stdMutex *sync.Mutex
+	stdout      *os.File
+	stderr      *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir      string
+	outputMutex *sync.Mutex
 
 	// NOTE: Access to the exit code must be done through setExitCode()
 	// and getExitCode() to avoid data races between caller and watcher routine.
@@ -292,8 +292,8 @@ func (th *kubernetesTaskHandle) setExitCode(exitCode *int) {
 // setFileHandles provides a thread safe way to set the file descriptors for
 // the stdout and stderr files.
 func (th *kubernetesTaskHandle) setFileHandles(stdoutFile *os.File, stderrFile *os.File) {
-	th.stdMutex.Lock()
-	defer th.stdMutex.Unlock()
+	th.outputMutex.Lock()
+	defer th.outputMutex.Unlock()
 
 	th.stdout = stdoutFile
 	th.stderr = stderrFile
@@ -305,8 +305,8 @@ func (th *kubernetesTaskHandle) setFileHandles(stdoutFile *os.File, stderrFile *
 // setFileHandles provides a thread safe way to get the file descriptors for
 // the stdout and stderr files.
 func (th *kubernetesTaskHandle) getFileHandles() (*os.File, *os.File) {
-	th.stdMutex.Lock()
-	defer th.stdMutex.Unlock()
+	th.outputMutex.Lock()
+	defer th.outputMutex.Unlock()
 
 	return th.stdout, th.stderr
 }
@@ -338,6 +338,8 @@ func (th *kubernetesTaskHandle) setupLogs(pod *api.Pod) {
 			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
 		}
 
+		th.outputMutex.Lock()
+		defer th.outputMutex.Unlock()
 		stdoutFile.Sync()
 	}()
 
@@ -539,6 +541,8 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 
 // Clean closes file descriptors but leaves stdout and stderr files intact.
 func (th *kubernetesTaskHandle) Clean() error {
+	th.outputMutex.Lock()
+	defer th.outputMutex.Unlock()
 	var errs errcollection.ErrorCollection
 	for _, f := range []*os.File{th.stderr, th.stdout} {
 		if f != nil {

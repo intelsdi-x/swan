@@ -130,6 +130,15 @@ func TestKubernetesExecutor(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("Running a command and calling Clean() on task handle should not cause a data race", func() {
+			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
+			So(err, ShouldBeNil)
+			taskHandle.Clean()
+
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Stop()
+		})
 	})
 }
 
