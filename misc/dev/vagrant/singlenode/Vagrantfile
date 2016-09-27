@@ -204,7 +204,10 @@ SCRIPT
 SCRIPT
 
   $download_specjbb = <<SCRIPT
-    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh $HOME_DIR
+    # -b specifies bucket name.
+    # By default bucket name value is read from SWAN_BUCKET_NAME env variable.
+    # When we add this variable to jenkins/vagrant, we will be able to remove it from command below.
+    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh -s $HOME_DIR/go/src/github.com/intelsdi-x/swan -c $HOME_DIR/swan_s3_creds/.s3cfg -b swan-artifacts
 SCRIPT
 
   config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
