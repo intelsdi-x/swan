@@ -9,18 +9,19 @@ mnt_path=/mnt/specjbb
 
 pip install s3cmd==1.6.1
 
-pushd $HOME/go/src/github.com/intelsdi-x/swan/
-s3cmd sync -c $HOME/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
-
-if [ -e $iso_path ]
-then
-    mkdir -p $mnt_path
-    mount -o loop $iso_path $mnt_path
-    cp -R $mnt_path $specjbb_path
-    umount $mnt_path
-    chmod -R +w $specjbb_path/specjbb/config
+if [ "$1" != "" ]; then
+    pushd $1/go/src/github.com/intelsdi-x/swan
+    s3cmd sync -c $1/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
+    if [ -e $iso_path ]; then
+        mkdir -p $mnt_path
+        mount -o loop $iso_path $mnt_path
+        cp -R $mnt_path $specjbb_path
+        umount $mnt_path
+        chmod -R +w $specjbb_path/specjbb/config
+    else
+        echo 'Could not find SPECjbb ISO file \($iso_path\).'
+    fi
+    popd
 else
-    echo Could not find SPECjbb ISO file \($iso_path\)
+    echo 'Argument home dir path is missing.'
 fi
-
-popd
