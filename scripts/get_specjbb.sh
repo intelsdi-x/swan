@@ -8,8 +8,9 @@ iso_path=$specjbb_path/SPECjbb2015_1_00.iso
 mnt_path=/mnt/specjbb
 
 pip install s3cmd==1.6.1
-pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
-s3cmd sync -c $HOME_DIR/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
+
+pushd $HOME/go/src/github.com/intelsdi-x/swan/
+s3cmd sync -c $HOME/swan_s3_creds/.s3cfg s3://$s3_iso_path $iso_path
 
 if [ -e $iso_path ]
 then
@@ -23,4 +24,3 @@ else
 fi
 
 popd
-
