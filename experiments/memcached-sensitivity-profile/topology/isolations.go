@@ -22,8 +22,9 @@ var (
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 
 	// For manually provided isolation policy.
-	hpSetsFlag = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
-	beSetsFlag = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	hpSetsFlag   = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	beSetsFlag   = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	beL1SetsFlag = conf.NewStringFlag("be_l1_sets", "BE for l1 aggressors cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
 )
 
 type defaultTopology struct {
@@ -48,9 +49,9 @@ type defaultTopology struct {
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
-		manualTopology := newManualTopology(hpSetsFlag.Value(), beSetsFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
-		l1Isolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beCPUs, PreferredNode: manualTopology.beNumaNodes[0]}
-		llcIsolation = l1Isolation
+		manualTopology := newManualTopology(hpSetsFlag.Value(), beSetsFlag.Value(), beL1SetsFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		llcIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beCPUs, PreferredNode: manualTopology.beNumaNodes[0]}
+		l1Isolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beL1CPUs, PreferredNode: manualTopology.beL1NumaNodes[0]}
 		hpIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.hpCPUs, PreferredNode: manualTopology.hpNumaNodes[0]}
 	} else {
 		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
@@ -96,14 +97,20 @@ type manualTopology struct {
 	hpNumaNodes      []int
 	beCPUs           []int
 	beNumaNodes      []int
+	beL1CPUs         []int
+	beL1NumaNodes    []int
 	isHpCPUExclusive bool
 	isBeCPUExclusive bool
 }
 
-func newManualTopology(hpFlag, beFlag string, isHpCPUExclusive, isBeCPUExclusive bool) manualTopology {
+func newManualTopology(hpSets, beSets, beL1Sets string, isHpCPUExclusive, isBeCPUExclusive bool) manualTopology {
 	topology := manualTopology{}
-	topology.hpCPUs, topology.hpNumaNodes = parseSlices(hpFlag)
-	topology.beCPUs, topology.beNumaNodes = parseSlices(beFlag)
+	topology.hpCPUs, topology.hpNumaNodes = parseSlices(hpSets)
+	topology.beCPUs, topology.beNumaNodes = parseSlices(beSets)
+	topology.beL1CPUs, topology.beL1NumaNodes = topology.beCPUs, topology.beNumaNodes
+	if beL1Sets != "" {
+		topology.beL1CPUs, topology.beL1NumaNodes = parseSlices(beL1Sets)
+	}
 	topology.isHpCPUExclusive = isHpCPUExclusive
 	topology.isBeCPUExclusive = isBeCPUExclusive
 
