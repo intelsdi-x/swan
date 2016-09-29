@@ -19,6 +19,13 @@ fi
 
 echo "Installing Athena & its K8s..."
 echo "Fetching Athena sources"
-[ -d $ATHENA_DIR ] || (mkdir -p $ATHENA_DIR && git clone git@github.com:intelsdi-x/athena $ATHENA_DIR)
+if [ -d $ATHENA_DIR ]; then 
+    mkdir -p $ATHENA_DIR 
+    git clone git@github.com:intelsdi-x/athena $ATHENA_DIR
+else
+    pushd
+    git pull
+    popd
+fi
 echo "Fetching kubernetes binaries for Athena"
 cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh
