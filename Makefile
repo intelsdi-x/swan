@@ -6,12 +6,12 @@ TEST_OPT?=
 # for compatibility purposes
 # in the future deps target should point to deps_all, currently Kopernik job
 # is running deps before running integration_tests. This is not needed, because
-# we are downloading all of dependancies in provision phase.
+# we are downloading all of dependencies in provision phase.
 deps: show_env
 integration_test: build_plugins build_swan test_integration
 unit_test: deps_godeps test_unit
 
-deps_all: deps_godeps deps_other
+deps_all: deps_godeps deps_jupyter
 build_all: deps_all build_workloads build_plugins build_swan
 build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
@@ -28,13 +28,9 @@ deps_godeps:
 	go get github.com/Masterminds/glide
 	glide install
 
-deps_other:
-	# Some workloads are Git Submodules
-	git submodule update --init --recursive
+deps_jupyter:
 	# Jupyter building
 	(cd scripts/jupyter; sudo pip install -r requirements.txt)
-	# Get SPECjbb
-	(sudo bash scripts/get_specjbb.sh)
 
 build_plugins:
 	mkdir -p build
@@ -48,6 +44,9 @@ build_plugins:
 	(go install ./misc/snap-plugin-collector-mutilate)
 
 build_workloads:
+	# Some workloads are Git Submodules
+	git submodule update --init --recursive
+
 	(cd workloads/data_caching/memcached && ./build.sh)
 	(cd workloads/low-level-aggressors && make -j4)
 
@@ -61,6 +60,9 @@ build_workloads:
 	(cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/)
 	(cd ./workloads/deep_learning/caffe/caffe_src && make -j4 all)
 	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
+
+	# Get SPECjbb
+	(sudo bash scripts/get_specjbb.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached
