@@ -51,3 +51,11 @@ echo "########## Checking snap version... ##########"
 echo ">> SNAP version:"
 snapctl --version
 echo "######################################"
+
+echo "########## Checking cache... ##########"
+echo ">> ccache size:"
+ccache -s
+echo "######################################"
+echo ">> /cache content:"
+ls -lah /cache
+echo "######################################"
