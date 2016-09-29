@@ -18,12 +18,13 @@ if [ ! -f /cache/snap-v0.14.0-beta-linux-amd64.tar.gz ]; then
 fi
 
 echo "Installing Athena & its K8s..."
-echo "Fetching Athena sources"
-if [ -d $ATHENA_DIR ]; then 
+if [ ! -d $ATHENA_DIR ]; then
+    echo "Fetching Athena sources"
     mkdir -p $ATHENA_DIR 
     git clone git@github.com:intelsdi-x/athena $ATHENA_DIR
 else
-    pushd
+    echo "Updating Athena sources"
+    pushd $ATHENA_DIR
     git pull
     popd
 fi
