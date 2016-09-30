@@ -133,10 +133,55 @@ class Profile(object):
         display(iplot(data))
 
 
+def compare_two_experiments(exp1, exp2, slo=500, aggresor='Baseline'):
+    p1 = Profile(exp1, slo)
+    p2 = Profile(exp2, slo)
+
+    slo = go.Scatter(
+        x=p1.data_visual['x'],
+        y=p1.data_visual['slo'],
+        fill=None,
+        name="slo",
+        mode='lines',
+        line=dict(
+            color='rgb(255, 0, 0)',
+        )
+    )
+    df1 = pd.DataFrame.from_dict(p1.data_visual, orient='index').T
+    baseline1 = go.Scatter(
+        x=df1['x'],
+        y=df1[aggresor],
+        fill=None,
+        name=exp1.experiment_id,
+        mode='lines',
+        line=dict(
+            color='rgb(143, 19, 131)',
+        )
+    )
+
+    df2 = pd.DataFrame.from_dict(p2.data_visual, orient='index').T
+    baseline2 = go.Scatter(
+        x=df2['x'],
+        y=df2[aggresor],
+        fill=None,
+        name=exp2.experiment_id,
+        mode='lines',
+        line=dict(
+            color='rgb(143, 19, 131)',
+        )
+    )
+
+    data = [baseline1, baseline2, slo]
+    display(iplot(data))
+
+
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
-    Profile(exp, slo=500).sensitivity_table()
-    Profile(exp, slo=500).sensitivity_chart()
+    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
+    exp2 = Experiment(experiment_id='8ab3f479-a3f8-48cf-71cb-e4853caf9cac', cassandra_cluster=['127.0.0.1'], port=19042)
 
+    Profile(exp1, slo=500).sensitivity_table()
+    Profile(exp2, slo=500).sensitivity_chart()
+
+    compare_two_experiments(exp1, exp2)
