@@ -63,7 +63,7 @@ $ vagrant ssh
 1. Run the integration tests: `make integration_test`
 
 ## Updating AMI image
-1. Run `swan-integration` job with parameters.
+1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
 2. When job has been finished copy AMI ID (it looks like: `ami-xxxxxxxx`).
 3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
 4. Commit & Push your change.
@@ -71,15 +71,7 @@ $ vagrant ssh
 ## Manually running provision scripts
 - Before running provision scripts, import your private ssh key into your GitHub account.
 - All scripts are stored in `/vagrant/resources/scripts`.
-- To manually run provision scripts:
-  1. Run `ssh-agent`: `eval $(ssh-agent -s)`
-  2. Import your private key into `ssh-agent`: `ssh-add <key_location>`
-  3. Log into running vagrant instance: `vagrant ssh`
-  4. Switch user to root: `sudo -E su`
-  5. Export following variables:
-    - `VAGRANT_USER=vagrant`
-    - `HOME_DIR=/home/vagrant`
-  6. Change directory to `/vagrant/resources/scripts`
+- To manually run provision scripts run `./enter_developer_mode.sh <private key location>`
 - Scripts order:
   1. `copy_configuration.sh`
   2. `install_packages.sh`
