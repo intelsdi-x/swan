@@ -2,7 +2,9 @@ package executor
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os/exec"
 	"path"
 	"strings"
@@ -15,6 +17,9 @@ import (
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
+	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/client/restclient"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
 func TestKubernetesExecutor(t *testing.T) {
@@ -139,6 +144,77 @@ func TestKubernetesExecutor(t *testing.T) {
 			defer taskHandle.EraseOutput()
 			defer taskHandle.Stop()
 		})
+
+		Convey("Logs should be available and non-empty", func() {
+			taskHandle, err := k8sexecutor.Execute("echo \"This is Sparta\" && (echo \"This is England\" 1>&2) && exit 0")
+			So(err, ShouldBeNil)
+			So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
+			time.Sleep(10 * time.Second)
+
+			exitCode, err := taskHandle.ExitCode()
+			So(exitCode, ShouldEqual, 0)
+
+			stdout, err := taskHandle.StdoutFile()
+			So(err, ShouldBeNil)
+			defer stdout.Close()
+			buffer := make([]byte, 31)
+			n, err := stdout.Read(buffer)
+
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 31)
+			output := strings.Split(string(buffer), "\n")
+			So(output, ShouldHaveLength, 3)
+			So(output, ShouldContain, "This is Sparta")
+			So(output, ShouldContain, "This is England")
+
+			stderr, err := taskHandle.StderrFile()
+			So(err, ShouldBeNil)
+			defer stderr.Close()
+			buffer = make([]byte, 10)
+			n, err = stderr.Read(buffer)
+
+			// stderr will always be empty as we are not able to fetch it from K8s.
+			// stdout includes both stderr and stdout of the application run in the pod.
+			So(err, ShouldEqual, io.EOF)
+			So(n, ShouldEqual, 0)
+
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
+		})
+
+		Convey("Timeout should not block execution because of files being unavailable", func() {
+			client, err := client.New(&restclient.Config{
+				Host:     executorConfig.Address,
+				Username: executorConfig.Username,
+				Password: executorConfig.Password,
+			})
+			So(err, ShouldBeNil)
+			nodes, err := client.Nodes().List(api.ListOptions{})
+			So(err, ShouldBeNil)
+			node := nodes.Items[0]
+			newTaint := api.Taint{
+				Key: "hponly", Value: "true", Effect: api.TaintEffectNoSchedule,
+			}
+			taintsInJSON, err := json.Marshal([]api.Taint{newTaint})
+			So(err, ShouldBeNil)
+			node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+			_, err = client.Nodes().Update(&node)
+			So(err, ShouldBeNil)
+
+			executorConfig.LaunchTimeout = 1 * time.Second
+			k8sexecutor, err = executor.NewKubernetes(executorConfig)
+			So(err, ShouldBeNil)
+			taskHandle, err := k8sexecutor.Execute("sleep inf")
+			So(err, ShouldBeNil)
+			defer taskHandle.EraseOutput()
+			defer taskHandle.Clean()
+			defer taskHandle.Stop()
+
+			stopped := taskHandle.Wait(5 * time.Second)
+			So(stopped, ShouldBeTrue)
+		})
+
 	})
 }
 

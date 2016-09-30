@@ -192,12 +192,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		outputMutex:   &sync.Mutex{},
 	}
 
-	taskHandle.watch()
-
-	var timeoutChannel <-chan time.Time
-	if k8s.config.LaunchTimeout != 0 {
-		timeoutChannel = time.After(k8s.config.LaunchTimeout)
-	}
+	taskHandle.watch(k8s.config.LaunchTimeout)
 
 	select {
 	case <-taskHandle.started:
@@ -210,20 +205,6 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
 		} else {
 			LogSuccessfulExecution(command, k8s.Name(), taskHandle)
-		}
-
-		return taskHandle, nil
-
-	case <-timeoutChannel:
-		defer StopCleanAndErase(taskHandle)
-
-		LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
-		errorMessage := fmt.Sprintf(
-			"failed to start command %q on %q on %q: timed out before started event was received",
-			command, k8s.Name(), taskHandle.Address())
-
-		return nil, &LaunchTimedOutError{
-			errorMessage: errorMessage,
 		}
 	}
 
@@ -349,7 +330,7 @@ func (th *kubernetesTaskHandle) setupLogs(pod *api.Pod) {
 	close(th.logsReady)
 }
 
-func (th *kubernetesTaskHandle) watch() error {
+func (th *kubernetesTaskHandle) watch(timeout time.Duration) error {
 	pod := th.getPod()
 
 	selectorRaw := fmt.Sprintf("name=%s", pod.Name)
@@ -369,9 +350,9 @@ func (th *kubernetesTaskHandle) watch() error {
 	th.logsReady = make(chan struct{})
 
 	go func() {
-		var onceSetupLogs sync.Once
+		var onceSetupLogs, onceStopped, onceStarted sync.Once
+		var hasBeenRunning bool
 
-		var onceStarted sync.Once
 		started := func(pod *api.Pod) {
 			if api.IsPodReady(pod) {
 				onceStarted.Do(func() {
@@ -380,7 +361,6 @@ func (th *kubernetesTaskHandle) watch() error {
 			}
 		}
 
-		var onceStopped sync.Once
 		terminated := func(pod *api.Pod) {
 			onceStopped.Do(func() {
 				exitCode := -1
@@ -408,51 +388,72 @@ func (th *kubernetesTaskHandle) watch() error {
 			})
 		}
 
-		for event := range watcher.ResultChan() {
-			pod, ok := event.Object.(*api.Pod)
-			if !ok {
-				continue
-			}
+		var timeoutChannel <-chan time.Time
+		if timeout != 0 {
+			timeoutChannel = time.After(timeout)
+		}
+		for {
+			select {
+			case event := <-watcher.ResultChan():
+				pod, ok := event.Object.(*api.Pod)
+				if !ok {
+					continue
+				}
 
-			th.setPod(pod)
+				th.setPod(pod)
 
-			switch event.Type {
-			case watch.Added, watch.Modified:
-				switch pod.Status.Phase {
-				case api.PodPending:
-				// Noop for now.
-				case api.PodRunning:
-					onceSetupLogs.Do(func() {
-						th.setupLogs(pod)
-					})
+				switch event.Type {
+				case watch.Added, watch.Modified:
+					switch pod.Status.Phase {
+					case api.PodPending:
+					// Noop for now.
+					case api.PodRunning:
+						onceSetupLogs.Do(func() {
+							th.setupLogs(pod)
+						})
 
-					started(pod)
-				case api.PodFailed, api.PodSucceeded:
+						started(pod)
+						hasBeenRunning = true
+					case api.PodFailed, api.PodSucceeded:
+						onceSetupLogs.Do(func() {
+							th.setupLogs(pod)
+						})
+
+						terminated(pod)
+						hasBeenRunning = true
+						return
+					case api.PodUnknown:
+						log.Warnf("Pod %q with command %q is in unknown phase. "+
+							"Probably state of the pod could not be obtained, "+
+							"typically due to an error in communicating with the host of the pod", pod.Name, th.command)
+					default:
+						log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
+					}
+				case watch.Deleted:
+					// Pod phase will still be 'running', so we disregard the phase at this point.
 					onceSetupLogs.Do(func() {
 						th.setupLogs(pod)
 					})
 
 					terminated(pod)
 					return
-				case api.PodUnknown:
-					log.Warnf("Pod %q with command %q is in unknown phase. "+
-						"Probably state of the pod could not be obtained, "+
-						"typically due to an error in communicating with the host of the pod", pod.Name, th.command)
+				case watch.Error:
+					log.Errorf("Kubernetes pod error event: %v", event.Object)
 				default:
-					log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
+					log.Warnf("Unhandled event type: %v", event.Type)
 				}
-			case watch.Deleted:
-				// Pod phase will still be 'running', so we disregard the phase at this point.
+			case <-timeoutChannel:
+				// If task has been running then we need to ignore timeout
+				if hasBeenRunning {
+					continue
+				}
+				log.Errorf("Timeout occured afrer %f seconds. Pod %s has not been created.", timeout.Seconds(), th.getPod().Name)
 				onceSetupLogs.Do(func() {
 					th.setupLogs(pod)
 				})
-
 				terminated(pod)
+				th.setExitCode(nil)
 				return
-			case watch.Error:
-				log.Errorf("Kubernetes pod error event: %v", event.Object)
-			default:
-				log.Warnf("Unhandled event type: %v", event.Type)
 			}
 		}
 	}()
@@ -589,7 +590,15 @@ func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 	if stdout == nil {
 		return nil, errors.New("stdout file has been already closed or it is not created yet")
 	}
-	return stdout, nil
+
+	// We need to create yet another file in order to avoid races and issues with seeking.
+	// stdout will point at the very end of file as it is being used for writing.
+	file, err := os.Open(stdout.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to open stdout file")
+	}
+
+	return file, nil
 }
 
 // StderrFile returns a file handle to the stderr file for the pod.
@@ -602,5 +611,12 @@ func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
 	if stderr == nil {
 		return nil, errors.New("stderr file has been already closed or it is not created yet")
 	}
-	return stderr, nil
+
+	// See comments to StdoutFile()
+	file, err := os.Open(stderr.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to open stderr file")
+	}
+
+	return file, nil
 }
