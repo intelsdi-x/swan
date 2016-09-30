@@ -13,11 +13,10 @@ Vagrant.configure(2) do |config|
   # out a full image, but just bringing up an image with
   # some of the dependencies installed on it. This is being
   # used to cache dependencies on an AMI.
-  only_cache_dependencies=(ENV['BUILD_CACHED_IMAGE'] && ENV['BUILD_CACHED_IMAGE'] != '') || false
 
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
-
+  config.ssh.insert_key = false
   config.vm.box = "centos/7"
   config.vm.box_check_update = false
 
@@ -29,13 +28,12 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  if ! only_cache_dependencies
-    home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
-    config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
-  end
+  home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
+  config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
+    vb.name = "swan"
 
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
@@ -60,158 +58,24 @@ Vagrant.configure(2) do |config|
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
-    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI']) || data['ami'] || "ami-6d1c2007"
-    aws.instance_type = (ENV['SWAN_INSTANCE_TYPE'] != '' && ENV['SWAN_INSTANCE_TYPE']) || data['instance_type'] || "m3.medium"
-    aws.keypair_name = data['keypair_name'] || "snapbot-private"
+    # COPY AMI ID HERE
+    # non-cached ami: ami-6d1c2007
+    aws.ami = "ami-23b5f434"
+    aws.instance_type = (ENV['SWAN_INSTANCE_TYPE'] != '' && ENV['SWAN_INSTANCE_TYPE']) || data['instance_type'] || "m3.large"
+    aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
     override.ssh.private_key_path = data['ssh_private_key_path'] || nil
     override.ssh.keys_only = data['keys_only'] || true
   end
 
-  $install_packages = <<SCRIPT
-    echo Adding the docker yum repository
-    tee /etc/yum.repos.d/docker.repo <<-'EOF'
-[dockerrepo]
-name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.dockerproject.org/gpg
-EOF
-    echo Updating package lists
-    yum update -y
-    yum install -y epel-release  # Enables EPEL repo
-    yum clean all
-    echo Installing packages
-    yum install -y \
-      docker-engine \
-      etcd \
-      gcc-g++ \
-      gengetopt \
-      git \
-      iptables \
-      java-1.8.0-openjdk \
-      libcgroup-tools \
-      libevent-devel \
-      moreutils-parallel \
-      nmap-ncat \
-      numactl \
-      perf \
-      psmisc \
-      pssh \
-      python-pip \
-      python-devel \
-      scons \
-      tree \
-      vim \
-      wget \
-      zeromq-devel
-    . $HOME_DIR/go/src/github.com/intelsdi-x/swan/workloads/deep_learning/caffe/caffe_deps_centos.sh
-    if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
-      wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
-      tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
-    fi
-SCRIPT
-
-  $configure_etcd = <<SCRIPT
-    echo Configuring etcd
-    systemctl enable etcd
-    systemctl restart etcd
-SCRIPT
-
-  $configure_docker = <<SCRIPT
-    echo Configuring Docker
-    systemctl enable docker
-    # Add the vagrant user to the docker group
-    gpasswd -a $VAGRANT_USER docker
-    systemctl restart docker
-    echo "docker.service status:"
-    systemctl show -p SubState docker.service
-SCRIPT
-
-  $setup_user_env = <<SCRIPT
-    echo "Setting up user environment"
-    # Vagrant user owns $GOPATH
-    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR/go
-    # Create convenient symlinks in the home directory
-    ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
-    # Add GOPATH and Go binaries to PATH in profile
-    echo "export GOPATH=\"$HOME_DIR/go\"" >> $HOME_DIR/.bash_profile
-    echo 'export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"' >> $HOME_DIR/.bash_profile
-    # Rewrite github URLs for fetching private repos (requires ssh-agent)
-    sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
-    # list fingerprints to make sure, that ssh-agent authorize access to private repositories
-    ssh-add -l
-    # Add ssh keys for root - needed to run an experiment
-    ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
-    cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
-    chmod og-wx /root/.ssh/authorized_keys
-    ssh-keyscan localhost >> /root/.ssh/known_hosts
-
-SCRIPT
-
-  $configure_cassandra = <<SCRIPT
-    echo "Setting up cassandra"
-    # Set up data directory
-    mkdir -p /var/data/cassandra
-    chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
-    # Create and enable systemd unit
-    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/cassandra.service /etc/systemd/system
-    mkdir -p /opt/swan/resources
-    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/keyspace.cql /opt/swan/resources
-    cp $HOME_DIR/swan/misc/dev/vagrant/singlenode/resources/table.cql /opt/swan/resources
-    systemctl daemon-reload
-    systemctl enable cassandra.service
-    echo "Restarting cassandra..."
-    systemctl restart cassandra.service 
-    echo "cassandra.service status:"
-    systemctl show -p SubState cassandra.service 
-SCRIPT
-
-  $install_glide = <<SCRIPT
-    source $HOME_DIR/.bash_profile
-    go get github.com/Masterminds/glide
-    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
-SCRIPT
-
-  $install_snap = <<SCRIPT
-    source $HOME_DIR/.bash_profile
-    echo "Installing and building snap..."
-    go get -u github.com/intelsdi-x/snap
-    cd $GOPATH/src/github.com/intelsdi-x/snap
-    git checkout -f v0.14.0-beta
-    make
-    cp build/bin/snapd $GOPATH/bin/
-    cp build/bin/snapctl $GOPATH/bin/
-    chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
-SCRIPT
-
-  $install_athena = <<SCRIPT
-    echo "prepare root to download athena"
-    mkdir -p ~/.ssh/
-    ssh-keyscan github.com >> ~/.ssh/known_hosts
-    git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-    source $HOME_DIR/.bash_profile
-    ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena
-
-    echo "Fetching Athena sources"
-    [ -d $ATHENA_DIR ] || (mkdir -p $ATHENA_DIR && git clone git@github.com:intelsdi-x/athena $ATHENA_DIR)
-    echo "Fetching kubernetes binaries for Athena"
-    cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh
-    chown -R $VAGRANT_USER:$VAGRANT_USER $ATHENA_DIR
-SCRIPT
-
-
-
-  config.vm.provision "shell", inline: $install_packages, env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", inline: $configure_etcd, env: {'HOME_DIR' => home_dir}
-  if ! only_cache_dependencies
-    config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $install_snap, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-    config.vm.provision "shell", inline: $install_athena, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  end
+  config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/setup_services.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/install_snap_athena.sh", env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/post_install.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/checker.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
 end

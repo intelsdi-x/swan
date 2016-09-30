@@ -276,7 +276,7 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/alecthomas/kingpin.v2
-  version: e5900212cbf65b181d3d8e08308ef06a01d117cf
+  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 - name: gopkg.in/cheggaaa/pb.v1
   version: 9453b2db37f4d8bc63751daca63bbe7049eb5e74
 - name: gopkg.in/inf.v0
@@ -347,7 +347,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/kubernetes
-  version: b44b716965db2d54c8c7dfcdbcb1d54792ab8559
+  version: 44368db9916cc345ebef8b6fbde3cdf0dc9d79dc
   subpackages:
   - pkg/api
   - pkg/api/endpoints

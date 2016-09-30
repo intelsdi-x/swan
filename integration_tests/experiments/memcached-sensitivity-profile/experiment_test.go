@@ -4,11 +4,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"testing"
 	"time"
-	"strings"
 
 	"github.com/gocql/gocql"
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,7 +28,6 @@ func getUUID(outs []byte) string {
 
 func TestExperiment(t *testing.T) {
 	memcachedSensitivityProfileBin := path.Join(fs.GetSwanBuildPath(), "experiments", "memcached", "memcached-sensitivity-profile")
-	snapdBin := path.Join(os.Getenv("GOPATH"), snapBuildPath, "bin", "snapd")
 
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
@@ -38,20 +38,26 @@ func TestExperiment(t *testing.T) {
 		"SWAN_PEAK_LOAD":            "5000",
 		"SWAN_LOAD_DURATION":        "1s",
 		"SWAN_MUTILATE_WARMUP_TIME": "1s",
+		"SWAN_KUBE_APISERVER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-apiserver"),
+		"SWAN_KUBE_CONTROLLER_PATH": path.Join(fs.GetAthenaBinPath(), "kube-controller-manager"),
+		"SWAN_KUBELET_PATH":         path.Join(fs.GetAthenaBinPath(), "kubelet"),
+		"SWAN_KUBE_PROXY_PATH":      path.Join(fs.GetAthenaBinPath(), "kube-proxy"),
+		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-scheduler"),
 	}
 
 	Convey("When snapd is launched", t, func() {
 		var logDirPerm os.FileMode = 0755
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
-		snapd := exec.Command(snapdBin, "--plugin-trust=0", "--log-level=1", "--log-path", snapLogs)
 
+		snapd := testhelpers.NewSnapdOnPort(8181)
 		err = snapd.Start()
 		So(err, ShouldBeNil)
+
 		time.Sleep(1 * time.Second)
 
 		Reset(func() {
-			err := snapd.Process.Kill()
+			err := snapd.Stop()
 			So(err, ShouldBeNil)
 			if err == nil {
 				os.RemoveAll(snapLogs)
@@ -163,5 +169,5 @@ func getCassandraSession() (*gocql.Session, error) {
 	cluster.ProtoVersion = 4
 	cluster.Timeout = 100 * time.Second
 	session, err := cluster.CreateSession()
-	return  session, err
+	return session, err
 }
