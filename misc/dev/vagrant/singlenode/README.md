@@ -62,6 +62,36 @@ $ vagrant ssh
 1. Change to the swan directory: `cd ~/swan`
 1. Run the integration tests: `make integration_test`
 
+## Updating AMI image
+1. Run `swan-integration` job with parameters.
+2. When job has been finished copy AMI ID (it looks like: `ami-xxxxxxxx`).
+3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
+4. Commit & Push your change.
+
+## Manually running provision scripts
+- Before running provision scripts, import your private ssh key into your GitHub account.
+- All scripts are stored in `/vagrant/resources/scripts`.
+- To manually run provision scripts:
+  1. Run `ssh-agent`: `eval $(ssh-agent -s)`
+  2. Import your private key into `ssh-agent`: `ssh-add <key_location>`
+  3. Log into running vagrant instance: `vagrant ssh`
+  4. Switch user to root: `sudo -E su`
+  5. Export following variables:
+    - `VAGRANT_USER=vagrant`
+    - `HOME_DIR=/home/vagrant`
+  6. Change directory to `/vagrant/resources/scripts`
+- Scripts order:
+  1. `copy_configuration.sh`
+  2. `install_packages.sh`
+  3. `setup_env.sh`
+  4. `setup_git.sh`
+  5. `setup_services.sh`
+  6. `install_golang.sh`
+  7. `install_snap_athena.sh`
+  8. `post_install.sh`
+  9. `install_project_deps.sh`
+  10. `checker.sh`
+
 ## Troubleshooting
 - Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
   works fine with this Vagrant version
