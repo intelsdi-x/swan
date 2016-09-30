@@ -64,6 +64,13 @@ $ vagrant ssh
 
 ## Updating AMI image
 1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
+  - Example parameters:
+    - `repo_organization: intelsdi-x`
+    - `repo_branch: master`
+    - `rebase_on_master: true`
+    - `CLEANUP: true`
+    - `BUILD_CACHED_IMAGE: true` ***(required)***
+    - `SWAN_AMI: <empty>`
 2. When job has been finished copy AMI ID (it looks like: `ami-xxxxxxxx`).
 3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
 4. Commit & Push your change.
