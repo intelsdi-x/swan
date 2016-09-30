@@ -62,6 +62,35 @@ $ vagrant ssh
 1. Change to the swan directory: `cd ~/swan`
 1. Run the integration tests: `make integration_test`
 
+## Updating AMI image
+1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
+  - Example parameters:
+    - `repo_organization: intelsdi-x`
+    - `repo_branch: master`
+    - `rebase_on_master: true`
+    - `CLEANUP: true`
+    - `BUILD_CACHED_IMAGE: true` ***(required)***
+    - `SWAN_AMI: <empty>`
+2. When job has been finished copy AMI ID (it looks like: `ami-xxxxxxxx`).
+3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
+4. Commit & Push your change.
+
+## Manually running provision scripts
+- Before running provision scripts, import your private ssh key into your GitHub account.
+- All scripts are stored in `/vagrant/resources/scripts`.
+- To manually run provision scripts run `./enter_developer_mode.sh <private key location>`
+- Scripts order:
+  1. `copy_configuration.sh`
+  2. `install_packages.sh`
+  3. `setup_env.sh`
+  4. `setup_git.sh`
+  5. `setup_services.sh`
+  6. `install_golang.sh`
+  7. `install_snap_athena.sh`
+  8. `post_install.sh`
+  9. `install_project_deps.sh`
+  10. `checker.sh`
+
 ## Troubleshooting
 - Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
   works fine with this Vagrant version
