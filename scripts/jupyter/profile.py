@@ -134,7 +134,27 @@ class Profile(object):
                     )
                 ))
 
-        display(iplot(data))
+        layout = go.Layout(
+            xaxis=dict(
+                title='QPS',
+                titlefont=dict(
+                    family='Arial, sans-serif',
+                    size=18,
+                    color='lightgrey'
+                ),
+            ),
+            yaxis=dict(
+                title='Latency',
+                titlefont=dict(
+                    family='Arial, sans-serif',
+                    size=18,
+                    color='lightgrey'
+                ),
+            )
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+        display(iplot(fig))
 
 
 def compare_two_experiments(exps, slo=500, aggressor=None):
@@ -172,7 +192,27 @@ def compare_two_experiments(exps, slo=500, aggressor=None):
     )
     data.append(slo)
 
-    display(iplot(data))
+    layout = go.Layout(
+        xaxis=dict(
+            title='QPS',
+            titlefont=dict(
+                family='Arial, sans-serif',
+                size=18,
+                color='lightgrey'
+            ),
+        ),
+        yaxis=dict(
+            title='Latencies',
+            titlefont=dict(
+                family='Arial, sans-serif',
+                size=18,
+                color='lightgrey'
+            ),
+        )
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    display(iplot(fig))
 
 
 if __name__ == '__main__':
