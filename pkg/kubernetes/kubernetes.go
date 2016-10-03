@@ -23,6 +23,7 @@ var (
 	pathKubeletFlag        = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetAthenaBinPath(), "kubelet"))
 	pathKubeProxyFlag      = conf.NewFileFlag("kube_proxy_path", "Path to kube-proxy binary", path.Join(fs.GetAthenaBinPath(), "kube-proxy"))
 	pathKubeSchedulerFlag  = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetAthenaBinPath(), "kube-scheduler"))
+	kubeAPIArgsFlag        = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 	allowPrivilegedFlag    = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
@@ -78,6 +79,7 @@ func DefaultConfig() Config {
 		KubeProxyPort:        10249,
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
+		KubeAPIArgs:          kubeAPIArgsFlag.Value(),
 	}
 }
 

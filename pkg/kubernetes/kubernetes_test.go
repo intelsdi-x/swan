@@ -98,6 +98,16 @@ func (s *KubernetesTestSuite) TestKubernetesLauncher() {
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
 		})
 	})
+
+	Convey("Check extra parameters passed to api-server", s.T(), func() {
+		config := DefaultConfig()
+		handle := &mocks.TaskHandle{}
+		config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
+		handle.On("Address").Return("127.0.0.1")
+		Convey("are escaped and separated correctly.", func() {
+			So(getKubeAPIServerCommand(config), ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
+		})
+	})
 }
 
 // testServiceCasesRecursively tests three cases which can happen for single service during
