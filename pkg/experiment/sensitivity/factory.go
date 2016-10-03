@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	l1dDefaultProcessNumber = 1
-	l1iDefaultProcessNumber = 1
-	l3DefaultProcessNumber  = 1
+	l1dDefaultProcessNumber   = 1
+	l1iDefaultProcessNumber   = 1
+	l3DefaultProcessNumber    = 1
+	membwDefaultProcessNumber = 1
 )
 
 // L1dProcessNumber represents number of L1 data cache aggressor processes to be run
@@ -39,6 +40,13 @@ var L3ProcessNumber = conf.NewIntFlag(
 	"l3_process_number",
 	"Number of L3 data cache aggressors to be run",
 	l3DefaultProcessNumber,
+)
+
+// MembwProcessNumber represents number of L3 data cache aggressor processes to be run
+var MembwProcessNumber = conf.NewIntFlag(
+	"membw_process_number",
+	"Number of membw aggressors to be run",
+	membwDefaultProcessNumber,
 )
 
 // AggressorFactory is factory for creating aggressor launchers with local executor
@@ -125,6 +133,12 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
+		}
+		return decorators
+	case memoryBandwidth.ID:
+		decorators := isolation.Decorators{f.otherAggressorIsolation}
+		if MembwProcessNumber.Value() != 1 {
+			decorators = append(decorators, executor.NewParallel(MembwProcessNumber.Value()))
 		}
 		return decorators
 	default:
