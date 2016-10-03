@@ -119,6 +119,7 @@ class Profile(object):
             mode='lines',
             line=dict(
                 color='rgb(255, 0, 0)',
+                shape='spline'
             )
         ))
         for agr in self.categories:
@@ -128,18 +129,40 @@ class Profile(object):
                     name=agr,
                     fill='tozeroy',
                     mode='lines',
+                    line=dict(
+                        shape='spline'
+                    )
                 ))
 
         display(iplot(data))
 
 
-def compare_two_experiments(exp1, exp2, slo=500, aggresor='Baseline'):
-    p1 = Profile(exp1, slo)
-    p2 = Profile(exp2, slo)
+def compare_two_experiments(exps, slo=500, aggressor=None):
+    if not aggressor:
+        aggressor = "Baseline"
+
+    data = []
+    for exp in exps:
+        df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
+                                    orient='index').T
+        data.append(
+            go.Scatter(
+                x=df['x'],
+                y=df[aggressor],
+                fill=None,
+                name=exp.experiment_id,
+                mode='lines',
+                line=dict(
+                    color='rgb(%s, %s, %s)' %
+                          (np.random.randint(0,256), np.random.randint(0,256), np.random.randint(0,256)),
+                    shape='spline'
+                )
+            )
+        )
 
     slo = go.Scatter(
-        x=p1.data_visual['x'],
-        y=p1.data_visual['slo'],
+        x=data[0]['x'],
+        y=[slo for i in range(df.shape[0])],
         fill=None,
         name="slo",
         mode='lines',
@@ -147,31 +170,8 @@ def compare_two_experiments(exp1, exp2, slo=500, aggresor='Baseline'):
             color='rgb(255, 0, 0)',
         )
     )
-    df1 = pd.DataFrame.from_dict(p1.data_visual, orient='index').T
-    baseline1 = go.Scatter(
-        x=df1['x'],
-        y=df1[aggresor],
-        fill=None,
-        name=exp1.experiment_id,
-        mode='lines',
-        line=dict(
-            color='rgb(143, 19, 131)',
-        )
-    )
+    data.append(slo)
 
-    df2 = pd.DataFrame.from_dict(p2.data_visual, orient='index').T
-    baseline2 = go.Scatter(
-        x=df2['x'],
-        y=df2[aggresor],
-        fill=None,
-        name=exp2.experiment_id,
-        mode='lines',
-        line=dict(
-            color='rgb(143, 19, 131)',
-        )
-    )
-
-    data = [baseline1, baseline2, slo]
     display(iplot(data))
 
 
@@ -179,9 +179,9 @@ if __name__ == '__main__':
     from experiment import Experiment
 
     exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
-    exp2 = Experiment(experiment_id='8ab3f479-a3f8-48cf-71cb-e4853caf9cac', cassandra_cluster=['127.0.0.1'], port=19042)
+    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
 
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_two_experiments(exp1, exp2)
+    compare_two_experiments(exps=[exp1, exp2])
