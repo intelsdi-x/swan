@@ -42,7 +42,7 @@ var L3ProcessNumber = conf.NewIntFlag(
 	l3DefaultProcessNumber,
 )
 
-// MembwProcessNumber represents number of L3 data cache aggressor processes to be run
+// MembwProcessNumber represents number of membw aggressor processes to be run
 var MembwProcessNumber = conf.NewIntFlag(
 	"membw_process_number",
 	"Number of membw aggressors to be run",
