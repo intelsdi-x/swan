@@ -157,28 +157,28 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_two_experiments(exps, slo=500, aggressor=None):
-    if not aggressor:
-        aggressor = "Baseline"
+def compare_two_experiments(exps, slo=500, aggressors=None):
+    if not aggressors:
+        aggressors = ["Baseline",]
 
     data = []
     for exp in exps:
         df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
                                     orient='index').T
-        data.append(
-            go.Scatter(
-                x=df['x'],
-                y=df[aggressor],
-                fill=None,
-                name=exp.experiment_id,
-                mode='lines',
-                line=dict(
-                    color='rgb(%s, %s, %s)' %
-                          (np.random.randint(0,256), np.random.randint(0,256), np.random.randint(0,256)),
-                    shape='spline'
+
+        for aggressor in aggressors:
+            data.append(
+                go.Scatter(
+                    x=df['x'],
+                    y=df[aggressor],
+                    fill=None,
+                    name='%s:%s' % (exp.experiment_id, aggressor),
+                    mode='lines',
+                    line=dict(
+                        shape='spline'
+                    )
                 )
             )
-        )
 
     slo = go.Scatter(
         x=data[0]['x'],
@@ -202,7 +202,7 @@ def compare_two_experiments(exps, slo=500, aggressor=None):
             ),
         ),
         yaxis=dict(
-            title='Latencies',
+            title='Latency',
             titlefont=dict(
                 family='Arial, sans-serif',
                 size=18,
@@ -224,4 +224,4 @@ if __name__ == '__main__':
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_two_experiments(exps=[exp1, exp2])
+    compare_two_experiments(exps=[exp1, exp2], aggressors=["Baseline", "Stream 100M"])
