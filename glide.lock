@@ -1,5 +1,5 @@
 hash: 1282415377bd8a0c88eea4dc7d19149cb7058039a0cd97d08b231e64578429b3
-updated: 2016-09-29T18:42:00.542485043+02:00
+updated: 2016-10-04T16:24:46.200155723+02:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -22,6 +22,8 @@ imports:
   - quantile
 - name: github.com/blang/semver
   version: 60ec3488bfea7cca02b021d106d9911120d25fe9
+- name: github.com/cloudfoundry-incubator/candiedyaml
+  version: 99c3df83b51532e3615f851d8c2dbb638f5313bf
 - name: github.com/coreos/go-oidc
   version: 5644a2f50e2d2d5ba0b474bc5bc55fea1925936d
   subpackages:
@@ -41,7 +43,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/docker/distribution
-  version: fd4dd8dd16c2c90e274f8e8ded1ccabb9e8f8c15
+  version: dea554fc7cce2f2e7af5b1e1d38e28c5e96e1d9e
   subpackages:
   - digest
   - reference
@@ -51,20 +53,20 @@ imports:
   - log
   - swagger
 - name: github.com/ghodss/yaml
-  version: c3eb24aeea63668ebdac08d2e252f20df8b6b1ae
+  version: aa0c862057666179de291b67d9f093d12b5a8473
 - name: github.com/gogo/protobuf
-  version: 318371cbef6bab80e8d1c69b470fffa79eebfb54
+  version: 966a6f4b3274f2692aa2f30df2ea5c7172c832ca
   subpackages:
   - proto
   - sortkeys
 - name: github.com/golang/glog
   version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/protobuf
-  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
+  version: 888eb0692c857ec880338addf316bd662d5e630e
   subpackages:
   - proto
 - name: github.com/google/cadvisor
-  version: 0cdf4912793fac9990de3790c273342ec31817fb
+  version: cd360d66e299db962aadff9319a74f2165f1fd7f
   subpackages:
   - info/v1
 - name: github.com/google/gofuzz
@@ -114,7 +116,7 @@ imports:
 - name: github.com/nu7hatch/gouuid
   version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - name: github.com/pborman/uuid
-  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+  version: b984ec7fa9ff9e428bd0cf0abf429384dfbe3e37
 - name: github.com/pkg/errors
   version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pmezard/go-difflib
@@ -138,11 +140,11 @@ imports:
 - name: github.com/prometheus/procfs
   version: abf152e5f3e97f2fafac028d2cc06c1feb87ffa5
 - name: github.com/robfig/cron
-  version: 0f39cf7ebc65a602f45692f9894bd6a193faf8fa
+  version: ab4c16f3a09641bd19d65f55b3d8d6edda7a8e05
 - name: github.com/Sirupsen/logrus
   version: 081307d9bc1364753142d5962fc1d795c742baaf
 - name: github.com/spf13/pflag
-  version: 7f60f83a2c81bc3c3c0d5297f61ddfa68da9d3b7
+  version: 103ce5cd2042f2fe629c1957abb64ab3e7f50235
 - name: github.com/stretchr/objx
   version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
 - name: github.com/stretchr/testify
@@ -153,7 +155,7 @@ imports:
   - require
   - suite
 - name: github.com/ugorji/go
-  version: 4a1cb5252a6951f715a85d0e4be334c2a2dbf2a2
+  version: 5cd0f2b3b6cca8e3a0a4101821e41a73cb59bed6
   subpackages:
   - codec
 - name: golang.org/x/crypto
@@ -162,7 +164,7 @@ imports:
   - curve25519
   - ssh
 - name: golang.org/x/net
-  version: 154d9f9ea81208afed560f4cf27b4860c8ed1904
+  version: 6c89f9617983ee917132513a791d8b5850fe90c5
   subpackages:
   - context
   - context/ctxhttp
@@ -170,7 +172,7 @@ imports:
   - http2/hpack
   - lex/httplex
 - name: golang.org/x/oauth2
-  version: 3b966c7f301c0c71c53d94dc632a62df0a682cd7
+  version: 75e75ddc3d156dc8fc71c6f2ef3607cbdcfc8c27
   subpackages:
   - google
   - internal
@@ -197,7 +199,7 @@ imports:
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
-  version: a83829b6f1293c91addabc89d0571c246397bbf4
+  version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
 - name: k8s.io/client-go
   version: 294573fbeaf0e7136d5112fabb1da0777cea445b
   subpackages:
@@ -373,7 +375,7 @@ testImports:
 - name: github.com/gocql/gocql
   version: 3ac1aabebaf2705c6f695d4ef2c25ab6239e88b3
 - name: github.com/gopherjs/gopherjs
-  version: 4b53e1bddba0e2f734514aeb6c02db652f4c6fe8
+  version: 45518c130e5bd1525f20110830a4986365a153de
   subpackages:
   - js
 - name: github.com/jtolds/gls
@@ -381,7 +383,7 @@ testImports:
 - name: github.com/pivotal-golang/bytefmt
   version: b12c1522f4cbb5f35861bd5dd2c39a4fa996441a
 - name: github.com/smartystreets/assertions
-  version: 443d812296a84445c202c085f19e18fc238f8250
+  version: 2063fd1cc7c975db70502811a34b06ad034ccdf2
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
