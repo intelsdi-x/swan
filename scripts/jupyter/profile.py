@@ -157,9 +157,12 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_two_experiments(exps, slo=500, aggressors=None):
+def compare_two_experiments(exps, slo=500, aggressors=None, fill_chart=False):
     if not aggressors:
-        aggressors = ["Baseline",]
+        aggressors = ["Baseline", ]
+    fill = 'tonexty' if fill_chart else None
+    if fill_chart:
+        fill = 'tonexty'
 
     data = []
     for exp in exps:
@@ -171,7 +174,7 @@ def compare_two_experiments(exps, slo=500, aggressors=None):
                 go.Scatter(
                     x=df['x'],
                     y=df[aggressor],
-                    fill=None,
+                    fill=fill,
                     name='%s:%s' % (exp.experiment_id, aggressor),
                     mode='lines',
                     line=dict(
