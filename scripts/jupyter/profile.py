@@ -157,12 +157,9 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_two_experiments(exps, slo=500, aggressors=None, fill_chart=False):
+def compare_two_experiments(exps, slo=500, aggressors=None, fill=False):
     if not aggressors:
         aggressors = ["Baseline", ]
-    fill = 'tonexty' if fill_chart else None
-    if fill_chart:
-        fill = 'tonexty'
 
     data = []
     for exp in exps:
@@ -174,7 +171,7 @@ def compare_two_experiments(exps, slo=500, aggressors=None, fill_chart=False):
                 go.Scatter(
                     x=df['x'],
                     y=df[aggressor],
-                    fill=fill,
+                    fill=None,
                     name='%s:%s' % (exp.experiment_id, aggressor),
                     mode='lines',
                     line=dict(
@@ -214,6 +211,10 @@ def compare_two_experiments(exps, slo=500, aggressors=None, fill_chart=False):
         )
     )
 
+    if fill and len(exps) == 2 and len(aggressors) == 1:  # Fill only if there is two exps with one aggr to compare
+        data[0]['fill'] = None
+        data[1]['fill'] = 'tonexty'
+
     fig = go.Figure(data=data, layout=layout)
     display(iplot(fig))
 
@@ -227,4 +228,4 @@ if __name__ == '__main__':
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_two_experiments(exps=[exp1, exp2], aggressors=["Baseline", "Stream 100M"])
+    compare_two_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)
