@@ -25,8 +25,9 @@ class Profile(object):
         Initializes a sensivity profile with `e` experiment object and visualize it against the
         specified slo (performance target).
         """
+        self.exp = e
         self.categories = []
-        self.data_frame = e.get_frame()
+        self.data_frame = self.exp.get_frame()
         self.data_visual = {}
 
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
@@ -126,7 +127,7 @@ class Profile(object):
             data.append(go.Scatter(
                     x=df['x'],
                     y=df[agr],
-                    name=agr,
+                    name=self.exp.name + ':' + agr,
                     fill='tozeroy',
                     mode='lines',
                     line=dict(
@@ -157,14 +158,14 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_two_experiments(exps, slo=500, aggressors=None, fill=False):
+def compare_experiments(exps, slo=500, aggressors=None, fill=False):
     if not aggressors:
         aggressors = ["Baseline", ]
 
     data = []
     for exp in exps:
         df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
-                                    orient='index').T
+                                    orient='index').T  # change orient of matrix, fill missing values and make transpose
 
         for aggressor in aggressors:
             data.append(
@@ -172,7 +173,7 @@ def compare_two_experiments(exps, slo=500, aggressors=None, fill=False):
                     x=df['x'],
                     y=df[aggressor],
                     fill=None,
-                    name='%s:%s' % (exp.experiment_id, aggressor),
+                    name='%s:%s' % (exp.name, aggressor),
                     mode='lines',
                     line=dict(
                         shape='spline'
@@ -222,10 +223,12 @@ def compare_two_experiments(exps, slo=500, aggressors=None, fill=False):
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
-    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042)
+    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+                      name='exp_with_serenity')
+    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+                      name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_two_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)
+    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)
