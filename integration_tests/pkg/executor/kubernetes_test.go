@@ -1,108 +1,121 @@
 package executor
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os/exec"
-	"path"
 	"strings"
 	"testing"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+)
+
+const (
+	clusterSpawnTimeout = 20 * time.Second
+	podSpawnTimeout     = 10 * time.Second
+	podFinishedTimeout  = 90 * time.Second
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
+	// Create Kubernetes configuration.
+	config := kubernetes.DefaultConfig()
+	executorConfig := executor.DefaultKubernetesConfig()
+
+	// Create kubectl helper for communicate with Kubernetes cluster.
+	kubectl, err := testhelpers.NewKubeClient(executorConfig)
+	if err != nil {
+		// NewKubeClient() returns error only when kubernetes configuration is
+		// invalid.
+		t.Errorf("Requested configuration is invalid: %q", err)
+	}
+
+	// Create Kubernetes launcher and spawn Kubernetes cluster.
+	local := executor.NewLocal()
+	k8sLauncher := kubernetes.New(local, local, config)
+	k8sHandle, err := k8sLauncher.Launch()
+	if err != nil {
+		t.Errorf("Cannot start k8s cluster: %q", err)
+	}
+
+	// Wait for at least one node is up and running in cluster.
+	if err := kubectl.WaitForCluster(clusterSpawnTimeout); err != nil {
+		t.Errorf("Cannot launch K8s cluster: %q", err)
+	}
+
+	// Make sure cluster is shut down and cleaned up when test ends.
+	defer func() {
+		errs := executor.StopCleanAndErase(k8sHandle)
+
+		errs.Add(exec.Command("etcdctl", "rm", "--recursive", "--dir", "/registry").Run())
+
+		if err := errs.GetErrIfAny(); err != nil {
+			t.Errorf("Cannot stop cluster: %q", err)
+		}
+	}()
 
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
-		local := executor.NewLocal()
 
-		config, err := kubernetes.UniqueConfig()
-		So(err, ShouldBeNil)
-
-		k8sLauncher := kubernetes.New(local, local, config)
-		k8sHandle, err := k8sLauncher.Launch()
-		So(err, ShouldBeNil)
-
-		// Make sure cluster is shut down and cleaned up when test ends.
-		defer func() {
-			var errors []string
-			err := k8sHandle.Stop()
-			if err != nil {
-				t.Logf(err.Error())
-				errors = append(errors, err.Error())
-			}
-
-			err = k8sHandle.Clean()
-			if err != nil {
-				t.Logf(err.Error())
-				errors = append(errors, err.Error())
-			}
-
-			err = k8sHandle.EraseOutput()
-			if err != nil {
-				t.Logf(err.Error())
-				errors = append(errors, err.Error())
-			}
-
-			So(len(errors), ShouldEqual, 0)
-		}()
-
+		// Generate random pod name. This pod name should be unique for each
+		// test case inside this Convey.
 		podName, err := uuid.NewV4()
 		So(err, ShouldBeNil)
+		executorConfig.PodNamePrefix = podName.String()
 
-		executorConfig := executor.DefaultKubernetesConfig()
-		executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
-		executorConfig.PodName = podName.String()
-
+		// Create Kubernetes executor, which should be passed to following
+		// Conveys.
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
-		// Make sure no pods are running. Output from kubectl includes a header line. Therefore, with
-		// no pod entry, we expect a line count of 1.
-		out, err := kubectl(executorConfig.Address, "get pods")
+		// Make sure no pods are running. GetPods() returns running pods and
+		// finished pods. We are expecting that there is no running pods on
+		// cluster.
+		pods, _, err := kubectl.GetPods()
 		So(err, ShouldBeNil)
-		So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+		So(len(pods), ShouldEqual, 0)
 
-		// Skipping for now as the Kopernik CI breaks here.
-		SkipConvey("The generic Executor test should pass", func() {
+		Convey("The generic Executor test should pass", func() {
 			testExecutor(t, k8sexecutor)
 		})
 
 		Convey("Running a command with a successful exit status should leave one pod running", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 4 && exit 0")
+			// Start Kubernetes pod which should die after 3 seconds. ExitCode
+			// should pass to taskHandle object.
+			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
+			defer executor.StopCleanAndErase(taskHandle)
 			So(err, ShouldBeNil)
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 
-			out, err := kubectl(executorConfig.Address, "get pods")
+			// Spawning pods on Kubernetes is a complex process which consists
+			// of i.a.: scheduling and pulling image. Test should wait for
+			// processing executing request.
+			err = kubectl.WaitForPod(podSpawnTimeout)
 			So(err, ShouldBeNil)
-			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
-			Convey("And after at most 5 seconds", func() {
-				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
+			Convey("And after few seconds", func() {
+				// Pod should end after three seconds, but propagation of
+				// status information can take longer time. To reduce number
+				// of false-positive assertion fails, Wait() timeout is much
+				// longer then time withing pod should shutdown.
+				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
 
 				Convey("The exit status should be zero", func() {
+					// ExitCode should appears in TaskHandle object after pod
+					// termination.
 					exitCode, err := taskHandle.ExitCode()
 					So(err, ShouldBeNil)
 					So(exitCode, ShouldEqual, 0)
 
 					Convey("And there should be zero pods", func() {
-						out, err = kubectl(executorConfig.Address, "get pods")
+						// There shouldn't be any running pods after test
+						// executing.
+						pods, _, err = kubectl.GetPods()
 						So(err, ShouldBeNil)
-						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+						So(len(pods), ShouldEqual, 0)
 					})
 				})
 			})
@@ -110,17 +123,14 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
+			defer executor.StopCleanAndErase(taskHandle)
 			So(err, ShouldBeNil)
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 
-			out, err := kubectl(executorConfig.Address, "get pods")
+			err = kubectl.WaitForPod(podSpawnTimeout)
 			So(err, ShouldBeNil)
-			So(len(strings.Split(out, "\n")), ShouldEqual, 2)
 
-			Convey("And after at most 5 seconds", func() {
-				So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
+			Convey("And after few seconds", func() {
+				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
 
 				Convey("The exit status should be 5", func() {
 					exitCode, err := taskHandle.ExitCode()
@@ -128,9 +138,9 @@ func TestKubernetesExecutor(t *testing.T) {
 					So(exitCode, ShouldEqual, 5)
 
 					Convey("And there should be zero pods", func() {
-						out, err = kubectl(executorConfig.Address, "get pods")
+						pods, _, err = kubectl.GetPods()
 						So(err, ShouldBeNil)
-						So(len(strings.Split(out, "\n")), ShouldEqual, 1)
+						So(len(pods), ShouldEqual, 0)
 					})
 				})
 			})
@@ -138,18 +148,17 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command and calling Clean() on task handle should not cause a data race", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
+			defer executor.StopCleanAndErase(taskHandle)
 			So(err, ShouldBeNil)
 			taskHandle.Clean()
-
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Stop()
 		})
 
 		Convey("Logs should be available and non-empty", func() {
 			taskHandle, err := k8sexecutor.Execute("echo \"This is Sparta\" && (echo \"This is England\" 1>&2) && exit 0")
+			defer executor.StopCleanAndErase(taskHandle)
+
 			So(err, ShouldBeNil)
-			So(taskHandle.Wait(5*time.Second), ShouldBeTrue)
-			time.Sleep(10 * time.Second)
+			So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
 
 			exitCode, err := taskHandle.ExitCode()
 			So(exitCode, ShouldEqual, 0)
@@ -177,20 +186,10 @@ func TestKubernetesExecutor(t *testing.T) {
 			// stdout includes both stderr and stdout of the application run in the pod.
 			So(err, ShouldEqual, io.EOF)
 			So(n, ShouldEqual, 0)
-
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 		})
 
 		Convey("Timeout should not block execution because of files being unavailable", func() {
-			client, err := client.New(&restclient.Config{
-				Host:     executorConfig.Address,
-				Username: executorConfig.Username,
-				Password: executorConfig.Password,
-			})
-			So(err, ShouldBeNil)
-			nodes, err := client.Nodes().List(api.ListOptions{})
+			nodes, err := kubectl.Nodes().List(api.ListOptions{})
 			So(err, ShouldBeNil)
 			node := nodes.Items[0]
 			newTaint := api.Taint{
@@ -199,34 +198,19 @@ func TestKubernetesExecutor(t *testing.T) {
 			taintsInJSON, err := json.Marshal([]api.Taint{newTaint})
 			So(err, ShouldBeNil)
 			node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-			_, err = client.Nodes().Update(&node)
+			_, err = kubectl.Client.Nodes().Update(&node)
 			So(err, ShouldBeNil)
 
 			executorConfig.LaunchTimeout = 1 * time.Second
 			k8sexecutor, err = executor.NewKubernetes(executorConfig)
 			So(err, ShouldBeNil)
 			taskHandle, err := k8sexecutor.Execute("sleep inf")
+			defer executor.StopCleanAndErase(taskHandle)
 			So(err, ShouldBeNil)
-			defer taskHandle.EraseOutput()
-			defer taskHandle.Clean()
-			defer taskHandle.Stop()
 
 			stopped := taskHandle.Wait(5 * time.Second)
 			So(stopped, ShouldBeTrue)
 		})
 
 	})
-}
-
-func kubectl(server string, subcommand string) (string, error) {
-	kubectlBinPath := path.Join(fs.GetAthenaBinPath(), "kubectl")
-	buf := new(bytes.Buffer)
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s -s %s %s", kubectlBinPath, server, subcommand))
-	cmd.Stdout = buf
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(buf.String()), nil
 }

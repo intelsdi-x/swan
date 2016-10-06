@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	. "github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/isolation"
@@ -28,8 +27,6 @@ const (
 // - id_rsa ssh keys in user home directory. [command ssh-keygen]
 // - no password ssh session. [command ssh-copy-id localhost]
 func TestRemote(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
-
 	Convey("While getting the information abut the test user", t, func() {
 		user, err := user.Current()
 

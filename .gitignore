@@ -1,6 +1,7 @@
 *.pyc
 *.idea
 .*.swp
+*.test
 /**/stderr
 /**/stdout
 /.vscode

@@ -53,7 +53,7 @@ func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File,
 	}
 
 	stderrFileName := path.Join(outputDir, "stderr")
-	stderr, err = os.Create(stderrFileName)
+	stderr, err = os.OpenFile(stderrFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC|os.O_SYNC, 0666)
 	if err != nil {
 		os.Remove(stdoutFileName)
 		return nil, nil, errors.Wrapf(err, "os.Create failed for path %q", stderrFileName)

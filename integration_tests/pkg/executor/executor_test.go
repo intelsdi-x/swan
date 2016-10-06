@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	. "github.com/intelsdi-x/athena/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -15,8 +14,6 @@ import (
 // testExecutor tests the execution of process for given executor.
 // This test can be used inside any Executor implementation test.
 func testExecutor(t *testing.T, executor Executor) {
-	log.SetLevel(log.ErrorLevel)
-
 	Convey("When blocking infinitively sleep command is executed", func() {
 		taskHandle, err := executor.Execute("sleep inf")
 		So(err, ShouldBeNil)
@@ -100,7 +97,7 @@ func testExecutor(t *testing.T, executor Executor) {
 			So(stdoutFile, ShouldNotBeNil)
 
 			// NOTE: the fd may point to the end of the file.
-			stdoutFile.Seek(0,0)
+			stdoutFile.Seek(0, 0)
 
 			data, readErr := ioutil.ReadAll(stdoutFile)
 			So(readErr, ShouldBeNil)
@@ -158,7 +155,6 @@ func testExecutor(t *testing.T, executor Executor) {
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
 
-
 			taskHandle.Clean()
 
 			stderrFile, err := taskHandle.StderrFile()
@@ -179,13 +175,11 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 	})
 
-	// TODO: Fix kubernetes executor and multiple runs.
-	SkipConvey("When we execute two tasks in the same time", func() {
+	Convey("When we execute two tasks in the same time", func() {
 		taskHandle, err := executor.Execute("echo output1")
 		taskHandle2, err2 := executor.Execute("echo output2")
 		So(err, ShouldBeNil)
 		So(err2, ShouldBeNil)
-
 		defer taskHandle.Stop()
 		defer taskHandle2.Stop()
 		defer taskHandle.Clean()

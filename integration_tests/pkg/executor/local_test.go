@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
 	. "github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/isolation"
 	"github.com/intelsdi-x/athena/pkg/isolation/cgroup"
@@ -16,8 +15,6 @@ import (
 
 // TestLocal tests the execution of process on local machine.
 func TestLocal(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
-
 	Convey("While using Local Shell", t, func() {
 
 		l := NewLocal()

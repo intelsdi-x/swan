@@ -21,7 +21,8 @@ func TestKubernetes(t *testing.T) {
 
 		Convey("with default unspecified resources, expect BestEffort", func() {
 			podExecutor := &kubernetes{config, nil}
-			pod := podExecutor.newPod("be")
+			pod, err := podExecutor.newPod("be")
+			So(err, ShouldBeNil)
 			So(qos.GetPodQOS(pod), ShouldEqual, qos.BestEffort)
 		})
 
@@ -31,7 +32,8 @@ func TestKubernetes(t *testing.T) {
 			config.MemoryRequest = 1000
 			config.MemoryLimit = 1000
 			podExecutor := &kubernetes{config, nil}
-			pod := podExecutor.newPod("hp")
+			pod, err := podExecutor.newPod("hp")
+			So(err, ShouldBeNil)
 			So(qos.GetPodQOS(pod), ShouldEqual, qos.Guaranteed)
 		})
 
@@ -41,7 +43,8 @@ func TestKubernetes(t *testing.T) {
 			config.MemoryRequest = 10
 			config.MemoryLimit = 1000
 			podExecutor := &kubernetes{config, nil}
-			pod := podExecutor.newPod("burstable")
+			pod, err := podExecutor.newPod("burstable")
+			So(err, ShouldBeNil)
 			So(qos.GetPodQOS(pod), ShouldEqual, qos.Burstable)
 		})
 
@@ -49,7 +52,8 @@ func TestKubernetes(t *testing.T) {
 			config.CPURequest = 1
 			config.CPULimit = 0
 			podExecutor := &kubernetes{config, nil}
-			pod := podExecutor.newPod("burst")
+			pod, err := podExecutor.newPod("burst")
+			So(err, ShouldBeNil)
 			So(qos.GetPodQOS(pod), ShouldEqual, qos.Burstable)
 		})
 

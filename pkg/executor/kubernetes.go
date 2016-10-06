@@ -11,6 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/isolation"
 	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
@@ -28,7 +29,16 @@ const (
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
 type KubernetesConfig struct {
+	// PodName vs PodNamePrefix:
+	// - PodName(deprecated; by default is empty string) - when this field is
+	// configured, Kubernetes executor is using it as a Pod name. Kubernetes
+	// doesn't support spawning pods with same name, so this field shouldn't
+	// be in use.
+	// - PodNamePrefix(by default is "swan") - If PodName field is not
+	// configured, this field is used as a prefix for random generated Pod
+	// name.
 	PodName        string
+	PodNamePrefix  string
 	Address        string
 	Username       string
 	Password       string
@@ -60,7 +70,8 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
-		PodName:        "swan",
+		PodName:        "",
+		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
 		Username:       "",
 		Password:       "",
@@ -136,18 +147,42 @@ func (k8s *kubernetes) Name() string {
 	return "Kubernetes Executor"
 }
 
+// generatePodName is generating pods based on KubernetesConfig struct.
+// If KubernetesConfig has got non-empty PodName field then this field is
+// used as a Pod name (even if selected Pod name is already in use - in
+// this case pod spawning should fail).
+// It returns string as a Pod name which should be used or error if cannot
+// generate random suffix.
+func (k8s *kubernetes) generatePodName() (string, error) {
+	if k8s.config.PodName != "" {
+		return k8s.config.PodName, nil
+	}
+
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return "", errors.Wrapf(err, "cannot generate suffix UUID")
+	}
+
+	return fmt.Sprintf("%s-%x", k8s.config.PodNamePrefix, uuid.String())[:60], nil
+}
+
 // newPod is a helper to build in-memory struture representing pod
-// before sending it as request to API server.
-func (k8s *kubernetes) newPod(command string) *api.Pod {
+// before sending it as request to API server. It can returns also
+// error if cannot generate Pod name.
+func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 
 	resources := k8s.containerResources()
+	podName, err := k8s.generatePodName()
+	if err != nil {
+		return nil, err
+	}
 
 	return &api.Pod{
 		TypeMeta: unversioned.TypeMeta{},
 		ObjectMeta: api.ObjectMeta{
-			Name:      k8s.config.PodName,
+			Name:      podName,
 			Namespace: k8s.config.Namespace,
-			Labels:    map[string]string{"name": k8s.config.PodName},
+			Labels:    map[string]string{"name": podName},
 		},
 		Spec: api.PodSpec{
 			RestartPolicy:   "Never",
@@ -163,7 +198,7 @@ func (k8s *kubernetes) newPod(command string) *api.Pod {
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
@@ -173,7 +208,12 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	command = k8s.config.Decorators.Decorate(command)
 
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
-	pod, err := podsAPI.Create(k8s.newPod(command))
+	podManifest, err := k8s.newPod(command)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot create pod manifest")
+	}
+
+	pod, err := podsAPI.Create(podManifest)
 
 	log.Debugf("pod.Spec = %+v\n", pod.Spec)
 	log.Debugf("pod %q QoS class:", qos.GetPodQOS(pod))
@@ -314,13 +354,13 @@ func (th *kubernetesTaskHandle) setupLogs(pod *api.Pod) {
 		stdoutFile.Name(), stderrFile.Name())
 
 	go func() {
+		th.outputMutex.Lock()
+		defer th.outputMutex.Unlock()
 		_, err := io.Copy(stdoutFile, logStream)
 		if err != nil {
 			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
 		}
 
-		th.outputMutex.Lock()
-		defer th.outputMutex.Unlock()
 		stdoutFile.Sync()
 	}()
 
@@ -376,6 +416,9 @@ func (th *kubernetesTaskHandle) watch(timeout time.Duration) error {
 				}
 
 				th.setExitCode(&exitCode)
+
+				th.stdout.Sync()
+				th.stderr.Sync()
 
 				close(th.stopped)
 			})
