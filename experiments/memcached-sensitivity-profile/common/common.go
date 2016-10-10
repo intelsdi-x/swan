@@ -11,10 +11,8 @@ import (
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/topology"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/validate"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
 
@@ -47,8 +45,8 @@ var (
 // PrepareAggressors prepare aggressors launcher's
 // wrapped by session less pair using given isolations and executor factory for aggressor workloads.
 // TODO: consider moving to swan:sensitivity/factory.go
-func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (aggressorPairs []sensitivity.LauncherSessionPair, err error) {
-
+func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (aggressorPairs []interface{}, err error) {
+	aggressorPairs = []interface{}{nil}
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 
@@ -65,7 +63,7 @@ func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 // PrepareSnapMutilateSessionLauncher prepare a SessionLauncher that runs mutilate collector and records that into storage.
 // Note: SnapdHTTPEndpoint set to "none" will disable mutilate session completely.
 // TODO: this should be put into athena:/pkg/snap
-func prepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
+func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.SnapdHTTPEndpoint.Value() != "none" {
 		// Create connection with Snap.
@@ -101,7 +99,7 @@ func newRemote(ip string) (executor.Executor, error) {
 }
 
 // prepareMutilateGenerator create new LoadGenerator based on mutilate.
-func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {
+func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcacheIP
 	mutilateConfig.MemcachedPort = memcachePort
@@ -147,7 +145,7 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 }
 
 // prepareExecutors gives a executor to deploy your workloads with appliled isolation on HP.
-func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
+func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
 		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
@@ -200,76 +198,4 @@ func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 // noopSessionLauncherFactory is a factory of snap.SessionLauncher that returns nothing.
 func noopSessionLauncherFactory(_ sensitivity.Configuration) snap.SessionLauncher {
 	return nil
-}
-
-// RunExperiment is main entrypoint to prepare and run experiment.
-func RunExperiment() error {
-	return RunExperimentWithMemcachedSessionLauncher(noopSessionLauncherFactory)
-}
-
-// RunExperimentWithMemcachedSessionLauncher is preparing all the components necessary to run experiment but uses memcachedSessionLauncherFactory
-// to create a snap.SessionLauncher that will wrap memcached (HP workload).
-// Note: it includes parsing the environment to get configuration as well as preparing executors and eventually running the experiment.
-func RunExperimentWithMemcachedSessionLauncher(memcachedSessionLauncherFactory func(sensitivity.Configuration) snap.SessionLauncher) error {
-	conf.SetAppName("memcached-sensitivity-profile")
-	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		return err
-	}
-	logrus.SetLevel(conf.LogLevel())
-
-	// Validate preconditions.
-	validate.OS()
-
-	// Isolations.
-	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
-
-	// Executors.
-	hpExecutor, beExecutorFactory, cleanup, err := prepareExecutors(hpIsolation)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	// BE workloads.
-	aggressorSessionLaunchers, err := prepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
-	if err != nil {
-		return err
-	}
-
-	// Prepare experiment configuration to be used by session launcher factory.
-	configuration := sensitivity.DefaultConfiguration()
-	memcachedSessionLauncher := memcachedSessionLauncherFactory(configuration)
-
-	// HP workload.
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(hpExecutor, memcachedConfig)
-	memcachedLauncherSessionPair := sensitivity.NewMonitoredLauncher(memcachedLauncher, memcachedSessionLauncher) // NewMonitoredLauncher can accept nil as session launcher.
-
-	// Load generator.
-	mutilateLoadGenerator, err := prepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
-	if err != nil {
-		return err
-	}
-
-	mutilateSnapSession, err := prepareSnapMutilateSessionLauncher()
-	if err != nil {
-		return err
-	}
-	mutilateLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession)
-
-	// Experiment.
-	sensitivityExperiment := sensitivity.NewExperiment(
-		conf.AppName(),
-		conf.LogLevel(),
-		configuration,
-		memcachedLauncherSessionPair,
-		mutilateLoadGeneratorSessionPair,
-		aggressorSessionLaunchers,
-	)
-
-	// Run experiment.
-	return sensitivityExperiment.Run()
 }
