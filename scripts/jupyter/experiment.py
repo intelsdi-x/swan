@@ -18,6 +18,7 @@ class Experiment(object):
     def __init__(self, experiment_id, **kwargs):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
+        :param name: optional name of the experiment
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
@@ -30,6 +31,7 @@ class Experiment(object):
         self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
         self.data = []
         self.experiment_id = experiment_id
+        self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps', 'achieved_qps_percent',
                         'swan_experiment', 'swan_aggressor_name', 'swan_phase', 'swan_repetition']
 

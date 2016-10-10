@@ -51,7 +51,9 @@ Code above shows the available samples. Be aware that if a experiments has large
 
 To render a sensitivity profile from the loaded samples, run:
 ```
-Profile(exp, slo=500)
+p = Profile(exp, slo=500)
+p.sensitivity_table()
+p.sensitivity_chart()
 ```
 
 Where 500 is the target latency in micro seconds.

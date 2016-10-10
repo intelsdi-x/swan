@@ -1,8 +1,14 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
-import numpy as np
+import plotly.graph_objs as go
 import pandas as pd
+import numpy as np
+
+from IPython.core.display import HTML, display
+from plotly.offline import init_notebook_mode, iplot
+
+init_notebook_mode()
 
 
 class Profile(object):
@@ -19,22 +25,26 @@ class Profile(object):
         Initializes a sensivity profile with `e` experiment object and visualize it against the
         specified slo (performance target).
         """
+        self.exp = e
+        self.categories = []
+        self.data_frame = self.exp.get_frame()
+        self.data_visual = {}
 
-        data_frame = e.get_frame()
-        df_of_99th = data_frame.loc[data_frame['ns'].str.contains('/percentile/99th')]
+        df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
         df_of_99th['swan_aggressor_name'].replace(to_replace='None', value="Baseline", inplace=True)
 
-        p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
+        self.p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
         columns = None
         data = []
         index = []
 
-        for name, df in p99_by_aggressor:
+        for name, df in self.p99_by_aggressor:
             index.append(name)
             df.is_copy = False
             df.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df['swan_loadpoint_qps'])
             aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
+            self.categories.append(name)
 
             # Store columns for data frame from the target QPSes.
             # In case of partial measurements, we only use the columns from this aggressor
@@ -46,11 +56,15 @@ class Profile(object):
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             data.append(violations.tolist())
 
+            self.data_visual['x'] = np.array(qps)
+            self.data_visual[name] = aggressor_frame['value'].as_matrix()
+            self.data_visual['slo'] = [slo for i in qps]
+
         peak = np.amax(columns)
         columns = map(lambda c: (float(c) / peak) * 100, columns)
         self.frame = pd.DataFrame(data, columns=columns, index=index).sort_index()
 
-    def _repr_html_(self):
+    def sensitivity_table(self):
         no_border = 'border: 0'
         black_border = '1px solid black'
         html_out = ''
@@ -89,16 +103,132 @@ class Profile(object):
                     style += 'background-color: #98cc70;'
 
                 html_out += '<td style="%s">%.1f%%</td>' % (style, value)
-
             html_out += '</tr>'
 
         html_out += '</table>'
 
-        return html_out
+        return HTML(html_out)
+
+    def sensitivity_chart(self):
+        df = pd.DataFrame.from_dict(self.data_visual, orient='index').T
+        data = list()
+        data.append(go.Scatter(
+            x=df['x'],
+            y=df['slo'],
+            fill=None,
+            name='slo',
+            mode='lines',
+            line=dict(
+                color='rgb(255, 0, 0)',
+                shape='spline'
+            )
+        ))
+        for agr in self.categories:
+            data.append(go.Scatter(
+                    x=df['x'],
+                    y=df[agr],
+                    name=self.exp.name + ':' + agr,
+                    fill='tozeroy',
+                    mode='lines',
+                    line=dict(
+                        shape='spline'
+                    )
+                ))
+
+        layout = go.Layout(
+            xaxis=dict(
+                title='QPS',
+                titlefont=dict(
+                    family='Arial, sans-serif',
+                    size=18,
+                    color='lightgrey'
+                ),
+            ),
+            yaxis=dict(
+                title='Latency',
+                titlefont=dict(
+                    family='Arial, sans-serif',
+                    size=18,
+                    color='lightgrey'
+                ),
+            )
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+        display(iplot(fig))
+
+
+def compare_experiments(exps, slo=500, aggressors=None, fill=False):
+    if not aggressors:
+        aggressors = ["Baseline", ]
+
+    data = []
+    for exp in exps:
+        df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
+                                    orient='index').T  # change orient of matrix, fill missing values and make transpose
+
+        for aggressor in aggressors:
+            data.append(
+                go.Scatter(
+                    x=df['x'],
+                    y=df[aggressor],
+                    fill=None,
+                    name='%s:%s' % (exp.name, aggressor),
+                    mode='lines',
+                    line=dict(
+                        shape='spline'
+                    )
+                )
+            )
+
+    slo = go.Scatter(
+        x=data[0]['x'],
+        y=[slo for i in range(df.shape[0])],
+        fill=None,
+        name="slo",
+        mode='lines',
+        line=dict(
+            color='rgb(255, 0, 0)',
+        )
+    )
+    data.append(slo)
+
+    layout = go.Layout(
+        xaxis=dict(
+            title='QPS',
+            titlefont=dict(
+                family='Arial, sans-serif',
+                size=18,
+                color='lightgrey'
+            ),
+        ),
+        yaxis=dict(
+            title='Latency',
+            titlefont=dict(
+                family='Arial, sans-serif',
+                size=18,
+                color='lightgrey'
+            ),
+        )
+    )
+
+    if fill and len(exps) == 2 and len(aggressors) == 1:  # Fill only if there is two exps with one aggr to compare
+        data[0]['fill'] = None
+        data[1]['fill'] = 'tonexty'
+
+    fig = go.Figure(data=data, layout=layout)
+    display(iplot(fig))
 
 
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp = Experiment(experiment_id='57d25f69-d6d7-43e1-5c4e-3b5f5208acdc', cassandra_cluster=['127.0.0.1'], port=9042)
-    p = Profile(exp, slo=500)
+    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+                      name='exp_with_serenity')
+    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+                      name='exp_without_serenity')
+
+    Profile(exp1, slo=500).sensitivity_table()
+    Profile(exp2, slo=500).sensitivity_chart()
+
+    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)

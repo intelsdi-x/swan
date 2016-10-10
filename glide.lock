@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-09-19T15:46:43.905511913+02:00
+updated: 2016-10-04T17:12:02.057633052+02:00
 imports:
 - name: cloud.google.com/go
   version: d1a7c8b8ea705725fb7cc392d923cb7f335e8ae4
@@ -111,7 +111,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: 0c5ba075f8520c65572f001331a1a43b756e01d7
 - name: github.com/intelsdi-x/athena
-  version: 64dfccc3c2fa1a2f9863ed81c303804edd7793dc
+  version: 215e1f00c674d566271793c2d1dfa7cb911e0122
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -276,7 +276,7 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/alecthomas/kingpin.v2
-  version: e5900212cbf65b181d3d8e08308ef06a01d117cf
+  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 - name: gopkg.in/cheggaaa/pb.v1
   version: 9453b2db37f4d8bc63751daca63bbe7049eb5e74
 - name: gopkg.in/inf.v0
@@ -347,7 +347,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/kubernetes
-  version: b44b716965db2d54c8c7dfcdbcb1d54792ab8559
+  version: 44368db9916cc345ebef8b6fbde3cdf0dc9d79dc
   subpackages:
   - pkg/api
   - pkg/api/endpoints

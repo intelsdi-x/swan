@@ -150,6 +150,7 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
+		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
 		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
 		k8sClusterTaskHandle, err := k8sLauncher.Launch()
 		if err != nil {
@@ -183,6 +184,7 @@ func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
 			config.PodName = "swan-aggr"
+			config.Privileged = true // swan aggressor use unshare, which requires sudo.
 			return executor.NewKubernetes(config)
 		}
 	} else {
