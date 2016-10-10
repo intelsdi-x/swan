@@ -26,6 +26,7 @@ class Profile(object):
         specified slo (performance target).
         """
         self.exp = e
+        self.slo = slo
         self.categories = []
         self.data_frame = self.exp.get_frame()
         self.data_visual = {}
@@ -109,9 +110,12 @@ class Profile(object):
 
         return HTML(html_out)
 
-    def sensitivity_chart(self):
+    def sensitivity_chart(self, fill=False):
+        gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
+                     'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         df = pd.DataFrame.from_dict(self.data_visual, orient='index').T
         data = list()
+        fill_to_nexty = 'tonexty' if fill else None
         data.append(go.Scatter(
             x=df['x'],
             y=df['slo'],
@@ -123,17 +127,22 @@ class Profile(object):
                 shape='spline'
             )
         ))
-        for agr in self.categories:
-            data.append(go.Scatter(
-                    x=df['x'],
-                    y=df[agr],
-                    name=self.exp.name + ':' + agr,
-                    fill='tozeroy',
-                    mode='lines',
-                    line=dict(
-                        shape='spline'
-                    )
-                ))
+
+        for i, agr in enumerate(self.categories):
+            scatter_aggr = go.Scatter(
+                x=df['x'],
+                y=df[agr],
+                name=self.exp.name + ':' + agr,
+                fill=fill_to_nexty if agr != 'Baseline' else None,
+                mode='lines',
+                line=dict(
+                    shape='spline',
+                ),
+            )
+            if fill:
+                scatter_aggr['line']['color'] = gradients[i]
+
+            data.append(scatter_aggr)
 
         layout = go.Layout(
             xaxis=dict(
@@ -145,6 +154,7 @@ class Profile(object):
                 ),
             ),
             yaxis=dict(
+                range=[0, 2 * self.slo],
                 title='Latency',
                 titlefont=dict(
                     family='Arial, sans-serif',
@@ -181,9 +191,14 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
                 )
             )
 
-    slo = go.Scatter(
-        x=data[0]['x'],
-        y=[slo for i in range(df.shape[0])],
+    max_x_series = np.maximum(data[0]['x'], data[1]['x'])
+    all_set = np.append(data[0]['x'], data[1]['x'])
+    max_x_series[0] = np.min(all_set)
+    max_x_series[-1] = np.max(all_set)
+
+    slo_scatter = go.Scatter(
+        x=max_x_series,
+        y=[slo for i in max_x_series],
         fill=None,
         name="slo",
         mode='lines',
@@ -191,7 +206,7 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
             color='rgb(255, 0, 0)',
         )
     )
-    data.append(slo)
+    data.append(slo_scatter)
 
     layout = go.Layout(
         xaxis=dict(
@@ -203,17 +218,20 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
             ),
         ),
         yaxis=dict(
+            range=[0, 2 * slo],
             title='Latency',
             titlefont=dict(
                 family='Arial, sans-serif',
                 size=18,
-                color='lightgrey'
+                color='lightgrey',
             ),
         )
     )
 
-    if fill and len(exps) == 2 and len(aggressors) == 1:  # Fill only if there is two exps with one aggr to compare
+    # Fill only if there is two experiments with one aggressor or one experiment with two aggressors to compare
+    if fill and ((len(exps) == 2 and len(aggressors) == 1) or (len(exps) == 1 and len(aggressors) == 2)):
         data[0]['fill'] = None
+        data[1]['line']['color'] = 'rgb(7, 249, 128)'
         data[1]['fill'] = 'tonexty'
 
     fig = go.Figure(data=data, layout=layout)
@@ -223,9 +241,9 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+    exp1 = Experiment(experiment_id='e527ce99-bcbc-4009-7367-b8234d0de89d', cassandra_cluster=['149.202.205.137'], port=9042,
                       name='exp_with_serenity')
-    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+    exp2 = Experiment(experiment_id='dfdca05e-881a-4416-5e8f-37cf0fd26827', cassandra_cluster=['149.202.205.137'], port=9042,
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
