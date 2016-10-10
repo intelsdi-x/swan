@@ -30,6 +30,9 @@ Vagrant.configure(2) do |config|
   # argument is a set of non-required options.
   home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
   config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  if File.directory?(File.expand_path("#{ENV['HOME']}/swan_s3_creds"))
+       config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds", "#{home_dir}/swan_s3_creds", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  end
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
@@ -68,6 +71,10 @@ Vagrant.configure(2) do |config|
     override.ssh.keys_only = data['keys_only'] || true
   end
 
+  # -b specifies bucket name.
+  # By default bucket name value is read from SWAN_BUCKET_NAME env variable.
+  # When we add this variable to jenkins/vagrant, we will be able to remove it from command below.
+  config.vm.provision "shell", path: "$HOME_DIR/go/src/github.com/intelsdi-x/swan/scripts/get_specjbb.sh", args: "-s $HOME_DIR/go/src/github.com/intelsdi-x/swan" + " -c $HOME_DIR/swan_s3_creds/.s3cfg" + " -b swan-artifacts"
   config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
