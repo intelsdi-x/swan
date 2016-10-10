@@ -134,6 +134,34 @@ func TestExperiment(t *testing.T) {
 				})
 			})
 
+			Convey("With proper kubernetes configuration and without phases", func() {
+				args := []string{"--run_on_kubernetes", "--kube_allow_privileged"}
+				exp := exec.Command(memcachedSensitivityProfileBin, args...)
+				err := exp.Run()
+				Convey("Experiment should return with no errors", func() {
+					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("With proper kubernetes configuration and with l1d aggressor", func() {
+				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--aggr", "l1d"}
+				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+					exp := exec.Command(memcachedSensitivityProfileBin, args...)
+					output, err := exp.Output()
+					So(err, ShouldBeNil)
+					experimentID := getUUID(output)
+
+					var ns string
+					var tags map[string]string
+					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
+					So(err, ShouldBeNil)
+					So(ns, ShouldNotBeBlank)
+					So(tags, ShouldNotBeEmpty)
+					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+				})
+
+			})
+
 			Convey("With invalid configuration stop experiment if error", func() {
 				os.Setenv("SWAN_LOAD_POINTS", "abc")
 				exp := exec.Command(memcachedSensitivityProfileBin)
