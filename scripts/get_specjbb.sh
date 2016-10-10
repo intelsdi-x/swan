@@ -36,6 +36,8 @@ extract() {
         echo "SPECjbb files extracted to $SPECJBB_PATH/specjbb"
     else
         echo "Could not find SPECjbb ISO file ($SPECJBB_ISO_PATH)."
+        echo "Exiting get_specjbb.sh: valid S3 credentials file is missing."
+        exit 0
     fi
 }
 
@@ -61,13 +63,13 @@ SPECJBB_PATH=$SWAN_PATH/workloads/web_serving
 SPECJBB_ISO_PATH=$SPECJBB_PATH/SPECjbb2015_1_00.iso
 
 if [ -z "$SWAN_BUCKET_NAME" ]; then
-    echo "Exiting: S3 bucket name is missing."
+    echo "Exiting get_specjbb.sh: S3 bucket name is missing."
     # Exit without error. We want to build Swan anyway.
     exit 0
 fi
 
 if [ ! -e $S3_CREDS_FILE ]; then
-    echo "Exiting: valid S3 credentials file is missing."
+    echo "Exiting get_specjbb.sh: valid S3 credentials file is missing."
     # Exit without error. We want to build Swan anyway.
     exit 0
 fi
