@@ -83,6 +83,7 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 	const duration = 10 * time.Second
 
 	s.mutilate.config.MasterQPS = 0
+	s.mutilate.config.Records = 12345
 	command := getLoadCommand(s.mutilate.config, load, duration, []executor.TaskHandle{})
 
 	s.soExpectBaseCommandOptions(command)
@@ -104,6 +105,11 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 
 	Convey("Mutilate load command should contain qps option", s.T(), func() {
 		expected := fmt.Sprintf("-q %d", load)
+		So(command, ShouldContainSubstring, expected)
+	})
+
+	Convey("Mutilate load command should contain records option", s.T(), func() {
+		expected := fmt.Sprintf("-r %d", s.mutilate.config.Records)
 		So(command, ShouldContainSubstring, expected)
 	})
 }

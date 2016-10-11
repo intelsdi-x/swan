@@ -21,6 +21,7 @@ const (
 	defaultMemcachedHost          = "127.0.0.1"
 	defaultPercentile             = "99"             // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
 	defaultTuningTime             = 10 * time.Second // [s]
+	defaultRecords                = 10000
 	defaultWarmupTime             = 10 * time.Second // [s]
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
@@ -44,6 +45,7 @@ var (
 		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
+	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
 	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
 	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
 	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
@@ -70,6 +72,7 @@ type Config struct {
 	// Mutilate load Parameters
 	TuningTime        time.Duration
 	LatencyPercentile string
+	Records           int
 
 	AgentConnections      int  // -c
 	AgentConnectionsDepth int  // Max length of request pipeline. -d
@@ -109,6 +112,7 @@ func DefaultMutilateConfig() Config {
 		WarmupTime:        warmupTimeFlag.Value(),
 		TuningTime:        tuningTimeFlag.Value(),
 		LatencyPercentile: defaultPercentile,
+		Records:           recordsFlag.Value(),
 
 		AgentThreads:           agentThreadsFlag.Value(),
 		AgentConnections:       agentConnectionsFlag.Value(),
