@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"path"
+
+	"github.com/pkg/errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
@@ -35,6 +36,7 @@ var (
 	userFlag           = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
 	numThreadsFlag     = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
 	maxConnectionsFlag = conf.NewIntFlag("memcached_connections", "Number of maximum connections for mutilate (-c)", defaultNumConnections)
+	maxMemoryMBFlag    = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items (-m)", defaultMaxMemoryMB)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -65,7 +67,7 @@ func DefaultMemcachedConfig() Config {
 		Port:           PortFlag.Value(),
 		User:           userFlag.Value(),
 		NumThreads:     numThreadsFlag.Value(),
-		MaxMemoryMB:    defaultMaxMemoryMB,
+		MaxMemoryMB:    maxMemoryMBFlag.Value(),
 		NumConnections: maxConnectionsFlag.Value(),
 		IP:             IPFlag.Value(),
 	}
