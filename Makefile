@@ -33,7 +33,7 @@ deps_jupyter:
 	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
-	(./scripts/build_workloads.sh)
+	(./scripts/build_plugins.sh)
 
 build_workloads:
 	# Some workloads are Git Submodules
