@@ -12,7 +12,7 @@ function installPlugin() {
         patch -p1 --forward -s --merge < $3 || true 
     fi
     make
-    cp $2 $GOPATH/bin
+    cp $2 $GOPATH/bin/$1
     popd
 }
 
