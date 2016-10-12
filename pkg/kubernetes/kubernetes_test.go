@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -137,10 +137,12 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		k8sHandle, err := s.k8sLauncher.Launch()
 		So(k8sHandle, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		// Error should wrap the initial reason.
+		// Error should wrap the reason of failure.
+		errorCause := errors.Cause(err)
+		So(errorCause.Error(), ShouldContainSubstring, "executor-fail")
+		// Error messages should contain name of each service.
 		So(err.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
 		So(err.Error(), ShouldContainSubstring, "execution of command")
-		So(err.Error(), ShouldContainSubstring, "executor-fail")
 	})
 
 	Convey(fmt.Sprintf("When %q is not listening on the endpoint, we expect error and it's handle stopped", serviceNames[serviceIterator]), func() {
@@ -168,8 +170,10 @@ func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
 		k8sHandle, err := s.k8sLauncher.Launch()
 		So(k8sHandle, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
-		So(err.Error(), ShouldContainSubstring, "failed to connect to service")
+		// Error should wrap the reason of failure.
+		errorCause := errors.Cause(err)
+		So(errorCause.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
+		So(errorCause.Error(), ShouldContainSubstring, "failed to connect to service")
 	})
 
 	Convey(fmt.Sprintf("When %q execute successfully", serviceNames[serviceIterator]), func() {

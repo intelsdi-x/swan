@@ -90,7 +90,7 @@ func UniqueConfig() (Config, error) {
 	// etcd cluster.
 	etcdPrefix, err := uuid.NewV4()
 	if err != nil {
-		return Config{}, fmt.Errorf("Could not create random etcd prefix %s", err.Error())
+		return Config{}, errors.Wrap(err, "cannot create random etcd prefix")
 	}
 	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
 	config.EtcdPrefix = ETCDPrefix
@@ -162,7 +162,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	apiHandle, err := m.launchService(
 		m.master, getKubeAPIServerCommand(m.config), m.config.KubeAPIPort)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot launch kube-apiserver using master executor")
 	}
 	clusterTaskHandle := executor.NewClusterTaskHandle(apiHandle, []executor.TaskHandle{})
 
@@ -172,7 +172,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errCol.GetErrIfAny()
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-controller-manager using master executor")
 	}
 	clusterTaskHandle.AddAgent(controllerHandle)
 
@@ -182,7 +182,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errCol.GetErrIfAny()
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-scheduler using master executor")
 	}
 	clusterTaskHandle.AddAgent(schedulerHandle)
 
@@ -193,7 +193,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errCol.GetErrIfAny()
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-proxy using minion executor")
 	}
 	clusterTaskHandle.AddAgent(proxyHandle)
 
@@ -203,7 +203,7 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errCol.GetErrIfAny()
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kubelet using minion executor")
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
 

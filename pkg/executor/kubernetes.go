@@ -174,7 +174,7 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 	resources := k8s.containerResources()
 	podName, err := k8s.generatePodName()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "cannot generate pod name")
 	}
 
 	return &api.Pod{
@@ -638,7 +638,7 @@ func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 	// stdout will point at the very end of file as it is being used for writing.
 	file, err := os.Open(stdout.Name())
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to open stdout file")
+		return nil, errors.Wrap(err, "unable to open stdout file")
 	}
 
 	return file, nil
@@ -658,7 +658,7 @@ func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
 	// See comments to StdoutFile()
 	file, err := os.Open(stderr.Name())
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to open stderr file")
+		return nil, errors.Wrap(err, "unable to open stderr file")
 	}
 
 	return file, nil
