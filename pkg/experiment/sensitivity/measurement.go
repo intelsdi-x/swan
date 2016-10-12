@@ -211,16 +211,14 @@ func (m *measurementPhase) run(session phase.Session) error {
 		}
 	}
 
-	// Note: HP snap session is required to run after aggressors and theirs sessions
-	// to reduce races between HP session that can monitor/control aggressors.
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
+	loadPoint := m.getLoadPoint()
+
 	// Launch Snap Session for Latency Sensitive workload if specified.
 	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
 	if err != nil {
 		return err
 	}
-
-	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
-	loadPoint := m.getLoadPoint()
 
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.LoadGenerator.Load(loadPoint, m.loadDuration)
