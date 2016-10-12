@@ -34,10 +34,11 @@ func getMasterQPSOption(config Config) string {
 
 // getPopulateCommand returns command for master with populate action.
 func getPopulateCommand(config Config) string {
-	return fmt.Sprintf("%s -s %s:%d --loadonly",
+	return fmt.Sprintf("%s -s %s:%d -r %d --loadonly",
 		config.PathToBinary,
 		config.MemcachedHost,
 		config.MemcachedPort,
+		config.Records,
 	)
 }
 
@@ -50,6 +51,7 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 		fmt.Sprintf(" -K %d -V %d", config.KeySize, config.ValueSize),
 		fmt.Sprintf(" -T %d", config.MasterThreads),
 		fmt.Sprintf(" -d %d -c %d", config.AgentConnectionsDepth, config.AgentConnections),
+		fmt.Sprintf(" -r %d", config.Records),
 	)
 
 	if config.MasterAffinity {

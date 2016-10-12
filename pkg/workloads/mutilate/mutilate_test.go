@@ -351,7 +351,7 @@ func (s *MutilateTestSuite) TestMutilateLoadExecutorError() {
 
 // Testing successful mutilate populate case.
 func (s *MutilateTestSuite) TestPopulate() {
-	mutilatePopulateCommand := fmt.Sprintf("%s -s %s:%d --loadonly",
+	mutilatePopulateCommand := fmt.Sprintf("%s -s %s:%d -r 0 --loadonly",
 		s.config.PathToBinary,
 		s.config.MemcachedHost,
 		s.config.MemcachedPort,
