@@ -28,7 +28,3 @@ RUN ./scripts/copy_configuration.sh && \
 
 WORKDIR /root/go/src/github.com/intelsdi-x/swan/
 RUN sed -i '/requiretty/s/\(^.*$\)/# \1/' /etc/sudoers && make build_workloads
-    
-ADD misc/dev/docker/swan_scripts /
-
-ENTRYPOINT ["/start.sh"]
