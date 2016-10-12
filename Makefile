@@ -62,7 +62,7 @@ build_workloads:
 	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
 
 	# Get SPECjbb
-	(sudo bash scripts/get_specjbb.sh)
+	(./scripts/get_specjbb.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached

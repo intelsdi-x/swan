@@ -2,7 +2,7 @@
 
 set -e
 
-CONFIGS_LOCATION="$HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/dev/vagrant/singlenode/resources/configs"
+CONFIGS_LOCATION="/vagrant/resources/configs"
 
 echo "Copying configs..."
 mkdir -p /opt/swan/resources

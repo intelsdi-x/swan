@@ -29,6 +29,7 @@ yum install -y -q \
     python-pip \
     python-devel \
     scons \
+    sudo \
     tree \
     vim \
     wget \

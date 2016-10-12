@@ -1,6 +1,7 @@
 package common
 
 import (
+	"os"
 	"os/user"
 	"runtime"
 
@@ -149,6 +150,8 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 // prepareExecutors gives a executor to deploy your workloads with appliled isolation on HP.
 func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
+		os.Setenv("RUN_ON_KUBERNETES", "true")
+
 		k8sConfig := kubernetes.DefaultConfig()
 		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
 		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
@@ -157,7 +160,10 @@ func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			return nil, nil, nil, err
 		}
 
-		cleanup = func() { executor.StopCleanAndErase(k8sClusterTaskHandle) }
+		cleanup = func() {
+			executor.StopCleanAndErase(k8sClusterTaskHandle)
+			os.Setenv("RUN_ON_KUBERNETES", "false")
+		}
 
 		// TODO: pass information from k8sConfig to hpExecutor and beExecutor configs.
 
