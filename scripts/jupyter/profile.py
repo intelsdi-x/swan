@@ -110,10 +110,12 @@ class Profile(object):
 
         return HTML(html_out)
 
-    def sensitivity_chart(self, fill=False):
+    def sensitivity_chart(self, fill=False, to_max=False):
+        categories = self.categories
         gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         df = pd.DataFrame.from_dict(self.data_visual, orient='index').T
+        df['max_aggrs'] = df[['L1 Instruction', 'Baseline', 'Stream 100M', 'Caffe', 'L1 Data']].max(axis=1)
         data = list()
         fill_to_nexty = 'tonexty' if fill else None
         data.append(go.Scatter(
@@ -128,7 +130,10 @@ class Profile(object):
             )
         ))
 
-        for i, agr in enumerate(self.categories):
+        if to_max:
+            categories = ['Baseline', 'max_aggrs']
+
+        for i, agr in enumerate(categories):
             scatter_aggr = go.Scatter(
                 x=df['x'],
                 y=df[agr],
