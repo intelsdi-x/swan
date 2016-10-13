@@ -45,6 +45,7 @@ build_plugins:
 
 build_image:
 	docker -t swan-aggr -f ./misc/dev/docker/Dockerfile .
+	docker pull jess/stress
 
 build_workloads:
 	# Some workloads are Git Submodules

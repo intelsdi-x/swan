@@ -11,7 +11,6 @@ import (
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/topology"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/validate"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -237,8 +236,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer cleanup()
 
 	// BE workloads.
-	aggressorConfig := executor.AggressorConfig{
-		ProjectPath:     fs.GetSwanWorkloadsPath(runOnKubernetesFlag.Value()),
+	aggressorConfig := sensitivity.WorkloadConfig{
 		RunOnKubernetes: runOnKubernetesFlag.Value(),
 	}
 
