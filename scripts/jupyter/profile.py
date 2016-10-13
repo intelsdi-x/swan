@@ -175,7 +175,7 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False):
+def compare_experiments(exps, slo=500, aggressors=None, fill=True, to_max=True):
     if not aggressors:
         aggressors = ["Baseline", ]
 
@@ -184,8 +184,12 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False
         df = Profile(exp, slo).data_visual_frame
 
         if to_max:
-            df['max_aggrs'] = df[['L1 Instruction', 'Baseline', 'Stream 100M',
-                                  'Caffe', 'L1 Data', 'L3 Data']].max(axis=1)
+            x = df['x']
+            cols = set(df.columns)
+            cols.remove('slo')
+            cols.remove('x')
+            df['max_aggrs'] = df[list(cols)].max(axis=1)
+            df['x'] = x
             aggressors = ["Baseline", 'max_aggrs']
 
         for aggressor in aggressors:
@@ -193,7 +197,7 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False
                 go.Scatter(
                     x=df['x'],
                     y=df[aggressor],
-                    fill=None,
+                    fill='tonexty' if fill else None,
                     name='%s:%s' % (exp.name, aggressor),
                     mode='lines',
                     line=dict(
@@ -240,10 +244,13 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False
     )
 
     # Fill only if there is two experiments with one aggressor or one experiment with two aggressors to compare
-    if fill and ((len(exps) == 2 and len(aggressors) == 1) or (len(exps) == 1 and len(aggressors) == 2)):
-        data[0]['fill'] = None
-        data[1]['line']['color'] = 'rgb(7, 249, 128)'
-        data[1]['fill'] = 'tonexty'
+    if fill and ((len(exps) == 2 and len(aggressors) == 2) or (len(exps) == 1 and len(aggressors) == 2)):
+        data[0]['fill'] = None  # with
+        data[2]['fill'] = None  # without
+        data[1]['line']['color'] = 'rgb(7, 249, 128)'  # with
+        data[3]['line']['color'] = 'rgb(229, 71, 13)'  # without
+        data[1]['fill'] = 'tonexty'  # with
+        data[3]['fill'] = 'tonexty'  # without
 
     fig = go.Figure(data=data, layout=layout)
     display(iplot(fig))
@@ -252,12 +259,12 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp1 = Experiment(experiment_id='e527ce99-bcbc-4009-7367-b8234d0de89d', cassandra_cluster=['149.202.205.137'], port=9042,
+    exp1 = Experiment(experiment_id='8445f017-a106-4bde-6cc4-927f8ceb643a', cassandra_cluster=['149.202.205.137'], port=9042,
                       name='exp_with_serenity')
-    exp2 = Experiment(experiment_id='dfdca05e-881a-4416-5e8f-37cf0fd26827', cassandra_cluster=['149.202.205.137'], port=9042,
+    exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['149.202.205.137'], port=9042,
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True, to_max=True)
+    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=False, to_max=True)
