@@ -1,22 +1,78 @@
 #!/bin/bash
 
-set -x -e -o pipefail
+set -e
 
-iso_path=workloads/web_serving/SPECjbb2015_1_00.iso
-specjbb_path=workloads/web_serving
-mnt_path=/mnt/specjbb
+pip install s3cmd==1.6.1
 
-# Download SPECjbb here, when we will have decision from where it can be downloaded.
+usage() {
+    echo "$(basename ${0}) [-s swan_path] [-c credentials_file] [-b bucket]"
+    echo " - a script to download and extract SPECjbb.iso from S3."
+    echo ""
+    echo "Options:"
+    echo " -s swan_path: Path to swan repository (default ${GOPATH}/src/github.com/intelsdi-x/swan)"
+    echo " -c credentials_file: Path to file with S3 credentials (default ${HOME}/swan_s3_creds/.s3cfg)"
+    echo " -b bucket: S3 Bucket name (default ${SWAN_BUCKET_NAME})"
+    echo " -h: to see this help"
+}
 
-if [ -e $iso_path ]
-then
-    mkdir -p $mnt_path
-    mount -o loop $iso_path $mnt_path
-    mkdir -p $specjbb_path
-    cp -R $mnt_path $specjbb_path
-    umount $mnt_path
-    chmod -R +w $specjbb_path/specjbb/config
-else
-    echo Could not find SPECjbb ISO file \($iso_path\)
+SWAN_PATH=$GOPATH/src/github.com/intelsdi-x/swan
+S3_CREDS_FILE=$HOME/swan_s3_creds/.s3cfg
+
+download() {
+    echo "Downloading SPECjbb iso file from S3."
+    S3_ISO_PATH=$SWAN_BUCKET_NAME/SPECjbb2015_1_00.iso
+    s3cmd sync -c $S3_CREDS_FILE s3://$S3_ISO_PATH $SPECJBB_ISO_PATH
+}
+
+extract() {
+    echo "Extracting SPECjbb iso file to $SPECJBB_PATH"
+    MNT_PATH=/mnt/specjbb
+    if [ -e $SPECJBB_ISO_PATH ]; then
+        mkdir -p $MNT_PATH
+        mount -o loop $SPECJBB_ISO_PATH $MNT_PATH
+        cp -R $MNT_PATH $SPECJBB_PATH
+        umount $MNT_PATH
+        chmod -R +w $SPECJBB_PATH/specjbb/config
+        echo "SPECjbb files extracted to $SPECJBB_PATH/specjbb"
+    else
+        echo "Could not find SPECjbb ISO file ($SPECJBB_ISO_PATH)."
+        echo "Exiting get_specjbb.sh: valid S3 credentials file is missing."
+        exit 0
+    fi
+}
+
+while getopts "hs:c:b:" OPT; do
+    case "$OPT" in
+        h)
+            usage
+            exit 0
+            ;;
+        s)
+            SWAN_PATH="${OPTARG}"
+            ;;
+        c)
+            S3_CREDS_FILE="${OPTARG}"
+            ;;
+        b)
+            SWAN_BUCKET_NAME="${OPTARG}"
+            ;;
+    esac
+done
+
+SPECJBB_PATH=$SWAN_PATH/workloads/web_serving
+SPECJBB_ISO_PATH=$SPECJBB_PATH/SPECjbb2015_1_00.iso
+
+if [ -z "$SWAN_BUCKET_NAME" ]; then
+    echo "Exiting get_specjbb.sh: S3 bucket name is missing."
+    # Exit without error. We want to build Swan anyway.
+    exit 0
 fi
 
+if [ ! -e $S3_CREDS_FILE ]; then
+    echo "Exiting get_specjbb.sh: valid S3 credentials file is missing."
+    # Exit without error. We want to build Swan anyway.
+    exit 0
+fi
+
+download
+extract
