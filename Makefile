@@ -32,6 +32,9 @@ deps_jupyter:
 	# Jupyter building
 	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
+build_images:
+	docker pull jess/stress | cat
+
 build_plugins:
 	(./scripts/build_plugins.sh)
 
