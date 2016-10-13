@@ -43,6 +43,9 @@ build_plugins:
 	(go install ./misc/snap-plugin-publisher-session-test)
 	(go install ./misc/snap-plugin-collector-mutilate)
 
+build_image:
+	docker -t swan-aggr -f ./misc/dev/docker/Dockerfile .
+
 build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive

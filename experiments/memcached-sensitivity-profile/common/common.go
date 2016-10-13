@@ -1,7 +1,6 @@
 package common
 
 import (
-	"os"
 	"os/user"
 	"runtime"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/topology"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/validate"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -48,13 +48,14 @@ var (
 // PrepareAggressors prepare aggressors launcher's
 // wrapped by session less pair using given isolations and executor factory for aggressor workloads.
 // TODO: consider moving to swan:sensitivity/factory.go
-func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (aggressorPairs []sensitivity.LauncherSessionPair, err error) {
+func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc,
+	workloadConfig sensitivity.WorkloadConfig) (aggressorPairs []sensitivity.LauncherSessionPair, err error) {
 
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
+		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory, workloadConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +151,6 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 // prepareExecutors gives a executor to deploy your workloads with appliled isolation on HP.
 func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
-		os.Setenv("RUN_ON_KUBERNETES", "true")
 
 		k8sConfig := kubernetes.DefaultConfig()
 		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
@@ -160,10 +160,7 @@ func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			return nil, nil, nil, err
 		}
 
-		cleanup = func() {
-			executor.StopCleanAndErase(k8sClusterTaskHandle)
-			os.Setenv("RUN_ON_KUBERNETES", "false")
-		}
+		cleanup = func() { executor.StopCleanAndErase(k8sClusterTaskHandle) }
 
 		// TODO: pass information from k8sConfig to hpExecutor and beExecutor configs.
 
@@ -240,7 +237,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer cleanup()
 
 	// BE workloads.
-	aggressorSessionLaunchers, err := prepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
+	aggressorConfig := executor.AggressorConfig{
+		ProjectPath:     fs.GetSwanWorkloadsPath(runOnKubernetesFlag.Value()),
+		RunOnKubernetes: runOnKubernetesFlag.Value(),
+	}
+
+	aggressorSessionLaunchers, err := prepareAggressors(l1Isolation, llcIsolation, beExecutorFactory, aggressorConfig)
 	if err != nil {
 		return err
 	}

@@ -41,16 +41,12 @@ type Config struct {
 
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
-	runOnKubernetes := false
-	if env.GetOrDefault(runOkKubernetes, "false") == "true" {
-		runOnKubernetes = true
-	}
 	return Config{
 		// TODO(bp): Make that consistent with other workloads.
 		BinaryPath:      getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
 		SolverPath:      getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
 		WorkdirPath:     getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
-		RunOnKubernetes: runOnKubernetes,
+		RunOnKubernetes: false,
 	}
 }
 
