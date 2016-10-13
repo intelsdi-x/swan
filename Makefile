@@ -34,6 +34,7 @@ deps_jupyter:
 
 build_images:
 	docker pull jess/stress | cat
+	docker build -t centos_swan_image -q -f ./misc/dev/docker/Dockerfile_centos .
 
 build_plugins:
 	(./scripts/build_plugins.sh)
