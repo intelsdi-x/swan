@@ -2,13 +2,14 @@ package memcached
 
 import (
 	"errors"
+	"syscall"
+	"testing"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
-	"syscall"
-	"testing"
-	"time"
 )
 
 // IsEndpointListeningMockedSuccess is a mocked IsListeningFunction returning always true.
@@ -27,7 +28,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	const (
-		expectedCommand = "test -p 11211 -u memcached -t 4 -m 64 -c 1024"
+		expectedCommand = "test -p 11211 -u memcached -t 4 -m 64 -c 1024 -T"
 		expectedHost    = "127.0.0.1"
 	)
 	Convey("When I create PID namespace isolation", t, func() {
@@ -40,6 +41,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 
 		Convey("While using Memcached launcher", func() {
 			config := DefaultMemcachedConfig()
+			config.ThreadsAffinity = true
 
 			config.PathToBinary = "test"
 			memcachedLauncher := New(

@@ -18,12 +18,13 @@ import (
 const (
 	name = "Memcached"
 	// DefaultPort represents default memcached port.
-	defaultPort           = 11211
-	defaultUser           = "memcached"
-	defaultNumThreads     = 4
-	defaultMaxMemoryMB    = 64
-	defaultNumConnections = 1024
-	defaultListenIP       = "127.0.0.1"
+	defaultPort            = 11211
+	defaultUser            = "memcached"
+	defaultNumThreads      = 4
+	defaultMaxMemoryMB     = 64
+	defaultNumConnections  = 1024
+	defaultListenIP        = "127.0.0.1"
+	defaultThreadsAffinity = false
 )
 
 var (
@@ -32,11 +33,12 @@ var (
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
 	// IPFlag returns IP which will be specified for workload services as endpoints.
-	IPFlag             = conf.NewIPFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
-	userFlag           = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
-	numThreadsFlag     = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
-	maxConnectionsFlag = conf.NewIntFlag("memcached_connections", "Number of maximum connections for mutilate (-c)", defaultNumConnections)
-	maxMemoryMBFlag    = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items (-m)", defaultMaxMemoryMB)
+	IPFlag              = conf.NewIPFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
+	userFlag            = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
+	numThreadsFlag      = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
+	threadsAffinityFlag = conf.NewBoolFlag("memcached_threads_affinity", "Threads affinity (-T) (requires memcached patch)", defaultThreadsAffinity)
+	maxConnectionsFlag  = conf.NewIntFlag("memcached_connections", "Number of maximum connections for mutilate (-c)", defaultNumConnections)
+	maxMemoryMBFlag     = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items (-m)", defaultMaxMemoryMB)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -51,25 +53,27 @@ var (
 //-vvv          extremely verbose (also print internal state transitions)
 //-t <num>      number of threads to use (default: 4)
 type Config struct {
-	PathToBinary   string
-	Port           int
-	User           string
-	NumThreads     int
-	MaxMemoryMB    int
-	NumConnections int
-	IP             string
+	PathToBinary    string
+	Port            int
+	User            string
+	NumThreads      int
+	ThreadsAffinity bool
+	MaxMemoryMB     int
+	NumConnections  int
+	IP              string
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
 	return Config{
-		PathToBinary:   pathFlag.Value(),
-		Port:           PortFlag.Value(),
-		User:           userFlag.Value(),
-		NumThreads:     numThreadsFlag.Value(),
-		MaxMemoryMB:    maxMemoryMBFlag.Value(),
-		NumConnections: maxConnectionsFlag.Value(),
-		IP:             IPFlag.Value(),
+		PathToBinary:    pathFlag.Value(),
+		Port:            PortFlag.Value(),
+		User:            userFlag.Value(),
+		NumThreads:      numThreadsFlag.Value(),
+		ThreadsAffinity: threadsAffinityFlag.Value(),
+		MaxMemoryMB:     maxMemoryMBFlag.Value(),
+		NumConnections:  maxConnectionsFlag.Value(),
+		IP:              IPFlag.Value(),
 	}
 }
 
@@ -91,12 +95,16 @@ func New(exec executor.Executor, config Config) Memcached {
 }
 
 func (m Memcached) buildCommand() string {
-	return fmt.Sprint(m.conf.PathToBinary,
+	cmd := fmt.Sprint(m.conf.PathToBinary,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
 		" -t ", m.conf.NumThreads,
 		" -m ", m.conf.MaxMemoryMB,
 		" -c ", m.conf.NumConnections)
+	if m.conf.ThreadsAffinity {
+		cmd += " -T"
+	}
+	return cmd
 }
 
 // Launch starts the workload (process or group of processes). It returns a workload
