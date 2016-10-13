@@ -61,6 +61,8 @@ class Profile(object):
             self.data_visual[name] = aggressor_frame['value'].as_matrix()
             self.data_visual['slo'] = [slo for i in qps]
 
+        self.data_visual_frame = pd.DataFrame.from_dict(self.data_visual, orient='index').T
+
         peak = np.amax(columns)
         columns = map(lambda c: (float(c) / peak) * 100, columns)
         self.frame = pd.DataFrame(data, columns=columns, index=index).sort_index()
@@ -114,13 +116,11 @@ class Profile(object):
         categories = self.categories
         gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
-        df = pd.DataFrame.from_dict(self.data_visual, orient='index').T
-        df['max_aggrs'] = df[['L1 Instruction', 'Baseline', 'Stream 100M', 'Caffe', 'L1 Data']].max(axis=1)
         data = list()
         fill_to_nexty = 'tonexty' if fill else None
         data.append(go.Scatter(
-            x=df['x'],
-            y=df['slo'],
+            x=self.data_visual_frame['x'],
+            y=self.data_visual_frame['slo'],
             fill=None,
             name='slo',
             mode='lines',
@@ -131,12 +131,14 @@ class Profile(object):
         ))
 
         if to_max:
+            self.data_visual_frame['max_aggrs'] = self.data_visual_frame[
+                ['L1 Instruction', 'Baseline', 'Stream 100M', 'Caffe', 'L1 Data', 'L3 Data']].max(axis=1)
             categories = ['Baseline', 'max_aggrs']
 
         for i, agr in enumerate(categories):
             scatter_aggr = go.Scatter(
-                x=df['x'],
-                y=df[agr],
+                x=self.data_visual_frame['x'],
+                y=self.data_visual_frame[agr],
                 name=self.exp.name + ':' + agr,
                 fill=fill_to_nexty if agr != 'Baseline' else None,
                 mode='lines',
@@ -173,14 +175,18 @@ class Profile(object):
         display(iplot(fig))
 
 
-def compare_experiments(exps, slo=500, aggressors=None, fill=False):
+def compare_experiments(exps, slo=500, aggressors=None, fill=False, to_max=False):
     if not aggressors:
         aggressors = ["Baseline", ]
 
     data = []
     for exp in exps:
-        df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
-                                    orient='index').T  # change orient of matrix, fill missing values and make transpose
+        df = Profile(exp, slo).data_visual_frame
+
+        if to_max:
+            df['max_aggrs'] = df[['L1 Instruction', 'Baseline', 'Stream 100M',
+                                  'Caffe', 'L1 Data', 'L3 Data']].max(axis=1)
+            aggressors = ["Baseline", 'max_aggrs']
 
         for aggressor in aggressors:
             data.append(
@@ -196,8 +202,8 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
                 )
             )
 
-    max_x_series = np.maximum(data[0]['x'], data[1]['x'])
-    all_set = np.append(data[0]['x'], data[1]['x'])
+    max_x_series = np.maximum(data[0]['x'], data[2]['x'])
+    all_set = np.append(data[0]['x'], data[2]['x'])
     max_x_series[0] = np.min(all_set)
     max_x_series[-1] = np.max(all_set)
 
@@ -254,4 +260,4 @@ if __name__ == '__main__':
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart()
 
-    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)
+    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True, to_max=True)
