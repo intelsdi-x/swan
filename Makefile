@@ -44,8 +44,8 @@ build_plugins:
 	(go install ./misc/snap-plugin-collector-mutilate)
 
 build_image:
-	docker build -t swan-aggr -f ./misc/dev/docker/Dockerfile .
-	docker pull jess/stress
+	docker build -q -t swan-aggr -f ./misc/dev/docker/Dockerfile .
+	docker pull jess/stress | cat
 
 build_workloads:
 	# Some workloads are Git Submodules
