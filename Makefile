@@ -36,7 +36,6 @@ build_plugins:
 	(./scripts/build_plugins.sh)
 
 build_workloads:
-
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
 

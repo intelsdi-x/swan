@@ -9,13 +9,13 @@ usage() {
     echo " - a script to download and extract SPECjbb.iso from S3."
     echo ""
     echo "Options:"
-    echo " -s swan_path: Path to swan repository (default ${HOME}/go/src/github.com/intelsdi-x/swan)"
+    echo " -s swan_path: Path to swan repository (default ${GOPATH}/src/github.com/intelsdi-x/swan)"
     echo " -c credentials_file: Path to file with S3 credentials (default ${HOME}/swan_s3_creds/.s3cfg)"
     echo " -b bucket: S3 Bucket name (default ${SWAN_BUCKET_NAME})"
     echo " -h: to see this help"
 }
 
-SWAN_PATH=$HOME/go/src/github.com/intelsdi-x/swan
+SWAN_PATH=$GOPATH/src/github.com/intelsdi-x/swan
 S3_CREDS_FILE=$HOME/swan_s3_creds/.s3cfg
 
 download() {
