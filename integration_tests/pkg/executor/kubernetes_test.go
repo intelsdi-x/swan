@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	clusterSpawnTimeout = 20 * time.Second
+	clusterSpawnTimeout = 2 * time.Minute
 	podSpawnTimeout     = 10 * time.Second
 	podFinishedTimeout  = 90 * time.Second
 )
