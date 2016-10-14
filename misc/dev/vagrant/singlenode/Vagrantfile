@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
   home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
   config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
 
-  build_ami=(ENV['BUILD_CACHED_IMAGE'] == 'true')
+  build_ami = ENV['BUILD_CACHED_IMAGE']
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
@@ -72,7 +72,7 @@ Vagrant.configure(2) do |config|
     override.ssh.keys_only = data['keys_only'] || true
   end
 
-  config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir, 'BUILD_AMI' => build_ami}
   config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
