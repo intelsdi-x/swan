@@ -10,6 +10,8 @@ from plotly.offline import init_notebook_mode, iplot
 
 init_notebook_mode()
 
+Y_AXIS_MAX = 2
+
 
 class Profile(object):
     """
@@ -29,7 +31,7 @@ class Profile(object):
         self.slo = slo
         self.categories = []
         self.data_frame = self.exp.get_frame()
-        self.data_visual = {}
+        self.latency_qps_aggrs = {}
 
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
@@ -57,11 +59,11 @@ class Profile(object):
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             data.append(violations.tolist())
 
-            self.data_visual['x'] = np.array(qps)
-            self.data_visual[name] = aggressor_frame['value'].as_matrix()
-            self.data_visual['slo'] = [slo for i in qps]
+            self.latency_qps_aggrs['x'] = np.array(qps)
+            self.latency_qps_aggrs[name] = aggressor_frame['value'].as_matrix()
+            self.latency_qps_aggrs['slo'] = [slo for i in qps]
 
-        self.data_visual_frame = pd.DataFrame.from_dict(self.data_visual, orient='index').T
+        self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
 
         peak = np.amax(columns)
         columns = map(lambda c: (float(c) / peak) * 100, columns)
@@ -113,14 +115,19 @@ class Profile(object):
         return HTML(html_out)
 
     def sensitivity_chart(self, fill=False, to_max=False):
+        """
+        :param fill: try to fill area between Baseline and aggressors
+        :param to_max: show comparison between Baseline and 'worst case' (max latency violations for all aggressors in
+            each load point.)
+        """
         categories = self.categories
         gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         data = list()
         fill_to_nexty = 'tonexty' if fill else None
         data.append(go.Scatter(
-            x=self.data_visual_frame['x'],
-            y=self.data_visual_frame['slo'],
+            x=self.latency_qps_aggrs_frame['x'],
+            y=self.latency_qps_aggrs_frame['slo'],
             fill=None,
             name='slo',
             mode='lines',
@@ -131,14 +138,19 @@ class Profile(object):
         ))
 
         if to_max:
-            self.data_visual_frame['max_aggrs'] = self.data_visual_frame[
-                ['L1 Instruction', 'Baseline', 'Stream 100M', 'Caffe', 'L1 Data', 'L3 Data']].max(axis=1)
+            x = self.latency_qps_aggrs_frame['x']
+            cols = set(self.latency_qps_aggrs_frame.columns)
+            cols.remove('slo')
+            cols.remove('x')
+            self.latency_qps_aggrs_frame['max_aggrs'] = self.latency_qps_aggrs_frame[list(cols)].max(axis=1)
+            self.latency_qps_aggrs_frame['x'] = x
+
             categories = ['Baseline', 'max_aggrs']
 
         for i, agr in enumerate(categories):
             scatter_aggr = go.Scatter(
-                x=self.data_visual_frame['x'],
-                y=self.data_visual_frame[agr],
+                x=self.latency_qps_aggrs_frame['x'],
+                y=self.latency_qps_aggrs_frame[agr],
                 name=self.exp.name + ':' + agr,
                 fill=fill_to_nexty if agr != 'Baseline' else None,
                 mode='lines',
@@ -146,7 +158,10 @@ class Profile(object):
                     shape='spline',
                 ),
             )
-            if fill:
+
+            if fill and to_max:
+                scatter_aggr['line']['color'] = 'rgb(153, 27, 35)'
+            elif fill:
                 scatter_aggr['line']['color'] = gradients[i]
 
             data.append(scatter_aggr)
@@ -161,7 +176,7 @@ class Profile(object):
                 ),
             ),
             yaxis=dict(
-                range=[0, 2 * self.slo],
+                range=[0, Y_AXIS_MAX * self.slo],
                 title='Latency',
                 titlefont=dict(
                     family='Arial, sans-serif',
@@ -172,16 +187,15 @@ class Profile(object):
         )
 
         fig = go.Figure(data=data, layout=layout)
-        display(iplot(fig))
+        return display(iplot(fig))
 
 
-def compare_experiments(exps, slo=500, aggressors=None, fill=True, to_max=True):
-    if not aggressors:
-        aggressors = ["Baseline", ]
+def compare_experiments(exps, slo=500, fill=True, to_max=True):
 
+    aggressors = ["Baseline",]
     data = []
     for exp in exps:
-        df = Profile(exp, slo).data_visual_frame
+        df = Profile(exp, slo).latency_qps_aggrs_frame
 
         if to_max:
             x = df['x']
@@ -205,11 +219,15 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=True, to_max=True):
                     )
                 )
             )
+    if to_max:
+        max_x_series = np.maximum(data[0]['x'], data[2]['x'])  # Find the maximum series for experiments
+        all_set = np.append(data[0]['x'], data[2]['x'])  # merge them to find max and min
+    else:
+        max_x_series = np.maximum(data[0]['x'], data[1]['x'])
+        all_set = np.append(data[0]['x'], data[1]['x'])
 
-    max_x_series = np.maximum(data[0]['x'], data[2]['x'])
-    all_set = np.append(data[0]['x'], data[2]['x'])
-    max_x_series[0] = np.min(all_set)
-    max_x_series[-1] = np.max(all_set)
+    max_x_series[0] = np.min(all_set)  # First element to min from both sets
+    max_x_series[-1] = np.max(all_set)  # And set last to maximum
 
     slo_scatter = go.Scatter(
         x=max_x_series,
@@ -233,7 +251,7 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=True, to_max=True):
             ),
         ),
         yaxis=dict(
-            range=[0, 2 * slo],
+            range=[0, Y_AXIS_MAX * slo],
             title='Latency',
             titlefont=dict(
                 family='Arial, sans-serif',
@@ -244,27 +262,31 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=True, to_max=True):
     )
 
     # Fill only if there is two experiments with one aggressor or one experiment with two aggressors to compare
-    if fill and ((len(exps) == 2 and len(aggressors) == 2) or (len(exps) == 1 and len(aggressors) == 2)):
+    if fill and to_max:
         data[0]['fill'] = None  # with
         data[2]['fill'] = None  # without
         data[1]['line']['color'] = 'rgb(7, 249, 128)'  # with
         data[3]['line']['color'] = 'rgb(229, 71, 13)'  # without
         data[1]['fill'] = 'tonexty'  # with
         data[3]['fill'] = 'tonexty'  # without
+    elif fill:
+        data[0]['fill'] = None
+        data[1]['fill'] = 'tonexty'
+        data[1]['line']['color'] = 'rgb(67, 137, 23)'  # green color for showing goodness between Baselines
 
     fig = go.Figure(data=data, layout=layout)
-    display(iplot(fig))
+    return display(iplot(fig))
 
 
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp1 = Experiment(experiment_id='8445f017-a106-4bde-6cc4-927f8ceb643a', cassandra_cluster=['149.202.205.137'], port=9042,
+    exp1 = Experiment(experiment_id='8445f017-a106-4bde-6cc4-927f8ceb643a', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_with_serenity')
-    exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['149.202.205.137'], port=9042,
+    exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
-    Profile(exp2, slo=500).sensitivity_chart()
+    Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
-    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=False, to_max=True)
+    compare_experiments(exps=[exp1, exp2], fill=False, to_max=True)
