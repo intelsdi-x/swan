@@ -12,6 +12,8 @@ echo "Installing project dependencies..."
 pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsUser make repository_reset
 executeAsUser make deps_all
-executeAsUser make build_image
+if [ $BUILD_AMI == "true"]; then
+        executeAsUser make build_image
+fi
 executeAsUser make build_workloads
 popd

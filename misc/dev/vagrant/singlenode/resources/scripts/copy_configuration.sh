@@ -4,8 +4,6 @@ set -e
 
 CONFIGS_LOCATION="/vagrant/resources/configs"
 
-df -lh # for debugging purposes.
-
 echo "Copying configs..."
 mkdir -p /opt/swan/resources
 mkdir -p /cache/ccache
