@@ -47,14 +47,13 @@ var (
 // PrepareAggressors prepare aggressors launcher's
 // wrapped by session less pair using given isolations and executor factory for aggressor workloads.
 // TODO: consider moving to swan:sensitivity/factory.go
-func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc,
-	workloadConfig sensitivity.WorkloadConfig) (aggressorPairs []sensitivity.LauncherSessionPair, err error) {
+func prepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (aggressorPairs []sensitivity.LauncherSessionPair, err error) {
 
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 
 	for _, aggressorName := range aggressorsFlag.Value() {
-		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory, workloadConfig)
+		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +149,6 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 // prepareExecutors gives a executor to deploy your workloads with appliled isolation on HP.
 func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory sensitivity.ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
-
 		k8sConfig := kubernetes.DefaultConfig()
 		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
 		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
@@ -236,11 +234,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	defer cleanup()
 
 	// BE workloads.
-	aggressorConfig := sensitivity.WorkloadConfig{
-		RunOnKubernetes: runOnKubernetesFlag.Value(),
-	}
-
-	aggressorSessionLaunchers, err := prepareAggressors(l1Isolation, llcIsolation, beExecutorFactory, aggressorConfig)
+	aggressorSessionLaunchers, err := prepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		return err
 	}

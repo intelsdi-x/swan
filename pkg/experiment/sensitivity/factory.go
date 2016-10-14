@@ -82,13 +82,8 @@ func NewMultiIsolationAggressorFactory(
 // ExecutorFactoryFunc is a type of function that every call returns new instance of executor with decorators.
 type ExecutorFactoryFunc func(isolation.Decorators) (executor.Executor, error)
 
-// WorkloadConfig stores specyfic workload configuration, which is based on experiment configuration.
-type WorkloadConfig struct {
-	RunOnKubernetes bool
-}
-
 // Create returns aggressor of chosen type using provided executorFactor to create executor.
-func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFunc, workloadConfig WorkloadConfig) (executor.Launcher, error) {
+func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFunc) (executor.Launcher, error) {
 	var aggressor executor.Launcher
 
 	decorators := f.getDecorators(name)
@@ -104,9 +99,7 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 	case memoryBandwidth.ID:
 		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
-		config := caffe.DefaultConfig()
-		config.RunOnKubernetes = workloadConfig.RunOnKubernetes
-		aggressor = caffe.New(exec, config)
+		aggressor = caffe.New(exec, caffe.DefaultConfig())
 	case l3data.ID:
 		aggressor = l3data.New(exec, l3data.DefaultL3Config())
 	case stream.ID:

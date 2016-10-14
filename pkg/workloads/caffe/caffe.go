@@ -18,8 +18,6 @@ const (
 	solverEnvKey  = "SWAN_CAFFE_SOLVER_PATH"
 	workdirEnvKey = "SWAN_CAFFE_WORKING_DIR_PATH"
 
-	runOkKubernetes = "RUN_ON_KUBERNETES"
-
 	defaultBinaryRelativePath  = "deep_learning/caffe/caffe_src/build/tools/caffe"
 	defaultSolverRelativePath  = "deep_learning/caffe/caffe_src/examples/cifar10/cifar10_quick_solver.prototxt"
 	defaultWorkdirRelativePath = "deep_learning/caffe/caffe_src/"
@@ -35,18 +33,15 @@ type Config struct {
 	BinaryPath  string
 	SolverPath  string
 	WorkdirPath string
-
-	RunOnKubernetes bool
 }
 
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
 		// TODO(bp): Make that consistent with other workloads.
-		BinaryPath:      getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
-		SolverPath:      getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
-		WorkdirPath:     getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
-		RunOnKubernetes: false,
+		BinaryPath:  getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
+		SolverPath:  getPathFromEnvOrDefault(solverEnvKey, defaultSolverRelativePath),
+		WorkdirPath: getPathFromEnvOrDefault(workdirEnvKey, defaultWorkdirRelativePath),
 	}
 }
 
@@ -67,12 +62,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (c Caffe) buildCommand() string {
-	kubernetesPrefix := ""
-	if c.conf.RunOnKubernetes != false {
-		kubernetesPrefix = fmt.Sprintf("cd %s &&", c.conf.WorkdirPath)
-	}
-	return fmt.Sprintf("%s %s train --solver=%s",
-		kubernetesPrefix,
+	return fmt.Sprintf("%s train --solver=%s",
 		c.conf.BinaryPath,
 		c.conf.SolverPath)
 }
@@ -88,11 +78,9 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	}
 	defer popWorkingDir(currentWorkingDir)
 
-	if c.conf.RunOnKubernetes != false {
-		err = os.Chdir(c.conf.WorkdirPath)
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not change directory to %q", c.conf.WorkdirPath)
-		}
+	err = os.Chdir(c.conf.WorkdirPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not change directory to %q", c.conf.WorkdirPath)
 	}
 
 	task, err = c.exec.Execute(c.buildCommand())
