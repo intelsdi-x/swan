@@ -99,7 +99,10 @@ cleanup:
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapd_*
 
-repository_reset: cleanup
+remove_vendor:
+	rm -fr vendor/
+
+repository_reset: cleanup remove_vendor
 	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
 
 show_env:
