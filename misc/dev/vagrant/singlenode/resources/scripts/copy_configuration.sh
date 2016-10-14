@@ -8,8 +8,6 @@ echo "Copying configs..."
 mkdir -p /opt/swan/resources
 mkdir -p /cache/ccache
 
-echo $BUILD_AMI
-
 cp $CONFIGS_LOCATION/docker.repo /etc/yum.repos.d/docker.repo
 cp $CONFIGS_LOCATION/ccache.conf /etc/ccache.conf
 cp $CONFIGS_LOCATION/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf

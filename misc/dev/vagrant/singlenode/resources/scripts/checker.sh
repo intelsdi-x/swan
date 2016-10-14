@@ -30,8 +30,10 @@ echo "######################################"
 echo "########## Checking services status... ##########"
 echo ">> Docker status:"
 systemctl status docker
-docker info
 docker ps
+echo "######################################"
+echo ">> Docker images:"
+docker images
 echo "######################################"
 echo ">> cassandra status:"
 systemctl status cassandra
