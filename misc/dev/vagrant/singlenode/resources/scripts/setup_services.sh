@@ -17,7 +17,6 @@ systemctl enable docker
 systemctl restart docker
 daemonStatus docker
 docker info # for debugging purposes.
-df -lh # for debugging purposes.
 
 echo "Configuring etcd..."
 systemctl enable etcd
