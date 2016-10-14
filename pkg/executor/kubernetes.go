@@ -10,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/isolation"
-	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"k8s.io/kubernetes/pkg/api"
@@ -210,34 +209,43 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
 	podManifest, err := k8s.newPod(command)
 	if err != nil {
+		log.Errorf("cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
 
 	pod, err := podsAPI.Create(podManifest)
 
 	log.Debugf("pod.Spec = %+v\n", pod.Spec)
-	log.Debugf("pod %q QoS class:", qos.GetPodQOS(pod))
+	log.Debugf("pod %q QoS class %q", pod.Name, qos.GetPodQOS(pod))
 
 	if err != nil {
+		log.Errorf("cannot schedule pod %q with namespace %q", k8s.config.PodName, k8s.config.Namespace)
 		return nil, errors.Wrapf(err, "cannot schedule pod %q with namespace %q",
 			k8s.config.PodName, k8s.config.Namespace)
 	}
 
-	taskHandle := &kubernetesTaskHandle{
-		command:       command,
-		podsAPI:       podsAPI,
-		pod:           pod,
-		podMutex:      &sync.Mutex{},
-		exitCodeMutex: &sync.Mutex{},
-		outputMutex:   &sync.Mutex{},
+	taskWatcher := &kubernetesWatcher{
+		podsAPI: podsAPI,
+		pod:     pod,
+
+		stopped:      make(chan struct{}),
+		started:      make(chan struct{}),
+		logsReady:    make(chan struct{}),
+		outputCopied: make(chan struct{}),
+
+		command: command,
 	}
 
-	taskHandle.watch(k8s.config.LaunchTimeout)
+	taskHandle, err := taskWatcher.watch(k8s.config.LaunchTimeout)
+	if err != nil {
+		log.Errorf("cannot create task on pod %q", pod.Name)
+		return nil, errors.Wrapf(err, "cannot create task on pod %q", pod.Name)
+	}
 
 	select {
-	case <-taskHandle.started:
+	case <-taskWatcher.started:
 		// Pod succesfully started.
-	case <-taskHandle.stopped:
+	case <-taskWatcher.stopped:
 		// Look into exit state to determine if start up failed or completed immediately.
 		// TODO(skonefal): We don't have stdout & stderr when pod fails.
 		exitCode, err := taskHandle.ExitCode()
@@ -254,44 +262,21 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 // kubernetesTaskHandle implements the TaskHandle interface
 type kubernetesTaskHandle struct {
 	podsAPI   client.PodInterface
-	command   string
 	stopped   chan struct{}
 	started   chan struct{}
 	logsReady chan struct{}
 
-	// NOTE: Access to the pod structure must be done through setPod()
-	// and getPod() to avoid data races between caller and watcher routine.
-	pod      *api.Pod
-	podMutex *sync.Mutex
-
-	// NOTE: Access to stdout and stderr must be done through setFileHandles()
-	// and getFileHandles() to avoid data races between caller and watcher
-	// routine.
-	stdout      *os.File
-	stderr      *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
-	logdir      string
-	outputMutex *sync.Mutex
+	stdout string
+	stderr string // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+	logdir string
 
 	// NOTE: Access to the exit code must be done through setExitCode()
 	// and getExitCode() to avoid data races between caller and watcher routine.
 	exitCode      *int
 	exitCodeMutex *sync.Mutex
-}
 
-// getPod provides a thread safe way to get the most recent pod structure.
-func (th *kubernetesTaskHandle) getPod() *api.Pod {
-	th.podMutex.Lock()
-	defer th.podMutex.Unlock()
-
-	return th.pod
-}
-
-// setPod provides a thread safe way to set the active pod structure.
-func (th *kubernetesTaskHandle) setPod(pod *api.Pod) {
-	th.podMutex.Lock()
-	defer th.podMutex.Unlock()
-
-	th.pod = pod
+	podName   string
+	podHostIP string
 }
 
 // getExitCode provides a thread safe way to get the most recent exit code.
@@ -312,196 +297,12 @@ func (th *kubernetesTaskHandle) setExitCode(exitCode *int) {
 
 // setFileHandles provides a thread safe way to set the file descriptors for
 // the stdout and stderr files.
-func (th *kubernetesTaskHandle) setFileHandles(stdoutFile *os.File, stderrFile *os.File) {
-	th.outputMutex.Lock()
-	defer th.outputMutex.Unlock()
-
+func (th *kubernetesTaskHandle) setFileNames(stdoutFile, stderrFile string) {
 	th.stdout = stdoutFile
 	th.stderr = stderrFile
 
-	outputDir, _ := path.Split(th.stdout.Name())
+	outputDir, _ := path.Split(th.stdout)
 	th.logdir = outputDir
-}
-
-// setFileHandles provides a thread safe way to get the file descriptors for
-// the stdout and stderr files.
-func (th *kubernetesTaskHandle) getFileHandles() (*os.File, *os.File) {
-	th.outputMutex.Lock()
-	defer th.outputMutex.Unlock()
-
-	return th.stdout, th.stderr
-}
-
-func (th *kubernetesTaskHandle) setupLogs(pod *api.Pod) {
-	log.Debugf("Setting up logs for pod %q", pod.Name)
-
-	// Wire up logs to task handle stdout.
-	logStream, err := th.podsAPI.GetLogs(pod.Name, &api.PodLogOptions{}).Stream()
-	if err != nil {
-		log.Debug("cannot create a stream: %s", err.Error())
-		return
-	}
-
-	// Prepare local files
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(th.command, "kubernetes")
-
-	if err != nil {
-		log.Debug("cannot create output files for pod %q: %s", pod.Name, err.Error())
-		return
-	}
-
-	log.Debugf("created temporary files stdout path: %q stderr path: %q",
-		stdoutFile.Name(), stderrFile.Name())
-
-	go func() {
-		th.outputMutex.Lock()
-		defer th.outputMutex.Unlock()
-		_, err := io.Copy(stdoutFile, logStream)
-		if err != nil {
-			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
-		}
-
-		stdoutFile.Sync()
-	}()
-
-	// Set file handles in task handle in a synchronized manner.
-	th.setFileHandles(stdoutFile, stderrFile)
-
-	close(th.logsReady)
-}
-
-func (th *kubernetesTaskHandle) watch(timeout time.Duration) error {
-	pod := th.getPod()
-
-	selectorRaw := fmt.Sprintf("name=%s", pod.Name)
-	selector, err := labels.Parse(selectorRaw)
-	if err != nil {
-		return errors.Wrapf(err, "cannot create selector %q", selector)
-	}
-
-	// Prepare events watcher.
-	watcher, err := th.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
-	if err != nil {
-		return errors.Wrapf(err, "cannot create watcher over selector %q", selector)
-	}
-
-	th.started = make(chan struct{})
-	th.stopped = make(chan struct{})
-	th.logsReady = make(chan struct{})
-
-	go func() {
-		var onceSetupLogs, onceStopped, onceStarted sync.Once
-		var hasBeenRunning bool
-
-		started := func(pod *api.Pod) {
-			if api.IsPodReady(pod) {
-				onceStarted.Do(func() {
-					close(th.started)
-				})
-			}
-		}
-
-		terminated := func(pod *api.Pod) {
-			onceStopped.Do(func() {
-				exitCode := -1
-
-				// Look for an exit status from the container.
-				// If more than one container is present, the last takes precedence.
-				for _, status := range pod.Status.ContainerStatuses {
-					if status.State.Terminated == nil {
-						continue
-					}
-
-					exitCode = int(status.State.Terminated.ExitCode)
-				}
-
-				th.setExitCode(&exitCode)
-
-				th.stdout.Sync()
-				th.stderr.Sync()
-
-				close(th.stopped)
-			})
-
-			// Try to delete the failed pod to avoid conflicts and having to call Stop()
-			// after the stopped channel has been closed.
-			var GracePeriodSeconds int64
-			th.podsAPI.Delete(pod.Name, &api.DeleteOptions{
-				GracePeriodSeconds: &GracePeriodSeconds,
-			})
-		}
-
-		var timeoutChannel <-chan time.Time
-		if timeout != 0 {
-			timeoutChannel = time.After(timeout)
-		}
-		for {
-			select {
-			case event := <-watcher.ResultChan():
-				pod, ok := event.Object.(*api.Pod)
-				if !ok {
-					continue
-				}
-
-				th.setPod(pod)
-
-				switch event.Type {
-				case watch.Added, watch.Modified:
-					switch pod.Status.Phase {
-					case api.PodPending:
-					// Noop for now.
-					case api.PodRunning:
-						onceSetupLogs.Do(func() {
-							th.setupLogs(pod)
-						})
-
-						started(pod)
-						hasBeenRunning = true
-					case api.PodFailed, api.PodSucceeded:
-						onceSetupLogs.Do(func() {
-							th.setupLogs(pod)
-						})
-
-						terminated(pod)
-						hasBeenRunning = true
-						return
-					case api.PodUnknown:
-						log.Warnf("Pod %q with command %q is in unknown phase. "+
-							"Probably state of the pod could not be obtained, "+
-							"typically due to an error in communicating with the host of the pod", pod.Name, th.command)
-					default:
-						log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
-					}
-				case watch.Deleted:
-					// Pod phase will still be 'running', so we disregard the phase at this point.
-					onceSetupLogs.Do(func() {
-						th.setupLogs(pod)
-					})
-
-					terminated(pod)
-					return
-				case watch.Error:
-					log.Errorf("Kubernetes pod error event: %v", event.Object)
-				default:
-					log.Warnf("Unhandled event type: %v", event.Type)
-				}
-			case <-timeoutChannel:
-				// If task has been running then we need to ignore timeout
-				if hasBeenRunning {
-					continue
-				}
-				log.Errorf("Timeout occured afrer %f seconds. Pod %s has not been created.", timeout.Seconds(), th.getPod().Name)
-				onceSetupLogs.Do(func() {
-					th.setupLogs(pod)
-				})
-				terminated(pod)
-				th.setExitCode(nil)
-				return
-			}
-		}
-	}()
-
-	return nil
 }
 
 func (th *kubernetesTaskHandle) isTerminated() bool {
@@ -519,21 +320,19 @@ func (th *kubernetesTaskHandle) Stop() error {
 		return nil
 	}
 
-	pod := th.getPod()
-
-	log.Debugf("deleting pod %q", pod.Name)
+	log.Debugf("deleting pod %q", th.podName)
 
 	var GracePeriodSeconds int64
-	err := th.podsAPI.Delete(pod.Name, &api.DeleteOptions{
+	err := th.podsAPI.Delete(th.podName, &api.DeleteOptions{
 		GracePeriodSeconds: &GracePeriodSeconds,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "cannot delete pod %q", pod.Name)
+		return errors.Wrapf(err, "cannot delete pod %q", th.podName)
 	}
 
-	log.Debugf("waiting for pod %q to stop", pod.Name)
+	log.Debugf("waiting for pod %q to stop", th.podName)
 	<-th.stopped
-	log.Debugf("pod %q stopped", pod.Name)
+	log.Debugf("pod %q stopped", th.podName)
 
 	return nil
 }
@@ -583,26 +382,17 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 	}
 }
 
-// Clean closes file descriptors but leaves stdout and stderr files intact.
+// Clean implements TaskHandle interface but is a no-action (as kubernetesWatcher manages file descriptors).
 func (th *kubernetesTaskHandle) Clean() error {
-	th.outputMutex.Lock()
-	defer th.outputMutex.Unlock()
-	var errs errcollection.ErrorCollection
-	for _, f := range []*os.File{th.stderr, th.stdout} {
-		if f != nil {
-			if err := f.Close(); err != nil {
-				errs.Add(errors.Wrapf(err, "close of file %q failed", f.Name()))
-			}
-		}
-	}
-
-	return errs.GetErrIfAny()
+	return nil
 }
 
 // EraseOutput deletes the stdout and stderr files.
 // NOTE: EraseOutput will block until output directory is available.
 func (th *kubernetesTaskHandle) EraseOutput() error {
+	log.Debug("waiting for logsReady channel to be closed")
 	<-th.logsReady
+	log.Debug("logs ready channel must have been closed")
 
 	directory, err := os.Lstat(th.logdir)
 	if err == nil && directory.IsDir() {
@@ -618,27 +408,20 @@ func (th *kubernetesTaskHandle) EraseOutput() error {
 
 // Address returns the host IP where the pod was scheduled.
 func (th *kubernetesTaskHandle) Address() string {
-	// NOTE: Could be pod.Status.PodIP as well.
-	pod := th.getPod()
-	return pod.Status.HostIP
+	return th.podHostIP
 }
 
 // StdoutFile returns a file handle to the stdout file for the pod.
 // NOTE: StdoutFile will block until stdout file is available.
 func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 	<-th.logsReady
-
-	stdout, _ := th.getFileHandles()
-
-	if stdout == nil {
+	if th.stdout == "" {
 		return nil, errors.New("stdout file has been already closed or it is not created yet")
 	}
 
-	// We need to create yet another file in order to avoid races and issues with seeking.
-	// stdout will point at the very end of file as it is being used for writing.
-	file, err := os.Open(stdout.Name())
+	file, err := os.Open(th.stdout)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to open stdout file")
+		return nil, errors.Wrap(err, "Unable to open stdout file")
 	}
 
 	return file, nil
@@ -648,18 +431,209 @@ func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 // NOTE: StderrFile will block until stderr file is available.
 func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
 	<-th.logsReady
-
-	_, stderr := th.getFileHandles()
-
-	if stderr == nil {
+	if th.stderr == "" {
 		return nil, errors.New("stderr file has been already closed or it is not created yet")
 	}
 
-	// See comments to StdoutFile()
-	file, err := os.Open(stderr.Name())
+	file, err := os.Open(th.stderr)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to open stderr file")
+		return nil, errors.Wrap(err, "Unable to open stderr file")
 	}
 
 	return file, nil
+}
+
+type kubernetesWatcher struct {
+	podsAPI client.PodInterface
+	pod     *api.Pod
+
+	stdout *os.File
+	stderr *os.File // Kubernetes does not support separation of stderr & stdout, so this file will be empty
+
+	stopped      chan struct{}
+	started      chan struct{}
+	logsReady    chan struct{}
+	outputCopied chan struct{}
+
+	taskHandle *kubernetesTaskHandle
+
+	command string
+}
+
+// watch creates instance of TaskHandle and is responsible for keeping it in-sync with k8s cluster
+func (kw *kubernetesWatcher) watch(timeout time.Duration) (TaskHandle, error) {
+	kw.taskHandle = &kubernetesTaskHandle{
+		podName:       kw.pod.Name,
+		podHostIP:     kw.pod.Status.HostIP,
+		stopped:       kw.stopped,
+		started:       kw.started,
+		logsReady:     kw.logsReady,
+		podsAPI:       kw.podsAPI,
+		exitCodeMutex: &sync.Mutex{},
+	}
+
+	selectorRaw := fmt.Sprintf("name=%s", kw.pod.Name)
+	selector, err := labels.Parse(selectorRaw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot create selector %q", selector)
+	}
+
+	// Prepare events watcher.
+	watcher, err := kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot create watcher over selector %q", selector)
+	}
+
+	go func() {
+		var onceSetupLogs, onceStopped, onceStarted sync.Once
+		var hasBeenRunning bool
+
+		started := func(pod *api.Pod) {
+			if api.IsPodReady(pod) {
+				onceStarted.Do(func() {
+					close(kw.started)
+				})
+			}
+		}
+
+		terminated := func(pod *api.Pod) {
+			onceStopped.Do(func() {
+				exitCode := -1
+
+				// Look for an exit status from the container.
+				// If more than one container is present, the last takes precedence.
+				for _, status := range pod.Status.ContainerStatuses {
+					if status.State.Terminated == nil {
+						continue
+					}
+
+					exitCode = int(status.State.Terminated.ExitCode)
+				}
+
+				kw.taskHandle.setExitCode(&exitCode)
+
+				// Make sure that output has been already copied and then close both files
+				<-kw.outputCopied
+				kw.stdout.Close()
+				kw.stderr.Close()
+
+				close(kw.stopped)
+			})
+
+			// Try to delete the failed pod to avoid conflicts and having to call Stop()
+			// after the stopped channel has been closed.
+			var GracePeriodSeconds int64
+			kw.podsAPI.Delete(pod.Name, &api.DeleteOptions{
+				GracePeriodSeconds: &GracePeriodSeconds,
+			})
+		}
+
+		var timeoutChannel <-chan time.Time
+		if timeout != 0 {
+			timeoutChannel = time.After(timeout)
+		}
+		for {
+			select {
+			case event := <-watcher.ResultChan():
+				pod, ok := event.Object.(*api.Pod)
+				if !ok {
+					continue
+				}
+
+				switch event.Type {
+				case watch.Added, watch.Modified:
+					switch pod.Status.Phase {
+					case api.PodPending:
+					// Noop for now.
+					case api.PodRunning:
+						onceSetupLogs.Do(func() {
+							kw.setupLogs(pod)
+						})
+
+						started(pod)
+						hasBeenRunning = true
+					case api.PodFailed, api.PodSucceeded:
+						onceSetupLogs.Do(func() {
+							kw.setupLogs(pod)
+						})
+
+						terminated(pod)
+						hasBeenRunning = true
+						return
+					case api.PodUnknown:
+						log.Warnf("Pod %q with command %q is in unknown phase. "+
+							"Probably state of the pod could not be obtained, "+
+							"typically due to an error in communicating with the host of the pod", pod.Name, kw.command)
+					default:
+						log.Warnf("Unhandled pod phase event %q for pod %q", pod.Status.Phase, pod.Name)
+					}
+				case watch.Deleted:
+					// Pod phase will still be 'running', so we disregard the phase at this point.
+					onceSetupLogs.Do(func() {
+						kw.setupLogs(pod)
+					})
+
+					terminated(pod)
+					return
+				case watch.Error:
+					log.Errorf("Kubernetes pod error event: %v", event.Object)
+				default:
+					log.Warnf("Unhandled event type: %v", event.Type)
+				}
+			case <-timeoutChannel:
+				// If task has been running then we need to ignore timeout
+				if hasBeenRunning {
+					continue
+				}
+				log.Errorf("Timeout occured afrer %f seconds. Pod %s has not been created.", timeout.Seconds(), kw.pod.Name)
+				onceSetupLogs.Do(func() {
+					kw.setupLogs(kw.pod)
+				})
+				terminated(kw.pod)
+				kw.taskHandle.setExitCode(nil)
+				return
+			}
+		}
+	}()
+
+	return kw.taskHandle, nil
+}
+
+// setupLogs creates log files and initializes goroutine that copies stream from k8s
+func (kw *kubernetesWatcher) setupLogs(pod *api.Pod) error {
+	log.Debugf("Setting up logs for pod %q", pod.Name)
+
+	// Wire up logs to task handle stdout.
+	logStream, err := kw.podsAPI.GetLogs(pod.Name, &api.PodLogOptions{}).Stream()
+	if err != nil {
+		log.Errorf("cannot create a stream: %s", err.Error())
+		return errors.Wrap(err, "cannot create a stream")
+	}
+
+	// Prepare local files
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(kw.command, "kubernetes")
+
+	if err != nil {
+		log.Errorf("cannot create output files for pod %q: %s", pod.Name, err.Error())
+		return errors.Wrapf(err, "cannot create output files for pod %q", pod.Name)
+	}
+
+	log.Debugf("created temporary files stdout path: %q stderr path: %q",
+		stdoutFile.Name(), stderrFile.Name())
+
+	go func() {
+		_, err := io.Copy(stdoutFile, logStream)
+		close(kw.outputCopied)
+		if err != nil {
+			log.Debugf("Failed to copy container log stream to task output: %s", err.Error())
+		}
+
+		stdoutFile.Sync()
+	}()
+
+	// Set file handles in task handle in a synchronized manner.
+	kw.taskHandle.setFileNames(stdoutFile.Name(), stderrFile.Name())
+	close(kw.logsReady)
+
+	return nil
 }
