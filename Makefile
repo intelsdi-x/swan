@@ -44,7 +44,7 @@ build_plugins:
 	(go install ./misc/snap-plugin-collector-mutilate)
 
 build_image:
-	docker build -q -t swan_centos_image -f ./misc/dev/docker/Dockerfile .
+	docker build -q -t centos_swan_image -f ./misc/dev/docker/Dockerfile .
 
 build_workloads:
 	# Some workloads are Git Submodules
