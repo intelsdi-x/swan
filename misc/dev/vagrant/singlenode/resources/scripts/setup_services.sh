@@ -11,7 +11,7 @@ systemctl daemon-reload
 
 echo "Configuring docker..."
 # docker.service file should be added after docker installation.
-cp $CONFIGS_LOCATION/docker.service /lib/systemd/system/
+cp /vagrant/resources/configs/docker.service /lib/systemd/system/
 gpasswd -a $VAGRANT_USER docker
 systemctl enable docker
 systemctl restart docker
