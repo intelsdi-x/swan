@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
   home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
   config.vm.synced_folder "../../../..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
 
-  build_ami = ENV['BUILD_CACHED_IMAGE']
+  build_docker_image = ENV['BUILD_CACHED_IMAGE']
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
@@ -40,7 +40,7 @@ Vagrant.configure(2) do |config|
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
 
-    override.build_ami = "true"
+    override.build_docker_image = "true"
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
@@ -83,6 +83,6 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/install_snap_athena.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/post_install.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_AMI' => build_ami}
+  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_DOCKER_IMAGE' => build_docker_image}
   config.vm.provision "shell", path: "resources/scripts/checker.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
 end
