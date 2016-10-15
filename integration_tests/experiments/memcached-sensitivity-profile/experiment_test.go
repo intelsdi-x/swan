@@ -1,6 +1,8 @@
 package experiment
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -9,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -138,6 +139,7 @@ func TestExperiment(t *testing.T) {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged"}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
 				err := exp.Run()
+				remoteDebugTest(exp)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
@@ -198,4 +200,11 @@ func getCassandraSession() (*gocql.Session, error) {
 	cluster.Timeout = 100 * time.Second
 	session, err := cluster.CreateSession()
 	return session, err
+}
+
+func remoteDebugTest(exp *Cmd) {
+	stdoutBuffor, _ := ioutil.ReadAll(exp.Stdout)
+	stderrBuffor, _ := ioutil.ReadAll(exp.Stdout)
+	fmt.Println(stdoutBuffor)
+	fmt.Println(stderrBuffor)
 }
