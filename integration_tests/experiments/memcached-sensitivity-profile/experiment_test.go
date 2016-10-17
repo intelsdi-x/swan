@@ -206,6 +206,9 @@ func getCassandraSession() (*gocql.Session, error) {
 func remoteDebugTest(exp *exec.Cmd) {
 	stdoutPipe, _ := exp.StdoutPipe()
 	stderrPipe, _ := exp.StderrPipe()
+	if stdoutPipe == nil || stderrPipe == nil {
+		return
+	}
 	stdoutBuffor, _ := ioutil.ReadAll(stdoutPipe)
 	stderrBuffor, _ := ioutil.ReadAll(stderrPipe)
 	fmt.Println(stdoutBuffor)
