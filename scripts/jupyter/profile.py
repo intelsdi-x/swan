@@ -6,11 +6,13 @@ import pandas as pd
 import numpy as np
 
 from IPython.core.display import HTML, display
-from plotly.offline import init_notebook_mode, iplot
+from plotly.offline import init_notebook_mode, download_plotlyjs, plot, iplot
 
-init_notebook_mode()
 
-Y_AXIS_MAX = 2
+init_notebook_mode(connected=True)
+
+
+Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
 
 
 class Profile(object):
@@ -187,7 +189,7 @@ class Profile(object):
         )
 
         fig = go.Figure(data=data, layout=layout)
-        return display(iplot(fig))
+        return iplot(fig)
 
 
 def compare_experiments(exps, slo=500, fill=True, to_max=True):
@@ -275,7 +277,7 @@ def compare_experiments(exps, slo=500, fill=True, to_max=True):
         data[1]['line']['color'] = 'rgb(67, 137, 23)'  # green color for showing goodness between Baselines
 
     fig = go.Figure(data=data, layout=layout)
-    return display(iplot(fig))
+    return iplot(fig)
 
 
 if __name__ == '__main__':
