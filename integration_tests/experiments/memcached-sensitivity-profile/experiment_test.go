@@ -137,7 +137,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"--run_on_kubernetes", "--kube_allow_privileged"}
+				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--kube_loglevel", "1", "--log", "debug"}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
 				err := exp.Run()
 				remoteDebugTest(exp)
