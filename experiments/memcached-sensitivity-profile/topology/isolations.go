@@ -8,7 +8,6 @@ import (
 	"github.com/intelsdi-x/athena/pkg/isolation"
 	"github.com/intelsdi-x/athena/pkg/isolation/topo"
 	"github.com/intelsdi-x/athena/pkg/utils/errutil"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 )
 
 var (
@@ -57,7 +56,6 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
 		l1Isolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.siblingThreadsToHpThreads.AvailableThreads().AsSlice(), PreferredNode: defaultTopology.numaNode}
 		llcIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.sharingLLCButNotL1Threads.AsSlice(), PreferredNode: defaultTopology.numaNode}
-		sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 		hpIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.hpThreadIDs.AsSlice(), PreferredNode: defaultTopology.numaNode}
 	}
 	return

@@ -21,6 +21,13 @@ const (
 	membwDefaultProcessNumber = 1
 )
 
+// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
+var RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
+	"run_caffe_with_llcisolation",
+	"If set, for Caffe workload use the same isolations like use for LLC aggressors, otherwise apply no isolation at all",
+	true,
+)
+
 // L1dProcessNumber represents number of L1 data cache aggressor processes to be run
 var L1dProcessNumber = conf.NewIntFlag(
 	"l1d_process_number",
@@ -141,6 +148,11 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 			decorators = append(decorators, executor.NewParallel(MembwProcessNumber.Value()))
 		}
 		return decorators
+	case caffe.ID:
+		if RunCaffeWithLLCIsolationFlag.Value() {
+			return isolation.Decorators{f.otherAggressorIsolation}
+		}
+		return isolation.Decorators{}
 	default:
 		return isolation.Decorators{f.otherAggressorIsolation}
 	}
