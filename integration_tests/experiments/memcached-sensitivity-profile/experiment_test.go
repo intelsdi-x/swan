@@ -1,8 +1,6 @@
 package experiment
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -30,6 +28,8 @@ func getUUID(outs []byte) string {
 
 func TestExperiment(t *testing.T) {
 	memcachedSensitivityProfileBin := path.Join(fs.GetSwanBuildPath(), "experiments", "memcached", "memcached-sensitivity-profile")
+	memcacheDockerBin := "/root/go/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
+	l1dDockerBin := "/root/go/src/github.com/intelsdi-x/swan/workloads/low-level-aggressors/l1d"
 
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
@@ -137,17 +137,16 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--kube_loglevel", "1", "--log", "debug"}
+				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
 				err := exp.Run()
-				remoteDebugTest(exp)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
 			})
 
 			Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--aggr", "l1d"}
+				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--aggr", "l1d", "--memcached_path", memcacheDockerBin, "--l1d_path", l1dDockerBin}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
@@ -201,16 +200,4 @@ func getCassandraSession() (*gocql.Session, error) {
 	cluster.Timeout = 100 * time.Second
 	session, err := cluster.CreateSession()
 	return session, err
-}
-
-func remoteDebugTest(exp *exec.Cmd) {
-	stdoutPipe, _ := exp.StdoutPipe()
-	stderrPipe, _ := exp.StderrPipe()
-	if stdoutPipe == nil || stderrPipe == nil {
-		return
-	}
-	stdoutBuffor, _ := ioutil.ReadAll(stdoutPipe)
-	stderrBuffor, _ := ioutil.ReadAll(stderrPipe)
-	fmt.Println(stdoutBuffor)
-	fmt.Println(stderrBuffor)
 }
