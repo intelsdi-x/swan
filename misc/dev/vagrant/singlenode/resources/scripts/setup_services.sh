@@ -18,7 +18,6 @@ gpasswd -a $VAGRANT_USER docker
 systemctl enable docker
 systemctl restart docker
 daemonStatus docker
-docker info # for debugging purposes.
 
 echo "Configuring etcd..."
 systemctl enable etcd
