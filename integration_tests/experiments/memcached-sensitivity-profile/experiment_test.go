@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -202,9 +203,11 @@ func getCassandraSession() (*gocql.Session, error) {
 	return session, err
 }
 
-func remoteDebugTest(exp *Cmd) {
-	stdoutBuffor, _ := ioutil.ReadAll(exp.Stdout)
-	stderrBuffor, _ := ioutil.ReadAll(exp.Stdout)
+func remoteDebugTest(exp *exec.Cmd) {
+	stdoutPipe, _ := exp.StdoutPipe()
+	stderrPipe, _ := exp.StderrPipe()
+	stdoutBuffor, _ := ioutil.ReadAll(stdoutPipe)
+	stderrBuffor, _ := ioutil.ReadAll(stderrPipe)
 	fmt.Println(stdoutBuffor)
 	fmt.Println(stderrBuffor)
 }
