@@ -174,10 +174,10 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 // run in order:
 // - start HP workload
 // - populate HP (with data)
-// - start aggressors workloads and their sessions (if any)
-// - start HP session
+// - start aggressors workloads and their snap sessions (if any)
+// - start HP snap session
 // - start and wait to finish for "load generator"
-// - start "load generator" session
+// - start "load generator" snap session
 func (m *measurementPhase) run(session phase.Session) error {
 	// TODO(bp): Here trigger Snap session for gathering platform metrics.
 
