@@ -82,9 +82,6 @@ test_integration:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
 	(cd scripts/jupyter; py.test)
 
-test_integration_on_docker:
-	(cd integration_tests/docker; ./inside-docker-tests.sh)
-
 cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
