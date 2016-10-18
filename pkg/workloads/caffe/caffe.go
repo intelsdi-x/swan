@@ -5,24 +5,23 @@ import (
 	"os"
 	"path"
 
+	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/env"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
-	ID           = "caffe"
-	binaryEnvKey = "SWAN_CAFFE_BINARY_PATH"
-
+	ID                        = "caffe"
 	defaultBinaryRelativePath = "deep_learning/caffe/train_quick_cifar10.sh"
 )
 
-func getPathFromEnvOrDefault(envkey string, relativePath string) string {
-	return env.GetOrDefault(
-		envkey, path.Join(fs.GetSwanWorkloadsPath(), relativePath))
-}
+var caffePath = conf.NewStringFlag(
+	"caffe_path",
+	"Path to caffe binary",
+	path.Join(fs.GetSwanWorkloadsPath(), defaultBinaryRelativePath),
+)
 
 // Config is a config for the Caffe.
 type Config struct {
@@ -32,8 +31,7 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		// TODO(bp): Make that consistent with other workloads.
-		BinaryPath: getPathFromEnvOrDefault(binaryEnvKey, defaultBinaryRelativePath),
+		BinaryPath: caffePath.Value(),
 	}
 }
 
