@@ -3,6 +3,7 @@ package common
 import (
 	"os/user"
 	"runtime"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
@@ -184,7 +185,8 @@ func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
 			config.PodName = "swan-aggr"
-			config.Privileged = true // swan aggressor use unshare, which requires sudo.
+			config.Privileged = true                // swan aggressor use unshare, which requires sudo.
+			config.LaunchTimeout = 15 * time.Second // HACK
 			return executor.NewKubernetes(config)
 		}
 	} else {

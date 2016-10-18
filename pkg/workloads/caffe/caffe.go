@@ -1,7 +1,6 @@
 package caffe
 
 import (
-	"fmt"
 	"os"
 	"path"
 
@@ -62,9 +61,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (c Caffe) buildCommand() string {
-	return fmt.Sprintf("%s train --solver=%s",
-		c.conf.BinaryPath,
-		c.conf.SolverPath)
+	return "sh -c '(cd swan/workloads/deep_learning/caffe/caffe_src/ && build/tools/caffe train --solver=examples/cifar10/cifar10_quick_solver.prototxt)'"
 }
 
 // Launch launches Caffe workload. It's implementation of workload.Launcher interface.

@@ -168,7 +168,9 @@ func (e *Experiment) configureGenericExperiment() error {
 
 	// Include Baseline Phase.
 	e.baselinePhase = e.prepareBaselinePhases()
-	allMeasurements = append(allMeasurements, e.baselinePhase...)
+	if os.Getenv("HACK_BASELINE_SKIP") == "" {
+		// allMeasurements = append(allMeasurements, e.baselinePhase...)
+	}
 
 	// Include Measurement Phases for each aggressor.
 	e.aggressorPhases = e.prepareAggressorsPhases()

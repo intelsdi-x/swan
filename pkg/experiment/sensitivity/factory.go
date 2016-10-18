@@ -141,6 +141,8 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 			decorators = append(decorators, executor.NewParallel(MembwProcessNumber.Value()))
 		}
 		return decorators
+	case caffe.ID:
+		return isolation.Decorators{}
 	default:
 		return isolation.Decorators{f.otherAggressorIsolation}
 	}

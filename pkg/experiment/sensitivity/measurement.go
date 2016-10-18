@@ -68,6 +68,7 @@ func (m *measurementPhase) getLoadPoint() int {
 func (m *measurementPhase) clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 
+	log.Info("Stopping all tasks...")
 	// Cleaning and stopping active Launchers' tasks.
 	for _, task := range m.activeLaunchersTasks {
 		err = task.Stop()
@@ -83,8 +84,10 @@ func (m *measurementPhase) clean() (err error) {
 			errCollection.Add(errors.Wrap(err, "error while cleaning task"))
 		}
 	}
+	log.Info("Stopping all tasks. Done.")
 	m.activeLaunchersTasks = []executor.TaskHandle{}
 
+	log.Info("Stopping all load generators...")
 	// Cleaning only active LoadGenerators' tasks.
 	for _, task := range m.activeLoadGeneratorTasks {
 		err = task.Clean()
@@ -92,9 +95,11 @@ func (m *measurementPhase) clean() (err error) {
 			errCollection.Add(errors.Wrap(err, "error while cleaning task"))
 		}
 	}
+	log.Info("Stopping all load generators. Done.")
 	m.activeLoadGeneratorTasks = []executor.TaskHandle{}
 
 	// Stopping only active Snap sessions.
+	log.Info("Stopping all snap sessions...")
 	for _, snapSession := range m.activeSnapSessions {
 		log.Debug("Waiting for snap session to complete it's work. ", snapSession)
 		err = snapSession.Wait()
@@ -108,6 +113,9 @@ func (m *measurementPhase) clean() (err error) {
 		}
 	}
 	m.activeSnapSessions = []snap.SessionHandle{}
+	log.Info("Stopping all snap sessions. Done.")
+
+	time.Sleep(3 * time.Second)
 
 	return errCollection.GetErrIfAny()
 }
@@ -171,10 +179,18 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 	return nil
 }
 
+// run in order:
+// - start HP workload
+// - populate HP (with data)
+// - start aggressors workloads and their sessions (if any)
+// - start HP session
+// - start and wait to finish for "load generator"
+// - start "load generator" session
 func (m *measurementPhase) run(session phase.Session) error {
 	// TODO(bp): Here trigger Snap session for gathering platform metrics.
 
 	// Launch Latency Sensitive workload.
+	log.Info("HP starting...")
 	prTask, err := m.pr.Launcher.Launch()
 	if err != nil {
 		return err
@@ -182,54 +198,67 @@ func (m *measurementPhase) run(session phase.Session) error {
 	// Defer stopping and closing the prTask.
 	m.activeLaunchersTasks = append(m.activeLaunchersTasks, prTask)
 
-	// Launch Snap Session for Latency Sensitive workload if specified.
-	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
-	if err != nil {
-		return err
-	}
-
-	// Launch specified aggressors if any.
-	for _, be := range m.bes {
-		beTask, err := be.Launcher.Launch()
-		if err != nil {
-			return err
-		}
-		// Defer stopping and closing the beTask.
-		m.activeLaunchersTasks = append(m.activeLaunchersTasks, beTask)
-
-		// Launch Snap Session for be workload if specified.
-		err = m.launchSnapSession(beTask, session, be.SnapSessionLauncher)
-		if err != nil {
-			return err
-		}
-	}
-
-	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
-	loadPoint := m.getLoadPoint()
-
-	log.Debug("Populating initial test data to LC task")
+	log.Info("Populating...")
 	err = m.lgForPr.LoadGenerator.Populate()
 	if err != nil {
 		return err
 	}
+	log.Info("Population done.")
 
+	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
+	loadPoint := m.getLoadPoint()
+
+	// Launch Snap Session for Latency Sensitive workload if specified.
+	log.Info("HP session starting...")
+	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
+	if err != nil {
+		return err
+	}
+	log.Info("HP session started.")
+
+	log.Info("Load generation...")
 	log.Debug("Launching Load Generator with load ", loadPoint)
 	loadGeneratorTask, err := m.lgForPr.LoadGenerator.Load(loadPoint, m.loadDuration)
 	if err != nil {
 		return err
 	}
 
+	log.Info("Wait after warm-up...")
+	time.Sleep(15 * time.Second)
+
+	log.Info("Aggressors starting...")
+	// Launch specified aggressors if any.
+	for _, be := range m.bes {
+		beTask, err := be.Launcher.Launch()
+		if err != nil {
+			//	return err
+			log.Warn("Aggressors interupted.")
+		} else {
+			// Defer stopping and closing the beTask.
+			m.activeLaunchersTasks = append(m.activeLaunchersTasks, beTask)
+		}
+
+		// Launch Snap Session for be workload if specified.
+		//err = m.launchSnapSession(beTask, session, be.SnapSessionLauncher)
+		//if err != nil {
+		//	return err
+		//}
+	}
+	log.Info("Aggressors started.")
+
 	// Defer cleaning the loadGeneratorTask.
 	m.activeLoadGeneratorTasks = append(m.activeLoadGeneratorTasks, loadGeneratorTask)
 
 	// Wait for load generation to end.
 	loadGeneratorTask.Wait(0)
+	log.Info("Load generation done.")
 
 	// Launch Snap Session for loadGenerator if specified.
 	// NOTE: Common loadGenerators don't have HTTP and just save output to the file after
 	// completing the load generation.
 	// To have our snap task not disabled by Snap daemon because we could not read the file during
 	// load, we need to run snap session (task) only after load generation work ended.
+	log.Info("Results data gathering...")
 	err = m.launchSnapSession(loadGeneratorTask, session, m.lgForPr.SnapSessionLauncher)
 	if err != nil {
 		return err
@@ -240,6 +269,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 	if err != nil {
 		return err
 	}
+	log.Info("Results gathering done. ")
 
 	if exitCode != 0 {
 		// Load generator failed.

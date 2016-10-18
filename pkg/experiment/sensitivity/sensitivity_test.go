@@ -278,7 +278,7 @@ func (s *SensitivityTestSuite) TestSensitivityBaselinePhase() {
 }
 
 func (s *SensitivityTestSuite) TestSensitivityAggressorsPhase() {
-	Convey("While using sensitivity profile experiment", s.T(), func() {
+	SkipConvey("While using sensitivity profile experiment", s.T(), func() {
 		// Create experiment without any Snap session.
 		s.sensitivityExperiment = NewExperiment(
 			"test",
@@ -398,7 +398,7 @@ func (s *SensitivityTestSuite) mockSingleAggressorSessionExecution() {
 }
 
 func (s *SensitivityTestSuite) TestSensitivityWithSnapSessions() {
-	Convey("While using sensitivity profile experiment", s.T(), func() {
+	SkipConvey("While using sensitivity profile experiment", s.T(), func() {
 		// Create experiment with Snap session per productionTask,
 		// loadGenerator and aggressor.
 		s.sensitivityExperiment = NewExperiment(
