@@ -171,6 +171,13 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 	return nil
 }
 
+// run in order:
+// - start HP workload
+// - populate HP (with data)
+// - start aggressors workloads and their snap sessions (if any)
+// - start HP snap session
+// - start and wait to finish for "load generator"
+// - start "load generator" snap session
 func (m *measurementPhase) run(session phase.Session) error {
 	// TODO(bp): Here trigger Snap session for gathering platform metrics.
 
@@ -182,8 +189,8 @@ func (m *measurementPhase) run(session phase.Session) error {
 	// Defer stopping and closing the prTask.
 	m.activeLaunchersTasks = append(m.activeLaunchersTasks, prTask)
 
-	// Launch Snap Session for Latency Sensitive workload if specified.
-	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
+	log.Debug("Populating initial test data to LC task")
+	err = m.lgForPr.LoadGenerator.Populate()
 	if err != nil {
 		return err
 	}
@@ -207,8 +214,8 @@ func (m *measurementPhase) run(session phase.Session) error {
 	// TODO(bp): Push that to DB via Snap in tag or using SwanCollector.
 	loadPoint := m.getLoadPoint()
 
-	log.Debug("Populating initial test data to LC task")
-	err = m.lgForPr.LoadGenerator.Populate()
+	// Launch Snap Session for Latency Sensitive workload if specified.
+	err = m.launchSnapSession(prTask, session, m.pr.SnapSessionLauncher)
 	if err != nil {
 		return err
 	}
