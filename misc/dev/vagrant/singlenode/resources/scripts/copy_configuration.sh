@@ -2,12 +2,11 @@
 
 set -e
 
-CONFIGS_LOCATION="$HOME_DIR/go/src/github.com/intelsdi-x/swan/misc/dev/vagrant/singlenode/resources/configs"
+CONFIGS_LOCATION="/vagrant/resources/configs"
 
 echo "Copying configs..."
 mkdir -p /opt/swan/resources
 mkdir -p /cache/ccache
-
 
 cp $CONFIGS_LOCATION/docker.repo /etc/yum.repos.d/docker.repo
 cp $CONFIGS_LOCATION/ccache.conf /etc/ccache.conf

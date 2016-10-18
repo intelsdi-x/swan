@@ -32,6 +32,9 @@ echo ">> Docker status:"
 systemctl status docker
 docker ps
 echo "######################################"
+echo ">> Docker images:"
+docker images
+echo "######################################"
 echo ">> cassandra status:"
 systemctl status cassandra
 echo "######################################"

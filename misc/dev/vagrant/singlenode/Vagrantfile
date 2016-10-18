@@ -34,12 +34,16 @@ Vagrant.configure(2) do |config|
        config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds", "#{home_dir}/swan_s3_creds", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
+  build_docker_image = ENV['BUILD_CACHED_IMAGE']
+
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
     vb.name = "swan"
 
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+
+    override.build_docker_image = "true"
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
@@ -57,13 +61,16 @@ Vagrant.configure(2) do |config|
     override.nfs.functional = false
     aws.access_key_id = data['access_key_id']
     aws.secret_access_key = data['secret_access_key']
+    aws.block_device_mapping = [{'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 40}]
+
     override.vm.box = "aws"
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
     # COPY AMI ID HERE
     # non-cached ami: ami-6d1c2007
-    aws.ami = "ami-23b5f434"
+    aws.ami = "ami-e30753f4"
+    aws.instance_package_timeout = 60000
     aws.instance_type = (ENV['SWAN_INSTANCE_TYPE'] != '' && ENV['SWAN_INSTANCE_TYPE']) || data['instance_type'] || "m4.large"
     aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
@@ -79,6 +86,6 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/install_snap_athena.sh", env: {'HOME_DIR' => home_dir}
   config.vm.provision "shell", path: "resources/scripts/post_install.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_DOCKER_IMAGE' => build_docker_image}
   config.vm.provision "shell", path: "resources/scripts/checker.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
 end

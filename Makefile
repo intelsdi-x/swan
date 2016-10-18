@@ -35,6 +35,9 @@ deps_jupyter:
 build_plugins:
 	(./scripts/build_plugins.sh)
 
+build_image:
+	docker build -t centos_swan_image -f ./misc/dev/docker/Dockerfile .
+
 build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
@@ -54,7 +57,7 @@ build_workloads:
 	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
 
 	# Get SPECjbb
-	(sudo bash scripts/get_specjbb.sh)
+	(sudo ./scripts/get_specjbb.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached
@@ -79,16 +82,16 @@ test_integration:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
 	(cd scripts/jupyter; py.test)
 
-test_integration_on_docker:
-	(cd integration_tests/docker; ./inside-docker-tests.sh)
-
 cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapd_*
 
-repository_reset: cleanup
+remove_vendor:
+	rm -fr vendor/
+
+repository_reset: cleanup remove_vendor
 	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
 
 show_env:

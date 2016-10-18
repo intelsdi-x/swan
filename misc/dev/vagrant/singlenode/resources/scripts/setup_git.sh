@@ -10,6 +10,7 @@ grep github.com $HOME_DIR/.ssh/known_hosts || ssh-keyscan github.com >> $HOME_DI
 sudo -u $VAGRANT_USER git config --global url."git@github.com:".insteadOf "https://github.com/"
 
 ## Preparing SSH environment for root
+mkdir -p ~/.ssh
 touch ~/.ssh/known_hosts
 grep github.com ~/.ssh/known_hosts || ssh-keyscan github.com >> ~/.ssh/known_hosts
 git config --global url."git@github.com:".insteadOf "https://github.com/"
