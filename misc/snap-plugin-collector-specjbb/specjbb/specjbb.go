@@ -40,12 +40,17 @@ func NewSpecjbb(now time.Time) snapPlugin.CollectorPlugin {
 func (specjbb *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
 	var metrics []snapPlugin.MetricType
 
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("min"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("max"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "50th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "90th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Unit_: UNIT, Version_: VERSION})
+	metricNames := [][]string{
+		[]string{"min"},
+		[]string{"max"},
+		[]string{"percentile", "50th"},
+		[]string{"percentile", "90th"},
+		[]string{"percentile", "95th"},
+		[]string{"percentile", "99th"}}
+
+	for _, metricName := range metricNames {
+		metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(metricName...), Unit_: UNIT, Version_: VERSION})
+	}
 
 	return metrics, nil
 }
