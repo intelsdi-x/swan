@@ -3,6 +3,7 @@ package specjbb
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
@@ -96,15 +97,10 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 		metricNamespaceSuffix := metric.Namespace_[swanNamespacePrefix:]
 
 		// Convert slice of namespace elements to string, so ['percentile', '95th'] becomes 'percentile/95th'
-		var metricName string
-		for i, namespace := range metricNamespaceSuffix {
-			if i == 0 {
-				metricName = namespace.Value
-			} else {
-				metricName += "/" + namespace.Value
-			}
+		metricName := metricNamespaceSuffix[0].Value
+		for _, namespace := range metricNamespaceSuffix[1:] {
+			metricName = strings.Join([]string{metricName, namespace.Value}, "/")
 		}
-
 		if value, ok := rawMetrics.Raw[metricName]; ok {
 			metric.Data_ = value
 		}
