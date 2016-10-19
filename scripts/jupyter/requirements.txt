@@ -3,5 +3,6 @@ cassandra-driver
 jupyter
 numpy
 pylint
+cython
 pandas
 plotly
