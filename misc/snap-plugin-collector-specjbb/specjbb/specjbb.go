@@ -51,7 +51,7 @@ func (specjbb *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapP
 }
 
 func createNewMetricNamespace(metricName ...string) core.Namespace {
-	namespace := core.NewNamespace("intel", "swan", "specjbb")
+	namespace := core.NewNamespace(namespace...)
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	for _, value := range metricName {
 		namespace = namespace.AddStaticElement(value)
