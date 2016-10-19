@@ -49,11 +49,5 @@ func TestCaffeDefaultConfig(t *testing.T) {
 		Convey("Binary field is not blank", func() {
 			So(config.BinaryPath, ShouldNotBeBlank)
 		})
-		Convey("Solver field is not blank", func() {
-			So(config.SolverPath, ShouldNotBeBlank)
-		})
-		Convey("Workdir field is not blank", func() {
-			So(config.WorkdirPath, ShouldNotBeBlank)
-		})
 	})
 }
