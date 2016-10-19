@@ -1,0 +1,70 @@
+SPECjbb2015 Java Business Benchmark
+ (c) Standard Performance Evaluation Corporation, 2015
+
+Preparing to launch All-in-one SPECjbb2015.
+
+Reading property file: /root/athena/specjbb/16-08-31_114144/./config/specjbb2015.props
+
+     0s: Enumerating plugins...
+     0s:    Connectivity:
+     0s:             HTTP_Grizzly: Grizzly HTTP server, JDK HTTP client
+     0s:              NIO_Grizzly: Grizzly NIO server, Grizzly NIO client
+     0s:               HTTP_Jetty: Jetty HTTP server, JDK HTTP client
+     0s:    Snapshot:
+     0s:                 InMemory: Stores snapshots in heap memory
+     0s:    Data Writers:
+     0s:                     Demo: Send all frame to listener
+     0s:                   InFile: Writing Data into file
+     0s:                   Silent: Drop all frames
+     0s:
+     0s: Validating kit integrity...
+     0s: Kit validation had passed.
+     0s:
+     0s: Tests are skipped.
+     0s:
+     0s: Ladies and gentlemen, this is your Controller speaking.
+     0s: We are delighted in having you for benchmark run today.
+     0s:
+     0s: Binary log file is ./specjbb2015-C-20160831-00001.data.gz
+     0s:
+     0s: Performing handshake with all agents ...
+     0s:
+     0s:  Agent Group1.TxInjector.CompositeTxInjector has attached to Controller
+     0s:  Agent Group1.Backend.CompositeBackend has attached to Controller
+     0s:
+     0s: All agents have connected.
+     0s:
+     0s: Attached agents info:
+
+Group "Group1"
+    TxInjectors:
+        CompositeTxInjector, includes { Driver } @ [local in-Java link]
+    Backends:
+        CompositeBackend, includes { SM(2),SP(2) } @ [local in-Java link]
+
+     0s: Initializing... (init) OK
+     6s:
+     6s: Check whether properties are compliant
+     6s: (validation=FAILED) WARNING: Property settings are NOT COMPLIANT.
+     6s:
+     6s: Running steady on IR = 4000 for 600000 msecs
+     6s: [reconfig (term) (init) ] Ramping up
+     8s:       rampup IR =      0 ... (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+    11s:       rampup IR =    400 ..... (rIR:aIR:PR = 400:400:392) (tPR = 22232) [OK]
+    17s:       rampup IR =    800 .... (rIR:aIR:PR = 800:809:793) (tPR = 25215) [OK]
+    21s:       rampup IR =   1200 .... (rIR:aIR:PR = 1200:1201:1174) (tPR = 27055) [OK]
+    25s:       rampup IR =   1600 ..... (rIR:aIR:PR = 1600:1600:1565) (tPR = 28522) [OK]
+    30s:       rampup IR =   2000 .... (rIR:aIR:PR = 2000:1995:1958) (tPR = 33714) [OK]
+    34s:       rampup IR =   2400 .... (rIR:aIR:PR = 2400:2401:2353) (tPR = 40930) [OK]
+    38s:       rampup IR =   2800 .... (rIR:aIR:PR = 2800:2819:2789) (tPR = 46554) [OK]
+    42s:       rampup IR =   3200 .... (rIR:aIR:PR = 3200:3138:3137) (tPR = 51409) [OK]
+    46s:       rampup IR =   3600 .... (rIR:aIR:PR = 3600:3617:3615) (tPR = 57580) [OK]
+    50s:       rampup IR =   4000 .... (rIR:aIR:PR = 4000:3865:3865) (tPR = 58634) [OK]
+    55s: Ramping up completed!
+    55s:
+    55s: ( 0%) ......|................?............. (rIR:aIR:PR = 4000:4007:4007) (tPR = 60729) [OK]
+    91s: Performance info:
+         Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
+             Overall,     121337,          0,          0,     115274,      59.47,
+         Response times:
+Total Purchase,

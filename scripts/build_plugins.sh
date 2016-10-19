@@ -24,3 +24,4 @@ popd
 (go install ./misc/snap-plugin-collector-session-test)
 (go install ./misc/snap-plugin-publisher-session-test)
 (go install ./misc/snap-plugin-collector-mutilate)
+(go install ./misc/snap-plugin-collector-specjbb)

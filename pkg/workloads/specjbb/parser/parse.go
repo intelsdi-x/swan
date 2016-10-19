@@ -168,17 +168,17 @@ func parseTotalPurchaseLatencies(line string) (map[string]uint64, error) {
 	}
 
 	return map[string]uint64{
-		"Success":  success,
-		"Partial":  partial,
-		"Failed":   failed,
-		"SkipFail": skipFail,
-		"Probes":   probes,
-		"Samples":  samples,
-		"min":      min,
-		"p50":      p50,
-		"p90":      p90,
-		"p95":      p95,
-		"p99":      p99,
-		"max":      max,
+		"Success":         success,
+		"Partial":         partial,
+		"Failed":          failed,
+		"SkipFail":        skipFail,
+		"Probes":          probes,
+		"Samples":         samples,
+		"min":             min,
+		"percentile/50th": p50,
+		"percentile/90th": p90,
+		"percentile/95th": p95,
+		"percentile/99th": p99,
+		"max":             max,
 	}, nil
 }
