@@ -33,10 +33,6 @@ func TestSpecjbbCollectorPlugin(t *testing.T) {
 	Convey("When I create SPECjbb plugin object", t, func() {
 		specjbbPlugin := NewSpecjbb(now)
 
-		Convey("Collector should not be nil", func() {
-			So(specjbbPlugin, ShouldNotBeNil)
-		})
-
 		Convey("I should receive meta data for plugin", func() {
 			meta := Meta()
 			So(meta.Name, ShouldEqual, "specjbb")
@@ -48,7 +44,7 @@ func TestSpecjbbCollectorPlugin(t *testing.T) {
 			policy, err := specjbbPlugin.GetConfigPolicy()
 			So(err, ShouldBeNil)
 
-			experimentConfig := policy.Get([]string{""}).RulesAsTable()
+			experimentConfig := policy.Get(namespace).RulesAsTable()
 			So(experimentConfig, ShouldHaveLength, 1)
 			So(experimentConfig[0].Required, ShouldBeTrue)
 			So(experimentConfig[0].Name, ShouldEqual, "stdout_file")
@@ -77,10 +73,20 @@ func TestSpecjbbCollectorPlugin(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
 
-			// Check whether gathered metrics contain all expected metric. If not, return not found one.
-			found, metricNamespace := containMetrics(collectedMetrics, expectedMetrics)
-			if !found {
-				t.Errorf("Collected metrics do not contain expected metric %s", metricNamespace)
+			// Check whether expected metrics contain the metric.
+			var found bool
+			for _, metric := range collectedMetrics {
+				found = false
+				for _, expectedMetric := range expectedMetrics {
+					if strings.Contains(metric.Namespace().String(), expectedMetric.namespace) {
+						soValidMetric(metric, expectedMetric)
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected metrics do not contain the metric %s", metric.Namespace().String())
+				}
 			}
 		})
 
@@ -116,19 +122,6 @@ func soValidMetricType(metricType snapPlugin.MetricType, namespace string, unit 
 	So(metricType.Namespace().String(), ShouldEqual, namespace)
 	So(metricType.Unit(), ShouldEqual, unit)
 	So(metricType.Version(), ShouldEqual, 1)
-}
-
-func containMetrics(collectedMetrics []snapPlugin.MetricType, expectedMetrics []metric) (contain bool, namespace string) {
-	for _, metric := range collectedMetrics {
-		for _, expectedMetric := range expectedMetrics {
-			if strings.Contains(metric.Namespace().String(), expectedMetric.namespace) {
-				soValidMetric(metric, expectedMetric)
-				return true, metric.Namespace().String()
-			}
-		}
-		return false, metric.Namespace().String()
-	}
-	return
 }
 
 func soValidMetric(metric snapPlugin.MetricType, expectedMetric metric) {

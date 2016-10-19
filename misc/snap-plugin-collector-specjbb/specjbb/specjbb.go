@@ -3,7 +3,6 @@ package specjbb
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
@@ -21,6 +20,10 @@ const (
 	VERSION = 1
 	TYPE    = snapPlugin.CollectorPluginType
 	UNIT    = "ns"
+)
+
+var (
+	namespace = []string{"intel", "swan", "specjbb"}
 )
 
 type plugin struct {
@@ -80,8 +83,9 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 		return metrics, errors.Wrap(err, msg)
 	}
 
+	// NamespacePrefix has 4 elements {"intel", "swan", "specjbb", "hostname"}.
 	const namespaceHostnameIndex = 3
-	const swanNamespacePrefix = len([...]string{"intel", "swan", "specjbb", "hostname"})
+	const swanNamespacePrefix = 4
 
 	for _, metricType := range metricTypes {
 		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
@@ -91,14 +95,15 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 		// Strips prefix. For example: '/intel/swan/specjbb/<hostname>/avg' to '/avg'.
 		metricNamespaceSuffix := metric.Namespace_[swanNamespacePrefix:]
 
-		// Convert slice of namespace elements to slice of strings.
-		metricNamespaceSuffixStrings := []string{}
-		for _, namespace := range metricNamespaceSuffix {
-			metricNamespaceSuffixStrings = append(metricNamespaceSuffixStrings, namespace.Value)
+		// Convert slice of namespace elements to string, so ['percentile', '95th'] becomes 'percentile/95th'
+		var metricName string
+		for i, namespace := range metricNamespaceSuffix {
+			if i == 0 {
+				metricName = namespace.Value
+			} else {
+				metricName += "/" + namespace.Value
+			}
 		}
-
-		// Flatten to string so ['percentile', '5th'] becomes '/percentile/5th'.
-		metricName := strings.Join(metricNamespaceSuffixStrings, "/")
 
 		if value, ok := rawMetrics.Raw[metricName]; ok {
 			metric.Data_ = value
@@ -120,7 +125,7 @@ func (specjbb *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	}
 	policyNode := cpolicy.NewPolicyNode()
 	policyNode.Add(stdoutFile)
-	policy.Add([]string{""}, policyNode)
+	policy.Add(namespace, policyNode)
 
 	return policy, nil
 }

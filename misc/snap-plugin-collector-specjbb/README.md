@@ -1,6 +1,6 @@
 # snap-plugin-collector-specjbb
 
-This is a collector plugin for swan which parses a
+This is a collector plugin for snap which parses a
 [SPECjbb](https://www.spec.org/jbb2015/) standard output file and
 collects available latency metrics.
 
@@ -50,7 +50,7 @@ snapctl plugin load snap-plugin-publisher-file
 snapctl task create -t task.json
 ```
 
-The current available metrics from the collector are:
+Following metrics are currently available:
 
 | Name  | Type  | Description | Example value |
 | :---- | :---- | :---------- | :--- |
