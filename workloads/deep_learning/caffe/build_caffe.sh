@@ -8,10 +8,10 @@ CPUS_NUMBER=$(grep -c ^processor /proc/cpuinfo)
 
 pushd ${CAFFE_ROOT_DIRECTORY}
 if [ "${OPENBLAS_PATH}" != "" ]; then
-    mkdir -p ${OPENBLAS_PATH}
+    sudo mkdir -p ${OPENBLAS_PATH}
     pushd ${OPENBLAS_SRC_DIRECTORY}
     make -j USE_OPENMP=1 --quiet
-    make PREFIX=${OPENBLAS_PATH} --quiet install
+    sudo make PREFIX=${OPENBLAS_PATH} --quiet install
     popd
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config_openblas ${CAFFE_SRC_DIRECTORY}/Makefile.config
     export LD_LIBRARY_PATH=${OPENBLAS_PATH}/lib
