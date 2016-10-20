@@ -2,7 +2,8 @@ FROM centos:7
 
 MAINTAINER https://github.com/intelsdi-x/swan
 
-ENV OPENBLAS_PATH=/opt/OpenBLAS \
+ENV BUILD_OPENBLAS = "true" \
+    OPENBLAS_PATH=/opt/OpenBLAS \
     LD_LIBRARY_PATH=/opt/OpenBLAS/lib \
     HOME_DIR=/root \
     VAGRANT_USER=root

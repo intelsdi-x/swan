@@ -8,14 +8,17 @@ function executeAsUser() {
         sudo -E -u $VAGRANT_USER -s PATH=$PATH GOPATH=$GOPATH CCACHECONFDIR=$CCACHECONFDIR "$@"
 }
 
+BUILD_OPENBLAS=""
+
 echo "Installing project dependencies..."
 pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsUser make repository_reset
 executeAsUser make deps_all
 if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
         executeAsUser make build_image
+        BUILD_OPENBLAS="true"
 fi
-executeAsUser make build_workloads
+executeAsUser make ${BUILD_OPENBLAS} build_workloads
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.

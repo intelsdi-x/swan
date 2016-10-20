@@ -46,7 +46,7 @@ build_workloads:
 	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
 
 	# Get SPECjbb
 	(sudo ./scripts/get_specjbb.sh)
