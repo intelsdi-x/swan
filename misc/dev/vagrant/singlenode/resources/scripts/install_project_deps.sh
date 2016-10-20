@@ -18,7 +18,7 @@ if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
         executeAsUser make build_image
         BUILD_OPENBLAS="true"
 fi
-executeAsUser make ${BUILD_OPENBLAS} build_workloads
+executeAsUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} build_workloads
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.

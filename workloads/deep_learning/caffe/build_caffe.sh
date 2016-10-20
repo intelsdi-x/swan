@@ -16,7 +16,7 @@ if [[ "${OPENBLAS_PATH}" != "" ] && [ "${BUILD_OPENBLAS}" == "true" ]]; then
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config_openblas ${CAFFE_SRC_DIRECTORY}/Makefile.config
     export LD_LIBRARY_PATH=${OPENBLAS_PATH}/lib
 else
-    echo "To build multithreaded caffe you need to set \"OPENBLAS_PATH\" env first."
+    echo "To build multithreaded caffe you need to set \"OPENBLAS_PATH\" and \"BUILD_OPENBLAS\" envs first."
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config ${CAFFE_SRC_DIRECTORY}/Makefile.config
 fi
 
