@@ -2,8 +2,8 @@ FROM centos:7
 
 MAINTAINER https://github.com/intelsdi-x/swan
 
-ENV GOPATH=/root/go \
-    PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
+ENV OPENBLAS_PATH=/opt/OpenBLAS \
+    LD_LIBRARY_PATH=/opt/OpenBLAS/lib \
     HOME_DIR=/root \
     VAGRANT_USER=root
 

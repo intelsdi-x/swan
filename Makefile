@@ -42,19 +42,11 @@ build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
 
-	(cd workloads/data_caching/memcached && ./build.sh)
-	(cd workloads/low-level-aggressors && make -j4)
+#	(cd workloads/data_caching/memcached && ./build.sh)
+#	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && cp caffe_cpu_solver.patch ./caffe_src/)
-	(cd ./workloads/deep_learning/caffe && cp vagrant_vboxsf_workaround.patch ./caffe_src/)
-	(cd ./workloads/deep_learning/caffe && cp get_cifar10.patch ./caffe_src/)
-	(cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < caffe_cpu_solver.patch)
-	(cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < vagrant_vboxsf_workaround.patch)
-	(cd ./workloads/deep_learning/caffe/caffe_src/ && patch -p1 --forward -s --merge < get_cifar10.patch)
-	(cd ./workloads/deep_learning/caffe && cp Makefile.config ./caffe_src/)
-	(cd ./workloads/deep_learning/caffe/caffe_src && make -j4 all)
-	(cd ./workloads/deep_learning/caffe && ./prepare_cifar10_dataset.sh)
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)
 
 	# Get SPECjbb
 	(sudo ./scripts/get_specjbb.sh)
@@ -93,6 +85,7 @@ remove_vendor:
 
 repository_reset: cleanup remove_vendor
 	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
+	(cd workloads/deep_learning/caffe/openblas/; git clean -fddx; git reset --hard)
 
 show_env:
 	@ echo Environment variables:
