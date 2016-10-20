@@ -8,6 +8,7 @@ yum makecache fast -y -q
 yum update -y -q
 yum install -y -q epel-release  # Enables EPEL repo
 echo Installing packages
+yum groupinstall -y -q "Development tools"
 yum install -y -q \
     boost \
     boost-devel \
