@@ -2,7 +2,7 @@
 set -e
 mkdir -p memcached-1.4.25/build
 pushd memcached-1.4.25/build
-../configure && make
+../configure && make --quiet
 id -u memcached &>/dev/null || sudo adduser memcached
 popd
 

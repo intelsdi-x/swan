@@ -42,8 +42,8 @@ build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
 
-#	(cd workloads/data_caching/memcached && ./build.sh)
-#	(cd workloads/low-level-aggressors && make -j4)
+	(cd workloads/data_caching/memcached && ./build.sh)
+	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
 	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)

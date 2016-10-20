@@ -1,17 +1,17 @@
-#!/bin/bash -x
+#!/bin/bash
 
 CAFFE_ROOT_DIRECTORY=$(dirname ${BASH_SOURCE[0]})
-OPENBLAS_SRC_DIRECTORY="${CURRENT_DIRECTORY}\openblas"
-CAFFE_SRC_DIRECTORY="${CURRENT_DIRECTORY}\caffe_src"
+OPENBLAS_SRC_DIRECTORY="${CAFFE_ROOT_DIRECTORY}/openblas"
+CAFFE_SRC_DIRECTORY="${CAFFE_ROOT_DIRECTORY}/caffe_src"
 
 CPUS_NUMBER=$(grep -c ^processor /proc/cpuinfo)
 
-
 pushd ${CAFFE_ROOT_DIRECTORY}
-if [ "${OPENBLAS_PATH}" == "true" ]; then
+if [ "${OPENBLAS_PATH}" != "" ]; then
+    mkdir -p ${OPENBLAS_PATH}
     pushd ${OPENBLAS_SRC_DIRECTORY}
-    make -j USE_OPENMP=1
-    make PREFIX=${OPENBLAS_PATH} install
+    make -j USE_OPENMP=1 --quiet
+    make PREFIX=${OPENBLAS_PATH} --quiet install
     popd
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config_openblas ${CAFFE_SRC_DIRECTORY}/Makefile.config
     export LD_LIBRARY_PATH=${OPENBLAS_PATH}/lib
@@ -30,7 +30,7 @@ patch -p1 --forward -s --merge < caffe_cpu_solver.patch
 patch -p1 --forward -s --merge < vagrant_vboxsf_workaround.patch
 patch -p1 --forward -s --merge < get_cifar10.patch
 export OMP_NUM_THREADS=${CPUS_NUMBER}
-make all
+make --quiet all
 popd
 ${CAFFE_ROOT_DIRECTORY}/prepare_cifar10_dataset.sh
 popd
