@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -139,7 +140,8 @@ func TestExperiment(t *testing.T) {
 			Convey("With proper kubernetes configuration and without phases", func() {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				err := exp.Run()
+				out, err := exp.CombinedOutput()
+				fmt.Printf("L144: %s \n", out)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
