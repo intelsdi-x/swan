@@ -7,7 +7,7 @@ CAFFE_SRC_DIRECTORY="${CAFFE_ROOT_DIRECTORY}/caffe_src"
 CPUS_NUMBER=$(grep -c ^processor /proc/cpuinfo)
 
 pushd ${CAFFE_ROOT_DIRECTORY}
-if [[ "${OPENBLAS_PATH}" != "" ] && [ "${BUILD_OPENBLAS}" == "true" ]]; then
+if [ "${OPENBLAS_PATH}" != "" ] && [ "${BUILD_OPENBLAS}" == "true" ]; then
     sudo mkdir -p ${OPENBLAS_PATH}
     pushd ${OPENBLAS_SRC_DIRECTORY}
     make -j USE_OPENMP=1 --quiet
