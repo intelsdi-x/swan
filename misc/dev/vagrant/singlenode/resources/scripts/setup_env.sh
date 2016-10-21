@@ -13,7 +13,7 @@ addEnv 'export CCACHE_CONFIGPATH=/etc/ccache.conf'
 addEnv 'export PATH=/usr/lib64/ccache/:$PATH:/usr/local/go/bin:$GOPATH/bin'
 addEnv 'export ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena'
 addEnv 'export OPENBLAS_PATH=/opt/OpenBLAS'
-addEnv 'export LD_LIBRARY_PATH=/opt/OpenBLAS/lib'
+addEnv 'export LD_LIBRARY_PATH=$OPENBLAS_PATH/lib'
 
 ## Create convenient symlinks in the home directory
 ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
