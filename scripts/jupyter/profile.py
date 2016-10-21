@@ -1,14 +1,16 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
-import plotly.graph_objs as go
-import pandas as pd
 import numpy as np
-
-from IPython.core.display import HTML, display
+import pandas as pd
+import plotly.graph_objs as go
+from IPython.core.display import HTML
 from plotly.offline import init_notebook_mode, iplot
 
-init_notebook_mode()
+init_notebook_mode(connected=True)
+
+
+Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
 
 
 class Profile(object):
@@ -26,9 +28,10 @@ class Profile(object):
         specified slo (performance target).
         """
         self.exp = e
+        self.slo = slo
         self.categories = []
         self.data_frame = self.exp.get_frame()
-        self.data_visual = {}
+        self.latency_qps_aggrs = {}
 
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
@@ -56,9 +59,11 @@ class Profile(object):
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             data.append(violations.tolist())
 
-            self.data_visual['x'] = np.array(qps)
-            self.data_visual[name] = aggressor_frame['value'].as_matrix()
-            self.data_visual['slo'] = [slo for i in qps]
+            self.latency_qps_aggrs['x'] = np.array(qps)
+            self.latency_qps_aggrs[name] = aggressor_frame['value'].as_matrix()
+            self.latency_qps_aggrs['slo'] = [slo for i in qps]
+
+        self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
 
         peak = np.amax(columns)
         columns = map(lambda c: (float(c) / peak) * 100, columns)
@@ -109,12 +114,20 @@ class Profile(object):
 
         return HTML(html_out)
 
-    def sensitivity_chart(self):
-        df = pd.DataFrame.from_dict(self.data_visual, orient='index').T
+    def sensitivity_chart(self, fill=False, to_max=False):
+        """
+        :param fill: fill area between Baseline and aggressors
+        :param to_max: show comparison between Baseline and 'worst case' (max latency violations for all aggressors in
+            each load point.)
+        """
+        categories = self.categories
+        gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
+                     'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         data = list()
+        fill_to_nexty = 'tonexty' if fill else None
         data.append(go.Scatter(
-            x=df['x'],
-            y=df['slo'],
+            x=self.latency_qps_aggrs_frame['x'],
+            y=self.latency_qps_aggrs_frame['slo'],
             fill=None,
             name='slo',
             mode='lines',
@@ -123,17 +136,35 @@ class Profile(object):
                 shape='spline'
             )
         ))
-        for agr in self.categories:
-            data.append(go.Scatter(
-                    x=df['x'],
-                    y=df[agr],
-                    name=self.exp.name + ':' + agr,
-                    fill='tozeroy',
-                    mode='lines',
-                    line=dict(
-                        shape='spline'
-                    )
-                ))
+
+        if to_max:
+            x = self.latency_qps_aggrs_frame['x']
+            cols = set(self.latency_qps_aggrs_frame.columns)
+            cols.remove('slo')
+            cols.remove('x')
+            self.latency_qps_aggrs_frame['max_aggrs'] = self.latency_qps_aggrs_frame[list(cols)].max(axis=1)
+            self.latency_qps_aggrs_frame['x'] = x
+
+            categories = ['Baseline', 'max_aggrs']
+
+        for i, agr in enumerate(categories):
+            scatter_aggr = go.Scatter(
+                x=self.latency_qps_aggrs_frame['x'],
+                y=self.latency_qps_aggrs_frame[agr],
+                name=self.exp.name + ':' + agr,
+                fill=fill_to_nexty if agr != 'Baseline' else None,
+                mode='lines',
+                line=dict(
+                    shape='spline'
+                )
+            )
+
+            if fill and to_max:
+                scatter_aggr['line']['color'] = 'rgb(153, 27, 35)'
+            elif fill:
+                scatter_aggr['line']['color'] = gradients[i]
+
+            data.append(scatter_aggr)
 
         layout = go.Layout(
             xaxis=dict(
@@ -145,6 +176,7 @@ class Profile(object):
                 ),
             ),
             yaxis=dict(
+                range=[0, Y_AXIS_MAX * self.slo],
                 title='Latency',
                 titlefont=dict(
                     family='Arial, sans-serif',
@@ -155,35 +187,50 @@ class Profile(object):
         )
 
         fig = go.Figure(data=data, layout=layout)
-        display(iplot(fig))
+        return iplot(fig)
 
 
-def compare_experiments(exps, slo=500, aggressors=None, fill=False):
-    if not aggressors:
-        aggressors = ["Baseline", ]
-
+def compare_experiments(exps, slo=500, fill=True, to_max=True):
+    categories = ["Baseline",]
     data = []
     for exp in exps:
-        df = pd.DataFrame.from_dict(Profile(exp, slo).data_visual,
-                                    orient='index').T  # change orient of matrix, fill missing values and make transpose
+        df = Profile(exp, slo).latency_qps_aggrs_frame
 
-        for aggressor in aggressors:
+        if to_max:
+            x = df['x']
+            cols = set(df.columns)
+            cols.remove('slo')
+            cols.remove('x')
+            df['max_aggrs'] = df[list(cols)].max(axis=1)
+            df['x'] = x
+            categories = ["Baseline", 'max_aggrs']
+
+        for category in categories:
             data.append(
                 go.Scatter(
                     x=df['x'],
-                    y=df[aggressor],
-                    fill=None,
-                    name='%s:%s' % (exp.name, aggressor),
+                    y=df[category],
+                    fill='tonexty' if fill else None,
+                    name='%s:%s' % (exp.name, category),
                     mode='lines',
                     line=dict(
                         shape='spline'
                     )
                 )
             )
+    if to_max:
+        max_x_series = np.maximum(data[0]['x'], data[2]['x'])  # Find the maximum series for experiments
+        all_set = np.append(data[0]['x'], data[2]['x'])  # merge them to find max and min
+    else:
+        max_x_series = np.maximum(data[0]['x'], data[1]['x'])
+        all_set = np.append(data[0]['x'], data[1]['x'])
 
-    slo = go.Scatter(
-        x=data[0]['x'],
-        y=[slo for i in range(df.shape[0])],
+    max_x_series[0] = np.min(all_set)  # First element to min from both sets
+    max_x_series[-1] = np.max(all_set)  # And set last to maximum
+
+    slo_scatter = go.Scatter(
+        x=max_x_series,
+        y=[slo for i in max_x_series],
         fill=None,
         name="slo",
         mode='lines',
@@ -191,7 +238,7 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
             color='rgb(255, 0, 0)',
         )
     )
-    data.append(slo)
+    data.append(slo_scatter)
 
     layout = go.Layout(
         xaxis=dict(
@@ -203,6 +250,7 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
             ),
         ),
         yaxis=dict(
+            range=[0, Y_AXIS_MAX * slo],
             title='Latency',
             titlefont=dict(
                 family='Arial, sans-serif',
@@ -212,23 +260,32 @@ def compare_experiments(exps, slo=500, aggressors=None, fill=False):
         )
     )
 
-    if fill and len(exps) == 2 and len(aggressors) == 1:  # Fill only if there is two exps with one aggr to compare
+    # Fill only if there is two experiments with one aggressor or one experiment with two aggressors to compare
+    if fill and to_max:
+        data[0]['fill'] = None
+        data[2]['fill'] = None
+        data[1]['line']['color'] = 'rgb(7, 249, 128)'
+        data[3]['line']['color'] = 'rgb(229, 71, 13)'
+        data[1]['fill'] = 'tonexty'
+        data[3]['fill'] = 'tonexty'
+    elif fill:
         data[0]['fill'] = None
         data[1]['fill'] = 'tonexty'
+        data[1]['line']['color'] = 'rgb(67, 137, 23)'  # green color for showing goodness between Baselines
 
     fig = go.Figure(data=data, layout=layout)
-    display(iplot(fig))
+    return iplot(fig)
 
 
 if __name__ == '__main__':
     from experiment import Experiment
 
-    exp1 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+    exp1 = Experiment(experiment_id='8445f017-a106-4bde-6cc4-927f8ceb643a', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_with_serenity')
-    exp2 = Experiment(experiment_id='ad8b76f5-e627-4e9a-53b3-0b20117b7394', cassandra_cluster=['127.0.0.1'], port=19042,
+    exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
-    Profile(exp2, slo=500).sensitivity_chart()
+    Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
-    compare_experiments(exps=[exp1, exp2], aggressors=["Baseline"], fill=True)
+    compare_experiments(exps=[exp1, exp2], fill=False, to_max=True)
