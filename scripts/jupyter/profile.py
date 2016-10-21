@@ -1,13 +1,11 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
-import plotly.graph_objs as go
-import pandas as pd
 import numpy as np
-
-from IPython.core.display import HTML, display
-from plotly.offline import init_notebook_mode, download_plotlyjs, plot, iplot
-
+import pandas as pd
+import plotly.graph_objs as go
+from IPython.core.display import HTML
+from plotly.offline import init_notebook_mode, iplot
 
 init_notebook_mode(connected=True)
 
@@ -118,7 +116,7 @@ class Profile(object):
 
     def sensitivity_chart(self, fill=False, to_max=False):
         """
-        :param fill: try to fill area between Baseline and aggressors
+        :param fill: fill area between Baseline and aggressors
         :param to_max: show comparison between Baseline and 'worst case' (max latency violations for all aggressors in
             each load point.)
         """
@@ -157,8 +155,8 @@ class Profile(object):
                 fill=fill_to_nexty if agr != 'Baseline' else None,
                 mode='lines',
                 line=dict(
-                    shape='spline',
-                ),
+                    shape='spline'
+                )
             )
 
             if fill and to_max:
@@ -193,8 +191,7 @@ class Profile(object):
 
 
 def compare_experiments(exps, slo=500, fill=True, to_max=True):
-
-    aggressors = ["Baseline",]
+    categories = ["Baseline",]
     data = []
     for exp in exps:
         df = Profile(exp, slo).latency_qps_aggrs_frame
@@ -206,15 +203,15 @@ def compare_experiments(exps, slo=500, fill=True, to_max=True):
             cols.remove('x')
             df['max_aggrs'] = df[list(cols)].max(axis=1)
             df['x'] = x
-            aggressors = ["Baseline", 'max_aggrs']
+            categories = ["Baseline", 'max_aggrs']
 
-        for aggressor in aggressors:
+        for category in categories:
             data.append(
                 go.Scatter(
                     x=df['x'],
-                    y=df[aggressor],
+                    y=df[category],
                     fill='tonexty' if fill else None,
-                    name='%s:%s' % (exp.name, aggressor),
+                    name='%s:%s' % (exp.name, category),
                     mode='lines',
                     line=dict(
                         shape='spline'
@@ -258,19 +255,19 @@ def compare_experiments(exps, slo=500, fill=True, to_max=True):
             titlefont=dict(
                 family='Arial, sans-serif',
                 size=18,
-                color='lightgrey',
+                color='lightgrey'
             ),
         )
     )
 
     # Fill only if there is two experiments with one aggressor or one experiment with two aggressors to compare
     if fill and to_max:
-        data[0]['fill'] = None  # with
-        data[2]['fill'] = None  # without
-        data[1]['line']['color'] = 'rgb(7, 249, 128)'  # with
-        data[3]['line']['color'] = 'rgb(229, 71, 13)'  # without
-        data[1]['fill'] = 'tonexty'  # with
-        data[3]['fill'] = 'tonexty'  # without
+        data[0]['fill'] = None
+        data[2]['fill'] = None
+        data[1]['line']['color'] = 'rgb(7, 249, 128)'
+        data[3]['line']['color'] = 'rgb(229, 71, 13)'
+        data[1]['fill'] = 'tonexty'
+        data[3]['fill'] = 'tonexty'
     elif fill:
         data[0]['fill'] = None
         data[1]['fill'] = 'tonexty'
