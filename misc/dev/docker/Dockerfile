@@ -2,17 +2,11 @@ FROM centos:7
 
 MAINTAINER https://github.com/intelsdi-x/swan
 
-ENV GOPATH=/root/go \
-    PATH=/usr/local/go/bin:/opt/gopath/bin:$PATH \
+ENV BUILD_OPENBLAS='true' \
+    OPENBLAS_PATH=/opt/OpenBLAS \
+    LD_LIBRARY_PATH=/opt/OpenBLAS/lib \
     HOME_DIR=/root \
     VAGRANT_USER=root
-
-# workloads is storing workloads binaries used by swan's experiment.
-ADD workloads /root/go/src/github.com/intelsdi-x/swan/workloads
-# scripts stores shell scripts used by Makefile to building SpecJBB or snap-plugins.
-ADD scripts /root/go/src/github.com/intelsdi-x/swan/scripts
-
-ADD Makefile /root/go/src/github.com/intelsdi-x/swan/
 
 # resources is storing vagrant scripts needed by this docker image.
 ADD misc/dev/vagrant/singlenode/resources /vagrant/resources
@@ -25,6 +19,13 @@ WORKDIR /vagrant/resources
 RUN ./scripts/copy_configuration.sh && \
     ./scripts/install_packages.sh && \
     ./scripts/setup_env.sh
+
+# workloads is storing workloads binaries used by swan's experiment.
+ADD workloads /root/go/src/github.com/intelsdi-x/swan/workloads
+# scripts stores shell scripts used by Makefile to building SpecJBB or snap-plugins.
+ADD scripts /root/go/src/github.com/intelsdi-x/swan/scripts
+
+ADD Makefile /root/go/src/github.com/intelsdi-x/swan/
 
 WORKDIR /root/go/src/github.com/intelsdi-x/swan/
 RUN sed -i '/requiretty/s/\(^.*$\)/# \1/' /etc/sudoers && make build_workloads
