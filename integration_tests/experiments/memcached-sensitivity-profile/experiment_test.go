@@ -1,7 +1,6 @@
 package experiment
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -16,8 +15,7 @@ import (
 )
 
 const (
-	snapBuildPath = "src/github.com/intelsdi-x/snap/build"
-	snapLogs      = "/tmp/swan-integration-tests"
+	snapLogs = "/tmp/swan-integration-tests"
 )
 
 func getUUID(outs []byte) string {
@@ -111,12 +109,28 @@ func TestExperiment(t *testing.T) {
 
 					var ns string
 					var tags map[string]string
-					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
-					So(err, ShouldBeNil)
-					So(ns, ShouldNotBeBlank)
-					So(tags, ShouldNotBeEmpty)
-					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
-					So(tags["swan_repetition"], ShouldEqual, "1")
+					var swanRepetitions []string
+					var swanAggressorsNames []string
+					iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+					for iter.Scan(&ns, &tags) {
+						So(ns, ShouldNotBeBlank)
+						So(tags, ShouldNotBeEmpty)
+						swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
+						So(err, ShouldBeNil)
+						swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
+					}
+
+					So("L1 Data", ShouldBeIn, swanAggressorsNames)
+					So("None", ShouldBeIn, swanAggressorsNames)
+
+					So("0", ShouldBeIn, swanRepetitions)
+					So("1", ShouldBeIn, swanRepetitions)
+
+					So(swanAggressorsNames, ShouldHaveLength, 40)
+					So(swanRepetitions, ShouldHaveLength, 40)
+
+					So(iter.Close(), ShouldBeNil)
+
 				})
 
 				Convey("Experiment should succeed also with 2 load points", func() {
@@ -128,20 +142,36 @@ func TestExperiment(t *testing.T) {
 
 					var ns string
 					var tags map[string]string
-					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
-					So(err, ShouldBeNil)
-					So(ns, ShouldNotBeBlank)
-					So(tags, ShouldNotBeEmpty)
-					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
-					So(tags["swan_phase"], ShouldEqual, "aggressor_nr_0_measurement_for_loadpoint_id_2")
+					var swanAggressorsNames []string
+					var swanPhases []string
+					iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+					for iter.Scan(&ns, &tags) {
+						So(ns, ShouldNotBeBlank)
+						So(tags, ShouldNotBeEmpty)
+						So(tags, ShouldContainKey, "swan_phase")
+						So(tags, ShouldContainKey, "swan_aggressor_name")
+						swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
+						swanPhases = append(swanPhases, tags["swan_phase"])
+						So(tags["swan_repetition"], ShouldEqual, "0")
+					}
+
+					So(swanAggressorsNames, ShouldHaveLength, 40)
+					So(swanPhases, ShouldHaveLength, 40)
+
+					So("L1 Data", ShouldBeIn, swanAggressorsNames)
+					So("None", ShouldBeIn, swanAggressorsNames)
+
+					So("aggressor_nr_0_measurement_for_loadpoint_id_1", ShouldBeIn, swanPhases)
+					So("aggressor_nr_0_measurement_for_loadpoint_id_1", ShouldBeIn, swanPhases)
+
+					So(iter.Close(), ShouldBeNil)
 				})
 			})
 
 			Convey("With proper kubernetes configuration and without phases", func() {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				out, err := exp.CombinedOutput()
-				fmt.Printf("L144: %s \n", out)
+				_, err := exp.CombinedOutput()
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
@@ -163,7 +193,6 @@ func TestExperiment(t *testing.T) {
 					So(tags, ShouldNotBeEmpty)
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				})
-
 			})
 
 			Convey("With invalid configuration stop experiment if error", func() {
