@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoR83JPRNNVr6+tw/F4vwlEYfjUowHQ51tLzhYh9zvXqqAgm1QT0oJ2Az2zmGv7WXBsBsaoadFqc/xj/xPrkOBtrTjKbpoJkiKJF/xWXCkB6ydGU1ydRaKo83fyxLfC96J6LtHaY66/ZZXwKmE/Lx88V38CC5kbxJIA4q95fnz3aahDBdD4KePENB5v1A/Hzqsq6tw7zteGuLXxw9QWpCiIaJRTkwk9ZpS3xC9Jbd/tuiVqdo86XYHA1eVCA+nb33wgn29Af1TimVC5N9mlL1c95F8H04788nf0WGhby+jqODQ6vCiv8PDtQ3TWT9h/ArHe56znGlrtX439tDioMFR" >> ${HOME_DIR}/.ssh/authorized_keys

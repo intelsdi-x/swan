@@ -80,7 +80,8 @@ Vagrant.configure(2) do |config|
   # config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
   # config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
   # config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  # config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "resources/scripts/inject_public_keys.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   # config.vm.provision "shell", path: "resources/scripts/setup_services.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
   # config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
   # config.vm.provision "shell", path: "resources/scripts/install_snap_athena.sh", env: {'HOME_DIR' => home_dir}
