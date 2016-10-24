@@ -1,6 +1,8 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
+import itertools
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -19,6 +21,26 @@ class Profile(object):
     quality metric against a target performance). The HTML representation of the profile color
     codes each cell based on it's slack (quality of service head room) or violation.
     """
+
+    MISSING_VALUE = -1
+
+    @staticmethod
+    def _fill_missing_data(qps, violations, columns):
+        """
+        :param qps: query per second column not normalized from cassandra
+        :param violations: corresponding list of slo violations for `qps`
+        :param columns: all loadpoints for `qps` as a reference
+
+        Fill missing data in `violations` with `-1` and grey color in sensitivity table.
+        """
+        qpv = zip(qps, violations)
+        diff = set(columns).difference(set(qps))
+        qpc = map(lambda x: (x, Profile.MISSING_VALUE), diff)
+        _data = sorted(itertools.chain(qpv, qpc))
+        violations = [q for (lp, q) in _data]
+
+        return violations
+
     def __init__(self, e, slo):
         """
         :param e: an Experiment class object
@@ -57,7 +79,8 @@ class Profile(object):
                 columns = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
-            data.append(violations.tolist())
+            filled_qps = self._fill_missing_data(qps, violations, columns)
+            data.append(filled_qps)
 
             self.latency_qps_aggrs['x'] = np.array(qps)
             self.latency_qps_aggrs[name] = aggressor_frame['value'].as_matrix()
@@ -101,6 +124,8 @@ class Profile(object):
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
+                elif value == Profile.MISSING_VALUE:
+                    style += 'background-color: #c0c0c0;'
                 elif np.isnan(value):
                     value = 0
                     style += 'background-color: #a9341f; color: white;'
@@ -121,7 +146,7 @@ class Profile(object):
             each load point.)
         """
         categories = self.categories
-        gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
+        gradients = ['rgb(7, 249, 128)', 'rgb(0, 0, 255)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         data = list()
         fill_to_nexty = 'tonexty' if fill else None
