@@ -42,11 +42,11 @@ build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
 
-	(cd workloads/data_caching/memcached && ./build.sh)
+	(cd workloads/data_caching/memcached && ./build.sh ${BUILD_ARTIFACTS})
 	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS} ${BUILD_ARTIFACTS})
 
 	# Get SPECjbb
 	(sudo ./scripts/get_specjbb.sh)
@@ -54,6 +54,12 @@ build_workloads:
 build_swan:
 	mkdir -p build/experiments/memcached
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
+
+pack_artifacts:
+	mkdir -p artifacts
+	(cp ${GOPATH}/bin/* artifacts/)
+	(cp workloads/low-level-aggressors/{l1d, l1i, l3, memBw} artifacts/)
+	
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
