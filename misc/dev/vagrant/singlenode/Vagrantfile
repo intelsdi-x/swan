@@ -43,7 +43,7 @@ Vagrant.configure(2) do |config|
     vb.cpus = 2       # NOTE: integration tests fail with less than 2
     vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
 
-    override.build_docker_image = "true"
+    build_docker_image = "true"
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
