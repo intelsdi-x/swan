@@ -13,7 +13,7 @@ echo ">> $HOME_DIR content:"
 ls $HOME_DIR
 echo "######################################"
 
-echo "########## Checking GIT configuration... ##########"
+echo "########## Checking git configuration... ##########"
 echo ">> Root .gitconfig:"
 cat /root/.gitconfig
 echo "######################################"
@@ -42,7 +42,7 @@ echo ">> etcd status:"
 systemctl status etcd
 echo "######################################"
 
-echo "########## Checking GO version... ##########"
+echo "########## Checking Go version... ##########"
 echo ">> GO version:"
 go version
 echo "######################################"
@@ -50,7 +50,7 @@ echo ">> Glide status:"
 glide --version
 echo "######################################"
 
-echo "########## Checking snap version... ##########"
+echo "########## Checking Snap version... ##########"
 echo ">> SNAP version:"
 snapctl --version
 echo "######################################"

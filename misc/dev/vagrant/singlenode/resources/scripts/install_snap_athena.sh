@@ -2,19 +2,16 @@
 
 set -e
 
-echo "prepare root to download athena"
-mkdir -p ~/.ssh/
-ssh-keyscan github.com >> ~/.ssh/known_hosts
-git config --global url."git@github.com:".insteadOf "https://github.com/"
+SNAP_VERSION="v0.14.0-beta"
 
 . $HOME_DIR/.bash_profile
 ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena
 
 echo "Installing Snap..."
-if [ ! -f /cache/snap-v0.14.0-beta-linux-amd64.tar.gz ]; then
-    wget -q -P /cache https://github.com/intelsdi-x/snap/releases/download/v0.14.0-beta/snap-v0.14.0-beta-linux-amd64.tar.gz
-    tar xf /cache/snap-v0.14.0-beta-linux-amd64.tar.gz -C /cache
-    mv /cache/snap-v0.14.0-beta/bin/* $GOPATH/bin
+if [ ! -f /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz ]; then
+    wget -q -P /cache https://github.com/intelsdi-x/snap/releases/download/${SNAP_VERSION}/snap-${SNAP_VERSION}-linux-amd64.tar.gz
+    tar xf /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz -C /cache
+    mv /cache/snap-${SNAP_VERSION}/bin/* $GOPATH/bin
 fi
 
 echo "Installing Athena & its K8s..."
