@@ -28,6 +28,6 @@ ssh-add -l
 
 echo "Injecting SSH public keys..."
 pushd $HOME_DIR
-git clone -b squall0/public_key https://github.com/intelsdi-x/sno-ops.git
+git clone https://github.com/intelsdi-x/sno-ops.git
 cat sno-ops/public_keys/* >> $HOME_DIR/.ssh/authorized_keys
 popd
