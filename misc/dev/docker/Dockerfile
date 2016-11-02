@@ -18,7 +18,8 @@ ADD .gitmodules /root/go/src/github.com/intelsdi-x/swan/
 WORKDIR /vagrant/resources
 RUN ./scripts/copy_configuration.sh && \
     ./scripts/install_packages.sh && \
-    ./scripts/setup_env.sh
+    ./scripts/setup_env.sh && \
+    ./scripts/post_install.sh
 
 # workloads is storing workloads binaries used by swan's experiment.
 ADD workloads /root/go/src/github.com/intelsdi-x/swan/workloads
