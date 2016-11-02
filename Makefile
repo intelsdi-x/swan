@@ -79,7 +79,6 @@ cleanup:
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapd_*
-	etcdctl rm --dir --recursive /registry
 
 remove_vendor:
 	rm -fr vendor/

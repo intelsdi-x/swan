@@ -171,7 +171,7 @@ func TestExperiment(t *testing.T) {
 			Convey("With proper kubernetes configuration and without phases", func() {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				_, err := exp.CombinedOutput()
+				_, err := exp.Output()
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
