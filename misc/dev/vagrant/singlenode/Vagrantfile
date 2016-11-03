@@ -11,10 +11,25 @@ Vagrant.configure(2) do |config|
   aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
-  # if this env is set, it means that we are building
-  # also docker image.
-  build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' &&  ENV['BUILD_CACHED_IMAGE'] || File.exists?(aws_data_file) && "false" || "true")
-  
+
+  # build_docker_image variable is used for enable building
+  # of docker image and multithreaded caffe.
+  # By default, for developer purposes, this value is set to "true"
+  # which means that all of required artifacts are going to be build.
+  build_docker_image = "true"
+
+  # If vagrant is used for running Integration Tests on Kopernik, then
+  # usually we don't have to rebuild all of artifacts due to AMI caching.
+  if File.exists?(aws_data_file)
+    build_docker_image = "false"
+  end
+
+  # Developer can override all of this settings with enviromental variable
+  # and force build behavior.
+  if ENV["BUILD_CACHED_IMAGE"]
+    build_docker_image = ENV['BUILD_CACHED_IMAGE']
+  end
+
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -40,8 +55,8 @@ Vagrant.configure(2) do |config|
     vb.gui = false
     vb.name = "swan"
 
-    vb.cpus = 2       # NOTE: integration tests fail with less than 2
-    vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 2)       # NOTE: integration tests fail with less than 2
+    vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
 
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
@@ -60,9 +75,9 @@ Vagrant.configure(2) do |config|
     aws.access_key_id = data['access_key_id']
     aws.secret_access_key = data['secret_access_key']
     aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
-				 'Ebs.Iops' => 1000,
+                                 'Ebs.Iops' => 1000,
                                  'Ebs.VolumeSize' => 40,
-				 'Ebs.VolumeType' => 'io1'
+                                 'Ebs.VolumeType' => 'io1',
                                  'Ebs.DeleteOnTermination' => true }]
 
     override.vm.box = "aws"

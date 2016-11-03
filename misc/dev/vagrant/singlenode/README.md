@@ -75,6 +75,19 @@ $ vagrant ssh
 3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
 4. Commit & Push your change.
 
+## Changing VM parameters
+### Building additional artifacts
+Depends on provider, Vagrant will build/or not docker image and multithreaded caffe:
+- For `aws` provider, by default vagrant won't build them - it's not necessary due to AMI caching
+- For `virtualbox` provider, by default vagrant will build all of artifacts.
+
+Developer can override this settings with environmental variable: `BUILD_CACHED_IMAGE`. If it is set to `true` then artifacts are going to be build.
+
+### VirtualBox CPUs and RAM values
+By default Vagrant will set 2 CPUs and 4096 MB RAM for VM. Developer can override this values with following environmental variables:
+- `VBOX_CPUS` - ***Note: integration tests fail with less than 2***
+- `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
+
 ## Manually running provision scripts
 - Before running provision scripts, import your private ssh key into your GitHub account.
 - All scripts are stored in `/vagrant/resources/scripts`.
