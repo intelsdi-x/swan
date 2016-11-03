@@ -1,3 +1,5 @@
+// +build parallel
+
 package snap
 
 import (
@@ -38,7 +40,7 @@ func TestSnap(t *testing.T) {
 		So(tags, ShouldHaveLength, 1)
 
 		So(columns[1], ShouldEqual, "/intel/mock/foo")
-		//TODO (iwan) uncomment when we upgrade Snap (0.14 does not save tags in file publisher)
+		//TODO(iwan): uncomment when we upgrade Snap (0.14 does not save tags in file publisher)
 		/*So("foo=bar", ShouldBeIn, tags)
 		host, err := os.Hostname()
 		So(err, ShouldBeNil)

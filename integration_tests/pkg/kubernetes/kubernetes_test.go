@@ -1,3 +1,5 @@
+// +build sequential
+
 package kubernetes
 
 import (

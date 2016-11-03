@@ -1,3 +1,5 @@
+// +build sequential
+
 package sessions
 
 import (
@@ -56,6 +58,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)
+		So(kubernetesHandle, ShouldNotBeNil)
 		defer kubernetesHandle.EraseOutput()
 		defer kubernetesHandle.Clean()
 		defer kubernetesHandle.Stop()
