@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Experimentable is a function that Range(), Set() and Permute() can consume
 type Experimentable func(value interface{})
 
 // Range allows to run a function across a range of integers
