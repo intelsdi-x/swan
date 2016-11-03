@@ -8,12 +8,13 @@
 # you're doing.
 Vagrant.configure(2) do |config|
 
+  aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
+
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
   # if this env is set, it means that we are building
   # also docker image.
-  build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' && ENV['BUILD_CACHED_IMAGE'] || "true")
+  build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' &&  ENV['BUILD_CACHED_IMAGE'] || File.exists?(aws_data_file) && "false" || "true")
   puts build_docker_image
-  puts ENV['BUILD_CACHED_IMAGE']
   puts "END DEBUGGING"
   
   # SSH agent forwarding (for host private keys)
@@ -52,9 +53,8 @@ Vagrant.configure(2) do |config|
     # load a file at this location that can be used to set aws specific
     # information. This allows you to set your own credentials, but also
     # custom what ami the job runs on.
-    file = "#{ENV['HOME']}/.vagrant/aws-creds"
-    if File.exists?(file)
-      data = YAML.load_file(file)
+    if File.exists?(aws_data_file)
+      data = YAML.load_file(aws_data_file)
     else
       data = {}
     end

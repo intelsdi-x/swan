@@ -15,7 +15,6 @@ pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsVagrantUser make repository_reset
 executeAsVagrantUser make deps_all
 if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
-        echo "$BUILD_DOCKER_IMAGE"
         executeAsVagrantUser make build_image
         BUILD_OPENBLAS="true"
 fi
