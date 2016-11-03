@@ -9,11 +9,13 @@
 Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
-  # if this env is set, it means that we are not building
-  # out a full image, but just bringing up an image with
-  # some of the dependencies installed on it. This is being
-  # used to cache dependencies on an AMI.
-
+  # if this env is set, it means that we are building
+  # also docker image.
+  build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' && ENV['BUILD_CACHED_IMAGE'] || "true")
+  puts build_docker_image
+  puts ENV['BUILD_CACHED_IMAGE']
+  puts "END DEBUGGING"
+  
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -34,8 +36,6 @@ Vagrant.configure(2) do |config|
   if File.directory?(File.expand_path("#{ENV['HOME']}/swan_s3_creds"))
        config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds", "#{home_dir}/swan_s3_creds", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
-
-  build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' && ENV['BUILD_CACHED_IMAGE'] || "true")
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
