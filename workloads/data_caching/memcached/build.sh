@@ -8,5 +8,5 @@ popd
 
 pushd mutilate
 git clean -fdx
-scons
+scons --quiet
 popd

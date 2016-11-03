@@ -4,14 +4,11 @@ import (
 	"strconv"
 	"time"
 
-	"path"
-
 	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/pkg/errors"
@@ -41,8 +38,7 @@ const (
 
 var (
 	// pathFlag represents mutilate path flag.
-	pathFlag = conf.NewFileFlag("mutilate_path", "Path to mutilate binary",
-		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/mutilate/mutilate"))
+	pathFlag                   = conf.NewFileFlag("mutilate_path", "Path to mutilate binary", "mutilate")
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
 	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
