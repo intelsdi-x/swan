@@ -17,29 +17,29 @@ Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
 
 class Profile(object):
     """
-    A sensivity profile is a table listing a workload's relative performance (it's measured
+    A sensitivity profile is a table listing a workload's relative performance (it's measured
     quality metric against a target performance). The HTML representation of the profile color
     codes each cell based on it's slack (quality of service head room) or violation.
     """
 
-    MISSING_VALUE = -1
+    MISSING_VALUE = 'N/A'
 
     @staticmethod
-    def _fill_missing_data(qps, violations, columns):
+    def _fill_missing_data(qps, violations, loadpoints):
         """
-        :param qps: query per second column not normalized from cassandra
+        :param qps: queries per second column from cassandra
         :param violations: corresponding list of slo violations for `qps`
-        :param columns: all loadpoints for `qps` as a reference
+        :param loadpoints: all loadpoints for `qps` as a reference
 
         Fill missing data in `violations` with `-1` and grey color in sensitivity table.
         """
-        qpv = zip(qps, violations)
-        diff = set(columns).difference(set(qps))
-        qpc = map(lambda x: (x, Profile.MISSING_VALUE), diff)
-        _data = sorted(itertools.chain(qpv, qpc))
-        violations = [q for (lp, q) in _data]
+        qps_violations = zip(qps, violations)
+        loadpoints__miss_results = set(loadpoints).difference(set(qps))
+        missing_values_replace = map(lambda x: (x, Profile.MISSING_VALUE), loadpoints__miss_results)
+        data_restored = sorted(itertools.chain(qps_violations, missing_values_replace))
+        qps_restored = [q for (lp, q) in data_restored]
 
-        return violations
+        return qps_restored
 
     def __init__(self, e, slo):
         """
@@ -60,7 +60,7 @@ class Profile(object):
         df_of_99th['swan_aggressor_name'].replace(to_replace='None', value="Baseline", inplace=True)
 
         self.p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
-        columns = None
+        loadpoints = None
         data = []
         index = []
 
@@ -71,15 +71,15 @@ class Profile(object):
             aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
             self.categories.append(name)
 
-            # Store columns for data frame from the target QPSes.
-            # In case of partial measurements, we only use the columns from this aggressor
+            # Store loadpoints for data frame from the target QPSes.
+            # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
-            if columns is None or len(columns) < len(qps):
-                columns = qps
+            if loadpoints is None or len(loadpoints) < len(qps):
+                loadpoints = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
-            filled_qps = self._fill_missing_data(qps, violations, columns)
+            filled_qps = self._fill_missing_data(qps, violations, loadpoints)
             data.append(filled_qps)
 
             self.latency_qps_aggrs['x'] = np.array(qps)
@@ -88,9 +88,9 @@ class Profile(object):
 
         self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
 
-        peak = np.amax(columns)
-        columns = map(lambda c: (float(c) / peak) * 100, columns)
-        self.frame = pd.DataFrame(data, columns=columns, index=index).sort_index()
+        peak = np.amax(loadpoints)
+        loadpoints = map(lambda c: (float(c) / peak) * 100, loadpoints)
+        self.frame = pd.DataFrame(data, columns=loadpoints, index=index).sort_index()
 
     def sensitivity_table(self):
         no_border = 'border: 0'
@@ -310,6 +310,7 @@ if __name__ == '__main__':
     exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_without_serenity')
 
+    Profile(exp1, slo=500).sensitivity_table()
     Profile(exp1, slo=500).sensitivity_table()
     Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
