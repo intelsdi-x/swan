@@ -12,9 +12,9 @@ Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
 
-  # build_docker_image variable is used for enable building
+  # build_docker_image variable is used to enable building
   # of docker image and multithreaded caffe.
-  # By default, for developer purposes, this value is set to "true"
+  # By default, for development purposes, this value is set to "true"
   # which means that all of required artifacts are going to be built.
   build_docker_image = "true"
 
