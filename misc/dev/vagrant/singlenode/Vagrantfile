@@ -14,8 +14,6 @@ Vagrant.configure(2) do |config|
   # if this env is set, it means that we are building
   # also docker image.
   build_docker_image = (ENV['BUILD_CACHED_IMAGE'] != '' &&  ENV['BUILD_CACHED_IMAGE'] || File.exists?(aws_data_file) && "false" || "true")
-  puts build_docker_image
-  puts "END DEBUGGING"
   
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
