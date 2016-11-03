@@ -8,11 +8,27 @@
 # you're doing.
 Vagrant.configure(2) do |config|
 
+  aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
+
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
-  # if this env is set, it means that we are not building
-  # out a full image, but just bringing up an image with
-  # some of the dependencies installed on it. This is being
-  # used to cache dependencies on an AMI.
+
+  # build_docker_image variable is used to enable building
+  # of docker image and multithreaded caffe.
+  # By default, for development purposes, this value is set to "true"
+  # which means that all of required artifacts are going to be built.
+  build_docker_image = "true"
+
+  # If vagrant is used to run Integration Tests on Kopernik, then
+  # usually we don't have to rebuild all of artifacts due to AMI caching.
+  if File.exists?(aws_data_file)
+    build_docker_image = "false"
+  end
+
+  # Developer can override all of this settings with enviromental variable
+  # and force build behavior.
+  if ENV["BUILD_CACHED_IMAGE"]
+    build_docker_image = ENV['BUILD_CACHED_IMAGE']
+  end
 
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
@@ -35,16 +51,13 @@ Vagrant.configure(2) do |config|
        config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds", "#{home_dir}/swan_s3_creds", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
-  build_docker_image = ENV['BUILD_CACHED_IMAGE']
-
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
     vb.name = "swan"
 
-    vb.cpus = 2       # NOTE: integration tests fail with less than 2
-    vb.memory = 4096  # NOTE: integration tests tend to crash with less (gcc)
+    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 2)       # NOTE: integration tests fail with less than 2
+    vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
 
-    build_docker_image = "true"
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
@@ -53,9 +66,8 @@ Vagrant.configure(2) do |config|
     # load a file at this location that can be used to set aws specific
     # information. This allows you to set your own credentials, but also
     # custom what ami the job runs on.
-    file = "#{ENV['HOME']}/.vagrant/aws-creds"
-    if File.exists?(file)
-      data = YAML.load_file(file)
+    if File.exists?(aws_data_file)
+      data = YAML.load_file(aws_data_file)
     else
       data = {}
     end
@@ -63,7 +75,9 @@ Vagrant.configure(2) do |config|
     aws.access_key_id = data['access_key_id']
     aws.secret_access_key = data['secret_access_key']
     aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
+                                 'Ebs.Iops' => 1000,
                                  'Ebs.VolumeSize' => 40,
+                                 'Ebs.VolumeType' => 'io1',
                                  'Ebs.DeleteOnTermination' => true }]
 
     override.vm.box = "aws"
@@ -74,7 +88,7 @@ Vagrant.configure(2) do |config|
     # non-cached ami: ami-6d1c2007
     aws.ami = "ami-2c4f1c3b"
     aws.instance_package_timeout = 60000
-    aws.instance_type = (ENV['SWAN_INSTANCE_TYPE'] != '' && ENV['SWAN_INSTANCE_TYPE']) || data['instance_type'] || "m4.large"
+    aws.instance_type = "m4.large"
     aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
   end

@@ -36,6 +36,8 @@ yum install -y -q \
     moreutils-parallel \
     nmap-ncat \
     numactl \
+    openblas \
+    openblas-devel \
     opencv \
     opencv-devel \
     perf \
