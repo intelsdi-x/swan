@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -11,211 +10,157 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
+	"k8s.io/kubernetes/pkg/api"
 )
 
-var serviceNames = []string{
-	"kube-apiserver",
-	"kube-controller-manager",
-	"kube-scheduler",
-	"kube-proxy",
-	"kubelet",
-}
-
-type KubernetesTestSuite struct {
-	suite.Suite
-
-	mExecutor    *mocks.Executor
-	mTaskHandles []*mocks.TaskHandle
-	k8sLauncher  *kubernetes
-
-	outputFile *os.File
-
-	isListeningIteration int
-}
-
-func (s *KubernetesTestSuite) TestKubernetesLauncher() {
-	Convey("While having mocked executor", s.T(), func() {
-		s.mExecutor = new(mocks.Executor)
-		// Create taskHandles with labels corresponding to service names.
-		s.mTaskHandles = []*mocks.TaskHandle{}
-		for _ = range serviceNames {
-			mTaskHandle := new(mocks.TaskHandle)
-			s.mTaskHandles = append(s.mTaskHandles, mTaskHandle)
-		}
-
-		var err error
-		s.outputFile, err = ioutil.TempFile(os.TempDir(), "k8s")
-		if err != nil {
-			s.Fail(err.Error())
-			return
-		}
-		defer s.outputFile.Close()
-
-		Convey("While launching k8s cluster with default configuration", func() {
-			config := DefaultConfig()
-			k8sLauncher, ok := New(s.mExecutor, s.mExecutor, config).(kubernetes)
-			So(ok, ShouldBeTrue)
-
-			s.k8sLauncher = &k8sLauncher
-
-			// Start from first service (service[0]).
-			s.testServiceCasesRecursively(0)
-
-			So(s.mExecutor.AssertExpectations(s.T()), ShouldBeTrue)
-			for _, mTaskHandle := range s.mTaskHandles {
-				So(mTaskHandle.AssertExpectations(s.T()), ShouldBeTrue)
-			}
-		})
-	})
-
-	Convey("Check configuration privileged flag", s.T(), func() {
+func TestKubernetesLauncherConfiguration(t *testing.T) {
+	Convey("When configuration is passed to Kubernetes Launcher", t, func() {
 		config := DefaultConfig()
 		handle := &mocks.TaskHandle{}
 		handle.On("Address").Return("127.0.0.1")
-		Convey("default disallow run privileged containers", func() {
+
+		Convey("Privileged containers should be allowed to run by default", func() {
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=false")
 			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=false")
 
+			Convey("But they can be disallowed through configuration", func() {
+				config.AllowPrivileged = true
+				So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
+				So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
+			})
 		})
-		Convey("but can be changed to allow.", func() {
-			config.AllowPrivileged = true
-			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
-			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
-		})
-	})
 
-	Convey("Check configuration etcd servers flag", s.T(), func() {
-		config := DefaultConfig()
-		handle := &mocks.TaskHandle{}
-		handle.On("Address").Return("127.0.0.1")
-		Convey("default etcd server points to localhost", func() {
+		Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
 
+			Convey("But etcd server location can be changed to arbitrary one", func() {
+				config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
+				So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
+			})
 		})
-		Convey("but can be changed to allow specify own etcd servers.", func() {
-			config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
-			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
-		})
-	})
-
-	Convey("Check extra parameters passed to api-server", s.T(), func() {
-		config := DefaultConfig()
-		handle := &mocks.TaskHandle{}
-		config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
-		handle.On("Address").Return("127.0.0.1")
-		Convey("are escaped and separated correctly.", func() {
+		Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {
+			config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
 		})
+
 	})
 }
 
-// testServiceCasesRecursively tests three cases which can happen for single service during
-// Launcher work:
-// a) failed `Execute` execution.
-// b) failed `IsListening` function (checking the case, where the service started but is not listening.
-// c) successful service creation
-// 		In this particular case we can move to another service, so having mocked successful case
-// 		for service 1 we can run the same function `testServiceCasesRecursively` to test service1+1.
-//
-// Since our launcher just spawn 5 services, to save LOC we test each of them using the this function.
-func (s *KubernetesTestSuite) testServiceCasesRecursively(serviceIterator int) {
-	Convey(fmt.Sprintf("When %q fails to execute, we expect error", serviceNames[serviceIterator]), func() {
-		// Mock current service's executor failure.
-		s.mExecutor.On(
-			"Execute", mock.AnythingOfType("string")).Return(nil, errors.New("executor-fail")).Once()
-		s.mExecutor.On("Name").Return("Local")
+func getMockedTaskHandle(outputFile *os.File) *mocks.TaskHandle {
+	handle := new(mocks.TaskHandle)
+	handle.On("StderrFile").Return(outputFile, nil)
+	handle.On("StdoutFile").Return(outputFile, nil)
+	handle.On("Address").Return("127.0.0.1")
+	handle.On("Stop").Return(nil)
+	handle.On("Clean").Return(nil)
+	handle.On("EraseOutput").Return(nil)
+	handle.On("ExitCode").Return(0, nil)
 
-		// Mock successful connection verifier for `iteration+1` iteration.
-		// It will succeed for current service.
-		s.isListeningIteration = 0
-		s.k8sLauncher.isListening = func(string, time.Duration) bool {
-			s.isListeningIteration++
-			return s.isListeningIteration <= (serviceIterator + 1)
-		}
+	return handle
+}
 
-		k8sHandle, err := s.k8sLauncher.Launch()
-		So(k8sHandle, ShouldBeNil)
-		So(err, ShouldNotBeNil)
-		// Error should wrap the reason of failure.
-		errorCause := errors.Cause(err)
-		So(errorCause.Error(), ShouldContainSubstring, "executor-fail")
-		// Error messages should contain name of each service.
-		So(err.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
-		So(err.Error(), ShouldContainSubstring, "execution of command")
-	})
+func getNodeListFunc(resultNodes []api.Node, resultError error) getReadyNodesFunc {
+	return func(k8sAPIAddress string) ([]api.Node, error) {
+		return resultNodes, resultError
+	}
+}
 
-	Convey(fmt.Sprintf("When %q is not listening on the endpoint, we expect error and it's handle stopped", serviceNames[serviceIterator]), func() {
-		// Mock current service's executor success.
-		s.mExecutor.On(
-			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[serviceIterator], nil).Once()
-		s.mExecutor.On("Name").Return("Local")
+func getIsListeningFunc(result bool) func(address string, timeout time.Duration) bool {
+	return func(address string, timeout time.Duration) bool {
+		return result
+	}
+}
 
-		s.mTaskHandles[serviceIterator].On("StderrFile").Return(s.outputFile, nil)
-		s.mTaskHandles[serviceIterator].On("StdoutFile").Return(s.outputFile, nil)
-		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator])
-		s.mTaskHandles[serviceIterator].On("Stop").Return(nil)
-		s.mTaskHandles[serviceIterator].On("Clean").Return(nil)
-		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil)
-		s.mTaskHandles[serviceIterator].On("ExitCode").Return(1, nil)
+func TestKubernetesLauncher(t *testing.T) {
+	Convey("When testing Kubernetes Launcher", t, func() {
+		// Prepare mocked output file for TaskHandles
+		outputFile, err := ioutil.TempFile(os.TempDir(), "k8s-ut")
+		So(err, ShouldBeNil)
+		defer outputFile.Close()
 
-		// Mock successful connection verifier for `iteration` iteration.
-		// It will fail for current service.
-		s.isListeningIteration = 0
-		s.k8sLauncher.isListening = func(string, time.Duration) bool {
-			s.isListeningIteration++
-			return s.isListeningIteration <= (serviceIterator)
-		}
+		// Prepare Executor Mocks
+		master := new(mocks.Executor)
+		master.On("Name").Return("Mocked Executor")
+		minion := new(mocks.Executor)
+		minion.On("Name").Return("Mocked Executor")
 
-		k8sHandle, err := s.k8sLauncher.Launch()
-		So(k8sHandle, ShouldBeNil)
-		So(err, ShouldNotBeNil)
-		// Error should wrap the reason of failure.
-		errorCause := errors.Cause(err)
-		So(errorCause.Error(), ShouldContainSubstring, serviceNames[serviceIterator])
-		So(errorCause.Error(), ShouldContainSubstring, "failed to connect to service")
-	})
+		config := DefaultConfig()
+		handle := getMockedTaskHandle(outputFile)
 
-	Convey(fmt.Sprintf("When %q execute successfully", serviceNames[serviceIterator]), func() {
-		// Mock current service's executor success.
-		s.mExecutor.On(
-			"Execute", mock.AnythingOfType("string")).Return(s.mTaskHandles[serviceIterator], nil).Once()
+		// Prepare Kubernetes Launcher
+		var k8s kubernetes
+		k8s = New(master, minion, config).(kubernetes)
 
-		s.mTaskHandles[serviceIterator].On("Address").Return(serviceNames[serviceIterator]).Once()
-		s.mTaskHandles[serviceIterator].On("Stop").Return(nil).Once()
-		s.mTaskHandles[serviceIterator].On("Clean").Return(nil).Once()
-		s.mTaskHandles[serviceIterator].On("EraseOutput").Return(nil).Once()
+		Convey("When everything succeed, on Launch method we should receive not-nil task handle and no error", func() {
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			k8s.isListening = getIsListeningFunc(true)
+			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
 
-		// Check if it is the last service.
-		if serviceIterator < len(serviceNames)-1 {
-			// kube-apiserver's Address is passed to other services so we need to add that as well.
-			s.mTaskHandles[0].On("Address").Return(serviceNames[serviceIterator]).Once()
+			resultHandle, err := k8s.Launch()
+			So(err, ShouldBeNil)
+			So(resultHandle, ShouldNotBeNil)
+		})
+		Convey("When Minion executor fails to execte, we should receive nil task handle and an error", func() {
+			err := errors.New("mocked-error")
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			k8s.isListening = getIsListeningFunc(true)
+			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
 
-			// We did not test all of them yet. Go to another service.
-			s.testServiceCasesRecursively(serviceIterator + 1)
-		} else {
-			// It is the last service so check the launcher's successful case.
-			Convey("We expect launcher to return cluster handle and no error", func() {
-				// Mock successful connection verifier for `iteration+1` iteration.
-				// It will succeed for current service.
-				s.isListeningIteration = 0
-				s.k8sLauncher.isListening = func(string, time.Duration) bool {
-					s.isListeningIteration++
-					return s.isListeningIteration <= (serviceIterator + 1)
-				}
+			resultHandle, err := k8s.Launch()
+			So(err, ShouldNotBeNil)
+			So(resultHandle, ShouldBeNil)
+			So(err.Error(), ShouldContainSubstring, err.Error())
+		})
 
-				k8sHandle, err := s.k8sLauncher.Launch()
-				So(k8sHandle, ShouldNotBeNil)
-				So(err, ShouldBeNil)
+		Convey("When Master executor fails to execte, we should receive nil task handle and an error", func() {
+			err := errors.New("mocked-error")
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
+			k8s.isListening = getIsListeningFunc(true)
+			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
 
-				So(k8sHandle.Stop(), ShouldBeNil)
-				So(k8sHandle.Clean(), ShouldBeNil)
-				So(k8sHandle.EraseOutput(), ShouldBeNil)
+			resultHandle, err := k8s.Launch()
+			So(err, ShouldNotBeNil)
+			So(resultHandle, ShouldBeNil)
+			So(err.Error(), ShouldContainSubstring, err.Error())
+		})
+
+		Convey("When Launcher cannot bind TCP connection to endpoint to check if service responds, we should receive an error", func() {
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			k8s.isListening = getIsListeningFunc(false)
+			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
+
+			resultHandle, err := k8s.Launch()
+			So(err, ShouldNotBeNil)
+			So(resultHandle, ShouldBeNil)
+
+			Convey("Assert that task hadle is properly cleaned before returning", func() {
+				handle.AssertCalled(t, "Stop")
+				handle.AssertCalled(t, "Clean")
+				handle.AssertCalled(t, "EraseOutput")
 			})
-		}
-	})
-}
+		})
 
-func TestKubernetesLauncherSuite(t *testing.T) {
-	suite.Run(t, new(KubernetesTestSuite))
+		Convey("When Kubelet cannot register to Master, we should receive an error", func() {
+			err := errors.New("mocked-error")
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			k8s.isListening = getIsListeningFunc(true)
+			k8s.getReadyNodes = getNodeListFunc(nil, err)
+
+			resultHandle, err := k8s.Launch()
+			So(err, ShouldNotBeNil)
+			So(resultHandle, ShouldBeNil)
+			So(err.Error(), ShouldContainSubstring, err.Error())
+
+			Convey("Assert that task hadle is properly cleaned before returning", func() {
+				handle.AssertCalled(t, "Stop")
+				handle.AssertCalled(t, "Clean")
+				handle.AssertCalled(t, "EraseOutput")
+			})
+		})
+	})
 }

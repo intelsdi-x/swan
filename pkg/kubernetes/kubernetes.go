@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
@@ -12,9 +13,19 @@ import (
 	"github.com/intelsdi-x/athena/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
+	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/client/restclient"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
-const serviceListenTimeout = 15 * time.Second
+const (
+	serviceListenTimeout = 15 * time.Second
+
+	// waitForReadyNode configuration
+	waitForReadyNodeBackOffPeriod = 1 * time.Second
+	waitForReadyNodeRetryCount    = 20
+	expectedKubelelNodesCount     = 1
+)
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
@@ -38,7 +49,6 @@ type Config struct {
 	PathToKubeProxy      string
 	PathToKubelet        string
 
-	// TODO(bp): Consider exposing these via flags (SCE-547)
 	// Comma separated list of nodes in the etcd cluster
 	EtcdServers        string
 	EtcdPrefix         string
@@ -58,6 +68,9 @@ type Config struct {
 	KubeSchedulerArgs  string
 	KubeletArgs        string
 	KubeProxyArgs      string
+
+	// Launcher configuration
+	RetryCount uint64
 }
 
 // DefaultConfig is a constructor for Config with default parameters.
@@ -80,6 +93,7 @@ func DefaultConfig() Config {
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
 		KubeAPIArgs:          kubeAPIArgsFlag.Value(),
+		RetryCount:           0,
 	}
 }
 
@@ -108,11 +122,15 @@ func UniqueConfig() (Config, error) {
 	return config, nil
 }
 
+// Type used for UT mocking purposes.
+type getReadyNodesFunc func(k8sAPIAddress string) ([]api.Node, error)
+
 type kubernetes struct {
-	master      executor.Executor
-	minion      executor.Executor
-	config      Config
-	isListening netutil.IsListeningFunction // For mocking purposes.
+	master        executor.Executor
+	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubelelNodesCount const.
+	config        Config
+	isListening   netutil.IsListeningFunction // For mocking purposes.
+	getReadyNodes getReadyNodesFunc           // For mocking purposes.
 }
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
@@ -121,10 +139,11 @@ type kubernetes struct {
 // support ip lookup for pods. To support that we need to setup flannel or calico as well. (SCE-551)
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
 	return kubernetes{
-		master:      master,
-		minion:      minion,
-		config:      config,
-		isListening: netutil.IsListening,
+		master:        master,
+		minion:        minion,
+		config:        config,
+		isListening:   netutil.IsListening,
+		getReadyNodes: getReadyNodes,
 	}
 }
 
@@ -133,31 +152,44 @@ func (m kubernetes) Name() string {
 	return "Kubernetes [single-kubelet]"
 }
 
-// launchService executes service and check if it is listening on it's endpoint.
-func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
-	handle, err := exec.Execute(command)
-	if err != nil {
-		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
+// Launch starts the kubernetes cluster. It returns a cluster
+// represented as a Task Handle instance.
+// Error is returned when Launcher is unable to start a cluster.
+func (m kubernetes) Launch() (handle executor.TaskHandle, err error) {
+	for retry := uint64(0); retry <= m.config.RetryCount; retry++ {
+		handle, err = m.tryLaunchCluster()
+		if err != nil {
+			log.Warningf("could not launch Kubernetes cluster: %q. Retry number: %d", err.Error(), retry)
+			continue
+		}
+
+		return handle, nil
 	}
 
-	address := fmt.Sprintf("%s:%d", handle.Address(), port)
-	if !m.isListening(address, serviceListenTimeout) {
-		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
+	log.Errorf("Could not launch Kubernetes cluster: %q", err.Error())
+	return nil, err
+}
 
-		defer executor.StopCleanAndErase(handle)
+func (m kubernetes) tryLaunchCluster() (executor.TaskHandle, error) {
+	handle, err := m.launchCluster()
+	if err != nil {
+		return nil, err
+	}
 
-		return nil, errors.Errorf(
-			"failed to connect to service %q on %q: timeout on connection to %q",
-			command, exec.Name(), address)
+	apiServerAddress := fmt.Sprintf("%s:%d", handle.Address(), m.config.KubeAPIPort)
+	err = m.waitForReadyNode(apiServerAddress)
+	if err != nil {
+		stopClusterErrors := executor.StopCleanAndErase(handle)
+		if stopClusterErrors.GetErrIfAny() != nil {
+			log.Warningf("Errors while stopping k8s cluster: %v", stopClusterErrors.GetErrIfAny())
+		}
+		return nil, err
 	}
 
 	return handle, nil
 }
 
-// Launch starts the kubernetes cluster. It returns a cluster
-// represented as a Task Handle instance.
-// Error is returned when Launcher is unable to start a cluster.
-func (m kubernetes) Launch() (executor.TaskHandle, error) {
+func (m kubernetes) launchCluster() (executor.TaskHandle, error) {
 	// Launch kube-apiserver using master executor.
 	apiHandle, err := m.launchService(
 		m.master, getKubeAPIServerCommand(m.config), m.config.KubeAPIPort)
@@ -207,8 +239,72 @@ func (m kubernetes) Launch() (executor.TaskHandle, error) {
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
 
-	// NOTE: We may add a simple pre-health-check here for instantiating one pod or checking how
-	// many nodes we have in cluster. (SCE-548)
+	return clusterTaskHandle, err
+}
 
-	return clusterTaskHandle, nil
+// launchService executes service and check if it is listening on it's endpoint.
+func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
+	handle, err := exec.Execute(command)
+	if err != nil {
+		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
+	}
+
+	address := fmt.Sprintf("%s:%d", handle.Address(), port)
+	if !m.isListening(address, serviceListenTimeout) {
+		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
+
+		defer executor.StopCleanAndErase(handle)
+
+		return nil, errors.Errorf(
+			"failed to connect to service %q on %q: timeout on connection to %q",
+			command, exec.Name(), address)
+	}
+
+	return handle, nil
+}
+
+func (m kubernetes) waitForReadyNode(apiServerAddress string) error {
+	for idx := 0; idx < waitForReadyNodeRetryCount; idx++ {
+		nodes, err := m.getReadyNodes(apiServerAddress)
+		if err != nil {
+			return err
+		}
+
+		if len(nodes) == expectedKubelelNodesCount {
+			return nil
+		}
+
+		time.Sleep(waitForReadyNodeBackOffPeriod)
+	}
+
+	return errors.New("kubelet could not register in time")
+}
+
+func getReadyNodes(k8sAPIAddress string) ([]api.Node, error) {
+	kubectlConfig := &restclient.Config{
+		Host:     k8sAPIAddress,
+		Username: "",
+		Password: "",
+	}
+
+	k8sClient, err := client.New(kubectlConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not create new Kubernetes client on %q", k8sAPIAddress)
+	}
+
+	nodes, err := k8sClient.Nodes().List(api.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not obtain Kubernetes node list on %q", k8sAPIAddress)
+	}
+
+	var readyNodes []api.Node
+	for _, node := range nodes.Items {
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == api.NodeReady && condition.Status != api.ConditionTrue {
+				readyNodes = append(readyNodes, node)
+			}
+		}
+	}
+
+	return readyNodes, nil
 }
