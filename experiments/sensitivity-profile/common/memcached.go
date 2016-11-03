@@ -124,10 +124,6 @@ func RunExperimentWithMemcachedSessionLauncher(memcachedSessionLauncherFactory f
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		return err
-	}
 	logrus.SetLevel(conf.LogLevel())
 
 	// Validate preconditions.

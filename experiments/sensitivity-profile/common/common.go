@@ -100,6 +100,10 @@ func noopSessionLauncherFactory(_ sensitivity.Configuration) snap.SessionLaunche
 
 // RunExperiment is main entrypoint to prepare and run experiment.
 func RunExperiment() error {
+	err := conf.ParseFlags()
+	if err != nil {
+		return err
+	}
 	switch hpTaskFlag.Value() {
 	case "memcached":
 		return RunExperimentWithMemcachedSessionLauncher(noopSessionLauncherFactory)

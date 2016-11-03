@@ -5,6 +5,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/snap"
+
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/experiments/sensitivity-profile/topology"
 	"github.com/intelsdi-x/swan/experiments/sensitivity-profile/validate"
@@ -41,9 +42,9 @@ func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 		logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
 		// TODO(bp): Make helper for passing host:port or only host option here.
 
-		specjbbConfig := specjbb.DefaultConfig()
+		specjbbConfig := specjbbsession.DefaultConfig()
 		specjbbConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
-		specjbbSnapSession, err := specjbb.NewSessionLauncher(specjbbConfig)
+		specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -59,10 +60,6 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 	conf.SetAppName("specjbb-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
                      It executes workloads and triggers gathering of metrics like latency (SLI)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		return err
-	}
 	logrus.SetLevel(conf.LogLevel())
 
 	// Validate preconditions.
