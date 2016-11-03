@@ -24,7 +24,7 @@ const (
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
 var RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
 	"run_caffe_with_llcisolation",
-	"If set, for Caffe workload use the same isolations like use for LLC aggressors, otherwise apply no isolation at all",
+	"If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation",
 	true,
 )
 
