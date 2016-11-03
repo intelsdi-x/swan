@@ -15,10 +15,10 @@ Vagrant.configure(2) do |config|
   # build_docker_image variable is used for enable building
   # of docker image and multithreaded caffe.
   # By default, for developer purposes, this value is set to "true"
-  # which means that all of required artifacts are going to be build.
+  # which means that all of required artifacts are going to be built.
   build_docker_image = "true"
 
-  # If vagrant is used for running Integration Tests on Kopernik, then
+  # If vagrant is used to run Integration Tests on Kopernik, then
   # usually we don't have to rebuild all of artifacts due to AMI caching.
   if File.exists?(aws_data_file)
     build_docker_image = "false"

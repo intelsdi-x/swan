@@ -77,14 +77,14 @@ $ vagrant ssh
 
 ## Changing VM parameters
 ### Building additional artifacts
-Depends on provider, Vagrant will build/or not docker image and multithreaded caffe:
-- For `aws` provider, by default vagrant won't build them - it's not necessary due to AMI caching
-- For `virtualbox` provider, by default vagrant will build all of artifacts.
+Depending on provider Vagrant may build a docker image and multithreaded caffe:
+- For `aws` provider, vagrant won't build them by default - it's not necessary due to AMI caching
+- For `virtualbox` provider, vagrant will build all of artifacts by default .
 
-Developer can override this settings with environmental variable: `BUILD_CACHED_IMAGE`. If it is set to `true` then artifacts are going to be build.
+Developer can override this settings using environmental variable: `BUILD_CACHED_IMAGE`. If it is set to `true` then artifacts are going to be built.
 
 ### VirtualBox CPUs and RAM values
-By default Vagrant will set 2 CPUs and 4096 MB RAM for VM. Developer can override this values with following environmental variables:
+Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can override these values with following environmental variables:
 - `VBOX_CPUS` - ***Note: integration tests fail with less than 2***
 - `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
 
