@@ -59,7 +59,11 @@ Vagrant.configure(2) do |config|
     override.nfs.functional = false
     aws.access_key_id = data['access_key_id']
     aws.secret_access_key = data['secret_access_key']
-    aws.block_device_mapping = [{'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 40, 'Ebs.Iops' => 1000, 'Ebs.VolumeType' => 'io1'}]
+    aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
+				 'Ebs.Iops' => 1000,
+                                 'Ebs.VolumeSize' => 40,
+				 'Ebs.VolumeType' => 'io1'
+                                 'Ebs.DeleteOnTermination' => true }]
 
     override.vm.box = "aws"
     # requiretty cannot be set in sudoers for vagrant to work
