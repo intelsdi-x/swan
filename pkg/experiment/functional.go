@@ -1,45 +1,55 @@
 package experiment
 
 import (
+	"reflect"
 	"strconv"
 	"strings"
 )
 
 var experimentContext []interface{}
 
-// Experimentable is a function that Range(), Set() and Permute() can consume
-type Experimentable func(...interface{})
-
 // Range allows to run a function across a range of integers
-func Range(rangeSpec string, r Experimentable) {
-	from, to := parseRangeSpec(rangeSpec)
+func Range(specs ...interface{}) {
+	from, to := parseRangeSpec(specs[0])
 	for i := from; i <= to; i++ {
-		experimentContext := append(experimentContext, i)
-		r(experimentContext...)
-		experimentContext = experimentContext[:len(experimentContext)-1]
+		call(specs[1], i)
 	}
 }
 
-func parseRangeSpec(rangeSpec string) (from, to int) {
-	boundaries := strings.Split(rangeSpec, "-")
+func parseRangeSpec(rangeSpec interface{}) (from, to int) {
+	boundaries := strings.Split(rangeSpec.(string), "-")
 	from, _ = strconv.Atoi(boundaries[0])
 	to, _ = strconv.Atoi(boundaries[1])
 
 	return from, to
 }
 
+func call(r, localContext interface{}) {
+	experimentContext = append(experimentContext, localContext)
+	function := reflect.ValueOf(r)
+	if function.Type().NumIn() > 0 {
+		var args []reflect.Value
+		for _, v := range experimentContext {
+			args = append(args, reflect.ValueOf(v))
+		}
+		function.Call(args)
+	} else {
+
+		function.Call(nil)
+	}
+	experimentContext = experimentContext[:len(experimentContext)-1]
+}
+
 // Set allows to run a function across set of values
-func Set(setSpec string, r Experimentable) {
-	set := parseSetSpec(setSpec)
+func Set(specs ...interface{}) {
+	set := parseSetSpec(specs[0])
 	for _, v := range set {
-		experimentContext = append(experimentContext, v)
-		r(experimentContext...)
-		experimentContext = experimentContext[:len(experimentContext)-1]
+		call(specs[1], v)
 	}
 }
 
-func parseSetSpec(setSpec string) (set []interface{}) {
-	items := strings.Split(setSpec, ",")
+func parseSetSpec(setSpec interface{}) (set []interface{}) {
+	items := strings.Split(setSpec.(string), ",")
 	for _, v := range items {
 		set = append(set, v)
 	}
@@ -47,13 +57,11 @@ func parseSetSpec(setSpec string) (set []interface{}) {
 	return set
 }
 
-// Permute accepts slices of specs, tell set from range and run them recursively
+// Permutate accepts slices of specs, tell set from range and run them recursively
 func Permutate(specs ...interface{}) {
 	if len(specs) > 2 {
-		recursive := func(context ...interface{}) {
-			experimentContext := append(experimentContext, context...)
+		recursive := func() {
 			Permutate(specs[1:]...)
-			experimentContext = experimentContext[:len(experimentContext)-1]
 		}
 		if isSetSpec(specs[0]) {
 			Set(specs[0].(string), recursive)
@@ -62,9 +70,9 @@ func Permutate(specs ...interface{}) {
 		}
 	} else {
 		if isSetSpec(specs[0]) {
-			Set(specs[0].(string), specs[1].(func(...interface{})))
+			Set(specs[0].(string), specs[1])
 		} else if isRangeSpec(specs[0]) {
-			Range(specs[0].(string), specs[1].(func(...interface{})))
+			Range(specs[0].(string), specs[1])
 		}
 
 	}
