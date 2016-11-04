@@ -8,7 +8,7 @@ TEST_OPT?=
 # is running deps before running integration_tests. This is not needed, because
 # we are downloading all of dependencies in provision phase.
 deps: show_env
-integration_test: build_plugins build_swan test_integration
+integration_test: cleanup build_plugins build_swan test_integration
 unit_test: deps_godeps test_unit
 
 deps_all: deps_godeps deps_jupyter
