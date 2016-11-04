@@ -8,7 +8,7 @@ import (
 var experimentContext []interface{}
 
 // Experimentable is a function that Range(), Set() and Permute() can consume
-type Experimentable func(context ...interface{})
+type Experimentable func(...interface{})
 
 // Range allows to run a function across a range of integers
 func Range(rangeSpec string, r Experimentable) {
@@ -48,11 +48,11 @@ func parseSetSpec(setSpec string) (set []interface{}) {
 }
 
 // Permute accepts slices of specs, tell set from range and run them recursively
-func Permute(r Experimentable, transitionalContext []interface{}, specs ...interface{}) {
-	if len(specs) > 1 {
+func Permute(specs ...interface{}) {
+	if len(specs) > 2 {
 		recursive := func(context ...interface{}) {
 			experimentContext := append(experimentContext, context...)
-			Permute(r, experimentContext, specs[1:]...)
+			Permute(specs[1:]...)
 			experimentContext = experimentContext[:len(experimentContext)-1]
 		}
 		if isSetSpec(specs[0]) {
@@ -62,9 +62,9 @@ func Permute(r Experimentable, transitionalContext []interface{}, specs ...inter
 		}
 	} else {
 		if isSetSpec(specs[0]) {
-			Set(specs[0].(string), r)
+			Set(specs[0].(string), specs[1].(func(...interface{})))
 		} else if isRangeSpec(specs[0]) {
-			Range(specs[0].(string), r)
+			Range(specs[0].(string), specs[1].(func(...interface{})))
 		}
 
 	}
