@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Nested Iterate() calls")
 
 	var iteration int
 	repetition := func(a string, b int) {
@@ -15,12 +14,17 @@ func main() {
 		iteration++
 	}
 
+	fmt.Println("Nested Iterate() calls")
 	experiment.Iterate("one,two,three", func() {
 		experiment.Iterate("1-3", repetition)
 	})
 
 	fmt.Println("Should produce identical result as a Permutate() call")
-
 	iteration = 0
 	experiment.Permutate("one,two,three", "1-3", repetition)
+
+	fmt.Println("Dry run should ouput nothing")
+	var numberOfIterations int
+	experiment.Permutate("one,two,three", "1-3", "1-100", func() { numberOfIterations++ })
+	fmt.Printf("Number of iterations that would have been executed: %d", numberOfIterations)
 }
