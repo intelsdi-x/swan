@@ -5,14 +5,18 @@ import (
 	"strings"
 )
 
+var experimentContext []interface{}
+
 // Experimentable is a function that Range(), Set() and Permute() can consume
-type Experimentable func(value interface{})
+type Experimentable func(context ...interface{})
 
 // Range allows to run a function across a range of integers
 func Range(rangeSpec string, r Experimentable) {
 	from, to := parseRangeSpec(rangeSpec)
 	for i := from; i <= to; i++ {
-		r(i)
+		experimentContext := append(experimentContext, i)
+		r(experimentContext...)
+		experimentContext = experimentContext[:len(experimentContext)-1]
 	}
 }
 
@@ -28,7 +32,9 @@ func parseRangeSpec(rangeSpec string) (from, to int) {
 func Set(setSpec string, r Experimentable) {
 	set := parseSetSpec(setSpec)
 	for _, v := range set {
-		r(v)
+		experimentContext = append(experimentContext, v)
+		r(experimentContext...)
+		experimentContext = experimentContext[:len(experimentContext)-1]
 	}
 }
 
@@ -42,30 +48,32 @@ func parseSetSpec(setSpec string) (set []interface{}) {
 }
 
 // Permute accepts slices of specs, tell set from range and run them recursively
-func Permute(specs []string, r Experimentable) {
+func Permute(r Experimentable, transitionalContext []interface{}, specs ...interface{}) {
 	if len(specs) > 1 {
-		recursive := func(value interface{}) {
-			Permute(specs[1:], r)
+		recursive := func(context ...interface{}) {
+			experimentContext := append(experimentContext, context...)
+			Permute(r, experimentContext, specs[1:]...)
+			experimentContext = experimentContext[:len(experimentContext)-1]
 		}
 		if isSetSpec(specs[0]) {
-			Set(specs[0], recursive)
+			Set(specs[0].(string), recursive)
 		} else if isRangeSpec(specs[0]) {
-			Range(specs[0], recursive)
+			Range(specs[0].(string), recursive)
 		}
 	} else {
 		if isSetSpec(specs[0]) {
-			Set(specs[0], r)
+			Set(specs[0].(string), r)
 		} else if isRangeSpec(specs[0]) {
-			Range(specs[0], r)
+			Range(specs[0].(string), r)
 		}
 
 	}
 }
 
-func isSetSpec(spec string) bool {
-	return strings.Contains(spec, ",")
+func isSetSpec(spec interface{}) bool {
+	return strings.Contains(spec.(string), ",")
 }
 
-func isRangeSpec(spec string) bool {
-	return strings.Contains(spec, "-")
+func isRangeSpec(spec interface{}) bool {
+	return strings.Contains(spec.(string), "-")
 }

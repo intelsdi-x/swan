@@ -10,9 +10,9 @@ func main() {
 	fmt.Println("Nested Set() and Range()")
 
 	var iteration int
-	experiment.Set("one,two,three", func(setValue interface{}) {
-		experiment.Range("1-3", func(rangeValue interface{}) {
-			fmt.Printf("iteration: %d\tset: %v\trange: %v\n", iteration, setValue, rangeValue)
+	experiment.Set("one,two,three", func(context ...interface{}) {
+		experiment.Range("1-3", func(context ...interface{}) {
+			fmt.Printf("iteration: %d\tset: %v\trange: %v\n", iteration, context[0], context[1])
 			iteration++
 		})
 	})
@@ -20,8 +20,8 @@ func main() {
 	fmt.Println("Should produce identical result as Permute()")
 
 	iteration = 0
-	experiment.Permute([]string{"one,two,three", "1-3"}, func(rangeValue interface{}) {
-		fmt.Printf("iteration: %d\tset: \trange: %v\n", iteration, rangeValue)
+	experiment.Permute(func(context ...interface{}) {
+		fmt.Printf("iteration: %d\tset: %v\trange: %v\n", iteration, context[0], context[1])
 		iteration++
-	})
+	}, []interface{}{}, "one,two,three", "1-3")
 }
