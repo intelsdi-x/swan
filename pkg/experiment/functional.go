@@ -8,8 +8,25 @@ import (
 
 var experimentContext []interface{}
 
+// Iterate is a public interface of the experiment. It can recognize type of iteration and runs approptiate code.
+func Iterate(specs ...interface{}) {
+	if isSetSpec(specs[0]) {
+		set(specs...)
+	} else if isRangeSpec(specs[0]) {
+		interval(specs...)
+	}
+}
+
+func isSetSpec(spec interface{}) bool {
+	return strings.Contains(spec.(string), ",")
+}
+
+func isRangeSpec(spec interface{}) bool {
+	return strings.Contains(spec.(string), "-")
+}
+
 // Range allows to run a function across a range of integers
-func Range(specs ...interface{}) {
+func interval(specs ...interface{}) {
 	from, to := parseRangeSpec(specs[0])
 	for i := from; i <= to; i++ {
 		call(specs[1], i)
@@ -41,7 +58,7 @@ func call(r, localContext interface{}) {
 }
 
 // Set allows to run a function across set of values
-func Set(specs ...interface{}) {
+func set(specs ...interface{}) {
 	set := parseSetSpec(specs[0])
 	for _, v := range set {
 		call(specs[1], v)
@@ -63,25 +80,9 @@ func Permutate(specs ...interface{}) {
 		recursive := func() {
 			Permutate(specs[1:]...)
 		}
-		if isSetSpec(specs[0]) {
-			Set(specs[0].(string), recursive)
-		} else if isRangeSpec(specs[0]) {
-			Range(specs[0].(string), recursive)
-		}
+		Iterate(specs[0].(string), recursive)
 	} else {
-		if isSetSpec(specs[0]) {
-			Set(specs[0].(string), specs[1])
-		} else if isRangeSpec(specs[0]) {
-			Range(specs[0].(string), specs[1])
-		}
 
+		Iterate(specs...)
 	}
-}
-
-func isSetSpec(spec interface{}) bool {
-	return strings.Contains(spec.(string), ",")
-}
-
-func isRangeSpec(spec interface{}) bool {
-	return strings.Contains(spec.(string), "-")
 }
