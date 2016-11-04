@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?=
+TEST_OPT?="-p 1"
 
 # for compatibility purposes
 # in the future deps target should point to deps_all, currently Kopernik job
