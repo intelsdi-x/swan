@@ -48,11 +48,11 @@ func parseSetSpec(setSpec string) (set []interface{}) {
 }
 
 // Permute accepts slices of specs, tell set from range and run them recursively
-func Permute(specs ...interface{}) {
+func Permutate(specs ...interface{}) {
 	if len(specs) > 2 {
 		recursive := func(context ...interface{}) {
 			experimentContext := append(experimentContext, context...)
-			Permute(specs[1:]...)
+			Permutate(specs[1:]...)
 			experimentContext = experimentContext[:len(experimentContext)-1]
 		}
 		if isSetSpec(specs[0]) {

@@ -20,7 +20,7 @@ func main() {
 	fmt.Println("Should produce identical result as Permute()")
 
 	iteration = 0
-	experiment.Permute("one,two,three", "1-3", func(context ...interface{}) {
+	experiment.Permutate("one,two,three", "1-3", func(context ...interface{}) {
 		fmt.Printf("iteration: %d\tset: %v\trange: %v\n", iteration, context[0], context[1])
 		iteration++
 	})
