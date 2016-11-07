@@ -12,19 +12,33 @@ import (
 )
 
 const (
-	SuccessKey        = "Success"
-	PartialKey        = "Partial"
-	FailedKey         = "Failed"
-	SkipFailKey       = "SkipFail"
-	ProbesKey         = "Probes"
-	SamplesKey        = "Samples"
-	MinKey            = "min"
-	Percentile50Key   = "percentile/50th"
-	Percentile90Key   = "percentile/90th"
-	Percentile95Key   = "percentile/95th"
-	Percentile99Key   = "percentile/99th"
-	MaxKey            = "max"
-	QpsKey            = "qps"
+	// SuccessKey is a key for success metric in SPECjbb controller output.
+	SuccessKey = "Success"
+	// PartialKey is a key for partial metric in SPECjbb controller output.
+	PartialKey = "Partial"
+	// FailedKey is a key for failed metric in SPECjbb controller output.
+	FailedKey = "Failed"
+	// SkipFailKey is a key for skipFail metric in SPECjbb controller output.
+	SkipFailKey = "SkipFail"
+	// ProbesKey is a key for probes metric in SPECjbb controller output.
+	ProbesKey = "Probes"
+	// SamplesKey is a key for samples metric in SPECjbb controller output.
+	SamplesKey = "Samples"
+	// MinKey is a key for min latency metric in SPECjbb controller output.
+	MinKey = "min"
+	// Percentile50Key is a key for 50th percentile metric in SPECjbb controller output.
+	Percentile50Key = "percentile/50th"
+	// Percentile90Key is a key for 90th percentile metric in SPECjbb controller output.
+	Percentile90Key = "percentile/90th"
+	// Percentile95Key is a key for 95th percentile metric in SPECjbb controller output.
+	Percentile95Key = "percentile/95th"
+	// Percentile99Key is a key for 99th percentile metric metric in SPECjbb controller output.
+	Percentile99Key = "percentile/99th"
+	// MaxKey is a key for max latency metric in SPECjbb controller output.
+	MaxKey = "max"
+	// QPSKey is a key for processed requests metric in SPECjbb controller output.
+	QPSKey = "qps"
+	// IssuedRequestsKey is a key for actual injection rate metric in SPECjbb controller output.
 	IssuedRequestsKey = "issued_requests"
 )
 
@@ -155,7 +169,7 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 			if err != nil {
 				return newResults(), err
 			}
-			metricsRaw[QpsKey] = processedRequests
+			metricsRaw[QPSKey] = processedRequests
 			metricsRaw[IssuedRequestsKey] = issuedRequests
 		} else if strings.HasPrefix(line, "TotalPurchase,") {
 			latencies, err := parseTotalPurchaseLatencies(line)
@@ -166,7 +180,7 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 		}
 		metrics.Raw = metricsRaw
 	}
-	_, ok := metrics.Raw[QpsKey]
+	_, ok := metrics.Raw[QPSKey]
 	if !ok {
 		return newResults(), errors.New("cannot find processed requests value (PR) in SPECjbb controller output")
 	}
@@ -195,9 +209,10 @@ func parseRequests(submatch []string) (uint64, uint64, error) {
 			return 0, 0, errors.New("invalid type of issued requests value (aIR) in SPECjbb controller output")
 		}
 		return issuedRequests, processedRequests, nil
-	} else {
-		return 0, 0, errors.New("cannot find processed requests value in SPECjbb controller output")
 	}
+
+	return 0, 0, errors.New("cannot find processed requests value in SPECjbb controller output")
+
 }
 
 func mapCopy(source, destination map[string]uint64) map[string]uint64 {
