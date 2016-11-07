@@ -31,13 +31,13 @@ class Profile(object):
         :param violations: corresponding list of slo violations for `qps`
         :param loadpoints: all loadpoints for `qps` as a reference
 
-        Fill missing data in `violations` with `-1` and grey color in sensitivity table.
+        Fill missing data in `violations` with `N/A` and grey color in sensitivity table.
         """
         qps_violations = zip(qps, violations)
-        loadpoints__miss_results = set(loadpoints).difference(set(qps))
-        missing_values_replace = map(lambda x: (x, Profile.MISSING_VALUE), loadpoints__miss_results)
-        data_restored = sorted(itertools.chain(qps_violations, missing_values_replace))
-        qps_restored = [q for (lp, q) in data_restored]
+        loadpoints_miss_results = set(loadpoints).difference(set(qps))
+        missing_values_replace = map(lambda x: (x, Profile.MISSING_VALUE), loadpoints_miss_results)
+        data_join_na = sorted(itertools.chain(qps_violations, missing_values_replace))
+        qps_restored = [q for (lp, q) in data_join_na]
 
         return qps_restored
 
