@@ -53,7 +53,7 @@ build_workloads:
 
 build_swan:
 	mkdir -p build/experiments/memcached
-	(cd build/experiments/memcached; go build ../../../experiments/sensitivity-profile)
+	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/intelsdi-x/athena/pkg/utils/errutil"
-	"github.com/intelsdi-x/swan/experiments/sensitivity-profile/common"
+	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 )
 
 func main() {
