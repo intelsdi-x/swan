@@ -46,7 +46,9 @@ func (specjbb *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapP
 		[]string{"percentile", "50th"},
 		[]string{"percentile", "90th"},
 		[]string{"percentile", "95th"},
-		[]string{"percentile", "99th"}}
+		[]string{"percentile", "99th"},
+		[]string{"qps"},
+		[]string{"issued_requests"}}
 
 	for _, metricName := range metricNames {
 		metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(metricName...), Unit_: UNIT, Version_: VERSION})
