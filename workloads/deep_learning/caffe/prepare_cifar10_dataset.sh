@@ -20,3 +20,18 @@ else
     mkdir -p /tmp/caffe/examples/cifar10/
     ./examples/cifar10/create_cifar10.sh
 fi
+
+# ./examples/cifar10/create_cifar10.sh converts data from ./data/cifar10/* into 
+# /tmp/caffe/examples/cifar10_[train|test]_lmdb database so downloaded files are not
+# needed anymore.
+if [ -e /tmp/caffe/examples/cifar10/cifar10_train_lmdb/data.mdb ] && [ -e /tmp/caffe/examples/cifar10/cifar10_test_lmdb/data.mdb ]
+then
+    echo "Removing downloaded data"
+    rm -f ./data/cifar10/batches.meta.txt ./data/cifar10/data_batch_?.bin ./data/cifar10/readme.html ./data/cifar10/test_batch.bin
+fi 
+
+# Copy saved weight so we don't need to perform trainning.
+if [ -e ../cifar10_quick_iter_5000.caffemodel.h5 ]
+then
+    cp ../cifar10_quick_iter_5000.caffemodel.h5 /tmp/caffe/
+fi
