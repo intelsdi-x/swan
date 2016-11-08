@@ -14,12 +14,12 @@ import (
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID                        = "caffe"
-	defaultBinaryRelativePath = "deep_learning/caffe/train_quick_cifar10.sh"
+	defaultBinaryRelativePath = "deep_learning/caffe/test_quick_cifar10.sh"
 )
 
 var caffePath = conf.NewStringFlag(
 	"caffe_path",
-	"Path to caffe binary",
+	"Path to script launching caffe as an aggressor",
 	path.Join(fs.GetSwanWorkloadsPath(), defaultBinaryRelativePath),
 )
 
