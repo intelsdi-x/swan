@@ -12,7 +12,7 @@ import (
 
 // DefaultConfig returns default configuration for Mutilate Collector session.
 func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", 2)
+	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
 	publisher.AddConfigItem("server", conf.CassandraAddress.Value())
 
 	return Config{
