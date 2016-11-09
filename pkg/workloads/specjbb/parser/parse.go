@@ -3,9 +3,43 @@ package parser
 import (
 	"bufio"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
+)
+
+const (
+	// SuccessKey is a key for success metric in SPECjbb controller output.
+	SuccessKey = "Success"
+	// PartialKey is a key for partial metric in SPECjbb controller output.
+	PartialKey = "Partial"
+	// FailedKey is a key for failed metric in SPECjbb controller output.
+	FailedKey = "Failed"
+	// SkipFailKey is a key for skipFail metric in SPECjbb controller output.
+	SkipFailKey = "SkipFail"
+	// ProbesKey is a key for probes metric in SPECjbb controller output.
+	ProbesKey = "Probes"
+	// SamplesKey is a key for samples metric in SPECjbb controller output.
+	SamplesKey = "Samples"
+	// MinKey is a key for min latency metric in SPECjbb controller output.
+	MinKey = "min"
+	// Percentile50Key is a key for 50th percentile metric in SPECjbb controller output.
+	Percentile50Key = "percentile/50th"
+	// Percentile90Key is a key for 90th percentile metric in SPECjbb controller output.
+	Percentile90Key = "percentile/90th"
+	// Percentile95Key is a key for 95th percentile metric in SPECjbb controller output.
+	Percentile95Key = "percentile/95th"
+	// Percentile99Key is a key for 99th percentile metric metric in SPECjbb controller output.
+	Percentile99Key = "percentile/99th"
+	// MaxKey is a key for max latency metric in SPECjbb controller output.
+	MaxKey = "max"
+	// QPSKey is a key for processed requests metric in SPECjbb controller output.
+	QPSKey = "qps"
+	// IssuedRequestsKey is a key for actual injection rate metric in SPECjbb controller output.
+	IssuedRequestsKey = "issued_requests"
 )
 
 // Results has a map of results indexed by a name.
@@ -109,6 +143,7 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 }
 
 // ParseLatencies retrieves metrics from specjbb output represented as:
+// 55s: ( 0%) ......|................?............. (rIR:aIR:PR = 4000:4007:4007) (tPR = 60729) [OK]
 // 262s: Performance info:
 // Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
 // Overall,         122034,          0,          0,     115656,      42.09,
@@ -118,23 +153,73 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 func ParseLatencies(reader io.Reader) (Results, error) {
 	metrics := newResults()
 	scanner := bufio.NewScanner(reader)
+	metricsRaw := make(map[string]uint64, 0)
+	// Regex for line with actual injection rate and processed requests.
+	r := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return newResults(), err
 		}
-
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if strings.HasPrefix(line, "TotalPurchase,") {
+		if r.MatchString(line) {
+			submatch := r.FindStringSubmatch(line)
+			issuedRequests, processedRequests, err := parseRequests(submatch)
+			if err != nil {
+				return newResults(), err
+			}
+			metricsRaw[QPSKey] = processedRequests
+			metricsRaw[IssuedRequestsKey] = issuedRequests
+		} else if strings.HasPrefix(line, "TotalPurchase,") {
 			latencies, err := parseTotalPurchaseLatencies(line)
 			if err != nil {
 				return newResults(), err
 			}
-			metrics.Raw = latencies
+			metricsRaw = mapCopy(latencies, metricsRaw)
 		}
+		metrics.Raw = metricsRaw
+	}
+	_, ok := metrics.Raw[QPSKey]
+	if !ok {
+		return newResults(), errors.New("cannot find processed requests value (PR) in SPECjbb controller output")
+	}
+	_, ok = metrics.Raw[IssuedRequestsKey]
+	if !ok {
+		return newResults(), errors.New("cannot find issued requests value (aIR) in SPECjbb controller output")
 	}
 	return metrics, nil
+}
+
+// parseRequests returns two values:
+// - issued requests - number of requests issued by transaction injector to backend
+// - processed requests - number of requests processed by backend
+// by parsing below line from the controller output:
+// 55s: ( 0%) ......|................?............. (rIR:aIR:PR = 4000:4007:4007) (tPR = 60729) [OK]
+func parseRequests(submatch []string) (uint64, uint64, error) {
+	// Returned submatch should have 4 fields: matched string, requested IR, actual IR and processed requests.
+	if len(submatch) >= 4 {
+		// We use actual injection rate and processed requests (two last values in a slice).
+		processedRequests, err := strconv.ParseUint(submatch[len(submatch)-1], 10, 64)
+		if err != nil {
+			return 0, 0, errors.New("invalid type of processed requests value (PR) in SPECjbb controller output")
+		}
+		issuedRequests, err := strconv.ParseUint(submatch[len(submatch)-2], 10, 64)
+		if err != nil {
+			return 0, 0, errors.New("invalid type of issued requests value (aIR) in SPECjbb controller output")
+		}
+		return issuedRequests, processedRequests, nil
+	}
+
+	return 0, 0, errors.New("cannot find processed requests value in SPECjbb controller output")
+
+}
+
+func mapCopy(source, destination map[string]uint64) map[string]uint64 {
+	for k, v := range source {
+		destination[k] = v
+	}
+	return destination
 }
 
 // Parse line from specjbb with latencies of TotalPurchase. For example:
@@ -168,17 +253,17 @@ func parseTotalPurchaseLatencies(line string) (map[string]uint64, error) {
 	}
 
 	return map[string]uint64{
-		"Success":         success,
-		"Partial":         partial,
-		"Failed":          failed,
-		"SkipFail":        skipFail,
-		"Probes":          probes,
-		"Samples":         samples,
-		"min":             min,
-		"percentile/50th": p50,
-		"percentile/90th": p90,
-		"percentile/95th": p95,
-		"percentile/99th": p99,
-		"max":             max,
+		SuccessKey:      success,
+		PartialKey:      partial,
+		FailedKey:       failed,
+		SkipFailKey:     skipFail,
+		ProbesKey:       probes,
+		SamplesKey:      samples,
+		MinKey:          min,
+		Percentile50Key: p50,
+		Percentile90Key: p90,
+		Percentile95Key: p95,
+		Percentile99Key: p99,
+		MaxKey:          max,
 	}, nil
 }

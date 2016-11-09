@@ -1,4 +1,4 @@
-package loadgenerator
+package specjbb
 
 import (
 	"fmt"
@@ -64,7 +64,7 @@ var (
 	BinaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 )
 
-// Config is a config for a SPECjbb2015 Load Generator.,
+// LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
 // Supported options:
 // IP - property "-Dspecjbb.controller.host=" - IP address of a SPECjbb controller component (default:127.0.0.1)
 // PathToBinary - path to specjbb2015.jar
@@ -74,7 +74,7 @@ var (
 // ProductNuber - number of products used to generate load.
 // BinaryDataOutputDir - dir where binary raw data file is stored during run of SPECjbb.
 // PathToOutputTemplate - path to template used to generate report from.
-type Config struct {
+type LoadGeneratorConfig struct {
 	ControllerIP         string
 	PathToBinary         string
 	PathToProps          string
@@ -86,8 +86,8 @@ type Config struct {
 }
 
 // NewDefaultConfig is a constructor for Config with default parameters.
-func NewDefaultConfig() Config {
-	return Config{
+func NewDefaultConfig() LoadGeneratorConfig {
+	return LoadGeneratorConfig{
 		ControllerIP:         IPFlag.Value(),
 		PathToBinary:         PathToBinaryFlag.Value(),
 		PathToProps:          PathToPropsFileFlag.Value(),
@@ -101,10 +101,10 @@ func NewDefaultConfig() Config {
 
 type reporter struct {
 	executor executor.Executor
-	config   Config
+	config   LoadGeneratorConfig
 }
 
-func newReporter(executor executor.Executor, config Config) reporter {
+func newReporter(executor executor.Executor, config LoadGeneratorConfig) reporter {
 	return reporter{
 		executor: executor,
 		config:   config,
@@ -114,14 +114,14 @@ func newReporter(executor executor.Executor, config Config) reporter {
 type loadGenerator struct {
 	controller           executor.Executor
 	transactionInjectors []executor.Executor
-	config               Config
+	config               LoadGeneratorConfig
 }
 
 // NewLoadGenerator returns a new SPECjbb Load Generator instance composed of controller
 // and transaction injectors.
 // Transaction Injector and Controller are load generator for SPECjbb Backend.
 // https://www.spec.org/jbb2015/docs/userguide.pdf
-func NewLoadGenerator(controller executor.Executor, transactionInjectors []executor.Executor, config Config) executor.LoadGenerator {
+func NewLoadGenerator(controller executor.Executor, transactionInjectors []executor.Executor, config LoadGeneratorConfig) executor.LoadGenerator {
 	return loadGenerator{
 		controller:           controller,
 		transactionInjectors: transactionInjectors,

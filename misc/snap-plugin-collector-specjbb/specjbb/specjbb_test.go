@@ -18,7 +18,7 @@ type metric struct {
 }
 
 var (
-	expectedMetricsCount = 6
+	expectedMetricsCount = 8
 	now                  = time.Now()
 	expectedMetrics      = []metric{
 		{"/min", 300, now},
@@ -26,7 +26,9 @@ var (
 		{"/percentile/90th", 21000, now},
 		{"/percentile/95th", 89000, now},
 		{"/percentile/99th", 517000, now},
-		{"/max", 640000, now}}
+		{"/max", 640000, now},
+		{"/qps", 4007, now},
+		{"/issued_requests", 4007, now}}
 )
 
 func TestSpecjbbCollectorPlugin(t *testing.T) {
@@ -63,6 +65,8 @@ func TestSpecjbbCollectorPlugin(t *testing.T) {
 			soValidMetricType(metricTypes[3], "/intel/swan/specjbb/*/percentile/90th", "ns")
 			soValidMetricType(metricTypes[4], "/intel/swan/specjbb/*/percentile/95th", "ns")
 			soValidMetricType(metricTypes[5], "/intel/swan/specjbb/*/percentile/99th", "ns")
+			soValidMetricType(metricTypes[6], "/intel/swan/specjbb/*/qps", "ns")
+			soValidMetricType(metricTypes[7], "/intel/swan/specjbb/*/issued_requests", "ns")
 
 		})
 
