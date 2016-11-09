@@ -64,6 +64,8 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 				"/intel/swan/specjbb/*/percentile/95th",
 				"/intel/swan/specjbb/*/percentile/99th",
 				"/intel/swan/specjbb/*/max",
+				"/intel/swan/specjbb/*/qps",
+				"/intel/swan/specjbb/*/issued_requests",
 			},
 			config.Interval,
 			snapClient,
