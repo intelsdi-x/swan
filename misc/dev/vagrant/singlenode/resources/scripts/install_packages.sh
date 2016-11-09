@@ -25,6 +25,7 @@ yum install -y -q \
     glog-devel \
     hdf5 \
     hdf5-devel \
+    hg \
     htop \
     iptables \
     leveldb \
