@@ -155,7 +155,9 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 	scanner := bufio.NewScanner(reader)
 	metricsRaw := make(map[string]uint64, 0)
 	// Regex for line with actual injection rate and processed requests.
-	r := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
+	rLocal := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
+	// <Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: PRESET: IR = 500 finished, steady status = [OK] (rIR:aIR:PR = 500:500:500) (tPR = 7214)
+	rRemote := regexp.MustCompile("[<a-zA-Z:0-9]+PRESET:[a-zA-Z=0-9]+finished,steadystatus=\\[OK\\][()]rIR:aIR:PR=([0-9]+):([0-9]+):([0-9]+)")
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return newResults(), err
@@ -163,14 +165,11 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if r.MatchString(line) {
-			submatch := r.FindStringSubmatch(line)
-			issuedRequests, processedRequests, err := parseRequests(submatch)
-			if err != nil {
-				return newResults(), err
-			}
-			metricsRaw[QPSKey] = processedRequests
-			metricsRaw[IssuedRequestsKey] = issuedRequests
+		var submatch []string
+		if rLocal.MatchString(line) {
+			submatch = rLocal.FindStringSubmatch(line)
+		} else if rRemote.MatchString(line) {
+			submatch = rRemote.FindStringSubmatch(line)
 		} else if strings.HasPrefix(line, "TotalPurchase,") {
 			latencies, err := parseTotalPurchaseLatencies(line)
 			if err != nil {
@@ -178,8 +177,17 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 			}
 			metricsRaw = mapCopy(latencies, metricsRaw)
 		}
-		metrics.Raw = metricsRaw
+		if len(submatch) > 0 {
+			issuedRequests, processedRequests, err := parseRequests(submatch)
+			if err != nil {
+				return newResults(), err
+			}
+			metricsRaw[QPSKey] = processedRequests
+			metricsRaw[IssuedRequestsKey] = issuedRequests
+		}
 	}
+	metrics.Raw = metricsRaw
+
 	_, ok := metrics.Raw[QPSKey]
 	if !ok {
 		return newResults(), errors.New("cannot find processed requests value (PR) in SPECjbb controller output")

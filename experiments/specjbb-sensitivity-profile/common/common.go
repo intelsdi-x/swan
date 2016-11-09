@@ -1,6 +1,7 @@
 package common
 
 import (
+	"os/user"
 	"runtime"
 
 	"github.com/Sirupsen/logrus"
@@ -22,32 +23,72 @@ var (
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 
-	hpTaskFlag = conf.NewStringFlag("hp", "High priority task to run during experiment", "memcached")
-
 	hpKubernetesCPUResourceFlag    = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits & request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
 	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits & request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
 
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+
+	specjbbIP = conf.NewIPFlag(
+		"specjbb_loadgenerator_ip",
+		"a",
+		"127.0.0.1")
 )
 
 const (
 	txICount = 1
 )
 
+// newRemote is helper for creating remotes with default sshConfig.
+// TODO: this should be put into athena:/pkg/executors
+func newRemote(ip string) (executor.Executor, error) {
+	// TODO(bp): Have ability to choose user using parameter here.
+	user, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+
+	sshConfig, err := executor.NewSSHConfig(ip, executor.DefaultSSHPort, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return executor.NewRemote(sshConfig), nil
+}
+
 // prepareSpecjbbLoadGenerator creates new LoadGenerator based on specjbb.
-func prepareSpecjbbLoadGenerator() executor.LoadGenerator {
+func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
+
+	var loadGeneratorExecutor executor.Executor
+	var transactionInjectors []executor.Executor
+	var err error
+	loadGeneratorExecutor = executor.NewLocal()
+	if ip != "local" {
+		loadGeneratorExecutor, err = newRemote(ip)
+		if err != nil {
+			return nil, err
+		}
+		for i := 1; i <= txICount; i++ {
+			transactionInjector, err := newRemote(ip)
+			if err != nil {
+				return nil, err
+			}
+			transactionInjectors = append(transactionInjectors, transactionInjector)
+		}
+	} else {
+		for i := 1; i <= txICount; i++ {
+			transactionInjector := executor.NewLocal()
+			transactionInjectors = append(transactionInjectors, transactionInjector)
+		}
+	}
+
 	specjbbLoadGeneratorConfig := specjbb_workload.NewDefaultConfig()
+	specjbbLoadGeneratorConfig.ControllerIP = ip
 	specjbbLoadGeneratorConfig.TxICount = txICount
 
-	var transactionInjectors []executor.Executor
-	for i := 1; i <= txICount; i++ {
-		transactionInjector := executor.NewLocal()
-		transactionInjectors = append(transactionInjectors, transactionInjector)
-	}
-	loadGeneratorLauncher := specjbb_workload.NewLoadGenerator(executor.NewLocal(),
+	loadGeneratorLauncher := specjbb_workload.NewLoadGenerator(loadGeneratorExecutor,
 		transactionInjectors, specjbbLoadGeneratorConfig)
 
-	return loadGeneratorLauncher
+	return loadGeneratorLauncher, nil
 }
 
 // repareSnapSpecjbbSessionLauncher prepare a SessionLauncher that runs SPECjbb collector and records that into storage.
@@ -163,6 +204,8 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 	}
 	logrus.SetLevel(conf.LogLevel())
 
+	specjbbHost := specjbbIP.Value()
+
 	// Validate preconditions.
 	validate.CheckCPUPowerGovernor()
 
@@ -188,13 +231,16 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 
 	// HP workload.
 	backendConfig := specjbb_workload.DefaultSPECjbbBackendConfig()
+	backendConfig.IP = specjbbHost
 	backendLauncher := specjbb_workload.NewBackend(hpExecutor, backendConfig)
 	// NewMonitoredLauncher can accept nil as session launcher.
 	backendLauncherSessionPair := sensitivity.NewMonitoredLauncher(backendLauncher, specjbbSessionLauncher)
 
 	// Load generator.
-	specjbbLoadGenerator := prepareSpecjbbLoadGenerator()
-
+	specjbbLoadGenerator, err := prepareSpecjbbLoadGenerator(specjbbHost)
+	if err != nil {
+		return err
+	}
 	specjbbSnapSession, err := prepareSnapSpecjbbSessionLauncher()
 	if err != nil {
 		return err
