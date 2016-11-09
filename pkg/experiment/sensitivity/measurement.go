@@ -250,7 +250,7 @@ func (m *measurementPhase) run(session phase.Session) error {
 
 	if exitCode != 0 {
 		// Load generator failed.
-		return errors.Errorf("executing Mutilate Load returned with exit code %d", exitCode)
+		return errors.Errorf("executing Load Generator returned with exit code %d", exitCode)
 	}
 
 	return nil
