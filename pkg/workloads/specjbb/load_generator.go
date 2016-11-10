@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	// PathToBinaryFlagLoadGeneretor specifies path to a SPECjbb2015 jar file for load generator.
+	// PathToBinaryFlagLoadGenerator specifies path to a SPECjbb2015 jar file for load generator.
 	PathToBinaryFlagLoadGenerator = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
 		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
