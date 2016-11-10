@@ -64,7 +64,10 @@ pack_artifacts:
 	(install -D -m755 workloads/low-level-aggressors/{l1d,l1i,l3,memBw,stream.100M} ${BUILD_ARTIFACTS}/bin)
 
 	(tar -czf artifacts.tgz -C ${BUILD_ARTIFACTS} .)
-	
+
+join: repository_reset build_all pack_artifacts
+	(mv artifacts.tgz ./tmp)
+	(cd tmp; docker build -t tmp .)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
