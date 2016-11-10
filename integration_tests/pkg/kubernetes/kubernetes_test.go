@@ -4,18 +4,18 @@ package kubernetes
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/kubernetes"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
-	"github.com/nu7hatch/gouuid"
-	. "github.com/smartystreets/goconvey/convey"
-	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/kubernetes"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -25,7 +25,6 @@ var (
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
 	logrus.SetLevel(logrus.ErrorLevel)
-
 	Convey("While having local executor", t, func() {
 		local := executor.NewLocal()
 
@@ -41,24 +40,13 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
-			defer stopCleanCheckError(k8sHandle)
+			defer executor.StopCleanAndErase(k8sHandle)
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
 
-				taskHandle, err := local.Execute(fmt.Sprintf("%s -s %s get nodes", kubectlBinPath, kubernetesAddress))
+				output, err := exec.Command(kubectlBinPath, "-s", kubernetesAddress, "get", "nodes").Output()
 				So(err, ShouldBeNil)
-
-				defer stopCleanCheckError(taskHandle)
-
-				taskHandle.Wait(0)
-
-				file, err := taskHandle.StdoutFile()
-				So(err, ShouldBeNil)
-				So(file, ShouldNotBeNil)
-
-				data, readErr := ioutil.ReadAll(file)
-				So(readErr, ShouldBeNil)
 
 				host, err := os.Hostname()
 				So(err, ShouldBeNil)
@@ -67,64 +55,56 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				// NAME            STATUS    AGE
 				// <hostname>      Ready     <x>h
 
-				re, err := regexp.Compile(fmt.Sprintf("%s.*Ready", host))
+				re, err := regexp.Compile(fmt.Sprintf("%s.*?Ready", host))
 				So(err, ShouldBeNil)
 
-				match := re.Find(data)
+				match := re.Find(output)
 				So(match, ShouldNotBeNil)
-			})
 
-			Convey("And we are able to create and remove pod", func() {
-				// NOTE: We pick a unique deployment name to reduce the likelihood of interference between
-				// test runs.
-				deploymentName, err := uuid.NewV4()
-				So(err, ShouldBeNil)
+				Convey("And K8s cluster can be stopped with no error", func() {
+					var errors []string
+					err := k8sHandle.Stop()
+					if err != nil {
+						errors = append(errors, err.Error())
+					}
+					err = k8sHandle.Clean()
+					if err != nil {
+						errors = append(errors, err.Error())
+					}
+					err = k8sHandle.EraseOutput()
+					if err != nil {
+						errors = append(errors, err.Error())
+					}
 
-				// Command kubectl 'run' creates a Deployment with uuid above on Kubernetes cluster.
-				podCreateHandle, err := local.Execute(
-					fmt.Sprintf("%s -s %s run %s --image=nginx", kubectlBinPath, kubernetesAddress, deploymentName.String()))
-				So(err, ShouldBeNil)
+					So(len(errors), ShouldEqual, 0)
+				})
 
-				defer stopCleanCheckError(podCreateHandle)
+				Convey("And we are able to create and remove pod", func() {
+					const containerName = "kubernetes-test-go-stress"
+					config := executor.DefaultKubernetesConfig()
+					config.Address = kubernetesAddress
+					config.ContainerImage = "jess/stress"
+					config.ContainerName = containerName
+					k8sExecutor, err := executor.NewKubernetes(config)
+					So(err, ShouldBeNil)
 
-				podCreateHandle.Wait(0)
+					podHandle, err := k8sExecutor.Execute("stress -c 1")
+					So(err, ShouldBeNil)
+					defer executor.StopCleanAndErase(podHandle)
 
-				file, err := podCreateHandle.StdoutFile()
-				So(err, ShouldBeNil)
-				So(file, ShouldNotBeNil)
+					output, err := exec.Command("sudo", "docker", "ps").Output()
+					So(err, ShouldBeNil)
+					So(string(output), ShouldContainSubstring, containerName)
 
-				data, readErr := ioutil.ReadFile(file.Name())
-				So(readErr, ShouldBeNil)
+					err = podHandle.Stop()
+					So(err, ShouldBeNil)
 
-				// Output should equal:
-				// deployment "<uuid of deployment>" created
-				So(string(data), ShouldEqual, fmt.Sprintf("deployment \"%s\" created\n", deploymentName.String()))
+					output, err = exec.Command("sudo", "docker", "ps").Output()
+					So(err, ShouldBeNil)
+					So(string(output), ShouldNotContainSubstring, containerName)
 
-				//Remove created pod.
-				podRemoveHandle, err := local.Execute(fmt.Sprintf("%s -s %s delete deployment %s", kubectlBinPath, kubernetesAddress, deploymentName.String()))
-				So(err, ShouldBeNil)
-
-				defer stopCleanCheckError(podRemoveHandle)
-
-				podRemoveHandle.Wait(0)
+				})
 			})
 		})
 	})
-}
-
-func stopCleanCheckError(taskHandle executor.TaskHandle) {
-	var errors []string
-	err := taskHandle.Stop()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	err = taskHandle.Clean()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	err = taskHandle.EraseOutput()
-	if err != nil {
-		errors = append(errors, err.Error())
-	}
-	So(len(errors), ShouldEqual, 0)
 }

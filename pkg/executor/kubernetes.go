@@ -24,6 +24,8 @@ import (
 
 const (
 	defaultContainerImage = "jess/stress" // TODO: replace with "centos_swan_image" when available.
+
+	dockerSockPath = "unix:///var/run/docker.sock"
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -176,6 +178,7 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 		return nil, errors.Wrapf(err, "cannot generate pod name")
 	}
 
+	var zero int64
 	return &api.Pod{
 		TypeMeta: unversioned.TypeMeta{},
 		ObjectMeta: api.ObjectMeta{
@@ -184,8 +187,9 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: api.PodSpec{
-			RestartPolicy:   "Never",
-			SecurityContext: &api.PodSecurityContext{HostNetwork: k8s.config.HostNetwork},
+			RestartPolicy:                 "Never",
+			SecurityContext:               &api.PodSecurityContext{HostNetwork: k8s.config.HostNetwork},
+			TerminationGracePeriodSeconds: &zero,
 			Containers: []api.Container{
 				api.Container{
 					Name:            k8s.config.ContainerName,
@@ -304,9 +308,10 @@ func (th *kubernetesTaskHandle) Stop() error {
 
 	log.Debugf("K8s task handle: deleting pod %q", th.podName)
 
-	var GracePeriodSeconds int64
+	// Setting GP to zero will erase pod from API server and won't wait for it to exit.
+	gracePeriodSeconds := int64(1)
 	err := th.podsAPI.Delete(th.podName, &api.DeleteOptions{
-		GracePeriodSeconds: &GracePeriodSeconds,
+		GracePeriodSeconds: &gracePeriodSeconds,
 	})
 	if err != nil {
 		log.Errorf("K8s task handle: cannot delete pod %q", th.podName)

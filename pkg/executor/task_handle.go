@@ -54,9 +54,11 @@ type TaskControl interface {
 
 // StopCleanAndErase run stop, clean and eraseOutput on taskHandle and add errors to errorCollection
 func StopCleanAndErase(handle TaskHandle) (errorCollection errcollection.ErrorCollection) {
-	errorCollection.Add(handle.Stop())
-	errorCollection.Add(handle.Clean())
-	errorCollection.Add(handle.EraseOutput())
+	if handle != nil {
+		errorCollection.Add(handle.Stop())
+		errorCollection.Add(handle.Clean())
+		errorCollection.Add(handle.EraseOutput())
+	}
 
 	return
 }

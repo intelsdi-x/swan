@@ -4,8 +4,8 @@ package executor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -19,21 +19,20 @@ import (
 )
 
 const (
-	clusterSpawnTimeout = 2 * time.Minute
-	podSpawnTimeout     = 10 * time.Second
-	podFinishedTimeout  = 90 * time.Second
+	podFinishedTimeout = 90 * time.Second
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	// Create Kubernetes configuration.
-	config := kubernetes.DefaultConfig()
+	config, err := kubernetes.UniqueConfig()
+	if err != nil {
+		t.Errorf("could not generate k8s unique config: %q", err)
+	}
 	executorConfig := executor.DefaultKubernetesConfig()
+	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
 	// Create kubectl helper for communicate with Kubernetes cluster.
 	kubectl, err := testhelpers.NewKubeClient(executorConfig)
 	if err != nil {
-		// NewKubeClient() returns error only when kubernetes configuration is
-		// invalid.
 		t.Errorf("Requested configuration is invalid: %q", err)
 	}
 
@@ -45,32 +44,22 @@ func TestKubernetesExecutor(t *testing.T) {
 		t.Errorf("Cannot start k8s cluster: %q", err)
 	}
 
-	// Wait for at least one node is up and running in cluster.
-	if err := kubectl.WaitForCluster(clusterSpawnTimeout); err != nil {
-		t.Errorf("Cannot launch K8s cluster: %q", err)
-	}
-
 	// Make sure cluster is shut down and cleaned up when test ends.
 	defer func() {
 		errs := executor.StopCleanAndErase(k8sHandle)
-
-		errs.Add(exec.Command("etcdctl", "rm", "--recursive", "--dir", "/registry").Run())
-
 		if err := errs.GetErrIfAny(); err != nil {
 			t.Errorf("Cannot stop cluster: %q", err)
 		}
 	}()
 
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
-
 		// Generate random pod name. This pod name should be unique for each
 		// test case inside this Convey.
 		podName, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 		executorConfig.PodNamePrefix = podName.String()
 
-		// Create Kubernetes executor, which should be passed to following
-		// Conveys.
+		// Create Kubernetes executor, which should be passed to following conveys.
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
 
@@ -90,12 +79,6 @@ func TestKubernetesExecutor(t *testing.T) {
 			// should pass to taskHandle object.
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
 			defer executor.StopCleanAndErase(taskHandle)
-			So(err, ShouldBeNil)
-
-			// Spawning pods on Kubernetes is a complex process which consists
-			// of i.a.: scheduling and pulling image. Test should wait for
-			// processing executing request.
-			err = kubectl.WaitForPod(podSpawnTimeout)
 			So(err, ShouldBeNil)
 
 			Convey("And after few seconds", func() {
@@ -126,9 +109,6 @@ func TestKubernetesExecutor(t *testing.T) {
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
 			defer executor.StopCleanAndErase(taskHandle)
-			So(err, ShouldBeNil)
-
-			err = kubectl.WaitForPod(podSpawnTimeout)
 			So(err, ShouldBeNil)
 
 			Convey("And after few seconds", func() {
@@ -213,6 +193,5 @@ func TestKubernetesExecutor(t *testing.T) {
 			stopped := taskHandle.Wait(5 * time.Second)
 			So(stopped, ShouldBeTrue)
 		})
-
 	})
 }

@@ -93,7 +93,7 @@ func DefaultConfig() Config {
 		ServiceAddresses:     "10.2.0.0/16",
 		KubeletArgs:          kubeletArgsFlag.Value(),
 		KubeAPIArgs:          kubeAPIArgsFlag.Value(),
-		RetryCount:           0,
+		RetryCount:           2,
 	}
 }
 

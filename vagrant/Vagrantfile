@@ -93,6 +93,7 @@ EOF
       gcc-g++ \
       gengetopt \
       git \
+      hg \
       iptables \
       libcgroup-tools \
       libevent-devel \
