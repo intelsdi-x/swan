@@ -42,6 +42,9 @@ var (
 	// ProductNumberFlag specifies number of products.
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
 
+	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
+	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"))
+
 	// ControllerHostProperty - string name for property that specifies controller host.
 	ControllerHostProperty = " -Dspecjbb.controller.host="
 
@@ -94,7 +97,7 @@ func NewDefaultConfig() LoadGeneratorConfig {
 		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
-		BinaryDataOutputDir:  path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"),
+		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
 	}
 }
