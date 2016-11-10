@@ -155,6 +155,7 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 	scanner := bufio.NewScanner(reader)
 	metricsRaw := make(map[string]uint64, 0)
 	// Regex for line with actual injection rate and processed requests.
+	// 55s: ( 0%) ......|................?............. (rIR:aIR:PR = 4000:4007:4007) (tPR = 60729) [OK]
 	rLocal := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
 	// <Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: PRESET: IR = 500 finished, steady status = [OK] (rIR:aIR:PR = 500:500:500) (tPR = 7214)
 	rRemote := regexp.MustCompile("[<a-zA-Z:0-9]+PRESET:[a-zA-Z=0-9]+finished,steadystatus=\\[OK\\][()]rIR:aIR:PR=([0-9]+):([0-9]+):([0-9]+)")
