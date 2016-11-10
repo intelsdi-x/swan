@@ -21,8 +21,11 @@ const (
 )
 
 var (
-	// PathToBinaryFlag specifies path to a SPECjbb2015 jar file.
-	PathToBinaryFlag = conf.NewStringFlag("specjbb_path", "Path to SPECjbb jar", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+	// PathToBinaryFlagHp specifies path to a SPECjbb2015 jar file for hp job.
+	PathToBinaryFlagHp = conf.NewStringFlag("specjbb_path_hp", "Path to SPECjbb jar for high priority job (backend)", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+
+	// PathToBinaryFlagLoadGeneretor specifies path to a SPECjbb2015 jar file for load generator.
+	PathToBinaryFlagLoadGenerator = conf.NewStringFlag("specjbb_path_lc", "Path to SPECjbb jar for load generator", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
 	// PathToPropsFileFlag specifies path to a SPECjbb2015 properties file.
 	PathToPropsFileFlag = conf.NewStringFlag("specjbb_props_path", "Path to SPECjbb properties file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
@@ -92,7 +95,7 @@ type LoadGeneratorConfig struct {
 func NewDefaultConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		ControllerIP:         IPFlag.Value(),
-		PathToBinary:         PathToBinaryFlag.Value(),
+		PathToBinary:         PathToBinaryFlagLoadGenerator.Value(),
 		PathToProps:          PathToPropsFileFlag.Value(),
 		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),

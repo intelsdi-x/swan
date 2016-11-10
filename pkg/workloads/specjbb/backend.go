@@ -25,7 +25,7 @@ type BackendConfig struct {
 // DefaultSPECjbbBackendConfig is a constructor for Config with default parameters.
 func DefaultSPECjbbBackendConfig() BackendConfig {
 	return BackendConfig{
-		PathToBinary: PathToBinaryFlag.Value(),
+		PathToBinary: PathToBinaryFlagHp.Value(),
 		IP:           IPFlag.Value(),
 		JvmID:        TxICountFlag.Value() + defaultJVMNId, // Backend JVM Id is always one more than number of TxI components.
 	}
