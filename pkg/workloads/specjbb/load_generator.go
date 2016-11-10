@@ -21,14 +21,13 @@ const (
 )
 
 var (
-	// PathToBinaryFlagHp specifies path to a SPECjbb2015 jar file for hp job.
-	PathToBinaryFlagHp = conf.NewStringFlag("specjbb_path_hp", "Path to SPECjbb jar for high priority job (backend)", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
-
 	// PathToBinaryFlagLoadGeneretor specifies path to a SPECjbb2015 jar file for load generator.
-	PathToBinaryFlagLoadGenerator = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+	PathToBinaryFlagLoadGenerator = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
-	// PathToPropsFileFlag specifies path to a SPECjbb2015 properties file.
-	PathToPropsFileFlag = conf.NewStringFlag("specjbb_props_path", "Path to SPECjbb properties file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
+	// PathToPropsFileFlagLoadGenerator specifies path to a SPECjbb2015 properties file for load generator.
+	PathToPropsFileFlagLoadGenerator = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
 
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
 	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "template-D.raw"))
@@ -96,7 +95,7 @@ func NewDefaultConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		ControllerIP:         IPFlag.Value(),
 		PathToBinary:         PathToBinaryFlagLoadGenerator.Value(),
-		PathToProps:          PathToPropsFileFlag.Value(),
+		PathToProps:          PathToPropsFileFlagLoadGenerator.Value(),
 		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
