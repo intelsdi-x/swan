@@ -15,17 +15,17 @@ func main() {
 
 	// Nested Iterate() calls
 	fmt.Println("Nested Iterate() calls")
-	experiment.Iterate(experiment.Arg{"some random set", []interface{}{"one", "two", "three"}}, func() {
+	experiment.Iterate(experiment.Arg{"some random set", experiment.Set{"one", "two", "three"}}, func() {
 		experiment.Iterate(experiment.Arg{"equally random interval", &experiment.Interval{From: 0, To: 3, Step: 1}}, repetition)
 	})
 
 	// Single Permutate() call
 	fmt.Println("Should produce identical result as a Permutate() call")
 	iteration = 0
-	experiment.Permutate(experiment.Arg{"some random set", []interface{}{"one", "two", "three"}}, experiment.Arg{"equally random interval", &experiment.Interval{From: 0, To: 3, Step: 1}}, repetition)
+	experiment.Permutate(experiment.Arg{"some random set", experiment.Set{"one", "two", "three"}}, experiment.Arg{"equally random interval", &experiment.Interval{From: 0, To: 3, Step: 1}}, repetition)
 
 	// Dry run example
 	fmt.Println("Dry run should ouput nothing")
-	experiment.Permutate(experiment.Arg{"some random set", []interface{}{"one", "two", "three"}}, experiment.Arg{"equally random interval", &experiment.Interval{From: 0, To: 3, Step: 0.001}}, experiment.DryRun)
+	experiment.Permutate(experiment.Arg{"some random set", experiment.Set{"one", "two", "three"}}, experiment.Arg{"equally random interval", &experiment.Interval{From: 0, To: 3, Step: 0.001}}, experiment.DryRun)
 	fmt.Printf("Number of iterations that would have been executed: %d", experiment.GetNumberOfIterations())
 }

@@ -7,9 +7,9 @@ type Interval struct {
 	Step float64
 }
 
-// Execute iterates over values that Interval
-func (r *Interval) Execute(runnable interface{}) {
+// Iterate implements Iterator interface
+func (r *Interval) Iterate(runnable interface{}) {
 	for i := r.From; i < r.To; i = i + r.Step {
-		call(runnable, i)
+		Call(runnable, i)
 	}
 }
