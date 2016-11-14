@@ -34,14 +34,9 @@ var (
 		"127.0.0.1")
 )
 
-const (
-	txICount = 1
-)
-
 // newRemote is helper for creating remotes with default sshConfig.
 // TODO: this should be put into athena:/pkg/executors
 func newRemote(ip string) (executor.Executor, error) {
-	// TODO(bp): Have ability to choose user using parameter here.
 	user, err := user.Current()
 	if err != nil {
 		return nil, err
@@ -61,7 +56,7 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 	var loadGeneratorExecutor executor.Executor
 	var transactionInjectors []executor.Executor
 	var err error
-	loadGeneratorExecutor = executor.NewLocal()
+	txICount := specjbb_workload.TxICountFlag.Value()
 	if ip != "local" {
 		loadGeneratorExecutor, err = newRemote(ip)
 		if err != nil {
@@ -75,6 +70,7 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 			transactionInjectors = append(transactionInjectors, transactionInjector)
 		}
 	} else {
+		loadGeneratorExecutor = executor.NewLocal()
 		for i := 1; i <= txICount; i++ {
 			transactionInjector := executor.NewLocal()
 			transactionInjectors = append(transactionInjectors, transactionInjector)
@@ -98,8 +94,6 @@ func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 	if snap.SnapdHTTPEndpoint.Value() != "none" {
 		// Create connection with Snap.
 		logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
-		// TODO(bp): Make helper for passing host:port or only host option here.
-
 		specjbbConfig := specjbbsession.DefaultConfig()
 		specjbbConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
 		specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbConfig)

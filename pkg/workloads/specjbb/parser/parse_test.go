@@ -93,7 +93,7 @@ func TestStdoutParser(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 	})
-	Convey("Attempting to read file with many iterations for load", t, func() {
+	Convey("Attempting to read correct and redeable file with many iterations for load", t, func() {
 		path, err := filepath.Abs("many_iterations")
 		So(err, ShouldBeNil)
 		Convey("should return last iteration results and no error", func() {
@@ -116,7 +116,7 @@ func TestStdoutParser(t *testing.T) {
 			So(results.Raw[IssuedRequestsKey], ShouldEqual, 3999)
 		})
 	})
-	Convey("Attempting to read file with output from SPECjbb run remotely", t, func() {
+	Convey("Attempting to read correct and readable file for latencies with output from SPECjbb run remotely", t, func() {
 		path, err := filepath.Abs("remote_output")
 		So(err, ShouldBeNil)
 		Convey("should return correct results and no error", func() {
