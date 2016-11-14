@@ -15,15 +15,15 @@ func main() {
 	}
 
 	fmt.Println("Nested Iterate() calls")
-	experiment.Iterate("one,two,three", func() {
-		experiment.Iterate("1-3", repetition)
+	experiment.Iterate(experiment.Arg{"some random set", "one,two,three"}, func() {
+		experiment.Iterate(experiment.Arg{"equally random interval", "1-3"}, repetition)
 	})
 
 	fmt.Println("Should produce identical result as a Permutate() call")
 	iteration = 0
-	experiment.Permutate("one,two,three", "1-3", repetition)
+	experiment.Permutate(experiment.Arg{"some random set", "one,two,three"}, experiment.Arg{"equally random interval", "1-3"}, repetition)
 
 	fmt.Println("Dry run should ouput nothing")
-	experiment.Permutate("one,two,three", "1-3", "1-100", experiment.DryRun)
+	experiment.Permutate(experiment.Arg{"some random set", "one,two,three"}, experiment.Arg{"equally random interval", "1-3"}, experiment.DryRun)
 	fmt.Printf("Number of iterations that would have been executed: %d", experiment.GetNumberOfIterations())
 }
