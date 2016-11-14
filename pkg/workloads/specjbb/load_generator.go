@@ -200,10 +200,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 // calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
 // We use critical jops value because maximum capacity (HBIR) is high above our desired SLA.
 // Exemplary output for machine capacity, HBIR = 12000:
-// critical-jOPS = Geomean ( jOPS @ 10000; 25000; 50000; 75000; 100000; SLAs )
-// Response time percentile is 99-th
-// SLA (us)	10000	25000	50000	75000	100000	Geomean
-// jOPS		1789	2588	2848	3080	3428	2684
+// RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
 	hbirRtCommand := getControllerHBIRRTCommand(loadGenerator.config)
 	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
