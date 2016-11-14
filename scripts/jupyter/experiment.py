@@ -55,13 +55,13 @@ class Experiment(object):
         for row_count, row in enumerate(self.session.execute(statement), start=1):
             k = (row.ns, row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             self.rows[k] = row
-            if row.ns == "/intel/swan/mutilate/%s/qps" % row.host:
+            if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 self.qps[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])] = row.doubleval
 
     def populate_data(self):
         for row in self.rows.itervalues():
             if row.valtype == "doubleval":
-                ns = "/intel/swan/mutilate/%s/qps" % row.host
+                ns = "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host)
                 achived_qps = (self.qps[(ns, row.tags['swan_phase'], row.tags['swan_repetition'])] /
                                float(row.tags['swan_loadpoint_qps']))
                 percent_qps = '{percent:.2%}'.format(percent=achived_qps)

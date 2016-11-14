@@ -132,7 +132,8 @@ class Profile(object):
                 else:
                     style += 'background-color: #98cc70;'
 
-                html_out += '<td style="%s">%.1f%%</td>' % (style, value)
+                value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
+                html_out += '<td style="%s">%s</td>' % (style, value)
             html_out += '</tr>'
 
         html_out += '</table>'
