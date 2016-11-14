@@ -3,8 +3,6 @@ package experiment
 import (
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 )
 
 var experimentContext []interface{}
@@ -16,7 +14,7 @@ type Arg struct {
 	Spec interface{}
 }
 
-// Permutate accepts slices of specs, tell set from range and run them recursively
+// Permutate accepts variable number of arguments. Allows to specify multiple instances of Arg of various type of Spec. The last one needs to be a function that is to be executed.
 func Permutate(specs ...interface{}) {
 	if len(specs) > 2 {
 		recursive := func() {
@@ -29,40 +27,33 @@ func Permutate(specs ...interface{}) {
 	}
 }
 
-// Iterate is a public interface of the experiment. It can recognize type of iteration and runs approptiate code.
+// Iterate is a public interface of the experiment. It can recognize type of iteration and runs approptiate code. Last argument needs to be a function that is to be executed.
 func Iterate(specs ...interface{}) {
-	fmt.Printf("Executing step %s with arguments %s\n", specs[0].(Arg).Name, specs[0].(Arg).Spec.(string))
-	if isSetSpec(specs[0]) {
-		set(specs...)
-	} else if isIntervalSpec(specs[0]) {
-		interval(specs...)
+	fmt.Printf("Executing step %s with arguments %s\n", specs[0].(Arg).Name, specs[0].(Arg).Spec)
+	if isSetSpec(specs) {
+		set(specs[0].(Arg), specs[1])
+	} else if isIntervalSpec(specs) {
+		interval(specs[0].(Arg), specs[1])
 	}
 }
 
-func isSetSpec(spec interface{}) bool {
-	return strings.Contains(spec.(Arg).Spec.(string), ",")
+func isSetSpec(specs []interface{}) bool {
+	value := reflect.ValueOf(specs[0].(Arg).Spec)
+
+	return value.Kind() == reflect.Slice && len(specs) == 2
 }
 
-func set(specs ...interface{}) {
-	set := parseSetSpec(specs[0])
-	for _, v := range set {
-		call(specs[1], v)
+func set(spec Arg, runnable interface{}) {
+	for _, v := range spec.Spec.([]interface{}) {
+		call(runnable, v)
 	}
 }
 
-func parseSetSpec(setSpec interface{}) (set []interface{}) {
-	items := strings.Split(setSpec.(Arg).Spec.(string), ",")
-	for _, v := range items {
-		set = append(set, v)
-	}
-
-	return set
-}
-
-func call(r, localContext interface{}) {
+// call handles calling a function passed to Iterate(). It is capable of calling a function with no arguments or with number of arguments equal to number of Arg instances parsed.
+func call(runnable, localContext interface{}) {
 	experimentContext = append(experimentContext, localContext)
 	defer func() { experimentContext = experimentContext[:len(experimentContext)-1] }()
-	function := reflect.ValueOf(r)
+	function := reflect.ValueOf(runnable)
 	if function.Type().NumIn() > 0 {
 		var args []reflect.Value
 		for _, v := range experimentContext {
@@ -75,23 +66,14 @@ func call(r, localContext interface{}) {
 	}
 }
 
-func isIntervalSpec(spec interface{}) bool {
-	return strings.Contains(spec.(Arg).Spec.(string), "-")
+func isIntervalSpec(specs []interface{}) bool {
+	_, ok := specs[0].(Arg).Spec.(*Interval)
+
+	return ok && len(specs) == 2
 }
 
-func interval(specs ...interface{}) {
-	from, to := parseIntervalSpec(specs[0])
-	for i := from; i <= to; i++ {
-		call(specs[1], i)
-	}
-}
-
-func parseIntervalSpec(rangeSpec interface{}) (from, to int) {
-	boundaries := strings.Split(rangeSpec.(Arg).Spec.(string), "-")
-	from, _ = strconv.Atoi(boundaries[0])
-	to, _ = strconv.Atoi(boundaries[1])
-
-	return from, to
+func interval(spec Arg, runnable interface{}) {
+	spec.Spec.(*Interval).Execute(runnable)
 }
 
 // DryRun is a helper function that allows to estimate number of iterations that Permutate() generates
