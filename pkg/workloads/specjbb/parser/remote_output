@@ -358,3 +358,5 @@ Non-mandatory options are:
   -timeOffsetLimitExceptions <msec> Time offset limit exceptions allowed (default: 10)
   -timeOffsetVariation <msec>  Time offset variation allowed (default: 100)
   -v                           Be verbose
+ 1s: <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: Binary log file is /swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
+ <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684

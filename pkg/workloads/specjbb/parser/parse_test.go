@@ -29,6 +29,17 @@ func TestStdoutParser(t *testing.T) {
 		})
 	})
 
+	Convey("Opening readable and correct file for hbir rt from remote output", t, func() {
+		path, err := filepath.Abs("remote_output")
+		So(err, ShouldBeNil)
+
+		Convey("should provide meaningful results", func() {
+			jops, err := FileWithHBIRRT(path)
+			So(err, ShouldBeNil)
+			So(jops, ShouldEqual, 2684)
+		})
+	})
+
 	Convey("Attempting to read file without measured critical jops", t, func() {
 		path, err := filepath.Abs("criticaljops_not_measured")
 		So(err, ShouldBeNil)
@@ -36,7 +47,7 @@ func TestStdoutParser(t *testing.T) {
 			jops, err := FileWithHBIRRT(path)
 			So(jops, ShouldEqual, 0)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "Incorrect number of fields: expected 1 but got 0")
+			So(err.Error(), ShouldEqual, "Run result not found")
 		})
 	})
 
@@ -151,6 +162,16 @@ func TestStdoutParser(t *testing.T) {
 
 	Convey("Opening readable and correct file for raw file name", t, func() {
 		path, err := filepath.Abs("raw_file_name")
+		So(err, ShouldBeNil)
+
+		Convey("should provide meaningful results", func() {
+			fileName, err := FileWithRawFileName(path)
+			So(err, ShouldBeNil)
+			So(fileName, ShouldEqual, "/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz")
+		})
+	})
+	Convey("Opening readable and correct file for raw file name from remote output", t, func() {
+		path, err := filepath.Abs("remote_output")
 		So(err, ShouldBeNil)
 
 		Convey("should provide meaningful results", func() {
