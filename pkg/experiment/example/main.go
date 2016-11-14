@@ -24,7 +24,6 @@ func main() {
 	experiment.Permutate("one,two,three", "1-3", repetition)
 
 	fmt.Println("Dry run should ouput nothing")
-	var numberOfIterations int
-	experiment.Permutate("one,two,three", "1-3", "1-100", func() { numberOfIterations++ })
-	fmt.Printf("Number of iterations that would have been executed: %d", numberOfIterations)
+	experiment.Permutate("one,two,three", "1-3", "1-100", experiment.DryRun)
+	fmt.Printf("Number of iterations that would have been executed: %d", experiment.GetNumberOfIterations())
 }

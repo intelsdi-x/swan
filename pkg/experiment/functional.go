@@ -8,6 +8,8 @@ import (
 
 var experimentContext []interface{}
 
+var numberOfIterations int
+
 // Permutate accepts slices of specs, tell set from range and run them recursively
 func Permutate(specs ...interface{}) {
 	if len(specs) > 2 {
@@ -83,4 +85,14 @@ func parseIntervalSpec(rangeSpec interface{}) (from, to int) {
 	to, _ = strconv.Atoi(boundaries[1])
 
 	return from, to
+}
+
+// DryRun is a helper function that allows to estimate number of iterations that Permutate() generates
+func DryRun() {
+	numberOfIterations++
+}
+
+// GetNumberOfIterations retrieves number of dry run iterations
+func GetNumberOfIterations() int {
+	return numberOfIterations
 }
