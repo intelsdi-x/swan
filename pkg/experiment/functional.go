@@ -5,16 +5,18 @@ import (
 	"reflect"
 )
 
-// Iterator is an interface that struct needs to implement in order to be part of Arg to allow Iterate() to consume it
+// Iterator is an interface that struct needs to implement in order to be part of Arg to allow Iterate() to consume it.
 type Iterator interface {
 	Iterate(interface{})
 }
 
+// experimentContext stores current items from all iterations. Call() handles its value.
 var experimentContext []interface{}
 
+// numberOfIterations stores number of calls to DryRun().
 var numberOfIterations int
 
-// Arg represents named iteration that Permutate() and Iterate() can consume
+// Arg represents named iteration that Permutate() and Iterate() can consume.
 type Arg struct {
 	Name string
 	Spec Iterator
@@ -23,12 +25,13 @@ type Arg struct {
 // Permutate accepts variable number of arguments. Allows to specify multiple instances of Arg of various type of Spec. The last one needs to be a function that is to be executed.
 func Permutate(specs ...interface{}) {
 	if len(specs) > 2 {
+		// More then two arguments indicates that we need to call Permutate() recursively. In order to do so we create a closure that will be passed to Iterate().
 		recursive := func() {
 			Permutate(specs[1:]...)
 		}
 		Iterate(specs[0].(Arg), recursive)
 	} else {
-
+		// If there are two argument only then we are on the leaf and have nowhere to recurse to.
 		Iterate(specs[0].(Arg), specs[1])
 	}
 }
