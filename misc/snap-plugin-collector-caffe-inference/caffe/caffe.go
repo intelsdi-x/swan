@@ -62,21 +62,21 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 	if err != nil {
 		msg := fmt.Sprintf("No file path set - no metrics are going to be collected: %s", err.Error())
 		logger.LogError(msg)
-		return metrics, errors.New(msg)
+		return metrics, errors.Wrap(err, msg)
 	}
 
 	images, err := parseOutputFile(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("Parsing caffe output failed: %s", err.Error())
 		logger.LogError(msg)
-		return metrics, errors.New(msg)
+		return metrics, errors.Wrap(err, msg)
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
 		msg := fmt.Sprintf("Cannot determine hostname: %s", err.Error())
 		logger.LogError(msg)
-		return metrics, errors.New(msg)
+		return metrics, errors.Wrap(err, msg)
 	}
 
 	// [...]string{"intel", "swan", "caffe", "interfere", "hostname", "img"}
@@ -137,8 +137,6 @@ func Meta() *plugin.PluginMeta {
 // Therefore looking back 269 characters and searching for word 'Batch' is
 // sufficient.
 func parseOutputFile(path string) (uint64, error) {
-
-	fmt.Printf("Opening file %s\n", path)
 
 	stat, err := os.Stat(path)
 	if err != nil {

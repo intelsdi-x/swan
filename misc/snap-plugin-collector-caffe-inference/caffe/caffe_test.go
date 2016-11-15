@@ -20,7 +20,7 @@ type metric struct {
 var (
 	expectedMetricsCount = 1
 	now                  = time.Now()
-	expectedMetrics      = []metric{{"/img", 0, now}}
+	expectedMetric       = metric{"/img", 0, now}
 )
 
 func TestCaffeInferenceCollectorPlugin(t *testing.T) {
@@ -60,23 +60,10 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
+			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
+			expectedMetric.value = 990000
+			soValidMetric(collectedMetrics[0], expectedMetric)
 
-			// Check whether expected metrics contain the metric.
-			var found bool
-			for _, metric := range collectedMetrics {
-				found = false
-				for _, expectedMetric := range expectedMetrics {
-					if strings.Contains(metric.Namespace().String(), expectedMetric.namespace) {
-						expectedMetric.value = 990000
-						soValidMetric(metric, expectedMetric)
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("Expected metrics do not contain the metric %s", metric.Namespace().String())
-				}
-			}
 		})
 		Convey("I should receive no metrics end error when caffe ended prematurely ", func() {
 			configuration := makeDefaultConfiguration("log-notstarted.txt")
@@ -98,24 +85,9 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
-
-			// Check whether expected metrics contain the metric.
-			var found bool
-			for _, metric := range collectedMetrics {
-				found = false
-				for _, expectedMetric := range expectedMetrics {
-					if strings.Contains(metric.Namespace().String(), expectedMetric.namespace) {
-						expectedMetric.value = 240000
-						soValidMetric(metric, expectedMetric)
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("Expected metrics do not contain the metric %s", metric.Namespace().String())
-				}
-			}
-
+			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
+			expectedMetric.value = 240000
+			soValidMetric(collectedMetrics[0], expectedMetric)
 		})
 		Convey("I should receive valid metric when caffe was killed during inference and last word in log is 'Batch'", func() {
 			configuration := makeDefaultConfiguration("log-interrupted3.txt")
@@ -123,24 +95,9 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
-
-			// Check whether expected metrics contain the metric.
-			var found bool
-			for _, metric := range collectedMetrics {
-				found = false
-				for _, expectedMetric := range expectedMetrics {
-					if strings.Contains(metric.Namespace().String(), expectedMetric.namespace) {
-						expectedMetric.value = 30000
-						soValidMetric(metric, expectedMetric)
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("Expected metrics do not contain the metric %s", metric.Namespace().String())
-				}
-			}
-
+			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
+			expectedMetric.value = 30000
+			soValidMetric(collectedMetrics[0], expectedMetric)
 		})
 		Convey("I should receive no metrics and error when no file path is set", func() {
 			configuration := cdata.NewNode()

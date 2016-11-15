@@ -3,7 +3,7 @@
 This is a collector plugin for snap which parses output from caffe in inference
 mode (`caffe test`) and provides number of batches analyzed.
 
-The output from caffe look like following:
+The output from caffe looks like following:
 ```
 I1109 13:24:05.107960  2329 caffe.cpp:275] Batch 98, accuracy = 0.72
 I1109 13:24:05.107988  2329 caffe.cpp:275] Batch 98, loss = 0.743565
@@ -14,7 +14,7 @@ I1109 13:24:05.241760  2329 caffe.cpp:292] accuracy = 0.7515
 I1109 13:24:05.241771  2329 caffe.cpp:292] loss = 0.758892 (* 1 = 0.758892 loss)
 ```
 Collector searches for the last occurence of the word `Batch` which should be
-followed by number. If `Batch` is not followed by number last occurence is 
+followed by number. If `Batch` is not followed by a number last occurence is 
 considered as valid:
 ```
 I1109 13:23:43.086158  2315 caffe.cpp:275] Batch 3, accuracy = 0.77
