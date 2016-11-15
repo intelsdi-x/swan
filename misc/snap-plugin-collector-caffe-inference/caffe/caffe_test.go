@@ -20,12 +20,12 @@ type metric struct {
 var (
 	expectedMetricsCount = 1
 	now                  = time.Now()
-	expectedMetrics      = []metric{{"/img", 300, now}}
+	expectedMetrics      = []metric{{"/img", 0, now}}
 )
 
 func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 	Convey("When I create Caffe-inference plugin object", t, func() {
-		caffePlugin := NewCaffeInference(now)
+		caffePlugin := CaffeInferenceCollector{}
 
 		Convey("I should receive meta data for plugin", func() {
 			meta := Meta()
@@ -51,7 +51,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypes, ShouldHaveLength, expectedMetricsCount)
-			soValidMetricType(metricTypes[0], "/intel/swan/caffeinference/*/img", "ns")
+			soValidMetricType(metricTypes[0], "/intel/swan/caffe/inference/*/img", "images")
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -171,10 +171,10 @@ func soValidMetric(metric snapPlugin.MetricType, expectedMetric metric) {
 	value := expectedMetric.value
 	time := expectedMetric.date
 
-	So(metric.Namespace().String(), ShouldStartWith, "/intel/swan/caffeinference/")
+	So(metric.Namespace().String(), ShouldStartWith, "/intel/swan/caffe/inference/")
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
-	So(metric.Unit(), ShouldEqual, "ns")
+	So(metric.Unit(), ShouldEqual, "images")
 	So(metric.Tags(), ShouldHaveLength, 0)
 	data, typeFound := metric.Data().(uint64)
 	So(typeFound, ShouldBeTrue)

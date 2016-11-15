@@ -10,7 +10,7 @@ import (
 
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
 	"github.com/intelsdi-x/snap-plugin-utilities/logger"
-	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
 	"github.com/pkg/errors"
@@ -20,43 +20,38 @@ import (
 const (
 	NAME          = "caffeinference"
 	VERSION       = 1
-	TYPE          = snapPlugin.CollectorPluginType
-	UNIT          = "ns"
+	TYPE          = plugin.CollectorPluginType
+	UNIT          = "images"
+	DESCRIPTION   = "Images classified by caffe"
 	imagesInBatch = 10000
 )
 
 var (
-	namespace = []string{"intel", "swan", "caffeinference"}
+	namespace = []string{"intel", "swan", "caffe", "inference"}
 )
 
-type plugin struct {
-	now time.Time
-}
-
-// NewMutilate creates new mutilate collector.
-func NewCaffeInference(now time.Time) snapPlugin.CollectorPlugin {
-	return &plugin{now}
+type CaffeInferenceCollector struct {
 }
 
 // GetMetricTypes implements plugin.PluginCollector interface.
 // Single metric only: /intel/swan/caffe/interference/img which holds number of processed images.
-func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+func (CaffeInferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
+	var metrics []plugin.MetricType
 
 	namespace := core.NewNamespace(namespace...)
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	namespace = namespace.AddStaticElement("img")
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: namespace, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.MetricType{Namespace_: namespace, Unit_: UNIT, Version_: VERSION})
 
 	return metrics, nil
 }
 
 // CollectMetrics implements plugin.PluginCollector interface.
-func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+func (CaffeInferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
+	var metrics []plugin.MetricType
 
 	if len(metricTypes) > 1 {
-		msg := fmt.Sprintf("Too much metrics requested. Caffe inference collector gathers single metric.")
+		msg := "Too much metrics requested. Caffe inference collector gathers single metric."
 		logger.LogError(msg)
 		return metrics, errors.New(msg)
 	}
@@ -82,15 +77,18 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		return metrics, errors.New(msg)
 	}
 
-	// [...]string{"intel", "swan", "caffe-interfere", "hostname"}
-	const namespaceHostnameIndex = 3
-	const swanNamespacePrefix = 4
+	// [...]string{"intel", "swan", "caffe", "interfere", "hostname", "img"}
+	const namespaceHostnameIndex = 4
+	const swanNamespacePrefix = 5
 
 	metricType := metricTypes[0]
 
-	metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
+	metric := plugin.MetricType{Namespace_: metricType.Namespace_,
+		Unit_:        metricType.Unit_,
+		Version_:     metricType.Version_,
+		Description_: DESCRIPTION}
 	metric.Namespace_[namespaceHostnameIndex].Value = hostname
-	metric.Timestamp_ = mutilate.now
+	metric.Timestamp_ = time.Now()
 
 	//Parsing caffe output succeeded so images holds value of processed images
 	metric.Data_ = images
@@ -100,7 +98,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 }
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
-func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
+func (CaffeInferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	policy := cpolicy.New()
 	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
 	if err != nil {
@@ -114,18 +112,18 @@ func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 }
 
 // Meta returns plugin metadata.
-func Meta() *snapPlugin.PluginMeta {
-	meta := snapPlugin.NewPluginMeta(
+func Meta() *plugin.PluginMeta {
+	meta := plugin.NewPluginMeta(
 		NAME,
 		VERSION,
 		TYPE,
-		[]string{snapPlugin.SnapGOBContentType},
-		[]string{snapPlugin.SnapGOBContentType},
-		snapPlugin.Unsecure(true),
-		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-		snapPlugin.CacheTTL(1*time.Second),
+		[]string{plugin.SnapGOBContentType},
+		[]string{plugin.SnapGOBContentType},
+		plugin.Unsecure(true),
+		plugin.RoutingStrategy(plugin.DefaultRouting),
+		plugin.CacheTTL(1*time.Second),
 	)
-	meta.RPCType = snapPlugin.JSONRPC
+	meta.RPCType = plugin.JSONRPC
 	return meta
 }
 
