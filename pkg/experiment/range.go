@@ -8,7 +8,7 @@ type Range struct {
 }
 
 // Iterate implements Iterator interface
-func (r *Range) Iterate(runnable interface{}) {
+func (r Range) Iterate(runnable interface{}) {
 	for i := r.From; i < r.To; i = i + r.Step {
 		Call(runnable, i)
 	}
