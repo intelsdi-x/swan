@@ -21,11 +21,11 @@ test_all: test_lint test_unit test_integration
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps_godeps:
-	go get github.com/golang/lint/golint
-	go get github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
-	go get github.com/stretchr/testify
-	go get github.com/vektra/mockery/.../
-	go get github.com/Masterminds/glide
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
+	go get github.com/stretchr/testify # go get -u github.com/stretchr/testify fails miserably
+	go get -u github.com/vektra/mockery/.../
+	go get -u github.com/Masterminds/glide
 	glide install
 
 deps_jupyter:
