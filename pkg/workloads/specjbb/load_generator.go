@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	defaultControllerIP   = "127.0.0.1"
-	defaultTxICount       = 1 // Default number of Transaction Injector components.
-	defaultCustomerNumber = 100
-	defaultProductsNumber = 100
+	defaultControllerIP    = "127.0.0.1"
+	defaultTxICount        = 1 // Default number of Transaction Injector components.
+	defaultCustomerNumber  = 100
+	defaultProductsNumber  = 100
+	defaultCriticaljopsSLO = 50000
 )
 
 var (
@@ -43,6 +44,9 @@ var (
 
 	// ProductNumberFlag specifies number of products.
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
+
+	// SLOFlag specifies SLO which will be used by reporter to calculate critical jops value.
+	SLOFlag = conf.NewIntFlag("specjbb_criticaljops_slo", "SLO for calculating critical-jops by reporter", defaultCriticaljopsSLO)
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
 	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"))
@@ -88,6 +92,7 @@ type LoadGeneratorConfig struct {
 	ProductNumber        int
 	BinaryDataOutputDir  string
 	PathToOutputTemplate string
+	SLO                  int
 }
 
 // NewDefaultConfig is a constructor for Config with default parameters.
@@ -101,6 +106,7 @@ func NewDefaultConfig() LoadGeneratorConfig {
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
+		SLO:                  SLOFlag.Value(),
 	}
 }
 
