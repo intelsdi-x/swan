@@ -30,7 +30,7 @@ func Permutate(specs ...interface{}) {
 			Permutate(specs[1:]...)
 		}
 		Iterate(specs[0].(Arg), recursive)
-	} else {
+	} else if len(specs) == 2 {
 		// If there are two argument only then we are on the leaf and have nowhere to recurse to.
 		Iterate(specs[0].(Arg), specs[1])
 	}
@@ -47,14 +47,15 @@ func Call(runnable, localContext interface{}) {
 	experimentContext = append(experimentContext, localContext)
 	defer func() { experimentContext = experimentContext[:len(experimentContext)-1] }()
 	function := reflect.ValueOf(runnable)
-	if function.Type().NumIn() == len(experimentContext) {
+	argsIn := function.Type().NumIn()
+	if argsIn == len(experimentContext) {
 		// number of runnable arguments should be equal to current context size (including localContext)...
 		var args []reflect.Value
 		for _, v := range experimentContext {
 			args = append(args, reflect.ValueOf(v))
 		}
 		function.Call(args)
-	} else {
+	} else if argsIn == 0 {
 		// ... or it should have no arguments at all
 		function.Call(nil)
 	}
