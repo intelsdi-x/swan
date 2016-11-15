@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -161,36 +162,30 @@ func parseOutputFile(path string) (uint64, error) {
 
 	buf2 := buf[:n]
 	scanner := bufio.NewScanner(strings.NewReader(string(buf2)))
-	scanner.Split(bufio.ScanWords)
+	scanner.Split(bufio.ScanLines)
 
-	// Global flag if 'Batch' word was found
-	foundBatch := 0
-	// Local flag. After every 'Batch' number is expected
-	batch := 0
-	// Keeps track of last known 'Batch' value
-	lastBatch := ""
-	for scanner.Scan() {
-		if scanner.Text() == "Batch" {
-			foundBatch++
-			batch = 1
-			continue
-		}
-		if foundBatch > 0 && batch == 1 {
-			// Get rid of the comma in 'number,' token.
-			lastBatch = strings.Replace(scanner.Text(), ",", "", 1)
-			foundBatch++
-		}
-		batch = 0
+	re := regexp.MustCompile("Batch ([0-9]+)")
+	if re == nil {
+		err = errors.New("Internal error in caffe inference collector")
+		return 0, err
 	}
+
+	foundBatch := false
 	result := uint64(0)
-	if foundBatch > 1 {
-		batchNum, err := strconv.ParseUint(lastBatch, 10, 64)
-		if err == nil {
-			result = batchNum * imagesInBatch
-		} else {
-			err = errors.New("Invalid batch number in the output log")
+	for scanner.Scan() {
+		regexpResult := re.FindAllStringSubmatch(scanner.Text(), -1)
+		if regexpResult != nil {
+			batchNum, err := strconv.ParseUint(regexpResult[0][1], 10, 64)
+			if err == nil {
+				result = batchNum * imagesInBatch
+				foundBatch = true
+			} else {
+				err = errors.New("Invalid batch number in the output log")
+			}
 		}
-	} else {
+	}
+
+	if foundBatch != true {
 		err = errors.New("Did not find batch number in the output log")
 	}
 	return result, err
