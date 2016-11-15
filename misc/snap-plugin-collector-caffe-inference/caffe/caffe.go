@@ -31,12 +31,13 @@ var (
 	namespace = []string{"intel", "swan", "caffe", "inference"}
 )
 
-type CaffeInferenceCollector struct {
+// InferenceCollector implements snap Plugin interface.
+type InferenceCollector struct {
 }
 
 // GetMetricTypes implements plugin.PluginCollector interface.
 // Single metric only: /intel/swan/caffe/interference/img which holds number of processed images.
-func (CaffeInferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
+func (InferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
 
 	namespace := core.NewNamespace(namespace...)
@@ -48,7 +49,7 @@ func (CaffeInferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]p
 }
 
 // CollectMetrics implements plugin.PluginCollector interface.
-func (CaffeInferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
+func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
 
 	if len(metricTypes) > 1 {
@@ -99,7 +100,7 @@ func (CaffeInferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) (
 }
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
-func (CaffeInferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
+func (InferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	policy := cpolicy.New()
 	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
 	if err != nil {

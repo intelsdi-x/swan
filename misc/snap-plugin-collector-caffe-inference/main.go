@@ -11,5 +11,5 @@ func main() {
 	meta := caffe.Meta()
 	meta.RPCType = plugin.JSONRPC
 
-	plugin.Start(meta, caffe.CaffeInferenceCollector{}, os.Args[1])
+	plugin.Start(meta, caffe.InferenceCollector{}, os.Args[1])
 }

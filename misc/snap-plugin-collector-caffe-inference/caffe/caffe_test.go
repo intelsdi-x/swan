@@ -25,7 +25,7 @@ var (
 
 func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 	Convey("When I create Caffe-inference plugin object", t, func() {
-		caffePlugin := CaffeInferenceCollector{}
+		caffePlugin := InferenceCollector{}
 
 		Convey("I should receive meta data for plugin", func() {
 			meta := Meta()
