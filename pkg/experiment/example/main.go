@@ -17,7 +17,7 @@ func main() {
 	// Nested Iterate() calls
 	fmt.Println("Nested Iterate() calls")
 	e.Iterate(
-		e.Arg{"some random set", e.Set{"one", "two", "three"}},
+		e.Arg{"some random set", e.List{"one", "two", "three"}},
 		func() {
 			e.Iterate(
 				e.Arg{"equally random interval", e.Range{From: 0, To: 3, Step: 1}},
@@ -29,16 +29,16 @@ func main() {
 	// Single Permutate() call - it is equivalent od the nested Iterate() implementation.
 	fmt.Println("Should produce identical result as a Permutate() call")
 	iteration = 0
-	e.Permutate(
-		e.Arg{"some random set", e.Set{"one", "two", "three"}},
+	e.Permute(
+		e.Arg{"some random set", e.List{"one", "two", "three"}},
 		e.Arg{"equally random interval", e.Range{From: 0, To: 3, Step: 1}},
 		repetition,
 	)
 
 	// Dry run example - it allows to calculate number of iterations that Permutate() is to generate.
 	fmt.Println("Dry run should ouput nothing")
-	e.Permutate(
-		e.Arg{"some random set", e.Set{"one", "two", "three"}},
+	e.Permute(
+		e.Arg{"some random set", e.List{"one", "two", "three"}},
 		e.Arg{"equally random interval", e.Range{From: 0, To: 3, Step: 0.001}},
 		e.DryRun,
 	)

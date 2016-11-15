@@ -18,16 +18,16 @@ var numberOfIterations int
 
 // Arg represents named iteration that Permutate() and Iterate() can consume.
 type Arg struct {
-	Name string
-	Spec Iterator
+	Name     string
+	Iterator Iterator
 }
 
-// Permutate accepts variable number of arguments. Allows to specify multiple instances of Arg of various type of Spec. The last one needs to be a function that is to be executed.
-func Permutate(specs ...interface{}) {
+// Permute accepts variable number of arguments. Allows to specify multiple instances of Arg of various type of Spec. The last one needs to be a function that is to be executed.
+func Permute(specs ...interface{}) {
 	if len(specs) > 2 {
 		// More then two arguments indicates that we need to call Permutate() recursively. In order to do so we create a closure that will be passed to Iterate().
 		recursive := func() {
-			Permutate(specs[1:]...)
+			Permute(specs[1:]...)
 		}
 		Iterate(specs[0].(Arg), recursive)
 	} else if len(specs) == 2 {
@@ -38,8 +38,8 @@ func Permutate(specs ...interface{}) {
 
 // Iterate is a public interface of the experiment. It can recognize type of iteration and runs approptiate code. Last argument needs to be a function that is to be executed.
 func Iterate(spec Arg, runnable interface{}) {
-	fmt.Printf("Executing step %s with arguments %s\n", spec.Name, spec.Spec)
-	spec.Spec.Iterate(runnable)
+	fmt.Printf("Executing step %s with arguments %s\n", spec.Name, spec.Iterator)
+	spec.Iterator.Iterate(runnable)
 }
 
 // Call handles calling a function passed to Iterate(). It is capable of calling a function with no arguments or with number of arguments equal to number of Arg instances parsed.
