@@ -103,6 +103,10 @@ func ParseRawFileName(reader io.Reader) (string, error) {
 		regex := regexp.MustCompile("Binarylogfileis([/a-zA-Z-_.0-9]+)")
 		if regex.MatchString(line) {
 			submatch = regex.FindStringSubmatch(line)
+			// Submatch should have length = 2, First is matched string, the second is value of a group (name of a file).
+			if len(submatch) < 2 {
+				return "", fmt.Errorf("Raw file name not found")
+			}
 			rawFileName = submatch[len(submatch)-1]
 			return rawFileName, nil
 		}
@@ -113,9 +117,7 @@ func ParseRawFileName(reader io.Reader) (string, error) {
 // ParseHBIRRT retrieves geo mean of critical jops from specjbb output represented as:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func ParseHBIRRT(reader io.Reader) (int, error) {
-	var hbir int
 	var submatch []string
-	var err error
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -127,14 +129,18 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 		regex := regexp.MustCompile("RUNRESULT:[()a-zA-Z,0-9=-]+critical-jOPS=([0-9]+)")
 		if regex.MatchString(line) {
 			submatch = regex.FindStringSubmatch(line)
-			hbir, err = strconv.Atoi(submatch[len(submatch)-1])
+			// Submatch should have length = 2, First is matched string, the second is value of a group (value of jops).
+			if len(submatch) < 2 {
+				return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
+			}
+			hbir, err := strconv.Atoi(submatch[len(submatch)-1])
 			if err != nil {
 				return 0, fmt.Errorf("Bad value type found for critical-jops")
 			}
 			return hbir, nil
 		}
 	}
-	return 0, fmt.Errorf("Run result not found")
+	return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
 }
 
 // ParseLatencies retrieves metrics from specjbb output represented as:

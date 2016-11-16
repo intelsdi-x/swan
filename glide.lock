@@ -178,11 +178,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-<<<<<<< c3a224918e843018d2c678aef67d22a956cea0d2
   version: 5053d82cef1dfbda7dca015e94de57f21f9118ab
-=======
-  version: bcc4fe7d3fb0ffe340bd1368b2443870b482194e
->>>>>>> Updated glide.
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf

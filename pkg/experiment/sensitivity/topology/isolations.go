@@ -35,7 +35,7 @@ type defaultTopology struct {
 	isBeCPUExclusive          bool
 }
 
-// NewIsolations returns HP anb factory of aggressors with applidated isolations for BE tasks.
+// NewIsolations returns HP anb factory of aggressors with applied isolation for BE tasks.
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {

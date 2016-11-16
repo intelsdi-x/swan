@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
@@ -9,7 +11,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
-	specjbb_workload "github.com/intelsdi-x/swan/pkg/workloads/specjbb"
+	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 )
 
 var (
@@ -21,12 +23,11 @@ var (
 
 // prepareSpecjbbLoadGenerator creates new LoadGenerator based on specjbb.
 func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
-
 	var loadGeneratorExecutor executor.Executor
 	var transactionInjectors []executor.Executor
-	var err error
-	txICount := specjbb_workload.TxICountFlag.Value()
+	txICount := specjbb.TxICountFlag.Value()
 	if ip != "local" {
+		var err error
 		loadGeneratorExecutor, err = sensitivity.NewRemote(ip)
 		if err != nil {
 			return nil, err
@@ -46,17 +47,17 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 		}
 	}
 
-	specjbbLoadGeneratorConfig := specjbb_workload.NewDefaultConfig()
+	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 	specjbbLoadGeneratorConfig.ControllerIP = ip
 	specjbbLoadGeneratorConfig.TxICount = txICount
 
-	loadGeneratorLauncher := specjbb_workload.NewLoadGenerator(loadGeneratorExecutor,
+	loadGeneratorLauncher := specjbb.NewLoadGenerator(loadGeneratorExecutor,
 		transactionInjectors, specjbbLoadGeneratorConfig)
 
 	return loadGeneratorLauncher, nil
 }
 
-// repareSnapSpecjbbSessionLauncher prepare a SessionLauncher that runs SPECjbb collector and records that into storage.
+// prepareSnapSpecjbbSessionLauncher prepares a SessionLauncher that runs SPECjbb collector and records that into storage.
 // TODO: this should be put into athena:/pkg/snap
 func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
@@ -71,7 +72,7 @@ func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 		}
 		return specjbbSnapSession, nil
 	}
-	return nil, nil
+	return nil, fmt.Errorf("snap http endpoint is not present, cannot prepare SPECjbb session launcher")
 }
 
 // noopSessionLauncherFactory is a factory of snap.SessionLauncher that returns nothing.
@@ -100,20 +101,20 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 
 	specjbbHost := specjbbIP.Value()
 
-	// Validate preconditions.
+	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
 	validate.CheckCPUPowerGovernor()
 
-	// Isolations.
+	// Apply isolation for hp task and aggressors.
 	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
 
-	// Executors.
+	// Create executors for be and hp tasks with applied isolation.
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
-	// BE workloads.
+	// Prepare session launchers for best effort tasks (aggressors).
 	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		return err
@@ -123,14 +124,14 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 	configuration := sensitivity.DefaultConfiguration()
 	specjbbSessionLauncher := specjbbSessionLauncherFactory(configuration)
 
-	// HP workload.
-	backendConfig := specjbb_workload.DefaultSPECjbbBackendConfig()
+	// Create launcher for high priority task (in case of SPECjbb it is a backend).
+	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
 	backendConfig.IP = specjbbHost
-	backendLauncher := specjbb_workload.NewBackend(hpExecutor, backendConfig)
+	backendLauncher := specjbb.NewBackend(hpExecutor, backendConfig)
 	// NewMonitoredLauncher can accept nil as session launcher.
 	backendLauncherSessionPair := sensitivity.NewMonitoredLauncher(backendLauncher, specjbbSessionLauncher)
 
-	// Load generator.
+	// Prepare load generator for hp task (in case of SPECjbb it is a controller with transaction injectors).
 	specjbbLoadGenerator, err := prepareSpecjbbLoadGenerator(specjbbHost)
 	if err != nil {
 		return err
@@ -141,7 +142,7 @@ func RunExperimentWithSpecjbbSessionLauncher(specjbbSessionLauncherFactory func(
 	}
 	specjbbLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(specjbbLoadGenerator, specjbbSnapSession)
 
-	// Experiment.
+	// Create experiment with specific config, prepared hp task, be task and aggressors.
 	sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),
 		conf.LogLevel(),

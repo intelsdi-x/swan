@@ -8,37 +8,40 @@ import (
 )
 
 func TestStdoutParser(t *testing.T) {
-	Convey("Opening non-existing file for hbir rt should fail", t, func() {
-		jops, err := FileWithHBIRRT("/non/existing/file")
+	Convey("Opening non-existing file for high bound injection rate (critical jops determined in tuning phase) should fail",
+		t, func() {
+			jops, err := FileWithHBIRRT("/non/existing/file")
 
-		Convey("jops should equal 0 and the error should not be nil", func() {
-			So(jops, ShouldEqual, 0)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
+			Convey("jops should equal 0 and the error should not be nil", func() {
+				So(jops, ShouldEqual, 0)
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "open /non/existing/file: no such file or directory")
+			})
 		})
-	})
 
-	Convey("Opening readable and correct file for hbir rt", t, func() {
-		path, err := filepath.Abs("criticaljops")
-		So(err, ShouldBeNil)
-
-		Convey("should provide meaningful results", func() {
-			jops, err := FileWithHBIRRT(path)
+	Convey("Opening readable and correct file for high bound injection rate (critical jops determined in tuning phase)",
+		t, func() {
+			path, err := filepath.Abs("criticaljops")
 			So(err, ShouldBeNil)
-			So(jops, ShouldEqual, 2684)
+
+			Convey("should provide meaningful results", func() {
+				jops, err := FileWithHBIRRT(path)
+				So(err, ShouldBeNil)
+				So(jops, ShouldEqual, 2684)
+			})
 		})
-	})
 
-	Convey("Opening readable and correct file for hbir rt from remote output", t, func() {
-		path, err := filepath.Abs("remote_output")
-		So(err, ShouldBeNil)
-
-		Convey("should provide meaningful results", func() {
-			jops, err := FileWithHBIRRT(path)
+	Convey("Opening readable and correct file for high bound injection rate (critical jops determined in tuning phase) from remote output",
+		t, func() {
+			path, err := filepath.Abs("remote_output")
 			So(err, ShouldBeNil)
-			So(jops, ShouldEqual, 2684)
+
+			Convey("should provide meaningful results", func() {
+				jops, err := FileWithHBIRRT(path)
+				So(err, ShouldBeNil)
+				So(jops, ShouldEqual, 2684)
+			})
 		})
-	})
 
 	Convey("Attempting to read file without measured critical jops", t, func() {
 		path, err := filepath.Abs("criticaljops_not_measured")
@@ -47,7 +50,7 @@ func TestStdoutParser(t *testing.T) {
 			jops, err := FileWithHBIRRT(path)
 			So(jops, ShouldEqual, 0)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "Run result not found")
+			So(err.Error(), ShouldEqual, "Run result not found, cannot determine critical-jops")
 		})
 	})
 
@@ -104,7 +107,7 @@ func TestStdoutParser(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 	})
-	Convey("Attempting to read correct and redeable file with many iterations for load", t, func() {
+	Convey("Attempting to read correct and readable file with many iterations for load", t, func() {
 		path, err := filepath.Abs("many_iterations")
 		So(err, ShouldBeNil)
 		Convey("should return last iteration results and no error", func() {

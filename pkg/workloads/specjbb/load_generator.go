@@ -14,20 +14,19 @@ import (
 )
 
 const (
-	defaultControllerIP    = "127.0.0.1"
-	defaultTxICount        = 1 // Default number of Transaction Injector components.
-	defaultCustomerNumber  = 100
-	defaultProductsNumber  = 100
-	defaultCriticaljopsSLO = 50000
+	defaultControllerIP   = "127.0.0.1"
+	defaultTxICount       = 1 // Default number of Transaction Injector components.
+	defaultCustomerNumber = 100
+	defaultProductsNumber = 100
 )
 
 var (
-	// PathToBinaryFlagLoadGenerator specifies path to a SPECjbb2015 jar file for load generator.
-	PathToBinaryFlagLoadGenerator = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
+	// PathToBinaryForLoadGeneratorFlag specifies path to a SPECjbb2015 jar file for load generator.
+	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
 		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
-	// PathToPropsFileFlagLoadGenerator specifies path to a SPECjbb2015 properties file for load generator.
-	PathToPropsFileFlagLoadGenerator = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator",
+	// PathToPropsFileForLoadGeneratorFlag specifies path to a SPECjbb2015 properties file for load generator.
+	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator",
 		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
 
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
@@ -44,9 +43,6 @@ var (
 
 	// ProductNumberFlag specifies number of products.
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
-
-	// SLOFlag specifies SLO which will be used by reporter to calculate critical jops value.
-	SLOFlag = conf.NewIntFlag("specjbb_criticaljops_slo", "SLO for calculating critical-jops by reporter", defaultCriticaljopsSLO)
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
 	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"))
@@ -92,21 +88,19 @@ type LoadGeneratorConfig struct {
 	ProductNumber        int
 	BinaryDataOutputDir  string
 	PathToOutputTemplate string
-	SLO                  int
 }
 
 // NewDefaultConfig is a constructor for Config with default parameters.
 func NewDefaultConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		ControllerIP:         IPFlag.Value(),
-		PathToBinary:         PathToBinaryFlagLoadGenerator.Value(),
-		PathToProps:          PathToPropsFileFlagLoadGenerator.Value(),
+		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
+		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),
 		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
-		SLO:                  SLOFlag.Value(),
 	}
 }
 
@@ -235,7 +229,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 
 	// Run reporter to calculate critical jops value from raw results.
-	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName)
+	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName, slo)
 	reporter := newReporter(executor.NewLocal(), loadGenerator.config)
 	reporterHandle, err := reporter.executor.Execute(reporterCommand)
 	reporterHandle.Wait(0)

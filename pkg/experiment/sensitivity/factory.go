@@ -164,11 +164,9 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 	}
 }
 
-// PrepareAggressors prepare aggressors launcher's
-// wrapped by session less pair using given isolations and executor factory for aggressor workloads.
-// TODO: consider moving to swan:sensitivity/factory.go
+// PrepareAggressors prepare aggressors launchers.
+// wrapped by session-less pair using given isolation and executor factory for aggressor workloads.
 func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory ExecutorFactoryFunc) (aggressorPairs []LauncherSessionPair, err error) {
-
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 

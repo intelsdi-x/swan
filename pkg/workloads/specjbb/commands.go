@@ -33,11 +33,11 @@ func getControllerHBIRRTCommand(config LoadGeneratorConfig) string {
 }
 
 // Reporter command allows to generate report from raw file (binary data).
-func getReporterCommand(config LoadGeneratorConfig, rawFileName string) string {
+func getReporterCommand(config LoadGeneratorConfig, rawFileName string, slo int) string {
 	return fmt.Sprint("java -jar",
 		" ", config.PathToBinary,
 		" -m reporter",
-		" -cIRtarget ", config.SLO,
+		" -cIRtarget ", slo,
 		" -p ", config.PathToProps,
 		" -raw ", config.PathToOutputTemplate,
 		" -s ", rawFileName)

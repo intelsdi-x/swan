@@ -103,7 +103,7 @@ func TestCommandsWithDefaultConfig(t *testing.T) {
 		})
 
 		Convey("and SPECjbb reporter command", func() {
-			command := getReporterCommand(defaultConfig, rawFileName)
+			command := getReporterCommand(defaultConfig, rawFileName, 50000)
 			Convey("Should contain reporter mode", func() {
 				So(command, ShouldContainSubstring, "-m reporter")
 			})
