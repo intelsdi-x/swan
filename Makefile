@@ -3,12 +3,9 @@
 # Place for custom options for test commands.
 TEST_OPT?=""
 
-# for compatibility purposes
-# in the future deps target should point to deps_all, currently Kopernik job
-# is running deps before running integration_tests. This is not needed, because
-# we are downloading all of dependencies in provision phase.
-deps: show_env
-integration_test: cleanup build_plugins build_swan test_integration
+# for compatibility purposes.
+deps: deps_all
+integration_test: show_env build_plugins build_swan test_integration
 unit_test: deps_godeps test_unit
 
 deps_all: deps_godeps deps_jupyter
