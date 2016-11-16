@@ -19,16 +19,21 @@ import (
 
 // Constants representing plugin name, version, type and unit of measurement used.
 const (
-	NAME          = "caffeinference"
-	VERSION       = 1
-	TYPE          = plugin.CollectorPluginType
-	UNIT          = "images"
-	DESCRIPTION   = "Images classified by caffe"
-	imagesInBatch = 10000
+	NAME        = "caffeinference"
+	VERSION     = 1
+	TYPE        = plugin.CollectorPluginType
+	METRICNAME  = "batches"
+	UNIT        = "batches"
+	DESCRIPTION = "Images classified by caffe (in batches)"
 )
 
 var (
 	namespace = []string{"intel", "swan", "caffe", "inference"}
+
+	ERRNSPACE = errors.New("invalid namespace")
+	ERRCONF   = errors.New("invalid config")
+	ERRPARSE  = errors.New("parse stdout_file")
+	ERRPLUGIN = errors.New("plugin internal error")
 )
 
 // InferenceCollector implements snap Plugin interface.
@@ -36,13 +41,13 @@ type InferenceCollector struct {
 }
 
 // GetMetricTypes implements plugin.PluginCollector interface.
-// Single metric only: /intel/swan/caffe/interference/img which holds number of processed images.
+// Single metric only: /intel/swan/caffe/inference/img which holds number of processed images.
 func (InferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
 
 	namespace := core.NewNamespace(namespace...)
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
-	namespace = namespace.AddStaticElement("img")
+	namespace = namespace.AddStaticElement(METRICNAME)
 	metrics = append(metrics, plugin.MetricType{Namespace_: namespace, Unit_: UNIT, Version_: VERSION})
 
 	return metrics, nil
@@ -52,50 +57,59 @@ func (InferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin
 func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
 	var metrics []plugin.MetricType
 
-	if len(metricTypes) > 1 {
-		msg := "Too much metrics requested. Caffe inference collector gathers single metric."
-		logger.LogError(msg)
-		return metrics, errors.New(msg)
+	for _, requestedMetric := range metricTypes {
+		requestedMetricNamespace := requestedMetric.Namespace().String()
+		pluginPrefixNamespace := strings.Join(append([]string{""}, namespace...), "/")
+		if strings.HasPrefix(requestedMetricNamespace, pluginPrefixNamespace) != true {
+			logger.LogError(fmt.Sprintf("requested metric %q does not match to the caffe inference collector provided metric (prefix) %q", requestedMetric, pluginPrefixNamespace))
+			return metrics, ERRNSPACE
+		}
+
+		sourceFilePath, err := config.GetConfigItem(requestedMetric, "stdout_file")
+		if err != nil {
+			logger.LogError(fmt.Sprintf("stdout_file missing or wrong in config for namespace: %s, error: %s", requestedMetricNamespace, err.Error()))
+			return metrics, ERRCONF
+		}
+
+		sourceFileName, ok := sourceFilePath.(string)
+		if !ok {
+			logger.LogError(fmt.Sprintf("stdout_file name invalid for namespace %s", requestedMetricNamespace))
+			return metrics, ERRCONF
+		}
+
+		batches, err := parseOutputFile(sourceFileName)
+		if err != nil {
+			logger.LogError(fmt.Sprintf("parsing caffe output (%s) for namespace %s failed: %s", sourceFilePath.(string), requestedMetricNamespace, err.Error()))
+			return metrics, ERRPARSE
+		}
+
+		// [...]string{"intel", "swan", "caffe", "inference", "hostname", "img"}
+		const namespaceHostnameIndex = 4
+		const swanNamespacePrefix = 5
+
+		hostname := ""
+		if requestedMetric.Namespace_[namespaceHostnameIndex].Value == "*" {
+			hostname, err = os.Hostname()
+			if err != nil {
+				logger.LogError(fmt.Sprintf("cannot determine hostname: %s", err.Error()))
+				return metrics, ERRPLUGIN
+			}
+		} else {
+			hostname = requestedMetric.Namespace_[namespaceHostnameIndex].Value
+		}
+
+		metric := plugin.MetricType{Namespace_: requestedMetric.Namespace_,
+			Unit_:        requestedMetric.Unit_,
+			Version_:     requestedMetric.Version_,
+			Description_: DESCRIPTION}
+		metric.Namespace_[namespaceHostnameIndex].Value = hostname
+		metric.Timestamp_ = time.Now()
+
+		//Parsing caffe output succeeded so images holds value of processed images
+		metric.Data_ = batches
+
+		metrics = append(metrics, metric)
 	}
-
-	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
-	if err != nil {
-		msg := fmt.Sprintf("No file path set - no metrics are going to be collected: %s", err.Error())
-		logger.LogError(msg)
-		return metrics, errors.Wrap(err, msg)
-	}
-
-	images, err := parseOutputFile(sourceFilePath.(string))
-	if err != nil {
-		msg := fmt.Sprintf("Parsing caffe output failed: %s", err.Error())
-		logger.LogError(msg)
-		return metrics, errors.Wrap(err, msg)
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		msg := fmt.Sprintf("Cannot determine hostname: %s", err.Error())
-		logger.LogError(msg)
-		return metrics, errors.Wrap(err, msg)
-	}
-
-	// [...]string{"intel", "swan", "caffe", "interfere", "hostname", "img"}
-	const namespaceHostnameIndex = 4
-	const swanNamespacePrefix = 5
-
-	metricType := metricTypes[0]
-
-	metric := plugin.MetricType{Namespace_: metricType.Namespace_,
-		Unit_:        metricType.Unit_,
-		Version_:     metricType.Version_,
-		Description_: DESCRIPTION}
-	metric.Namespace_[namespaceHostnameIndex].Value = hostname
-	metric.Timestamp_ = time.Now()
-
-	//Parsing caffe output succeeded so images holds value of processed images
-	metric.Data_ = images
-
-	metrics = append(metrics, metric)
 	return metrics, nil
 }
 
@@ -104,7 +118,8 @@ func (InferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	policy := cpolicy.New()
 	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
 	if err != nil {
-		return policy, errors.Wrap(err, "cannot create new string rule")
+		logger.LogError(fmt.Sprintf("cannot create new string rule: %s", err.Error()))
+		return policy, ERRPLUGIN
 	}
 	policyNode := cpolicy.NewPolicyNode()
 	policyNode.Add(stdoutFile)
@@ -137,26 +152,33 @@ func Meta() *plugin.PluginMeta {
 // Therefore looking back 269 characters and searching for word 'Batch' is
 // sufficient.
 func parseOutputFile(path string) (uint64, error) {
-
 	stat, err := os.Stat(path)
 	if err != nil {
-		return 0, err
+		logger.LogError(fmt.Sprintf("cannot stat file %s: %s", path, err.Error()))
+		return 0, ERRPARSE
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		return 0, err
+		logger.LogError(fmt.Sprintf("cannot open file %s: %s", path, err.Error()))
+		return 0, ERRPARSE
 	}
 	defer file.Close()
 
-	// In correctly finished log buffer of this size guarantees occurence
-	// Of the word 'Batch'. If caffe was killed then there will be many
-	// occurences.
-	buf := make([]byte, 269)
+	// In correctly finished log buffer roughly 269 characters is enough
+	// to get last Batch XXXX occurence.
+	// If caffe was killed the last occurence will be even closer to the
+	// EOF. See example output files.
+	buf := make([]byte, 4096)
 
-	n, err := file.ReadAt(buf, stat.Size()-int64(len(buf)))
+	readat := int64(0)
+	if stat.Size() > int64(len(buf)) {
+		readat = stat.Size() - int64(len(buf))
+	}
+	n, err := file.ReadAt(buf, readat)
 	if err != nil {
-		return 0, err
+		logger.LogError(fmt.Sprintf("cannot cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error()))
+		return 0, ERRPARSE
 	}
 
 	buf2 := buf[:n]
@@ -165,8 +187,8 @@ func parseOutputFile(path string) (uint64, error) {
 
 	re := regexp.MustCompile("Batch ([0-9]+)")
 	if re == nil {
-		err = errors.New("Internal error in caffe inference collector")
-		return 0, err
+		logger.LogError(fmt.Sprintf("failed to parse: %s, plugin internal error", path))
+		return 0, ERRPARSE
 	}
 
 	foundBatch := false
@@ -176,16 +198,15 @@ func parseOutputFile(path string) (uint64, error) {
 		if regexpResult != nil {
 			batchNum, err := strconv.ParseUint(regexpResult[0][1], 10, 64)
 			if err == nil {
-				result = batchNum * imagesInBatch
+				result = batchNum
 				foundBatch = true
-			} else {
-				err = errors.New("Invalid batch number in the output log")
 			}
 		}
 	}
 
 	if foundBatch != true {
-		err = errors.New("Did not find batch number in the output log")
+		logger.LogError(fmt.Sprintf("failed to parse: %s, did not find valid batch number", path))
+		err = ERRPARSE
 	}
 	return result, err
 }

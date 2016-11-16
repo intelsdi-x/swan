@@ -3,7 +3,6 @@ package caffe
 import (
 	"strings"
 	"testing"
-	"time"
 
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/core/cdata"
@@ -14,13 +13,11 @@ import (
 type metric struct {
 	namespace string
 	value     uint64
-	date      time.Time
 }
 
 var (
 	expectedMetricsCount = 1
-	now                  = time.Now()
-	expectedMetric       = metric{"/img", 0, now}
+	expectedMetric       = metric{"/batches", 0}
 )
 
 func TestCaffeInferenceCollectorPlugin(t *testing.T) {
@@ -51,7 +48,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 
 		Convey("I should receive information about metrics", func() {
 			So(metricTypes, ShouldHaveLength, expectedMetricsCount)
-			soValidMetricType(metricTypes[0], "/intel/swan/caffe/inference/*/img", "images")
+			soValidMetricType(metricTypes[0], "/intel/swan/caffe/inference/*/batches", METRICNAME)
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -61,7 +58,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
 			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
-			expectedMetric.value = 990000
+			expectedMetric.value = 99
 			soValidMetric(collectedMetrics[0], expectedMetric)
 
 		})
@@ -70,14 +67,14 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			metricTypes[0].Config_ = configuration
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(collectedMetrics, ShouldHaveLength, 0)
-			So(err.Error(), ShouldContainSubstring, "Did not find batch number in the output log")
+			So(err, ShouldHaveSameTypeAs, ERRPARSE)
 		})
 		Convey("I should receive no metrics end error when caffe ended prematurely and there is single work 'Batch' in log without number", func() {
 			configuration := makeDefaultConfiguration("log-interrupted2.txt")
 			metricTypes[0].Config_ = configuration
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(collectedMetrics, ShouldHaveLength, 0)
-			So(err.Error(), ShouldContainSubstring, "Did not find batch number in the output log")
+			So(err, ShouldHaveSameTypeAs, ERRPARSE)
 		})
 		Convey("I should receive valid metric when caffe was killed during inference", func() {
 			configuration := makeDefaultConfiguration("log-interrupted.txt")
@@ -86,7 +83,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
 			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
-			expectedMetric.value = 240000
+			expectedMetric.value = 24
 			soValidMetric(collectedMetrics[0], expectedMetric)
 		})
 		Convey("I should receive valid metric when caffe was killed during inference and last word in log is 'Batch'", func() {
@@ -96,7 +93,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(collectedMetrics, ShouldHaveLength, expectedMetricsCount)
 			So(collectedMetrics[0].Namespace().String(), ShouldContainSubstring, expectedMetric.namespace)
-			expectedMetric.value = 30000
+			expectedMetric.value = 3
 			soValidMetric(collectedMetrics[0], expectedMetric)
 		})
 		Convey("I should receive no metrics and error when no file path is set", func() {
@@ -104,7 +101,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			metricTypes[0].Config_ = configuration
 			metrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(metrics, ShouldHaveLength, 0)
-			So(err.Error(), ShouldContainSubstring, "No file path set - no metrics are going to be collected")
+			So(err, ShouldHaveSameTypeAs, ERRCONF)
 		})
 	})
 }
@@ -112,8 +109,6 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 func makeDefaultConfiguration(fileName string) *cdata.ConfigDataNode {
 	configuration := cdata.NewNode()
 	configuration.AddItem("stdout_file", ctypes.ConfigValueStr{Value: fileName})
-	configuration.AddItem("phase_name", ctypes.ConfigValueStr{Value: "phase name"})
-	configuration.AddItem("experiment_name", ctypes.ConfigValueStr{Value: "experiment name"})
 	return configuration
 }
 
@@ -125,16 +120,15 @@ func soValidMetricType(metricType snapPlugin.MetricType, namespace string, unit 
 
 func soValidMetric(metric snapPlugin.MetricType, expectedMetric metric) {
 	namespaceSuffix := expectedMetric.namespace
+	namespacePrefix := strings.Join(append([]string{""}, namespace...), "/")
 	value := expectedMetric.value
-	time := expectedMetric.date
 
-	So(metric.Namespace().String(), ShouldStartWith, "/intel/swan/caffe/inference/")
+	So(metric.Namespace().String(), ShouldStartWith, namespacePrefix)
 	So(metric.Namespace().String(), ShouldEndWith, namespaceSuffix)
 	So(strings.Contains(metric.Namespace().String(), "*"), ShouldBeFalse)
-	So(metric.Unit(), ShouldEqual, "images")
+	So(metric.Unit(), ShouldEqual, METRICNAME)
 	So(metric.Tags(), ShouldHaveLength, 0)
 	data, typeFound := metric.Data().(uint64)
 	So(typeFound, ShouldBeTrue)
 	So(data, ShouldEqual, value)
-	So(metric.Timestamp().Unix(), ShouldEqual, time.Unix())
 }
