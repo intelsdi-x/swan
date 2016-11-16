@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?="-p 1"
+TEST_OPT?=""
 
 # for compatibility purposes.
 deps: deps_all
@@ -18,11 +18,11 @@ test_all: test_lint test_unit test_integration
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps_godeps:
-	go get github.com/golang/lint/golint
-	go get github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
-	go get github.com/stretchr/testify
-	go get github.com/vektra/mockery/.../
-	go get github.com/Masterminds/glide
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
+	go get github.com/stretchr/testify # go get -u github.com/stretchr/testify fails miserably
+	go get -u github.com/vektra/mockery/.../
+	go get -u github.com/Masterminds/glide
 	glide install
 
 deps_jupyter:
@@ -61,14 +61,15 @@ test_lint:
 	fgt golint ./integration_tests/...
 
 test_unit:
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./pkg/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./experiments/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./misc/...
 
 test_integration:
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
+	go test -i ./integration_tests/... ./experiments/... ./misc/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
 	(cd scripts/jupyter; py.test)
 
 cleanup:
