@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?="-p 1"
+TEST_OPT?=""
 
 # for compatibility purposes
 # in the future deps target should point to deps_all, currently Kopernik job
@@ -64,14 +64,15 @@ test_lint:
 	fgt golint ./integration_tests/...
 
 test_unit:
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./pkg/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./pkg/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./experiments/...
+	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./misc/...
 
 test_integration:
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./experiments/... -v
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./misc/... -v
+	go test -i ./integration_tests/... ./experiments/... ./misc/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
+	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
 	(cd scripts/jupyter; py.test)
 
 cleanup:
