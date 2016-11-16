@@ -67,14 +67,14 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			metricTypes[0].Config_ = configuration
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(collectedMetrics, ShouldHaveLength, 0)
-			So(err, ShouldHaveSameTypeAs, ERRPARSE)
+			So(err, ShouldHaveSameTypeAs, ErrParse)
 		})
 		Convey("I should receive no metrics end error when caffe ended prematurely and there is single work 'Batch' in log without number", func() {
 			configuration := makeDefaultConfiguration("log-interrupted2.txt")
 			metricTypes[0].Config_ = configuration
 			collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(collectedMetrics, ShouldHaveLength, 0)
-			So(err, ShouldHaveSameTypeAs, ERRPARSE)
+			So(err, ShouldHaveSameTypeAs, ErrParse)
 		})
 		Convey("I should receive valid metric when caffe was killed during inference", func() {
 			configuration := makeDefaultConfiguration("log-interrupted.txt")
@@ -101,7 +101,7 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 			metricTypes[0].Config_ = configuration
 			metrics, err := caffePlugin.CollectMetrics(metricTypes)
 			So(metrics, ShouldHaveLength, 0)
-			So(err, ShouldHaveSameTypeAs, ERRCONF)
+			So(err, ShouldHaveSameTypeAs, ErrConf)
 		})
 	})
 }
