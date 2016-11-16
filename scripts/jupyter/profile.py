@@ -120,12 +120,12 @@ class Profile(object):
 
             for value in row:
                 style = '%s; ' % no_border
-                if value > 150:
+                if value == Profile.MISSING_VALUE:
+                    style += 'background-color: #c0c0c0;'
+                elif value > 150:
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
-                elif value == Profile.MISSING_VALUE:
-                    style += 'background-color: #c0c0c0;'
                 elif np.isnan(value):
                     value = 0
                     style += 'background-color: #a9341f; color: white;'
@@ -312,7 +312,7 @@ if __name__ == '__main__':
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
-    Profile(exp1, slo=500).sensitivity_table()
+    Profile(exp1, slo=500).sensitivity_chart()
     Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
     compare_experiments(exps=[exp1, exp2], fill=False, to_max=True)
