@@ -25,6 +25,12 @@ func getUUID(outs []byte) string {
 	return string(lines[0])
 }
 
+func printDebug(out []byte) {
+	if len(out) > 0 {
+		Printf("[Debug]==> Out: %s\n", string(out))
+	}
+}
+
 func TestExperiment(t *testing.T) {
 	memcachedSensitivityProfileBin := path.Join(fs.GetSwanBuildPath(), "experiments", "memcached", "memcached-sensitivity-profile")
 	memcacheDockerBin := "/root/go/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
@@ -76,7 +82,8 @@ func TestExperiment(t *testing.T) {
 
 			Convey("With proper configuration and without aggressor phases", func() {
 				exp := exec.Command(memcachedSensitivityProfileBin)
-				err := exp.Run()
+				output, err := exp.Output()
+				printDebug(output)
 
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
@@ -88,6 +95,8 @@ func TestExperiment(t *testing.T) {
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
+					printDebug(output)
+
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
 
@@ -104,6 +113,7 @@ func TestExperiment(t *testing.T) {
 					os.Setenv("SWAN_REPS", "2")
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
+					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
 
@@ -136,6 +146,7 @@ func TestExperiment(t *testing.T) {
 					os.Setenv("SWAN_LOAD_POINTS", "2")
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
+					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
 
@@ -170,7 +181,8 @@ func TestExperiment(t *testing.T) {
 			SkipConvey("With proper kubernetes configuration and without phases", func() {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				err := exp.Run()
+				output, err := exp.Output()
+				printDebug(output)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
 				})
@@ -181,6 +193,7 @@ func TestExperiment(t *testing.T) {
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
 					output, err := exp.Output()
+					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
 
@@ -197,7 +210,8 @@ func TestExperiment(t *testing.T) {
 			Convey("With invalid configuration stop experiment if error", func() {
 				os.Setenv("SWAN_LOAD_POINTS", "abc")
 				exp := exec.Command(memcachedSensitivityProfileBin)
-				err := exp.Run()
+				output, err := exp.Output()
+				printDebug(output)
 
 				So(err, ShouldNotBeNil)
 			})
@@ -208,7 +222,8 @@ func TestExperiment(t *testing.T) {
 				os.Setenv("SWAN_REPS", "0")
 				Convey("Experiment should pass with no errors", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					err := exp.Run()
+					output, err := exp.Output()
+					printDebug(output)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -216,7 +231,8 @@ func TestExperiment(t *testing.T) {
 			Convey("With wrong aggresor name", func() {
 				args := []string{"--aggr", "l1e"}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				err := exp.Run()
+				output, err := exp.Output()
+				printDebug(output)
 				So(err, ShouldNotBeNil)
 			})
 		})
