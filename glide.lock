@@ -191,6 +191,7 @@ imports:
   - pkg/snap
   - pkg/snap/mocks
   - pkg/snap/sessions/mutilate
+  - pkg/snap/sessions/specjbb
   - pkg/utils/env
   - pkg/utils/err_collection
   - pkg/utils/errutil

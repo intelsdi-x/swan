@@ -49,8 +49,9 @@ build_workloads:
 	(sudo ./scripts/get_specjbb.sh)
 
 build_swan:
-	mkdir -p build/experiments/memcached
+	mkdir -p build/experiments/memcached build/experiments/specjbb
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
+	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)

@@ -21,11 +21,13 @@ const (
 )
 
 var (
-	// PathToBinaryFlag specifies path to a SPECjbb2015 jar file.
-	PathToBinaryFlag = conf.NewStringFlag("specjbb_path", "Path to SPECjbb jar", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+	// PathToBinaryForLoadGeneratorFlag specifies path to a SPECjbb2015 jar file for load generator.
+	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
 
-	// PathToPropsFileFlag specifies path to a SPECjbb2015 properties file.
-	PathToPropsFileFlag = conf.NewStringFlag("specjbb_props_path", "Path to SPECjbb properties file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
+	// PathToPropsFileForLoadGeneratorFlag specifies path to a SPECjbb2015 properties file for load generator.
+	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
 
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
 	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "template-D.raw"))
@@ -41,6 +43,9 @@ var (
 
 	// ProductNumberFlag specifies number of products.
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
+
+	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
+	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"))
 
 	// ControllerHostProperty - string name for property that specifies controller host.
 	ControllerHostProperty = " -Dspecjbb.controller.host="
@@ -89,12 +94,12 @@ type LoadGeneratorConfig struct {
 func NewDefaultConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		ControllerIP:         IPFlag.Value(),
-		PathToBinary:         PathToBinaryFlag.Value(),
-		PathToProps:          PathToPropsFileFlag.Value(),
+		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
+		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),
 		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
-		BinaryDataOutputDir:  path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"),
+		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
 	}
 }
@@ -195,10 +200,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 // calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
 // We use critical jops value because maximum capacity (HBIR) is high above our desired SLA.
 // Exemplary output for machine capacity, HBIR = 12000:
-// critical-jOPS = Geomean ( jOPS @ 10000; 25000; 50000; 75000; 100000; SLAs )
-// Response time percentile is 99-th
-// SLA (us)	10000	25000	50000	75000	100000	Geomean
-// jOPS		1789	2588	2848	3080	3428	2684
+// RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
 	hbirRtCommand := getControllerHBIRRTCommand(loadGenerator.config)
 	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
@@ -227,7 +229,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 
 	// Run reporter to calculate critical jops value from raw results.
-	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName)
+	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName, slo)
 	reporter := newReporter(executor.NewLocal(), loadGenerator.config)
 	reporterHandle, err := reporter.executor.Execute(reporterCommand)
 	reporterHandle.Wait(0)

@@ -87,7 +87,7 @@ func FileWithHBIRRT(path string) (int, error) {
 // 6s: Binary log file is /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
 func ParseRawFileName(reader io.Reader) (string, error) {
 	var rawFileName string
-	var time int
+	var submatch []string
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -95,15 +95,19 @@ func ParseRawFileName(reader io.Reader) (string, error) {
 		}
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
+		// <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: Controller start
+		// Binary log file is /tmp/specjbb2015-D-20161114-00007.data.gz
+		// 1s:
+		// 1s: <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: Binary log file is /tmp/specjbb2015-D-20161114-00007.data.gz
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if strings.Contains(line, "Binarylogfileis") {
-			const fields = 2
-			if numberOfItems, err := fmt.Sscanf(line, "%ds:Binarylogfileis%s", &time, &rawFileName); err != nil {
-				if numberOfItems != fields {
-					return "", fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
-				}
-				return "", err
+		regex := regexp.MustCompile("Binarylogfileis([/a-zA-Z-_.0-9]+)")
+		if regex.MatchString(line) {
+			submatch = regex.FindStringSubmatch(line)
+			// Submatch should have length = 2, First is matched string, the second is value of a group (name of a file).
+			if len(submatch) < 2 {
+				return "", fmt.Errorf("Raw file name not found")
 			}
+			rawFileName = submatch[len(submatch)-1]
 			return rawFileName, nil
 		}
 	}
@@ -113,7 +117,7 @@ func ParseRawFileName(reader io.Reader) (string, error) {
 // ParseHBIRRT retrieves geo mean of critical jops from specjbb output represented as:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func ParseHBIRRT(reader io.Reader) (int, error) {
-	var hbir int
+	var submatch []string
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -122,24 +126,21 @@ func ParseHBIRRT(reader io.Reader) (int, error) {
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if strings.Contains(line, "RUNRESULT:") && strings.Contains(line, "critical-jOPS") {
-			// We can't create universal regex for this line as sometimes values are int and sometimes string.
-			// Instead we have to divide it by comas and take last element and then extract its value.
-			// Split output to have results in separate fields.
-			lineSplitted := strings.Split(line, ",")
-			// Last element in a line is always a critical jops.
-			lastElement := lineSplitted[len(lineSplitted)-1]
-			const fields = 1
-			if numberOfItems, err := fmt.Sscanf(lastElement, "critical-jOPS=%d", &hbir); err != nil {
-				if numberOfItems != fields {
-					return 0, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
-				}
-				return 0, err
+		regex := regexp.MustCompile("RUNRESULT:[()a-zA-Z,0-9=-]+critical-jOPS=([0-9]+)")
+		if regex.MatchString(line) {
+			submatch = regex.FindStringSubmatch(line)
+			// Submatch should have length = 2, First is matched string, the second is value of a group (value of jops).
+			if len(submatch) < 2 {
+				return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
+			}
+			hbir, err := strconv.Atoi(submatch[len(submatch)-1])
+			if err != nil {
+				return 0, fmt.Errorf("Bad value type found for critical-jops")
 			}
 			return hbir, nil
 		}
 	}
-	return 0, fmt.Errorf("Run result not found")
+	return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
 }
 
 // ParseLatencies retrieves metrics from specjbb output represented as:
@@ -155,7 +156,10 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 	scanner := bufio.NewScanner(reader)
 	metricsRaw := make(map[string]uint64, 0)
 	// Regex for line with actual injection rate and processed requests.
-	r := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
+	// 55s: ( 0%) ......|................?............. (rIR:aIR:PR = 4000:4007:4007) (tPR = 60729) [OK]
+	rLocal := regexp.MustCompile("[0-9]+s:[ ()0-9%.|?]+rIR:aIR:PR[ =]+([0-9]+):([0-9]+):([0-9]+)")
+	// <Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: PRESET: IR = 500 finished, steady status = [OK] (rIR:aIR:PR = 500:500:500) (tPR = 7214)
+	rRemote := regexp.MustCompile("[<a-zA-Z:0-9]+PRESET:[a-zA-Z=0-9]+finished,steadystatus=\\[[a-zA-Z]+\\][()]rIR:aIR:PR=([0-9]+):([0-9]+):([0-9]+)")
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return newResults(), err
@@ -163,14 +167,11 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
-		if r.MatchString(line) {
-			submatch := r.FindStringSubmatch(line)
-			issuedRequests, processedRequests, err := parseRequests(submatch)
-			if err != nil {
-				return newResults(), err
-			}
-			metricsRaw[QPSKey] = processedRequests
-			metricsRaw[IssuedRequestsKey] = issuedRequests
+		var submatch []string
+		if rLocal.MatchString(line) {
+			submatch = rLocal.FindStringSubmatch(line)
+		} else if rRemote.MatchString(line) {
+			submatch = rRemote.FindStringSubmatch(line)
 		} else if strings.HasPrefix(line, "TotalPurchase,") {
 			latencies, err := parseTotalPurchaseLatencies(line)
 			if err != nil {
@@ -178,8 +179,17 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 			}
 			metricsRaw = mapCopy(latencies, metricsRaw)
 		}
-		metrics.Raw = metricsRaw
+		if len(submatch) > 0 {
+			issuedRequests, processedRequests, err := parseRequests(submatch)
+			if err != nil {
+				return newResults(), err
+			}
+			metricsRaw[QPSKey] = processedRequests
+			metricsRaw[IssuedRequestsKey] = issuedRequests
+		}
 	}
+	metrics.Raw = metricsRaw
+
 	_, ok := metrics.Raw[QPSKey]
 	if !ok {
 		return newResults(), errors.New("cannot find processed requests value (PR) in SPECjbb controller output")

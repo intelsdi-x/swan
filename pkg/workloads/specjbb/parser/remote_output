@@ -1,0 +1,362 @@
+<Wed Nov 09 18:54:53 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 250 finished, settle status = [OK] (rIR:aIR:PR = 250:237:239) (tPR = 3704)
+ (rIR:aIR:PR = 250:237:239) (tPR = 3704) [OK]
+   105s:       rampup IR =    300 ?.<Wed Nov 09 18:54:56 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:54:58 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:306:280) (tPR = 4783) [PR is under limit]
+?.<Wed Nov 09 18:55:01 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:292:285) (tPR = 4840) [OK]
+?.<Wed Nov 09 18:55:04 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:284:256) (tPR = 4214) [PR is under limit]
+?.<Wed Nov 09 18:55:06 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:297:262) (tPR = 4125) [PR is under limit]
+?.<Wed Nov 09 18:55:09 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:296:255) (tPR = 4074) [PR is under limit]
+?.<Wed Nov 09 18:55:11 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:295:265) (tPR = 4093) [PR is under limit]
+?.<Wed Nov 09 18:55:14 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:264:261) (tPR = 3989) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:55:17 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:303:251) (tPR = 3771) [PR is under limit]
+?.<Wed Nov 09 18:55:19 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:295:255) (tPR = 3868) [PR is under limit]
+?.<Wed Nov 09 18:55:22 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:298:256) (tPR = 3865) [PR is under limit]
+?.<Wed Nov 09 18:55:25 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 300:295:257) (tPR = 3931) [PR is under limit]
+<Wed Nov 09 18:55:25 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 300 finished, settle status = [PR is under limit] (rIR:aIR:PR = 300:295:257) (tPR = 3931)
+ (rIR:aIR:PR = 300:295:257) (tPR = 3931) [PR is under limit]
+   137s:       rampup IR =    350 ?.<Wed Nov 09 18:55:28 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:55:30 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:369:280) (tPR = 3988) [PR is under limit]
+?.<Wed Nov 09 18:55:33 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:392:285) (tPR = 4678) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:55:35 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:363:275) (tPR = 4535) [PR is under limit]
+?.<Wed Nov 09 18:55:38 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:357:272) (tPR = 4477) [PR is under limit]
+?.<Wed Nov 09 18:55:40 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:360:267) (tPR = 4386) [PR is under limit]
+?.<Wed Nov 09 18:55:43 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:364:260) (tPR = 4164) [PR is under limit]
+?.<Wed Nov 09 18:55:46 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:365:262) (tPR = 4098) [PR is under limit]
+?.<Wed Nov 09 18:55:48 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:361:265) (tPR = 4123) [PR is under limit]
+?.<Wed Nov 09 18:55:51 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:359:263) (tPR = 4067) [PR is under limit]
+?.<Wed Nov 09 18:55:54 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:350:260) (tPR = 4058) [PR is under limit]
+?.<Wed Nov 09 18:55:56 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 350:353:259) (tPR = 3989) [PR is under limit]
+<Wed Nov 09 18:55:56 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 350 finished, settle status = [PR is under limit] (rIR:aIR:PR = 350:353:259) (tPR = 3989)
+ (rIR:aIR:PR = 350:353:259) (tPR = 3989) [PR is under limit]
+   169s:       rampup IR =    400 ?.<Wed Nov 09 18:55:59 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+??????????.<Wed Nov 09 18:56:10 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:147:301) (tPR = 4804) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:56:13 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:410:245) (tPR = 3914) [PR is under limit]
+?.<Wed Nov 09 18:56:15 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:413:232) (tPR = 3582) [PR is under limit]
+?.<Wed Nov 09 18:56:18 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:404:241) (tPR = 3678) [PR is under limit]
+?.<Wed Nov 09 18:56:21 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:396:245) (tPR = 3752) [PR is under limit]
+?.<Wed Nov 09 18:56:24 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:394:246) (tPR = 3739) [PR is under limit]
+?.<Wed Nov 09 18:56:26 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:399:249) (tPR = 3793) [PR is under limit]
+?.<Wed Nov 09 18:56:29 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 400:397:254) (tPR = 3826) [PR is under limit]
+<Wed Nov 09 18:56:29 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 400 finished, settle status = [PR is under limit] (rIR:aIR:PR = 400:397:254) (tPR = 3826)
+ (rIR:aIR:PR = 400:397:254) (tPR = 3826) [PR is under limit]
+   201s:       rampup IR =    450 ?.<Wed Nov 09 18:56:32 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:56:34 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:475:262) (tPR = 3339) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:56:37 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:500:240) (tPR = 3553) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:56:40 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:483:247) (tPR = 3852) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:56:43 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:482:261) (tPR = 4148) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:56:45 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:466:257) (tPR = 4071) [PR is under limit]
+?.<Wed Nov 09 18:56:48 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:471:254) (tPR = 3898) [PR is under limit]
+?.<Wed Nov 09 18:56:51 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:476:251) (tPR = 3773) [IR is over limit] [PR is under limit]
+?.<Wed Nov 09 18:56:54 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:469:249) (tPR = 3738) [PR is under limit]
+?.<Wed Nov 09 18:56:56 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:468:251) (tPR = 3720) [PR is under limit]
+?.<Wed Nov 09 18:56:59 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:469:254) (tPR = 3741) [PR is under limit]
+.<Wed Nov 09 18:57:00 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 450:474:382) (tPR = 5777) [IR is over limit] [PR is under limit]
+<Wed Nov 09 18:57:00 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 450 finished, settle status = [IR is over limit] [PR is under limit] (rIR:aIR:PR = 450:474:382) (tPR = 5777)
+ (rIR:aIR:PR = 450:474:382) (tPR = 5777) [IR is over limit] [PR is under limit]
+   232s:       rampup IR =    500 .<Wed Nov 09 18:57:01 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+.<Wed Nov 09 18:57:02 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:458:3085) (tPR = 45475) [IR is under limit] [PR is over limit]
+.<Wed Nov 09 18:57:03 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:534:3113) (tPR = 47628) [IR is over limit] [PR is over limit]
+??.<Wed Nov 09 18:57:06 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:506:1537) (tPR = 23672) [PR is over limit]
+.<Wed Nov 09 18:57:07 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:609:1685) (tPR = 26068) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:08 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:596:1525) (tPR = 23580) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:09 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:586:1403) (tPR = 21694) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:10 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:576:1306) (tPR = 20119) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:11 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:567:1227) (tPR = 18785) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:12 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:562:1163) (tPR = 17799) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:13 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:556:1109) (tPR = 17020) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:14 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:553:1060) (tPR = 16291) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:15 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:547:1021) (tPR = 15698) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:16 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:547:990) (tPR = 15224) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:17 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:543:958) (tPR = 14763) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:18 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:541:933) (tPR = 14424) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:19 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:539:910) (tPR = 14041) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:20 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:537:889) (tPR = 13663) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:21 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:535:869) (tPR = 13331) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:22 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:533:852) (tPR = 13067) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:23 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:531:836) (tPR = 12838) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:24 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:534:715) (tPR = 11106) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:25 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:528:597) (tPR = 9178) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:26 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:529:598) (tPR = 9144) [IR is over limit] [PR is over limit]
+.<Wed Nov 09 18:57:27 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:500:500) (tPR = 7602) [OK]
+.<Wed Nov 09 18:57:28 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:500:500) (tPR = 7593) [OK]
+.<Wed Nov 09 18:57:29 UTC 2016> org.spec.jbb.controller: WARMUP: settling, (rIR:aIR:PR = 500:501:501) (tPR = 7607) [OK]
+<Wed Nov 09 18:57:29 UTC 2016> org.spec.jbb.controller: WARMUP: IR = 500 finished, settle status = [OK] (rIR:aIR:PR = 500:501:501) (tPR = 7607)
+ (rIR:aIR:PR = 500:501:501) (tPR = 7607) [OK]
+   262s: Ramping up completed!
+   262s:
+   262s: ( 0%) .<Wed Nov 09 18:57:30 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+.<Wed Nov 09 18:57:31 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:471:473) (tPR = 5830) [IR is under limit] [PR is under limit]
+.<Wed Nov 09 18:57:32 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:495:495) (tPR = 6408) [OK]
+.<Wed Nov 09 18:57:33 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:494:494) (tPR = 6183) [OK]
+.<Wed Nov 09 18:57:34 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:503:503) (tPR = 7018) [OK]
+|.<Wed Nov 09 18:57:35 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:462:462) (tPR = 5591) [IR is under limit] [PR is under limit]
+.<Wed Nov 09 18:57:36 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:474:480) (tPR = 7275) [IR is under limit]
+.<Wed Nov 09 18:57:37 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:488:489) (tPR = 7545) [OK]
+.<Wed Nov 09 18:57:38 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:496:496) (tPR = 7649) [OK]
+.<Wed Nov 09 18:57:39 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:498:498) (tPR = 7833) [OK]
+.<Wed Nov 09 18:57:40 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:494:496) (tPR = 7570) [OK]
+.<Wed Nov 09 18:57:41 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7647) [OK]
+.<Wed Nov 09 18:57:42 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7810) [OK]
+.<Wed Nov 09 18:57:43 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7667) [OK]
+.<Wed Nov 09 18:57:44 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7636) [OK]
+.<Wed Nov 09 18:57:45 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:502) (tPR = 7634) [OK]
+.<Wed Nov 09 18:57:46 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:497:497) (tPR = 7493) [OK]
+.<Wed Nov 09 18:57:47 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:498:498) (tPR = 7586) [OK]
+.<Wed Nov 09 18:57:48 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7537) [OK]
+.<Wed Nov 09 18:57:49 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7492) [OK]
+.<Wed Nov 09 18:57:50 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7465) [OK]
+.<Wed Nov 09 18:57:51 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7572) [OK]
+.<Wed Nov 09 18:57:52 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7565) [OK]
+.<Wed Nov 09 18:57:53 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7628) [OK]
+.<Wed Nov 09 18:57:54 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7613) [OK]
+.<Wed Nov 09 18:57:55 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7593) [OK]
+.<Wed Nov 09 18:57:56 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7618) [OK]
+.<Wed Nov 09 18:57:57 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:497:497) (tPR = 7566) [OK]
+.<Wed Nov 09 18:57:58 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7617) [OK]
+.<Wed Nov 09 18:57:59 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7630) [OK]
+??.<Wed Nov 09 18:58:03 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:494:454) (tPR = 6957) [PR is under limit]
+.<Wed Nov 09 18:58:04 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7644) [OK]
+.<Wed Nov 09 18:58:05 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7624) [OK]
+<Wed Nov 09 18:58:05 UTC 2016> org.spec.jbb.controller: PRESET: IR = 500 finished, steady status = [OK] (rIR:aIR:PR = 500:500:500) (tPR = 7624)
+ (rIR:aIR:PR = 500:500:500) (tPR = 7624) [OK]
+   297s: Performance info:
+         Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
+             Overall,      15197,          0,          0,      14442,      41.64,
+         Response times:
+             Request,    Success,    Partial,     Failed,   SkipFail,     Probes,    Samples,      min,      p50,      p90,      p95,      p99,      max,
+       TotalPurchase,      14435,          0,          0,          0,      12877,      16334,      800,     4200,    93000,  1200000,  2400000,  2700000,
+     InStorePurchase,       7602,          0,          0,          0,       6826,       8604,      800,     4200,    92000,  1200000,  2400000,  2700000,
+      OnlinePurchase,       5318,          0,          0,          0,       4735,       6012,     1000,     4200,    92000,  1100000,  2400000,  2700000,
+        InstPurchase,       1515,          0,          0,          0,       1316,       1718,     1500,     4300,    95000,  1300000,  2400000,  2700000,
+          AssocOfCat,         15,          0,          0,          0,         13,         16,     7200,     8750,  1230000,  1300000,  1300000,  1300000,
+      AssocOfProduct,        148,          0,          0,          0,        107,        162,     2900,     7100,   103000,  1285000,  2574000,  2700000,
+      BusinessReport,         38,          0,          0,          0,         37,         43,     8100,    11100,   107400,   729800,  1300000,  1300000,
+          CustBuyBeh,        146,          0,          0,          0,        113,        181,     1500,     4600,   225000,   648000,   799000,   840000,
+       ProductReturn,        406,          0,          0,          0,        336,        445,     1100,     4100,    94800,  1100000,  2408000,  2600000,
+
+   297s: (88%) .<Wed Nov 09 18:58:06 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+.<Wed Nov 09 18:58:07 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:511:501) (tPR = 7935) [OK]
+.<Wed Nov 09 18:58:08 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:494:489) (tPR = 7769) [OK]
+.<Wed Nov 09 18:58:09 UTC 2016> org.spec.jbb.controller: PRESET: settling, (rIR:aIR:PR = 500:497:493) (tPR = 7731) [OK]
+|.<Wed Nov 09 18:58:10 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:486:486) (tPR = 7060) [OK]
+.<Wed Nov 09 18:58:11 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:494:494) (tPR = 7198) [OK]
+.<Wed Nov 09 18:58:12 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:502:502) (tPR = 7240) [OK]
+.<Wed Nov 09 18:58:13 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:502:502) (tPR = 7262) [OK]
+.<Wed Nov 09 18:58:14 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:506:506) (tPR = 7155) [OK]
+.<Wed Nov 09 18:58:15 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:501) (tPR = 7051) [OK]
+.<Wed Nov 09 18:58:16 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 6895) [OK]
+.<Wed Nov 09 18:58:17 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7064) [OK]
+.<Wed Nov 09 18:58:18 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:499) (tPR = 7004) [OK]
+.<Wed Nov 09 18:58:19 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7148) [OK]
+.<Wed Nov 09 18:58:20 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:502:502) (tPR = 7189) [OK]
+.<Wed Nov 09 18:58:21 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7265) [OK]
+.<Wed Nov 09 18:58:22 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:498:498) (tPR = 7236) [OK]
+.<Wed Nov 09 18:58:23 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7133) [OK]
+.<Wed Nov 09 18:58:24 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:502:502) (tPR = 7135) [OK]
+.<Wed Nov 09 18:58:25 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7126) [OK]
+.<Wed Nov 09 18:58:26 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:498:499) (tPR = 7076) [OK]
+.<Wed Nov 09 18:58:27 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7094) [OK]
+.<Wed Nov 09 18:58:28 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7075) [OK]
+.<Wed Nov 09 18:58:29 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7059) [OK]
+.<Wed Nov 09 18:58:30 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7043) [OK]
+.<Wed Nov 09 18:58:31 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7062) [OK]
+.<Wed Nov 09 18:58:32 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7104) [OK]
+.<Wed Nov 09 18:58:33 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7161) [OK]
+.<Wed Nov 09 18:58:34 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:499) (tPR = 7159) [OK]
+.<Wed Nov 09 18:58:35 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7199) [OK]
+.<Wed Nov 09 18:58:36 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7151) [OK]
+.<Wed Nov 09 18:58:37 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:501:501) (tPR = 7182) [OK]
+.<Wed Nov 09 18:58:38 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:499:498) (tPR = 7148) [OK]
+.<Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: PRESET: steady, (rIR:aIR:PR = 500:500:500) (tPR = 7214) [OK]
+<Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: PRESET: IR = 500 finished, steady status = [OK] (rIR:aIR:PR = 500:500:500) (tPR = 7214)
+ (rIR:aIR:PR = 500:500:500) (tPR = 7214) [OK]
+   331s: Performance info:
+         Transaction,    Success,    Partial,     Failed,   Receipts, AvgBarcode,
+             Overall,      15107,          0,          0,      14355,      41.63,
+         Response times:
+             Request,    Success,    Partial,     Failed,   SkipFail,     Probes,    Samples,      min,      p50,      p90,      p95,      p99,      max,
+       TotalPurchase,      14355,          0,          0,          0,      13832,      15916,     1000,     4000,     9530,    40150,    94000,   120000,
+     InStorePurchase,       7569,          0,          0,          0,       7323,       8322,     1000,     4000,     9800,    43850,    95000,   120000,
+      OnlinePurchase,       5284,          0,          0,          0,       5079,       5809,     1000,     4000,     9800,    41500,    94000,   118000,
+        InstPurchase,       1502,          0,          0,          0,       1430,       1785,     1000,     4100,     8600,    20670,    90280,   104000,
+          AssocOfCat,         16,          0,          0,          0,         16,         16,     6400,     7850,     9630,    11100,    11100,    11100,
+      AssocOfProduct,        149,          0,          0,          0,        123,        183,     2800,     6800,    10300,    14840,    82360,   100000,
+      BusinessReport,         38,          0,          0,          0,         38,         42,     8900,    11600,    31400,    88050,   102000,   102000,
+          CustBuyBeh,        150,          0,          0,          0,        110,        147,     2100,     4400,    13500,    74200,    98520,    99000,
+       ProductReturn,        399,          0,          0,          0,        342,        435,     1400,     4000,    10080,    32000,    97920,   110000,
+
+   331s: <Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: Validation...
+<Wed Nov 09 18:58:39 UTC 2016> org.spec.jbb.controller: Quiescencing...
+(quiescence.<Wed Nov 09 18:58:40 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:41 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:42 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:43 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:44 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+<Wed Nov 09 18:58:44 UTC 2016> org.spec.jbb.controller: TRANSITION: IR = 0 finished, settle status = [OK] (rIR:aIR:PR = 0:0:0) (tPR = 0)
+) <Wed Nov 09 18:58:44 UTC 2016> org.spec.jbb.controller: Stopping TxInjectors
+(stop TxI) <Wed Nov 09 18:58:44 UTC 2016> org.spec.jbb.controller: Stopping Backends
+(stop BE) <Wed Nov 09 18:58:44 UTC 2016> org.spec.jbb.controller: Snapshotting...
+(saving... 16841 Kb) (validation=PASSED)<Wed Nov 09 18:58:45 UTC 2016> org.spec.jbb.controller: Validation PASSED
+<Wed Nov 09 18:58:45 UTC 2016> org.spec.jbb.controller: Ramping down and finishing
+(term<Wed Nov 09 18:58:45 UTC 2016> org.spec.jbb.controller: Finishing
+) (init<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.controller: Requested topology is: Group GRP1:
+GRP1.TxInjector.JVM1
+GRP1.Backend.JVM2
+ Headquarter:
+   GRP1.Backend.JVM2.HQ
+ Supermarkets:
+   GRP1.Backend.JVM2.SM0 (target GRP1.Backend.JVM2.HQ)
+   GRP1.Backend.JVM2.SM1 (target GRP1.Backend.JVM2.HQ)
+ Suppliers:
+   GRP1.Backend.JVM2.SP0
+   GRP1.Backend.JVM2.SP1
+
+Purchases to be distributed among [GRP1.Backend.JVM2.SM0, GRP1.Backend.JVM2.SM1]
+Customer drivers to be distributed among [GRP1.TxInjector.JVM1]
+Customers to be distributed among [GRP1.Backend.JVM2.HQ]
+Product replenishes to be distributed among [GRP1.Backend.JVM2.SP0, GRP1.Backend.JVM2.SP1]
+
+<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.controller: Configuring JVM parameters
+<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.controller: Properties dumped in binary log
+<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.controller: Enabling heartbeats
+<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.ic: Registered Leader.heartbeat
+<Wed Nov 09 18:58:46 UTC 2016> org.spec.jbb.controller: Asking JVMs to initialize themselves
+) <Wed Nov 09 18:58:51 UTC 2016> org.spec.jbb.controller: Starting background stats gathering
+.<Wed Nov 09 18:58:52 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:53 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 18:58:54 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+<Wed Nov 09 18:58:54 UTC 2016> org.spec.jbb.controller: TRANSITION: IR = 0 finished, settle status = [OK] (rIR:aIR:PR = 0:0:0) (tPR = 0)
+
+   346s: Profiling??.<Wed Nov 09 18:58:57 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:0:0) (tPR = 0) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:00 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:245:21) (tPR = 368) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:02 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:391:23) (tPR = 495) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:04 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:322:29) (tPR = 511) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:07 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:315:28) (tPR = 471) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:09 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:291:32) (tPR = 476) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:11 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:297:31) (tPR = 436) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:14 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:270:30) (tPR = 409) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:16 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:268:31) (tPR = 462) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:18 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:277:32) (tPR = 462) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:21 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:269:31) (tPR = 462) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:23 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:272:34) (tPR = 486) [IR is under limit] [PR is under limit]
+?.<Wed Nov 09 18:59:25 UTC 2016> org.spec.jbb.controller: PROFILE: settling, (rIR:aIR:PR = 500:284:31) (tPR = 445) [IR is under limit] [PR is under limit]
+<Wed Nov 09 18:59:25 UTC 2016> org.spec.jbb.controller: PROFILE: IR = 500 finished, settle status = [IR is under limit] [PR is under limit] (rIR:aIR:PR = 500:284:31) (tPR = 445)
+ (rIR:aIR:PR = 500:284:31) (tPR = 445) [IR is under limit] [PR is under limit]
+   378s:  OK
+   378s: <Wed Nov 09 18:59:25 UTC 2016> org.spec.jbb.controller: Ramping down and finishing
+(term?.<Wed Nov 09 18:59:30 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+?.<Wed Nov 09 18:59:32 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:7:80) (tPR = 988) [PR is over limit]
+?.<Wed Nov 09 18:59:35 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:4:65) (tPR = 1041) [PR is over limit]
+?.<Wed Nov 09 18:59:37 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:51) (tPR = 945) [PR is over limit]
+?.<Wed Nov 09 18:59:40 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:66) (tPR = 942) [PR is over limit]
+?.<Wed Nov 09 18:59:42 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:70) (tPR = 999) [PR is over limit]
+?.<Wed Nov 09 18:59:44 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:56) (tPR = 899) [PR is over limit]
+?.<Wed Nov 09 18:59:47 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:58) (tPR = 1078) [PR is over limit]
+?.<Wed Nov 09 18:59:50 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:66) (tPR = 1088) [PR is over limit]
+?.<Wed Nov 09 18:59:52 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:2:64) (tPR = 854) [PR is over limit]
+?.<Wed Nov 09 18:59:55 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:2:63) (tPR = 860) [PR is over limit]
+?.<Wed Nov 09 18:59:57 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:1:57) (tPR = 975) [PR is over limit]
+?.<Wed Nov 09 19:00:00 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:1:60) (tPR = 1041) [PR is over limit]
+?.<Wed Nov 09 19:00:03 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:2:79) (tPR = 1020) [PR is over limit]
+?.<Wed Nov 09 19:00:05 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:3:91) (tPR = 944) [PR is over limit]
+?.<Wed Nov 09 19:00:07 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:1:80) (tPR = 1156) [PR is over limit]
+?.<Wed Nov 09 19:00:10 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:70) (tPR = 1310) [PR is over limit]
+?.<Wed Nov 09 19:00:12 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:83) (tPR = 1146) [PR is over limit]
+?.<Wed Nov 09 19:00:15 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:73) (tPR = 1101) [PR is over limit]
+?.<Wed Nov 09 19:00:17 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:70) (tPR = 955) [PR is over limit]
+?.<Wed Nov 09 19:00:20 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:100) (tPR = 1179) [PR is over limit]
+?.<Wed Nov 09 19:00:22 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:100) (tPR = 1464) [PR is over limit]
+?.<Wed Nov 09 19:00:24 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:81) (tPR = 1182) [PR is over limit]
+?.<Wed Nov 09 19:00:27 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:90) (tPR = 1056) [PR is over limit]
+?.<Wed Nov 09 19:00:29 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:102) (tPR = 1361) [PR is over limit]
+?.<Wed Nov 09 19:00:32 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:104) (tPR = 1357) [PR is over limit]
+?.<Wed Nov 09 19:00:34 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:97) (tPR = 1082) [PR is over limit]
+?.<Wed Nov 09 19:00:36 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:111) (tPR = 1284) [PR is over limit]
+?.<Wed Nov 09 19:00:38 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:113) (tPR = 1567) [PR is over limit]
+?.<Wed Nov 09 19:00:41 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:109) (tPR = 1572) [PR is over limit]
+?.<Wed Nov 09 19:00:43 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:104) (tPR = 1530) [PR is over limit]
+?.<Wed Nov 09 19:00:46 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:82) (tPR = 1587) [PR is over limit]
+?.<Wed Nov 09 19:00:48 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:72) (tPR = 1336) [PR is over limit]
+?.<Wed Nov 09 19:00:51 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:76) (tPR = 1440) [PR is over limit]
+?.<Wed Nov 09 19:00:54 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:75) (tPR = 1548) [PR is over limit]
+?.<Wed Nov 09 19:00:56 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:99) (tPR = 1367) [PR is over limit]
+?.<Wed Nov 09 19:00:58 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:111) (tPR = 1471) [PR is over limit]
+.<Wed Nov 09 19:00:59 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:129) (tPR = 2020) [PR is over limit]
+.<Wed Nov 09 19:01:00 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:110) (tPR = 1578) [PR is over limit]
+.<Wed Nov 09 19:01:01 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 19:01:02 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+.<Wed Nov 09 19:01:03 UTC 2016> org.spec.jbb.controller: TRANSITION: settling, (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+<Wed Nov 09 19:01:03 UTC 2016> org.spec.jbb.controller: TRANSITION: IR = 0 finished, settle status = [OK] (rIR:aIR:PR = 0:0:0) (tPR = 0)
+ (rIR:aIR:PR = 0:0:0) (tPR = 0) [OK]
+   476s: <Wed Nov 09 19:01:03 UTC 2016> org.spec.jbb.controller: Finishing
+) <Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.controller: Run finished
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.ic: Looked up Controller-TransferLog-Tier0 @ localhost:32828
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying LOG from agent GRP1.Backend.JVM2-TransferLog completed
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying OUTPUT from agent GRP1.Backend.JVM2-TransferLog completed
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.ic: Looked up Controller-TransferLog-Tier0 @ localhost:32828
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying LOG from agent GRP1.TxInjector.JVM1-TransferLog completed
+<Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying OUTPUT from agent GRP1.TxInjector.JVM1-TransferLog completed
+Waiting for Agents to complete log sending...
+   477s: <Wed Nov 09 19:01:04 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying logs from agent GRP1.Backend.JVM2-TransferLog completed
+<Wed Nov 09 19:01:05 UTC 2016> org.spec.jbb.infra.TransferLogsAgent: Copying logs from agent GRP1.TxInjector.JVM1-TransferLog completed
+Copying logs from Agents completed
+   477s: Tests are skipped.
+   477s:
+   477s: Generating level 0 report from /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/specjbb2015-D-20161109-00027.data.gz
+
+
+SPECjbb2015 Java Business Benchmark
+ (c) Standard Performance Evaluation Corporation, 2015
+
+Preparing to launch SPECjbb2015 reporter.
+
+Problem reading property file: ./config/specjbb2015.props, exiting
+
+Mandatory options are:
+  -m <mode>                    Runner mode
+
+Non-mandatory options are:
+  -b <times>                   Bootstrap iterations (default: 1)
+  -c                           Create compressed binary log file enough for zero level report
+  -cIRperc <percentile>        critical-jOPS percentile (0..100) (default: 99)
+  -cIRtarget <usec>            critical-jOPS target (default: [10000, 25000, 50000, 75000, 100000])
+  -data4image                  Generation raw data file for images
+  -defaultProps                Show default properties settings
+  -getPerfDelayHardLimit <msec> Get perf info delay hard limit criteria (default: 60000.0)
+  -getPerfDelayLimit <msec>    Get perf info delay limit criteria (default: 5000.0)
+  -getPerfDelayLimitExc <points> Get perf info delay limit exceptions allowed (default: 10)
+  -h                           Print this help
+  -i                           Prints run information
+  -if <TYPE>                   Image format (default: png)
+  -ih <px>                     Image height (default: 400)
+  -ikv                         Ignore kit validation
+  -iw <px>                     Image width (default: 800)
+  -l <num>                     Report level (0 = bare minimum, 3 = every single thing) (default: 0)
+  -nonCriticalFailuresPercent <%> Non-Critical Failures Percent (default: 0.5)
+  -p <FILE>                    Property file (default: ./config/specjbb2015.props)
+  -pHardLimit <%>              Percentile # of probes to IR for each RT curve level should be less (default: 3.0)
+  -pSoftLimit <%>              Percentile # of probes to IR for each RT curve level should be less in most cases (default: 5.0)
+  -pSoftLimitPercent <%>       Percentile RT curve levels should be pass soft limit criteria (default: 75.0)
+  -publication                 Generation of FDR for publication
+  -r                           Re-compress data file, saving more disk space
+  -raw <FILE>                  Raw template file
+  -requestMixAccuracyMainTx <%> Request Mix accuracy for Tx which expected % in the mix is >= 10% (default: 5.0)
+  -requestMixAccuracyOtherTx <%> Request Mix accuracy for Tx which expected % in the mix is < 10% (default: 1.0)
+  -requestMixMainTxPercent <%> % of Main Tx in the mix (default: 10.0)
+  -requestMixPercentIgnore <%> Request Mix percent ignore (default: 0.0)
+  -requestMixValidationStart <%> Request Mix validation start (default: 10)
+  -rlevel <points>             Compression level (1 = fast, 9 = best) (default: 9)
+  -rtProcess <type>            Response time processing option (default: SCHEDULED_RT_RAW)
+  -s <FILE>                    Source binary log file
+  -smooth <num>                Smooth level, points (1 = no smoothing) (default: 1)
+  -ss <points>                 Sub-sample limit, points (default: 1000)
+  -stream                      Enable streaming, skip loading unpacked file into memory
+  -t <FILE/DIR>                Target file/directory (default: result)
+  -threads <count>             Threads to use (default: 2)
+  -timeOffsetHardLimit <msec>  Time offset hard limit criteria (default: 500)
+  -timeOffsetLimit <msec>      Time offset limit criteria (default: 50)
+  -timeOffsetLimitExceptions <msec> Time offset limit exceptions allowed (default: 10)
+  -timeOffsetVariation <msec>  Time offset variation allowed (default: 100)
+  -v                           Be verbose
+ 1s: <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: Binary log file is /swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
+ <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684

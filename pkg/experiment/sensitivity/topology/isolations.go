@@ -35,16 +35,7 @@ type defaultTopology struct {
 	isBeCPUExclusive          bool
 }
 
-// // DecoratorFunc is a dummy decorator as a workaround for a isolation for inside a docker.
-// // TODO: this should be put into athena:/pkg/isolators
-// type DecoratorFunc func(string) string
-//
-// // Decorate wrap method for a command.
-// func (df DecoratorFunc) Decorate(command string) string {
-// 	return df(command)
-// }
-
-// NewIsolations returns HP anb factory of aggressors with applidated isolations for BE tasks.
+// NewIsolations returns HP anb factory of aggressors with applied isolation for BE tasks.
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {

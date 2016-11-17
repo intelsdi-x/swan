@@ -21,6 +21,12 @@ const (
 	membwDefaultProcessNumber = 1
 )
 
+var (
+	// Aggressors flag.
+	aggressorsFlag = conf.NewSliceFlag(
+		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
+)
+
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
 var RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
 	"run_caffe_with_llcisolation",
@@ -156,4 +162,20 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 	default:
 		return isolation.Decorators{f.otherAggressorIsolation}
 	}
+}
+
+// PrepareAggressors prepare aggressors launchers.
+// wrapped by session-less pair using given isolation and executor factory for aggressor workloads.
+func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory ExecutorFactoryFunc) (aggressorPairs []LauncherSessionPair, err error) {
+	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
+	aggressorFactory := NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
+
+	for _, aggressorName := range aggressorsFlag.Value() {
+		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
+		if err != nil {
+			return nil, err
+		}
+		aggressorPairs = append(aggressorPairs, NewLauncherWithoutSession(aggressorPair))
+	}
+	return
 }

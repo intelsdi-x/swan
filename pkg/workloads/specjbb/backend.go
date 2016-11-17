@@ -2,14 +2,26 @@ package specjbb
 
 import (
 	"fmt"
+	"path"
 
+	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
 const (
 	name          = "SPECjbb Backend"
 	defaultJVMNId = 1
+)
+
+var (
+	// PathToBinaryForHpFlag specifies path to a SPECjbb2015 jar file for hp job.
+	PathToBinaryForHpFlag = conf.NewStringFlag("specjbb_path_hp", "Path to SPECjbb jar for high priority job (backend)",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+	// PathToPropsFileForHpFlag specifies path to a SPECjbb2015 properties file for hp job.
+	PathToPropsFileForHpFlag = conf.NewStringFlag("specjbb_props_path_hp", "Path to SPECjbb properties file for high priority job (backend)",
+		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
@@ -25,7 +37,7 @@ type BackendConfig struct {
 // DefaultSPECjbbBackendConfig is a constructor for Config with default parameters.
 func DefaultSPECjbbBackendConfig() BackendConfig {
 	return BackendConfig{
-		PathToBinary: PathToBinaryFlag.Value(),
+		PathToBinary: PathToBinaryForHpFlag.Value(),
 		IP:           IPFlag.Value(),
 		JvmID:        TxICountFlag.Value() + defaultJVMNId, // Backend JVM Id is always one more than number of TxI components.
 	}
@@ -52,7 +64,7 @@ func (b Backend) buildCommand() string {
 		" -m backend",
 		" -G GRP1",
 		" -J JVM", b.conf.JvmID,
-		" -p ", PathToPropsFileFlag.Value())
+		" -p ", PathToPropsFileForHpFlag.Value())
 }
 
 // Launch starts the Backend component. It returns a Task Handle instance.
