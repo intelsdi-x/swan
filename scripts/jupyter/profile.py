@@ -1,6 +1,8 @@
 """
 This module contains the logic to render a sensivity profile (table) for samples in an Experiment.
 """
+import itertools
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -15,10 +17,30 @@ Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
 
 class Profile(object):
     """
-    A sensivity profile is a table listing a workload's relative performance (it's measured
+    A sensitivity profile is a table listing a workload's relative performance (it's measured
     quality metric against a target performance). The HTML representation of the profile color
     codes each cell based on it's slack (quality of service head room) or violation.
     """
+
+    MISSING_VALUE = 'N/A'
+
+    @staticmethod
+    def _fill_missing_data(qps, violations, loadpoints):
+        """
+        :param qps: queries per second column from cassandra
+        :param violations: corresponding list of slo violations for `qps`
+        :param loadpoints: all loadpoints for `qps` as a reference
+
+        Fill missing data in `violations` with `N/A` and grey color in sensitivity table.
+        """
+        qps_violations = zip(qps, violations)
+        loadpoints_miss_results = set(loadpoints).difference(set(qps))
+        missing_values_replace = map(lambda x: (x, Profile.MISSING_VALUE), loadpoints_miss_results)
+        data_join_na = sorted(itertools.chain(qps_violations, missing_values_replace))
+        qps_restored = [q for (lp, q) in data_join_na]
+
+        return qps_restored
+
     def __init__(self, e, slo):
         """
         :param e: an Experiment class object
@@ -38,7 +60,7 @@ class Profile(object):
         df_of_99th['swan_aggressor_name'].replace(to_replace='None', value="Baseline", inplace=True)
 
         self.p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
-        columns = None
+        loadpoints = None
         data = []
         index = []
 
@@ -49,15 +71,16 @@ class Profile(object):
             aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
             self.categories.append(name)
 
-            # Store columns for data frame from the target QPSes.
-            # In case of partial measurements, we only use the columns from this aggressor
+            # Store loadpoints for data frame from the target QPSes.
+            # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
-            if columns is None or len(columns) < len(qps):
-                columns = qps
+            if loadpoints is None or len(loadpoints) < len(qps):
+                loadpoints = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
-            data.append(violations.tolist())
+            filled_qps = self._fill_missing_data(qps, violations, loadpoints)
+            data.append(filled_qps)
 
             self.latency_qps_aggrs['x'] = np.array(qps)
             self.latency_qps_aggrs[name] = aggressor_frame['value'].as_matrix()
@@ -65,9 +88,9 @@ class Profile(object):
 
         self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
 
-        peak = np.amax(columns)
-        columns = map(lambda c: (float(c) / peak) * 100, columns)
-        self.frame = pd.DataFrame(data, columns=columns, index=index).sort_index()
+        peak = np.amax(loadpoints)
+        loadpoints = map(lambda c: (float(c) / peak) * 100, loadpoints)
+        self.frame = pd.DataFrame(data, columns=loadpoints, index=index).sort_index()
 
     def sensitivity_table(self):
         no_border = 'border: 0'
@@ -97,7 +120,9 @@ class Profile(object):
 
             for value in row:
                 style = '%s; ' % no_border
-                if value > 150:
+                if value == Profile.MISSING_VALUE:
+                    style += 'background-color: #c0c0c0;'
+                elif value > 150:
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
@@ -107,7 +132,8 @@ class Profile(object):
                 else:
                     style += 'background-color: #98cc70;'
 
-                html_out += '<td style="%s">%.1f%%</td>' % (style, value)
+                value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
+                html_out += '<td style="%s">%s</td>' % (style, value)
             html_out += '</tr>'
 
         html_out += '</table>'
@@ -121,7 +147,7 @@ class Profile(object):
             each load point.)
         """
         categories = self.categories
-        gradients = ['rgb(7, 249, 128)', 'rgb(127, 255, 158)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
+        gradients = ['rgb(7, 249, 128)', 'rgb(0, 0, 255)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
         data = list()
         fill_to_nexty = 'tonexty' if fill else None
@@ -286,6 +312,7 @@ if __name__ == '__main__':
                       name='exp_without_serenity')
 
     Profile(exp1, slo=500).sensitivity_table()
+    Profile(exp1, slo=500).sensitivity_chart()
     Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
     compare_experiments(exps=[exp1, exp2], fill=False, to_max=True)

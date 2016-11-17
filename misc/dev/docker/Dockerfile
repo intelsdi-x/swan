@@ -29,4 +29,6 @@ ADD scripts /root/go/src/github.com/intelsdi-x/swan/scripts
 ADD Makefile /root/go/src/github.com/intelsdi-x/swan/
 
 WORKDIR /root/go/src/github.com/intelsdi-x/swan/
+RUN ./workloads/web_serving/specjbb_deps_centos.sh
+
 RUN sed -i '/requiretty/s/\(^.*$\)/# \1/' /etc/sudoers && make build_workloads

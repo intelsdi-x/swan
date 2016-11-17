@@ -8,7 +8,6 @@ import (
 	"github.com/intelsdi-x/athena/pkg/isolation"
 	"github.com/intelsdi-x/athena/pkg/isolation/topo"
 	"github.com/intelsdi-x/athena/pkg/utils/errutil"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 )
 
 var (
@@ -36,16 +35,7 @@ type defaultTopology struct {
 	isBeCPUExclusive          bool
 }
 
-// // DecoratorFunc is a dummy decorator as a workaround for a isolation for inside a docker.
-// // TODO: this should be put into athena:/pkg/isolators
-// type DecoratorFunc func(string) string
-//
-// // Decorate wrap method for a command.
-// func (df DecoratorFunc) Decorate(command string) string {
-// 	return df(command)
-// }
-
-// NewIsolations returns HP anb factory of aggressors with applidated isolations for BE tasks.
+// NewIsolations returns HP anb factory of aggressors with applied isolation for BE tasks.
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
@@ -57,7 +47,6 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
 		l1Isolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.siblingThreadsToHpThreads.AvailableThreads().AsSlice(), PreferredNode: defaultTopology.numaNode}
 		llcIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.sharingLLCButNotL1Threads.AsSlice(), PreferredNode: defaultTopology.numaNode}
-		sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 		hpIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.hpThreadIDs.AsSlice(), PreferredNode: defaultTopology.numaNode}
 	}
 	return
