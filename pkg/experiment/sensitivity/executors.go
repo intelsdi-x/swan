@@ -52,7 +52,6 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		// HP executor.
 		hpExecutorConfig := executor.DefaultKubernetesConfig()
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
-		hpExecutorConfig.PodName = "swan-hp"
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
 
