@@ -7,8 +7,8 @@ all: deps lint unit_test
 
 deps:
 	curl https://glide.sh/get | /bin/bash
-	go get github.com/golang/lint/golint
-	go get github.com/GeertJohan/fgt
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/GeertJohan/fgt
 	glide install
 
 # testing

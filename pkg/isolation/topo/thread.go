@@ -2,6 +2,7 @@ package topo
 
 import (
 	"fmt"
+
 	"github.com/Sirupsen/logrus"
 )
 
@@ -35,7 +36,7 @@ func NewThreadFromID(id int) (thread Thread, err error) {
 
 	if len(foundThreads) == 0 {
 		logrus.Errorf("NewThreadFromID: Could not find thread with id %d on platform\n", id)
-		return thread, fmt.Errorf("Could not find thread with id %d on platform\n", id)
+		return thread, fmt.Errorf("could not find thread with id %d on platform", id)
 	}
 
 	return foundThreads[0], err
