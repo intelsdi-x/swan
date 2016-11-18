@@ -70,7 +70,6 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config := executor.DefaultKubernetesConfig()
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
-			config.PodName = "swan-aggr"
 			config.Privileged = true // swan aggressor use unshare, which requires sudo.
 			return executor.NewKubernetes(config)
 		}
