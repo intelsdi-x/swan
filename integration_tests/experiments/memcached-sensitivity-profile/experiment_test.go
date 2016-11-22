@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -18,11 +19,26 @@ const (
 	snapLogs = "/tmp/swan-integration-tests"
 )
 
+func filter(lines []string, f func(string) bool) string {
+	for _, line := range lines {
+		if f(line) {
+			return line
+		}
+	}
+	return ""
+}
+
 func getUUID(outs []byte) string {
 	So(outs, ShouldNotBeNil)
-	lines := strings.Split(string(outs), "\n")
-	So(len(lines), ShouldBeGreaterThan, 0)
-	return string(lines[0])
+	uuid := filter(strings.Split(string(outs), "\n"),
+		func(line string) bool {
+			matched, _ := regexp.MatchString(
+				"^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$", line)
+			return matched
+		})
+
+	So(uuid, ShouldNotBeBlank)
+	return uuid
 }
 
 func printDebug(out []byte) {
@@ -82,7 +98,7 @@ func TestExperiment(t *testing.T) {
 
 			Convey("With proper configuration and without aggressor phases", func() {
 				exp := exec.Command(memcachedSensitivityProfileBin)
-				output, err := exp.Output()
+				output, err := exp.CombinedOutput()
 				printDebug(output)
 
 				Convey("Experiment should return with no errors", func() {
@@ -94,7 +110,7 @@ func TestExperiment(t *testing.T) {
 				args := []string{"--aggr", "l1d"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					output, err := exp.Output()
+					output, err := exp.CombinedOutput()
 					printDebug(output)
 
 					So(err, ShouldBeNil)
@@ -112,7 +128,7 @@ func TestExperiment(t *testing.T) {
 				Convey("While having two repetitions to phase", func() {
 					os.Setenv("SWAN_REPS", "2")
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					output, err := exp.Output()
+					output, err := exp.CombinedOutput()
 					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
@@ -145,7 +161,7 @@ func TestExperiment(t *testing.T) {
 				Convey("Experiment should succeed also with 2 load points", func() {
 					os.Setenv("SWAN_LOAD_POINTS", "2")
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					output, err := exp.Output()
+					output, err := exp.CombinedOutput()
 					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
@@ -181,7 +197,7 @@ func TestExperiment(t *testing.T) {
 			SkipConvey("With proper kubernetes configuration and without phases", func() {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				output, err := exp.Output()
+				output, err := exp.CombinedOutput()
 				printDebug(output)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
@@ -192,7 +208,7 @@ func TestExperiment(t *testing.T) {
 				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--aggr", "l1d", "--memcached_path", memcacheDockerBin, "--l1d_path", l1dDockerBin}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					output, err := exp.Output()
+					output, err := exp.CombinedOutput()
 					printDebug(output)
 					So(err, ShouldBeNil)
 					experimentID := getUUID(output)
@@ -210,7 +226,7 @@ func TestExperiment(t *testing.T) {
 			Convey("With invalid configuration stop experiment if error", func() {
 				os.Setenv("SWAN_LOAD_POINTS", "abc")
 				exp := exec.Command(memcachedSensitivityProfileBin)
-				output, err := exp.Output()
+				output, err := exp.CombinedOutput()
 				printDebug(output)
 
 				So(err, ShouldNotBeNil)
@@ -222,7 +238,7 @@ func TestExperiment(t *testing.T) {
 				os.Setenv("SWAN_REPS", "0")
 				Convey("Experiment should pass with no errors", func() {
 					exp := exec.Command(memcachedSensitivityProfileBin, args...)
-					output, err := exp.Output()
+					output, err := exp.CombinedOutput()
 					printDebug(output)
 					So(err, ShouldBeNil)
 				})
@@ -231,7 +247,7 @@ func TestExperiment(t *testing.T) {
 			Convey("With wrong aggresor name", func() {
 				args := []string{"--aggr", "l1e"}
 				exp := exec.Command(memcachedSensitivityProfileBin, args...)
-				output, err := exp.Output()
+				output, err := exp.CombinedOutput()
 				printDebug(output)
 				So(err, ShouldNotBeNil)
 			})
