@@ -14,7 +14,7 @@ import (
 var (
 	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
 	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
-	loadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
+	LoadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
 	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
 	stopOnErrorFlag     = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
 	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
@@ -47,7 +47,7 @@ type Configuration struct {
 func DefaultConfiguration() Configuration {
 	return Configuration{
 		SLO:             sloFlag.Value(),
-		LoadDuration:    loadDurationFlag.Value(),
+		LoadDuration:    LoadDurationFlag.Value(),
 		LoadPointsCount: loadPointsCountFlag.Value(),
 		Repetitions:     repetitionsFlag.Value(),
 		PeakLoad:        PeakLoadFlag.Value(),

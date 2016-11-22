@@ -1,15 +1,18 @@
 package common
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -17,6 +20,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -118,6 +122,7 @@ func RunExperiment() error {
 // to create a snap.SessionLauncher that will wrap memcached (HP workload).
 // Note: it includes parsing the environment to get configuration as well as preparing executors and eventually running the experiment.
 func RunExperimentWithMemcachedSessionLauncher(memcachedSessionLauncherFactory func(sensitivity.Configuration) snap.SessionLauncher) error {
+	//experimentStartingTime := time.Now()
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
@@ -131,29 +136,31 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	validate.OS()
 
 	// Isolations.
-	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
+	//hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
+	hpIsolation, _, _ := topology.NewIsolations()
 
 	// Executors.
-	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
+	//hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
+	hpExecutor, _, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
 
 	// BE workloads.
-	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
+	//aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
+		cleanup()
 		return err
 	}
 
 	// Prepare experiment configuration to be used by session launcher factory.
 	configuration := sensitivity.DefaultConfiguration()
-	memcachedSessionLauncher := memcachedSessionLauncherFactory(configuration)
+	//memcachedSessionLauncher := memcachedSessionLauncherFactory(configuration)
 
 	// HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	memcachedLauncher := memcached.New(hpExecutor, memcachedConfig)
-	memcachedLauncherSessionPair := sensitivity.NewMonitoredLauncher(memcachedLauncher, memcachedSessionLauncher) // NewMonitoredLauncher can accept nil as session launcher.
+	//memcachedLauncherSessionPair := sensitivity.NewMonitoredLauncher(memcachedLauncher, memcachedSessionLauncher) // NewMonitoredLauncher can accept nil as session launcher.
 
 	// Load generator.
 	mutilateLoadGenerator, err := prepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
@@ -165,12 +172,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	if err != nil {
 		return err
 	}
-	mutilateLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession)
+	//mutilateLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession)
 
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		return errors.Wrap(err, "could not create uuid")
 	}
+
+	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	fmt.Println(uuid.String())
 
 	experimentDirectory := path.Join(os.TempDir(), conf.AppName(), uuid.String())
 	err = os.MkdirAll(experimentDirectory, 0777)
@@ -224,6 +234,111 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	} else {
 		logrus.Infof("Skipping Tunning phase, using peakload %d", configuration.PeakLoad)
 	}
+
+	var bar *pb.ProgressBar
+	if conf.LogLevel() == logrus.ErrorLevel {
+		fmt.Printf("Experiment %q with uuid %q\n", conf.AppName(), uuid.String())
+		totalPhases := configuration.LoadPointsCount * configuration.Repetitions
+		bar = pb.StartNew(totalPhases)
+		bar.ShowCounters = false
+		bar.ShowTimeLeft = true
+		prefix := fmt.Sprintf("[%02d / %02d] %s ", uuid.String(), 1, "Baseline")
+		bar.Prefix(prefix)
+		bar.Add(1)
+	}
+
+	for loadPoint := 1; loadPoint <= configuration.LoadPointsCount; loadPoint++ {
+		phaseName := fmt.Sprintf("Baseline, load point %d", loadPoint)
+		for repetition := 0; repetition < configuration.Repetitions; repetition++ {
+			session := phase.Session{
+				PhaseID:       phaseName,
+				ExperimentID:  uuid.String(),
+				RepetitionID:  repetition,
+				AggressorName: "None",
+			}
+
+			// Start timer.
+			//phaseStartingTime := time.Now()
+			logrus.Infof("Starting %s repetition %d", phaseName, repetition)
+
+			phaseDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
+			err := os.MkdirAll(phaseDir, 0777)
+			if err != nil {
+				logrus.Errorf("Could not create phase directory %q. Error: %q", phaseDir, err.Error())
+				return errors.Wrapf(err, "could not create dir %q", phaseDir)
+			}
+
+			err = os.Chdir(phaseDir)
+			if err != nil {
+				logrus.Errorf("Could not change to phase directory %q. Error: %q", phaseDir, err.Error())
+				return errors.Wrapf(err, "could not change to dir %q", phaseDir)
+			}
+
+			prTask, err := memcachedLauncher.Launch()
+			if err != nil {
+				logrus.Errorf("Cannot launch memcached in baseline, load point %d, repetition %d. Error message: %q", err.Error())
+				return errors.Wrapf(err, "cannot launch memcached in baseline, load point %d, repetition %d")
+			}
+			stopMemcached := func() {
+				prTask.Stop()
+				prTask.Clean()
+			}
+
+			err = mutilateLoadGenerator.Populate()
+			if err != nil {
+				stopMemcached()
+				logrus.Errorf("Cannot populate memcached in baseline, load point %d, repetition %d. Error message: %q", err.Error())
+				return errors.Wrapf(err, "cannot populate memcached in baseline, load point %d, repetition %d")
+			}
+
+			logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
+			loadGeneratorTask, err := mutilateLoadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
+			if err != nil {
+				stopMemcached()
+				logrus.Errorf("Unable to start load generation in baseline, load point %d, repetition %d. Error message: %q.", loadPoint, repetition, err.Error())
+				return errors.Wrapf(err, "Unable to start load generation in baseline, load point %d, repetition %d.", loadPoint, repetition)
+			}
+			loadGeneratorTask.Wait(0)
+
+			tags := sensitivity.CreateTagConfigItem(session)
+			sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
+			if err != nil {
+				stopMemcached()
+				logrus.Error("Cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
+				return errors.Wrapf(err, "cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
+			}
+			stopMutilate := func() {
+				sessionHandle.Stop()
+			}
+
+			exitCode, err := loadGeneratorTask.ExitCode()
+			if err != nil {
+				stopMutilate()
+				stopMemcached()
+				return errors.Wrapf(err, "cannot retrieve exit code from load generator in baseline, load point %d, repetition %d", loadPoint, repetition)
+			}
+
+			if exitCode != 0 {
+				stopMutilate()
+				stopMemcached()
+				return errors.Errorf("executing Load Generator returned with exit code %d in baseline, load point %d, repetition %d", exitCode, loadPoint, repetition)
+			}
+
+		}
+	}
+
+	/*measurementPhase{
+		namePrefix:      "baseline",
+		pr:              e.productionTaskLauncher,
+		lgForPr:         e.loadGeneratorForProductionTask,
+		bes:             []LauncherSessionPair{},
+		loadDuration:    e.configuration.LoadDuration,
+		loadPointsCount: e.configuration.LoadPointsCount,
+		repetitions:     e.configuration.Repetitions,
+		PeakLoad:        &e.configuration.PeakLoad,
+		// Measurements in baseline have different load point input.
+		currentLoadPointIndex: i,
+	}*/
 
 	// Experiment.
 	/*sensitivityExperiment := sensitivity.NewExperiment(

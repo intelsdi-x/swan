@@ -158,7 +158,7 @@ func (m *measurementPhase) launchSnapSession(taskInfo executor.TaskInfo,
 	// Check if Snap Session is specified.
 	if launcher != nil {
 		// Launch specified Snap Session.
-		tags := createTagConfigItem(session)
+		tags := CreateTagConfigItem(session)
 		sessionHandle, err := launcher.LaunchSession(taskInfo, tags)
 		if err != nil {
 			return err
@@ -262,7 +262,7 @@ func (m *measurementPhase) Finalize() error {
 	return nil
 }
 
-func createTagConfigItem(phaseSession phase.Session) string {
+func CreateTagConfigItem(phaseSession phase.Session) string {
 	// Constructing Tags config item as stated in
 	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
 	return fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
