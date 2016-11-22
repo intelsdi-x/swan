@@ -19,8 +19,8 @@ var (
 	stopOnErrorFlag     = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
 	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
-	peakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
-	runTuningPhase = 0
+	PeakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	RunTuningPhase = 0
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -50,7 +50,7 @@ func DefaultConfiguration() Configuration {
 		LoadDuration:    loadDurationFlag.Value(),
 		LoadPointsCount: loadPointsCountFlag.Value(),
 		Repetitions:     repetitionsFlag.Value(),
-		PeakLoad:        peakLoadFlag.Value(),
+		PeakLoad:        PeakLoadFlag.Value(),
 		StopOnError:     stopOnErrorFlag.Value(),
 	}
 }
@@ -159,7 +159,7 @@ func (e *Experiment) configureGenericExperiment() error {
 	var allMeasurements []phase.Phase
 
 	// Include Tuning Phase if PeakLoad wasn't given.
-	if e.configuration.PeakLoad == runTuningPhase {
+	if e.configuration.PeakLoad == RunTuningPhase {
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
 	} else {

@@ -1,6 +1,10 @@
 package common
 
 import (
+	"io"
+	"os"
+	"path"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
@@ -11,6 +15,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/nu7hatch/gouuid"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -161,8 +167,66 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	mutilateLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession)
 
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return errors.Wrap(err, "could not create uuid")
+	}
+
+	experimentDirectory := path.Join(os.TempDir(), conf.AppName(), uuid.String())
+	err = os.MkdirAll(experimentDirectory, 0777)
+	if err != nil {
+		return errors.Wrap(err, "cannot create experiment directory")
+	}
+	err = os.Chdir(experimentDirectory)
+	os.Chdir(os.TempDir())
+	if err != nil {
+		return errors.Wrap(err, "cannot chdir to experiment directory")
+	}
+
+	masterLogFilename := path.Join(experimentDirectory, "master.log")
+	logFile, err := os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "could not open log file %q", masterLogFilename)
+	}
+
+	// Setup logging set to both output and logFile.
+	logrus.SetLevel(conf.LogLevel())
+	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
+
+	achievedSLI := float64(sensitivity.PeakLoadFlag.Value())
+	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
+		prTask, err := memcachedLauncher.Launch()
+		if err != nil {
+			return errors.Wrap(err, "cannot launch memcached")
+		}
+		stop := func() {
+			prTask.Stop()
+			prTask.Clean()
+		}
+
+		err = mutilateLoadGenerator.Populate()
+		if err != nil {
+			stop()
+			return errors.Wrap(err, "cannot populate memcached")
+		}
+
+		load, sli, err := mutilateLoadGenerator.Tune(configuration.SLO)
+		achievedSLI = float64(sli)
+		if err != nil {
+			stop()
+			return errors.Wrap(err, "tuning failed")
+		}
+
+		// Save results.
+		stop()
+		logrus.Infof("Run tuning and achieved following values: load - %d and SLI - %d", load, achievedSLI)
+	} else {
+		logrus.Infof("Skipping Tunning phase, using peakload %d", configuration.PeakLoad)
+	}
+
 	// Experiment.
-	sensitivityExperiment := sensitivity.NewExperiment(
+	/*sensitivityExperiment := sensitivity.NewExperiment(
 		conf.AppName(),
 		conf.LogLevel(),
 		configuration,
@@ -172,5 +236,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	)
 
 	// Run experiment.
-	return sensitivityExperiment.Run()
+	return sensitivityExperiment.Run()*/
+	return nil
 }
