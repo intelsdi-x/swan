@@ -264,20 +264,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			phaseDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
 			err := os.MkdirAll(phaseDir, 0777)
 			if err != nil {
-				logrus.Errorf("Could not create phase directory %q. Error: %q", phaseDir, err.Error())
 				return errors.Wrapf(err, "could not create dir %q", phaseDir)
 			}
 
 			err = os.Chdir(phaseDir)
 			if err != nil {
-				logrus.Errorf("Could not change to phase directory %q. Error: %q", phaseDir, err.Error())
 				return errors.Wrapf(err, "could not change to dir %q", phaseDir)
 			}
 
 			prTask, err := memcachedLauncher.Launch()
 			if err != nil {
-				logrus.Errorf("Cannot launch memcached in baseline, load point %d, repetition %d. Error message: %q", err.Error())
-				return errors.Wrapf(err, "cannot launch memcached in baseline, load point %d, repetition %d")
+				return errors.Wrapf(err, "cannot launch memcached in baseline, load point %d, repetition %d", loadPoint, repetition)
 			}
 			stopMemcached := func() {
 				prTask.Stop()
@@ -287,15 +284,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			err = mutilateLoadGenerator.Populate()
 			if err != nil {
 				stopMemcached()
-				logrus.Errorf("Cannot populate memcached in baseline, load point %d, repetition %d. Error message: %q", err.Error())
-				return errors.Wrapf(err, "cannot populate memcached in baseline, load point %d, repetition %d")
+				return errors.Wrapf(err, "cannot populate memcached in baseline, load point %d, repetition %d", loadPoint, repetition)
 			}
 
 			logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
 			loadGeneratorTask, err := mutilateLoadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
 			if err != nil {
 				stopMemcached()
-				logrus.Errorf("Unable to start load generation in baseline, load point %d, repetition %d. Error message: %q.", loadPoint, repetition, err.Error())
 				return errors.Wrapf(err, "Unable to start load generation in baseline, load point %d, repetition %d.", loadPoint, repetition)
 			}
 			loadGeneratorTask.Wait(0)
@@ -304,7 +299,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
 			if err != nil {
 				stopMemcached()
-				logrus.Error("Cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
 				return errors.Wrapf(err, "cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
 			}
 			stopMutilate := func() {
