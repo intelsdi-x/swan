@@ -14,12 +14,17 @@ import (
 var (
 	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
 	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
-	LoadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
-	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
-	stopOnErrorFlag     = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
-	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
+	// LoadDurationFlag allows us to set repetition duration from command line argument or environmental variable.
+	LoadDurationFlag = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
+	repetitionsFlag  = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	stopOnErrorFlag  = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
+	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
-	PeakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
+)
+
+const (
+	// RunTuningPhase represents PeakLoadFlag value indicating that tuning phase should be run.
 	RunTuningPhase = 0
 )
 

@@ -262,6 +262,7 @@ func (m *measurementPhase) Finalize() error {
 	return nil
 }
 
+// CreateTagConfigItem creates Snap-friendly tags list from session.
 func CreateTagConfigItem(phaseSession phase.Session) string {
 	// Constructing Tags config item as stated in
 	// https://github.com/intelsdi-x/snap-plugin-processor-tag/README.md
