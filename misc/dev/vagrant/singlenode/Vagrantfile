@@ -59,6 +59,7 @@ Vagrant.configure(2) do |config|
     vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
 
     override.ssh.insert_key = true
+    override.ssh.keys_only = true
     override.vm.synced_folder "~/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
