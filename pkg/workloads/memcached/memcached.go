@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"path"
+
 	"github.com/pkg/errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/athena/pkg/utils/netutil"
 )
 
@@ -25,7 +28,8 @@ const (
 )
 
 var (
-	pathFlag = conf.NewStringFlag("memcached_path", "Path to memcached binary", "memcached")
+	pathFlag = conf.NewStringFlag("memcached_path", "Path to memcached binary",
+		path.Join(fs.GetSwanWorkloadsPath(), "data_caching/memcached/memcached-1.4.25/build/memcached"))
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
 	// IPFlag returns IP which will be specified for workload services as endpoints.

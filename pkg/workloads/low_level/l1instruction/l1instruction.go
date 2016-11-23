@@ -2,9 +2,11 @@ package l1instruction
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +31,7 @@ const (
 var PathFlag = conf.NewStringFlag(
 	"l1i_path",
 	"Path to L1 instruction binary",
-	"l1i",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1i"),
 )
 
 // Config is a struct for l1i aggressor configuration.

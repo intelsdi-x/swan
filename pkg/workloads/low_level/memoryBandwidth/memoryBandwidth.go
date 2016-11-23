@@ -2,10 +2,12 @@ package memoryBandwidth
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +22,7 @@ const (
 var PathFlag = conf.NewStringFlag(
 	"membw_path",
 	"Path to Memory Bandwidth binary",
-	"memBw",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/memBw"),
 )
 
 // Config is a struct for MemBw aggressor configuration.

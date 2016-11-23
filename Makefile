@@ -1,3 +1,4 @@
+include Makefile.install
 .PHONY: build
 
 # Place for custom options for test commands.
@@ -27,7 +28,7 @@ deps_godeps:
 
 deps_jupyter:
 	# Jupyter building
-	(scripts/jupyter/install_jupyter.sh)
+	(cd scripts/jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
 	(./scripts/build_plugins.sh)
@@ -38,11 +39,12 @@ build_image:
 build_workloads:
 	# Some workloads are Git Submodules
 	git submodule update --init --recursive
-	(cd workloads/data_caching/memcached && ./build.sh ${BUILD_ARTIFACTS})
+
+	(cd workloads/data_caching/memcached && ./build.sh)
 	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh -o "${BUILD_OPENBLAS}" -a ${BUILD_ARTIFACTS})
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
 
 	# Get SPECjbb
 	(sudo ./scripts/get_specjbb.sh)
@@ -51,22 +53,6 @@ build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
-
-pack_artifacts: 
-	$(eval BUILD_ARTIFACTS := $(shell pwd)/artifacts/)
-	mkdir -p $(BUILD_ARTIFACTS)/{bin,lib}
-	(cp ${GOPATH}/bin/* ${BUILD_ARTIFACTS}/bin)
-
-	(./workloads/deep_learning/caffe/install.sh ${BUILD_ARTIFACTS})
-	(install -D -m755 ./workloads/data_caching/memcached/memcached-1.4.25/build/memcached ${BUILD_ARTIFACTS}/bin)
-	(install -D -m755 ./workloads/data_caching/memcached/mutilate/mutilate ${BUILD_ARTIFACTS}/bin)
-	(install -D -m755 workloads/low-level-aggressors/{l1d,l1i,l3,memBw,stream.100M} ${BUILD_ARTIFACTS}/bin)
-
-	(tar -czf artifacts.tgz -C ${BUILD_ARTIFACTS} .)
-
-join: repository_reset build_all pack_artifacts
-	(mv artifacts.tgz ./tmp)
-	(cd tmp; docker build -t tmp .)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)

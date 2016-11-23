@@ -2,10 +2,12 @@ package l3data
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +22,7 @@ const (
 var PathFlag = conf.NewStringFlag(
 	"l3_path",
 	"Path to L3 Data binary",
-	"l3",
+	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l3"),
 )
 
 // Config is a struct for l3 aggressor configuration.

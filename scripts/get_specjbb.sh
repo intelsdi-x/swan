@@ -17,7 +17,6 @@ usage() {
 
 SWAN_PATH=$GOPATH/src/github.com/intelsdi-x/swan
 S3_CREDS_FILE=$HOME/swan_s3_creds/.s3cfg
-ARTIFACTS_PATH=""
 
 download() {
     echo "Downloading SPECjbb iso file from S3."
@@ -42,14 +41,11 @@ extract() {
     fi
 }
 
-while getopts "hs:c:b:a:" OPT; do
+while getopts "hs:c:b:" OPT; do
     case "$OPT" in
         h)
             usage
             exit 0
-            ;;
-        a)
-            ARTIFACTS_PATH="${OPTARG}"
             ;;
         s)
             SWAN_PATH="${OPTARG}"
@@ -80,7 +76,3 @@ fi
 
 download
 extract
-if [ "${ARTIFACTS_PATH}" != "" ]; then
-    mkdir -p "/opt/specjbb/"
-    install -D -m644 $MNT_PATH/* $ARTIFACTS_PATH
-fi
