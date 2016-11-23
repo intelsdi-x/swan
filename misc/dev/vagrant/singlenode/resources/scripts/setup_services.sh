@@ -6,10 +6,6 @@ function daemonStatus() {
     echo "$1 service status: $(systemctl show -p SubState $1 | cut -d'=' -f2)"
 }
 
-echo "Copying Docker service unit file..."
-# docker.service file should be added after docker installation.
-cp /vagrant/resources/configs/docker.service /lib/systemd/system/
-
 echo "Reloading systemd..."
 systemctl daemon-reload
 
