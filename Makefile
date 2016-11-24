@@ -1,4 +1,3 @@
-include Makefile.install
 .PHONY: build
 
 # Place for custom options for test commands.
@@ -53,6 +52,9 @@ build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
+
+dist: build_workloads build_swan
+	./scripts/build_artifacts.sh
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
