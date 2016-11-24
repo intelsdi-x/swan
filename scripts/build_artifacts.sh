@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ARTIFACTS_PATH="$(pwd)/artifacts/"
-mkdir -p $(ARTIFACTS_PATH)/{bin,lib}
+mkdir -p ${ARTIFACTS_PATH}/{bin,lib}
 
 # install memcached
 install -D -m755 ./workloads/data_caching/memcached/memcached-1.4.25/build/memcached ${ARTIFACTS_PATH}/bin
