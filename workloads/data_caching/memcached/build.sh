@@ -7,7 +7,6 @@ id -u memcached &>/dev/null || sudo adduser memcached
 popd
 
 pushd mutilate
-sudo rm -rf .sconf_temp
 git clean -fdx
 scons
 popd
