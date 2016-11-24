@@ -30,6 +30,8 @@ const (
 	SessionPublisher = "snap-plugin-publisher-session-test"
 	// FilePublisher is Snap testing file publisher
 	FilePublisher = "snap-publisher-file"
+	// CaffeInferenceCollector is a name of the snap plugin binary
+	CaffeInferenceCollector = "snap-plugin-collector-caffe-inference"
 )
 
 var (
