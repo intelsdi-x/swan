@@ -32,7 +32,7 @@ cp ${CAFFE_ROOT_DIRECTORY}/get_cifar10.patch ${CAFFE_SRC_DIRECTORY}
 pushd ${CAFFE_SRC_DIRECTORY}
 patch -p1 --forward -s --merge < caffe_cpu_solver.patch
 patch -p1 --forward -s --merge < vagrant_vboxsf_workaround.patch
-patch -p1 --forward -s --merge < get_cifar10.patch
+patch -p1 --forward -s < get_cifar10.patch || true
 export OMP_NUM_THREADS=${CPUS_NUMBER}
 make --quiet all
 popd
