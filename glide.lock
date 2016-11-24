@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-11-16T11:13:21.633941519+01:00
+updated: 2016-11-25T12:09:30.877149414+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -178,7 +178,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: 5053d82cef1dfbda7dca015e94de57f21f9118ab
+  version: 46027e5a87e312fe03cc4498483c1278f7afa305
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -190,6 +190,7 @@ imports:
   - pkg/kubernetes
   - pkg/snap
   - pkg/snap/mocks
+  - pkg/snap/sessions/caffe
   - pkg/snap/sessions/mutilate
   - pkg/snap/sessions/specjbb
   - pkg/utils/env
