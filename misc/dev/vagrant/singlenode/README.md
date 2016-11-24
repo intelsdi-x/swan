@@ -93,16 +93,16 @@ Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can overrid
 - All scripts are stored in `/vagrant/resources/scripts`.
 - To manually run provision scripts run `./enter_developer_mode.sh <private key location>`
 - Scripts order:
+  1. `setup_env.sh`
   1. `copy_configuration.sh`
-  2. `install_packages.sh`
-  3. `setup_env.sh`
-  4. `setup_git.sh`
-  5. `setup_services.sh`
-  6. `install_golang.sh`
-  7. `install_snap_athena.sh`
-  8. `post_install.sh`
-  9. `install_project_deps.sh`
-  10. `checker.sh`
+  1. `install_packages.sh`
+  1. `setup_git.sh`
+  1. `setup_services.sh`
+  1. `install_golang.sh`
+  1. `install_snap_athena.sh`
+  1. `post_install.sh`
+  1. `install_project_deps.sh`
+  1. `checker.sh`
 
 ## Troubleshooting
 - Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10

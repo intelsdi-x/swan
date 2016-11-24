@@ -1,0 +1,17 @@
+[Unit]
+Description=snap deamon
+Documentation=https://github.com/intelsdi-x/snap
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=GOPATH/bin/snapd -t 0
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
