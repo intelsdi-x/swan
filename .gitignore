@@ -5,6 +5,8 @@
 /**/stdout
 /.vscode
 autom4te.cache/
+/artifacts
+/artifacts.tgz
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/low-level-aggressors/l1d
 /workloads/low-level-aggressors/l1i
