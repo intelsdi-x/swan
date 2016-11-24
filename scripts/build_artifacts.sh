@@ -11,6 +11,8 @@ install -D -m755 ./workloads/data_caching/memcached/mutilate/mutilate ${ARTIFACT
 install -D -m755 ./workloads/low-level-aggressors/{l1d,l1i,l3,memBw,stream.100M} ${ARTIFACTS_PATH}/bin
 # copy go binaries
 cp ${GOPATH}/bin/* ${ARTIFACTS_PATH}/bin
+install -D -m755 ./build/experiments/memcached/memcached-sensitivity-profile ${ARTIFACTS_PATH}/bin
+install -D -m755 ./build/experiments/specjbb/specjbb-sensitivity-profile ${ARTIFACTS_PATH}/bin
 
 # install specjbb
 install -d ${ARTIFACTS_PATH}/share/specjbb
