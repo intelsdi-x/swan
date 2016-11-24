@@ -33,7 +33,7 @@ build_plugins:
 	(./scripts/build_plugins.sh)
 
 build_image:
-	docker build -t centos_swan_image -f ./misc/dev/docker/Dockerfile .
+	(./scripts/build_docker_image.sh)
 
 build_workloads:
 	# Some workloads are Git Submodules

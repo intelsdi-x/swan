@@ -38,4 +38,7 @@ install -d ${ARTIFACTS_PATH}/share/caffe/examples/cifar10/
 install -D -m644 ./workloads/deep_learning/caffe/caffe_src/examples/cifar10/* "${ARTIFACTS_PATH}/share/caffe/examples/cifar10/" 
 
 # pack
-tar -czf swan-$(date +%m%d%y-%H%M).tar.gz -C ${ARTIFACTS_PATH} .
+FILENAME="swan-$(date +%m%d%y-%H%M).tar.gz"
+echo ${FILENAME} > ./latest_build
+
+tar -czf ${FILENAME} -C ${ARTIFACTS_PATH} .
