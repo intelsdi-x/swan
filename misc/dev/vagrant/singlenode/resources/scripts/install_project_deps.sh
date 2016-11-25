@@ -14,11 +14,9 @@ echo "Installing project dependencies..."
 pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsVagrantUser make repository_reset
 executeAsVagrantUser make deps_all
-if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
-        executeAsVagrantUser make build_image
-        BUILD_OPENBLAS="true"
-fi
-executeAsVagrantUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} build_workloads
+executeAsVagrantUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} dist
+executeAsVagrantUser make build_image
+make install
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.

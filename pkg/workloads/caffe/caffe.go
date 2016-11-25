@@ -3,24 +3,21 @@ package caffe
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/pkg/errors"
 )
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID                        = "caffe"
-	defaultBinaryRelativePath = "deep_learning/caffe/test_quick_cifar10.sh"
+	defaultBinaryRelativePath = "caffe"
 )
 
 var caffePath = conf.NewStringFlag(
 	"caffe_path",
-	"Path to script launching caffe as an aggressor",
-	path.Join(fs.GetSwanWorkloadsPath(), defaultBinaryRelativePath),
+	"Path to script launching caffe as an aggressor", defaultBinaryRelativePath,
 )
 
 // Config is a config for the Caffe.

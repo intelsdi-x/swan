@@ -17,6 +17,7 @@ RUN ./scripts/setup_env.sh && \
     ./scripts/post_install.sh
 WORKDIR /
 
-RUN adduser memcached
-
 ADD artifacts.tar.gz /usr/local/
+
+RUN caffe init
+RUN adduser memcached

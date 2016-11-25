@@ -2,11 +2,9 @@ package stream
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 )
 
 const (
@@ -21,7 +19,7 @@ const (
 var PathFlag = conf.NewStringFlag(
 	"stream_path",
 	"Path to stream binary",
-	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/stream.100M"),
+	"stream.100M",
 )
 
 // Config is a struct for stream aggressor configuration.
