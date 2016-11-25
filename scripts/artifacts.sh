@@ -51,7 +51,7 @@ function dist {
     tar -czf ${FILENAME} -C ${ARTIFACTS_PATH} .
 }
 
-function install {
+function install_swan {
     if [ "${UID}" != 0 ]; then
         >&2 echo "Only root can perform this operation"
         exit 1
@@ -63,7 +63,7 @@ function install {
     caffe init
 }
 
-function uninstall {
+function uninstall_swan {
     if [ "${UID}" != 0 ]; then
         >&2 echo "Only root can perform this operation"
         exit 1
@@ -76,4 +76,11 @@ function uninstall {
     done
 }
 
-${1}
+case ${1} in
+    "dist" )
+        dist ;;
+    "install" )
+        install_swan ;;
+    "uninstall" )
+        uninstall_swan ;;
+esac

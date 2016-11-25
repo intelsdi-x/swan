@@ -15,7 +15,9 @@ pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsVagrantUser make repository_reset
 executeAsVagrantUser make deps_all
 executeAsVagrantUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} dist
-executeAsVagrantUser make build_image
+if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
+        executeAsVagrantUser make build_image
+fi
 make install
 
 # -b specifies bucket name.
