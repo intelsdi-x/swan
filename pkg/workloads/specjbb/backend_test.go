@@ -17,7 +17,7 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 	Convey("When using Backend launcher", t, func() {
 
 		expectedCommand := fmt.Sprintf("java -jar -Dspecjbb.controller.host=127.0.0.1 test -m backend -G GRP1 -J JVM2"+
-			" -p %s/web_serving/specjbb/config/specjbb2015.props", fs.GetSwanWorkloadsPath())
+			" -p /usr/local/share/specjbb/config/specjbb2015.props", fs.GetSwanWorkloadsPath())
 		expectedHost := "127.0.0.1"
 
 		mockedExecutor := new(mocks.Executor)

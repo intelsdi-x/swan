@@ -1,15 +1,16 @@
 # this file exclude folders from build context
-workloads/*
-vendor/*
-pkg/*
-integration_tests/*
-docs/*
-scripts/*
-.git*
-experiments/*
-docs/*
-build/*
+
 artifacts/*
-scripts/*
+build/*
+docs/*
+docs/*
+experiments/*
+.git*
+integration_tests/*
 misc/*snap*
+pkg/*
+scripts/*
+scripts/*
 swan-*.tar.gz
+vendor/*
+workloads/*

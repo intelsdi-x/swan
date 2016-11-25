@@ -2,7 +2,6 @@ package specjbb
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
@@ -16,11 +15,10 @@ const (
 
 var (
 	// PathToBinaryForHpFlag specifies path to a SPECjbb2015 jar file for hp job.
-	PathToBinaryForHpFlag = conf.NewStringFlag("specjbb_path_hp", "Path to SPECjbb jar for high priority job (backend)",
-		path.Join("usr", "local", "share", "specjbb", "specjbb2015.jar"))
+	PathToBinaryForHpFlag = conf.NewStringFlag("specjbb_path_hp", "Path to SPECjbb jar for high priority job (backend)", "/usr/local/share/specjbb/specjbb2015.jar")
 	// PathToPropsFileForHpFlag specifies path to a SPECjbb2015 properties file for hp job.
 	PathToPropsFileForHpFlag = conf.NewStringFlag("specjbb_props_path_hp", "Path to SPECjbb properties file for high priority job (backend)",
-		path.Join("usr", "local", "share", "specjbb", "config", "specjbb2015.props"))
+		"/usr/local/share/specjbb/config/specjbb2015.props")
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
