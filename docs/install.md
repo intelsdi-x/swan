@@ -8,8 +8,10 @@ You have to have a read access to [Athena](https://github.com/intelsdi-x/athena)
 ## Install OS dependencies
 **1. Git**
 The distributed version control system [Git](https://git-scm.com/) is needed to clone Swan repository. You can install Git as a package, via another installer, or download the source code and compile it yourself. See [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) for guidance on installation of Git.
+
 **2. VirtualBox**
 The cross-platform virtualization application [VirtualBox](https://www.virtualbox.org/) has to be installed because the Swan virtual machine is configured to use this provider. See [here](https://www.virtualbox.org/wiki/Downloads) for guidance on installation of VirtualBox.
+
 **3. Vagrant**
 The command line utility for managing the lifecycle of virtual machines [Vagrant](https://www.vagrantup.com/docs/) is needed to create and run a pre-configured Swan virtual macine. See [here](https://www.vagrantup.com/docs/installation/) for guidance on installation of Vagrant.
 Configure vagrant to work with VirtualBox by installing the plugin [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) which automatically installs the host's VirtualBox Guest Additions on the guest system:
@@ -31,6 +33,7 @@ $ eval "$(ssh-agent -s)"
 $ ssh-add ~/.ssh/id_rsa
 ```
 See [here](https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/) for further guidance on generating SSH keys and adding them to the ssh-agent.
+
 Make sure your public SSH key is added to your github account, if not follow the instructions [here](https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/) to add it.
 
 ## Create virtual machine
@@ -44,8 +47,11 @@ $ vagrant up
 ```
 As a result of this command, you will have a running virtual machine pre-configured for running Swan experiment.
 Configuration include:
-1. Running [Cassandra](http://cassandra.apache.org/) docker, needed for storing experiment results.
+
+1. A running [Cassandra](http://cassandra.apache.org/) docker, needed for storing experiment results.
+
 2. [Snap](https://github.com/intelsdi-x/snap) binary placed in `$GOPATH/bin/`.
+
 3. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
 
 ## Access Swan code inside virtual machine
@@ -63,8 +69,9 @@ $ make build_plugins
 $ make build_swan
 ```
 
-This will build and install the [Snap](https://github.com/intelsdi-x/snap) plugins in `$GOPATH/bin/` and the experiment binaries in the `$HOME/swan/build/` directory.
+This will build and install the [Snap](https://github.com/intelsdi-x/snap) plugins in `$GOPATH/bin/` and the experiment binaries in `$HOME/swan/build/` directory.
 
 To run tests, please refer to the [Swan development guide](development.md).
+
 To run the **memcached-sensitivity-profile** experiment, please refer [here](experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
 
