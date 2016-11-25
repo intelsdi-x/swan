@@ -61,10 +61,15 @@ Configuration include:
   preferred tools in the host OS!
 
 ## Access Swan code inside virtual machine
-To SSH into a running Vagrant machine, run:
+To SSH into a running Vagrant machine, go to a vagrant directory:
+```
+$ cd swan/misc/dev/vagrant/singlenode
+``` 
+and run:
 ```
 $ vagrant ssh
 ```
+
 A Swan repository is placed in the home directory of a vagrant user `$HOME/swan/`
 
 ## Build necessary plugins and experiment binary
