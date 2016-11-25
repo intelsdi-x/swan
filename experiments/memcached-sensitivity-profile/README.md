@@ -1,15 +1,13 @@
+# ![Swan diagram](../../docs/swan-logo-48.png) Swan
+
 # Memcached sensitivity experiment
 
-The first experiment which comes with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called sensitivity profile, which describes the violation of Quality of Service under certain conditions, such as cpu cache or network bandwidth interference.
-An example of this can be seen below.
-
-![Sensitivity profile](../../docs/sensitivity-profile.png)
-
-Swan does this by carefully controlling execution of memcached and its co-location with aggressor processes i.e. noisy neighbors or antagonists. From this point on, Swan coordinates execution of a distributed load generator called [mutilate](https://github.com/leverich/mutilate). Snap plugins and tasks are coordinated by swan to collect latency and load metrics and tags them with experiment identifiers.
+The first experiment which bundles with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference.
+Swan does this by carefully controlling execution of memcached and its co-location with aggressor processes i.e. noisy neighbors or antagonists. From this point on, Swan coordinates execution of a distributed load generator called [mutilate](https://github.com/leverich/mutilate) which puts memcached under controlled load. Snap plugins and tasks are coordinated by swan to collect latency and load metrics and tags them with experiment identifiers. All the metrics are then sent to Cassandra and then extracted by Jupyter. Picture below shows the experiments components.
 
 ![Swan diagram](../../docs/swan.png)
 
-The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers Quality of Service metrics like latency, so-called Service Level Indicators or SLI for short, and the achieved load in terms of Request per Second (RPS) or Queries Per Second (QPS).
+The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers _Quality of Service_ metrics like latency, so-called _Service Level Indicators_ or SLI for short, and the achieved load in terms of _Request per Second_ (RPS) or _Queries Per Second_ (QPS).
 
 The conditions, currently, involve co-location of memcached with a list of specialized aggressors and one deep-learning workload.
 
@@ -34,12 +32,13 @@ docker run -d -p :9042:9042 -p :9160:9160 cassandra
 **NOTE** Running Cassandra in docker containers is not advised for production environments.
 Additionally, be careful if not used with docker volume mounts as you may experience data loss.
 
-**NOTE** The [Cassandra Snap publisher](https://github.com/intelsdi-x/snap-plugin-publisher-cassandra) is required for Swan to publish metrics to Cassandra. This repository may require explicit added access. Contact GitHub administrators of http://github.com/intelsdi-x to get access to this repository.
+### Cassandra Snap publisher plugin
+The [Cassandra Snap publisher](https://github.com/intelsdi-x/snap-plugin-publisher-cassandra) is required for Swan to publish metrics gathered by Snap to Cassandra.
 
 ### Validation
 
-It is recommended to ensure that all integration tests are working on your machine before running experiment.
-After following the steps in the [Swan installation guide](../docs/install.md), run:
+It is highly recommended to ensure that all integration tests are working on your machine before running the experiment.
+After following the steps in the [Swan installation guide](../../docs/install.md), run:
 
 ```bash
 $ make integration_test
@@ -52,6 +51,7 @@ To get insight into some of these, please refer to [Kozyrakis, Jacob Leverich Ch
 
 Much of the configuration guidelines here are targeted eliminating as many of these (unintentional) sources of interference as possible.
 
+
 Swan has built in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
 However, Swan needs some input from the user about the environment to adjust these. The sections below will go over the recommended
 
@@ -63,13 +63,13 @@ We recommend the following machine topology:
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | Target machine        | Machine where swan is run and thus where memcached will be run. Snapd should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
 | Load generator master | Machine where mutilate master will be running and thus the machine which coordinates all mutilate agent machines.                         | 1 x 10Gb link, 20 or more hyper threads in total                                       |
-| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 4 x 10Gb link, 20 or more hyper threads in total                                       |
+| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 10Gb link for each agent, 20 or more hyper threads in total                                       |
 | Service machines      | Machines where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
 
 
 #### File descriptors
 
-As the both mutilate and memcached will create many connections, it is important that the number of available file descriptors is high enough. It should be in the high 10.000s.
+As the both mutilate and memcached will create many connections, it is important that the number of available file descriptors is high enough. It should be in the high 10 000s.
 To check the current limit, run:
 
 ```bash
@@ -99,6 +99,8 @@ To avoid power saving policies to kick in while carrying out the experiments, se
 $ sudo cpupower frequency-set -g performance
 ```
 
+Swan is able to perform automatic checks for file descriptors, DDoS protection and power control.
+
 #### Misc
 
 In general, look at all running processes at the mutilate master, agents and on the target machine. Try to reduce the number of processes running at any time to reduce the likelihood of interference.
@@ -112,6 +114,38 @@ The rationale for this number is explained in the 'Isolation configuration' sect
 Lastly, the maximum number of connections to memcached can be set with the `--memcached_connections` flag or through the `SWAN_MEMCACHED_THREADS` environment variable.
 
 ### Isolation configuration
+
+To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading*. Each core has two execution threads. In Linux system each thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
+
+![Cache topology](../../docs/cpu_topo.png)
+
+`lstopo` and `lscpu` can help to understand the CPU topology in a given system. `lstopo` will show CPU topology graphically while `lscpu -e` will show CPU topology in text mode giving much more details:
+```bash
+$ lscpu -e
+CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE MAXMHZ    MINMHZ
+0   0    0      0    0:0:0:0       yes    4000,0000 800,0000
+1   0    0      1    1:1:1:0       yes    4000,0000 800,0000
+2   1    1      2    2:2:2:0       yes    4000,0000 800,0000
+3   1    1      3    3:3:3:0       yes    4000,0000 800,0000
+4   0    0      0    0:0:0:0       yes    4000,0000 800,0000
+5   0    0      1    1:1:1:0       yes    4000,0000 800,0000
+6   1    1      0    2:2:2:0       yes    4000,0000 800,0000
+7   1    1      3    3:3:3:0       yes    4000,0000 800,0000
+
+```
+In the exemplary output from the `lscpu -e` there is a dual socket platform with 2 physical CPUs each of which has 2 cores and *HyperThreading* enabled. Output shows that:
+
+* Logical CPUs 0 and 4 are execution threads on core 0 on the socket 0
+* Logical CPUs 1 and 5 are execution threads on core 1 on the socket 0
+* Logical CPUs 2 and 6 are execution threads on core 0 on the socket 1
+* Logical CPUs 3 and 7 are execution threads on core 0 on the socket 1
+* Logical CPUs 0 and 4 share L1 instruction, L1 data and L2 cache
+* Logical CPUs 1 and 5 share L1 instruction, L1 data and L2 cache
+* Logical CPUs 0, 1, 4 and 5 share L3 cache
+* Logical CPUs 1, 2, 4, 5 reside on a different socket and NUMA node than Logical CPUs 2, 3, 6, 7. They have separate caches and memory access to RAM.
+
+The Linux scheduler detects 8 CPUs and in spite of the fact that it's taking into account the CPU topology it may schedule jobs in a way that they will work in a very inefficient way. It may even migrate jobs between NUMA nodes increasing job's memory access time. Please read [The Linux Scheduler: a Decade of Wasted Cores](https://www.ece.ubc.ca/~sasha/papers/eurosys16-final29.pdf) to learn more.
+
 
 To give insight into the placement of aggressor workloads, and motivate the thread count selection in memcached, let us start with an example topology:
 
@@ -130,11 +164,11 @@ _and_ introduce L3 aggressors with the same setup of memcached, in order to comp
 
 
 Swan will by default try to aim for the core configuration above.
-Swan does this by creating separate exclusive [cgroup cpu sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) for the high priority and best effort processes.
-By creating exclusive cpu sets, Swan can reduce interference from other background processes which may get scheduled on the high priority cores.
+Swan does this by creating separate exclusive [cgroup CPU sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) for the high priority and best effort processes.
+By creating exclusive CPU sets, Swan can reduce interference from other background processes which may get scheduled on the high priority cores.
 
-Using exclusive cpu sets can be challenging if other systems on the host are using cpu sets. Exclusive cpu sets cannot share cores with any other cgroup and setting the desired cores will cause an error from the kernel.
-An example of such conflicting and potential overlapping cpu sets could be systems with [docker](https://www.docker.com/) installed. Docker creates a cpuset cgroup which contain all logical cores and thus will conflict with Swan, if Swan attempts to create exclusive cpu sets.
+Using exclusive CPU sets can be challenging if other systems on the host are using CPU sets. Exclusive CPU sets cannot share cores with any other cgroup and setting the desired cores will cause an error from the kernel.
+An example of such conflicting and potential overlapping CPU sets could be systems with [docker](https://www.docker.com/) installed. Docker creates a cpuset cgroup which contain all logical cores and thus will conflict with Swan, if Swan attempts to create exclusive CPU sets.
 
 ### Aggressor configuration
 
@@ -202,7 +236,7 @@ In essence, it is unfortunately very easy to see high latency measurements due t
 On top of the recommendations, we have found that reducing the number agent threads and connections and increasing the measurement time to around 30 seconds with the `--load_duration` flag helps.
 To accommodate for the fewer connections per agent, you can safely add more agents.
 
-Another option to increase precision of the latency measurements, mutilate gives the option to use blocking vs non-blocking IO. Enabling this increase the precision but increase the cpu load on the mutilate agents.
+Another option to increase precision of the latency measurements, mutilate gives the option to use blocking vs non-blocking IO. Enabling this increases the precision but also increases the CPU load on the mutilate agents.
 
 #### Known issues with mutilate
 
@@ -262,7 +296,7 @@ $ ./build/experiments/memcached/memcached-sensitivity-profile --log=debug
 
 When the experiment has started, you should see a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` which will be the identifier for this experiment and be the way to get hold of the experiment data.
 
-## Explore experiment data
+## Explore experiment data (Sensitivity Profile)
 
 While the experiment is running, you can access the experiment data in Cassandra.
 Swan ships with a Jupyter setup which provides an environment for loading the samples and generating sensitivity profiles.
@@ -278,6 +312,11 @@ Below is an example of the sensitivity profile could be:
 
 ![Sensitivity profile](../../docs/sensitivity-profile.png)
 
+
+The _Load_ row is a percentage of the maximum achieved QPS without violating SLO which was found during _[Red lining](https://www.wikiwand.com/en/Redline)_.
+A cell in a table express _SLI_ which is a 99th [percentile](https://www.wikiwand.com/en/Percentile) response time for that _Load_ in relation to _SLO_. For instance _Baseline_ for _Load_ 5% for _SLO_ 500ms tells that 99 percent of requests responded in time not greater than 160ms which is 32% of SLO time. Thus if we observe _SLI_ above 100% that means violation of _SLO_.
+In the presented table Caffe and memBW are relatively weak aggressors and they lead to _SLO_ violation only on higher loads while Stream 100M is very aggressive and leads to _SLO_ violation even on low loads of memcached.
+
 ## Example configuration
 
 Below is an example configuration using environment variables to set up the experiment where the machines are configured in the following topology:
@@ -291,6 +330,13 @@ Below is an example configuration using environment variables to set up the expe
 | 192.168.10.5  | Mutilate agent host #3                 |
 | 192.168.10.6  | Mutilate agent host #4                 |
 | 192.168.10.10 | Service host running Cassandra         |
+
+The mutilate binary must be copied from the swan host to the mutilate master and the mutilate agent hosts. The location of the mutilate binary on the remote hosts is passed via `SWAN_MUTILATE_PATH` environment variable.
+
+
+`memcached-sensitivity-profile` must be launched on the swan host by a privileged user.
+Key based ssh authorization for user _root_ is required from the swan host to the mutilate hosts.
+
 
 The target host has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description above, this leaves 4 threads and logical cores for memcached.
 Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (same calculation as in the mutilate configuration section above).
@@ -347,3 +393,23 @@ export SWAN_SNAPD_ADDR=192.168.10.9
 export SWAN_CASSANDRA_ADDR=192.168.10.10
 export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassandra
 ```
+Before running `memcached-sensitivity-profile` ensure that
+
+* Cassandra is up and running on the cassandra host
+* Snapd is running on swan host
+* Mutilate binary is copied to proper location on mutilate hosts
+* From swan host privileged user can ssh to mutilate hosts using keys authorization.
+
+If everything is up and ready then simply launch
+```
+memcached-sensitivity-profile
+```
+and wait for the results.
+
+
+## Running experiment on virtual machine
+
+If you have followed [installation guide](../../docs/install.md) then you should already have configured virtual machine. Go to the swan/misc/dev/vagrant/singlenode and run 
+`vagrant ssh`.
+
+![Swan diagram](../../docs/swan-logo-48.png) 

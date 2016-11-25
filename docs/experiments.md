@@ -1,3 +1,5 @@
+# ![Swan diagram](swan-logo-48.png) Swan
+
 # Experiments
 
 This project attempts to be scientific regarding experimental results.
@@ -37,5 +39,5 @@ inspired this experiment.
    test the extent to which CAT can mitigate negative interference.
 1. Replicate co-location slowdowns for 429.mcf when running next to
    Spec2006 benchmarks (results from this paper:
-   http://dl.acm.org/citation.cfm?id=2523750
+   http://dl.acm.org/citation.cfm?id=2523750)
 

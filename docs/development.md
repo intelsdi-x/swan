@@ -1,4 +1,6 @@
-# Swan developer guide
+# ![Swan diagram](swan-logo-48.png) Swan 
+
+# Developer's guide
 
 ## Development using Makefile
 

@@ -1,4 +1,6 @@
-# Swan vision and motivation
+# ![Swan diagram](swan-logo-48.png) Swan
+
+# Vision and motivation
 
 Swan is an experiment and evaluation methodology for optimizing cloud schedulers.
 Through coordination of distributed testing, Swan provides a framework to capture real cloud workloads and ability for developers and operators to gain deep insight into their workload behavior in a controlled environment.

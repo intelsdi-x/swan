@@ -1,4 +1,6 @@
-# Swan integration with Docker containers
+# ![Swan diagram](swan-logo-48.png) Swan 
+
+# Integration with Docker containers
 
 ## About
 
