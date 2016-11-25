@@ -54,6 +54,12 @@ Configuration include:
 
 3. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
 
+
+## Notes
+
+- The project directory is mounted in the guest file system: edit with your
+  preferred tools in the host OS!
+
 ## Access Swan code inside virtual machine
 To SSH into a running Vagrant machine, run:
 ```
