@@ -2,6 +2,8 @@
 
 set -e
 
+. $HOME_DIR/.bash_profile
+
 CONFIGS_LOCATION="/vagrant/resources/configs"
 
 echo "Copying configs..."
@@ -15,3 +17,6 @@ cp $CONFIGS_LOCATION/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf
 cp $CONFIGS_LOCATION/cassandra.service /etc/systemd/system
 cp $CONFIGS_LOCATION/keyspace.cql /opt/swan/resources
 cp $CONFIGS_LOCATION/table.cql /opt/swan/resources
+
+echo "Generate configs..."
+sed -e 's,GOPATH,'"$GOPATH"',' $CONFIGS_LOCATION/snapd.service_template > /etc/systemd/system/snapd.service
