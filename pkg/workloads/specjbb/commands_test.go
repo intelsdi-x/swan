@@ -14,9 +14,9 @@ const (
 	customerNumber           = 100
 	duration                 = 100 * time.Second
 	productsNumber           = 100
-	jarPath                  = "/swan/workloads/web_serving/specjbb/specjbb2015.jar"
-	propertiesFilePath       = "/swan/workloads/web_serving/specjbb/config/specjbb2015.props"
-	outputDir                = "/swan/workloads/web_serving/specjbb"
+	jarPath                  = "/usr/local/share/specjbb/specjbb2015.jar"
+	propertiesFilePath       = "/usr/local/share/specjbb/config/specjbb2015.props"
+	outputDir                = "/usr/local/share/specjbb"
 	rawFileName              = "abc"
 )
 
