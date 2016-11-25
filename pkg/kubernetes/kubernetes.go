@@ -300,7 +300,7 @@ func getReadyNodes(k8sAPIAddress string) ([]api.Node, error) {
 	var readyNodes []api.Node
 	for _, node := range nodes.Items {
 		for _, condition := range node.Status.Conditions {
-			if condition.Type == api.NodeReady && condition.Status != api.ConditionTrue {
+			if condition.Type == api.NodeReady && condition.Status == api.ConditionTrue {
 				readyNodes = append(readyNodes, node)
 			}
 		}
