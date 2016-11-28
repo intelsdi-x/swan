@@ -4,6 +4,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/caffe"
 	"github.com/intelsdi-x/athena/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
@@ -175,7 +176,23 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 		if err != nil {
 			return nil, err
 		}
-		aggressorPairs = append(aggressorPairs, NewLauncherWithoutSession(aggressorPair))
+
+		var launcherSessionPair LauncherSessionPair
+
+		switch aggressorName {
+		case caffe.ID:
+			caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
+			if err != nil {
+				return nil, err
+			}
+			launcherSessionPair = NewMonitoredLauncher(aggressorPair, caffeSession)
+		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID:
+			launcherSessionPair = NewLauncherWithoutSession(aggressorPair)
+		default:
+			return nil, errors.Errorf("aggressor %q not found", aggressorName)
+		}
+
+		aggressorPairs = append(aggressorPairs, launcherSessionPair)
 	}
 	return
 }
