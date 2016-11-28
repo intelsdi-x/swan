@@ -245,7 +245,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		bar.ShowTimeLeft = true
 		prefix := fmt.Sprintf("[%02d / %02d] %s ", uuid.String(), 1, "Baseline")
 		bar.Prefix(prefix)
-		bar.Add(1)
 	}
 
 	for loadPoint := 1; loadPoint <= configuration.LoadPointsCount; loadPoint++ {
@@ -327,6 +326,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			stopMemcached()
 			stopSnapSession()
+
+			if conf.LogLevel() == logrus.ErrorLevel {
+				bar.Add(1)
+			}
+
 		}
 	}
 
