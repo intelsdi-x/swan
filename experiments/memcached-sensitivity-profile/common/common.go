@@ -250,13 +250,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	for loadPoint := 1; loadPoint <= configuration.LoadPointsCount; loadPoint++ {
 		phaseName := fmt.Sprintf("Baseline, load point %d", loadPoint)
 		for repetition := 0; repetition < configuration.Repetitions; repetition++ {
-			session := phase.Session{
-				PhaseID:       phaseName,
-				ExperimentID:  uuid.String(),
-				RepetitionID:  repetition,
-				AggressorName: "None",
-			}
-
 			// Start timer.
 			//phaseStartingTime := time.Now()
 			logrus.Infof("Starting %s repetition %d", phaseName, repetition)
@@ -295,32 +288,35 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			loadGeneratorTask.Wait(0)
 
-			tags := sensitivity.CreateTagConfigItem(session)
-			sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
+			tags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
+				phase.ExperimentKey, uuid.String(),
+				phase.PhaseKey, phaseName,
+				phase.RepetitionKey, repetition,
+				// TODO: Remove that when completing SCE-376
+				phase.LoadPointQPSKey, loadPoint,
+				phase.AggressorNameKey, "",
+			)
+
+			//sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
+			_, err = mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
 			if err != nil {
 				stopMemcached()
 				return errors.Wrapf(err, "cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
 			}
-			stopMutilate := func() {
-				sessionHandle.Stop()
-			}
 
 			exitCode, err := loadGeneratorTask.ExitCode()
 			if err != nil {
-				stopMutilate()
 				stopMemcached()
 				return errors.Wrapf(err, "cannot retrieve exit code from load generator in baseline, load point %d, repetition %d", loadPoint, repetition)
 			}
 
 			if exitCode != 0 {
-				stopMutilate()
 				stopMemcached()
 				return errors.Errorf("executing Load Generator returned with exit code %d in baseline, load point %d, repetition %d", exitCode, loadPoint, repetition)
 			}
-
+			stopMemcached()
 		}
 	}
-
 	/*measurementPhase{
 		namePrefix:      "baseline",
 		pr:              e.productionTaskLauncher,
