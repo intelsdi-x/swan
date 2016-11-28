@@ -270,6 +270,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				return errors.Wrapf(err, "cannot launch memcached in baseline, load point %d, repetition %d", loadPoint, repetition)
 			}
 			stopMemcached := func() {
+				logrus.Info("Stopping memcached")
 				prTask.Stop()
 				prTask.Clean()
 			}
@@ -297,8 +298,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				phase.AggressorNameKey, "",
 			)
 
-			//sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
-			_, err = mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
+			sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
+			stopSnapSession := func() {
+				logrus.Info("Stopping snap session")
+				sessionHandle.Stop()
+			}
 			if err != nil {
 				stopMemcached()
 				return errors.Wrapf(err, "cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
@@ -307,40 +311,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			exitCode, err := loadGeneratorTask.ExitCode()
 			if err != nil {
 				stopMemcached()
+				stopSnapSession()
 				return errors.Wrapf(err, "cannot retrieve exit code from load generator in baseline, load point %d, repetition %d", loadPoint, repetition)
 			}
 
 			if exitCode != 0 {
 				stopMemcached()
+				stopSnapSession()
 				return errors.Errorf("executing Load Generator returned with exit code %d in baseline, load point %d, repetition %d", exitCode, loadPoint, repetition)
 			}
 			stopMemcached()
+			stopSnapSession()
 		}
 	}
-	/*measurementPhase{
-		namePrefix:      "baseline",
-		pr:              e.productionTaskLauncher,
-		lgForPr:         e.loadGeneratorForProductionTask,
-		bes:             []LauncherSessionPair{},
-		loadDuration:    e.configuration.LoadDuration,
-		loadPointsCount: e.configuration.LoadPointsCount,
-		repetitions:     e.configuration.Repetitions,
-		PeakLoad:        &e.configuration.PeakLoad,
-		// Measurements in baseline have different load point input.
-		currentLoadPointIndex: i,
-	}*/
 
-	// Experiment.
-	/*sensitivityExperiment := sensitivity.NewExperiment(
-		conf.AppName(),
-		conf.LogLevel(),
-		configuration,
-		memcachedLauncherSessionPair,
-		mutilateLoadGeneratorSessionPair,
-		aggressorSessionLaunchers,
-	)
-
-	// Run experiment.
-	return sensitivityExperiment.Run()*/
 	return nil
 }
