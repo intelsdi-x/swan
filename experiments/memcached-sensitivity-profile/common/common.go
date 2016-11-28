@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
@@ -230,7 +231,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 		// Save results.
 		stop()
-		logrus.Infof("Run tuning and achieved following values: load - %d and SLI - %d", load, achievedSLI)
+		logrus.Infof("Run tuning and achieved following values: load - %d and SLI - %f", load, achievedSLI)
 	} else {
 		logrus.Infof("Skipping Tunning phase, using peakload %d", configuration.PeakLoad)
 	}
@@ -271,8 +272,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			stopMemcached := func() {
 				logrus.Info("Stopping memcached")
-				prTask.Stop()
-				prTask.Clean()
+				err := prTask.Stop()
+				logrus.Infof("Memcached stopping error: %q", err)
+				err = prTask.Clean()
+				logrus.Infof("Memcached cleaning error: %q", err)
 			}
 
 			err = mutilateLoadGenerator.Populate()
@@ -300,8 +303,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 			sessionHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorTask, tags)
 			stopSnapSession := func() {
+				time.Sleep(5 * time.Second)
 				logrus.Info("Stopping snap session")
-				sessionHandle.Stop()
+				err := sessionHandle.Stop()
+				logrus.Infof("Snap session stopping error: %q", err)
 			}
 			if err != nil {
 				stopMemcached()
