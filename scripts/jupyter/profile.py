@@ -73,13 +73,19 @@ class Profile(object):
             index.append(name)
             df.is_copy = False
             df.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df['swan_loadpoint_qps'])
-            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
+            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value', 'caffe_batches']]
             self.categories.append(name)
 
             # Store loadpoints for data frame from the target QPSes.
             # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
+
+            if name == 'Caffe':
+                self.batches = aggressor_frame['caffe_batches'].tolist()
+
+            if loadpoints is None or len(loadpoints) < len(qps):
+                loadpoints = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
@@ -136,7 +142,12 @@ class Profile(object):
                     style += 'background-color: #98cc70;'
 
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
+
+                if aggressor == 'Caffe':
+                    value = "%s [%s]" % (value, self.batches.pop(0))
+
                 html_out += '<td style="%s">%s</td>' % (style, value)
+
             html_out += '</tr>'
 
         html_out += '</table>'
