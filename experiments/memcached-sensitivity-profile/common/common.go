@@ -237,14 +237,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	var bar *pb.ProgressBar
+	totalPhases := configuration.LoadPointsCount * configuration.Repetitions
 	if conf.LogLevel() == logrus.ErrorLevel {
-		fmt.Printf("Experiment %q with uuid %q\n", conf.AppName(), uuid.String())
-		totalPhases := configuration.LoadPointsCount * configuration.Repetitions
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
-		prefix := fmt.Sprintf("[%02d / %02d] %s ", uuid.String(), 1, "Baseline")
-		bar.Prefix(prefix)
 	}
 
 	for loadPoint := 1; loadPoint <= configuration.LoadPointsCount; loadPoint++ {
@@ -253,6 +250,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			// Start timer.
 			//phaseStartingTime := time.Now()
 			logrus.Infof("Starting %s repetition %d", phaseName, repetition)
+			if conf.LogLevel() == logrus.ErrorLevel {
+				prefix := fmt.Sprintf("[%02d / %02d] %s ", loadPoint*(configuration.Repetitions)+repetition, totalPhases, "Baseline")
+				bar.Prefix(prefix)
+				bar.Add(1)
+			}
 
 			phaseDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
 			err := os.MkdirAll(phaseDir, 0777)
@@ -326,10 +328,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			stopMemcached()
 			stopSnapSession()
-
-			if conf.LogLevel() == logrus.ErrorLevel {
-				bar.Add(1)
-			}
 
 		}
 	}
