@@ -57,9 +57,13 @@ function install_swan {
         exit 1
     fi
 
-    tar xf $(cat ./latest_build) -C /usr/local
-    export LD_LIBRARY_PATH="/usr/local/lib":$LD_LIBRARY_PATH
-    export PATH="/usr/local/bin":$PATH
+    if [ "${PREFIX}" == "" ]; then
+        PREFIX="/usr/local"
+    fi
+
+    tar xf $(cat ./latest_build) -C ${PREFIX}
+    export LD_LIBRARY_PATH="${PREFIX}/lib":$LD_LIBRARY_PATH
+    export PATH="${PREFIX}/bin":$PATH
     caffe init
 }
 
@@ -68,10 +72,15 @@ function uninstall_swan {
         >&2 echo "Only root can perform this operation"
         exit 1
     fi
+
+    if [ "${PREFIX}" == "" ]; then
+        PREFIX="/usr/local"
+    fi
+
     FILELIST=$(tar ztf $(cat ./latest_build))
     for listed_file in $FILELIST; do
-        if [[ -f /usr/local/${listed_file} ]]; then
-            rm -v /usr/local/${listed_file}
+        if [[ -f ${PREFIX}/${listed_file} ]]; then
+            rm -v ${PREFIX}/${listed_file}
         fi
     done
 }

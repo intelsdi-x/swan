@@ -19,7 +19,7 @@ executeAsVagrantUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} dist
 if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
         executeAsVagrantUser make build_image
 fi
-make install
+PREFIX=/usr make install
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.
