@@ -35,6 +35,7 @@ const (
 )
 
 func main() {
+	experimentStart := time.Now()
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
@@ -237,4 +238,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		}
 		launcherIteration++
 	}
+
+	if conf.LogLevel() == logrus.ErrorLevel {
+		bar.Finish()
+	}
+
+	logrus.Infof("Ended experiment %s with uuid %s in %d", conf.AppName(), uuid.String(), time.Since(experimentStart))
 }
