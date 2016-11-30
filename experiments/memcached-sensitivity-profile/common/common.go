@@ -152,6 +152,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		cleanup()
 		return err
 	}
+	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
 
 	// Prepare experiment configuration to be used by session launcher factory.
@@ -240,27 +241,37 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		bar.ShowTimeLeft = true
 	}
 
+	var launcherIteration int
 	for _, beLauncher := range beLaunchers {
-		for loadPoint := 1; loadPoint <= configuration.LoadPointsCount; loadPoint++ {
-			phaseName := fmt.Sprintf("Baseline, load point %d", loadPoint)
+		for loadPoint := 0; loadPoint < configuration.LoadPointsCount; loadPoint++ {
+			var phaseName string
+			if beLauncher.Launcher != nil {
+				phaseName = fmt.Sprintf("%s, load point %d", beLauncher.Launcher.Name(), loadPoint)
+			} else {
+				phaseName = fmt.Sprintf("Baseline, load point %d", loadPoint)
+			}
 			for repetition := 0; repetition < configuration.Repetitions; repetition++ {
 				var cleanupStack []func()
 				if conf.LogLevel() == logrus.ErrorLevel {
-					prefix := fmt.Sprintf("[%02d / %02d] %s ", loadPoint*configuration.Repetitions+repetition, totalPhases, phaseName)
+					completedPhases := launcherIteration * configuration.LoadPointsCount * configuration.Repetitions
+					prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 					bar.Prefix(prefix)
-					bar.Add(1)
+					// Changes to progress bar should be applied immediately
+					bar.AlwaysUpdate = true
+					bar.Update()
+					bar.AlwaysUpdate = false
 				}
 
 				logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
 				_, err := createDirs(experimentDirectory, phaseName, repetition)
 				if err != nil {
-					return errors.Wrapf(err, "cannot create repetition log directory")
+					return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 				}
 
 				hpHandle, err := hpLauncher.Launch()
 				if err != nil {
-					return errors.Wrapf(err, "cannot launch memcached in baseline, load point %d, repetition %d", loadPoint, repetition)
+					return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
 				}
 				cleanupStack = append(cleanupStack, func() {
 					hpHandle.Stop()
@@ -270,14 +281,14 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				err = loadGenerator.Populate()
 				if err != nil {
 					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "cannot populate memcached in baseline, load point %d, repetition %d", loadPoint, repetition)
+					return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
 				}
 
 				if beLauncher.Launcher != nil {
 					beHandle, err := beLauncher.Launcher.Launch()
 					if err != nil {
 						cleanEnvironment(cleanupStack)
-						return errors.Wrapf(err, "cannot launch aggressor %q, load point %d, repetition %d", beLauncher.Launcher.Name(), loadPoint, repetition)
+						return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 					}
 					cleanupStack = append(cleanupStack, func() {
 						beHandle.Stop()
@@ -287,7 +298,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
 						if err != nil {
 							cleanEnvironment(cleanupStack)
-							return errors.Wrapf(err, "cannot launch aggressor snap session for %q, load point %d, repetition %d", beLauncher.Launcher.Name(), loadPoint, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 						}
 						cleanupStack = append(cleanupStack, func() {
 							aggressorSnapHandle.Stop()
@@ -300,7 +311,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				loadGeneratorHandle, err := loadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
 				if err != nil {
 					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "Unable to start load generation in baseline, load point %d, repetition %d.", loadPoint, repetition)
+					return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 				}
 				loadGeneratorHandle.Wait(0)
 
@@ -316,7 +327,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
 				if err != nil {
 					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "cannot launch mutilate Snap session in baseline, loadpoint %d, repetition %d", loadPoint, repetition)
+					return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
 				}
 				cleanupStack = append(cleanupStack, func() {
 					time.Sleep(5 * time.Second)
@@ -326,10 +337,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				exitCode, err := loadGeneratorHandle.ExitCode()
 				cleanEnvironment(cleanupStack)
 				if exitCode != 0 {
-					return errors.Errorf("executing Load Generator returned with exit code %d in baseline, load point %d, repetition %d", exitCode, loadPoint, repetition)
+					return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
+				}
+
+				if conf.LogLevel() == logrus.ErrorLevel {
+					bar.Add(1)
 				}
 			}
 		}
+		launcherIteration++
 	}
 
 	return nil
