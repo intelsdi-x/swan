@@ -36,5 +36,4 @@ patch -p1 --forward -s < get_cifar10.patch || true
 export OMP_NUM_THREADS=${CPUS_NUMBER}
 make --quiet all
 popd
-${CAFFE_ROOT_DIRECTORY}/prepare_cifar10_dataset.sh
 popd
