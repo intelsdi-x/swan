@@ -3,9 +3,8 @@ package topo
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"github.com/intelsdi-x/athena/pkg/isolation"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func syntheticThreadSet() ThreadSet {
@@ -259,7 +258,7 @@ func TestThreadSetDifference(t *testing.T) {
 	})
 }
 
-func TestThreadSetRemove(t *testing.T) {
+func TestThreadSetRemoveThread(t *testing.T) {
 	Convey("Given a synthetic thread set", t, func() {
 		ts := syntheticThreadSet()
 		Convey("Removing all threads from socket 1 should yield 4 threads from 2 cores and 1 sockets", func() {
@@ -279,6 +278,37 @@ func TestThreadSetRemove(t *testing.T) {
 			So(s2Threads.AvailableThreads().Equals(isolation.NewIntSet(5, 6, 7, 8)), ShouldBeTrue)
 			So(s2Threads.AvailableCores().Equals(isolation.NewIntSet(3, 4)), ShouldBeTrue)
 			So(s2Threads.AvailableSockets().Equals(isolation.NewIntSet(2)), ShouldBeTrue)
+		})
+	})
+}
+
+func TestThreadSetRemoveThreadSet(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("Removing all threads from socket 1 should yield 4 threads from 2 cores and 1 sockets", func() {
+			s1Threads, err := ts.FromSockets(1)
+			So(err, ShouldBeNil)
+
+			s2Threads := ts.RemoveThreadSet(s1Threads)
+
+			s2ThreadsExpected, err := ts.FromSockets(2)
+			So(err, ShouldBeNil)
+
+			So(len(s2Threads), ShouldEqual, 4)
+			So(s2Threads, ShouldResemble, s2ThreadsExpected)
+			So(s2Threads.AvailableThreads().Equals(isolation.NewIntSet(5, 6, 7, 8)), ShouldBeTrue)
+			So(s2Threads.AvailableCores().Equals(isolation.NewIntSet(3, 4)), ShouldBeTrue)
+			So(s2Threads.AvailableSockets().Equals(isolation.NewIntSet(2)), ShouldBeTrue)
+		})
+	})
+}
+
+func TestThreadSetToCpuSet(t *testing.T) {
+	Convey("Given a synthetic thread set", t, func() {
+		ts := syntheticThreadSet()
+		Convey("Written in CpuSet notation it should be `1,2,3,4,5,6,7,8`", func() {
+			cpuset := ts.ToCPUSetNotation()
+			So(cpuset, ShouldEqual, "1,2,3,4,5,6,7,8")
 		})
 	})
 }

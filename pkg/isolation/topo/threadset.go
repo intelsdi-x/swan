@@ -2,6 +2,8 @@ package topo
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/intelsdi-x/athena/pkg/isolation"
 )
@@ -169,4 +171,24 @@ func (s ThreadSet) Difference(ts ThreadSet) ThreadSet {
 // this set except the supplied thread.
 func (s ThreadSet) Remove(t Thread) ThreadSet {
 	return s.Filter(func(elem Thread) bool { return !elem.Equals(t) })
+}
+
+// RemoveThreadSet Remove returns a newly allocated thread set containing all threads from
+// this set except the supplied threads.
+func (s ThreadSet) RemoveThreadSet(ts ThreadSet) (result ThreadSet) {
+	result = s
+	for _, thread := range ts {
+		result = result.Remove(thread)
+	}
+	return result
+}
+
+// ToCPUSetNotation returns thread IDs in cpuset notation.
+// Example return: 0,1,2,3,4 (...)
+func (s ThreadSet) ToCPUSetNotation() string {
+	threads := make([]string, len(s))
+	for idx, thread := range s {
+		threads[idx] = strconv.Itoa(thread.ID())
+	}
+	return strings.Join(threads, ",")
 }

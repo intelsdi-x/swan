@@ -1,9 +1,8 @@
 package topo
 
 import (
-	"fmt"
-
 	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
 // Thread represents a hyperthread, typically presented by the operating
@@ -25,8 +24,8 @@ func NewThread(id int, core int, socket int) Thread {
 func NewThreadFromID(id int) (thread Thread, err error) {
 	allThreads, err := Discover()
 	if err != nil {
-		logrus.Errorf("NewThreadFromID: Could not discover CPUs\n")
-		return thread, err
+		logrus.Errorf("NewThreadFromID: Could not discover CPUs")
+		return thread, errors.Wrapf(err, "could not discover CPUs")
 	}
 
 	foundThreads := allThreads.Filter(
@@ -36,7 +35,7 @@ func NewThreadFromID(id int) (thread Thread, err error) {
 
 	if len(foundThreads) == 0 {
 		logrus.Errorf("NewThreadFromID: Could not find thread with id %d on platform\n", id)
-		return thread, fmt.Errorf("could not find thread with id %d on platform", id)
+		return thread, errors.Errorf("could not find thread with id %d on platform", id)
 	}
 
 	return foundThreads[0], err

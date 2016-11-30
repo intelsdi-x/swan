@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Discover CPU and basic NUMA topology.
 func Discover() (ThreadSet, error) {
 	out, err := exec.Command("lscpu", "-p").Output()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "could not execute %q", "lscpu -p")
 	}
 	return ReadTopology(out)
 }
@@ -39,10 +41,10 @@ func ReadTopology(lscpuOutput []byte) (ThreadSet, error) {
 		var cpu, core, socket int
 		n, err := fmt.Sscanf(line, "%d,%d,%d", &cpu, &core, &socket)
 		if n != 3 {
-			return nil, fmt.Errorf("Expected to read 3 values but got %d", n)
+			return nil, errors.Errorf("expected to read 3 values but got %q", n)
 		}
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "Sscanf failed")
 		}
 
 		// Construct a new thread and append it to the "set".
