@@ -112,13 +112,13 @@ This will build and install the [Snap](https://github.com/intelsdi-x/snap) plugi
 2. Change to the swan directory: `cd ~/swan`
 
 3. Run the tests: `make test_all`
-For further information about tests, please refer to the [Swan development guide](development.md).
+For further information about tests, please refer to the [Swan development guide](development.md#tests).
 
 ## Running experiment
 To run the **memcached-sensitivity-profile** experiment, please refer [here](../experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
 
 ## Changing VM parameters or manually running provision scripts
-For details how to change VM parameters or manually run provision scripts, please refer to Vagrant [README](../misc/dev/vagrant/singlenode/README.md).
+For details how to change VM parameters or manually run provision scripts, please refer to Vagrant [README](../misc/dev/vagrant/singlenode/README.md#changing-vm-parameters).
 
 ## Troubleshooting
-Possible issues that you may encounter are described [here](../misc/dev/vagrant/singlenode/README.md).
+Possible issues that you may encounter are described [here](../misc/dev/vagrant/singlenode/README.md#troubleshooting).
