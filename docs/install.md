@@ -2,12 +2,46 @@
 Swan is built to be run on Linux and has been tested on Linux Centos 7.
 Instead of building Swan in your own environment, we recommend you to build and run it in a development VM. Follow the instructions to create a Linux virtual machine pre-configured for running the Swan experiment.
 
+## Virtual machine configuration details
+Swan provides a Vagranfile, which describes the pre-configured CentOS 7 virtual machine and how to provision it. This machine can be used for running the Swan experiment. The configuration include:
+
+1. Swan directory mounted in the guest file system (it resides in the host OS, but it is also accessed from virtual machine).
+
+2. [Athena](https://github.com/intelsdi-x/athena) repository  placed in `$GOPATH/src/github.com/intelsdi-x/athena`.
+
+3. Additional software packages:
+    * docker
+    * gengetopt
+    * git
+    * golang 1.6
+    * glide v0.12.2
+    * libcgroup-tools
+    * libevent-devel
+    * nmap-ncat
+    * perf
+    * scons
+    * tree
+    * vim
+    * wget
+
+    [Glide](https://github.com/Masterminds/glide) is a tool for managing the vendor directory within a Go package. All dependencies are cached in the `~/.glide` folder (this direcotry is shared between virtual machine and host OS). 
+
+4. A running [docker](https://www.docker.com/) service and a running [Cassandra](http://cassandra.apache.org/) docker container, needed for storing experiment results.
+
+5. [Snap](https://github.com/intelsdi-x/snap) binary placed in `$GOPATH/bin/`.
+
+6. [Kubernetes](http://kubernetes.io/) binaries placed in  `$GOPATH/src/github.com/intelsdi-x/athena/misc/bin`.
+
+7. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
+
+8. Prepared docker swan image `centos_swan_image`, used during experiment, which run on [Kubernetes](http://kubernetes.io/). This image contains all necessary workloads that could be used during experiment (during Vagrant provisioning you will see that workloads are built twice - one time in the virtual machine and the second in the Docker image).
+
 ## Prerequities
-You have to have a read access to [Athena](https://github.com/intelsdi-x/athena) and [Swan](https://github.com/intelsdi-x/swan) repositories. If you don't have it, please contact [Swan](https://github.com/intelsdi-x/swan) repository administrators.
+You need a read access to [Athena](https://github.com/intelsdi-x/athena) and [Swan](https://github.com/intelsdi-x/swan) repositories. If you don't have it, please contact [Swan](https://github.com/intelsdi-x/swan) repository administrators.
 
 ## Install OS dependencies
 **1. Git**
-The distributed version control system [Git](https://git-scm.com/) is needed to clone Swan repository. You can install Git as a package, via another installer, or download the source code and compile it yourself. See [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) for guidance on installation of Git.
+The distributed version control system [Git](https://git-scm.com/) is needed to clone the Swan repository. You can install Git as a package, with your local package manager, or download the source code and compile it yourself. See [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) for guidance on installation of Git.
 
 **2. VirtualBox**
 The cross-platform virtualization application [VirtualBox](https://www.virtualbox.org/) has to be installed because the Swan virtual machine is configured to use this provider. See [here](https://www.virtualbox.org/wiki/Downloads) for guidance on installation of VirtualBox.
@@ -34,7 +68,6 @@ $ ssh-add ~/.ssh/id_rsa
 ```
 See [here](https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/) for further guidance on generating SSH keys and adding them to the ssh-agent.
 
-Make sure your public SSH key is added to your github account, if not follow the instructions [here](https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/) to add it.
 
 ## Create virtual machine
 Create and configure guest machine according to the Swan Vagrantfile. To do this, go to a vagrant directory:
@@ -45,20 +78,11 @@ and run:
 ```
 $ vagrant up
 ```
+
+### Note
+It takes ~50 minutes to spin up the whole environment, so please be patient.
 As a result of this command, you will have a running virtual machine pre-configured for running Swan experiment.
-Configuration include:
 
-1. A running [Cassandra](http://cassandra.apache.org/) docker, needed for storing experiment results.
-
-2. [Snap](https://github.com/intelsdi-x/snap) binary placed in `$GOPATH/bin/`.
-
-3. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
-
-
-## Notes
-
-- The project directory is mounted in the guest file system: edit with your
-  preferred tools in the host OS!
 
 ## Access Swan code inside virtual machine
 To SSH into a running Vagrant machine, go to a vagrant directory:
@@ -82,7 +106,19 @@ $ make build_swan
 
 This will build and install the [Snap](https://github.com/intelsdi-x/snap) plugins in `$GOPATH/bin/` and the experiment binaries in `$HOME/swan/build/` directory.
 
-To run tests, please refer to the [Swan development guide](development.md).
+## Running tests
+1. SSH into the VM: `vagrant ssh`
 
-To run the **memcached-sensitivity-profile** experiment, please refer [here](experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
+2. Change to the swan directory: `cd ~/swan`
 
+3. Run the tests: `make test_all`
+For further information about tests, please refer to the [Swan development guide](development.md).
+
+## Running experiment
+To run the **memcached-sensitivity-profile** experiment, please refer [here](../experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
+
+## Changing VM parameters or manually running provision scripts
+For details how to change VM parameters or manually run provision scripts, please refer to Vagrant [README](../misc/dev/vagrant/singlenode/README.md).
+
+## Troubleshooting
+Possible issues that you may encounter are described [here](../misc/dev/vagrant/singlenode/README.md).

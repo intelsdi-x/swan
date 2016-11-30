@@ -18,17 +18,6 @@ $ vagrant ssh
 ## Setup
 For details how to create a Linux virtual machine pre-configured for running the Swan experiment, please refer to [Installation guide for Swan](../../../../docs/install.md)
 
-## Running the integration tests
-
-1. SSH into the VM: `vagrant ssh`
-1. Change to the swan directory: `cd ~/swan`
-1. Fetch swan dependencies: `make deps`
-1. Change to the snap directory:
-   `cd $GOPATH/src/github.com/intelsdi-x/snap`
-1. Build snap: `make deps && make`
-1. Change to the swan directory: `cd ~/swan`
-1. Run the integration tests: `make integration_test`
-
 ## Updating AMI image
 1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
   - Example parameters:
