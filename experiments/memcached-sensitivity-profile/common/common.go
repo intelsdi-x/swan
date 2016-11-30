@@ -251,97 +251,97 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				phaseName = fmt.Sprintf("Baseline, load point %d", loadPoint)
 			}
 			for repetition := 0; repetition < configuration.Repetitions; repetition++ {
-				var cleanupStack []func()
-				if conf.LogLevel() == logrus.ErrorLevel {
-					completedPhases := launcherIteration * configuration.LoadPointsCount * configuration.Repetitions
-					prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
-					bar.Prefix(prefix)
-					// Changes to progress bar should be applied immediately
-					bar.AlwaysUpdate = true
-					bar.Update()
-					bar.AlwaysUpdate = false
-				}
+				err := func() error {
+					if conf.LogLevel() == logrus.ErrorLevel {
+						completedPhases := launcherIteration * configuration.LoadPointsCount * configuration.Repetitions
+						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
+						bar.Prefix(prefix)
+						// Changes to progress bar should be applied immediately
+						bar.AlwaysUpdate = true
+						bar.Update()
+						bar.AlwaysUpdate = false
+					}
 
-				logrus.Infof("Starting %s repetition %d", phaseName, repetition)
+					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-				_, err := createDirs(experimentDirectory, phaseName, repetition)
-				if err != nil {
-					return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
-				}
-
-				hpHandle, err := hpLauncher.Launch()
-				if err != nil {
-					return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
-				}
-				cleanupStack = append(cleanupStack, func() {
-					hpHandle.Stop()
-					hpHandle.Clean()
-				})
-
-				err = loadGenerator.Populate()
-				if err != nil {
-					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
-				}
-
-				if beLauncher.Launcher != nil {
-					beHandle, err := beLauncher.Launcher.Launch()
+					_, err := createDirs(experimentDirectory, phaseName, repetition)
 					if err != nil {
-						cleanEnvironment(cleanupStack)
-						return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
+						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
-					cleanupStack = append(cleanupStack, func() {
-						beHandle.Stop()
-						beHandle.Clean()
-					})
-					if beLauncher.SnapSessionLauncher != nil {
-						aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+
+					hpHandle, err := hpLauncher.Launch()
+					if err != nil {
+						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
+					}
+					defer func() {
+						hpHandle.Stop()
+						hpHandle.Clean()
+					}()
+
+					err = loadGenerator.Populate()
+					if err != nil {
+						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
+					}
+
+					if beLauncher.Launcher != nil {
+						beHandle, err := beLauncher.Launcher.Launch()
 						if err != nil {
-							cleanEnvironment(cleanupStack)
-							return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 						}
-						cleanupStack = append(cleanupStack, func() {
-							aggressorSnapHandle.Stop()
-						})
+						defer func() {
+							beHandle.Stop()
+							beHandle.Clean()
+						}()
+						if beLauncher.SnapSessionLauncher != nil {
+							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+							if err != nil {
+								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
+							}
+							defer func() {
+								aggressorSnapHandle.Stop()
+							}()
+						}
+
 					}
 
-				}
+					logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
+					loadGeneratorHandle, err := loadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
+					if err != nil {
+						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
+					}
+					loadGeneratorHandle.Wait(0)
 
-				logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
-				loadGeneratorHandle, err := loadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
+					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
+						phase.ExperimentKey, uuid.String(),
+						phase.PhaseKey, phaseName,
+						phase.RepetitionKey, repetition,
+						// TODO: Remove that when completing SCE-376
+						phase.LoadPointQPSKey, loadPoint,
+						phase.AggressorNameKey, "",
+					)
+
+					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
+					if err != nil {
+						return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
+					}
+					defer func() {
+						time.Sleep(5 * time.Second)
+						snapHandle.Stop()
+					}()
+
+					exitCode, err := loadGeneratorHandle.ExitCode()
+					if exitCode != 0 {
+						return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
+					}
+
+					if conf.LogLevel() == logrus.ErrorLevel {
+						bar.Add(1)
+					}
+
+					return nil
+				}()
 				if err != nil {
-					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
-				}
-				loadGeneratorHandle.Wait(0)
-
-				snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-					phase.ExperimentKey, uuid.String(),
-					phase.PhaseKey, phaseName,
-					phase.RepetitionKey, repetition,
-					// TODO: Remove that when completing SCE-376
-					phase.LoadPointQPSKey, loadPoint,
-					phase.AggressorNameKey, "",
-				)
-
-				snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
-				if err != nil {
-					cleanEnvironment(cleanupStack)
-					return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
-				}
-				cleanupStack = append(cleanupStack, func() {
-					time.Sleep(5 * time.Second)
-					snapHandle.Stop()
-				})
-
-				exitCode, err := loadGeneratorHandle.ExitCode()
-				cleanEnvironment(cleanupStack)
-				if exitCode != 0 {
-					return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
-				}
-
-				if conf.LogLevel() == logrus.ErrorLevel {
-					bar.Add(1)
+					return errors.Wrap(err, "Experiment failed")
 				}
 			}
 		}
@@ -364,10 +364,4 @@ func createDirs(experimentDirectory, phaseName string, repetition int) (string, 
 	}
 
 	return phaseDir, nil
-}
-
-func cleanEnvironment(cleanupStack []func()) {
-	for _, v := range cleanupStack {
-		v()
-	}
 }
