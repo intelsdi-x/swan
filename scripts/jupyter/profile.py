@@ -51,6 +51,7 @@ class Profile(object):
         """
         self.exp = e
         self.slo = slo
+        self.batches= None
         self.categories = []
         self.data_frame = self.exp.get_frame()
         self.latency_qps_aggrs = {}
@@ -83,9 +84,6 @@ class Profile(object):
 
             if name == 'Caffe':
                 self.batches = aggressor_frame['caffe_batches'].tolist()
-
-            if loadpoints is None or len(loadpoints) < len(qps):
-                loadpoints = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
