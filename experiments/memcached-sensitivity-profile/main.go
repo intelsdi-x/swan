@@ -27,6 +27,7 @@ const (
 	RepetitionKey = "swan_repetition"
 
 	// TODO(bp): Remove these below when completing SCE-376
+
 	// LoadPointQPSKey defines the key for Snap tag.
 	LoadPointQPSKey = "swan_loadpoint_qps"
 	// AggressorNameKey defines the key for Snap tag.
@@ -128,7 +129,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		defer bar.Finish()
 	}
 
-	var launcherIteration int
+	// We need to count fully executed aggressor loops to render progress bar correctly.
+	var beIteration int
+
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < sensitivity.LoadPointsCountFlag.Value(); loadPoint++ {
@@ -144,9 +147,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
 				// Using a closure allows us to defer cleanup functions.
 				err := func() error {
-					// Make prograss bar to display current repetition.
+					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
-						completedPhases := launcherIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
+						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 						bar.Prefix(prefix)
 						// Changes to progress bar should be applied immediately
@@ -244,7 +247,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				}
 			}
 		}
-		launcherIteration++
+		beIteration++
 	}
 	logrus.Infof("Ended experiment %s with uuid %s in %s", conf.AppName(), uuid.String(), time.Since(experimentStart).String())
 }
