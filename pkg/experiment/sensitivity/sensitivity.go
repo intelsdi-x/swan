@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
-	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
+	SLOFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
+	LoadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
 	// LoadDurationFlag allows us to set repetition duration from command line argument or environmental variable.
 	LoadDurationFlag = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
-	repetitionsFlag  = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
-	stopOnErrorFlag  = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
+	RepetitionsFlag  = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	StopOnErrorFlag  = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	// It omits tuning phase.
 	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
@@ -51,12 +51,12 @@ type Configuration struct {
 // DefaultConfiguration returns default configuration for experiment from Conf flags.
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		SLO:             sloFlag.Value(),
+		SLO:             SLOFlag.Value(),
 		LoadDuration:    LoadDurationFlag.Value(),
-		LoadPointsCount: loadPointsCountFlag.Value(),
-		Repetitions:     repetitionsFlag.Value(),
+		LoadPointsCount: LoadPointsCountFlag.Value(),
+		Repetitions:     RepetitionsFlag.Value(),
 		PeakLoad:        PeakLoadFlag.Value(),
-		StopOnError:     stopOnErrorFlag.Value(),
+		StopOnError:     StopOnErrorFlag.Value(),
 	}
 }
 

@@ -154,9 +154,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
 
-	// Prepare experiment configuration to be used by session launcher factory.
-	configuration := sensitivity.DefaultConfiguration()
-
 	// HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	hpLauncher := memcached.New(hpExecutor, memcachedConfig)
@@ -192,7 +189,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	load := sensitivity.PeakLoadFlag.Value()
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
-		load, err = getPeakLoad(hpLauncher, loadGenerator, configuration.SLO)
+		load, err = getPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			return errors.Wrap(err, "tuning failed - cannot determine peak load")
 		}
@@ -202,7 +199,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	var bar *pb.ProgressBar
-	totalPhases := configuration.LoadPointsCount * configuration.Repetitions * len(beLaunchers)
+	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(beLaunchers)
 	if conf.LogLevel() == logrus.ErrorLevel {
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
@@ -211,18 +208,18 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	var launcherIteration int
 	for _, beLauncher := range beLaunchers {
-		for loadPoint := 0; loadPoint < configuration.LoadPointsCount; loadPoint++ {
-			phaseQPS := int(int(load) / configuration.LoadPointsCount * (loadPoint + 1))
+		for loadPoint := 0; loadPoint < sensitivity.LoadPointsCountFlag.Value(); loadPoint++ {
+			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 			var phaseName string
 			if beLauncher.Launcher != nil {
 				phaseName = fmt.Sprintf("%s, load point %d", beLauncher.Launcher.Name(), loadPoint)
 			} else {
 				phaseName = fmt.Sprintf("Baseline, load point %d", loadPoint)
 			}
-			for repetition := 0; repetition < configuration.Repetitions; repetition++ {
+			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
 				err := func() error {
 					if conf.LogLevel() == logrus.ErrorLevel {
-						completedPhases := launcherIteration * configuration.LoadPointsCount * configuration.Repetitions
+						completedPhases := launcherIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 						bar.Prefix(prefix)
 						// Changes to progress bar should be applied immediately
