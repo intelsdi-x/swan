@@ -127,6 +127,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	var launcherIteration int
+	stopOnError := sensitivity.StopOnErrorFlag.Value()
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < sensitivity.LoadPointsCountFlag.Value(); loadPoint++ {
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
@@ -227,8 +228,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					return nil
 				}()
 				if err != nil {
-					logrus.Errorf("Error occured: %q", err.Error())
-					os.Exit(1)
+					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
+					if stopOnError {
+						os.Exit(1)
+					}
 				}
 			}
 		}
