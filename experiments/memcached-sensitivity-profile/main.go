@@ -246,5 +246,5 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		}
 		launcherIteration++
 	}
-	logrus.Infof("Ended experiment %s with uuid %s in %d", conf.AppName(), uuid.String(), time.Since(experimentStart))
+	logrus.Infof("Ended experiment %s with uuid %s in %s", conf.AppName(), uuid.String(), time.Since(experimentStart).String())
 }
