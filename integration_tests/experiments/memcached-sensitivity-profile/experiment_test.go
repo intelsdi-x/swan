@@ -1,13 +1,13 @@
 package experiment
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"testing"
 	"time"
-	"bytes"
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"

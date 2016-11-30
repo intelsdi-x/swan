@@ -58,7 +58,7 @@ function install_swan {
     fi
 
     if [ "${PREFIX}" == "" ]; then
-        PREFIX="/usr/local"
+        PREFIX="/usr/"
     fi
 
     tar xf $(cat ./latest_build) -C ${PREFIX}
@@ -74,7 +74,7 @@ function uninstall_swan {
     fi
 
     if [ "${PREFIX}" == "" ]; then
-        PREFIX="/usr/local"
+        PREFIX="/usr/"
     fi
 
     FILELIST=$(tar ztf $(cat ./latest_build))

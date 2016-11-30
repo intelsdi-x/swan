@@ -38,7 +38,7 @@ const (
 
 var (
 	// pathFlag represents mutilate path flag.
-	pathFlag                   = conf.NewFileFlag("mutilate_path", "Path to mutilate binary", "mutilate")
+	pathFlag                   = conf.NewStringFlag("mutilate_path", "Path to mutilate binary", "mutilate")
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
 	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
