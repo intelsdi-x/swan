@@ -27,7 +27,6 @@ const (
 	RepetitionKey = "swan_repetition"
 
 	// TODO(bp): Remove these below when completing SCE-376
-
 	// LoadPointQPSKey defines the key for Snap tag.
 	LoadPointQPSKey = "swan_loadpoint_qps"
 	// AggressorNameKey defines the key for Snap tag.
@@ -35,6 +34,7 @@ const (
 )
 
 func main() {
+	// Preparing application - setting name, help, aprsing flags etc.
 	experimentStart := time.Now()
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
@@ -49,10 +49,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Validate preconditions.
 	validate.OS()
 
-	// Isolations.
+	// Create isolations.
 	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
 
-	// Executors.
+	// Create executors with cleanup function.
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		logrus.Errorf("Cannot create executors: %q", err.Error())
@@ -60,7 +60,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	defer cleanup()
 
-	// BE workloads.
+	// Create BE workloads.
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
@@ -69,7 +69,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
 
-	// HP workload.
+	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
 	hpLauncher := memcached.New(hpExecutor, memcachedConfig)
 
@@ -91,7 +91,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
 		os.Exit(70)
 	}
-
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
@@ -106,6 +105,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.SetFormatter(new(logrus.TextFormatter))
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
+	// Retrieve peak log from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
@@ -118,6 +118,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
 	}
 
+	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
 	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(beLaunchers)
 	if conf.LogLevel() == logrus.ErrorLevel {
@@ -131,7 +132,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < sensitivity.LoadPointsCountFlag.Value(); loadPoint++ {
+			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
+			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 			var phaseName string
 			if beLauncher.Launcher != nil {
 				phaseName = fmt.Sprintf("%s, load point %d", beLauncher.Launcher.Name(), loadPoint)
@@ -139,7 +142,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				phaseName = fmt.Sprintf("Baseline, load point %d", loadPoint)
 			}
 			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
+				// Using a closure allows us to defer cleanup functions.
 				err := func() error {
+					// Make prograss bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
 						completedPhases := launcherIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
@@ -171,6 +176,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
 					}
 
+					// Launch BE tasks when we are not in baseline.
 					if beLauncher.Launcher != nil {
 						beHandle, err := beLauncher.Launcher.Launch()
 						if err != nil {
@@ -180,6 +186,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 							beHandle.Stop()
 							beHandle.Clean()
 						}()
+						// Majority of LauncherSessionPairs do not use Swan.
 						if beLauncher.SnapSessionLauncher != nil {
 							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
 							if err != nil {
@@ -213,6 +220,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
 					}
 					defer func() {
+						// I know it is ugly but there is no other way to make sure that data is written to Cassandra as of now.
 						time.Sleep(5 * time.Second)
 						snapHandle.Stop()
 					}()
