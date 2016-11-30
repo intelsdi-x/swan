@@ -14,3 +14,5 @@ script:
 - make test_unit
 notifications:
   slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
+    on_success: never
+    on_pull_requests: false
