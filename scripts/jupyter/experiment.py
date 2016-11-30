@@ -83,7 +83,8 @@ class Experiment(object):
 
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
-                          row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'], batches]
+                          row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'],
+                          int(batches)]
 
                 self.data.append(values)
 
