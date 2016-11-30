@@ -41,8 +41,8 @@ func main() {
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
 	err := conf.ParseFlags()
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot parse flags: %q", err.Error())
+		os.Exit(64)
 	}
 	logrus.SetLevel(conf.LogLevel())
 
@@ -54,18 +54,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Executors.
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
-	fmt.Printf("%v", beExecutorFactory)
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot create executors: %q", err.Error())
+		os.Exit(70)
 	}
 	defer cleanup()
 
 	// BE workloads.
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
+		os.Exit(70)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
@@ -77,20 +76,20 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot create load generator: %q", err.Error())
+		os.Exit(70)
 	}
 
 	snapSession, err := common.PrepareSnapMutilateSessionLauncher()
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot create snap session: %q", err.Error())
+		os.Exit(70)
 	}
 
 	uuid, err := uuid.NewV4()
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
+		os.Exit(70)
 	}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
@@ -98,8 +97,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
 	if err != nil {
-		logrus.Errorf("Error occured: %q", err.Error())
-		os.Exit(1)
+		logrus.Errorf("Cannot create experiment directory: %q", err.Error())
+		os.Exit(74)
 	}
 
 	// Setup logging set to both output and logFile.
@@ -111,8 +110,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
-			logrus.Errorf("Error occured: %q", err.Error())
-			os.Exit(1)
+			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
+			os.Exit(70)
 		}
 		logrus.Infof("Run tuning and achieved load of %d", load)
 	} else {
@@ -125,6 +124,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
+		defer bar.Finish()
 	}
 
 	var launcherIteration int
@@ -231,17 +231,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
-						os.Exit(1)
+						os.Exit(70)
 					}
 				}
 			}
 		}
 		launcherIteration++
 	}
-
-	if conf.LogLevel() == logrus.ErrorLevel {
-		bar.Finish()
-	}
-
 	logrus.Infof("Ended experiment %s with uuid %s in %d", conf.AppName(), uuid.String(), time.Since(experimentStart))
 }
