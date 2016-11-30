@@ -70,7 +70,7 @@ class Experiment(object):
         for row in self.rows.itervalues():
             load = row.ns.split("/")[3]
             if row.valtype == "doubleval":
-                batches = None
+                batches = 'None'
                 if load == "mutilate":
                     qps_ns = "/intel/swan/%s/%s/qps" % (load, row.host)
                     batches_ns = "/intel/swan/caffe/inference/%s/batches" %row.host
@@ -84,7 +84,7 @@ class Experiment(object):
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
                           row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'],
-                          int(batches)]
+                          batches]
 
                 self.data.append(values)
 
