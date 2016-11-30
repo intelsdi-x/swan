@@ -123,7 +123,6 @@ func RunExperiment() error {
 // to create a snap.SessionLauncher that will wrap memcached (HP workload).
 // Note: it includes parsing the environment to get configuration as well as preparing executors and eventually running the experiment.
 func RunExperimentWithMemcachedSessionLauncher(memcachedSessionLauncherFactory func(sensitivity.Configuration) snap.SessionLauncher) error {
-	//experimentStartingTime := time.Now()
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
@@ -181,21 +180,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
-	experimentDirectory := path.Join(os.TempDir(), conf.AppName(), uuid.String())
-	err = os.MkdirAll(experimentDirectory, 0777)
+	experimentDirectory, logFile, err := createExperimentDir(uuid.String())
 	if err != nil {
-		return errors.Wrap(err, "cannot create experiment directory")
-	}
-	err = os.Chdir(experimentDirectory)
-	os.Chdir(os.TempDir())
-	if err != nil {
-		return errors.Wrap(err, "cannot chdir to experiment directory")
-	}
-
-	masterLogFilename := path.Join(experimentDirectory, "master.log")
-	logFile, err := os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
-	if err != nil {
-		return errors.Wrapf(err, "could not open log file %q", masterLogFilename)
+		return errors.Wrap(err, "could not create experiment directory")
 	}
 
 	// Setup logging set to both output and logFile.
@@ -264,7 +251,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					_, err := createDirs(experimentDirectory, phaseName, repetition)
+					_, err := createRepetitionDir(experimentDirectory, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -351,17 +338,38 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	return nil
 }
 
-func createDirs(experimentDirectory, phaseName string, repetition int) (string, error) {
-	phaseDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
-	err := os.MkdirAll(phaseDir, 0777)
+func createRepetitionDir(experimentDirectory, phaseName string, repetition int) (string, error) {
+	repetitionDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
+	err := os.MkdirAll(repetitionDir, 0777)
 	if err != nil {
-		return "", errors.Wrapf(err, "could not create dir %q", phaseDir)
+		return "", errors.Wrapf(err, "could not create dir %q", repetitionDir)
 	}
 
-	err = os.Chdir(phaseDir)
+	err = os.Chdir(repetitionDir)
 	if err != nil {
-		return "", errors.Wrapf(err, "could not change to dir %q", phaseDir)
+		return "", errors.Wrapf(err, "could not change to dir %q", repetitionDir)
 	}
 
-	return phaseDir, nil
+	return repetitionDir, nil
+}
+
+func createExperimentDir(uuid string) (experimentDirectory string, logFile *os.File, err error) {
+	experimentDirectory = path.Join(os.TempDir(), conf.AppName(), uuid)
+	err = os.MkdirAll(experimentDirectory, 0777)
+	if err != nil {
+		return "", &os.File{}, errors.Wrap(err, "cannot create experiment directory")
+	}
+	err = os.Chdir(experimentDirectory)
+	os.Chdir(os.TempDir())
+	if err != nil {
+		return "", &os.File{}, errors.Wrap(err, "cannot chdir to experiment directory")
+	}
+
+	masterLogFilename := path.Join(experimentDirectory, "master.log")
+	logFile, err = os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return "", &os.File{}, errors.Wrapf(err, "could not open log file %q", masterLogFilename)
+	}
+
+	return experimentDirectory, logFile, nil
 }
