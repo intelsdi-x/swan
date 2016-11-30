@@ -7,6 +7,7 @@ import test_data_reader
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
+from collections import defaultdict
 
 
 class Experiment(object):
@@ -29,12 +30,14 @@ class Experiment(object):
         """
         self.rows = {}  # keep temporary rows from query for later match with qps rows
         self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
-        self.batches = {} # caffe batches is a some rows a from query. Can get max from it and map percentile rows
+        # caffe batches is a some rows from a query. Can get max from it and map to percentile rows
+        self.batches = defaultdict(list)
         self.data = []
         self.experiment_id = experiment_id
         self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
-        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps', 'achieved_qps_percent',
-                        'swan_experiment', 'swan_aggressor_name', 'swan_phase', 'swan_repetition', 'caffe_batches']
+        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
+                        'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
+                        'swan_repetition', 'caffe_batches']
 
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
@@ -56,27 +59,25 @@ class Experiment(object):
 
         for row_count, row in enumerate(self.session.execute(statement), start=1):
             k = (row.ns, row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
+            j = (row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])
             self.rows[k] = row
             if row.ns == "/intel/swan/caffe/inference/%s/batches" % row.host:
-                if self.batches.get((row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])):
-                    self.batches[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])].append(row.doubleval)
-                else:
-                    self.batches[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])] = []
-                    self.batches[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])].append(row.doubleval)
+                self.batches[j].append(row.doubleval)
             elif row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
-                self.qps[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])] = row.doubleval
+                self.qps[j] = row.doubleval
 
     def populate_data(self):
         for row in self.rows.itervalues():
             load = row.ns.split("/")[3]
-            batches = 'None'
             if row.valtype == "doubleval":
+                batches = None
                 if load == "mutilate":
                     qps_ns = "/intel/swan/%s/%s/qps" % (load, row.host)
                     batches_ns = "/intel/swan/caffe/inference/%s/batches" %row.host
                     achived_qps = (self.qps[(qps_ns, row.tags['swan_phase'], row.tags['swan_repetition'])] /
                                    float(row.tags['swan_loadpoint_qps']))
                     percent_qps = '{percent:.2%}'.format(percent=achived_qps)
+
                     if row.tags['swan_aggressor_name'] == 'Caffe':
                         batches = max(self.batches[(batches_ns, row.tags['swan_phase'], row.tags['swan_repetition'])])
 

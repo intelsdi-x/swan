@@ -80,9 +80,7 @@ class Profile(object):
             # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
-
-            if name == 'Caffe':
-                self.batches = aggressor_frame['caffe_batches'].tolist()
+            self.batches = aggressor_frame['caffe_batches'].tolist()
 
             if loadpoints is None or len(loadpoints) < len(qps):
                 loadpoints = qps
