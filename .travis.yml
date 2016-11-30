@@ -13,4 +13,8 @@ script:
 - make lint
 - make unit_test
 notifications:
-  slack: intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3
+  slack:
+    rooms:
+      - 'intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3'
+    on_success: 'never'
+    on_pull_requests: false
