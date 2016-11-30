@@ -94,6 +94,11 @@ func (m *measurementPhase) clean() (err error) {
 	}
 	m.activeLoadGeneratorTasks = []executor.TaskHandle{}
 
+	// Give enough time for executors to cleanup, before stopping the session.
+	// It is workaround for metrics from publisher of loadgenerator session not always available in the storage.
+	// See the description of SCE-876.
+	time.Sleep(10 * time.Second)
+
 	// Stopping only active Snap sessions.
 	for _, snapSession := range m.activeSnapSessions {
 		log.Debug("Waiting for snap session to complete it's work. ", snapSession)
