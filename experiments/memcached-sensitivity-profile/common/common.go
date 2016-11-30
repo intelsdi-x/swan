@@ -190,34 +190,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.SetFormatter(new(logrus.TextFormatter))
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
-	achievedSLI := float64(sensitivity.PeakLoadFlag.Value())
+	load := sensitivity.PeakLoadFlag.Value()
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
-		prTask, err := hpLauncher.Launch()
+		load, err = getPeakLoad(hpLauncher, loadGenerator, configuration.SLO)
 		if err != nil {
-			return errors.Wrap(err, "cannot launch memcached")
+			return errors.Wrap(err, "tuning failed - cannot determine peak load")
 		}
-		stop := func() {
-			prTask.Stop()
-			prTask.Clean()
-		}
-
-		err = loadGenerator.Populate()
-		if err != nil {
-			stop()
-			return errors.Wrap(err, "cannot populate memcached")
-		}
-
-		load, sli, err := loadGenerator.Tune(configuration.SLO)
-		if err != nil {
-			stop()
-			return errors.Wrap(err, "tuning failed")
-		}
-		achievedSLI = float64(sli)
-
-		stop()
-		logrus.Infof("Run tuning and achieved following values: load - %d and SLI - %f", load, achievedSLI)
+		logrus.Infof("Run tuning and achieved load of %d", load)
 	} else {
-		logrus.Infof("Skipping Tunning phase, using peakload %d", configuration.PeakLoad)
+		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
 	}
 
 	var bar *pb.ProgressBar
@@ -231,6 +212,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var launcherIteration int
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < configuration.LoadPointsCount; loadPoint++ {
+			phaseQPS := int(int(load) / configuration.LoadPointsCount * (loadPoint + 1))
 			var phaseName string
 			if beLauncher.Launcher != nil {
 				phaseName = fmt.Sprintf("%s, load point %d", beLauncher.Launcher.Name(), loadPoint)
@@ -292,7 +274,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					}
 
 					logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
-					loadGeneratorHandle, err := loadGenerator.Load(loadPoint, sensitivity.LoadDurationFlag.Value())
+					loadGeneratorHandle, err := loadGenerator.Load(phaseQPS, sensitivity.LoadDurationFlag.Value())
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
@@ -372,4 +354,27 @@ func createExperimentDir(uuid string) (experimentDirectory string, logFile *os.F
 	}
 
 	return experimentDirectory, logFile, nil
+}
+
+func getPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenerator, slo int) (int, error) {
+	prTask, err := hpLauncher.Launch()
+	if err != nil {
+		return 0, errors.Wrap(err, "cannot launch memcached")
+	}
+	defer func() {
+		prTask.Stop()
+		prTask.Clean()
+	}()
+
+	err = loadGenerator.Populate()
+	if err != nil {
+		return 0, errors.Wrap(err, "cannot populate memcached")
+	}
+
+	load, _, err := loadGenerator.Tune(slo)
+	if err != nil {
+		return 0, errors.Wrap(err, "tuning failed")
+	}
+
+	return int(load), nil
 }
