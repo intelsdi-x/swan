@@ -80,7 +80,7 @@ $ vagrant up
 ```
 
 ### Note
-It takes ~50 minutes to spin up the whole environment, so please be patient.
+It takes ~50 minutes to spin up the whole environment for the first time, so please be patient.
 As a result of this command, you will have a running virtual machine pre-configured for running Swan experiment.
 
 
