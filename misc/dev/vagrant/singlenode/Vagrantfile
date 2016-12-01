@@ -88,7 +88,7 @@ Vagrant.configure(2) do |config|
     # centos7 for us-east
     # COPY AMI ID HERE
     # non-cached ami: ami-6d1c2007
-    aws.ami = "ami-1c68570b"
+    aws.ami = "ami-6d1c2007"
     aws.instance_package_timeout = 60000
     aws.instance_type = "m4.large"
     aws.keypair_name = "snapbot-private"
