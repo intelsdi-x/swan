@@ -24,7 +24,7 @@ Swan provides a Vagranfile, which describes the pre-configured CentOS 7 virtual 
     * vim
     * wget
 
-    [Glide](https://github.com/Masterminds/glide) is a tool for managing the vendor directory within a Go package. All dependencies are cached in the `~/.glide` folder (this direcotry is shared between virtual machine and host OS). 
+    [Glide](https://github.com/Masterminds/glide) is a tool for managing the vendor directory within a Go package. All dependencies are cached in the `~/.glide` folder (this directory is shared between virtual machine and host OS). 
 
 4. A running [docker](https://www.docker.com/) service and a running [Cassandra](http://cassandra.apache.org/) docker container, needed for storing experiment results.
 
