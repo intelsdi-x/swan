@@ -3,8 +3,7 @@ FROM centos:7
 MAINTAINER https://github.com/intelsdi-x/swan
 
 ENV HOME_DIR=/root \
-    PATH=/usr/local/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
+    LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH \
     VAGRANT_USER=root
 
 # resources is storing vagrant scripts needed by this docker image.
@@ -17,7 +16,7 @@ RUN ./scripts/setup_env.sh && \
     ./scripts/post_install.sh
 WORKDIR /
 
-ADD artifacts.tar.gz /usr/local/
+ADD artifacts.tar.gz /usr/
 
 RUN caffe init
 RUN adduser memcached

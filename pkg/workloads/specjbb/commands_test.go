@@ -14,9 +14,9 @@ const (
 	customerNumber           = 100
 	duration                 = 100 * time.Second
 	productsNumber           = 100
-	jarPath                  = "/usr/local/share/specjbb/specjbb2015.jar"
-	propertiesFilePath       = "/usr/local/share/specjbb/config/specjbb2015.props"
-	outputDir                = "/usr/local/share/specjbb"
+	jarPath                  = "/usr/share/specjbb/specjbb2015.jar"
+	propertiesFilePath       = "/usr/share/specjbb/config/specjbb2015.props"
+	outputDir                = "/usr/share/specjbb"
 	rawFileName              = "abc"
 )
 
