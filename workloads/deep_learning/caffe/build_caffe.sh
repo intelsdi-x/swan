@@ -19,7 +19,8 @@ if [ "${BUILD_OPENBLAS}" == "true" ]; then
     make PREFIX=${OPENBLAS_BIN_DIRECTORY} --quiet install
     popd
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config_openblas ${CAFFE_SRC_DIRECTORY}/Makefile.config
-    export LD_LIBRARY_PATH=${OPENBLAS_BIN_DIRECTORY}/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=${OPENBLAS_BIN_DIRECTORY}/lib:${LD_LIBRARY_PATH}
+    export CPATH=${OPENBLAS_BIN_DIRECTORY}/include:${CPATH}
 else
     echo "To build multithreaded caffe you need to set \"BUILD_OPENBLAS\" envs first."
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config ${CAFFE_SRC_DIRECTORY}/Makefile.config
