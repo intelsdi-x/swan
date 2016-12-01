@@ -22,23 +22,24 @@ const (
 	serviceListenTimeout = 15 * time.Second
 
 	// waitForReadyNode configuration
-	waitForReadyNodeBackOffPeriod = 1 * time.Second
-	waitForReadyNodeRetryCount    = 20
-	expectedKubelelNodesCount     = 1
+	waitForReadyNodeBackOffPeriod     = 1 * time.Second
+	defaultReadyNodeRetryCount        = 20
+	expectedKubelelNodesCount         = 1
 )
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	pathKubeAPIServerFlag  = conf.NewFileFlag("kube_apiserver_path", "Path to kube-apiserver binary", path.Join(fs.GetAthenaBinPath(), "kube-apiserver"))
-	pathKubeControllerFlag = conf.NewFileFlag("kube_controller_path", "Path to kube-controller-manager binary", path.Join(fs.GetAthenaBinPath(), "kube-controller-manager"))
-	pathKubeletFlag        = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetAthenaBinPath(), "kubelet"))
-	pathKubeProxyFlag      = conf.NewFileFlag("kube_proxy_path", "Path to kube-proxy binary", path.Join(fs.GetAthenaBinPath(), "kube-proxy"))
-	pathKubeSchedulerFlag  = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetAthenaBinPath(), "kube-scheduler"))
-	kubeAPIArgsFlag        = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
-	kubeletArgsFlag        = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
-	logLevelFlag           = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
-	allowPrivilegedFlag    = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
-	kubeEtcdServersFlag    = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	pathKubeAPIServerFlag          = conf.NewFileFlag("kube_apiserver_path", "Path to kube-apiserver binary", path.Join(fs.GetAthenaBinPath(), "kube-apiserver"))
+	pathKubeControllerFlag         = conf.NewFileFlag("kube_controller_path", "Path to kube-controller-manager binary", path.Join(fs.GetAthenaBinPath(), "kube-controller-manager"))
+	pathKubeletFlag                = conf.NewFileFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetAthenaBinPath(), "kubelet"))
+	pathKubeProxyFlag              = conf.NewFileFlag("kube_proxy_path", "Path to kube-proxy binary", path.Join(fs.GetAthenaBinPath(), "kube-proxy"))
+	pathKubeSchedulerFlag          = conf.NewFileFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetAthenaBinPath(), "kube-scheduler"))
+	kubeAPIArgsFlag                = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
+	kubeletArgsFlag                = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
+	logLevelFlag                   = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
+	allowPrivilegedFlag            = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
+	kubeEtcdServersFlag            = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	readyNodeRetryCountFlag        = conf.NewIntFlag("kube_node_ready_retry_count", "Number of checks that kubelet is ready, before trying setup cluster again (with 1s interval between checks).", defaultReadyNodeRetryCount)
 )
 
 // Config contains all data for running kubernetes master & kubelet.
@@ -264,7 +265,7 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 }
 
 func (m kubernetes) waitForReadyNode(apiServerAddress string) error {
-	for idx := 0; idx < waitForReadyNodeRetryCount; idx++ {
+	for idx := 0; idx < readyNodeRetryCountFlag.Value(); idx++ {
 		nodes, err := m.getReadyNodes(apiServerAddress)
 		if err != nil {
 			return err
