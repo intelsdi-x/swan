@@ -44,7 +44,6 @@ type measurementPhase struct {
 }
 
 // Returns measurement name.
-// TODO(bp): Change to UUID when completing SCE-376.
 func (m *measurementPhase) Name() string {
 	return m.namePrefix + "_measurement_for_loadpoint_id_" +
 		strconv.Itoa(m.currentLoadPointIndex)
@@ -118,7 +117,6 @@ func (m *measurementPhase) Run(session phase.Session) error {
 		return errors.New("target QPS for measurement was not given")
 	}
 
-	// TODO(bp): Remove that when completing SCE-376
 	session.LoadPointQPS = m.getLoadPoint()
 	if len(m.bes) > 0 {
 		session.AggressorName = ""
@@ -270,7 +268,6 @@ func CreateTagConfigItem(phaseSession phase.Session) string {
 		phase.ExperimentKey, phaseSession.ExperimentID,
 		phase.PhaseKey, phaseSession.PhaseID,
 		phase.RepetitionKey, phaseSession.RepetitionID,
-		// TODO: Remove that when completing SCE-376
 		phase.LoadPointQPSKey, phaseSession.LoadPointQPS,
 		phase.AggressorNameKey, phaseSession.AggressorName,
 	)

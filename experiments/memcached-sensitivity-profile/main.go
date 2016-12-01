@@ -25,9 +25,6 @@ const (
 	PhaseKey = "swan_phase"
 	// RepetitionKey defines the key for Snap tag.
 	RepetitionKey = "swan_repetition"
-
-	// TODO(bp): Remove these below when completing SCE-376
-
 	// LoadPointQPSKey defines the key for Snap tag.
 	LoadPointQPSKey = "swan_loadpoint_qps"
 	// AggressorNameKey defines the key for Snap tag.
@@ -43,6 +40,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	err := conf.ParseFlags()
 	if err != nil {
 		logrus.Errorf("Cannot parse flags: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(64)
 	}
 	logrus.SetLevel(conf.LogLevel())
@@ -57,6 +55,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		logrus.Errorf("Cannot create executors: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(70)
 	}
 	defer cleanup()
@@ -65,6 +64,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(70)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
@@ -78,18 +78,21 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
 	if err != nil {
 		logrus.Errorf("Cannot create load generator: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(70)
 	}
 
 	snapSession, err := common.PrepareSnapMutilateSessionLauncher()
 	if err != nil {
 		logrus.Errorf("Cannot create snap session: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(70)
 	}
 
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(70)
 	}
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
@@ -98,6 +101,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
 	if err != nil {
 		logrus.Errorf("Cannot create experiment directory: %q", err.Error())
+		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(74)
 	}
 
@@ -112,6 +116,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
+			// All the exit code values are based on /usr/include/sysexits.h
 			os.Exit(70)
 		}
 		logrus.Infof("Run tuning and achieved load of %d", load)
@@ -138,14 +143,14 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-			var phaseName string
+			aggressorName := "None"
 			if beLauncher.Launcher != nil {
-				phaseName = fmt.Sprintf("%s, load point %d", beLauncher.Launcher.Name(), loadPoint)
-			} else {
-				phaseName = fmt.Sprintf("Baseline, load point %d", loadPoint)
+				aggressorName = beLauncher.Launcher.Name()
 			}
+			phaseName := fmt.Sprintf("Aggressor %s, load point %d", aggressorName, loadPoint)
 			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
-				// Using a closure allows us to defer cleanup functions.
+				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
+				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				err := func() error {
 					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
@@ -156,6 +161,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						bar.AlwaysUpdate = true
 						bar.Update()
 						bar.AlwaysUpdate = false
+						defer bar.Add(1)
 					}
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
@@ -202,7 +208,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					}
 
-					logrus.Debugf("Launching Load Generator with load point %d.", loadPoint)
+					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
 					loadGeneratorHandle, err := loadGenerator.Load(phaseQPS, sensitivity.LoadDurationFlag.Value())
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
@@ -213,9 +219,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						ExperimentKey, uuid.String(),
 						PhaseKey, phaseName,
 						RepetitionKey, repetition,
-						// TODO: Remove that when completing SCE-376
 						LoadPointQPSKey, loadPoint,
-						AggressorNameKey, "",
+						AggressorNameKey, aggressorName,
 					)
 
 					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
@@ -223,7 +228,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
 					}
 					defer func() {
-						// I know it is ugly but there is no other way to make sure that data is written to Cassandra as of now.
+						// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
 						time.Sleep(5 * time.Second)
 						snapHandle.Stop()
 					}()
@@ -233,15 +238,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
 					}
 
-					if conf.LogLevel() == logrus.ErrorLevel {
-						bar.Add(1)
-					}
-
 					return nil
 				}()
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
+						// All the exit code values are based on /usr/include/sysexits.h
 						os.Exit(70)
 					}
 				}

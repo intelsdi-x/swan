@@ -1,13 +1,14 @@
 package experiment
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"testing"
 	"time"
-	"bytes"
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
@@ -111,6 +112,7 @@ func TestExperiment(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(ns, ShouldNotBeBlank)
 					So(tags, ShouldNotBeEmpty)
+					fmt.Println("\n\n\n\n\n\n\n\n\n\n\n", tags, "\n\n\n\n\n\n\n\n\n\n")
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				})
 
@@ -154,7 +156,9 @@ func TestExperiment(t *testing.T) {
 					var swanAggressorsNames []string
 					var swanPhases []string
 					iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+					var i int
 					for iter.Scan(&ns, &tags) {
+						i++
 						So(ns, ShouldNotBeBlank)
 						So(tags, ShouldNotBeEmpty)
 						So(tags, ShouldContainKey, "swan_phase")
@@ -162,6 +166,7 @@ func TestExperiment(t *testing.T) {
 						swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
 						swanPhases = append(swanPhases, tags["swan_phase"])
 						So(tags["swan_repetition"], ShouldEqual, "0")
+						fmt.Println(i)
 					}
 
 					So(swanAggressorsNames, ShouldHaveLength, 40)
