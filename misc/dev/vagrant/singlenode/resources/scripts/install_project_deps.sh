@@ -15,11 +15,14 @@ pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 executeAsVagrantUser make repository_reset
 executeAsVagrantUser make deps_all
 ./scripts/get_specjbb.sh -s . -c $HOME_DIR/swan_s3_creds/.s3cfg -b swan-artifacts
-executeAsVagrantUser make BUILD_OPENBLAS=${BUILD_OPENBLAS} dist
 if [[ "$BUILD_DOCKER_IMAGE" == "true" ]]; then
+        executeAsVagrantUser make BUILD_OPENBLAS='true' dist
         executeAsVagrantUser make build_image
+else
+        executeAsVagrantUser make dist
 fi
-PREFIX=/usr make install
+
+make install
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.

@@ -29,6 +29,13 @@ function dist {
         echo "Specjbb won't be included"
     fi
 
+    # install openblas
+    if [ -d "./workloads/deep_learning/caffe/openblas/build" ]; then
+        install -D -m644 ./workloads/deep_learning/caffe/openblas/build/lib/* "${ARTIFACTS_PATH}/lib"
+    else
+        echo "Openblas won't be included - caffe won't be multithreaded"
+    fi
+
     # install caffe
     install -d ${ARTIFACTS_PATH}/share/caffe
     install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe"

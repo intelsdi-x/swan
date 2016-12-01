@@ -2,25 +2,26 @@
 
 set -e
 
-CAFFE_ROOT_DIRECTORY=$(dirname ${BASH_SOURCE[0]})
+CAFFE_ROOT_DIRECTORY="$(dirname ${BASH_SOURCE[0]})"
 OPENBLAS_SRC_DIRECTORY="${CAFFE_ROOT_DIRECTORY}/openblas"
+OPENBLAS_BIN_DIRECTORY="./build"
 CAFFE_SRC_DIRECTORY="${CAFFE_ROOT_DIRECTORY}/caffe_src"
 
 CPUS_NUMBER=$(grep -c ^processor /proc/cpuinfo)
 
 pushd ${CAFFE_ROOT_DIRECTORY}
-if [ "${OPENBLAS_PATH}" != "" ] && [ "${BUILD_OPENBLAS}" == "true" ]; then
-    sudo mkdir -p ${OPENBLAS_PATH}
+if [ "${BUILD_OPENBLAS}" == "true" ]; then
     pushd ${OPENBLAS_SRC_DIRECTORY}
+    mkdir -p ${OPENBLAS_BIN_DIRECTORY}
     make -j USE_OPENMP=1 --quiet libs
     make -j USE_OPENMP=1 --quiet netlib
     make -j USE_OPENMP=1 --quiet shared
-    sudo make PREFIX=${OPENBLAS_PATH} --quiet install
+    make PREFIX=${OPENBLAS_BIN_DIRECTORY} --quiet install
     popd
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config_openblas ${CAFFE_SRC_DIRECTORY}/Makefile.config
-    export LD_LIBRARY_PATH=${OPENBLAS_PATH}/lib
+    export LD_LIBRARY_PATH=${OPENBLAS_BIN_DIRECTORY}/lib
 else
-    echo "To build multithreaded caffe you need to set \"OPENBLAS_PATH\" and \"BUILD_OPENBLAS\" envs first."
+    echo "To build multithreaded caffe you need to set \"BUILD_OPENBLAS\" envs first."
     cp ${CAFFE_ROOT_DIRECTORY}/Makefile.config ${CAFFE_SRC_DIRECTORY}/Makefile.config
 fi
 
