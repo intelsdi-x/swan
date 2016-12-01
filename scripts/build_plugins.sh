@@ -18,7 +18,8 @@ function installPlugin() {
 }
 
 pushd $GOPATH/src/github.com/intelsdi-x
-installPlugin snap-plugin-publisher-cassandra 188b78e3e6b29dc3b80d8a9e9dd21eb5a5a8a81a build/rootfs/snap-plugin-publisher-cassandra
+# See SCE-895
+installPlugin snap-plugin-publisher-cassandra 188b78e3e6b29dc3b80d8a9e9dd21eb5a5a8a81a build/rootfs/snap-plugin-publisher-cassandra $(pwd)/swan/misc/snap-plugin-publisher-cassandra.patch
 installPlugin snap-plugin-processor-tag 3ccdb7de499ff92d7b7c9812c497a6e6f124a64d build/linux/x86_64/snap-plugin-processor-tag
 installPlugin kubesnap-plugin-collector-docker 81a60d8276054a95dde4a72429bf320c89e31ded build/rootfs/snap-plugin-collector-docker $(pwd)/swan/misc/kubesnap_docker_collector.patch
 popd
