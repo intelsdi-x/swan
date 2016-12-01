@@ -60,7 +60,12 @@ class Profile(object):
         df_of_99th['swan_aggressor_name'].replace(to_replace='None', value="Baseline", inplace=True)
 
         self.p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
-        loadpoints = None
+
+        # find max of loadpoints for every aggressor by length, then take first one longest loadpoint and return it"
+        loadpoints_for_all_aggressors = [df['swan_loadpoint_qps'].astype(int).tolist() for (_, df) in
+                                         self.p99_by_aggressor]
+        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda loadpoints: len(loadpoints))
+
         data = []
         index = []
 
@@ -75,11 +80,9 @@ class Profile(object):
             # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
-            if loadpoints is None or len(loadpoints) < len(qps):
-                loadpoints = qps
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
-            filled_qps = self._fill_missing_data(qps, violations, loadpoints)
+            filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
             data.append(filled_qps)
 
             self.latency_qps_aggrs['x'] = np.array(qps)
@@ -88,8 +91,8 @@ class Profile(object):
 
         self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
 
-        peak = np.amax(loadpoints)
-        loadpoints = map(lambda c: (float(c) / peak) * 100, loadpoints)
+        peak = np.amax(longest_loadpoints)
+        loadpoints = map(lambda c: (float(c) / peak) * 100, longest_loadpoints)
         self.frame = pd.DataFrame(data, columns=loadpoints, index=index).sort_index()
 
     def sensitivity_table(self):
