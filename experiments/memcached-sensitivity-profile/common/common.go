@@ -34,7 +34,7 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 )
 
-// PrepareSnapMutilateSessionLauncher prepare a SessionLauncher that runs mutilate collector and records that into storage.
+// PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
 // Note: SnapdHTTPEndpoint set to "none" will disable mutilate session completely.
 // TODO: this should be put into athena:/pkg/snap
 func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
@@ -55,7 +55,7 @@ func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	return nil, nil
 }
 
-// PrepareMutilateGenerator create new LoadGenerator based on mutilate.
+// PrepareMutilateGenerator creates new LoadGenerator based on mutilate.
 func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcacheIP
@@ -122,12 +122,12 @@ func CreateExperimentDir(uuid string) (experimentDirectory string, logFile *os.F
 	experimentDirectory = path.Join(os.TempDir(), conf.AppName(), uuid)
 	err = os.MkdirAll(experimentDirectory, 0777)
 	if err != nil {
-		return "", &os.File{}, errors.Wrap(err, "cannot create experiment directory")
+		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
 	}
 	err = os.Chdir(experimentDirectory)
 	os.Chdir(os.TempDir())
 	if err != nil {
-		return "", &os.File{}, errors.Wrap(err, "cannot chdir to experiment directory")
+		return "", &os.File{}, errors.Wrapf(err, "cannot chdir to experiment directory", experimentDirectory)
 	}
 
 	masterLogFilename := path.Join(experimentDirectory, "master.log")

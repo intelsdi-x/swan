@@ -100,7 +100,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
 	if err != nil {
-		logrus.Errorf("Cannot create experiment directory: %q", err.Error())
+		logrus.Errorf("IO error: %q", err.Error())
 		// All the exit code values are based on /usr/include/sysexits.h
 		os.Exit(74)
 	}
@@ -110,7 +110,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.SetFormatter(new(logrus.TextFormatter))
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
-	// Retrieve peak log from flags and overwrite it when required.
+	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
