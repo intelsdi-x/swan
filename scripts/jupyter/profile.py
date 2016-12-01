@@ -51,7 +51,7 @@ class Profile(object):
         """
         self.exp = e
         self.slo = slo
-        self.batches= None
+        self.throughput_per_aggressor = {}
         self.categories = []
         self.data_frame = self.exp.get_frame()
         self.latency_qps_aggrs = {}
@@ -74,7 +74,7 @@ class Profile(object):
             index.append(name)
             df.is_copy = False
             df.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df['swan_loadpoint_qps'])
-            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value', 'caffe_batches']]
+            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value', 'throughputs']]
             self.categories.append(name)
 
             # Store loadpoints for data frame from the target QPSes.
@@ -82,8 +82,7 @@ class Profile(object):
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
 
-            if name == 'Caffe':
-                self.batches = aggressor_frame['caffe_batches'].tolist()
+            self.throughput_per_aggressor[name] = aggressor_frame['throughputs'].tolist()
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
@@ -114,9 +113,8 @@ class Profile(object):
 
         html_out += '</tr>'
 
-        for index, row in self.frame.iterrows():
+        for aggressor, row in self.frame.iterrows():
             html_out += '<tr style="%s">' % no_border
-            aggressor = index
             if aggressor == 'None':
                 label = 'Baseline'
             else:
@@ -125,7 +123,7 @@ class Profile(object):
             html_out += '<td style="%s; border-right: %s;">%s</td>' % \
                 (no_border, black_border, label)
 
-            for value in row:
+            for i, value in enumerate(row):
                 style = '%s; ' % no_border
                 if value == Profile.MISSING_VALUE:
                     style += 'background-color: #c0c0c0;'
@@ -142,7 +140,7 @@ class Profile(object):
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
 
                 if aggressor == 'Caffe':
-                    value = "%s [%s]" % (value, int(self.batches.pop(0)))
+                    value = "%s [%s]" % (value, self.throughput_per_aggressor[aggressor][i])
 
                 html_out += '<td style="%s">%s</td>' % (style, value)
 

@@ -30,14 +30,15 @@ class Experiment(object):
         """
         self.rows = {}  # keep temporary rows from query for later match with qps rows
         self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
-        # caffe batches is a some rows from a query. Can get max from it and map to percentile rows
-        self.batches = defaultdict(list)
+        # throughput for aggressors are some rows from a query.
+        # can get max from it and map to percentile rows
+        self.throughputs = defaultdict(list)
         self.data = []
         self.experiment_id = experiment_id
         self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
                         'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
-                        'swan_repetition', 'caffe_batches']
+                        'swan_repetition', 'throughputs']
 
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
@@ -57,34 +58,29 @@ class Experiment(object):
             FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
         statement = SimpleStatement(query, fetch_size=100)
 
-        for row_count, row in enumerate(self.session.execute(statement), start=1):
-            k = (row.ns, row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
-            j = (row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])
-            self.rows[k] = row
-            if row.ns == "/intel/swan/caffe/inference/%s/batches" % row.host:
-                self.batches[j].append(row.doubleval)
-            elif row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
-                self.qps[j] = row.doubleval
+        for row in self.session.execute(statement):
+            k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
+            if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
+                self.qps[k] = row.doubleval
+            elif row.ns == "/intel/swan/caffe/inference/%s/batches" % row.host:
+                self.throughputs[k].append(row.doubleval)
+            else:
+                self.rows[(row.ns,) + k] = row
 
     def populate_data(self):
         for row in self.rows.itervalues():
-            load = row.ns.split("/")[3]
             if row.valtype == "doubleval":
-                batches = 'None'
-                if load == "mutilate":
-                    qps_ns = "/intel/swan/%s/%s/qps" % (load, row.host)
-                    batches_ns = "/intel/swan/caffe/inference/%s/batches" %row.host
-                    achived_qps = (self.qps[(qps_ns, row.tags['swan_phase'], row.tags['swan_repetition'])] /
-                                   float(row.tags['swan_loadpoint_qps']))
-                    percent_qps = '{percent:.2%}'.format(percent=achived_qps)
+                k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
 
-                    if row.tags['swan_aggressor_name'] == 'Caffe':
-                        batches = max(self.batches[(batches_ns, row.tags['swan_phase'], row.tags['swan_repetition'])])
+                achived_qps = (self.qps[k] / float(row.tags['swan_loadpoint_qps']))
+                percent_qps = '{percent:.2%}'.format(percent=achived_qps)
+
+                max_throughput = max(self.throughputs[k]) if self.throughputs.get(k) else None
 
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
                           row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'],
-                          batches]
+                          max_throughput]
 
                 self.data.append(values)
 
