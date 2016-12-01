@@ -103,7 +103,8 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			data, readErr := ioutil.ReadAll(stdoutFile)
 			So(readErr, ShouldBeNil)
-			So(string(data[:]), ShouldStartWith, "output")
+			// ShouldContain is required because kubernetes pod exectuors adds empty line upfront.
+			So(string(data[:]), ShouldContainSubstring, "output")
 		})
 
 		Convey("And the eraseOutput should clean the stdout file", func() {
@@ -209,7 +210,7 @@ func testExecutor(t *testing.T, executor Executor) {
 
 				data, readErr := ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
-				So(string(data[:]), ShouldStartWith, "output1")
+				So(string(data[:]), ShouldContainSubstring, "output1")
 
 				file, err = taskHandle2.StdoutFile()
 				So(err, ShouldBeNil)
@@ -217,7 +218,7 @@ func testExecutor(t *testing.T, executor Executor) {
 
 				data, readErr = ioutil.ReadAll(file)
 				So(readErr, ShouldBeNil)
-				So(string(data[:]), ShouldStartWith, "output2")
+				So(string(data[:]), ShouldContainSubstring, "output2")
 
 			})
 

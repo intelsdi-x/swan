@@ -210,6 +210,12 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	podsAPI := k8s.client.Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
+	// This is a workaround for kubernetes #31446 & SCE-883.
+	// Make sure that at least one line of text is outputed from pod, to unblock .GetLogs() on apiserver call
+	// with streamed response (when follow=true). Check SCE-883 for details or kubernetes #31446 issue.
+	// https://github.com/kubernetes/kubernetes/pull/31446
+	command = "echo;" + command
+
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
 	podManifest, err := k8s.newPod(command)
 	if err != nil {
@@ -635,7 +641,7 @@ func (kw *kubernetesWatcher) setupLogs(pod *api.Pod) error {
 	log.Debugf("K8s task watcher: setting up logs for pod %q", pod.Name)
 
 	// Wire up logs to task handle stdout.
-	logStream, err := kw.podsAPI.GetLogs(pod.Name, &api.PodLogOptions{}).Stream()
+	logStream, err := kw.podsAPI.GetLogs(pod.Name, &api.PodLogOptions{Follow: true}).Stream()
 	if err != nil {
 		log.Errorf("K8s task watcher: cannot create a stream: %s", err.Error())
 		return errors.Wrap(err, "cannot create a stream")
