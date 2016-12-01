@@ -3,9 +3,9 @@ package kubesnap
 import (
 	"time"
 
-	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
@@ -13,7 +13,7 @@ import (
 // DefaultConfig returns default configuration for Kubesnap Session Launcher.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	publisher.AddConfigItem("server", conf.CassandraAddress.Value())
+	sessions.ApplyCassandraConfiguration(publisher)
 
 	return Config{
 		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
