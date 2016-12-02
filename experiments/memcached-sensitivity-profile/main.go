@@ -147,7 +147,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			if beLauncher.Launcher != nil {
 				aggressorName = beLauncher.Launcher.Name()
 			}
-			phaseName := fmt.Sprintf("Aggressor %s, load point %d", aggressorName, loadPoint)
+			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
 			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
