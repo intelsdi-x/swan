@@ -5,7 +5,7 @@ TEST_OPT?=""
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env build_plugins build_swan test_integration
+integration_test: show_env test_integration
 unit_test: deps_godeps test_unit
 
 deps_all: deps_godeps deps_jupyter
@@ -33,7 +33,7 @@ build_plugins:
 	(./scripts/build_plugins.sh)
 
 build_image:
-	docker build -t centos_swan_image -f ./misc/dev/docker/Dockerfile .
+	(./scripts/build_docker_image.sh)
 
 build_workloads:
 	# Some workloads are Git Submodules
@@ -53,8 +53,14 @@ build_swan:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
 
-dist: build_workloads build_swan
-	./scripts/build_artifacts.sh
+dist: build_workloads build_plugins build_swan
+	(./scripts/artifacts.sh dist)
+
+install:
+	(./scripts/artifacts.sh install)
+
+uninstall:
+	(./scripts/artifacts.sh uninstall)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)

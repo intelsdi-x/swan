@@ -1,13 +1,14 @@
 package integration
 
 import (
+	"testing"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
-	"time"
 )
 
 func TestCaffeWithMockedExecutor(t *testing.T) {

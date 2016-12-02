@@ -2,13 +2,11 @@ package specjbb
 
 import (
 	"fmt"
-	"path"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/parser"
 	"github.com/pkg/errors"
 )
@@ -22,15 +20,13 @@ const (
 
 var (
 	// PathToBinaryForLoadGeneratorFlag specifies path to a SPECjbb2015 jar file for load generator.
-	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator",
-		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "specjbb2015.jar"))
+	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator", "/usr/share/specjbb/specjbb2015.jar")
 
 	// PathToPropsFileForLoadGeneratorFlag specifies path to a SPECjbb2015 properties file for load generator.
-	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator",
-		path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "specjbb2015.props"))
+	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator", "/usr/share/specjbb/config/specjbb2015.props")
 
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
-	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb", "config", "template-D.raw"))
+	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/usr/share/specjbb/config/template-D.raw")
 
 	// IPFlag specifies IP address of a controller component of SPECjbb2015 benchmark.
 	IPFlag = conf.NewIPFlag("specjbb_controller_ip", "IP address of a SPECjbb controller component", defaultControllerIP)
@@ -45,7 +41,7 @@ var (
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
-	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", path.Join(fs.GetSwanWorkloadsPath(), "web_serving", "specjbb"))
+	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/usr/share/specjbb/")
 
 	// ControllerHostProperty - string name for property that specifies controller host.
 	ControllerHostProperty = " -Dspecjbb.controller.host="

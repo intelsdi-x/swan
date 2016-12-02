@@ -41,6 +41,7 @@ yum install -y -q \
     openblas-devel \
     opencv \
     opencv-devel \
+    openjdk-8-jre \
     perf \
     protobuf \
     protobuf-devel \

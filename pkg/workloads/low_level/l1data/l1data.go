@@ -6,8 +6,6 @@ import (
 
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
-	"path"
 )
 
 const (
@@ -21,7 +19,7 @@ const (
 var PathFlag = conf.NewStringFlag(
 	"l1d_path",
 	"Path to L1 Data binary",
-	path.Join(fs.GetSwanWorkloadsPath(), "low-level-aggressors/l1d"),
+	"l1d",
 )
 
 // Config is a struct for l1d aggressor configuration.

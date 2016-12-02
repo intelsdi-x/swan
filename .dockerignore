@@ -1,0 +1,16 @@
+# this file exclude folders from build context
+
+artifacts/*
+build/*
+docs/*
+docs/*
+experiments/*
+.git*
+integration_tests/*
+misc/*snap*
+pkg/*
+scripts/*
+scripts/*
+swan-*.tar.gz
+vendor/*
+workloads/*
