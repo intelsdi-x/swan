@@ -12,15 +12,24 @@ import (
 )
 
 var (
-	sloFlag             = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
-	loadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
-	loadDurationFlag    = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
-	repetitionsFlag     = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
-	stopOnErrorFlag     = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
-	// peakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
+	// SLOFlag indicates expected SLO
+	SLOFlag = conf.NewIntFlag("slo", "Given SLO for the experiment. [us]", 500)
+	// LoadPointsCountFlag represents number of load points per each aggressor
+	LoadPointsCountFlag = conf.NewIntFlag("load_points", "Number of load points to test", 10)
+	// LoadDurationFlag allows us to set repetition duration from command line argument or environmental variable
+	LoadDurationFlag = conf.NewDurationFlag("load_duration", "Load duration [s].", 10*time.Second)
+	// RepetitionsFlag indicates number of repetitions per each load point
+	RepetitionsFlag = conf.NewIntFlag("reps", "Number of repetitions for each measurement", 3)
+	// StopOnErrorFlag forces experiment to terminate on error
+	StopOnErrorFlag = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
+	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase
 	// It omits tuning phase.
-	peakLoadFlag   = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase.
-	runTuningPhase = 0
+	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase
+)
+
+const (
+	// RunTuningPhase represents PeakLoadFlag value indicating that tuning phase should be run.
+	RunTuningPhase = 0
 )
 
 // Configuration - set of parameters to control the experiment.
@@ -46,12 +55,12 @@ type Configuration struct {
 // DefaultConfiguration returns default configuration for experiment from Conf flags.
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		SLO:             sloFlag.Value(),
-		LoadDuration:    loadDurationFlag.Value(),
-		LoadPointsCount: loadPointsCountFlag.Value(),
-		Repetitions:     repetitionsFlag.Value(),
-		PeakLoad:        peakLoadFlag.Value(),
-		StopOnError:     stopOnErrorFlag.Value(),
+		SLO:             SLOFlag.Value(),
+		LoadDuration:    LoadDurationFlag.Value(),
+		LoadPointsCount: LoadPointsCountFlag.Value(),
+		Repetitions:     RepetitionsFlag.Value(),
+		PeakLoad:        PeakLoadFlag.Value(),
+		StopOnError:     StopOnErrorFlag.Value(),
 	}
 }
 
@@ -159,7 +168,7 @@ func (e *Experiment) configureGenericExperiment() error {
 	var allMeasurements []phase.Phase
 
 	// Include Tuning Phase if PeakLoad wasn't given.
-	if e.configuration.PeakLoad == runTuningPhase {
+	if e.configuration.PeakLoad == RunTuningPhase {
 		e.tuningPhase = e.prepareTuningPhase()
 		allMeasurements = append(allMeasurements, e.tuningPhase)
 	} else {

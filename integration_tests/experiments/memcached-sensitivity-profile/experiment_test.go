@@ -2,6 +2,7 @@ package experiment
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -44,8 +45,8 @@ func runExp(command string, args ...string) (string, error) {
 
 func TestExperiment(t *testing.T) {
 	memcachedSensitivityProfileBin := path.Join(fs.GetSwanBuildPath(), "experiments", "memcached", "memcached-sensitivity-profile")
-	memcacheDockerBin := "/root/go/src/github.com/intelsdi-x/swan/workloads/data_caching/memcached/memcached-1.4.25/build/memcached"
-	l1dDockerBin := "/root/go/src/github.com/intelsdi-x/swan/workloads/low-level-aggressors/l1d"
+	memcacheDockerBin := "memcached"
+	l1dDockerBin := "l1d"
 
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
@@ -146,6 +147,7 @@ func TestExperiment(t *testing.T) {
 
 				Convey("Experiment should succeed also with 2 load points", func() {
 					os.Setenv("SWAN_LOAD_POINTS", "2")
+					fmt.Println(args)
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
 
@@ -170,8 +172,7 @@ func TestExperiment(t *testing.T) {
 					So("L1 Data", ShouldBeIn, swanAggressorsNames)
 					So("None", ShouldBeIn, swanAggressorsNames)
 
-					So("aggressor_nr_0_measurement_for_loadpoint_id_1", ShouldBeIn, swanPhases)
-					So("aggressor_nr_0_measurement_for_loadpoint_id_1", ShouldBeIn, swanPhases)
+					So("Aggressor None; load point 0;", ShouldBeIn, swanPhases)
 
 					So(iter.Close(), ShouldBeNil)
 				})
