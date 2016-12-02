@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -118,4 +119,62 @@ func (k *KubeClient) getReadyNodes() ([]*api.Node, error) {
 	}
 
 	return readyNodes, nil
+}
+
+// DeletePod with given podName.
+func (k *KubeClient) DeletePod(podName string) error {
+	var oneSecond int64 = 1
+	return k.Pods(k.namespace).Delete(podName, &api.DeleteOptions{GracePeriodSeconds: &oneSecond})
+}
+
+// Node assume just one node a return it. Note panics if unavaiable (this is just test helper!).
+func (k *KubeClient) node() *api.Node {
+	nodes, err := k.Nodes().List(api.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
+	if len(nodes.Items) != 1 {
+		panic("Expected signle nodes kubernetes cluster!")
+	}
+	return &nodes.Items[0]
+}
+
+// UpdateNode updates nodes metadata e.g. taints (Note: can panic).
+func (k *KubeClient) UpdateNode(node *api.Node) {
+	_, err := k.Client.Nodes().Update(node)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// TaintNode with NoSchedule taint (can panic).
+func (k *KubeClient) TaintNode() {
+	node := k.node()
+	newTaint := api.Taint{
+		Key: "hponly", Value: "true", Effect: api.TaintEffectNoSchedule,
+	}
+	taintsInJSON, err := json.Marshal([]api.Taint{newTaint})
+	if err != nil {
+		panic(err)
+	}
+
+	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+	if err != nil {
+		panic(err)
+	}
+	k.UpdateNode(node)
+}
+
+// UntaintNode removes all tains for given node (can panic on failure).
+func (k *KubeClient) UntaintNode() {
+	taintsInJSON, err := json.Marshal([]api.Taint{})
+	if err != nil {
+		panic(err)
+	}
+	node := k.node()
+	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+	_, err = k.Client.Nodes().Update(node)
+	if err != nil {
+		panic(err)
+	}
 }

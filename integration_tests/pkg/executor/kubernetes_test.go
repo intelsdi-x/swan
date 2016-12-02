@@ -3,19 +3,18 @@
 package executor
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
+	log "github.com/Sirupsen/logrus"
+
+	testhelpers "github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
-	"github.com/nu7hatch/gouuid"
 	. "github.com/smartystreets/goconvey/convey"
-	"k8s.io/kubernetes/pkg/api"
 )
 
 const (
@@ -23,10 +22,11 @@ const (
 )
 
 func TestKubernetesExecutor(t *testing.T) {
-	config, err := kubernetes.UniqueConfig()
-	if err != nil {
-		t.Errorf("could not generate k8s unique config: %q", err)
-	}
+	// Readable, simple, easy to debug, reproducible and reliable testing environment.
+	log.SetLevel(log.PanicLevel)
+	config := kubernetes.DefaultConfig()
+	config.RetryCount = 0
+
 	executorConfig := executor.DefaultKubernetesConfig()
 	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
@@ -53,12 +53,6 @@ func TestKubernetesExecutor(t *testing.T) {
 	}()
 
 	Convey("Creating a kubernetes executor _with_ a kubernetes cluster available", t, func() {
-		// Generate random pod name. This pod name should be unique for each
-		// test case inside this Convey.
-		podName, err := uuid.NewV4()
-		So(err, ShouldBeNil)
-		executorConfig.PodNamePrefix = podName.String()
-
 		// Create Kubernetes executor, which should be passed to following conveys.
 		k8sexecutor, err := executor.NewKubernetes(executorConfig)
 		So(err, ShouldBeNil)
@@ -78,10 +72,11 @@ func TestKubernetesExecutor(t *testing.T) {
 			// Start Kubernetes pod which should die after 3 seconds. ExitCode
 			// should pass to taskHandle object.
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
-			defer executor.StopCleanAndErase(taskHandle)
 			So(err, ShouldBeNil)
 
-			Convey("And after few seconds", func() {
+			defer executor.StopCleanAndErase(taskHandle)
+
+			Convey("And after few seconds waiting Wait() returns true", func() {
 				// Pod should end after three seconds, but propagation of
 				// status information can take longer time. To reduce number
 				// of false-positive assertion fails, Wait() timeout is much
@@ -170,18 +165,40 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(n, ShouldEqual, 0)
 		})
 
+		Convey("Long running pod is not deadlocked when deleted externally", func() {
+			executorConfig.PodName = "mypod"
+			k8sexecutor, err := executor.NewKubernetes(executorConfig)
+			So(err, ShouldBeNil)
+			th, err := k8sexecutor.Execute("sleep inf")
+			So(err, ShouldBeNil)
+
+			// Externally delete the pod.
+			err = kubectl.DeletePod(executorConfig.PodName)
+			So(err, ShouldBeNil)
+
+			// Wait...
+			stopped := th.Wait(0)
+			So(stopped, ShouldBeTrue)
+
+			// Exit code expected about killed.
+			exitCode, err := th.ExitCode()
+			So(err, ShouldBeNil)
+			So(exitCode, ShouldEqual, 137)
+		})
+
+		Convey("Timeout occurs when image is not found", func() {
+			// Launch timout is needed because pod is left in Pending/Waiting/ImagePullBackOff state.
+			executorConfig.ContainerImage = "notexistingone"
+			executorConfig.LaunchTimeout = 1 * time.Second
+			k8sexecutor, err := executor.NewKubernetes(executorConfig)
+			So(err, ShouldBeNil)
+			_, err = k8sexecutor.Execute("wrong command")
+			So(err, ShouldBeNil)
+		})
+
 		Convey("Timeout should not block execution because of files being unavailable", func() {
-			nodes, err := kubectl.Nodes().List(api.ListOptions{})
-			So(err, ShouldBeNil)
-			node := nodes.Items[0]
-			newTaint := api.Taint{
-				Key: "hponly", Value: "true", Effect: api.TaintEffectNoSchedule,
-			}
-			taintsInJSON, err := json.Marshal([]api.Taint{newTaint})
-			So(err, ShouldBeNil)
-			node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-			_, err = kubectl.Client.Nodes().Update(&node)
-			So(err, ShouldBeNil)
+			kubectl.TaintNode()
+			defer kubectl.UntaintNode()
 
 			executorConfig.LaunchTimeout = 1 * time.Second
 			k8sexecutor, err = executor.NewKubernetes(executorConfig)
