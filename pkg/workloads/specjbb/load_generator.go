@@ -41,7 +41,7 @@ var (
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
-	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "usr/share/specjbb")
+	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/usr/share/specjbb/")
 
 	// ControllerHostProperty - string name for property that specifies controller host.
 	ControllerHostProperty = " -Dspecjbb.controller.host="

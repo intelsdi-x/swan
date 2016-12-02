@@ -5,7 +5,7 @@ TEST_OPT?=""
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env build_plugins build_swan test_integration
+integration_test: show_env test_integration
 unit_test: deps_godeps test_unit
 
 deps_all: deps_godeps deps_jupyter
@@ -53,7 +53,7 @@ build_swan:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
 
-dist: build_workloads build_swan
+dist: build_workloads build_plugins build_swan
 	(./scripts/artifacts.sh dist)
 
 install:
