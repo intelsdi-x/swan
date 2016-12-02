@@ -29,6 +29,15 @@ const (
 	LoadPointQPSKey = "swan_loadpoint_qps"
 	// AggressorNameKey defines the key for Snap tag.
 	AggressorNameKey = "swan_aggressor_name"
+
+	// See /usr/include/sysexits.h for refference regarding constants below
+
+	// ExUsage reperense command line user error exit code
+	ExUsage = 64
+	// ExSoftware represents internal software error exit code
+	ExSoftware = 70
+	// ExIOErr represents input/output error exit code
+	ExIOErr = 74
 )
 
 func main() {
@@ -40,8 +49,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	err := conf.ParseFlags()
 	if err != nil {
 		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(64)
+		os.Exit(ExUsage)
 	}
 	logrus.SetLevel(conf.LogLevel())
 
@@ -55,8 +63,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		logrus.Errorf("Cannot create executors: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(70)
+		os.Exit(ExSoftware)
 	}
 	defer cleanup()
 
@@ -64,8 +71,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(70)
+		os.Exit(ExSoftware)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
@@ -78,22 +84,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
 	if err != nil {
 		logrus.Errorf("Cannot create load generator: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(70)
+		os.Exit(ExSoftware)
 	}
 
 	snapSession, err := common.PrepareSnapMutilateSessionLauncher()
 	if err != nil {
 		logrus.Errorf("Cannot create snap session: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(70)
+		os.Exit(ExSoftware)
 	}
 
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(70)
+		os.Exit(ExSoftware)
 	}
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
@@ -101,8 +104,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
-		// All the exit code values are based on /usr/include/sysexits.h
-		os.Exit(74)
+		os.Exit(ExIOErr)
 	}
 
 	// Setup logging set to both output and logFile.
@@ -116,8 +118,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
-			// All the exit code values are based on /usr/include/sysexits.h
-			os.Exit(70)
+			os.Exit(ExSoftware)
 		}
 		logrus.Infof("Run tuning and achieved load of %d", load)
 	} else {
@@ -243,8 +244,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
-						// All the exit code values are based on /usr/include/sysexits.h
-						os.Exit(70)
+						os.Exit(ExSoftware)
 					}
 				}
 			}
