@@ -16,6 +16,11 @@ class Experiment(object):
     The experiment id should either be found when running the experiment through the swan cli or
     from using the Experiments class.
     """
+
+    AGGRESSOR_THROUGPUT_NS = (
+        '/intel/swan/caffe/inference/',  # Caffe
+    )
+
     def __init__(self, experiment_id, **kwargs):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
@@ -28,12 +33,7 @@ class Experiment(object):
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
-        self.rows = {}  # keep temporary rows from query for later match with qps rows
-        self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
-        # throughput for aggressors are some rows from a query.
-        # can get max from it and map to percentile rows
-        self.throughputs = defaultdict(list)
-        self.data = []
+        self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
         self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
@@ -43,37 +43,41 @@ class Experiment(object):
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
         if 'cassandra_cluster' in kwargs:
-            self.cluster = Cluster(kwargs['cassandra_cluster'], port=port)
-            self.session = self.cluster.connect(keyspace)
-            self.match_qps()
+            cluster = Cluster(kwargs['cassandra_cluster'], port=port)
+            session = cluster.connect(keyspace)
+            rows, qps = self.match_qps(session)
 
         elif 'read_csv' in kwargs:
-            self.rows, self.qps = test_data_reader.read(kwargs['read_csv'])
+            rows, qps = test_data_reader.read(kwargs['read_csv'])
 
-        self.populate_data()
-        self.frame = pd.DataFrame(self.data, columns=self.columns)
+        data = self.populate_data(rows, qps)
+        self.frame = pd.DataFrame(data, columns=self.columns)
 
-    def match_qps(self):
+    def match_qps(self, session):
+        rows = {}  # keep temporary rows from query for later match with qps rows
+        qps = {}  # qps is a one row from query, where we can map it to percentile rows
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
             FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
         statement = SimpleStatement(query, fetch_size=100)
 
-        for row in self.session.execute(statement):
+        for row in session.execute(statement):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
-                self.qps[k] = row.doubleval
-            elif row.ns == "/intel/swan/caffe/inference/%s/batches" % row.host:
+                qps[k] = row.doubleval
+            elif any(map(lambda ns: ns in row.ns, Experiment.AGGRESSOR_THROUGPUT_NS)):
                 self.throughputs[k].append(row.doubleval)
             else:
-                self.rows[(row.ns,) + k] = row
+                rows[(row.ns,) + k] = row
+        return rows, qps
 
-    def populate_data(self):
-        for row in self.rows.itervalues():
+    def populate_data(self, rows, qps):
+        data = []
+        for row in rows.itervalues():
             if row.valtype == "doubleval":
                 k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
 
-                achived_qps = (self.qps[k] / float(row.tags['swan_loadpoint_qps']))
-                percent_qps = '{percent:.2%}'.format(percent=achived_qps)
+                achieved_qps = (qps[k] / float(row.tags['swan_loadpoint_qps']))
+                percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
 
                 max_throughput = max(self.throughputs[k]) if self.throughputs.get(k) else None
 
@@ -82,7 +86,8 @@ class Experiment(object):
                           row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'],
                           max_throughput]
 
-                self.data.append(values)
+                data.append(values)
+        return data
 
     def get_frame(self):
         return self.frame

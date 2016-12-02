@@ -6,6 +6,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+
 from IPython.core.display import HTML
 from plotly.offline import init_notebook_mode, iplot
 
@@ -51,10 +52,10 @@ class Profile(object):
         """
         self.exp = e
         self.slo = slo
-        self.throughput_per_aggressor = {}
         self.categories = []
         self.data_frame = self.exp.get_frame()
         self.latency_qps_aggrs = {}
+        self.throughput_per_aggressor = {}
 
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
@@ -82,7 +83,11 @@ class Profile(object):
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
 
-            self.throughput_per_aggressor[name] = aggressor_frame['throughputs'].tolist()
+            throughput = aggressor_frame['throughputs'].tolist()
+            throughput.extend([np.nan] *
+                              (len(longest_loadpoints) - len(throughput)))
+
+            self.throughput_per_aggressor[name] = throughput
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
@@ -98,7 +103,7 @@ class Profile(object):
         loadpoints = map(lambda c: (float(c) / peak) * 100, longest_loadpoints)
         self.frame = pd.DataFrame(data, columns=loadpoints, index=index).sort_index()
 
-    def sensitivity_table(self):
+    def sensitivity_table(self, show_throughput=False):
         no_border = 'border: 0'
         black_border = '1px solid black'
         html_out = ''
@@ -131,16 +136,14 @@ class Profile(object):
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
-                elif np.isnan(value):
-                    value = 0
-                    style += 'background-color: #a9341f; color: white;'
                 else:
                     style += 'background-color: #98cc70;'
 
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
 
-                if aggressor == 'Caffe':
-                    value = "%s [%s]" % (value, self.throughput_per_aggressor[aggressor][i])
+                throughput = self.throughput_per_aggressor[aggressor]
+                if not all(np.isnan(throughput)) and show_throughput:
+                    value = "%s [%s]" % (value, throughput[i])
 
                 html_out += '<td style="%s">%s</td>' % (style, value)
 
