@@ -1,16 +1,19 @@
 package common
 
 import (
+	"os"
+	"path"
+	"strconv"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -31,10 +34,10 @@ var (
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 )
 
-// PrepareSnapMutilateSessionLauncher prepare a SessionLauncher that runs mutilate collector and records that into storage.
+// PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
 // Note: SnapdHTTPEndpoint set to "none" will disable mutilate session completely.
 // TODO: this should be put into athena:/pkg/snap
-func prepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
+func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.SnapdHTTPEndpoint.Value() != "none" {
 		// Create connection with Snap.
@@ -52,8 +55,8 @@ func prepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	return nil, nil
 }
 
-// prepareMutilateGenerator create new LoadGenerator based on mutilate.
-func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {
+// PrepareMutilateGenerator creates new LoadGenerator based on mutilate.
+func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {
 	mutilateConfig := mutilate.DefaultMutilateConfig()
 	mutilateConfig.MemcachedHost = memcacheIP
 	mutilateConfig.MemcachedPort = memcachePort
@@ -98,79 +101,64 @@ func prepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 	return mutilateLoadGenerator, nil
 }
 
-// noopSessionLauncherFactory is a factory of snap.SessionLauncher that returns nothing.
-func noopSessionLauncherFactory(_ sensitivity.Configuration) snap.SessionLauncher {
-	return nil
+// CreateRepetitionDir creates folders that store repetition logs.
+func CreateRepetitionDir(experimentDirectory, phaseName string, repetition int) (string, error) {
+	repetitionDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
+	err := os.MkdirAll(repetitionDir, 0777)
+	if err != nil {
+		return "", errors.Wrapf(err, "could not create dir %q", repetitionDir)
+	}
+
+	err = os.Chdir(repetitionDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "could not change to dir %q", repetitionDir)
+	}
+
+	return repetitionDir, nil
 }
 
-// RunExperiment is main entrypoint to prepare and run experiment.
-func RunExperiment() error {
-	return RunExperimentWithMemcachedSessionLauncher(noopSessionLauncherFactory)
+// CreateExperimentDir creates directory structure for the experiment.
+func CreateExperimentDir(uuid string) (experimentDirectory string, logFile *os.File, err error) {
+	experimentDirectory = path.Join(os.TempDir(), conf.AppName(), uuid)
+	err = os.MkdirAll(experimentDirectory, 0777)
+	if err != nil {
+		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
+	}
+	err = os.Chdir(experimentDirectory)
+	os.Chdir(os.TempDir())
+	if err != nil {
+		return "", &os.File{}, errors.Wrapf(err, "cannot chdir to experiment directory", experimentDirectory)
+	}
+
+	masterLogFilename := path.Join(experimentDirectory, "master.log")
+	logFile, err = os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return "", &os.File{}, errors.Wrapf(err, "could not open log file %q", masterLogFilename)
+	}
+
+	return experimentDirectory, logFile, nil
 }
 
-// RunExperimentWithMemcachedSessionLauncher is preparing all the components necessary to run experiment but uses memcachedSessionLauncherFactory
-// to create a snap.SessionLauncher that will wrap memcached (HP workload).
-// Note: it includes parsing the environment to get configuration as well as preparing executors and eventually running the experiment.
-func RunExperimentWithMemcachedSessionLauncher(memcachedSessionLauncherFactory func(sensitivity.Configuration) snap.SessionLauncher) error {
-	conf.SetAppName("memcached-sensitivity-profile")
-	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-	err := conf.ParseFlags()
+// GetPeakLoad runs tuning in order to determine the peak load.
+func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenerator, slo int) (int, error) {
+	prTask, err := hpLauncher.Launch()
 	if err != nil {
-		return err
+		return 0, errors.Wrap(err, "cannot launch memcached")
 	}
-	logrus.SetLevel(conf.LogLevel())
+	defer func() {
+		prTask.Stop()
+		prTask.Clean()
+	}()
 
-	// Validate preconditions.
-	validate.OS()
-
-	// Isolations.
-	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
-
-	// Executors.
-	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
+	err = loadGenerator.Populate()
 	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	// BE workloads.
-	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
-	if err != nil {
-		return err
+		return 0, errors.Wrap(err, "cannot populate memcached")
 	}
 
-	// Prepare experiment configuration to be used by session launcher factory.
-	configuration := sensitivity.DefaultConfiguration()
-	memcachedSessionLauncher := memcachedSessionLauncherFactory(configuration)
-
-	// HP workload.
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-	memcachedLauncher := memcached.New(hpExecutor, memcachedConfig)
-	memcachedLauncherSessionPair := sensitivity.NewMonitoredLauncher(memcachedLauncher, memcachedSessionLauncher) // NewMonitoredLauncher can accept nil as session launcher.
-
-	// Load generator.
-	mutilateLoadGenerator, err := prepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
+	load, _, err := loadGenerator.Tune(slo)
 	if err != nil {
-		return err
+		return 0, errors.Wrap(err, "tuning failed")
 	}
 
-	mutilateSnapSession, err := prepareSnapMutilateSessionLauncher()
-	if err != nil {
-		return err
-	}
-	mutilateLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(mutilateLoadGenerator, mutilateSnapSession)
-
-	// Experiment.
-	sensitivityExperiment := sensitivity.NewExperiment(
-		conf.AppName(),
-		conf.LogLevel(),
-		configuration,
-		memcachedLauncherSessionPair,
-		mutilateLoadGeneratorSessionPair,
-		aggressorSessionLaunchers,
-	)
-
-	// Run experiment.
-	return sensitivityExperiment.Run()
+	return int(load), nil
 }
