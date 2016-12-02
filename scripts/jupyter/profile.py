@@ -47,7 +47,7 @@ class Profile(object):
         :param e: an Experiment class object
         :param slo: performance target [int]
 
-        Initializes a sensivity profile with `e` experiment object and visualize it against the
+        Initializes a sensitivity profile with `e` experiment object and visualize it against the
         specified slo (performance target).
         """
         self.exp = e
@@ -142,7 +142,7 @@ class Profile(object):
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
 
                 throughput = self.throughput_per_aggressor[aggressor]
-                if not all(np.isnan(throughput)) and show_throughput:
+                if show_throughput and not all(np.isnan(throughput)):
                     value = "%s [%s]" % (value, throughput[i])
 
                 html_out += '<td style="%s">%s</td>' % (style, value)

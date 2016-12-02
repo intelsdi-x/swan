@@ -54,7 +54,8 @@ def read(path):
                             valtype=convert_null(strip_quotation(row[8])))
 
             if "/intel/swan/mutilate/%s/qps" % sample.host == row[0]:
-                qps[(sample.ns, sample.tags['swan_phase'], sample.tags['swan_repetition'])] = sample.doubleval
+                qps[(sample.tags['swan_aggressor_name'], sample.tags['swan_phase'],
+                     sample.tags['swan_repetition'])] = sample.doubleval
             k = (sample.ns, sample.tags['swan_aggressor_name'], sample.tags['swan_phase'],
                  sample.tags['swan_repetition'])
             rows[k] = sample

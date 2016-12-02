@@ -17,7 +17,7 @@ class Experiment(object):
     from using the Experiments class.
     """
 
-    AGGRESSOR_THROUGPUT_NS = (
+    AGGRESSOR_THROUGHPUT_NAMESPACES = (
         '/intel/swan/caffe/inference/',  # Caffe
     )
 
@@ -64,7 +64,7 @@ class Experiment(object):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
-            elif any(map(lambda ns: ns in row.ns, Experiment.AGGRESSOR_THROUGPUT_NS)):
+            elif any(map(lambda ns: ns in row.ns, Experiment.AGGRESSOR_THROUGHPUT_NAMESPACES)):
                 self.throughputs[k].append(row.doubleval)
             else:
                 rows[(row.ns,) + k] = row
@@ -79,7 +79,7 @@ class Experiment(object):
                 achieved_qps = (qps[k] / float(row.tags['swan_loadpoint_qps']))
                 percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
 
-                max_throughput = max(self.throughputs[k]) if self.throughputs.get(k) else None
+                max_throughput = max(self.throughputs[k]) if k in self.throughputs else None
 
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
