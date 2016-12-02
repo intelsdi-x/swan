@@ -108,7 +108,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 
 	// Setup logging set to both output and logFile.
-	logrus.SetLevel(conf.LogLevel())
 	logrus.SetFormatter(new(logrus.TextFormatter))
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
@@ -120,7 +119,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
 			os.Exit(ExSoftware)
 		}
-		logrus.Infof("Run tuning and achieved load of %d", load)
+		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
 		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
 	}
