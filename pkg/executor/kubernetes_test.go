@@ -9,6 +9,7 @@ import (
 )
 
 func TestKubernetes(t *testing.T) {
+
 	Convey("Kubernetes config is sane by default", t, func() {
 		config := DefaultKubernetesConfig()
 		So(config.Privileged, ShouldEqual, false)
@@ -58,4 +59,46 @@ func TestKubernetes(t *testing.T) {
 		})
 
 	})
+
+	Convey("Kubernetes pod executor pod names", t, func() {
+
+		Convey("have desired name", func() {
+			podExecutor := &kubernetes{KubernetesConfig{PodName: "foo"}, nil}
+			name, err := podExecutor.generatePodName()
+			So(err, ShouldBeNil)
+			So(name, ShouldEqual, "foo")
+
+		})
+
+		Convey("have desired prefix", func() {
+			podExecutor := &kubernetes{KubernetesConfig{PodNamePrefix: "foo"}, nil}
+			name, err := podExecutor.generatePodName()
+			So(err, ShouldBeNil)
+			So(name, ShouldStartWith, "foo-")
+
+		})
+
+		Convey("with default config", func() {
+
+			podExecutor := &kubernetes{DefaultKubernetesConfig(), nil}
+			names := make(map[string]struct{})
+
+			Convey("have default prefix", func() {
+				name, err := podExecutor.generatePodName()
+				So(err, ShouldBeNil)
+				So(name, ShouldStartWith, "swan-")
+			})
+
+			Convey("are unique", func() {
+				N := 1000
+				for i := 0; i < N; i++ {
+					name, err := podExecutor.generatePodName()
+					So(err, ShouldBeNil)
+					names[name] = struct{}{}
+				}
+				So(names, ShouldHaveLength, N)
+			})
+		})
+	})
+
 }

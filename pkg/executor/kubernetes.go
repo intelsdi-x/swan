@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -163,8 +164,10 @@ func (k8s *kubernetes) generatePodName() (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "cannot generate suffix UUID")
 	}
+	bytes := [16]byte(*uuid)
+	hex := hex.EncodeToString(bytes[:16])[:8]
 
-	return fmt.Sprintf("%s-%x", k8s.config.PodNamePrefix, uuid.String())[:60], nil
+	return fmt.Sprintf("%s-%s", k8s.config.PodNamePrefix, hex), nil
 }
 
 // newPod is a helper to build in-memory struture representing pod
