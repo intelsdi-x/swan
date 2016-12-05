@@ -26,4 +26,15 @@ The experiment abstractions does not try to shoehorn a particular format for the
 
 ### Decouple experiment and analysis
 
+Swan is intended to be the experiment driver, but leave experiment data processing to other tools.
+Swan does provide an interactive Python environment in Jupyter to pull the data into Python Panda data frames but the data is available for processing by any tool.
+
 ## What is Swan _not_
+
+### Swan is not intended to be an absolute benchmark.
+
+Swan is intended to be an experiment driver but experiment data is purely intended to be relative comparisons opposed to absolute ones.
+
+### Swan is not intended to be coupled to any particular experiment.
+
+While the first experiment shipping with Swan is a sensitivity analysis for services like memcached, we aim for a more expressive experiment development environment.
