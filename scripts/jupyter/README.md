@@ -8,11 +8,12 @@ On Centos 7, install the following packages with:
 ```sh
 sudo yum install python-pip python-devel
 ```
+or follow the instructions at [official pip site](https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
 
 After this, install the python dependencies with `make` with:
 
 ```sh
-make build_jupyter
+make deps_jupyter
 ```
 
 ## Launching jupyter
@@ -20,11 +21,11 @@ make build_jupyter
 Start Jupyter by running the following in the `swan/scripts/jupyter` directory:
 
 ```sh
-jupyter notebook --ip=0.0.0.0
+jupyter notebook --ip=0.0.0.0 --port=8080
 ```
 
 If run locally, the command will bring up the default browser.
-If not, connect to http://hostname:8888/ through your browser.
+If not, connect to http://hostname:8080/ through your browser.
 
 ## Explore data using Jupyter
 
@@ -36,28 +37,40 @@ Within the open tamplate notebook:
 - set the `IP`, `PORT` of cassandra cluster and `EXPERIMENT_ID`
 - focus on first `import` python statement:
 
-```
+```python
 from experiment import *
 ```
 
-And evaluate the expressions by clicking shift and enter on each other.
-```
+And evaluate the expressions by clicking `shift` and `enter` on each other.
+```python
 exp = Experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment', port=9042)
 ```
 
 Code above shows the available samples. Be aware that if a experiments has large data, it can take a while:
 
-![sample list](docs/sample_list.png)
+![sample list](docs/sample_list.png) 
 
+If yu want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analisys you can get it like: 
+```python
+df1 = exp1.get_frame()
+```
 To render a sensitivity profile from the loaded samples, run:
-```
+```python
 p = Profile(exp, slo=500)
-p.sensitivity_table()
-p.sensitivity_chart()
+p.sensitivity_table(show_throughput=False)
 ```
 
-Where 500 is the target latency in micro seconds.
+Where `slo` is the target latency in micro seconds and `show_throughput` is optional parameter and consist work make by aggressor.
 
 This should render a table similar to the one below:
 
 ![sensitivity profile](docs/sensitivity_profile.png)
+
+Below there as showed some missing data that can happen if you will try build sensivity profile in case of missing data in Cassandra.
+In this case field in the table is marked as grey with `N/A`
+
+```python
+p1 = Profile(exp, slo=500)
+p1.sensitivity_table(show_throughput=True)
+```
+![sensitivity profile](docs/sensitivity_profile_failed.png)
