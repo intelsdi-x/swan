@@ -47,7 +47,7 @@ The distributed version control system [Git](https://git-scm.com/) is needed to 
 The cross-platform virtualization application [VirtualBox](https://www.virtualbox.org/) has to be installed because the Swan virtual machine is configured to use this provider. See [here](https://www.virtualbox.org/wiki/Downloads) for guidance on installation of VirtualBox.
 
 **3. Vagrant**
-The command line utility for managing the lifecycle of virtual machines [Vagrant](https://www.vagrantup.com/docs/) is needed to create and run a pre-configured Swan virtual macine. See [here](https://www.vagrantup.com/docs/installation/) for guidance on installation of Vagrant.
+The command line utility for managing the lifecycle of virtual machines [Vagrant](https://www.vagrantup.com/docs/) is needed to create and run a pre-configured Swan virtual machine. Swan requires Vagrant version 1.8.6. See [here](https://www.vagrantup.com/docs/installation/) for guidance on installation of Vagrant.
 Configure vagrant to work with VirtualBox by installing the plugin [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) which automatically installs the host's VirtualBox Guest Additions on the guest system:
 ```
 $ vagrant plugin install vagrant-vbguest
