@@ -7,7 +7,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/conf"
 )
 
-// MetadataConfig ...
+// MetadataConfig encodes the settings for connecting to the database.
 type MetadataConfig struct {
 	CassandraAddress           string
 	CassandraPort              int
@@ -21,7 +21,8 @@ type MetadataConfig struct {
 	CassandraSslKeyPath        string
 }
 
-// DefaultMetadataConfig ...
+// DefaultMetadataConfig returns a setup which use a Cassandra cluster running on localhost
+// without any authentication or encryption.
 func DefaultMetadataConfig() MetadataConfig {
 	return MetadataConfig{
 		CassandraAddress:           "127.0.0.1",
@@ -36,7 +37,8 @@ func DefaultMetadataConfig() MetadataConfig {
 	}
 }
 
-// MetadataConfigFromFlags ...
+// MetadataConfigFromFlags applies the Cassandra settings from the command line flags and
+// environment variables.
 func MetadataConfigFromFlags() MetadataConfig {
 	return MetadataConfig{
 		CassandraAddress:           conf.CassandraAddress.Value(),
@@ -51,17 +53,19 @@ func MetadataConfigFromFlags() MetadataConfig {
 	}
 }
 
-// MetadataMap ...
+// MetadataMap encodes the key value pairs to be stored in Cassandra.
 type MetadataMap map[string]string
 
-// Metadata ...
+// Metadata is a helper struct which keeps the Cassandra session alive, holds the active configuration
+// and the experiment id to tag the metadata with.
 type Metadata struct {
 	experimentID string
 	config       MetadataConfig
 	session      *gocql.Session
 }
 
-// NewMetadata ...
+// NewMetadata returns the Metadata helper from an experiment id and configuration.
+// Connect() still needs to be called to get an active Cassandra session.
 func NewMetadata(experimentID string, config MetadataConfig) *Metadata {
 	return &Metadata{
 		experimentID: experimentID,
@@ -69,7 +73,7 @@ func NewMetadata(experimentID string, config MetadataConfig) *Metadata {
 	}
 }
 
-// Connect ...
+// Connect creates a session to the Cassandra cluster. This function should only be called once.
 func (m *Metadata) Connect() error {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
 
@@ -124,7 +128,7 @@ func (m *Metadata) Connect() error {
 	return nil
 }
 
-// Record ...
+// Record stores a key and value and associates with the experiment id.
 func (m *Metadata) Record(key string, value string) error {
 	metadata := MetadataMap{}
 	metadata[key] = value
@@ -137,7 +141,7 @@ func (m *Metadata) Record(key string, value string) error {
 	return nil
 }
 
-// RecordMap ...
+// RecordMap stores a key and value map and associates with the experiment id.
 func (m *Metadata) RecordMap(metadata MetadataMap) error {
 	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
 		m.experimentID, time.Now(), metadata).Exec(); err != nil {
@@ -147,7 +151,7 @@ func (m *Metadata) RecordMap(metadata MetadataMap) error {
 	return nil
 }
 
-// Get ...
+// Get retrieves all metadata maps from the database.
 func (m *Metadata) Get() ([]MetadataMap, error) {
 	var metadata MetadataMap
 
@@ -164,7 +168,7 @@ func (m *Metadata) Get() ([]MetadataMap, error) {
 	return out, nil
 }
 
-// Clear ...
+// Clear deletes all metadata entries associated with the current experiment id.
 func (m *Metadata) Clear() error {
 	if err := m.session.Query(`DELETE FROM swan.metadata WHERE experiment_id = ?`,
 		m.experimentID).Exec(); err != nil {
