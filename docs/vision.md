@@ -8,10 +8,22 @@ We treat this exploration as a workload in itself.
 
 ![Swan experiment](swan-experiment.png)
 
+## History
+
+Swan was developed as a way to build cluster scheduler optimizations _without_ having access to our own production workloads.
+The team was working on an optimization and found themselves tweaking parameters by hand and manually observe the change in performance on dashboards. However, it is extremely hard to reason about whether choosing a certain set of parameters will benefit or even negatively influence other workloads.
+On top of this, the parameter space for the _co-located_ workloads can be immense and not viable for manual testing. While we could test workloads in a one to one fashion, we had little to no insight into whether our optimizations would keep being useful with others.
+So we thought we needed a way to _systematically_ test these optimizations.
+We started work on Swan in early 2016 and has been the primary validation framework for oversubscription policies developed by the team.
+
 ## Principles
+
+### Swan as a library
 
 Experiment setups can be complex and involve standing up and configuring services, software and hardware, and span many machines.
 For that reason, and because of the parallel opportunity, experiments are _written in code_ and swan provides library for running distributed experiments under tightly controlled conditions.
-The experiment abstractions does not try to shoehorn a particular format for the output or analysis, but provides just enough help experiment developers make this happen.  
+The experiment abstractions does not try to shoehorn a particular format for the output or analysis, but provides just enough help experiment developers make this happen.
 
-## History
+### Decouple experiment and analysis
+
+## What is Swan _not_
