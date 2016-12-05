@@ -6,7 +6,7 @@ Swan emphasizes the need for _co-located_ workloads experiments.
 Modern infrastructures run tens to hundreds of tasks per server and the different combinations of how those get placed on a server turns out to be a huge problem space to uncover.
 We treat this exploration as a workload in itself.
 
-![Swan experiment](docs/swan-experiment.png)
+![Swan experiment](swan-experiment.png)
 
 ## Principles
 
