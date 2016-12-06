@@ -23,6 +23,8 @@ import:
   - ssh
 - package: gopkg.in/alecthomas/kingpin.v2
   version: ~2.2.2
+- package: k8s.io/client-go
+  version: v1.4.0
 - package: k8s.io/kubernetes
   version: 1.4.0
   subpackages:
