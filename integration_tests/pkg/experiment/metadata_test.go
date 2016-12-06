@@ -16,6 +16,11 @@ func TestMetadata(t *testing.T) {
 		// If a test failed midway, there may be metadata associated with the 'foobar-experiment' above.
 		metadata.Clear()
 
+		// Make sure that metadata is cleared when test ends.
+		Reset(func() {
+			metadata.Clear()
+		})
+
 		Convey("Recoding a metadata pair", func() {
 			err := metadata.Record("foo", "bar")
 			So(err, ShouldBeNil)

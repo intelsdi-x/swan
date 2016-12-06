@@ -73,6 +73,26 @@ func NewMetadata(experimentID string, config MetadataConfig) *Metadata {
 	}
 }
 
+func sslOptions(config MetadataConfig) *gocql.SslOptions {
+	sslOptions := &gocql.SslOptions{
+		EnableHostVerification: config.CassandraSslHostValidation,
+	}
+
+	if config.CassandraSslCAPath != "" {
+		sslOptions.CaPath = config.CassandraSslCAPath
+	}
+
+	if config.CassandraSslCertPath != "" {
+		sslOptions.CertPath = config.CassandraSslCertPath
+	}
+
+	if config.CassandraSslKeyPath != "" {
+		sslOptions.KeyPath = config.CassandraSslKeyPath
+	}
+
+	return sslOptions
+}
+
 // Connect creates a session to the Cassandra cluster. This function should only be called once.
 func (m *Metadata) Connect() error {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
@@ -91,23 +111,7 @@ func (m *Metadata) Connect() error {
 	}
 
 	if m.config.CassandraSslEnabled {
-		sslOptions := &gocql.SslOptions{
-			EnableHostVerification: m.config.CassandraSslHostValidation,
-		}
-
-		if m.config.CassandraSslCAPath != "" {
-			sslOptions.CaPath = m.config.CassandraSslCAPath
-		}
-
-		if m.config.CassandraSslCertPath != "" {
-			sslOptions.CertPath = m.config.CassandraSslCertPath
-		}
-
-		if m.config.CassandraSslKeyPath != "" {
-			sslOptions.KeyPath = m.config.CassandraSslKeyPath
-		}
-
-		cluster.SslOpts = sslOptions
+		cluster.SslOpts = sslOptions(m.config)
 	}
 
 	session, err := cluster.CreateSession()
