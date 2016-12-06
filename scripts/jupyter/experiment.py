@@ -16,11 +16,6 @@ class Experiment(object):
     The experiment id should either be found when running the experiment through the swan cli or
     from using the Experiments class.
     """
-
-    AGGRESSOR_THROUGHPUT_NAMESPACES = (
-        '/intel/swan/caffe/inference/',  # Caffe
-    )
-
     def __init__(self, experiment_id, **kwargs):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
@@ -54,6 +49,7 @@ class Experiment(object):
         self.frame = pd.DataFrame(data, columns=self.columns)
 
     def match_qps(self, session):
+        global AGGRESSOR_THROUGHPUT_NAMESPACES_PREFIX
         rows = {}  # keep temporary rows from query for later match with qps rows
         qps = {}  # qps is a one row from query, where we can map it to percentile rows
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
@@ -64,7 +60,7 @@ class Experiment(object):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
-            elif any(map(lambda ns: ns in row.ns, Experiment.AGGRESSOR_THROUGHPUT_NAMESPACES)):
+            elif filter(lambda ns: ns in row.ns, AGGRESSOR_THROUGHPUT_NAMESPACES_PREFIX):
                 self.throughputs[k].append(row.doubleval)
             else:
                 rows[(row.ns,) + k] = row
