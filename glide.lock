@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-12-05T14:39:47.582522882+01:00
+updated: 2016-12-06T13:12:16.742305188+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -172,7 +172,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: 9e63592af2f6c95b4e7ae03a0f12d13004719a4a
+  version: 9b01aa2d32e35d6836378688aaf2df98e12f607c
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
