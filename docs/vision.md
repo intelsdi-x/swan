@@ -28,6 +28,8 @@ The experiment abstractions does not try to shoehorn a particular format for the
 
 Swan is intended to be the experiment driver, but leave experiment data processing to other tools.
 Swan does provide an interactive Python environment in Jupyter to pull the data into Python Panda data frames but the data is available for processing by any tool.
+Alongside raw metrics, Swan stores meta data associated with the experiment identifier which encodes details around the experiment setup.
+This can be details like the hardware and software, the choice of core ids to run the different processes on and much more.
 
 ## What is Swan _not_
 
