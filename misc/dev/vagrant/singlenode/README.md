@@ -45,7 +45,7 @@ Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can overrid
 - `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
 
 There is a possibility to use your local ~/.glide for caching golang dependencies.
-***Please be informed that every single change inside Virtualbox VM will affect on local ~/.glide too***
+***Please be informed that every single glide operation inside VM might affect your host's ~/.glide.***
 To use your local ~/.glide please make sure that this directory exists and `SHARE_GLIDE_CACHE` environmental variable is set to "true"
 
 ## Manually running provision scripts
