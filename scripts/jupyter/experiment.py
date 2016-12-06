@@ -3,10 +3,14 @@ This module contains the convience class to read experiment data and generate se
 profiles. See profile.py for more information.
 """
 import pandas as pd
+import ssl
+
 import test_data_reader
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
+from cassandra.auth import PlainTextAuthProvider
+
 from collections import defaultdict
 
 
@@ -45,9 +49,22 @@ class Experiment(object):
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
         if 'cassandra_cluster' in kwargs:
+
+
             cluster = Cluster(kwargs['cassandra_cluster'], port=port)
             session = cluster.connect(keyspace)
             rows, qps = self.match_qps(session)
+
+            ssl_opts = None
+            auth_provider = None
+            ssl_auth_params_needed = ('ca_certs', 'keyfile', 'certfile', 'username', 'password')
+            if all([(k in kwargs) for k in ssl_auth_params_needed]):
+                ssl_opts = dict()
+                ssl_opts['ca_certs'] = kwargs['ca_certs']
+                ssl_opts['keyfile'] = kwargs['keyfile']
+                ssl_opts['certfile'] = kwargs['certfile']
+                ssl_opts['ssl_version'] = ssl.PROTOCOL_TLSv1
+                auth_provider = PlainTextAuthProvider(username=kwargs['username'], password=kwargs['password'])
 
         elif 'read_csv' in kwargs:
             rows, qps = test_data_reader.read(kwargs['read_csv'])
