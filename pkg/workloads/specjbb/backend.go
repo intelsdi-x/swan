@@ -59,12 +59,17 @@ func NewBackend(exec executor.Executor, config BackendConfig) Backend {
 
 func (b Backend) buildCommand() string {
 	return fmt.Sprint("java -jar",
+		" -Dcom.sun.management.jmxremote.port=5555",
+		" -Dcom.sun.management.jmxremote.ssl=false",
+		" -Dcom.sun.management.jmxremote.authenticate=false",
+		" -Djava.net.preferIPv4Stack=true",
 		ControllerHostProperty, b.conf.IP,
 		" ", b.conf.PathToBinary,
 		" -m backend",
 		" -G GRP1",
 		" -J JVM", b.conf.JvmID,
-		" -p ", PathToPropsFileForHpFlag.Value())
+		" -p ", PathToPropsFileForHpFlag.Value(),
+	)
 }
 
 // Launch starts the Backend component. It returns a Task Handle instance.
