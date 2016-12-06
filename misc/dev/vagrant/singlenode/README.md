@@ -46,7 +46,7 @@ Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can overrid
 
 There is a possibility to use your local ~/.glide for caching golang dependencies.
 ***Please be informed that every single change inside Virtualbox VM will affect on local ~/.glide too***
-To use your local ~/.glide please make sure that this directory exists and `COPY_GLIDE` environmental variable is set to "true"
+To use your local ~/.glide please make sure that this directory exists and `SHARE_GLIDE_CACHE` environmental variable is set to "true"
 
 ## Manually running provision scripts
 - Before running provision scripts, import your private ssh key into your GitHub account.
