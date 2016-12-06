@@ -23,6 +23,7 @@ class Experiment(object):
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
+        :param aggressor_throughput_namespaces_prefix: get work done for aggressor by specify ns prefix in cassandra DB
 
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
@@ -30,7 +31,13 @@ class Experiment(object):
         """
         self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
+
         self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
+
+        self.aggressor_throughput_namespaces_prefix = ()
+        if 'aggressor_throughput_namespaces_prefix' in kwargs:
+            self.aggressor_throughput_namespaces_prefix = kwargs['aggressor_throughput_namespaces_prefix']
+
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
                         'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
                         'swan_repetition', 'throughputs']
@@ -49,7 +56,6 @@ class Experiment(object):
         self.frame = pd.DataFrame(data, columns=self.columns)
 
     def match_qps(self, session):
-        global AGGRESSOR_THROUGHPUT_NAMESPACES_PREFIX
         rows = {}  # keep temporary rows from query for later match with qps rows
         qps = {}  # qps is a one row from query, where we can map it to percentile rows
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
@@ -60,7 +66,7 @@ class Experiment(object):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
-            elif filter(lambda ns: ns in row.ns, AGGRESSOR_THROUGHPUT_NAMESPACES_PREFIX):
+            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefix):
                 self.throughputs[k].append(row.doubleval)
             else:
                 rows[(row.ns,) + k] = row
