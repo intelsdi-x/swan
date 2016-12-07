@@ -3,10 +3,14 @@ This module contains the convience class to read experiment data and generate se
 profiles. See profile.py for more information.
 """
 import pandas as pd
+import ssl
+
 import test_data_reader
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
+from cassandra.auth import PlainTextAuthProvider
+
 from collections import defaultdict
 
 
@@ -16,14 +20,20 @@ class Experiment(object):
     The experiment id should either be found when running the experiment through the swan cli or
     from using the Experiments class.
     """
-    def __init__(self, experiment_id, **kwargs):
+    def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
+                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
-        :param name: optional name of the experiment
+        :param name: optional name of the experiment if missing, experiment_id is given instead
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
+        :param keyspace: keyspace used in cassandra cluster
+        :param aggressor_throughput_namespaces_prefixes: get work done for aggressor by specify ns prefix in cassandra
+        :param ssl_options used during secure connection.
+            Keys needed are: `ca_certs`, `keyfile`, `certfile` which are absolute paths,
+                             `username` with `password` are mandatory,
+                             `ssl_version` is optional and created in case of missing
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
-        :param aggressor_throughput_namespaces_prefix: get work done for aggressor by specify ns prefix in cassandra DB
 
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
@@ -31,26 +41,31 @@ class Experiment(object):
         """
         self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
+        self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
 
-        self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
-
-        self.aggressor_throughput_namespaces_prefix = ()
-        if 'aggressor_throughput_namespaces_prefix' in kwargs:
-            self.aggressor_throughput_namespaces_prefix = kwargs['aggressor_throughput_namespaces_prefix']
-
+        self.name = name if name else self.experiment_id
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
                         'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
                         'swan_repetition', 'throughputs']
 
-        port = kwargs['port'] if 'port' in kwargs else 9042
-        keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
-        if 'cassandra_cluster' in kwargs:
-            cluster = Cluster(kwargs['cassandra_cluster'], port=port)
+        if cassandra_cluster:
+            auth_provider = None
+            if ssl_options:
+                if 'ssl_version' not in ssl_options:
+                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    context.options |= ssl.OP_NO_SSLv2
+                    context.options |= ssl.OP_NO_SSLv3
+                    ssl_options['ssl_version'] = context.protocol
+                
+                auth_provider = PlainTextAuthProvider(username=ssl_options['username'],
+                                                      password=ssl_options['password'])
+
+            cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
             session = cluster.connect(keyspace)
             rows, qps = self.match_qps(session)
 
-        elif 'read_csv' in kwargs:
-            rows, qps = test_data_reader.read(kwargs['read_csv'])
+        elif read_csv:
+            rows, qps = test_data_reader.read(read_csv)
 
         data = self.populate_data(rows, qps)
         self.frame = pd.DataFrame(data, columns=self.columns)
@@ -66,7 +81,7 @@ class Experiment(object):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
-            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefix):
+            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefixes):
                 self.throughputs[k].append(row.doubleval)
             else:
                 rows[(row.ns,) + k] = row
