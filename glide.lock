@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-12-06T13:12:16.742305188+01:00
+updated: 2016-12-07T21:48:51.8437258+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -110,9 +110,7 @@ imports:
   - jsonpb
   - proto
 - name: github.com/golang/snappy
-  version: d9eb7a3d35ec988b8585d4a0068e462c27d28380
-- name: github.com/google/btree
-  version: 925471ac9e2131377a91e1595defec898166fe49
+  version: d7b1e156f50d3c4664f683603af70e3e47fa0aa2
 - name: github.com/google/cadvisor
   version: 0cdf4912793fac9990de3790c273342ec31817fb
   subpackages:
@@ -163,8 +161,6 @@ imports:
   version: e80d13ce29ede4452c43dea11e79b9bc8a15b478
 - name: github.com/hailocab/gocassa
   version: d3c840df87884c07d5ca67f08ecf62f4877ac79a
-  subpackages:
-  - reflect
 - name: github.com/hashicorp/go-msgpack
   version: fa3f63826f7c23912c15263591e65d54d080b458
   subpackages:
@@ -172,7 +168,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: 9b01aa2d32e35d6836378688aaf2df98e12f607c
+  version: 793435a5cab1538d4951f391fabedd019ae5ab57
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -223,7 +219,7 @@ imports:
   - pkg/schedule
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-processor-tag
-  version: 4bbe338e49bde18040fcc498e8119a35605b6215
+  version: 08701a5ca02034ab1a83c25da44349e5caa4dcc4
   subpackages:
   - tag
 - name: github.com/intelsdi-x/snap-plugin-utilities
@@ -237,8 +233,6 @@ imports:
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/mattn/go-runewidth
   version: 737072b4e32b7a5018b4a7125da8d12de90e8045
-- name: github.com/mitchellh/mapstructure
-  version: 5a0325d7fafaac12dda6e7fb8bd222ec1b69875e
 - name: github.com/montanaflynn/stats
   version: f8cd06f93c6c1b06028caafb88b540fc820f77c1
 - name: github.com/nu7hatch/gouuid

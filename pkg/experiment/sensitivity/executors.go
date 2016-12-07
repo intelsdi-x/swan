@@ -52,6 +52,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		// HP executor.
 		hpExecutorConfig := executor.DefaultKubernetesConfig()
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
+		hpExecutorConfig.PodNamePrefix = "swan-hp"
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
 
@@ -68,6 +69,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		// BE Executors.
 		beExecutorFactory = func(decorators isolation.Decorators) (executor.Executor, error) {
 			config := executor.DefaultKubernetesConfig()
+			config.PodNamePrefix = "swan-be"
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
 			config.Privileged = true // swan aggressor use unshare, which requires sudo.
