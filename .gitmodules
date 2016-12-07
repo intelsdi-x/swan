@@ -8,3 +8,4 @@
 [submodule "workloads/deep_learning/caffe/openblas"]
 	path = workloads/deep_learning/caffe/openblas
 	url = https://github.com/xianyi/OpenBLAS.git
+	ignore = dirty

@@ -8,6 +8,7 @@ autom4te.cache/
 /artifacts
 /artifacts.tgz
 /workloads/data_caching/memcached/memcached-1.4.25/build/
+/workloads/deep_learning/caffe/build/
 /workloads/low-level-aggressors/l1d
 /workloads/low-level-aggressors/l1i
 /workloads/low-level-aggressors/l3
@@ -29,3 +30,6 @@ autom4te.cache/
 /misc/snap-plugin-collector-session-test/snap-plugin-collector-session-test
 /misc/**/*log
 /integration_tests/**/*log
+latest_build
+artifacts.tar.gz
+swan-*.tar.gz
