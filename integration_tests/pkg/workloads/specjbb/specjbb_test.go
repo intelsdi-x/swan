@@ -80,7 +80,7 @@ func TestSPECjbb(t *testing.T) {
 							// JVM2, includes { SM(2),SP(2) } @ [127.0.0.1:38571, 127.0.0.1:45981, 127.0.0.1:35478]
 							//
 							//1s: Initializing... (init) OK
-							// We should look for this proper lines to be sure that our configuration works.
+							// We should look for the proper lines to be sure that our configuration works.
 							substringInitialization := "Initializing... (init) OK"
 							substringBackend := "Agent GRP1.Backend.JVM2 has attached to Controller"
 							substringTxI := "Agent GRP1.TxInjector.JVM1 has attached to Controller"
