@@ -2,7 +2,6 @@ package specjbb
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -90,7 +89,6 @@ func TestSPECjbb(t *testing.T) {
 								err := scanner.Err()
 								So(err, ShouldBeNil)
 								line := scanner.Text()
-								fmt.Println(line)
 								if result := strings.Contains(line, substringInitialization); result {
 									matchLoad = result
 								} else if result := strings.Contains(line, substringBackend); result {
