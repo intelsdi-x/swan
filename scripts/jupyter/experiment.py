@@ -7,6 +7,7 @@ import test_data_reader
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
+from collections import defaultdict
 
 
 class Experiment(object):
@@ -22,54 +23,73 @@ class Experiment(object):
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
+        :param aggressor_throughput_namespaces_prefix: get work done for aggressor by specify ns prefix in cassandra DB
 
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
-        self.rows = {}  # keep temporary rows from query for later match with qps rows
-        self.qps = {}  # qps is a one row from query, where we can map it to percentile rows
-        self.data = []
+        self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
+
         self.name = kwargs['name'] if 'name' in kwargs else self.experiment_id
-        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps', 'achieved_qps_percent',
-                        'swan_experiment', 'swan_aggressor_name', 'swan_phase', 'swan_repetition']
+
+        self.aggressor_throughput_namespaces_prefix = ()
+        if 'aggressor_throughput_namespaces_prefix' in kwargs:
+            self.aggressor_throughput_namespaces_prefix = kwargs['aggressor_throughput_namespaces_prefix']
+
+        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
+                        'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
+                        'swan_repetition', 'throughputs']
 
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
         if 'cassandra_cluster' in kwargs:
-            self.cluster = Cluster(kwargs['cassandra_cluster'], port=port)
-            self.session = self.cluster.connect(keyspace)
-            self.match_qps()
+            cluster = Cluster(kwargs['cassandra_cluster'], port=port)
+            session = cluster.connect(keyspace)
+            rows, qps = self.match_qps(session)
 
         elif 'read_csv' in kwargs:
-            self.rows, self.qps = test_data_reader.read(kwargs['read_csv'])
+            rows, qps = test_data_reader.read(kwargs['read_csv'])
 
-        self.populate_data()
-        self.frame = pd.DataFrame(self.data, columns=self.columns)
+        data = self.populate_data(rows, qps)
+        self.frame = pd.DataFrame(data, columns=self.columns)
 
-    def match_qps(self):
+    def match_qps(self, session):
+        rows = {}  # keep temporary rows from query for later match with qps rows
+        qps = {}  # qps is a one row from query, where we can map it to percentile rows
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
             FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
         statement = SimpleStatement(query, fetch_size=100)
-        for row_count, row in enumerate(self.session.execute(statement), start=1):
-            k = (row.ns, row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
-            self.rows[k] = row
-            if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
-                self.qps[(row.ns, row.tags['swan_phase'], row.tags['swan_repetition'])] = row.doubleval
 
-    def populate_data(self):
-        for row in self.rows.itervalues():
+        for row in session.execute(statement):
+            k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
+            if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
+                qps[k] = row.doubleval
+            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefix):
+                self.throughputs[k].append(row.doubleval)
+            else:
+                rows[(row.ns,) + k] = row
+        return rows, qps
+
+    def populate_data(self, rows, qps):
+        data = []
+        for row in rows.itervalues():
             if row.valtype == "doubleval":
-                ns = "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host)
-                achived_qps = (self.qps[(ns, row.tags['swan_phase'], row.tags['swan_repetition'])] /
-                               float(row.tags['swan_loadpoint_qps']))
-                percent_qps = '{percent:.2%}'.format(percent=achived_qps)
+                k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
+
+                achieved_qps = (qps[k] / float(row.tags['swan_loadpoint_qps']))
+                percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
+
+                max_throughput = max(self.throughputs[k]) if k in self.throughputs else None
+
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
-                          row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition']]
+                          row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'],
+                          max_throughput]
 
-                self.data.append(values)
+                data.append(values)
+        return data
 
     def get_frame(self):
         return self.frame

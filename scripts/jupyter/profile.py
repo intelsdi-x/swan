@@ -6,6 +6,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+
 from IPython.core.display import HTML
 from plotly.offline import init_notebook_mode, iplot
 
@@ -46,7 +47,7 @@ class Profile(object):
         :param e: an Experiment class object
         :param slo: performance target [int]
 
-        Initializes a sensivity profile with `e` experiment object and visualize it against the
+        Initializes a sensitivity profile with `e` experiment object and visualize it against the
         specified slo (performance target).
         """
         self.exp = e
@@ -54,6 +55,7 @@ class Profile(object):
         self.categories = []
         self.data_frame = self.exp.get_frame()
         self.latency_qps_aggrs = {}
+        self.throughput_per_aggressor = {}
 
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
@@ -73,13 +75,19 @@ class Profile(object):
             index.append(name)
             df.is_copy = False
             df.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df['swan_loadpoint_qps'])
-            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value']]
+            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value', 'throughputs']]
             self.categories.append(name)
 
             # Store loadpoints for data frame from the target QPSes.
             # In case of partial measurements, we only use the loadpoints from this aggressor
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
+
+            throughput = aggressor_frame['throughputs'].tolist()
+            throughput.extend([np.nan] *
+                              (len(longest_loadpoints) - len(throughput)))
+
+            self.throughput_per_aggressor[name] = throughput
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
@@ -95,7 +103,7 @@ class Profile(object):
         loadpoints = map(lambda c: (float(c) / peak) * 100, longest_loadpoints)
         self.frame = pd.DataFrame(data, columns=loadpoints, index=index).sort_index()
 
-    def sensitivity_table(self):
+    def sensitivity_table(self, show_throughput=False):
         no_border = 'border: 0'
         black_border = '1px solid black'
         html_out = ''
@@ -110,9 +118,8 @@ class Profile(object):
 
         html_out += '</tr>'
 
-        for index, row in self.frame.iterrows():
+        for aggressor, row in self.frame.iterrows():
             html_out += '<tr style="%s">' % no_border
-            aggressor = index
             if aggressor == 'None':
                 label = 'Baseline'
             else:
@@ -121,7 +128,7 @@ class Profile(object):
             html_out += '<td style="%s; border-right: %s;">%s</td>' % \
                 (no_border, black_border, label)
 
-            for value in row:
+            for i, value in enumerate(row):
                 style = '%s; ' % no_border
                 if value == Profile.MISSING_VALUE:
                     style += 'background-color: #c0c0c0;'
@@ -129,14 +136,17 @@ class Profile(object):
                     style += 'background-color: #a9341f; color: white;'
                 elif value > 100:
                     style += 'background-color: #ffeda0;'
-                elif np.isnan(value):
-                    value = 0
-                    style += 'background-color: #a9341f; color: white;'
                 else:
                     style += 'background-color: #98cc70;'
 
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
+
+                throughput = self.throughput_per_aggressor[aggressor]
+                if show_throughput and not all(np.isnan(throughput)):
+                    value = "%s [%s]" % (value, throughput[i])
+
                 html_out += '<td style="%s">%s</td>' % (style, value)
+
             html_out += '</tr>'
 
         html_out += '</table>'
