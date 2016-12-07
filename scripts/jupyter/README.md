@@ -41,7 +41,7 @@ Within the open tamplate notebook:
 from experiment import *
 ```
 
-And evaluate the expressions by clicking `shift` and `enter` on each other.
+And evaluate the expressions by clicking `shift` and `enter` on the cell.
 ```python
 exp = Experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment', port=9042)
 ```
@@ -50,7 +50,7 @@ Code above shows the available samples. Be aware that if a experiments has large
 
 ![sample list](docs/sample_list.png) 
 
-If yu want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analisys you can get it like: 
+If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analisys you can get it like: 
 ```python
 df1 = exp1.get_frame()
 ```
@@ -66,7 +66,7 @@ This should render a table similar to the one below:
 
 ![sensitivity profile](docs/sensitivity_profile.png)
 
-Below there as showed some missing data that can happen if you will try build sensivity profile in case of missing data in Cassandra.
+Below there are showed some missing data that can happen if you will try build sensivity profile in case of missing data in Cassandra.
 In this case field in the table is marked as grey with `N/A`
 
 ```python
