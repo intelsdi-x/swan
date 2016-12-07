@@ -1,9 +1,12 @@
-# Installation guide for Swan
+# ![Swan diagram](swan-logo-48.png) Swan
+
+# Installation guide
+
 Swan is built to be run on Linux and has been tested on Linux Centos 7.
 Instead of building Swan in your own environment, we recommend you to build and run it in a development VM. Follow the instructions to create a Linux virtual machine pre-configured for running the Swan experiment.
 
 ## Virtual machine configuration details
-Swan provides a Vagranfile, which describes the pre-configured CentOS 7 virtual machine and how to provision it. This machine can be used for running the Swan experiment. The configuration include:
+Swan provides a Vagrantfile, which describes the pre-configured CentOS 7 virtual machine and how to provision it. This machine can be used for running the Swan experiment. The configuration include:
 
 1. Swan directory mounted in the guest file system (it resides in the host OS, but it is also accessed from virtual machine).
 
@@ -36,7 +39,7 @@ Swan provides a Vagranfile, which describes the pre-configured CentOS 7 virtual 
 
 8. Prepared docker swan image `centos_swan_image`, used during experiment, which run on [Kubernetes](http://kubernetes.io/). This image contains all necessary workloads that could be used during experiment (during Vagrant provisioning you will see that workloads are built twice - one time in the virtual machine and the second in the Docker image).
 
-## Prerequities
+## Prerequisites
 You need a read access to [Athena](https://github.com/intelsdi-x/athena) and [Swan](https://github.com/intelsdi-x/swan) repositories. If you don't have it, please contact [Swan](https://github.com/intelsdi-x/swan) repository administrators.
 
 ## Install OS dependencies
@@ -47,7 +50,7 @@ The distributed version control system [Git](https://git-scm.com/) is needed to 
 The cross-platform virtualization application [VirtualBox](https://www.virtualbox.org/) has to be installed because the Swan virtual machine is configured to use this provider. See [here](https://www.virtualbox.org/wiki/Downloads) for guidance on installation of VirtualBox.
 
 **3. Vagrant**
-The command line utility for managing the lifecycle of virtual machines [Vagrant](https://www.vagrantup.com/docs/) is needed to create and run a pre-configured Swan virtual machine. Swan requires Vagrant version 1.8.6. See [here](https://www.vagrantup.com/docs/installation/) for guidance on installation of Vagrant.
+The command line utility for managing the life cycle of virtual machines [Vagrant](https://www.vagrantup.com/docs/) is needed to create and run a pre-configured Swan virtual machine. See [here](https://www.vagrantup.com/docs/installation/) for guidance on installation of Vagrant. *Please note* that Swan requires Vagrant version _1.8.6_.
 Configure vagrant to work with VirtualBox by installing the plugin [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) which automatically installs the host's VirtualBox Guest Additions on the guest system:
 ```
 $ vagrant plugin install vagrant-vbguest

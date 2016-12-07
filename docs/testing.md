@@ -1,3 +1,5 @@
+# ![Swan diagram](swan-logo-48.png) Swan
+
 # Integration tests
 
 Integration tests are run separately from unit_tests. This is cause they require custom
