@@ -230,6 +230,7 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: api.PodSpec{
+			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
 			SecurityContext:               &api.PodSecurityContext{HostNetwork: k8s.config.HostNetwork},
 			TerminationGracePeriodSeconds: &zero,
