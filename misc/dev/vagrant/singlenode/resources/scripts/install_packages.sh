@@ -28,6 +28,7 @@ yum install -y -q \
     hg \
     htop \
     iptables \
+    java-1.8.0-openjdk \
     leveldb \
     leveldb-devel \
     libcgroup-tools \
@@ -41,7 +42,6 @@ yum install -y -q \
     openblas-devel \
     opencv \
     opencv-devel \
-    openjdk-8-jre \
     perf \
     protobuf \
     protobuf-devel \
