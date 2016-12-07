@@ -48,13 +48,8 @@ class Experiment(object):
 
         port = kwargs['port'] if 'port' in kwargs else 9042
         keyspace = kwargs['keyspace'] if 'keyspace' in kwargs else 'snap'
+
         if 'cassandra_cluster' in kwargs:
-
-
-            cluster = Cluster(kwargs['cassandra_cluster'], port=port)
-            session = cluster.connect(keyspace)
-            rows, qps = self.match_qps(session)
-
             ssl_opts = None
             auth_provider = None
             ssl_auth_params_needed = ('ca_certs', 'keyfile', 'certfile', 'username', 'password')
@@ -63,8 +58,18 @@ class Experiment(object):
                 ssl_opts['ca_certs'] = kwargs['ca_certs']
                 ssl_opts['keyfile'] = kwargs['keyfile']
                 ssl_opts['certfile'] = kwargs['certfile']
-                ssl_opts['ssl_version'] = ssl.PROTOCOL_TLSv1
+
+                context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                context.options |= ssl.OP_NO_SSLv2
+                context.options |= ssl.OP_NO_SSLv3
+                ssl_opts['ssl_version'] = context.protocol
+                
                 auth_provider = PlainTextAuthProvider(username=kwargs['username'], password=kwargs['password'])
+
+            cluster = Cluster(kwargs['cassandra_cluster'], port=port, ssl_options=ssl_opts,
+                              auth_provider=auth_provider)
+            session = cluster.connect(keyspace)
+            rows, qps = self.match_qps(session)
 
         elif 'read_csv' in kwargs:
             rows, qps = test_data_reader.read(kwargs['read_csv'])
