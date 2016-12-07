@@ -20,16 +20,16 @@ class Experiment(object):
     The experiment id should either be found when running the experiment through the swan cli or
     from using the Experiments class.
     """
-    def __init__(self, experiment_id, cassandra_cluster, port=9042, name=None, keyspace='snap',
-                 aggressor_throughput_namespaces_prefix=(), ssl_opts={}, read_csv=None):
+    def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
+                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
-        :param name: optional name of the experiment if missing experiment_id is given
+        :param name: optional name of the experiment if missing, experiment_id is given instead
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
         :param keyspace: keyspace used in cassandra cluster
-        :param aggressor_throughput_namespaces_prefix: get work done for aggressor by specify ns prefix in cassandra DB
-        :param ssl_opts used during secure connection.
+        :param aggressor_throughput_namespaces_prefixes: get work done for aggressor by specify ns prefix in cassandra
+        :param ssl_options used during secure connection.
             Keys needed are: `ca_certs`, `keyfile`, `certfile` which are absolute paths,
                              `username` with `password` are mandatory,
                              `ssl_version` is optional and created in case of missing
@@ -41,7 +41,7 @@ class Experiment(object):
         """
         self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
-        self.aggressor_throughput_namespaces_prefix = aggressor_throughput_namespaces_prefix
+        self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
 
         self.name = name if name else self.experiment_id
         self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
@@ -50,16 +50,17 @@ class Experiment(object):
 
         if cassandra_cluster:
             auth_provider = None
-            if ssl_opts:
-                if 'ssl_version' not in ssl_opts:
+            if ssl_options:
+                if 'ssl_version' not in ssl_options:
                     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                     context.options |= ssl.OP_NO_SSLv2
                     context.options |= ssl.OP_NO_SSLv3
-                    ssl_opts['ssl_version'] = context.protocol
+                    ssl_options['ssl_version'] = context.protocol
                 
-                auth_provider = PlainTextAuthProvider(username=ssl_opts['username'], password=ssl_opts['password'])
+                auth_provider = PlainTextAuthProvider(username=ssl_options['username'],
+                                                      password=ssl_options['password'])
 
-            cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_opts, auth_provider=auth_provider)
+            cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
             session = cluster.connect(keyspace)
             rows, qps = self.match_qps(session)
 
@@ -80,7 +81,7 @@ class Experiment(object):
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
-            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefix):
+            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefixes):
                 self.throughputs[k].append(row.doubleval)
             else:
                 rows[(row.ns,) + k] = row
