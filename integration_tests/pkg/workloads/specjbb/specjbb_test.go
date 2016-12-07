@@ -17,7 +17,7 @@ import (
 const (
 	txICount     = 1
 	load         = 6000
-	loadDuration = 9000
+	loadDuration = 10000
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
