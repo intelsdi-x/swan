@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -56,6 +59,22 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Validate preconditions.
 	validate.OS()
 
+	// Generate an experiment ID and start the metadata session.
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
+		os.Exit(ExSoftware)
+	}
+	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
+	err = metadata.Connect()
+	if err != nil {
+		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
+		os.Exit(ExSoftware)
+	}
+
+	metadata.Record("command_arguments", strings.Join(os.Args, ","))
+	metadata.Record("environment_variables", strings.Join(os.Environ(), ","))
+
 	// Create isolations.
 	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
 
@@ -93,12 +112,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(ExSoftware)
 	}
 
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(ExSoftware)
-	}
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	metadata.Record("experiment_name", conf.AppName())
 	fmt.Println(uuid.String())
 
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
@@ -123,6 +138,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	} else {
 		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
 	}
+	metadata.Record("peak_load", strconv.Itoa(load))
 
 	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
@@ -138,8 +154,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var beIteration int
 
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
+
+	loadPoints := sensitivity.LoadPointsCountFlag.Value()
+	metadata.Record("load_points", strconv.Itoa(loadPoints))
+
+	repetitions := sensitivity.RepetitionsFlag.Value()
+	metadata.Record("repetitions", strconv.Itoa(repetitions))
+
 	for _, beLauncher := range beLaunchers {
-		for loadPoint := 0; loadPoint < sensitivity.LoadPointsCountFlag.Value(); loadPoint++ {
+		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
 			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
@@ -148,7 +171,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				aggressorName = beLauncher.Launcher.Name()
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
-			for repetition := 0; repetition < sensitivity.RepetitionsFlag.Value(); repetition++ {
+			for repetition := 0; repetition < repetitions; repetition++ {
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				err := func() error {
