@@ -63,6 +63,9 @@ func (b Backend) buildCommand() string {
 		" -Dcom.sun.management.jmxremote.ssl=false",
 		" -Dcom.sun.management.jmxremote.authenticate=false",
 		" -Djava.net.preferIPv4Stack=true",
+		" -Xms5g -Xmx5g",                    // allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
+		" -XX:NativeMemoryTracking=summary", // memory monitoring purposes
+		" -server",                          // compilation takes more time but offers additional optimizations
 		ControllerHostProperty, b.conf.IP,
 		" ", b.conf.PathToBinary,
 		" -m backend",
