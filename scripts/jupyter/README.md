@@ -74,3 +74,15 @@ p1 = Profile(exp, slo=500)
 p1.sensitivity_table(show_throughput=True)
 ```
 ![sensitivity profile](docs/sensitivity_profile_failed.png)
+
+## Visualizing data using Jupyter
+
+We are using [plotly](https://plot.ly/) interactive plots. There are some already prepared function for plots
+the data directly in Jupyter, like:
+
+```python
+p1.sensitivity_chart(fill=True, to_max=True)
+```
+Where `fill` parameter fills area between Baseline and Aggressor. `to_max` shows comparison between Baseline and 'worst case'.
+
+'worst case' in this case means max latency violations for all aggressors in each load point.
