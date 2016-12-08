@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
@@ -16,7 +17,7 @@ import (
 const (
 	txICount     = 1
 	load         = 6000
-	loadDuration = 30
+	loadDuration = 40
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
@@ -169,13 +170,13 @@ func TestSPECjbb(t *testing.T) {
 
 						Convey("And when I stop backend prematurely", func() {
 							// Wait for backend to be registered.
-							time.Sleep(10 * time.Second)
+							time.Sleep(20 * time.Second)
 							err = backendTaskHandle.Stop()
 							So(err, ShouldBeNil)
 							So(backendTaskHandle.Status(), ShouldEqual, executor.TERMINATED)
 							Convey("Controller should indicate that error occurred", func() {
 								// Wait for controller to notice an error.
-								time.Sleep(10 * time.Second)
+								time.Sleep(15 * time.Second)
 								file, err := os.Open(output.Name())
 								So(err, ShouldBeNil)
 								defer file.Close()
@@ -186,6 +187,7 @@ func TestSPECjbb(t *testing.T) {
 									err := scanner.Err()
 									So(err, ShouldBeNil)
 									line := scanner.Text()
+									fmt.Println(line)
 									if result := strings.Contains(line, stoppedBackend); result {
 										match = result
 										break
@@ -222,9 +224,9 @@ func TestSPECjbb(t *testing.T) {
 				So(loadGeneratorTaskHandle, ShouldNotBeNil)
 
 				Reset(func() {
-					//loadGeneratorTaskHandle.Stop()
-					//loadGeneratorTaskHandle.Clean()
-					//loadGeneratorTaskHandle.EraseOutput()
+					loadGeneratorTaskHandle.Stop()
+					loadGeneratorTaskHandle.Clean()
+					loadGeneratorTaskHandle.EraseOutput()
 				})
 
 				output, err := loadGeneratorTaskHandle.StdoutFile()
@@ -274,9 +276,9 @@ func TestSPECjbb(t *testing.T) {
 				So(loadGeneratorTaskHandle, ShouldNotBeNil)
 
 				Reset(func() {
-					//loadGeneratorTaskHandle.Stop()
-					//loadGeneratorTaskHandle.Clean()
-					//loadGeneratorTaskHandle.EraseOutput()
+					loadGeneratorTaskHandle.Stop()
+					loadGeneratorTaskHandle.Clean()
+					loadGeneratorTaskHandle.EraseOutput()
 				})
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
