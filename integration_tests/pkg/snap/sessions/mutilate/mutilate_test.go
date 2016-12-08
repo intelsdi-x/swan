@@ -1,4 +1,4 @@
-package sessions
+package mutilatesession_test
 
 import (
 	"fmt"
