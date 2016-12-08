@@ -4,6 +4,7 @@
 /**/stderr
 /**/stdout
 /.vscode
+.ipynb_checkpoints/
 autom4te.cache/
 /artifacts
 /artifacts.tgz
