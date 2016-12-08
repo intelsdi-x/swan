@@ -73,7 +73,7 @@ In this case field in the table is marked as grey with `N/A`
 p1 = Profile(exp, slo=500)
 p1.sensitivity_table(show_throughput=True)
 ```
-![sensitivity profile](docs/sensitivity_profile_failed.png)
+![sensitivity_profile_failed](docs/sensitivity_profile_failed.png)
 
 ## Visualizing data using Jupyter
 
@@ -81,8 +81,24 @@ We are using [plotly](https://plot.ly/) interactive plots. There are some alread
 the data directly in Jupyter, like:
 
 ```python
-p1.sensitivity_chart(fill=True, to_max=True)
+p1.sensitivity_chart(fill=True, to_max=False)
 ```
-Where `fill` parameter fills area between Baseline and Aggressor. `to_max` shows comparison between Baseline and 'worst case'.
+Where `fill` parameter fills area between Baseline and  selected aggressor. `to_max` shows comparison between Baseline and a 'worst case'.
 
-'worst case' in this case means max latency violations for all aggressors in each load point.
+'worst case' in this case means max latency violations, for all aggressors in each load point.
+
+![sensitivity_chart](docs/sensitivity_chart.png)
+
+It is also possible to compare two experiments, like below:
+```python
+exps = [exp1, exp2]
+compare_experiments(exps, fill=True, to_max=False)
+```
+
+![compare_two_experiments](docs/compare_two_experiments.png)
+
+Here `fill` param acts the same  as in the previous example, and `to_max` compare Baseline for two experiments with 'worst cases'.
+
+## Exploration data using jupyter
+
+To quick start we provide to you example notebook [here](example.ipynb)
