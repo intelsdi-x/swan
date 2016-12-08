@@ -35,24 +35,19 @@ var (
 )
 
 // PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
-// Note: SnapdHTTPEndpoint set to "none" will disable mutilate session completely.
 // TODO: this should be put into athena:/pkg/snap
 func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
-	// NOTE: For debug it is convenient to disable snap for some experiment runs.
-	if snap.SnapdHTTPEndpoint.Value() != "none" {
-		// Create connection with Snap.
-		logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
-		// TODO(bp): Make helper for passing host:port or only host option here.
+	// Create connection with Snap.
+	logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
+	// TODO(bp): Make helper for passing host:port or only host option here.
 
-		mutilateConfig := mutilatesession.DefaultConfig()
-		mutilateConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
-		mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
-		if err != nil {
-			return nil, err
-		}
-		return mutilateSnapSession, nil
+	mutilateConfig := mutilatesession.DefaultConfig()
+	mutilateConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
+	mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
+	return mutilateSnapSession, nil
 }
 
 // PrepareMutilateGenerator creates new LoadGenerator based on mutilate.
