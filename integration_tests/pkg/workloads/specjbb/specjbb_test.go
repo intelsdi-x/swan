@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
@@ -187,7 +186,6 @@ func TestSPECjbb(t *testing.T) {
 									err := scanner.Err()
 									So(err, ShouldBeNil)
 									line := scanner.Text()
-									fmt.Println(line)
 									if result := strings.Contains(line, stoppedBackend); result {
 										match = result
 										break
