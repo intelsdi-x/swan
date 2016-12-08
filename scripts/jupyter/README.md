@@ -102,3 +102,8 @@ Here `fill` param acts the same  as in the previous example, and `to_max` compar
 ## Exploration data using jupyter
 
 To quick start we provide to you example notebook [here](example.ipynb)
+
+Note: Unfortunelly Github doesn't render iframes at the moment.
+So, you will notice, that plotly graphs do not show up on the page after rendering.
+We recommend use [nbviewer](http://nbviewer.jupyter.org/) which renders every notebooks from Github, on a separate domain,
+or just open example from the local Jupyter instance.
