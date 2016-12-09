@@ -3,6 +3,7 @@ This module contains the convience class to read experiment data and generate se
 profiles. See profile.py for more information.
 """
 import pandas as pd
+import numpy as np
 import ssl
 
 import test_data_reader
@@ -96,7 +97,7 @@ class Experiment(object):
                 achieved_qps = (qps[k] / float(row.tags['swan_loadpoint_qps']))
                 percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
 
-                max_throughput = max(self.throughputs[k]) if k in self.throughputs else None
+                max_throughput = max(self.throughputs[k]) if k in self.throughputs else np.nan
 
                 values = [row.ns, row.host, row.time, row.doubleval, row.tags['plugin_running_on'],
                           row.tags['swan_loadpoint_qps'], percent_qps, row.tags['swan_experiment'],
