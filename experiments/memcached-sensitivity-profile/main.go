@@ -56,9 +56,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.SetLevel(conf.LogLevel())
 
-	// Validate preconditions.
-	validate.OS()
-
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
 	if err != nil {
@@ -74,6 +71,23 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	metadata.Record("command_arguments", strings.Join(os.Args, ","))
 	metadata.Record("environment_variables", strings.Join(os.Environ(), ","))
+
+	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	metadata.Record("experiment_name", conf.AppName())
+	fmt.Println(uuid.String())
+
+	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
+	if err != nil {
+		logrus.Errorf("IO error: %q", err.Error())
+		os.Exit(ExIOErr)
+	}
+
+	// Setup logging set to both output and logFile.
+	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
+
+	// Validate preconditions.
+	validate.OS()
 
 	// Create isolations.
 	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
@@ -111,20 +125,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		logrus.Errorf("Cannot create snap session: %q", err.Error())
 		os.Exit(ExSoftware)
 	}
-
-	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
-	metadata.Record("experiment_name", conf.AppName())
-	fmt.Println(uuid.String())
-
-	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
-	if err != nil {
-		logrus.Errorf("IO error: %q", err.Error())
-		os.Exit(ExIOErr)
-	}
-
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
@@ -208,6 +208,14 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
 					}
 
+					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
+						ExperimentKey, uuid.String(),
+						PhaseKey, phaseName,
+						RepetitionKey, repetition,
+						LoadPointQPSKey, phaseQPS,
+						AggressorNameKey, aggressorName,
+					)
+
 					// Launch BE tasks when we are not in baseline.
 					if beLauncher.Launcher != nil {
 						beHandle, err := beLauncher.Launcher.Launch()
@@ -220,6 +228,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						}()
 						// Majority of LauncherSessionPairs do not use Swan.
 						if beLauncher.SnapSessionLauncher != nil {
+							logrus.Debugf("starting snap session: ")
 							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
@@ -237,14 +246,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
 					loadGeneratorHandle.Wait(0)
-
-					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						ExperimentKey, uuid.String(),
-						PhaseKey, phaseName,
-						RepetitionKey, repetition,
-						LoadPointQPSKey, loadPoint,
-						AggressorNameKey, aggressorName,
-					)
 
 					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
 					if err != nil {
