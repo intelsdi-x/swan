@@ -60,13 +60,14 @@ class Profile(object):
         df_of_99th = self.data_frame.loc[self.data_frame['ns'].str.contains('/percentile/99th')]
         df_of_99th.is_copy = False
         df_of_99th['swan_aggressor_name'].replace(to_replace='None', value="Baseline", inplace=True)
+        df_of_99th.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df_of_99th['swan_loadpoint_qps'])
+        df_of_99th.sort_values('swan_loadpoint_qps', inplace=True)
 
         self.p99_by_aggressor = df_of_99th.groupby('swan_aggressor_name')
-
         # find max of loadpoints for every aggressor by length, then take first one longest loadpoint and return it"
-        loadpoints_for_all_aggressors = [df['swan_loadpoint_qps'].astype(int).tolist() for (_, df) in
+        loadpoints_for_all_aggressors = [df['swan_loadpoint_qps'].astype(float).tolist() for (_, df) in
                                          self.p99_by_aggressor]
-        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda loadpoints: len(loadpoints))
+        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda lps: len(lps))
 
         data = []
         index = []
@@ -74,8 +75,7 @@ class Profile(object):
         for name, df in self.p99_by_aggressor:
             index.append(name)
             df.is_copy = False
-            df.loc[:, 'swan_loadpoint_qps'] = pd.to_numeric(df['swan_loadpoint_qps'])
-            aggressor_frame = df.sort_values('swan_loadpoint_qps')[['swan_loadpoint_qps', 'value', 'throughputs']]
+            aggressor_frame = df[['swan_loadpoint_qps', 'value', 'throughputs']]
             self.categories.append(name)
 
             # Store loadpoints for data frame from the target QPSes.
@@ -83,11 +83,10 @@ class Profile(object):
             # if it is bigger than the current one.
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
 
-            throughput = aggressor_frame['throughputs'].tolist()
-            throughput.extend([np.nan] *
-                              (len(longest_loadpoints) - len(throughput)))
+            throughputs = aggressor_frame['throughputs'].tolist()
+            throughputs.extend([np.nan] * (len(longest_loadpoints) - len(throughputs)))
 
-            self.throughput_per_aggressor[name] = throughput
+            self.throughput_per_aggressor[name] = throughputs
 
             violations = aggressor_frame['value'].apply(lambda x: (x / slo) * 100)
             filled_qps = self._fill_missing_data(qps, violations, longest_loadpoints)
@@ -142,7 +141,7 @@ class Profile(object):
                 value = "%.1f%%" % value if value is not Profile.MISSING_VALUE else Profile.MISSING_VALUE
 
                 throughput = self.throughput_per_aggressor[aggressor]
-                if show_throughput and not all(np.isnan(throughput)):
+                if show_throughput and not np.isnan(throughput).all():
                     value = "%s [%s]" % (value, throughput[i])
 
                 html_out += '<td style="%s">%s</td>' % (style, value)
@@ -324,7 +323,7 @@ if __name__ == '__main__':
     exp2 = Experiment(experiment_id='2e002fc4-9600-4028-6165-6a8725484058', cassandra_cluster=['127.0.0.1'], port=9042,
                       name='exp_without_serenity')
 
-    Profile(exp1, slo=500).sensitivity_table()
+    Profile(exp1, slo=500).sensitivity_table(show_throughput=True)
     Profile(exp1, slo=500).sensitivity_chart()
     Profile(exp2, slo=500).sensitivity_chart(fill=True, to_max=True)
 
