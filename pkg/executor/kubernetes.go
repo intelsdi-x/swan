@@ -546,8 +546,16 @@ func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
 			select {
 			case event, ok := <-watcher.ResultChan():
 				if !ok {
-					// Don't know what to do.
-					panic("watcher event channel was unexpectly closed!")
+					// In some cases sender may close watcher channel. Usually it is safe to recreate it.
+					log.Warnf("Pod %s: watcher event channel was unexpectly closed!", kw.pod.Name)
+					var err error
+					log.Debugf("Pod %s: recreating watcher stream", kw.pod.Name)
+					watcher, err = kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+					if err != nil {
+						// We do not know what to do when error occurs.
+						log.Panicf("Pod %s: cannot recreate watcher stream - %q", kw.pod.Name, err)
+					}
+					continue
 				}
 
 				// Don't care about anything else than pods.
