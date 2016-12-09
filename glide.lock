@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-12-07T21:48:51.8437258+01:00
+updated: 2016-12-09T12:52:02.700793704+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -69,7 +69,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: c3eb24aeea63668ebdac08d2e252f20df8b6b1ae
 - name: github.com/gocql/gocql
-  version: 3ac1aabebaf2705c6f695d4ef2c25ab6239e88b3
+  version: 03ae28ccfc4fa086afea7fcec681bf7ff60f0346
   subpackages:
   - internal/lru
   - internal/murmur
@@ -168,7 +168,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: 793435a5cab1538d4951f391fabedd019ae5ab57
+  version: 7d63fe189321966ee06e039f330d04e71c32c4a7
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -284,9 +284,16 @@ imports:
   subpackages:
   - context
   - context/ctxhttp
+  - html
+  - html/atom
   - http2
   - http2/hpack
+  - idna
+  - internal/timeseries
   - lex/httplex
+  - proxy
+  - trace
+  - websocket
 - name: golang.org/x/oauth2
   version: b5adcc2dcdf009d0391547edc6ecbaff889f5bb9
   subpackages:
@@ -295,7 +302,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 9c60d1c508f5134d1ca726b4641db998f2523357
+  version: c8bc69bc2db9c57ccf979550bc69655df5039a8a
   subpackages:
   - unix
 - name: google.golang.org/appengine
