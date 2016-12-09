@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! -x $(which s3cmd) ]; then
+if [ ! -x "$(which s3cmd)" ]; then
     pip install s3cmd
 fi
 
