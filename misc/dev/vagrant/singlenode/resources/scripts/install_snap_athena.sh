@@ -2,7 +2,7 @@
 
 set -e
 
-SNAP_VERSION="v0.14.0-beta"
+SNAP_VERSION="v1.0.0"
 
 . $HOME_DIR/.bash_profile
 ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena

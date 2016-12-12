@@ -4,7 +4,7 @@ set -e
 
 source $HOME_DIR/.bash_profile
 
-GO_VERSION="1.6"
+GO_VERSION="1.7"
 GLIDE_VERSION="v0.12.2"
 GODEP_VERSION="v74"
 

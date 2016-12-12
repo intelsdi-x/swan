@@ -5,7 +5,7 @@ import:
 - package: github.com/gocql/gocql
 - package: github.com/hailocab/gocassa
 - package: github.com/intelsdi-x/athena
-  version: master
+  version: iwan/desperate_attempt_to_upgrade_snap
   subpackages:
   - pkg/conf
   - pkg/executor
@@ -27,7 +27,7 @@ import:
   - config
   - logger
 - package: github.com/intelsdi-x/snap
-  version: ~0.14.0-beta
+  version: 1.0.0
   subpackages:
   - control/plugin
   - control/plugin/cpolicy
