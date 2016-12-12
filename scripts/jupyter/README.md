@@ -48,9 +48,9 @@ exp = Experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experim
 
 Code above shows the available samples. Be aware that if a experiments has large data, it can take a while:
 
-![sample list](docs/sample_list.png) 
+![sample list](docs/sample_list.png)
 
-If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analisys you can get it like: 
+If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analysis you can get it like: 
 ```python
 df1 = exp1.get_frame()
 ```
@@ -60,13 +60,13 @@ p = Profile(exp, slo=500)
 p.sensitivity_table(show_throughput=False)
 ```
 
-Where `slo` is the target latency in micro seconds and `show_throughput` is optional parameter and consist work make by aggressor.
+Where `slo` is the target latency in micro seconds and `show_throughput` is optional parameter and consists of work make by aggressor.
 
 This should render a table similar to the one below:
 
 ![sensitivity profile](docs/sensitivity_profile.png)
 
-Below there are showed some missing data that can happen if you will try build sensivity profile in case of missing data in Cassandra.
+Below some missing data is shown. It can happen, if you will try build sensivity profile in case of missing data in Cassandra.
 In this case field in the table is marked as grey with `N/A`
 
 ```python
@@ -77,7 +77,7 @@ p1.sensitivity_table(show_throughput=True)
 
 ## Visualizing data using Jupyter
 
-We are using [plotly](https://plot.ly/) interactive plots. There are some already prepared function for plots
+We are using [plotly](https://plot.ly/) interactive plots. There are some already prepared function for plotting
 the data directly in Jupyter, like:
 
 ```python
@@ -85,7 +85,7 @@ p1.sensitivity_chart(fill=True, to_max=False)
 ```
 Where `fill` parameter fills area between Baseline and  selected aggressor. `to_max` shows comparison between Baseline and a 'worst case'.
 
-'worst case' in this case means max latency violations, for all aggressors in each load point.
+'worst case' in this case means max latency violations, for all aggressors at each load point.
 
 ![sensitivity_chart](docs/sensitivity_chart.png)
 
@@ -97,13 +97,13 @@ compare_experiments(exps, fill=True, to_max=False)
 
 ![compare_two_experiments](docs/compare_two_experiments.png)
 
-Here `fill` param acts the same  as in the previous example, and `to_max` compare Baseline for two experiments with 'worst cases'.
+Here `fill` param acts the same as in the previous example, and `to_max` compares Baseline for two experiments with 'worst cases'.
 
 ## Exploration data using jupyter
 
-To quick start we provide to you example notebook [here](example.ipynb)
+To quick start we provide you with the example notebook [here](example.ipynb)
 
-Note: Unfortunelly Github doesn't render iframes at the moment.
+Note: Unfortunately Github doesn't render iframes at the moment.
 So, you will notice, that plotly graphs do not show up on the page after rendering.
 We recommend use [nbviewer](http://nbviewer.jupyter.org/) which renders every notebooks from Github, on a separate domain,
 or just open example from the local Jupyter instance.
