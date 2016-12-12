@@ -172,7 +172,6 @@ func Meta() *snapPlugin.PluginMeta {
 		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
 		snapPlugin.CacheTTL(1*time.Second),
 	)
-	meta.RPCType = snapPlugin.JSONRPC
 
 	return meta
 }

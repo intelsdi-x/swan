@@ -143,7 +143,7 @@ func Meta() *plugin.PluginMeta {
 		plugin.RoutingStrategy(plugin.DefaultRouting),
 		plugin.CacheTTL(1*time.Second),
 	)
-	meta.RPCType = plugin.JSONRPC
+
 	return meta
 }
 
