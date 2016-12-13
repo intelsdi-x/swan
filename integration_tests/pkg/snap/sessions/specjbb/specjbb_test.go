@@ -1,4 +1,4 @@
-package mutilatesessiontest
+package specjbbsessiontest
 
 import (
 	"fmt"
@@ -13,10 +13,11 @@ import (
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/snap"
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
+
 
 func soMetricRowIsValid(
 	expectedMetrics map[string]string,
@@ -42,7 +43,8 @@ func soMetricRowIsValid(
 	So(valueFloat, ShouldAlmostEqual, expectedValueFloat, epsilon)
 }
 
-func TestSnapMutilateSession(t *testing.T) {
+func TestSnapSpecJbbSession(t *testing.T) {
+
 	var snapd *testhelpers.Snapd
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
@@ -82,38 +84,35 @@ func TestSnapMutilateSession(t *testing.T) {
 				defer os.Remove(metricsFile)
 
 				loader.Load(snap.SessionPublisher)
+
 				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
 				So(err, ShouldBeNil)
+
 
 				publisher = wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
 				So(publisher, ShouldNotBeNil)
 
 				publisher.AddConfigItem("file", metricsFile)
 
-				Convey("While launching MutilateSnapSession", func() {
-					mutilateSessionConfig := mutilatesession.DefaultConfig()
-					mutilateSessionConfig.SnapdAddress = snapdAddress
-					mutilateSessionConfig.Publisher = publisher
-					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
+				Convey("While launching SpecJbbSnapSession", func() {
+					specjbbSessionConfig := specjbbsession.DefaultConfig()
+					specjbbSessionConfig.SnapdAddress = snapdAddress
+					specjbbSessionConfig.Publisher = publisher
+					specjbbSnapSession,err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
 					mockedTaskInfo := new(mocks.TaskInfo)
-					mutilateStdoutPath := path.Join(
-						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
+					specjbbStdoutPath := path.Join(
+						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout")
 
-					file, err := os.Open(mutilateStdoutPath)
+					file, err := os.Open(specjbbStdoutPath)
 
 					So(err, ShouldBeNil)
 					defer file.Close()
 
 					mockedTaskInfo.On("StdoutFile").Return(file, nil)
-					/*session := phase.Session{
-						ExperimentID: "foobar",
-						PhaseID:      "barbaz",
-						RepetitionID: 1,
-					}*/
 
-					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
+					handle, err := specjbbSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
 					So(err, ShouldBeNil)
 
 					defer func() {
@@ -126,18 +125,16 @@ func TestSnapMutilateSession(t *testing.T) {
 
 						// These are results from test output file
 						// in "src/github.com/intelsdi-x/swan/misc/
-						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
+						// snap-plugin-collector-specjbb/specjbb/specjbb.stdout"
 						expectedMetrics := map[string]string{
-							"avg":    "20.80000",
-							"std":    "23.10000",
-							"min":    "11.90000",
-							"5th":    "13.30000",
-							"10th":   "13.40000",
-							"90th":   "33.40000",
-							"95th":   "43.10000",
-							"99th":   "59.50000",
-							"qps":    "4993.10000",
-							"custom": "1777.88781",
+							"min":    "300",
+							"50th":    "3100",
+							"90th":    "21000",
+							"95th":    "89000",
+							"99th":   "517000",
+							"max":   "640000",
+							"qps":   "4007",
+							"issued_requests":   "4007",
 						}
 
 						Convey("Reading samples from file", func() {
