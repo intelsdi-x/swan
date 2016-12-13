@@ -21,11 +21,11 @@ make deps_jupyter
 Start Jupyter by running the following in the `swan/scripts/jupyter` directory:
 
 ```sh
-jupyter notebook --ip=0.0.0.0 --port=8080
+jupyter notebook --ip=0.0.0.0
 ```
 
 If run locally, the command will bring up the default browser.
-If not, connect to http://hostname:8080/ through your browser.
+If not, connect to http://hostname:8888/ through your browser.
 
 ## Explore data using Jupyter
 
@@ -50,7 +50,7 @@ Code above shows the available samples. Be aware that if a experiments has large
 
 ![sample list](docs/sample_list.png)
 
-If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analysis you can get it like: 
+If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analysis you can get it by: 
 ```python
 df1 = exp1.get_frame()
 ```
@@ -60,20 +60,20 @@ p = Profile(exp, slo=500)
 p.sensitivity_table(show_throughput=False)
 ```
 
-Where `slo` is the target latency in micro seconds and `show_throughput` is optional parameter and consists of work make by aggressor.
+Where `slo` is the target latency in micro seconds and `show_throughput` is an optional parameter and consists of work make by aggressor.
 
 This should render a table similar to the one below:
 
 ![sensitivity profile](docs/sensitivity_profile.png)
 
-Below some missing data is shown. It can happen, if you will try build sensivity profile in case of missing data in Cassandra.
-In this case field in the table is marked as grey with `N/A`
+Figure above shows the impact of interference on shared resource on latency critical task.
+First row in the table represents a `Baseline`. It's the part of the experiment, where we run only latency sensitive task, `Memcached` in our case. 
+The rest rows shows impact of `aggressors` for the experiment (`L1 Data` and `L1 instruction`).
 
-```python
-p1 = Profile(exp, slo=500)
-p1.sensitivity_table(show_throughput=True)
-```
-![sensitivity_profile_failed](docs/sensitivity_profile_failed.png)
+Each column in the table is so called `load point`.
+Latencies are values which are normalized to the SLO (passed from `sensitivity_table` function). 
+
+The green color means that interference impact from aggressors was acceptable, red or yellow color shows that SLO latency was violated.
 
 ## Visualizing data using Jupyter
 
@@ -101,9 +101,6 @@ Here `fill` param acts the same as in the previous example, and `to_max` compare
 
 ## Exploration data using jupyter
 
-To quick start we provide you with the example notebook [here](example.ipynb)
+To get started, we have provided an example notebook [here](example.ipynb)
 
-Note: Unfortunately Github doesn't render iframes at the moment.
-So, you will notice, that plotly graphs do not show up on the page after rendering.
-We recommend use [nbviewer](http://nbviewer.jupyter.org/) which renders every notebooks from Github, on a separate domain,
-or just open example from the local Jupyter instance.
+Because of [plotly](https://plot.ly/) usage, we recommend open example from the local Jupyter instance.
