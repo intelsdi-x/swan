@@ -50,9 +50,9 @@ file in the `stdout_file` configuration field. For example:
 
 To submit the manifest above, run:
 ```
-snapctl plugin load snap-plugin-collector-mutilate
-snapctl plugin load snap-plugin-publisher-file
-snapctl task create -t task.json
+snaptel plugin load snap-plugin-collector-mutilate
+snaptel plugin load snap-plugin-publisher-file
+snaptel task create -t task.json
 ```
 
 The current available metrics from the collector are:

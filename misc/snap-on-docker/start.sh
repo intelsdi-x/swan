@@ -12,11 +12,11 @@ echo "Cassandra is now ready to accept connections"
 docker exec cassandra-1 /create.sh
 docker run -d --net=snap-cassandra --name=snap --hostname=snap swan-snap:latest
 IS_SNAP_RUNNING=1
-echo "Waiting for snapd to launch, it may take some time..."
+echo "Waiting for snapteld to launch, it may take some time..."
 while [ $IS_SNAP_RUNNING -ne 0 ]
 do
-	docker exec snap snapctl -u http://snap:8181 task list 1>/dev/null 2>/dev/null
+	docker exec snap snaptel -u http://snap:8181 task list 1>/dev/null 2>/dev/null
 	IS_SNAP_RUNNING=$?
 done
-echo "snapd is now ready to accept connections"
-docker exec snap snapctl -u http://snap:8181 task create -t /home/snap/task.json
+echo "snapteld is now ready to accept connections"
+docker exec snap snaptel -u http://snap:8181 task create -t /home/snap/task.json

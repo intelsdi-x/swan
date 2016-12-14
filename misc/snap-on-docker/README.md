@@ -1,4 +1,4 @@
-Running snapd with cassandra publisher and cassandra database
+Running snapteld with cassandra publisher and cassandra database
 =============================================================
 
 First of all you will need a snap-plugin-publisher-cassandra binary. As of writing you will need to compile it manually using version 0.13-beta of snap (the version number is **really important**). Once compiled it should be copied to `snap-on-docker/snap`. 
@@ -8,7 +8,7 @@ Then you will be able to use the scripts described below.
 build.sh
 --------
 
-Builds both necessary docker images (for snapd and cassandra) and sets networking up.
+Builds both necessary docker images (for snapteld and cassandra) and sets networking up.
 
 start.sh
 --------

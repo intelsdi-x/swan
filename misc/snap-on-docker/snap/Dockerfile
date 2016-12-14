@@ -27,10 +27,10 @@ RUN wget https://github.com/intelsdi-x/snap/releases/download/v0.13.0-beta/snap-
 ENV PATH $PATH:/usr/local/go/bin
 
 COPY snap-plugin-publisher-cassandra /home/snap/snap-v0.13.0-beta/plugin/
-COPY snapd.yml /home/snap/
+COPY snapteld.yml /home/snap/
 COPY task.json /home/snap/
 ENV PATH $PATH:/home/snap/snap-v0.13.0-beta/bin
 
 EXPOSE 8181
 
-CMD ["/home/snap/snap-v0.13.0-beta/bin/snapd","--config","/home/snap/snapd.yml","--plugin-trust","0"]
+CMD ["/home/snap/snap-v0.13.0-beta/bin/snapteld","--config","/home/snap/snapteld.yml","--plugin-trust","0"]

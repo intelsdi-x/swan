@@ -86,7 +86,7 @@ cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
-	rm -fr integration_tests/**/local_snapd_*
+	rm -fr integration_tests/**/local_snapteld_*
 
 remove_vendor:
 	rm -fr vendor/

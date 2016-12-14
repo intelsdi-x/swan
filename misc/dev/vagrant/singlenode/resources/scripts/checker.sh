@@ -52,7 +52,7 @@ echo "######################################"
 
 echo "########## Checking Snap version... ##########"
 echo ">> SNAP version:"
-snapctl --version
+snaptel --version
 echo "######################################"
 
 echo "########## Checking cache... ##########"

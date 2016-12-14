@@ -64,19 +64,19 @@ func TestExperiment(t *testing.T) {
 		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-scheduler"),
 	}
 
-	Convey("When snapd is launched", t, func() {
+	Convey("When snapteld is launched", t, func() {
 		var logDirPerm os.FileMode = 0755
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
 
-		snapd := testhelpers.NewSnapdOnPort(8181)
-		err = snapd.Start()
+		snapteld := testhelpers.NewSnapteldOnPort(8181)
+		err = snapteld.Start()
 		So(err, ShouldBeNil)
 
 		time.Sleep(1 * time.Second)
 
 		Reset(func() {
-			err := snapd.Stop()
+			err := snapteld.Stop()
 			So(err, ShouldBeNil)
 			if err == nil {
 				os.RemoveAll(snapLogs)
@@ -102,7 +102,7 @@ func TestExperiment(t *testing.T) {
 
 			Convey("With proper configuration and with l1d aggressors", func() {
 				args := []string{"--aggr", "l1d"}
-				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				SkipConvey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
 
@@ -115,7 +115,7 @@ func TestExperiment(t *testing.T) {
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				})
 
-				Convey("While having two repetitions to phase", func() {
+				SkipConvey("While having two repetitions to phase", func() {
 					os.Setenv("SWAN_REPS", "2")
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -145,7 +145,7 @@ func TestExperiment(t *testing.T) {
 
 				})
 
-				Convey("Experiment should succeed also with 2 load points", func() {
+				SkipConvey("Experiment should succeed also with 2 load points", func() {
 					os.Setenv("SWAN_LOAD_POINTS", "2")
 					fmt.Println(args)
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)

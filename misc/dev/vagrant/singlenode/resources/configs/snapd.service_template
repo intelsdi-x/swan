@@ -5,7 +5,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=GOPATH/bin/snapd -t 0
+ExecStart=GOPATH/bin/snapteld -t 0
 LimitNOFILE=infinity
 LimitNPROC=infinity
 LimitCORE=infinity
