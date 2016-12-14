@@ -87,19 +87,21 @@ Where `fill` parameter fills area between Baseline and  selected aggressor. `to_
 
 'worst case' in this case means max latency violations, for all aggressors at each load point.
 
-![sensitivity_chart](docs/sensitivity_chart.png)
+![sensitivity_chart](docs/worst_to_baseline.png)
 
-We can get some conclusion from above plot like:
+We can get some conclusion from plot below like:
 - which aggressor cause some SLO violations and how big they are
 - what is the max `QPS` that we are able to achive, while keeping `slo violation`. Point on the X axis - where `slo` boundary line and `aggressor` line cross
 - basically for 'worst' aggressor (`L3 data` => "red" in this case), we expecting about 70 `QPS` and `SLO` keeped at level no more than 500ms.
+
+![sensitivity_chart](docs/sensitivity_chart.png)
 
 It is also possible to compare two experiments, like below:
 ```python
 exps = [exp1, exp2]
 compare_experiments(exps, fill=True, to_max=False)
 ```
-Here `fill` param acts the same as in the previous example, and `to_max` compares Baseline for two experiments with 'worst cases'.
+Here `fill` param acts the same as in the previous example, and `to_max` compares `Baseline` for two experiments.
 
 ![compare_two_experiments](docs/compare_two_experiments.png)
 
