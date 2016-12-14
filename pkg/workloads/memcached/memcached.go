@@ -29,7 +29,7 @@ var (
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
 	// IPFlag returns IP which will be specified for workload services as endpoints.
-	IPFlag              = conf.NewIPFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
+	IPFlag              = conf.NewStringFlag("memcached_ip", "IP of interface memcached is listening on.", defaultListenIP)
 	userFlag            = conf.NewStringFlag("memcached_user", "Username for memcached process (-u)", defaultUser)
 	numThreadsFlag      = conf.NewIntFlag("memcached_threads", "Number of threads for mutilate (-t)", defaultNumThreads)
 	threadsAffinityFlag = conf.NewBoolFlag("memcached_threads_affinity", "Threads affinity (-T) (requires memcached patch)", defaultThreadsAffinity)

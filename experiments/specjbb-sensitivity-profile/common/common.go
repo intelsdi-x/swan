@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	specjbbIP = conf.NewIPFlag(
+	specjbbIP = conf.NewStringFlag(
 		"specjbb_loadgenerator_ip",
 		"a",
 		"127.0.0.1")

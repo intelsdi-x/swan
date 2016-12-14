@@ -1,5 +1,5 @@
 hash: 5985d6bca4d1f94b01cf4d5cf5954c0365b4f19f64cfd713fdf4197c416abb12
-updated: 2016-12-09T12:52:02.700793704+01:00
+updated: 2016-12-14T15:53:33.455455466+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -53,7 +53,7 @@ imports:
   - httputil
   - timeutil
 - name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
   subpackages:
   - spew
 - name: github.com/docker/distribution
@@ -168,7 +168,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: 7d63fe189321966ee06e039f330d04e71c32c4a7
+  version: 9b83ed39651ae8c13758e79dbeacf88226450a81
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -219,7 +219,7 @@ imports:
   - pkg/schedule
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-processor-tag
-  version: 08701a5ca02034ab1a83c25da44349e5caa4dcc4
+  version: 8f305f7e2c9f5569d438ea2c6ac08713a801102c
   subpackages:
   - tag
 - name: github.com/intelsdi-x/snap-plugin-utilities
@@ -252,9 +252,9 @@ imports:
 - name: github.com/spf13/pflag
   version: 1560c1005499d61b80f865c04d39ca7505bf7f0b
 - name: github.com/stretchr/objx
-  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
+  version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
-  version: e3a8ff8ce36581f87a15341206f205b1da467059
+  version: 18a02ba4a312f95da08ff4cfc0055750ce50ae9e
   subpackages:
   - assert
   - mock
