@@ -13,6 +13,7 @@ yum install -y -q \
     boost \
     boost-devel \
     ccache \
+    cppzmq-devel \
     deltarpm \
     docker-engine \
     etcd \
