@@ -139,9 +139,6 @@ func TestSPECjbb(t *testing.T) {
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
 			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
-			output, err := loadGeneratorTaskHandle.StdoutFile()
-			So(err, ShouldBeNil)
-
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
 				So(loadGeneratorTaskHandle, ShouldNotBeNil)
@@ -167,34 +164,12 @@ func TestSPECjbb(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(backendTaskHandle, ShouldNotBeNil)
 
-						Convey("And when I stop backend prematurely", func() {
+						Convey("And when I stop backend prematurely, it should be terminated", func() {
 							// Wait for backend to be registered.
 							time.Sleep(20 * time.Second)
 							err = backendTaskHandle.Stop()
 							So(err, ShouldBeNil)
 							So(backendTaskHandle.Status(), ShouldEqual, executor.TERMINATED)
-							Convey("Controller should indicate that error occurred", func() {
-								// Wait for controller to notice an error.
-								time.Sleep(15 * time.Second)
-								file, err := os.Open(output.Name())
-								So(err, ShouldBeNil)
-								defer file.Close()
-								scanner := bufio.NewScanner(file)
-								stoppedBackend := "Stop the run due to the unexpected error:"
-								var match bool
-								for scanner.Scan() {
-									err := scanner.Err()
-									So(err, ShouldBeNil)
-									line := scanner.Text()
-									if result := strings.Contains(line, stoppedBackend); result {
-										match = result
-										break
-									}
-								}
-								So(match, ShouldBeTrue)
-								So(loadGeneratorTaskHandle.Status(), ShouldEqual, executor.TERMINATED)
-
-							})
 						})
 
 					})
