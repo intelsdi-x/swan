@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SnapdHTTPEndpoint represents snap daemon address flag.
-var SnapdHTTPEndpoint = conf.NewStringFlag("snapd_addr", "Snapd HTTP Endpoint", "http://127.0.0.1:8181")
+// SnapteldHTTPEndpoint represents snap daemon address flag.
+var SnapteldHTTPEndpoint = conf.NewStringFlag("snapteld_addr", "Snapteld HTTP Endpoint", "http://127.0.0.1:8181")
 
 type task struct {
 	Version  int
@@ -51,7 +51,7 @@ type Session struct {
 	// Publisher for tagged metrics.
 	Publisher *wmap.PublishWorkflowMapNode
 
-	// Client to Snapd.
+	// Client to Snapteld.
 	pClient *client.Client
 }
 
@@ -125,7 +125,7 @@ func (s *Session) Start(tags string) error {
 
 	t.Workflow = wf
 
-	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true)
+	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true, 10)
 	if r.Err != nil {
 		return errors.Wrapf(r.Err, "could not create task %q", t.Name)
 	}

@@ -14,7 +14,7 @@ const (
 
 // Plugins provides a 'manager' like abstraction for plugin operations.
 type Plugins struct {
-	// Client to Snapd
+	// Client to Snapteld
 	pClient *client.Client
 }
 

@@ -22,18 +22,18 @@ import (
 
 func TestSnapKubesnapSession(t *testing.T) {
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
-		snapd := testhelpers.NewSnapd()
-		err := snapd.Start()
+		snapteld := testhelpers.NewSnapteld()
+		err := snapteld.Start()
 		So(err, ShouldBeNil)
 
-		defer snapd.CleanAndEraseOutput()
-		defer snapd.Stop()
+		defer snapteld.CleanAndEraseOutput()
+		defer snapteld.Stop()
 
-		snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapd.Port())
+		snapteldAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapteld.Port())
 
 		// Load plugins.
 		loaderConfig := snap.DefaultPluginLoaderConfig()
-		loaderConfig.SnapdAddress = snapdAddress
+		loaderConfig.SnapteldAddress = snapteldAddress
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
@@ -83,7 +83,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 
 		Convey("Launching Kubesnap Session", func() {
 			kubesnapConfig := kubesnap.DefaultConfig()
-			kubesnapConfig.SnapdAddress = snapdAddress
+			kubesnapConfig.SnapteldAddress = snapteldAddress
 			kubesnapConfig.Publisher = publisher
 			kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
 			So(err, ShouldBeNil)

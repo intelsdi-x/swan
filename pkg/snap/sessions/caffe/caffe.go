@@ -16,7 +16,7 @@ func DefaultConfig() Config {
 	sessions.ApplyCassandraConfiguration(publisher)
 
 	return Config{
-		SnapdAddress: snap.SnapdHTTPEndpoint.Value(),
+		SnapteldAddress: snap.SnapteldHTTPEndpoint.Value(),
 		Interval:     1 * time.Second,
 		Publisher:    publisher,
 	}
@@ -24,7 +24,7 @@ func DefaultConfig() Config {
 
 // Config contains configuration for Caffe Inference Collector session.
 type Config struct {
-	SnapdAddress string
+	SnapteldAddress string
 	Publisher    *wmap.PublishWorkflowMapNode
 	Interval     time.Duration
 }
@@ -38,13 +38,13 @@ type SessionLauncher struct {
 
 // NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
-	snapClient, err := client.New(config.SnapdAddress, "v1", true)
+	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapdAddress = config.SnapdAddress
+	loaderConfig.SnapteldAddress = config.SnapteldAddress
 	loader, err := snap.NewPluginLoader(loaderConfig)
 	if err != nil {
 		return nil, err

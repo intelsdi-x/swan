@@ -18,7 +18,7 @@ import (
 )
 
 func TestSnap(t *testing.T) {
-	var snapd *testhelpers.Snapd
+	var snapteld *testhelpers.Snapteld
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
@@ -35,7 +35,7 @@ func TestSnap(t *testing.T) {
 		lines := strings.Split(string(dat), "\n")
 		So(len(lines), ShouldEqual, 1)
 		columns := strings.Split(lines[0], "|")
-		So(len(columns), ShouldEqual, 3)
+		So(len(columns), ShouldEqual, 4)
 		tags := strings.Split(columns[1], ",")
 		So(tags, ShouldHaveLength, 1)
 
@@ -47,27 +47,27 @@ func TestSnap(t *testing.T) {
 		So("plugin_running_on="+host, ShouldBeIn, tags)*/
 	}
 
-	Convey("While having Snapd running", t, func() {
-		snapd = testhelpers.NewSnapd()
-		err := snapd.Start()
+	Convey("While having Snapteld running", t, func() {
+		snapteld = testhelpers.NewSnapteld()
+		err := snapteld.Start()
 		So(err, ShouldBeNil)
 
 		defer func() {
-			if snapd != nil {
-				err := snapd.Stop()
-				err2 := snapd.CleanAndEraseOutput()
+			if snapteld != nil {
+				err := snapteld.Stop()
+				err2 := snapteld.CleanAndEraseOutput()
 				So(err, ShouldBeNil)
 				So(err2, ShouldBeNil)
 			}
 		}()
-		snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
+		snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
 
-		Convey("We are able to connect with snapd", func() {
-			c, err := client.New(snapdAddress, "v1", true)
+		Convey("We are able to connect with snapteld", func() {
+			c, err := client.New(snapteldAddress, "v1", true)
 			So(err, ShouldBeNil)
 
 			loaderConfig := snap.DefaultPluginLoaderConfig()
-			loaderConfig.SnapdAddress = snapdAddress
+			loaderConfig.SnapteldAddress = snapteldAddress
 			pluginLoader, err := snap.NewPluginLoader(loaderConfig)
 			So(err, ShouldBeNil)
 
@@ -95,7 +95,7 @@ func TestSnap(t *testing.T) {
 					err := pluginLoader.Load(snap.FilePublisher)
 					So(err, ShouldBeNil)
 
-					publisher = wmap.NewPublishNode("file", snap.PluginAnyVersion)
+					publisher = wmap.NewPublishNode("mock-file", snap.PluginAnyVersion)
 
 					So(publisher, ShouldNotBeNil)
 

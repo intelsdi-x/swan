@@ -1,5 +1,5 @@
-hash: 22c27f419efae353474f3dd87dce062a4214e36604d6fb3240001600f154bf3c
-updated: 2016-12-05T14:26:57.718633201+01:00
+hash: ff3f66e4d2ea36ee1ce80d5a62252a807f765cee10508538ba35d1a8d41d43c3
+updated: 2016-12-12T11:50:14.314395881+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -85,9 +85,8 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
+  version: 888eb0692c857ec880338addf316bd662d5e630e
   subpackages:
-  - jsonpb
   - proto
 - name: github.com/google/cadvisor
   version: 0cdf4912793fac9990de3790c273342ec31817fb
@@ -142,7 +141,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/snap
-  version: 506318ebb84a8fefc5ef966edc4318c9cf5b2002
+  version: 8905198aaab5bfb6d50a747477ca401e3a7a33ab
   subpackages:
   - control/plugin
   - control/plugin/cpolicy
@@ -154,10 +153,10 @@ imports:
   - core/serror
   - mgmt/rest/client
   - mgmt/rest/rbody
-  - mgmt/rest/request
   - mgmt/tribe/agreement
   - pkg/ctree
   - pkg/schedule
+  - pkg/stringutils
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-processor-tag
   version: 4bbe338e49bde18040fcc498e8119a35605b6215
@@ -201,20 +200,14 @@ imports:
   - curve25519
   - ssh
 - name: golang.org/x/net
-  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
+  version: 04557861f124410b768b1ba5bb3a91b705afbfc6
   subpackages:
   - context
   - context/ctxhttp
-  - html
-  - html/atom
   - http2
   - http2/hpack
-  - idna
-  - internal/timeseries
   - lex/httplex
-  - proxy
   - trace
-  - websocket
 - name: golang.org/x/oauth2
   version: b5adcc2dcdf009d0391547edc6ecbaff889f5bb9
   subpackages:

@@ -66,7 +66,7 @@ Vagrant.configure(2) do |config|
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
     # centos7 for us-east
-    aws.ami = (ENV['ATHENA_AMI'] != '' && ENV['ATHENA_AMI']) || data['ami'] || "ami-6d1c2007"
+    aws.ami = (ENV['ATHENA_AMI'] != '' && ENV['ATHENA_AMI']) || data['ami'] || "ami-d0363bc7"
     aws.instance_type = (ENV['ATHENA_INSTANCE_TYPE'] != '' && ENV['ATHENA_INSTANCE_TYPE']) || data['instance_type'] || "m3.medium"
     aws.keypair_name = data['keypair_name'] || "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
@@ -110,9 +110,10 @@ EOF
       tree \
       vim \
       wget
-    if [ ! -f /tmp/go1.6.linux-amd64.tar.gz ]; then
-      wget -P /tmp https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
-      tar xvf /tmp/go1.6.linux-amd64.tar.gz -C /usr/local
+    if [ ! -f /tmp/go1.7.linux-amd64.tar.gz ]; then
+      wget -P /tmp https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
+      rm -fr /usr/local/go
+      tar xvf /tmp/go1.7.linux-amd64.tar.gz -C /usr/local
     fi
 SCRIPT
 
@@ -192,14 +193,18 @@ SCRIPT
 
   $install_snap = <<SCRIPT
   echo "Downloading Snap binaries..."
-  wget -O /tmp/snap.tar.gz -c https://github.com/intelsdi-x/snap/releases/download/v0.14.0-beta/snap-v0.14.0-beta-linux-amd64.tar.gz
-  wget -O /tmp/snap-plugins.tar.gz -c https://github.com/intelsdi-x/snap/releases/download/v0.14.0-beta/snap-plugins-v0.14.0-beta-linux-amd64.tar.gz
-  echo "Extracting Snap binaries..."
-  tar zxf /tmp/snap.tar.gz -C /tmp
-  tar zxf /tmp/snap-plugins.tar.gz -C /tmp
-  echo "Installing Snap binaries..."
-  cp -f /tmp/snap-v0.14.0-beta/bin/* $HOME_DIR/go/bin/
-  cp -f /tmp/snap-v0.14.0-beta/plugin/* $HOME_DIR/go/bin/
+
+  wget https://s3-us-west-2.amazonaws.com/snap.ci.snap-telemetry.io/snap/1.0.0/linux/x86_64/snaptel -O $HOME_DIR/go/bin/snaptel
+  chmod +x $HOME_DIR/go/bin/snaptel
+
+  wget https://s3-us-west-2.amazonaws.com/snap.ci.snap-telemetry.io/snap/1.0.0/linux/x86_64/snapteld -O $HOME_DIR/go/bin/snapteld
+  chmod +x $HOME_DIR/go/bin/snapteld
+
+  wget https://s3-us-west-2.amazonaws.com/snap.ci.snap-telemetry.io/snap/1.0.0/linux/x86_64/snap-plugin-collector-mock1 -O $HOME_DIR/go/bin/snap-plugin-collector-mock1
+  chmod +x $HOME_DIR/go/bin/snap-plugin-collector-mock1
+
+  wget https://s3-us-west-2.amazonaws.com/snap.ci.snap-telemetry.io/snap/1.0.0/linux/x86_64/snap-plugin-publisher-mock-file -O $HOME_DIR/go/bin/snap-plugin-publisher-mock-file
+  chmod +x $HOME_DIR/go/bin/snap-plugin-publisher-mock-file
 SCRIPT
 
   $install_kubesnap_collector = <<SCRIPT

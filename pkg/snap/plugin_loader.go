@@ -19,7 +19,7 @@ const (
 	// SPECjbbCollector is name of snap plugin binary used to collect metrics from SPECjbb output file.
 	SPECjbbCollector string = "snap-plugin-collector-specjbb"
 	// MockCollector is Snap testing mock collector
-	MockCollector = "snap-collector-mock1"
+	MockCollector = "snap-plugin-collector-mock1"
 
 	// TagProcessor is name of snap plugin binary.
 	TagProcessor string = "snap-plugin-processor-tag"
@@ -29,7 +29,7 @@ const (
 	// SessionPublisher is name of snap plugin binary.
 	SessionPublisher = "snap-plugin-publisher-session-test"
 	// FilePublisher is Snap testing file publisher
-	FilePublisher = "snap-publisher-file"
+	FilePublisher = "snap-plugin-publisher-mock-file"
 	// CaffeInferenceCollector is a name of the snap plugin binary
 	CaffeInferenceCollector = "snap-plugin-collector-caffe-inference"
 )
@@ -39,21 +39,21 @@ var (
 
 	defaultPluginsPath = path.Join(goPath, "bin")
 
-	snapdAddress = conf.NewStringFlag("snapd_address", "Address to snapd in `http://%s:%s` format", "http://127.0.0.1:8181")
+	snapteldAddress = conf.NewStringFlag("snapteld_address", "Address to snapteld in `http://%s:%s` format", "http://127.0.0.1:8181")
 	pluginsPath  = conf.NewStringFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
 )
 
 // DefaultPluginLoaderConfig returns default config for PluginLoader.
 func DefaultPluginLoaderConfig() PluginLoaderConfig {
 	return PluginLoaderConfig{
-		SnapdAddress: snapdAddress.Value(),
+		SnapteldAddress: snapteldAddress.Value(),
 		PluginsPath:  pluginsPath.Value(),
 	}
 }
 
 // PluginLoaderConfig contains configuration for PluginLoader.
 type PluginLoaderConfig struct {
-	SnapdAddress string
+	SnapteldAddress string
 	PluginsPath  string
 }
 
@@ -72,7 +72,7 @@ func NewDefaultPluginLoader() (*PluginLoader, error) {
 // NewPluginLoader constructs PluginLoader with given config.
 // Returns error when could not connect to Snap.
 func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
-	snapClient, err := client.New(config.SnapdAddress, "v1", true)
+	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}

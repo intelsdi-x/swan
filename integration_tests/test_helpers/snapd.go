@@ -7,37 +7,37 @@ import (
 	"path"
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/pkg/errors"
 )
 
-// Snapd represents Snap daemon used in tests.
-type Snapd struct {
+// Snapteld represents Snap daemon used in tests.
+type Snapteld struct {
 	task    executor.TaskHandle
 	apiPort int
 }
 
-// NewSnapd constructs Snapd on random high port.
-func NewSnapd() *Snapd {
+// NewSnapteld constructs Snapteld on random high port.
+func NewSnapteld() *Snapteld {
 	randomHighPort := rand.Intn(32768-10000) + 10000
-	return NewSnapdOnPort(randomHighPort)
+	return NewSnapteldOnPort(randomHighPort)
 }
 
-// NewSnapdOnPort constructs Snapd on chosen port.
-func NewSnapdOnPort(apiPort int) *Snapd {
-	return &Snapd{apiPort: apiPort}
+// NewSnapteldOnPort constructs Snapteld on chosen port.
+func NewSnapteldOnPort(apiPort int) *Snapteld {
+	return &Snapteld{apiPort: apiPort}
 }
 
 // Start starts Snap daemon and wait until it is responsive.
-func (s *Snapd) Start() error {
+func (s *Snapteld) Start() error {
 	l := executor.NewLocal()
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		return errors.New("Cannot find GOPATH")
 	}
-	snapdPath := path.Join(gopath, "bin", "snapd")
-	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapdPath, s.apiPort)
+	snapteldPath := path.Join(gopath, "bin", "snapteld")
+	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapteldPath, s.apiPort)
 
 	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *Snapd) Start() error {
 		taskHandle.Stop()
 		taskHandle.Clean()
 		taskHandle.EraseOutput()
-		return errors.Errorf("could not connect to snapd on %q", s.getSnapdAddress())
+		return errors.Errorf("could not connect to snapteld on %q", s.getSnapteldAddress())
 	}
 
 	s.task = taskHandle
@@ -56,18 +56,18 @@ func (s *Snapd) Start() error {
 }
 
 // Stop stops Snap daemon.
-func (s *Snapd) Stop() error {
+func (s *Snapteld) Stop() error {
 	if s.task == nil {
-		return errors.New("Snapd not started: cannot find task")
+		return errors.New("Snapteld not started: cannot find task")
 	}
 
 	return s.task.Stop()
 }
 
 // CleanAndEraseOutput cleans and removes Output.
-func (s *Snapd) CleanAndEraseOutput() error {
+func (s *Snapteld) CleanAndEraseOutput() error {
 	if s.task == nil {
-		return errors.New("Snapd not started: cannot find task")
+		return errors.New("Snapteld not started: cannot find task")
 	}
 
 	s.task.Clean()
@@ -75,10 +75,10 @@ func (s *Snapd) CleanAndEraseOutput() error {
 }
 
 // Connected checks if we can connect to Snap daemon.
-func (s *Snapd) Connected() bool {
+func (s *Snapteld) Connected() bool {
 	retries := 100
 	isConnected := false
-	cli, err := client.New(s.getSnapdAddress(), "v1", true)
+	cli, err := client.New(s.getSnapteldAddress(), "v1", true)
 	if err != nil {
 		return isConnected
 	}
@@ -93,11 +93,11 @@ func (s *Snapd) Connected() bool {
 	return isConnected
 }
 
-// Port returns port Snapd is listening.
-func (s *Snapd) Port() int {
+// Port returns port Snapteld is listening.
+func (s *Snapteld) Port() int {
 	return s.apiPort
 }
 
-func (s *Snapd) getSnapdAddress() string {
+func (s *Snapteld) getSnapteldAddress() string {
 	return fmt.Sprintf("http://127.0.0.1:%d", s.apiPort)
 }
