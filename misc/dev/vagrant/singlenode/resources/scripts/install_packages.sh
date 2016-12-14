@@ -58,3 +58,6 @@ yum install -y -q \
     wget \
     zeromq-devel
 yum clean all
+
+echo "Installing python packages"
+pip install s3cmd
