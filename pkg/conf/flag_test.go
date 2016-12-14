@@ -3,11 +3,9 @@ package conf
 import (
 	"fmt"
 	"os"
-	"path"
 	"testing"
 	"time"
 
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,42 +40,6 @@ func TestFlags(t *testing.T) {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customValue)
-			})
-		})
-
-		Convey("When some custom File Flag is defined", func() {
-			// Register custom flag.
-			defaultFilePath := path.Join(fs.GetAthenaPath(), "README.md")
-			customFlag := NewFileFlag("custom_file_arg", "help", defaultFilePath)
-			customFlag.clear()
-			defer customFlag.clear()
-
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, defaultFilePath)
-			})
-
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
-			})
-
-			Convey("When we define custom existing path we should have that value after parse", func() {
-				customValue := path.Join(fs.GetAthenaPath(), "Makefile")
-				os.Setenv(customFlag.envName(), customValue)
-
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customValue)
-			})
-
-			Convey("When we define custom not existing path we should have error after parse", func() {
-				customValue := "non-existing/path"
-				os.Setenv(customFlag.envName(), customValue)
-
-				err := ParseEnv()
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEndWith, "does not exist")
 			})
 		})
 
@@ -182,42 +144,6 @@ func TestFlags(t *testing.T) {
 				err := ParseEnv()
 				So(err, ShouldBeNil)
 				So(customFlag.Value(), ShouldEqual, customValue)
-			})
-		})
-
-		Convey("When some custom IP Flag is defined", func() {
-			// Register custom flag.
-			customFlag :=
-				NewIPFlag("custom_ip_arg", "help", "255.255.255.5")
-			customFlag.clear()
-			defer customFlag.clear()
-
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, "255.255.255.5")
-			})
-
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
-			})
-
-			Convey("When we define custom environment variable we should have custom value after parse", func() {
-				customValue := "255.255.255.99"
-				os.Setenv(customFlag.envName(), customValue)
-
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldResemble, customValue)
-			})
-
-			Convey("When we define invalid custom environment variable we should have error after parse", func() {
-				invalidCustomValue := "300.255.255.99"
-				os.Setenv(customFlag.envName(), invalidCustomValue)
-
-				err := ParseEnv()
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEndWith, "is not an IP address")
 			})
 		})
 	})

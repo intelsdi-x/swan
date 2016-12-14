@@ -2,7 +2,6 @@ package conf
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strings"
 	"time"
@@ -45,40 +44,6 @@ func NewStringFlag(flagName string, description string, defaultValue string) Str
 
 	strFlag.value = app.Flag(flagName, description).
 		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).String()
-	isEnvParsed = false
-
-	return strFlag
-}
-
-// NewFileFlag is a constructor of StringFlag struct which checks if file exists.
-func NewFileFlag(flagName string, description string, defaultValue string) StringFlag {
-	strFlag := StringFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
-	}
-
-	strFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).ExistingFile()
-	isEnvParsed = false
-
-	return strFlag
-}
-
-// NewDirFlag is a constructor of StringFlag struct which checks if dir exists.
-func NewDirFlag(flagName string, description string, defaultValue string) StringFlag {
-	strFlag := StringFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
-	}
-
-	strFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).ExistingDir()
 	isEnvParsed = false
 
 	return strFlag
@@ -226,38 +191,4 @@ func (d DurationFlag) Value() time.Duration {
 	}
 
 	return *d.value
-}
-
-// IPFlag represents flag with IP value.
-type IPFlag struct {
-	flag
-	defaultValue string
-	value        *net.IP
-}
-
-// NewIPFlag is a constructor of IPFlag struct.
-func NewIPFlag(flagName string, description string, defaultValue string) IPFlag {
-	ipFlag := IPFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
-		},
-		defaultValue: defaultValue,
-	}
-
-	ipFlag.value = app.Flag(flagName, description).Default(net.ParseIP(defaultValue).String()).
-		OverrideDefaultFromEnvar(ipFlag.envName()).IP()
-	isEnvParsed = false
-
-	return ipFlag
-}
-
-// Value returns value of defined flag after parse.
-// NOTE: If conf is not parsed it returns default value (!)
-func (i IPFlag) Value() string {
-	if !isEnvParsed {
-		return i.defaultValue
-	}
-
-	return (*i.value).String()
 }
