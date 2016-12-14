@@ -29,7 +29,7 @@ var (
 	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/usr/share/specjbb/config/template-D.raw")
 
 	// IPFlag specifies IP address of a controller component of SPECjbb2015 benchmark.
-	IPFlag = conf.NewIPFlag("specjbb_controller_ip", "IP address of a SPECjbb controller component", defaultControllerIP)
+	IPFlag = conf.NewStringFlag("specjbb_controller_ip", "IP address of a SPECjbb controller component", defaultControllerIP)
 
 	// TxICountFlag specifies number of Transaction Injector components in one group.
 	TxICountFlag = conf.NewIntFlag("specjbb_txl_count", "Number of Transaction injectors run in a cluster", defaultTxICount)

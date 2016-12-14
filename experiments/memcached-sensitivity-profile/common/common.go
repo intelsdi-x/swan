@@ -24,7 +24,7 @@ var (
 
 	// Mutilate configuration.
 	percentileFlag     = conf.NewStringFlag("percentile", "Tail latency Percentile", "99")
-	mutilateMasterFlag = conf.NewIPFlag(
+	mutilateMasterFlag = conf.NewStringFlag(
 		"mutilate_master",
 		"Mutilate master host for remote executor. In case of 0 agents being specified it runs in agentless mode."+
 			"Use `local` to run with local executor.",
