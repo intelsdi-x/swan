@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -16,31 +15,8 @@ import (
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions/helpers"
 )
-
-func soMetricRowIsValid(
-	expectedMetrics map[string]string,
-	namespace, tags, value string) {
-
-	// Check tags.
-	tagsSplitted := strings.Split(tags, ",")
-	So(len(tagsSplitted), ShouldBeGreaterThanOrEqualTo, 1)
-	So("foo=bar", ShouldBeIn, tagsSplitted)
-
-	// Check namespace & values.
-	namespaceSplitted := strings.Split(namespace, "/")
-	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
-	So(ok, ShouldBeTrue)
-
-	// Reduce string-encoded-float to common precision for comparison.
-	expectedValueFloat, err := strconv.ParseFloat(expectedValue, 64)
-	So(err, ShouldBeNil)
-	valueFloat, err := strconv.ParseFloat(value, 64)
-	So(err, ShouldBeNil)
-
-	epsilon := 0.00001
-	So(valueFloat, ShouldAlmostEqual, expectedValueFloat, epsilon)
-}
 
 func TestSnapMutilateSession(t *testing.T) {
 	var snapd *testhelpers.Snapd
@@ -178,7 +154,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 									for i := 0; i < len(expectedMetrics); i++ {
 										columns := strings.Split(lines[i], "\t")
-										soMetricRowIsValid(
+										helpers.SoMetricRowIsValid(
 											expectedMetrics,
 											columns[0], columns[1], columns[2])
 									}
