@@ -2,8 +2,6 @@ package snap
 
 import (
 	"fmt"
-	"os"
-	"path"
 	"time"
 
 	"github.com/intelsdi-x/athena/pkg/conf"
@@ -99,21 +97,15 @@ func (s *Session) Start(tags string) error {
 		wf.CollectNode.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
 	}
 
-	// Check if `processor-tag` plugins is loaded.
-	// Get the Name of the processor-tag plugin from its Meta.
-	plugins := NewPlugins(s.pClient)
-	loaded, err := plugins.IsLoaded("processor", snapProcessorTag.Meta().Name)
+	loaderConfig := DefaultPluginLoaderConfig()
+	loaderConfig.SnapteldAddress = s.pClient.URL
+	loader, err := NewPluginLoader(loaderConfig)
 	if err != nil {
 		return err
 	}
 
-	if !loaded {
-		goPath := os.Getenv("GOPATH")
-		pluginPath := path.Join(goPath, "bin", "snap-plugin-processor-tag")
-		err = plugins.LoadPlugin(pluginPath)
-		if err != nil {
-			return err
-		}
+	if err := loader.Load(TagProcessor); err != nil {
+		return err
 	}
 
 	pr := wmap.NewProcessNode(snapProcessorTag.Meta().Name, 3)
