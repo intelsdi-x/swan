@@ -6,7 +6,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	. "github.com/smartystreets/goconvey/convey"
+	So "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -20,7 +20,7 @@ import (
 func RunAndTestSnap() (func(), *snap.PluginLoader, string) {
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
 	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
@@ -28,13 +28,13 @@ func RunAndTestSnap() (func(), *snap.PluginLoader, string) {
 
 	loader, err := snap.NewPluginLoader(loaderConfig)
 
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 
 	return func() {
 		err := snapd.Stop()
 		err2 := snapd.CleanAndEraseOutput()
-		So(err, ShouldBeNil)
-		So(err2, ShouldBeNil)
+		So.So(err, So.ShouldBeNil)
+		So.So(err2, So.ShouldBeNil)
 	}, loader, snapdAddress
 }
 
@@ -43,16 +43,16 @@ func RunAndTestSnap() (func(), *snap.PluginLoader, string) {
 func PrepareAndTestPublisher(loader *snap.PluginLoader) (func(), *wmap.PublishWorkflowMapNode, string) {
 
 	tmpFile, err := ioutil.TempFile("", "session_test")
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 
 	publisherMetricsFile := tmpFile.Name()
 	loader.Load(snap.SessionPublisher)
 
 	pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 
 	publisher := wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
-	So(publisher, ShouldNotBeNil)
+	So.So(publisher, So.ShouldNotBeNil)
 
 	publisher.AddConfigItem("file", publisherMetricsFile)
 
@@ -66,7 +66,7 @@ func PrepareAndTestPublisher(loader *snap.PluginLoader) (func(), *wmap.PublishWo
 func PrepareMockedTask(outFilePath string) (func(), *mocks.TaskInfo) {
 	mockedTaskInfo := new(mocks.TaskInfo)
 	file, err := os.Open(outFilePath)
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 	mockedTaskInfo.On("StdoutFile").Return(file, nil)
 
 	return func() {
@@ -128,27 +128,26 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 	return validData
 }
 
-
 func soMetricRowIsValid(
 	expectedMetrics map[string]string,
 	namespace, tags, value string) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
-	So(len(tagsSplitted), ShouldBeGreaterThanOrEqualTo, 1)
-	So("foo=bar", ShouldBeIn, tagsSplitted)
+	So.So(len(tagsSplitted), So.ShouldBeGreaterThanOrEqualTo, 1)
+	So.So("foo=bar", So.ShouldBeIn, tagsSplitted)
 
 	// Check namespace & values.
 	namespaceSplitted := strings.Split(namespace, "/")
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
-	So(ok, ShouldBeTrue)
+	So.So(ok, So.ShouldBeTrue)
 
 	// Reduce string-encoded-float to common precision for comparison.
 	expectedValueFloat, err := strconv.ParseFloat(expectedValue, 64)
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 	valueFloat, err := strconv.ParseFloat(value, 64)
-	So(err, ShouldBeNil)
+	So.So(err, So.ShouldBeNil)
 
 	epsilon := 0.00001
-	So(expectedValueFloat, ShouldAlmostEqual, valueFloat, epsilon)
+	So.So(expectedValueFloat, So.ShouldAlmostEqual, valueFloat, epsilon)
 }

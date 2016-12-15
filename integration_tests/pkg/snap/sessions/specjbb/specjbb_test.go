@@ -1,12 +1,13 @@
-package specjbbsessiontest
+package specjbb
 
 import (
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
-	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"path"
 	"testing"
+
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAaaSnapSpecJbbSession(t *testing.T) {
