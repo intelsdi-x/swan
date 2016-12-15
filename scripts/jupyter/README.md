@@ -2,21 +2,22 @@
 
 ## Installation
 
-You need `python` and `pip` to install the necessary dependencies for Jupyter.
+`python` and `pip` are necessary dependencies for Jupyter.
 On Centos 7, install the following packages with:
 
 ```sh
 sudo yum install python-pip python-devel
 ```
+
 or follow the instructions at [official pip site](https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
 
-After this, install the python dependencies with `make` with:
+After this, install the python dependencies with `make`:
 
 ```sh
 make deps_jupyter
 ```
 
-## Launching jupyter
+## Launching Jupyter
 
 Start Jupyter by running the following in the `swan/scripts/jupyter` directory:
 
@@ -29,90 +30,90 @@ If not, connect to http://hostname:8888/ through your browser.
 
 ## Explore data using Jupyter
 
-From within the Jupyter interface, open a template notebook by clicking on `Open` and `example.ipynb`, or you can open a new natebook like below:
+From within the Jupyter interface, open a template notebook by clicking on `Open` and `example.ipynb`, or you can open a new notebook like below:
 
 ![experiment](docs/new_notebook.png)
 
-Within the open tamplate notebook:
-- set the `IP`, `PORT` of cassandra cluster and `EXPERIMENT_ID`
-- focus on first `import` python statement:
+Within the open template notebook:
+- set the `IP`, `PORT` of Cassandra cluster and `EXPERIMENT_ID`
+- select the first `import` python statement:
 
 ```python
 from experiment import *
 ```
 
 And evaluate the expressions by clicking `shift` and `enter` on the cell.
+
 ```python
 exp = Experiment(cassandra_cluster=['localhost'], experiment_id='uuid of experiment', port=9042)
 ```
 
-Code above shows the available samples. Be aware that if a experiments has large data, it can take a while:
+Code above shows the available samples. Be aware that if a experiments contains a large amount of data, this can take a minute:
 
 ![sample list](docs/sample_list.png)
 
-If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analysis you can get it by: 
+If you want to get [pandas](http://pandas.pydata.org/) DataFrame from `exp` for deeper analysis, you can get it by:
 ```python
 df1 = exp1.get_frame()
 ```
+
 To render a sensitivity profile from the loaded samples, run:
+
 ```python
 p = Profile(exp, slo=500)
 p.sensitivity_table(show_throughput=False)
 ```
 
-Where `slo` is the target latency in micro seconds and `show_throughput` is an optional parameter and consists of work make by aggressor.
+Where `slo` is the target latency in micro seconds and `show_throughput` is an optional parameter which shows the work carried out by the best effort workload.
 
 This should render a table similar to the one below:
 
 ![sensitivity profile](docs/sensitivity_profile.png)
 
-Figure above shows the impact of interference on shared resource on latency critical task.
-First row in the table represents a `Baseline`. It's the part of the experiment, where we run only latency sensitive task, `Memcached` in our case. 
-The rest rows shows impact of `aggressors` for the experiment (`L1 Data` and `L1 instruction`).
+The figure above shows the impact of interference on shared resources for the latency critical task.
+The first row in the table represents a baseline, where the latency sensitive task is run without any aggressors, which is `Memcached` in our case.
+The rest of the rows shows the impact of `aggressors` for the experiment.
 
-Each column in the table is so called `load point`.
-Latencies are values which are normalized to the SLO (passed from `sensitivity_table` function). 
+Each column in the table is a so called `load point`.
+The latencies are normalized to the SLO (provided in the `sensitivity_table` function).
 
 The green color means that interference impact from aggressors was acceptable, red or yellow color shows that SLO latency was violated.
 
 ## Visualizing data using Jupyter
 
-We are using [plotly](https://plot.ly/) interactive plots. There are some already prepared function for plotting
+We are using [plotly](https://plot.ly/) interactive plots. There are some prepared function for plotting
 the data directly in Jupyter, like:
 
 ```python
 p1.sensitivity_chart(fill=True, to_max=False)
 ```
-Where `fill` parameter fills area between Baseline and  selected aggressor. `to_max` shows comparison between Baseline and a 'worst case'.
 
-'worst case' in this case means max latency violations, for all aggressors at each load point.
+Where `fill` parameter fills the area between Baseline and selected aggressor.
+`to_max` shows a comparison between baseline and the 'worst case'.
+'worst case' indicates the maximum latency violation, for all aggressors at each load point.
 
 ![sensitivity_chart](docs/worst_to_baseline.png)
 
-We can get some conclusion from plot below like:
-- which aggressor cause some SLO violations and how big they are
-- what is the max `QPS` that we are able to achive, while keeping `slo violation`. Point on the X axis - where `slo` boundary line and `aggressor` line cross
-- basically for 'worst' aggressor (`L3 data` => "red" in this case), we expecting about 70 `QPS` and `SLO` keeped at level no more than 500ms.
+The plot below can be provide insights, like:
+- The aggressor causing SLO violations and how much do it violates the desired performance.
+- The maximum load, in terms of `QPS`, which can be achieved while maintaining the SLO. The point on the X axis - where the `slo` boundary line and `aggressor` line intersect.
 
 ![sensitivity_chart](docs/sensitivity_chart.png)
 
-It is also possible to compare two experiments, like below:
+It is also possible to compare two experiments:
+
 ```python
 exps = [exp1, exp2]
 compare_experiments(exps, fill=True, to_max=False)
 ```
-Here `fill` param acts the same as in the previous example, and `to_max` compares `Baseline` for two experiments.
+
+Here `fill` parameter acts the same as in the previous example, and `to_max` compares baseline for two experiments.
 
 ![compare_two_experiments](docs/compare_two_experiments.png)
 
-At this chart the “green area” shows some “goodness”, between `Baselines` on two different setups. 
+At this chart the "green area" shows improvement in terms of higher load and lower latency, between `Baselines` on two different setups.
 
-We see that:
-- on the “better hardware”, we don’t violate `SLO` almost at all loadpoints.
-- we can have `slo violation` with much more `QPS` values
-- "goodness", green area between `Baselines` is kind of measure of availabe physical resources. 
-
-## Exploration data using jupyter
+## Exploration data using Jupyter
 
 To get started, we have provided an example notebook [here](example.ipynb)
 
