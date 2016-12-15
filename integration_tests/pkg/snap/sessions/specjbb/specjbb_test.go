@@ -4,7 +4,7 @@ import (
 	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
 	. "github.com/smartystreets/goconvey/convey"
-	"os"
+	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"path"
 	"testing"
 )
@@ -31,7 +31,7 @@ func TestAaaSnapSpecJbbSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTask(path.Join(
-						os.Getenv("GOPATH"), "src/github.com/intelsdi-x/swan/misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
+						fs.GetSwanPath(), "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := specjbbSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
