@@ -6,95 +6,98 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	So "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 // RunAndTestSnap starts snapd on random port returning clenaup function, plugin loader and string
 // with snapd address
-func RunAndTestSnap() (func(), *snap.PluginLoader, string) {
+func RunAndTestSnap() (cleanup func(), loader *snap.PluginLoader, snapURL string) {
 	snapd := testhelpers.NewSnapd()
 	err := snapd.Start()
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
-	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
-	loaderConfig.SnapdAddress = snapdAddress
+	snapURL = fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
+	loaderConfig.SnapdAddress = snapURL
 
-	loader, err := snap.NewPluginLoader(loaderConfig)
+	loader, err = snap.NewPluginLoader(loaderConfig)
 
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 
-	return func() {
-		err := snapd.Stop()
-		err2 := snapd.CleanAndEraseOutput()
-		So.So(err, So.ShouldBeNil)
-		So.So(err2, So.ShouldBeNil)
-	}, loader, snapdAddress
+	 cleanup = func() {
+		err := snapd.CleanAndEraseOutput()
+		convey.So(err, convey.ShouldBeNil)
+		err = snapd.Stop()
+		convey.So(err, convey.ShouldBeNil)}
+	return
 }
 
-// PrepareAndTestPublisher creates session publisher and publisher output file, returns clenaup function
+// PrepareAndTestPublisher creates session publisher and publisher output file, returns cleanup function,
 // publisher and file name where publisher data will be stored
-func PrepareAndTestPublisher(loader *snap.PluginLoader) (func(), *wmap.PublishWorkflowMapNode, string) {
+func PrepareAndTestPublisher(loader *snap.PluginLoader) ( cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
 
 	tmpFile, err := ioutil.TempFile("", "session_test")
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 
-	publisherMetricsFile := tmpFile.Name()
+	publisherMetricsFile = tmpFile.Name()
 	loader.Load(snap.SessionPublisher)
 
 	pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 
-	publisher := wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
-	So.So(publisher, So.ShouldNotBeNil)
+	publisher = wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
+	convey.So(publisher, convey.ShouldNotBeNil)
 
 	publisher.AddConfigItem("file", publisherMetricsFile)
 
-	return func() {
+	cleanup = func() {
 		os.Remove(publisherMetricsFile)
-	}, publisher, publisherMetricsFile
+	}
+	return
 }
 
-// PrepareMockedTask based on provided path, creates mock task that is used to
+// PrepareMockedTaskInfo based on provided path, creates mock task info that is used to
 // configure collector
-func PrepareMockedTask(outFilePath string) (func(), *mocks.TaskInfo) {
-	mockedTaskInfo := new(mocks.TaskInfo)
+func PrepareMockedTaskInfo(outFilePath string) (cleanup func(), mockedTaskInfo *mocks.TaskInfo) {
+	mockedTaskInfo = new(mocks.TaskInfo)
 	file, err := os.Open(outFilePath)
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 	mockedTaskInfo.On("StdoutFile").Return(file, nil)
 
-	return func() {
+	cleanup = func() {
 		file.Close()
-	}, mockedTaskInfo
+	}
+
+	return
 }
 
 // ReadAndTestPublisherData reads publisher output, when data are read, function checks if we have all data,
 // if we have all columns, if yes, then we compare read data against expectedMetrics.
-// Function returns bool indicating if read data are the same as expected data
-func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string, t *testing.T) bool {
+// Function returns bool, which if true means that all data are valid, if false - data have not been read properly.
+// If data do not match expected data, convey.So is "thrown"
+func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string) ( validData bool) {
 	retries := 50
-	validData := false
+	validData = false
 	expectedColumnsNum := 3
 	for i := 0; i < retries; i++ {
 		time.Sleep(100 * time.Millisecond)
 
-		dat, err := ioutil.ReadFile(dataFilePath)
+		data, err := ioutil.ReadFile(dataFilePath)
 		if err != nil {
 			continue
 		}
 
-		if len(dat) > 0 {
+		if len(data) > 0 {
 			// Check if we have all published data
-			lines := strings.Split(string(dat), "\n")
+			lines := strings.Split(string(data), "\n")
 			if len(lines) < len(expectedMetrics) {
-				t.Log("There should be at least ",
+				convey.Printf("There should be at least ",
 					len(expectedMetrics),
 					" lines. Checking again.")
 				continue
@@ -111,11 +114,12 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 			}
 
 			if !allLinesHaveAllColumns {
-				t.Log("There should be at least 3 columns for all lines. ",
+				convey.Printf("There should be at least 3 columns for all lines. ",
 					"Checking again.")
 				continue
 			}
 
+			// Now we are sure that we have all data so we begin validation
 			for i := 0; i < len(expectedMetrics); i++ {
 				columns := strings.Split(lines[i], "\t")
 				soMetricRowIsValid(
@@ -126,29 +130,36 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 			break
 		}
 	}
-	return validData
+	return
 }
 
+
+// soMetricRowIsValid function takes 3 strings:
+// namespace, tags, value - and checks if provided value is almost equal
+// corresponding one from expectedMetrics
 func soMetricRowIsValid(
 	expectedMetrics map[string]string,
 	namespace, tags, value string) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
-	So.So(len(tagsSplitted), So.ShouldBeGreaterThanOrEqualTo, 1)
-	So.So("foo=bar", So.ShouldBeIn, tagsSplitted)
+	convey.So(len(tagsSplitted), convey.ShouldBeGreaterThanOrEqualTo, 1)
+	convey.So("foo=bar", convey.ShouldBeIn, tagsSplitted)
 
-	// Check namespace & values.
+	// Split namespace string
 	namespaceSplitted := strings.Split(namespace, "/")
+
+	// Read metric name (from namespace) is "key" used to search corresponding
+	// expectedMetric "value"
 	expectedValue, ok := expectedMetrics[namespaceSplitted[len(namespaceSplitted)-1]]
-	So.So(ok, So.ShouldBeTrue)
+	convey.So(ok, convey.ShouldBeTrue)
 
 	// Reduce string-encoded-float to common precision for comparison.
 	expectedValueFloat, err := strconv.ParseFloat(expectedValue, 64)
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 	valueFloat, err := strconv.ParseFloat(value, 64)
-	So.So(err, So.ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 
 	epsilon := 0.00001
-	So.So(expectedValueFloat, So.ShouldAlmostEqual, valueFloat, epsilon)
+	convey.So(expectedValueFloat, convey.ShouldAlmostEqual, valueFloat, epsilon)
 }

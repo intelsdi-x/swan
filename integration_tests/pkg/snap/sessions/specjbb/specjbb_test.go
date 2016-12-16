@@ -10,7 +10,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestAaaSnapSpecJbbSession(t *testing.T) {
+func TestSnapSpecJbbSession(t *testing.T) {
 
 	Convey("When testing SpecJbbSnapSession ", t, func() {
 		Convey("We have snapd running ", func() {
@@ -31,7 +31,7 @@ func TestAaaSnapSpecJbbSession(t *testing.T) {
 					specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
-					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTask(path.Join(
+					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTaskInfo(path.Join(
 						fs.GetSwanPath(), "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
@@ -62,7 +62,7 @@ func TestAaaSnapSpecJbbSession(t *testing.T) {
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := sessions.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics, t)
+							dataValid := sessions.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
 							So(dataValid, ShouldBeTrue)
 						})
 					})
