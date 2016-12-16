@@ -58,11 +58,8 @@ func NewBackend(exec executor.Executor, config BackendConfig) Backend {
 }
 
 func (b Backend) buildCommand() string {
+	// See: https://intelsdi.atlassian.net/wiki/display/SCE/SpecJBB+experiment+tuning
 	return fmt.Sprint("java -jar",
-		" -Dcom.sun.management.jmxremote.port=5555",
-		" -Dcom.sun.management.jmxremote.ssl=false",
-		" -Dcom.sun.management.jmxremote.authenticate=false",
-		" -Djava.net.preferIPv4Stack=true",
 		" -XX:NativeMemoryTracking=summary", // memory monitoring purposes
 		" -server",                          // compilation takes more time but offers additional optimizations
 		" -Xms10g -Xmx10g",                  // allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
