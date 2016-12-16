@@ -2,17 +2,18 @@ package sessions
 
 import (
 	"fmt"
-	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
-	"github.com/intelsdi-x/athena/pkg/executor/mocks"
-	"github.com/intelsdi-x/athena/pkg/snap"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
-	So "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
+	"github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/snap/scheduler/wmap"
+	So "github.com/smartystreets/goconvey/convey"
 )
 
 // RunAndTestSnap starts snapd on random port returning clenaup function, plugin loader and string

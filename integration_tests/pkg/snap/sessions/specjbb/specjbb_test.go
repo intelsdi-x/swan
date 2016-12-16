@@ -15,13 +15,13 @@ func TestAaaSnapSpecJbbSession(t *testing.T) {
 	Convey("When testing SpecJbbSnapSession ", t, func() {
 		Convey("We have snapd running ", func() {
 
-			cleanaupSnap, loader, snapdAddress := sessions.RunAndTestSnap()
-			defer cleanaupSnap()
+			cleanupSnap, loader, snapdAddress := sessions.RunAndTestSnap()
+			defer cleanupSnap()
 
 			Convey("And we loaded publisher plugin", func() {
 
-				clenupMerticsFile, publisher, publisherDataFilePath := sessions.PrepareAndTestPublisher(loader)
-				defer clenupMerticsFile()
+				cleanupMerticsFile, publisher, publisherDataFilePath := sessions.PrepareAndTestPublisher(loader)
+				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch specjbb session", func() {
 
