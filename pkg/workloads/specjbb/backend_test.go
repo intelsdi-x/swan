@@ -14,7 +14,7 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 
 	Convey("When using Backend launcher", t, func() {
 
-		expectedCommand := "java -jar -Dspecjbb.controller.host=127.0.0.1 test -m backend -G GRP1 -J JVM2 -p /usr/share/specjbb/config/specjbb2015.props"
+		expectedCommand := "java -jar -server -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms10g -Xmx10g -XX:NativeMemoryTracking=summary -XX:+UseParallelGC -XX:ParallelGCThreads=8 -XX:ConcGCThreads=4 -XX:InitiatingHeapOccupancyPercent=80 -XX:MaxGCPauseMillis=100 -Dspecjbb.controller.host=127.0.0.1 test -m backend -G GRP1 -J JVM2 -p /usr/share/specjbb/config/specjbb2015.props"
 		expectedHost := "127.0.0.1"
 
 		mockedExecutor := new(mocks.Executor)
