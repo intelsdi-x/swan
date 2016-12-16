@@ -42,7 +42,7 @@ func soMetricRowIsValid(
 	So(valueFloat, ShouldAlmostEqual, expectedValueFloat, epsilon)
 }
 
-func SkipTestSnapMutilateSession(t *testing.T) {
+func TestSnapMutilateSession(t *testing.T) {
 	var snapteld *testhelpers.Snapteld
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string

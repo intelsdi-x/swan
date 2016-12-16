@@ -102,7 +102,7 @@ func TestExperiment(t *testing.T) {
 
 			Convey("With proper configuration and with l1d aggressors", func() {
 				args := []string{"--aggr", "l1d"}
-				SkipConvey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
 
@@ -115,7 +115,7 @@ func TestExperiment(t *testing.T) {
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				})
 
-				SkipConvey("While having two repetitions to phase", func() {
+				Convey("While having two repetitions to phase", func() {
 					os.Setenv("SWAN_REPS", "2")
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -145,7 +145,7 @@ func TestExperiment(t *testing.T) {
 
 				})
 
-				SkipConvey("Experiment should succeed also with 2 load points", func() {
+				Convey("Experiment should succeed also with 2 load points", func() {
 					os.Setenv("SWAN_LOAD_POINTS", "2")
 					fmt.Println(args)
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)

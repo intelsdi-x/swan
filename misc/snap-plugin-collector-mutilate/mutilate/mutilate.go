@@ -155,7 +155,7 @@ func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	experiment := cpolicy.NewPolicyNode()
 	experiment.Add(stdoutFile)
 	policy := cpolicy.New()
-	policy.Add([]string{""}, experiment)
+	policy.Add([]string{"intel", "swan", "mutilate"}, experiment)
 
 	return policy, nil
 }
