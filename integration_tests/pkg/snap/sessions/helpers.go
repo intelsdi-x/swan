@@ -38,7 +38,7 @@ func RunAndTestSnap() (cleanup func(), loader *snap.PluginLoader, snapURL string
 	return
 }
 
-// PrepareAndTestPublisher creates session publisher and publisher output file, returns cleanup function,
+// PreparePublisher creates session publisher and publisher output file, returns cleanup function,
 // publisher and file name where publisher data will be stored
 func PreparePublisher(loader *snap.PluginLoader) ( cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
 
