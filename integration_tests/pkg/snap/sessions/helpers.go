@@ -40,7 +40,7 @@ func RunAndTestSnap() (cleanup func(), loader *snap.PluginLoader, snapURL string
 
 // PrepareAndTestPublisher creates session publisher and publisher output file, returns cleanup function,
 // publisher and file name where publisher data will be stored
-func PrepareAndTestPublisher(loader *snap.PluginLoader) ( cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
+func PreparePublisher(loader *snap.PluginLoader) ( cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
 
 	tmpFile, err := ioutil.TempFile("", "session_test")
 	convey.So(err, convey.ShouldBeNil)

@@ -20,7 +20,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 
 			Convey("And we loaded publisher plugin", func() {
 
-				cleanupMerticsFile, publisher, publisherDataFilePath := sessions.PrepareAndTestPublisher(loader)
+				cleanupMerticsFile, publisher, publisherDataFilePath := sessions.PreparePublisher(loader)
 				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch specjbb session", func() {
