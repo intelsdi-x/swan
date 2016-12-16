@@ -120,7 +120,6 @@ func CreateExperimentDir(uuid string) (experimentDirectory string, logFile *os.F
 		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
 	}
 	err = os.Chdir(experimentDirectory)
-	os.Chdir(os.TempDir())
 	if err != nil {
 		return "", &os.File{}, errors.Wrapf(err, "cannot chdir to experiment directory", experimentDirectory)
 	}
