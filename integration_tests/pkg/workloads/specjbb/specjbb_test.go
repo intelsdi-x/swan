@@ -20,7 +20,7 @@ const (
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
-func SkipTestSPECjbb(t *testing.T) {
+func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("While using default config", t, func() {
