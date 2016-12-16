@@ -1,13 +1,14 @@
 package mutilate
 
 import (
+	"strings"
+	"testing"
+	"time"
+
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/ctypes"
 	. "github.com/smartystreets/goconvey/convey"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestMutilatePlugin(t *testing.T) {
@@ -21,7 +22,7 @@ func TestMutilatePlugin(t *testing.T) {
 			policy, err := mutilatePlugin.GetConfigPolicy()
 			So(err, ShouldBeNil)
 
-			experimentConfig := policy.Get([]string{""}).RulesAsTable()
+			experimentConfig := policy.Get([]string{"intel", "swan", "mutilate"}).RulesAsTable()
 			So(err, ShouldBeNil)
 			So(experimentConfig, ShouldHaveLength, 1)
 			So(experimentConfig[0].Required, ShouldBeTrue)
