@@ -29,7 +29,7 @@ yum install -y -q \
     hg \
     htop \
     iptables \
-    java-1.8.0-openjdk \
+    java-1.8.0-openjdk-devel \
     leveldb \
     leveldb-devel \
     libcgroup-tools \
