@@ -2,8 +2,6 @@
 
 set -e
 
-pip install s3cmd==1.6.1
-
 usage() {
     echo "$(basename ${0}) [-s swan_path] [-c credentials_file] [-b bucket]"
     echo " - a script to download and extract SPECjbb.iso from S3."

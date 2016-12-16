@@ -8,9 +8,7 @@ import pandas as pd
 import plotly.graph_objs as go
 
 from IPython.core.display import HTML
-from plotly.offline import init_notebook_mode, iplot
-
-init_notebook_mode(connected=True)
+from plotly.offline import iplot
 
 
 Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max

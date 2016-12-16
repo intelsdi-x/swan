@@ -48,6 +48,7 @@ func TestSPECjbb(t *testing.T) {
 
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
+					backendConfig.JVMHeapMemory = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
@@ -151,6 +152,7 @@ func TestSPECjbb(t *testing.T) {
 
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
+					backendConfig.JVMHeapMemory = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
@@ -255,6 +257,7 @@ func TestSPECjbb(t *testing.T) {
 				})
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
+					backendConfig.JVMHeapMemory = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
