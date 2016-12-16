@@ -38,11 +38,11 @@ var (
 // TODO: this should be put into athena:/pkg/snap
 func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	// Create connection with Snap.
-	logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
+	logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())
 	// TODO(bp): Make helper for passing host:port or only host option here.
 
 	mutilateConfig := mutilatesession.DefaultConfig()
-	mutilateConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
+	mutilateConfig.SnapteldAddress = snap.SnapteldHTTPEndpoint.Value()
 	mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
 	if err != nil {
 		return nil, err

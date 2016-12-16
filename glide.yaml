@@ -27,7 +27,7 @@ import:
   - config
   - logger
 - package: github.com/intelsdi-x/snap
-  version: ~0.14.0-beta
+  version: 1.0.0
   subpackages:
   - control/plugin
   - control/plugin/cpolicy

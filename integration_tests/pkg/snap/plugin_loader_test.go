@@ -20,30 +20,30 @@ var plugins = []string{
 }
 
 func TestPluginLoader(t *testing.T) {
-	snapd := testhelpers.NewSnapd()
-	err := snapd.Start()
+	snapteld := testhelpers.NewSnapteld()
+	err := snapteld.Start()
 	if err != nil {
-		t.Fatalf("snapd creation failed: %q", err)
+		t.Fatalf("snapteld creation failed: %q", err)
 	}
-	defer snapd.Stop()
-	defer snapd.CleanAndEraseOutput()
-	snapdAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapd.Port())
+	defer snapteld.Stop()
+	defer snapteld.CleanAndEraseOutput()
+	snapteldAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapteld.Port())
 
 	// Wait until snap is up.
-	if !snapd.Connected() {
-		t.Fatalf("failed to connect to snapd on %q", snapdAddress)
+	if !snapteld.Connected() {
+		t.Fatalf("failed to connect to snapteld on %q", snapteldAddress)
 	}
 
 	config := snap.DefaultPluginLoaderConfig()
-	config.SnapdAddress = snapdAddress
+	config.SnapteldAddress = snapteldAddress
 	loader, err := snap.NewPluginLoader(config)
 	if err != nil {
 		t.Fatalf("snap plugin loading failed: %q", err)
 	}
-	c, err := client.New(snapdAddress, "v1", true)
+	c, err := client.New(snapteldAddress, "v1", true)
 	pluginClient := snap.NewPlugins(c)
 
-	Convey("While having Snapd running", t, func() {
+	Convey("While having Snapteld running", t, func() {
 		for index, plugin := range plugins {
 			Convey(fmt.Sprintf("We try to load %s plugin (%d)", plugin, index), func() {
 				err := loader.Load(plugin)

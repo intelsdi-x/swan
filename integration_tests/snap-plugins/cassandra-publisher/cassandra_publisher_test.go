@@ -16,25 +16,25 @@ import (
 
 func TestCassandraPublisher(t *testing.T) {
 
-	snapd := testhelpers.NewSnapd()
-	err := snapd.Start()
+	snapteld := testhelpers.NewSnapteld()
+	err := snapteld.Start()
 	if err != nil {
 		t.Error(err)
 	}
-	defer snapd.Stop()
-	defer snapd.CleanAndEraseOutput()
+	defer snapteld.Stop()
+	defer snapteld.CleanAndEraseOutput()
 
-	if !snapd.Connected() {
-		t.Error("Could not connect to snapd")
+	if !snapteld.Connected() {
+		t.Error("Could not connect to snapteld")
 	}
 
-	snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
-	snapClient, err := client.New(snapdAddress, "v1", true)
+	snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
+	snapClient, err := client.New(snapteldAddress, "v1", true)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = loadSnapPlugins(snapdAddress)
+	err = loadSnapPlugins(snapteldAddress)
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,9 +58,9 @@ func TestCassandraPublisher(t *testing.T) {
 	})
 }
 
-func loadSnapPlugins(snapdAddress string) (err error) {
+func loadSnapPlugins(snapteldAddress string) (err error) {
 	pluginLoaderConfig := snap.DefaultPluginLoaderConfig()
-	pluginLoaderConfig.SnapdAddress = snapdAddress
+	pluginLoaderConfig.SnapteldAddress = snapteldAddress
 	pluginLoader, err := snap.NewPluginLoader(pluginLoaderConfig)
 	if err != nil {
 		return err

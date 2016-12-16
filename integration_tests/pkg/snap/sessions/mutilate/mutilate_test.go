@@ -43,19 +43,19 @@ func soMetricRowIsValid(
 }
 
 func TestSnapMutilateSession(t *testing.T) {
-	var snapd *testhelpers.Snapd
+	var snapteld *testhelpers.Snapteld
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
-	Convey("While having Snapd running", t, func() {
-		snapd = testhelpers.NewSnapd()
-		err := snapd.Start()
+	Convey("While having Snapteld running", t, func() {
+		snapteld = testhelpers.NewSnapteld()
+		err := snapteld.Start()
 		So(err, ShouldBeNil)
 
 		defer func() {
-			if snapd != nil {
-				err := snapd.Stop()
-				err2 := snapd.CleanAndEraseOutput()
+			if snapteld != nil {
+				err := snapteld.Stop()
+				err2 := snapteld.CleanAndEraseOutput()
 
 				So(err, ShouldBeNil)
 				So(err2, ShouldBeNil)
@@ -63,16 +63,16 @@ func TestSnapMutilateSession(t *testing.T) {
 		}()
 
 		// Wait until snap is up.
-		So(snapd.Connected(), ShouldBeTrue)
+		So(snapteld.Connected(), ShouldBeTrue)
 
-		snapdAddress := fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
+		snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
 
 		loaderConfig := snap.DefaultPluginLoaderConfig()
-		loaderConfig.SnapdAddress = snapdAddress
+		loaderConfig.SnapteldAddress = snapteldAddress
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
-		Convey("We are able to connect with snapd", func() {
+		Convey("We are able to connect with snapteld", func() {
 			Convey("Loading test publisher", func() {
 				tmpFile, err := ioutil.TempFile("", "session_test")
 				So(err, ShouldBeNil)
@@ -92,7 +92,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 				Convey("While launching MutilateSnapSession", func() {
 					mutilateSessionConfig := mutilatesession.DefaultConfig()
-					mutilateSessionConfig.SnapdAddress = snapdAddress
+					mutilateSessionConfig.SnapteldAddress = snapteldAddress
 					mutilateSessionConfig.Publisher = publisher
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
 					So(err, ShouldBeNil)

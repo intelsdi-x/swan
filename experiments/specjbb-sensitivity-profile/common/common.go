@@ -61,11 +61,11 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 // TODO: this should be put into athena:/pkg/snap
 func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
-	if snap.SnapdHTTPEndpoint.Value() != "none" {
+	if snap.SnapteldHTTPEndpoint.Value() != "none" {
 		// Create connection with Snap.
-		logrus.Info("Connecting to Snapd on ", snap.SnapdHTTPEndpoint.Value())
+		logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())
 		specjbbConfig := specjbbsession.DefaultConfig()
-		specjbbConfig.SnapdAddress = snap.SnapdHTTPEndpoint.Value()
+		specjbbConfig.SnapteldAddress = snap.SnapteldHTTPEndpoint.Value()
 		specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbConfig)
 		if err != nil {
 			return nil, err

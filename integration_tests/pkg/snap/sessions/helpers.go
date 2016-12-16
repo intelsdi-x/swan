@@ -15,25 +15,25 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
-// RunAndTestSnap starts snapd on random port returning clenaup function, plugin loader and string
-// with snapd address
-func RunAndTestSnap() (cleanup func(), loader *snap.PluginLoader, snapURL string) {
-	snapd := testhelpers.NewSnapd()
-	err := snapd.Start()
+// RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
+// with snapteld address
+func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL string) {
+	snapteld := testhelpers.NewSnapteld()
+	err := snapteld.Start()
 	convey.So(err, convey.ShouldBeNil)
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
-	snapURL = fmt.Sprintf("http://127.0.0.1:%d", snapd.Port())
-	loaderConfig.SnapdAddress = snapURL
+	snaptelURL = fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
+	loaderConfig.SnapteldAddress = snaptelURL
 
 	loader, err = snap.NewPluginLoader(loaderConfig)
 
 	convey.So(err, convey.ShouldBeNil)
 
 	 cleanup = func() {
-		err := snapd.CleanAndEraseOutput()
+		err := snapteld.CleanAndEraseOutput()
 		convey.So(err, convey.ShouldBeNil)
-		err = snapd.Stop()
+		err = snapteld.Stop()
 		convey.So(err, convey.ShouldBeNil)}
 	return
 }

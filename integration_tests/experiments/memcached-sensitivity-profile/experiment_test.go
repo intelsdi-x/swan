@@ -64,19 +64,19 @@ func TestExperiment(t *testing.T) {
 		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-scheduler"),
 	}
 
-	Convey("When snapd is launched", t, func() {
+	Convey("When snapteld is launched", t, func() {
 		var logDirPerm os.FileMode = 0755
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
 
-		snapd := testhelpers.NewSnapdOnPort(8181)
-		err = snapd.Start()
+		snapteld := testhelpers.NewSnapteldOnPort(8181)
+		err = snapteld.Start()
 		So(err, ShouldBeNil)
 
 		time.Sleep(1 * time.Second)
 
 		Reset(func() {
-			err := snapd.Stop()
+			err := snapteld.Stop()
 			So(err, ShouldBeNil)
 			if err == nil {
 				os.RemoveAll(snapLogs)

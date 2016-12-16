@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -e
+set -e -x
 
-SNAP_VERSION="v0.14.0-beta"
+SNAP_VERSION="1.0.0"
 
 . $HOME_DIR/.bash_profile
 ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena
@@ -11,13 +11,14 @@ echo "Installing Snap..."
 if [ ! -f /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz ]; then
     wget -q -P /cache https://github.com/intelsdi-x/snap/releases/download/${SNAP_VERSION}/snap-${SNAP_VERSION}-linux-amd64.tar.gz
     tar xf /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz -C /cache
-    mv /cache/snap-${SNAP_VERSION}/bin/* $GOPATH/bin
+    mv /cache/snaptel $GOPATH/bin
+    mv /cache/snapteld $GOPATH/bin
 fi
 
 echo "Installing Athena & its K8s..."
 if [ ! -d $ATHENA_DIR ]; then
     echo "Fetching Athena sources"
-    mkdir -p $ATHENA_DIR 
+    mkdir -p $ATHENA_DIR
     git clone git@github.com:intelsdi-x/athena $ATHENA_DIR
 else
     echo "Updating Athena sources"

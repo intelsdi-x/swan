@@ -19,7 +19,7 @@ While the experiment can be run in a developer setting from within a virtual mac
 
 Swan use Snap to collect and process i.e. tag metrics, and store them in Cassandra. Swan does not stand up a Snap cluster, as users may already have this installed and set up in [tribes](https://github.com/intelsdi-x/snap/blob/master/docs/TRIBE.md) on machines in the cluster.
 
-See the [Snap installation guide](https://github.com/intelsdi-x/snap) for guidance of how to configure and install `snapd`. `snapd` should be running on the host running the swan binary.
+See the [Snap installation guide](https://github.com/intelsdi-x/snap) for guidance of how to configure and install `snapteld`. `snapteld` should be running on the host running the swan binary.
 
 ### Cassandra
 
@@ -61,7 +61,7 @@ We recommend the following machine topology:
 
 | Type                  | Description                                                                                                                               | Machine                                                                                |
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| Target machine        | Machine where swan is run and thus where memcached will be run. Snapd should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
+| Target machine        | Machine where swan is run and thus where memcached will be run. Snapteld should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
 | Load generator master | Machine where mutilate master will be running and thus the machine which coordinates all mutilate agent machines.                         | 1 x 10Gb link, 20 or more hyper threads in total                                       |
 | Load generator agents | Machines to generate stress on the target machine.                                                                                        | 10Gb link for each agent, 20 or more hyper threads in total                                       |
 | Service machines      | Machines where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
@@ -323,7 +323,7 @@ Below is an example configuration using environment variables to set up the expe
 
 |   Machine     |                  Role                  |
 |---------------|----------------------------------------|
-| 192.168.10.9  | Target host running `snapd` and `swan` |
+| 192.168.10.9  | Target host running `snapteld` and `swan` |
 | 192.168.10.1  | Mutilate master host                   |
 | 192.168.10.3  | Mutilate agent host #1                 |
 | 192.168.10.4  | Mutilate agent host #2                 |
@@ -396,7 +396,7 @@ export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassand
 Before running `memcached-sensitivity-profile` ensure that
 
 * Cassandra is up and running on the cassandra host
-* Snapd is running on swan host
+* Snapteld is running on swan host
 * Mutilate binary is copied to proper location on mutilate hosts
 * From swan host privileged user can ssh to mutilate hosts using keys authorization.
 

@@ -19,4 +19,4 @@ cp $CONFIGS_LOCATION/keyspace.cql /opt/swan/resources
 cp $CONFIGS_LOCATION/table.cql /opt/swan/resources
 
 echo "Generate configs..."
-sed -e 's,GOPATH,'"$GOPATH"',' $CONFIGS_LOCATION/snapd.service_template > /etc/systemd/system/snapd.service
+sed -e 's,GOPATH,'"$GOPATH"',' $CONFIGS_LOCATION/snapteld.service_template > /etc/systemd/system/snapteld.service

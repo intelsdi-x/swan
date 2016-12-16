@@ -10,13 +10,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnapSpecJbbSession(t *testing.T) {
+func TestSnaptelSpecJbbSession(t *testing.T) {
 
-	Convey("When testing SpecJbbSnapSession ", t, func() {
-		Convey("We have snapd running ", func() {
+	Convey("When testing SpecJbbSnaptelSession ", t, func() {
+		Convey("We have snapteld running ", func() {
 
-			cleanupSnap, loader, snapdAddress := sessions.RunAndTestSnap()
-			defer cleanupSnap()
+			cleanupSnaptel, loader, snapteldAddress := sessions.RunAndTestSnaptel()
+			defer cleanupSnaptel()
 
 			Convey("And we loaded publisher plugin", func() {
 
@@ -26,16 +26,16 @@ func TestSnapSpecJbbSession(t *testing.T) {
 				Convey("Then we prepared and launch specjbb session", func() {
 
 					specjbbSessionConfig := specjbbsession.DefaultConfig()
-					specjbbSessionConfig.SnapdAddress = snapdAddress
+					specjbbSessionConfig.SnapteldAddress = snapteldAddress
 					specjbbSessionConfig.Publisher = publisher
-					specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
+					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTaskInfo(path.Join(
 						fs.GetSwanPath(), "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
-					handle, err := specjbbSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
+					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, "foo:bar")
 					So(err, ShouldBeNil)
 
 					defer func() {
