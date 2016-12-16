@@ -60,13 +60,18 @@ func NewBackend(exec executor.Executor, config BackendConfig) Backend {
 func (b Backend) buildCommand() string {
 	// See: https://intelsdi.atlassian.net/wiki/display/SCE/SpecJBB+experiment+tuning
 	return fmt.Sprint("java -jar",
-		" -XX:NativeMemoryTracking=summary", // memory monitoring purposes
-		" -server",                          // compilation takes more time but offers additional optimizations
-		" -Xms10g -Xmx10g",                  // allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
-		" -XX:+UseG1GC",                     // modern garbage collector
-		" -XX:ParallelGCThreads=8",          //Sets the value of n to the number of logical processors. The value of n is the same as the number of logical processors up to a value of 8.
-		" -XX:ConcGCThreads=2",              //Sets the number of parallel marking threads. Sets n to approximately 1/4 of the number of parallel garbage collection threads (ParallelGCThreads).
-		" -XX:MaxGCPauseMillis=100",         //Sets a target value for desired maximum pause time. The default value is 200 milliseconds. The specified value does not adapt to your heap size.
+		" -server", // Compilation takes more time but offers additional optimizations
+
+		" -Djava.util.concurrent.ForkJoinPool.common.parallelism=8", // Amount of threads equal to amount of hyper threads
+
+		" -Xms10g -Xmx10g",                       // Allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
+		" -XX:NativeMemoryTracking=summary",      // Memory monitoring purposes
+		" -XX:+UseParallelGC",                    // Parallel garbage collector
+		" -XX:ParallelGCThreads=8",               // Sets the value of n to the number of logical processors. The value of n is the same as the number of logical processors up to a value of 8.
+		" -XX:ConcGCThreads=4",                   // Using only four GC threads
+		" -XX:InitiatingHeapOccupancyPercent=80", // Using more memory then default 45% before GC kicks in
+		" -XX:MaxGCPauseMillis=100",              //Sets a target value for desired maximum pause time. The default value is 200 milliseconds. The specified value does not adapt to your heap size.
+
 		ControllerHostProperty, b.conf.IP,
 		" ", b.conf.PathToBinary,
 		" -m backend",
