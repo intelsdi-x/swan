@@ -15,8 +15,8 @@ IS_SNAP_RUNNING=1
 echo "Waiting for snapteld to launch, it may take some time..."
 while [ $IS_SNAP_RUNNING -ne 0 ]
 do
-	docker exec snap snaptel -u http://snap:8181 task list 1>/dev/null 2>/dev/null
+	docker exec snaptel -u http://snap:8181 task list 1>/dev/null 2>/dev/null
 	IS_SNAP_RUNNING=$?
 done
 echo "snapteld is now ready to accept connections"
-docker exec snap snaptel -u http://snap:8181 task create -t /home/snap/task.json
+docker exec snaptel -u http://snap:8181 task create -t /home/snap/task.json
