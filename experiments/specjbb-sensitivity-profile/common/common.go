@@ -26,7 +26,7 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 	var loadGeneratorExecutor executor.Executor
 	var transactionInjectors []executor.Executor
 	txICount := specjbb.TxICountFlag.Value()
-	if ip != "local" {
+	if ip != "127.0.0.1" {
 		var err error
 		loadGeneratorExecutor, err = sensitivity.NewRemote(ip)
 		if err != nil {

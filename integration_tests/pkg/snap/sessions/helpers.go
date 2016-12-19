@@ -30,17 +30,18 @@ func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL 
 
 	convey.So(err, convey.ShouldBeNil)
 
-	 cleanup = func() {
+	cleanup = func() {
 		err := snapteld.CleanAndEraseOutput()
 		convey.So(err, convey.ShouldBeNil)
 		err = snapteld.Stop()
-		convey.So(err, convey.ShouldBeNil)}
+		convey.So(err, convey.ShouldBeNil)
+	}
 	return
 }
 
 // PreparePublisher creates session publisher and publisher output file, returns cleanup function,
 // publisher and file name where publisher data will be stored
-func PreparePublisher(loader *snap.PluginLoader) ( cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
+func PreparePublisher(loader *snap.PluginLoader) (cleanup func(), publisher *wmap.PublishWorkflowMapNode, publisherMetricsFile string) {
 
 	tmpFile, err := ioutil.TempFile("", "session_test")
 	convey.So(err, convey.ShouldBeNil)
@@ -81,7 +82,7 @@ func PrepareMockedTaskInfo(outFilePath string) (cleanup func(), mockedTaskInfo *
 // if we have all columns, if yes, then we compare read data against expectedMetrics.
 // Function returns bool, which if true means that all data are valid, if false - data have not been read properly.
 // If data do not match expected data, convey.So is "thrown"
-func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string) ( validData bool) {
+func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string) (validData bool) {
 	retries := 50
 	validData = false
 	expectedColumnsNum := 3
@@ -132,7 +133,6 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 	}
 	return
 }
-
 
 // soMetricRowIsValid function takes 3 strings:
 // namespace, tags, value - and checks if provided value is almost equal
