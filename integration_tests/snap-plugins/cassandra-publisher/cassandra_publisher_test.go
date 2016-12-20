@@ -8,6 +8,7 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
@@ -21,8 +22,14 @@ func TestCassandraPublisher(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer snapteld.Stop()
-	defer snapteld.CleanAndEraseOutput()
+	defer func() {
+		var errCollection errcollection.ErrorCollection
+		errCollection.Add(snapteld.Stop())
+		errCollection.Add(snapteld.CleanAndEraseOutput())
+		if err := errCollection.GetErrIfAny(); err != nil {
+			t.Fatalf("Cleaning up procedures fails: %s", err)
+		}
+	}()
 
 	if !snapteld.Connected() {
 		t.Error("Could not connect to snapteld")

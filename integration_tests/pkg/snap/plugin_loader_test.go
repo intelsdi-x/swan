@@ -6,6 +6,7 @@ import (
 
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -25,8 +26,15 @@ func TestPluginLoader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("snapteld creation failed: %q", err)
 	}
-	defer snapteld.Stop()
-	defer snapteld.CleanAndEraseOutput()
+	defer func() {
+		var errCollection errcollection.ErrorCollection
+		errCollection.Add(snapteld.Stop())
+		errCollection.Add(snapteld.CleanAndEraseOutput())
+		if err := errCollection.GetErrIfAny(); err != nil {
+			t.Fatalf("Cleaning up procedures fails: %s", err)
+		}
+	}()
+
 	snapteldAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapteld.Port())
 
 	// Wait until snap is up.

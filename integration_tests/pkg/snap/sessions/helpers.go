@@ -11,6 +11,7 @@ import (
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -31,10 +32,10 @@ func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL 
 	convey.So(err, convey.ShouldBeNil)
 
 	cleanup = func() {
-		err := snapteld.CleanAndEraseOutput()
-		convey.So(err, convey.ShouldBeNil)
-		err = snapteld.Stop()
-		convey.So(err, convey.ShouldBeNil)
+		var errCollection errcollection.ErrorCollection
+		errCollection.Add(snapteld.Stop())
+		errCollection.Add(snapteld.CleanAndEraseOutput())
+		convey.So(errCollection.GetErrIfAny(), convey.ShouldBeNil)
 	}
 	return
 }
@@ -58,7 +59,7 @@ func PreparePublisher(loader *snap.PluginLoader) (cleanup func(), publisher *wma
 	publisher.AddConfigItem("file", publisherMetricsFile)
 
 	cleanup = func() {
-		os.Remove(publisherMetricsFile)
+		os.RemoveAll(publisherMetricsFile)
 	}
 	return
 }

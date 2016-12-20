@@ -12,6 +12,7 @@ import (
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -76,8 +77,10 @@ func TestExperiment(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		Reset(func() {
-			err := snapteld.Stop()
-			So(err, ShouldBeNil)
+			var errCollection errcollection.ErrorCollection
+			errCollection.Add(snapteld.Stop())
+			errCollection.Add(snapteld.CleanAndEraseOutput())
+			So(errCollection.GetErrIfAny(), ShouldBeNil)
 			if err == nil {
 				os.RemoveAll(snapLogs)
 			}
