@@ -1,5 +1,4 @@
 #!/bin/bash
-cd $(dirname ${BASH_SOURCE[0]})/../
 
 function dist {
     ARTIFACTS_PATH="$(pwd)/artifacts/"
@@ -92,6 +91,38 @@ function uninstall_swan {
     done
 }
 
+function _check_s3_params() {
+    if [ "${BUCKET_NAME}" == "" ]; then
+        echo "Provide bucket name"
+        exit 1
+    fi
+
+    if [ ! -f "${S3_CREDS_LOCATION}" ]; then
+        echo "Provide S3 creds"
+        exit 1
+    fi
+    if [ ! $(which s3cmd) ]; then
+        echo "s3cmd is not installed"
+        exit 1
+    fi
+}
+
+function download {
+    _check_s3_params
+
+    s3cmd sync -c ${S3_CREDS_LOCATION} s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
+    FNAME=$(cat ./latest_build)
+    s3cmd sync -c ${S3_CREDS_LOCATION} s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
+}
+
+function upload {
+    _check_s3_params
+
+    FNAME=$(cat ./latest_build)
+    s3cmd put -c ${S3_CREDS_LOCATION} ./${FNAME} s3://${BUCKET_NAME}/build_artifacts/
+    s3cmd put -c ${S3_CREDS_LOCATION} ./latest_build s3://${BUCKET_NAME}/build_artifacts/
+}
+
 case ${1} in
     "dist" )
         dist ;;
@@ -99,4 +130,8 @@ case ${1} in
         install_swan ;;
     "uninstall" )
         uninstall_swan ;;
+    "download" )
+        download ;;
+    "upload" )
+        upload ;;
 esac
