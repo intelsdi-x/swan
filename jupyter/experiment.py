@@ -21,6 +21,29 @@ class Experiment(object):
     The experiment id should either be found when running the experiment through the swan cli or
     from using the Experiments class.
     """
+
+    session = None  # one instance passed for all existing notebooks experiments
+
+    @staticmethod
+    def _create_or_get_session(cassandra_cluster, port, ssl_options, keyspace):
+        if Experiment.session:
+            return Experiment.session
+        else:
+            auth_provider = None
+            if ssl_options:
+                if 'ssl_version' not in ssl_options:
+                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    context.options |= ssl.OP_NO_SSLv2
+                    context.options |= ssl.OP_NO_SSLv3
+                    ssl_options['ssl_version'] = context.protocol
+
+                auth_provider = PlainTextAuthProvider(username=ssl_options['username'],
+                                                      password=ssl_options['password'])
+
+            cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
+            Experiment.session = cluster.connect(keyspace)
+            return Experiment.session
+
     def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
                  aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
         """
@@ -50,19 +73,7 @@ class Experiment(object):
                         'swan_repetition', 'throughputs']
 
         if cassandra_cluster:
-            auth_provider = None
-            if ssl_options:
-                if 'ssl_version' not in ssl_options:
-                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                    context.options |= ssl.OP_NO_SSLv2
-                    context.options |= ssl.OP_NO_SSLv3
-                    ssl_options['ssl_version'] = context.protocol
-                
-                auth_provider = PlainTextAuthProvider(username=ssl_options['username'],
-                                                      password=ssl_options['password'])
-
-            cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
-            session = cluster.connect(keyspace)
+            session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
             rows, qps = self.match_qps(session)
 
         elif read_csv:
