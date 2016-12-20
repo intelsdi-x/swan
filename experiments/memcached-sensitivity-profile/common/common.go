@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	mutilateMasterFlagDefault = "local"
+	mutilateMasterFlagDefault = "127.0.0.1"
 )
 
 var (
@@ -60,17 +60,17 @@ func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 	// Special case to have ability to use local executor for mutilate master load generator.
 	// This is needed for docker testing.
 	var masterLoadGeneratorExecutor executor.Executor
-	masterLoadGeneratorExecutor = executor.NewLocal()
+	agentsLoadGeneratorExecutors := []executor.Executor{}
 	if mutilateMasterFlag.Value() != mutilateMasterFlagDefault {
 		var err error
 		masterLoadGeneratorExecutor, err = sensitivity.NewRemote(mutilateMasterFlag.Value())
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		masterLoadGeneratorExecutor = executor.NewLocal()
 	}
-
 	// Pack agents.
-	agentsLoadGeneratorExecutors := []executor.Executor{}
 	for _, agent := range mutilateAgentsFlag.Value() {
 		remoteExecutor, err := sensitivity.NewRemote(agent)
 		if err != nil {
