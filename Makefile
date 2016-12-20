@@ -62,6 +62,12 @@ install:
 uninstall:
 	(./scripts/artifacts.sh uninstall)
 
+download:
+	(BUCKET_NAME="${BUCKET_NAME}" S3_CREDS_LOCATION="${S3_CREDS_LOCATION}" ./scripts/artifacts.sh download)
+
+upload:
+	(BUCKET_NAME="${BUCKET_NAME}" S3_CREDS_LOCATION="${S3_CREDS_LOCATION}" ./scripts/artifacts.sh upload)
+
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 test_lint:
