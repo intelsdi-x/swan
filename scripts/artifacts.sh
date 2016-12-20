@@ -92,6 +92,10 @@ function uninstall_swan {
 }
 
 function _check_s3_params() {
+    if [ ! $(which s3cmd) ]; then
+        echo "s3cmd is not installed"
+        exit 1
+    fi
     if [ "${BUCKET_NAME}" == "" ]; then
         echo "Provide bucket name"
         exit 1
@@ -99,10 +103,6 @@ function _check_s3_params() {
 
     if [ ! -f "${S3_CREDS_LOCATION}" ]; then
         echo "Provide S3 creds"
-        exit 1
-    fi
-    if [ ! $(which s3cmd) ]; then
-        echo "s3cmd is not installed"
         exit 1
     fi
 }
