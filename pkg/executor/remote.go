@@ -128,13 +128,15 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	// Wait for remote task in go routine.
 	go func() {
 		defer func() {
-			close(hasProcessExited)
 			session.Close()
 			connection.Close()
 		}()
 		*exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
+		// We need to close the channel before we call LogSuccessfulExecution() or LogUnsuccessfulExecution().
+		// Otherwise it won't be possible to retrieve exit code from the task handle.
+		close(hasProcessExited)
 		if err != nil {
 			if exitError, ok := err.(*ssh.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
