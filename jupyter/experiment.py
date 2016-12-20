@@ -22,12 +22,12 @@ class Experiment(object):
     from using the Experiments class.
     """
 
-    session = None  # one instance passed for all existing notebooks experiments
+    CASSANDRA_SESSION = None  # one instance for all existing notebook experiments
 
     @staticmethod
     def _create_or_get_session(cassandra_cluster, port, ssl_options, keyspace):
-        if Experiment.session:
-            return Experiment.session
+        if Experiment.CASSANDRA_SESSION:
+            return Experiment.CASSANDRA_SESSION
         else:
             auth_provider = None
             if ssl_options:
@@ -41,8 +41,8 @@ class Experiment(object):
                                                       password=ssl_options['password'])
 
             cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
-            Experiment.session = cluster.connect(keyspace)
-            return Experiment.session
+            Experiment.CASSANDRA_SESSION = cluster.connect(keyspace)
+            return Experiment.CASSANDRA_SESSION
 
     def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
                  aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
