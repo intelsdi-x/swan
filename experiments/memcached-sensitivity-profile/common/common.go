@@ -67,20 +67,16 @@ func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 		if err != nil {
 			return nil, err
 		}
-		// Pack agents.
-		for _, agent := range mutilateAgentsFlag.Value() {
-			remoteExecutor, err := sensitivity.NewRemote(agent)
-			if err != nil {
-				return nil, err
-			}
-			agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, remoteExecutor)
-		}
 	} else {
 		masterLoadGeneratorExecutor = executor.NewLocal()
-		for range mutilateAgentsFlag.Value() {
-			remoteExecutor := executor.NewLocal()
-			agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, remoteExecutor)
+	}
+	// Pack agents.
+	for _, agent := range mutilateAgentsFlag.Value() {
+		remoteExecutor, err := sensitivity.NewRemote(agent)
+		if err != nil {
+			return nil, err
 		}
+		agentsLoadGeneratorExecutors = append(agentsLoadGeneratorExecutors, remoteExecutor)
 	}
 	logrus.Debugf("Added %d mutilate agent(s) to mutilate cluster", len(agentsLoadGeneratorExecutors))
 
