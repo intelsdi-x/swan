@@ -2,17 +2,17 @@
 This module contains the convience class to read experiment data and generate sensitivity
 profiles. See profile.py for more information.
 """
-import pandas as pd
-import numpy as np
 import ssl
+from collections import defaultdict
 
-import test_data_reader
+import numpy as np
+import pandas as pd
 
+from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
-from cassandra.auth import PlainTextAuthProvider
 
-from collections import defaultdict
+import test_data_reader
 
 
 class Experiment(object):

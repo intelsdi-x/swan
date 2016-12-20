@@ -27,7 +27,7 @@ deps_godeps:
 
 deps_jupyter:
 	# Jupyter building
-	(cd scripts/jupyter; sudo pip install -r requirements.txt)
+	(cd jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
 	(./scripts/build_plugins.sh)
@@ -80,7 +80,7 @@ test_integration:
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
-	(cd scripts/jupyter; py.test)
+	(cd jupyter; py.test)
 
 cleanup:
 	rm -fr misc/**/*log
