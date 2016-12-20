@@ -26,9 +26,7 @@ class Experiment(object):
 
     @staticmethod
     def _create_or_get_session(cassandra_cluster, port, ssl_options, keyspace):
-        if Experiment.CASSANDRA_SESSION:
-            return Experiment.CASSANDRA_SESSION
-        else:
+        if not Experiment.CASSANDRA_SESSION:
             auth_provider = None
             if ssl_options:
                 if 'ssl_version' not in ssl_options:
@@ -42,7 +40,8 @@ class Experiment(object):
 
             cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
             Experiment.CASSANDRA_SESSION = cluster.connect(keyspace)
-            return Experiment.CASSANDRA_SESSION
+
+        return Experiment.CASSANDRA_SESSION
 
     def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
                  aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
