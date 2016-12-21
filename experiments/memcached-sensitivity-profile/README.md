@@ -2,10 +2,10 @@
 
 # Memcached sensitivity experiment
 
-The first experiment which bundles with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference.
-Swan does this by carefully controlling execution of memcached and its co-location with aggressor processes i.e. noisy neighbors or antagonists. From this point on, Swan coordinates execution of a distributed load generator called [mutilate](https://github.com/leverich/mutilate) which puts memcached under controlled load. Snap plugins and tasks are coordinated by swan to collect latency and load metrics and tags them with experiment identifiers. All the metrics are then sent to Cassandra and then extracted by Jupyter. Picture below shows the experiments components.
+The first experiment bundled with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment enables experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference.
+Swan does this by carefully controlling execution of memcached and its co-location with aggressor processes i.e. noisy neighbors or antagonists. From this point on, _Swan_ coordinates execution of a distributed load generator called [mutilate](https://github.com/leverich/mutilate) which puts memcached under controlled load. Snap plugins and tasks are coordinated by _Swan_ to collect latency and load metrics and tags them with experiment identifiers. All the metrics are then sent to Cassandra and then extracted by Jupyter. Picture below shows the experiments components.
 
-![Swan diagram](../../docs/swan.png)
+![Swan diagram](../../docs/swan-arch.png)
 
 The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers _Quality of Service_ metrics like latency, so-called _Service Level Indicators_ or SLI for short, and the achieved load in terms of _Request per Second_ (RPS) or _Queries Per Second_ (QPS).
 
@@ -13,7 +13,8 @@ The conditions, currently, involve co-location of memcached with a list of speci
 
 ## Prerequisites
 
-While the experiment can be run in a developer setting from within a virtual machine or on your own laptop, the experiment is targeted a data center environment with high bandwidth links and rich multi socket servers. It can be a surprisingly tricky exercise to rule out unintended sources of interference in these experiments, so below is a guide to setting up the experiment and some guidance in how to debug a misbehaving setup.
+While the experiment can be run in a developer setting from within a virtual machine or on your own laptop, it is targeted for the data center environment with high bandwidth links and rich multi socket servers. Therefore further steps will assume that experiment will be run in the multi node environment.
+It can be a surprisingly tricky exercise to rule out unintended sources of interference in these experiments, so below is a guide to setting up the experiment and some guidance in how to debug a misbehaving setup.
 
 ### Snap
 
@@ -51,7 +52,6 @@ To get insight into some of these, please refer to [Kozyrakis, Jacob Leverich Ch
 
 Much of the configuration guidelines here are targeted eliminating as many of these (unintentional) sources of interference as possible.
 
-
 Swan has built in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
 However, Swan needs some input from the user about the environment to adjust these. The sections below will go over the recommended
 
@@ -61,7 +61,7 @@ We recommend the following machine topology:
 
 | Type                  | Description                                                                                                                               | Machine                                                                                |
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| Target machine        | Machine where swan is run and thus where memcached will be run. Snapteld should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
+| Target machine        | Machine where Swan is run and thus where memcached will be run. Snapteld should be running on this host as well.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
 | Load generator master | Machine where mutilate master will be running and thus the machine which coordinates all mutilate agent machines.                         | 1 x 10Gb link, 20 or more hyper threads in total                                       |
 | Load generator agents | Machines to generate stress on the target machine.                                                                                        | 10Gb link for each agent, 20 or more hyper threads in total                                       |
 | Service machines      | Machines where Cassandra and Jupyter will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
@@ -99,7 +99,7 @@ To avoid power saving policies to kick in while carrying out the experiments, se
 $ sudo cpupower frequency-set -g performance
 ```
 
-Swan is able to perform automatic checks for file descriptors, DDoS protection and power control.
+Swan provides the  [validate](https://github.com/intelsdi-x/swan/blob/master/pkg/experiment/sensitivity/validate/validate.go) package that provides a method, named `OS()`, to carry out the checks against the issues above.
 
 #### Misc
 
@@ -115,7 +115,7 @@ Lastly, the maximum number of connections to memcached can be set with the `--me
 
 ### Isolation configuration
 
-To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
+To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In the Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
 
 ![Cache topology](../../docs/cpu_topo.png)
 
@@ -244,7 +244,7 @@ There may be issues with synchronization between the master and agents. If any o
 
 If you see `connection closed by peer` on the agents, this is most likely related to the SYN cookies mentioned above.
 
-### Red lining
+### [Red lining](https://www.wikiwand.com/en/Redline)
 
 In order to produce a sensitivity profile, Swan needs to know the peak load for memcached.
 From the peak load, Swan computes load points from 5% to 100%.
@@ -313,7 +313,7 @@ Below is an example of the sensitivity profile could be:
 ![Sensitivity profile](../../docs/sensitivity-profile.png)
 
 
-The _Load_ row is a percentage of the maximum achieved QPS without violating SLO which was found during _[Red lining](https://www.wikiwand.com/en/Redline)_.
+The _Load_ row is a percentage of the peak load which was found during _[Red lining](https://www.wikiwand.com/en/Redline)_.
 A cell in a table express _SLI_ which is a 99th [percentile](https://www.wikiwand.com/en/Percentile) response time for that _Load_ in relation to _SLO_. For instance _Baseline_ for _Load_ 5% for _SLO_ 500ms tells that 99 percent of requests responded in time not greater than 160ms which is 32% of SLO time. Thus if we observe _SLI_ above 100% that means violation of _SLO_.
 In the presented table Caffe and memBW are relatively weak aggressors and they lead to _SLO_ violation only on higher loads while Stream 100M is very aggressive and leads to _SLO_ violation even on low loads of memcached.
 

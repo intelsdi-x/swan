@@ -1,4 +1,4 @@
-# ![Swan diagram](swan-logo-48.png) Swan
+# ![Swan](swan-logo-48.png) Swan
 
 # Vision and motivation
 

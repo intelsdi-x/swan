@@ -1,4 +1,4 @@
-# ![Swan diagram](swan-logo-48.png) Swan 
+# ![Swan logo](swan-logo-48.png) Swan 
 
 # Integration with Docker containers
 
