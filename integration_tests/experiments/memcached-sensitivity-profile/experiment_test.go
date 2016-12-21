@@ -69,7 +69,8 @@ func TestExperiment(t *testing.T) {
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
 
-		snapteld := testhelpers.NewSnapteldOnPort(8181)
+		// Snapteld default ports are 8181(API port) and 8082(RPC port).
+		snapteld := testhelpers.NewSnapteldOnPort(8181, 8082)
 		err = snapteld.Start()
 		So(err, ShouldBeNil)
 
