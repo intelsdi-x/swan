@@ -166,7 +166,7 @@ func TestSPECjbb(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(backendTaskHandle, ShouldNotBeNil)
 
-						Convey("And when I stop backend prematurely, "+
+						Convey("And when I stop backend prematurely, " +
 							"both backend and load generator should be terminated", func() {
 							// Wait for backend to be registered.
 							time.Sleep(20 * time.Second)
