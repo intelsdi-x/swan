@@ -16,17 +16,19 @@ import (
 type Snapteld struct {
 	task    executor.TaskHandle
 	apiPort int
+	rpcPort int
 }
 
-// NewSnapteld constructs Snapteld on random high port.
+// NewSnapteld constructs Snapteld on random high ports.
 func NewSnapteld() *Snapteld {
-	randomHighPort := rand.Intn(32768-10000) + 10000
-	return NewSnapteldOnPort(randomHighPort)
+	randomHighAPIPort := rand.Intn(32768-10000) + 10000
+	randomHighRPCPort := rand.Intn(42768-32768) + 32768
+	return NewSnapteldOnPort(randomHighAPIPort, randomHighRPCPort)
 }
 
-// NewSnapteldOnPort constructs Snapteld on chosen port.
-func NewSnapteldOnPort(apiPort int) *Snapteld {
-	return &Snapteld{apiPort: apiPort}
+// NewSnapteldOnPort constructs Snapteld on chosen ports.
+func NewSnapteldOnPort(apiPort, rpcPort int) *Snapteld {
+	return &Snapteld{apiPort: apiPort, rpcPort: rpcPort}
 }
 
 // Start starts Snap daemon and wait until it is responsive.
@@ -37,7 +39,7 @@ func (s *Snapteld) Start() error {
 		return errors.New("Cannot find GOPATH")
 	}
 	snapteldPath := path.Join(gopath, "bin", "snapteld")
-	snapCommand := fmt.Sprintf("%s -t 0 -p %d", snapteldPath, s.apiPort)
+	snapCommand := fmt.Sprintf("%s -t 0 -p %d --control-listen-port %d", snapteldPath, s.apiPort, s.rpcPort)
 
 	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
