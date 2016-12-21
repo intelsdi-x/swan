@@ -9,6 +9,5 @@ import (
 
 func main() {
 	meta := caffe.Meta()
-
 	plugin.Start(meta, caffe.InferenceCollector{}, os.Args[1])
 }

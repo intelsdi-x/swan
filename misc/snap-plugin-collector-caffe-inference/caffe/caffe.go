@@ -2,15 +2,14 @@ package caffe
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	"github.com/intelsdi-x/snap-plugin-utilities/logger"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
@@ -64,25 +63,25 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 		requestedMetricNamespace := requestedMetric.Namespace().String()
 		pluginPrefixNamespace := strings.Join(append([]string{""}, namespace...), "/")
 		if strings.HasPrefix(requestedMetricNamespace, pluginPrefixNamespace) != true {
-			logger.LogError(fmt.Sprintf("requested metric %q does not match to the caffe inference collector provided metric (prefix) %q", requestedMetric, pluginPrefixNamespace))
+			log.Errorf("requested metric %q does not match to the caffe inference collector provided metric (prefix) %q", requestedMetric, pluginPrefixNamespace)
 			return metrics, ErrNspace
 		}
 
 		sourceFilePath, err := config.GetConfigItem(requestedMetric, "stdout_file")
 		if err != nil {
-			logger.LogError(fmt.Sprintf("stdout_file missing or wrong in config for namespace: %s, error: %s", requestedMetricNamespace, err.Error()))
+			log.Errorf("stdout_file missing or wrong in config for namespace: %s, error: %s", requestedMetricNamespace, err.Error())
 			return metrics, ErrConf
 		}
 
 		sourceFileName, ok := sourceFilePath.(string)
 		if !ok {
-			logger.LogError(fmt.Sprintf("stdout_file name invalid for namespace %s", requestedMetricNamespace))
+			log.Errorf("stdout_file name invalid for namespace %s", requestedMetricNamespace)
 			return metrics, ErrConf
 		}
 
 		batches, err := parseOutputFile(sourceFileName)
 		if err != nil {
-			logger.LogError(fmt.Sprintf("parsing caffe output (%s) for namespace %s failed: %s", sourceFilePath.(string), requestedMetricNamespace, err.Error()))
+			log.Errorf("parsing caffe output (%s) for namespace %s failed: %s", sourceFilePath.(string), requestedMetricNamespace, err.Error())
 			return metrics, ErrParse
 		}
 
@@ -94,7 +93,7 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 		if requestedMetric.Namespace_[namespaceHostnameIndex].Value == "*" {
 			hostname, err = os.Hostname()
 			if err != nil {
-				logger.LogError(fmt.Sprintf("cannot determine hostname: %s", err.Error()))
+				log.Errorf("cannot determine hostname: %s", err.Error())
 				return metrics, ErrPlugin
 			}
 		} else {
@@ -121,7 +120,7 @@ func (InferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	policy := cpolicy.New()
 	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
 	if err != nil {
-		logger.LogError(fmt.Sprintf("cannot create new string rule: %s", err.Error()))
+		log.Errorf("cannot create new string rule: %s", err.Error())
 		return policy, ErrPlugin
 	}
 	policyNode := cpolicy.NewPolicyNode()
@@ -157,13 +156,13 @@ func Meta() *plugin.PluginMeta {
 func parseOutputFile(path string) (uint64, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
-		logger.LogError(fmt.Sprintf("cannot stat file %s: %s", path, err.Error()))
+		log.Errorf("cannot stat file %s: %s", path, err.Error())
 		return 0, ErrParse
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		logger.LogError(fmt.Sprintf("cannot open file %s: %s", path, err.Error()))
+		log.Errorf("cannot open file %s: %s", path, err.Error())
 		return 0, ErrParse
 	}
 	defer file.Close()
@@ -180,7 +179,7 @@ func parseOutputFile(path string) (uint64, error) {
 	}
 	n, err := file.ReadAt(buf, readat)
 	if err != nil {
-		logger.LogError(fmt.Sprintf("cannot cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error()))
+		log.Errorf("cannot cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error())
 		return 0, ErrParse
 	}
 
@@ -190,7 +189,7 @@ func parseOutputFile(path string) (uint64, error) {
 
 	re := regexp.MustCompile("Batch ([0-9]+)")
 	if re == nil {
-		logger.LogError(fmt.Sprintf("failed to parse: %s, plugin internal error", path))
+		log.Errorf("failed to parse: %s, plugin internal error", path)
 		return 0, ErrParse
 	}
 
@@ -208,7 +207,7 @@ func parseOutputFile(path string) (uint64, error) {
 	}
 
 	if foundBatch != true {
-		logger.LogError(fmt.Sprintf("failed to parse: %s, did not find valid batch number", path))
+		log.Errorf("failed to parse: %s, did not find valid batch number", path)
 		err = ErrParse
 	}
 	return result, err
