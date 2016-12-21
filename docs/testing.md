@@ -1,4 +1,4 @@
-# ![Swan diagram](swan-logo-48.png) Swan
+# ![Swan logo](swan-logo-48.png) Swan
 
 # Integration tests
 
@@ -12,7 +12,7 @@ configuration and setup like special packages and building the workload binary.
 Before test, make sure:
 - The Memcached is built.
   - Go to the [memcached](workloads/data_caching/memcached) workload directory for instructions.
-  - Optionally, export MEMCACHED_BIN variable if you want to use memcached in custom path.
+  - Optionally, export `MEMCACHED_BIN` variable if you want to use memcached in custom path.
 - User `memcached` is present.
 - `libevent` package is present.
 - `nc` program is present.
@@ -56,8 +56,8 @@ To run integration tests inside Docker containers:
 
 `make integration_test_on_docker`
 
-**Note:** Optionally, you can set GIT_TOKEN variable to get private GitHub repositories used in this test (variable will be passed into containers automatically).
+**Note:** Optionally, you can set `GIT_TOKEN` variable to get private GitHub repositories used in this test (variable will be passed into containers automatically).
 
 # Using docker containers
 
-To run integration tests in docker containers please follow instruction from [Swan integration with docker containers](../misc/dev/docker/README.md)
+To run integration tests in docker containers please follow instruction from [Swan integration with docker containers](./docker.md)
