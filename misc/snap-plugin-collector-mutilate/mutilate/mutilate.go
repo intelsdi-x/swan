@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	"github.com/intelsdi-x/snap-plugin-utilities/logger"
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
@@ -71,21 +71,21 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
 	if err != nil {
 		msg := fmt.Sprintf("No file path set - no metrics are collected: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.New(msg)
 	}
 
 	rawMetrics, err := parse.File(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.New(msg)
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
 		msg := fmt.Sprintf("Cannot determine hostname: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.New(msg)
 	}
 
@@ -135,10 +135,10 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 
 					metric.Data_ = value
 				} else {
-					logger.LogError("Could not find raw metric for key '%s': skipping metric", parse.MutilatePercentileCustom)
+					log.Errorf("Could not find raw metric for key '%s': skipping metric", parse.MutilatePercentileCustom)
 				}
 			} else {
-				logger.LogError("Could not find raw metric for key '%s': skipping metric", metricName)
+				log.Errorf("Could not find raw metric for key '%s': skipping metric", metricName)
 			}
 		}
 
