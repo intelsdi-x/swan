@@ -1,5 +1,5 @@
 hash: ca7205beaf46e444af03130404dd56493c2e837e3738ec5fbe323e84538aaf2f
-updated: 2016-12-14T18:20:12.245403034+01:00
+updated: 2016-12-20T17:18:06.88375717+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -155,6 +155,10 @@ imports:
   - version
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
+- name: github.com/gopherjs/gopherjs
+  version: 4b53e1bddba0e2f734514aeb6c02db652f4c6fe8
+  subpackages:
+  - js
 - name: github.com/hailocab/go-hostpool
   version: e80d13ce29ede4452c43dea11e79b9bc8a15b478
 - name: github.com/hailocab/gocassa
@@ -166,7 +170,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: dbdf05088e088ad688a2a2c528edab5944446a28
+  version: eca475e875b7d9060871dd777dba25adb9d8905f
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -231,6 +235,8 @@ imports:
   - logger
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
+- name: github.com/jtolds/gls
+  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/mattn/go-runewidth
@@ -251,6 +257,17 @@ imports:
   version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/Sirupsen/logrus
   version: 081307d9bc1364753142d5962fc1d795c742baaf
+- name: github.com/smartystreets/assertions
+  version: 443d812296a84445c202c085f19e18fc238f8250
+  subpackages:
+  - internal/go-render/render
+  - internal/oglematchers
+- name: github.com/smartystreets/goconvey
+  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
+  subpackages:
+  - convey
+  - convey/gotest
+  - convey/reporting
 - name: github.com/spf13/pflag
   version: 1560c1005499d61b80f865c04d39ca7505bf7f0b
 - name: github.com/stretchr/objx
@@ -521,22 +538,5 @@ imports:
   - plugin/pkg/client/auth/oidc
   - third_party/forked/golang/reflect
 testImports:
-- name: github.com/gopherjs/gopherjs
-  version: 4b53e1bddba0e2f734514aeb6c02db652f4c6fe8
-  subpackages:
-  - js
-- name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
-- name: github.com/smartystreets/assertions
-  version: 443d812296a84445c202c085f19e18fc238f8250
-  subpackages:
-  - internal/go-render/render
-  - internal/oglematchers
-- name: github.com/smartystreets/goconvey
-  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
-  subpackages:
-  - convey
-  - convey/gotest
-  - convey/reporting
 - name: github.com/vektra/errors
   version: c64d83aba85aa4392895aadeefabbd24e89f3580
