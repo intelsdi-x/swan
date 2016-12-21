@@ -179,7 +179,7 @@ func parseOutputFile(path string) (uint64, error) {
 	}
 	n, err := file.ReadAt(buf, readat)
 	if err != nil {
-		log.Errorf("cannot cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error())
+		log.Errorf("cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error())
 		return 0, ErrParse
 	}
 
