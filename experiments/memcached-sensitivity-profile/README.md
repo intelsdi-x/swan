@@ -106,7 +106,7 @@ Swan is able to perform automatic checks for file descriptors, DDoS protection a
 In general, look at all running processes at the mutilate master, agents and on the target machine. Try to reduce the number of processes running at any time to reduce the likelihood of interference.
 memcached and mutilate are sensitive to processes which use any network bandwidth and otherwise may interfere with normal execution speed. Example of these are tracing tools like `iftop`. Therefore, be cautious using instrumentation tools while conducting experiments.
 
-### memcached configuration
+### Memcached configuration
 
 One of the most important configuration options for memcached is the thread count. We recommend _half physical core count per socket_. In a machine with 32 hyper threads over 16 cores and 2 sockets, this equals 4 memcached threads.
 This is set with the `--memcached_threads` flag or through the `SWAN_MEMCACHED_THREADS` environment variable.
@@ -115,7 +115,7 @@ Lastly, the maximum number of connections to memcached can be set with the `--me
 
 ### Isolation configuration
 
-To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading*. Each core has two execution threads. In Linux system each thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
+To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
 
 ![Cache topology](../../docs/cpu_topo.png)
 
@@ -164,7 +164,7 @@ _and_ introduce L3 aggressors with the same setup of memcached, in order to comp
 
 
 Swan will by default try to aim for the core configuration above.
-Swan does this by creating separate exclusive [cgroup CPU sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) for the high priority and best effort processes.
+Swan does this by creating separate exclusive [cgroup CPU sets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt) (using numactl utility for the high priority and best effort processes).
 By creating exclusive CPU sets, Swan can reduce interference from other background processes which may get scheduled on the high priority cores.
 
 Using exclusive CPU sets can be challenging if other systems on the host are using CPU sets. Exclusive CPU sets cannot share cores with any other cgroup and setting the desired cores will cause an error from the kernel.
