@@ -1,4 +1,4 @@
-# ![Swan diagram](swan-logo-48.png) Swan 
+# ![Swan logo](swan-logo-48.png) Swan 
 
 # Developer's guide
 
@@ -7,7 +7,7 @@
 Before sending or updating pull requests, make sure to run:
 
 test & build & run
-```
+```bash
 $ make deps
 $ make              # lint unit_test build
 $ make run
@@ -21,7 +21,7 @@ Follow the [Vagrant instructions](../misc/dev/vagrant/singlenode/README.md) to
 create a Linux virtual machine pre-configured for developing Swan.
 
 ### Detailed options for tests
-```
+```bash
 $ make test TEST_OPT="-v -run <specific test>"
 ```
 
@@ -29,7 +29,7 @@ $ make test TEST_OPT="-v -run <specific test>"
 
 As an alternative to using our Makefiles, you can test, lint and build manually:
 
-```
+```bash
 go test ./pkg/...
 golint ./pkg/...
 go build ./cmds/memcached
@@ -37,13 +37,9 @@ go build ./cmds/memcached
 
 ## Dependency management
 
-Dependency management in Swan is handled by [godeps](https://github.com/tools/godep).
+Dependency management in Swan is handled by [glide](https://github.com/Masterminds/glide). Please refer to the glide documentation for further dependency managenement.
 
-Before submitting pull requests, make sure that you have saved any dependencies with:
-
-```
-godep save ./...
-```
+*Please note* that the <swan>/vendor directory shall not be commited to the repository.
 
 ## Tests
 
@@ -87,7 +83,7 @@ In the pull request description, remember to:
 
  - Motivate the change with _why_ your code acts as it does. What is the problem it is trying to solve and how can a reviewer be sure that the pull request indeed fixes the issue.
  - Include a testing strategy that you used to gain confidence in the correctness of the code. This also enables the reviewer to replicate the issue.
- - Keep pull requests small and split them into several pull requests. If there are dependencies, name them `SCE-XXX: [1/N] Foo`, `SCE-XXX: [2/N] Bar`, and so on.
+ - Keep pull requests small and split them into several pull requests. If there are dependencies, name them `<NAME>: [1/N] <short info>`, `<NAME>: [2/N] <short info>`, and so on.
 
 ### Continuous integration
 

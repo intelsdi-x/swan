@@ -1,4 +1,4 @@
-# ![Swan diagram](swan-logo-48.png) Swan
+# ![Swan logo](swan-logo-48.png) Swan
 
 # Installation guide
 
@@ -89,11 +89,11 @@ As a result of this command, you will have a running virtual machine pre-configu
 
 ## Access Swan code inside virtual machine
 To SSH into a running Vagrant machine, go to a vagrant directory:
-```
+```bash
 $ cd swan/misc/dev/vagrant/singlenode
 ``` 
 and run:
-```
+```bash
 $ vagrant ssh
 ```
 
@@ -102,7 +102,7 @@ A Swan repository is placed in the home directory of a vagrant user `$HOME/swan/
 ## Build necessary plugins and experiment binary
 
 From within the swan checkout, run the following:
-```
+```bash
 $ make build_plugins
 $ make build_swan
 ```
@@ -118,10 +118,10 @@ This will build and install the [Snap](https://github.com/intelsdi-x/snap) plugi
 For further information about tests, please refer to the [Swan development guide](development.md#tests).
 
 ## Running experiment
-To run the **memcached-sensitivity-profile** experiment, please refer [here](../experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
+To run the **memcached-sensitivity-profile** experiment, please refer to the [sensitivity experiment README](../experiments/memcached-sensitivity-profile/README.md) for information about how to configure, run it and explore experiment data.
 
 ## Changing VM parameters or manually running provision scripts
-For details how to change VM parameters or manually run provision scripts, please refer to Vagrant [README](../misc/dev/vagrant/singlenode/README.md#changing-vm-parameters).
+For details how to change VM parameters or manually run provision scripts, please refer to Vagrant's [README](../misc/dev/vagrant/singlenode/README.md#changing-vm-parameters).
 
 ## Troubleshooting
 Possible issues that you may encounter are described [here](../misc/dev/vagrant/singlenode/README.md#troubleshooting).
