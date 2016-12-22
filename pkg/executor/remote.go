@@ -122,7 +122,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	var exitCode *int
 	exitCode = &exitCodeInt
 
-	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile, stderrFile,
+	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile.Name(), stderrFile.Name(),
 		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited, hasStopOrWaitInvoked)
 
 	// Wait for remote task in go routine.
@@ -134,9 +134,6 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		*exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
-		// We need to close the channel before we call LogSuccessfulExecution() or LogUnsuccessfulExecution().
-		// Otherwise it won't be possible to retrieve exit code from the task handle.
-		close(hasProcessExited)
 		if err != nil {
 			if exitError, ok := err.(*ssh.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
@@ -147,8 +144,27 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 				*exitCode = exitError.Waitmsg.ExitStatus()
 			}
 		}
-		stdoutFile.Sync()
-		stderrFile.Sync()
+
+		// We need to close the channel before we call LogSuccessfulExecution() or LogUnsuccessfulExecution().
+		// Otherwise it won't be possible to retrieve exit code from the task handle.
+		close(hasProcessExited)
+
+		err = stdoutFile.Sync()
+		if err != nil {
+			log.Errorf("Cannnot sync stdout file: %s", err.Error())
+		}
+		err = stdoutFile.Close()
+		if err != nil {
+			log.Errorf("Cannot close stdout file: %s", err.Error())
+		}
+		err = stderrFile.Sync()
+		if err != nil {
+			log.Errorf("Cannot sync stderr file: %s", err.Error())
+		}
+		err = stderrFile.Close()
+		if err != nil {
+			log.Errorf("Cannot close stderr file: %s", err.Error())
+		}
 
 		select {
 		case <-hasStopOrWaitInvoked:
@@ -171,13 +187,13 @@ const killWaitTimeout = 100 * time.Millisecond
 
 // remoteTaskHandle implements TaskHandle interface.
 type remoteTaskHandle struct {
-	session    *ssh.Session
-	connection *ssh.Client
-	stdoutFile *os.File
-	stderrFile *os.File
-	host       string
-	uuid       string
-	exitCode   *int
+	session        *ssh.Session
+	connection     *ssh.Client
+	stdoutFilePath string
+	stderrFilePath string
+	host           string
+	uuid           string
+	exitCode       *int
 
 	// This channel is closed immediately when process exits.
 	// It is used to signal task termination.
@@ -195,8 +211,8 @@ type remoteTaskHandle struct {
 func newRemoteTaskHandle(
 	session *ssh.Session,
 	connection *ssh.Client,
-	stdoutFile *os.File,
-	stderrFile *os.File,
+	stdoutFilePath string,
+	stderrFilePath string,
 	host string,
 	uuid string,
 	exitCode *int,
@@ -205,8 +221,8 @@ func newRemoteTaskHandle(
 	return &remoteTaskHandle{
 		session:                 session,
 		connection:              connection,
-		stdoutFile:              stdoutFile,
-		stderrFile:              stderrFile,
+		stdoutFilePath:          stdoutFilePath,
+		stderrFilePath:          stderrFilePath,
 		host:                    host,
 		uuid:                    uuid,
 		exitCode:                exitCode,
@@ -283,46 +299,40 @@ func (taskHandle *remoteTaskHandle) ExitCode() (int, error) {
 
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *remoteTaskHandle) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
-		return nil, err
+	if _, err := os.Stat(taskHandle.stdoutFilePath); err != nil {
+		return nil, errors.Wrapf(err, "unable to stat stdout file at %q", taskHandle.stdoutFilePath)
 	}
 
-	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stdoutFile, nil
+	file, err := os.Open(taskHandle.stdoutFilePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open stdout file at %q", taskHandle.stdoutFilePath)
+	}
+
+	return file, nil
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *remoteTaskHandle) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
-		return nil, err
+	if _, err := os.Stat(taskHandle.stderrFilePath); err != nil {
+		return nil, errors.Wrapf(err, "unable to stat stderr file at %q", taskHandle.stderrFilePath)
 	}
 
-	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stderrFile, nil
+	file, err := os.Open(taskHandle.stderrFilePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open stderr file at %q", taskHandle.stderrFilePath)
+	}
+
+	return file, nil
 }
 
 // Clean removes files to which stdout and stderr of executed command was written.
 func (taskHandle *remoteTaskHandle) Clean() error {
-	// Close stdout.
-	stdoutErr := taskHandle.stdoutFile.Close()
-
-	// Close stderr.
-	stderrErr := taskHandle.stderrFile.Close()
-
-	if stdoutErr != nil {
-		return stdoutErr
-	}
-
-	if stderrErr != nil {
-		return stderrErr
-	}
-
 	return nil
 }
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(taskHandle.stdoutFile.Name())
+	outputDir, _ := path.Split(taskHandle.stdoutFilePath)
 
 	// Remove temporary directory created for stdout and stderr.
 	if err := os.RemoveAll(outputDir); err != nil {

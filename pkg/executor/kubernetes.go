@@ -524,7 +524,6 @@ type kubernetesWatcher struct {
 
 // watch creates instance of TaskHandle and is responsible for keeping it in-sync with k8s cluster
 func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
-
 	selectorRaw := fmt.Sprintf("name=%s", kw.pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
@@ -662,7 +661,11 @@ func (kw *kubernetesWatcher) setExitCode(pod *api.Pod) {
 		}
 		exitCode = int(status.State.Terminated.ExitCode)
 	}
-	log.Debugf("K8s task watcher: exit code retrieved: %d", exitCode)
+	if pod.Status.Phase == api.PodFailed {
+		log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
+	} else {
+		log.Debugf("K8s task watcher: exit code retrieved: %d", exitCode)
+	}
 	sendExitCode(exitCode)
 }
 
