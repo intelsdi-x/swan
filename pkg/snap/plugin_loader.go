@@ -40,21 +40,21 @@ var (
 	defaultPluginsPath = path.Join(goPath, "bin")
 
 	snapteldAddress = conf.NewStringFlag("snapteld_address", "Address to snapteld in `http://%s:%s` format", "http://127.0.0.1:8181")
-	pluginsPath  = conf.NewStringFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
+	pluginsPath     = conf.NewStringFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
 )
 
 // DefaultPluginLoaderConfig returns default config for PluginLoader.
 func DefaultPluginLoaderConfig() PluginLoaderConfig {
 	return PluginLoaderConfig{
 		SnapteldAddress: snapteldAddress.Value(),
-		PluginsPath:  pluginsPath.Value(),
+		PluginsPath:     pluginsPath.Value(),
 	}
 }
 
 // PluginLoaderConfig contains configuration for PluginLoader.
 type PluginLoaderConfig struct {
 	SnapteldAddress string
-	PluginsPath  string
+	PluginsPath     string
 }
 
 // PluginLoader is used to simplify Snap plugin loading.

@@ -171,7 +171,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 			th, err := k8sexecutor.Execute("sleep inf")
 			So(err, ShouldBeNil)
-
+			defer executor.StopCleanAndErase(th)
 			// Externally delete the pod.
 			err = kubectl.DeletePod(executorConfig.PodName)
 			So(err, ShouldBeNil)

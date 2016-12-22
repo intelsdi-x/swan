@@ -17,16 +17,16 @@ func DefaultConfig() Config {
 
 	return Config{
 		SnapteldAddress: snap.SnapteldHTTPEndpoint.Value(),
-		Interval:     1 * time.Second,
-		Publisher:    publisher,
+		Interval:        1 * time.Second,
+		Publisher:       publisher,
 	}
 }
 
 // Config contains configuration for SPECjbb Collector session.
 type Config struct {
 	SnapteldAddress string
-	Publisher    *wmap.PublishWorkflowMapNode
-	Interval     time.Duration
+	Publisher       *wmap.PublishWorkflowMapNode
+	Interval        time.Duration
 }
 
 // SessionLauncher configures & launches snap workflow for gathering
