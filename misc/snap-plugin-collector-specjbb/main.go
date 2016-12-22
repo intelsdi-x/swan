@@ -10,6 +10,5 @@ import (
 
 func main() {
 	meta := specjbb.Meta()
-
 	plugin.Start(meta, specjbb.NewSpecjbb(time.Now()), os.Args[1])
 }

@@ -57,15 +57,16 @@ func TestMutilateWithExecutor(t *testing.T) {
 
 		ec, err := mcHandle.ExitCode()
 		errCollection.Add(err)
+		// Make sure that file desciptors are closed.
+		errCollection.Add(mcHandle.Clean())
+		// Make sure temp files removal was successful.
+		errCollection.Add(mcHandle.EraseOutput())
+
 		if ec != -1 {
 			// Expect -1 on SIGKILL (TODO: change to zero, after Stop "graceful stop fix").
 			t.Fatalf("memcached was stopped incorrectly err %s exit-code: %d", err, ec)
 		}
 
-		// Make sure that file desciptors are closed.
-		errCollection.Add(mcHandle.Clean())
-		// Make sure temp files removal was successful.
-		errCollection.Add(mcHandle.EraseOutput())
 		if err := errCollection.GetErrIfAny(); err != nil {
 			t.Fatalf("Cleaning up procedures fails: %s", err)
 		}
@@ -125,6 +126,13 @@ func TestMutilateWithExecutor(t *testing.T) {
 			mutilateLauncher := mutilate.New(executor.NewLocal(), mutilateConfig)
 			mutilateHandle, err := mutilateLauncher.Load(10, 1*time.Second)
 			So(err, ShouldBeNil)
+			Reset(func() {
+				var errCollection errcollection.ErrorCollection
+				errCollection.Add(mutilateHandle.Stop())
+				errCollection.Add(mutilateHandle.Clean())
+				errCollection.Add(mutilateHandle.EraseOutput())
+				So(errCollection.GetErrIfAny(), ShouldBeNil)
+			})
 			mutilateHandle.Wait(0)
 			out, err := mutilateHandle.StdoutFile()
 			log.Println(out.Name())
@@ -143,10 +151,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 			SoNonZeroMetricExists("percentile/99th")
 			SoNonZeroMetricExists("percentile/custom")
 
-			if err := mutilateHandle.EraseOutput(); err != nil {
-				t.Fatal(err)
-
-			}
 			_, currentGetCount := getMemcachedStats(mcAddress, t)
 			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)
 			if exitcode, err := mutilateHandle.ExitCode(); err != nil || exitcode != 0 {

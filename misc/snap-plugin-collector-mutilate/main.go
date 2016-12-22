@@ -10,6 +10,5 @@ import (
 
 func main() {
 	meta := mutilate.Meta()
-
 	plugin.Start(meta, mutilate.NewMutilate(time.Now()), os.Args[1])
 }

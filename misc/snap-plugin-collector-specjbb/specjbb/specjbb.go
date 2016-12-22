@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	"github.com/intelsdi-x/snap-plugin-utilities/logger"
 	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
@@ -74,20 +74,20 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
 	if err != nil {
 		msg := fmt.Sprintf("No file path set - no metrics are collected: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.Wrap(err, msg)
 	}
 
 	rawMetrics, err := parser.FileWithLatencies(sourceFilePath.(string))
 	if err != nil {
 		msg := fmt.Sprintf("SPECjbb output parsing failed: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.Wrap(err, msg)
 	}
 	hostname, err := os.Hostname()
 	if err != nil {
 		msg := fmt.Sprintf("Cannot determine hostname: %s", err.Error())
-		logger.LogError(msg)
+		log.Error(msg)
 		return metrics, errors.Wrap(err, msg)
 	}
 
