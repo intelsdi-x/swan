@@ -22,11 +22,11 @@ a so-called _sensitivity profile_, which describes the violation of _Quality of 
 
 ![Sensitivity profile](docs/sensitivity-profile.png)
 
-During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter. 
+During the experiment *memcached* is co-located with several types of _aggressors_, which are low priority jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely co-located with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Co-location of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter. 
 
 Memcached sensitivity experiment is described in detail in [memcached sensitivity profile document](experiments/memcached-sensitivity-profile/README.md).
 
-To read more about general idea behind experiment please refer to the [experiments](docs/experiments.md) document.
+To read more about general idea behind experiment please refer to the [architecture](docs/architecture.md) document.
 
 ## System requirements
 
