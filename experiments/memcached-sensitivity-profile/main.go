@@ -69,12 +69,18 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(ExSoftware)
 	}
 
-	metadata.Record("command_arguments", strings.Join(os.Args, ","))
-	metadata.Record("environment_variables", strings.Join(os.Environ(), ","))
-
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
-	metadata.Record("experiment_name", conf.AppName())
-	fmt.Println(uuid.String())
+
+	err = metadata.RecordMap(map[string]string{
+		"command_arguments": 		strings.Join(os.Args, ","),
+		"environment_variables": 	strings.Join(os.Environ(), ","),
+		"experiment_name": 		conf.AppName(),
+	})
+
+	if err != nil {
+		logrus.Errorf("Cannot save metadata: %q", err.Error())
+		os.Exit(ExSoftware)
+	}
 
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
 	if err != nil {
