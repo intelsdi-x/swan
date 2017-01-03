@@ -3,6 +3,8 @@ This module contains the convience class to read experiment data and generate se
 profiles. See profile.py for more information.
 """
 import ssl
+import os.path
+
 from collections import defaultdict
 
 import numpy as np
@@ -44,7 +46,7 @@ class Experiment(object):
         return Experiment.CASSANDRA_SESSION
 
     def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
-                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None):
+                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None, cached=True):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
         :param name: optional name of the experiment if missing, experiment_id is given instead
@@ -57,13 +59,19 @@ class Experiment(object):
                              `username` with `password` are mandatory,
                              `ssl_version` is optional and created in case of missing
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
+        :param cached: pickle experiment to data directory for offline usage
 
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
-        self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.experiment_id = experiment_id
+        cached_experiment = os.path.join('data', '%s.pkl' % self.experiment_id)
+        if os.path.exists(cached_experiment):
+            self.frame = pd.read_pickle(cached_experiment)
+            return
+
+        self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
         self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
 
         self.name = name if name else self.experiment_id
@@ -79,7 +87,10 @@ class Experiment(object):
             rows, qps = test_data_reader.read(read_csv)
 
         data = self.populate_data(rows, qps)
+
         self.frame = pd.DataFrame(data, columns=self.columns)
+        if cached and not os.path.exists(cached_experiment):
+            self.frame.to_pickle(cached_experiment)
 
     def match_qps(self, session):
         rows = {}  # keep temporary rows from query for later match with qps rows
