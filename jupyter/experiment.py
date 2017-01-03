@@ -14,7 +14,7 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 
-import test_data_reader
+import data_reader
 
 
 class Experiment(object):
@@ -46,7 +46,7 @@ class Experiment(object):
         return Experiment.CASSANDRA_SESSION
 
     def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
-                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=None, cached=True):
+                 aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=False, dir_csv='data'):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
         :param name: optional name of the experiment if missing, experiment_id is given instead
@@ -66,51 +66,53 @@ class Experiment(object):
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
         self.experiment_id = experiment_id
-        cached_experiment = os.path.join('data', '%s.pkl' % self.experiment_id)
-        if cached and os.path.exists(cached_experiment):
-            self.frame = pd.read_pickle(cached_experiment)
-            return
+        self.cassandra_cluster = cassandra_cluster
+        self.port = port
+        self.name = name if name else self.experiment_id
+        self.keyspace = keyspace
+        self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
+        self.ssl_options = ssl_options
+        self.frame = None
+
+        if not os.path.exists(dir_csv):
+            os.makedirs(dir_csv)
+        self.cached_experiment = os.path.join(dir_csv, '%s.csv' % self.experiment_id)
 
         self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
-        self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
 
-        self.name = name if name else self.experiment_id
-        self.columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
-                        'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
-                        'swan_repetition', 'throughputs']
+        rows, qps = self.match_qps(read_csv)
+        self.frame = self.populate_data(rows, qps, read_csv)
 
-        if cassandra_cluster:
-            session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
-            rows, qps = self.match_qps(session)
+    def match_qps(self, read_csv):
+        rows = None
+        qps = None
 
-        elif read_csv:
-            rows, qps = test_data_reader.read(read_csv)
+        if read_csv:
+            return rows, qps
+        else:
+            session = Experiment._create_or_get_session(self.cassandra_cluster, self.port,
+                                                        self.ssl_options, self.keyspace)
+            rows = {}  # keep temporary rows from query for later match with qps rows
+            qps = {}  # qps is a one row from query, where we can map it to percentile rows
+            query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
+                FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
+            statement = SimpleStatement(query, fetch_size=100)
 
-        data = self.populate_data(rows, qps)
+            for row in session.execute(statement):
+                k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
+                if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
+                    qps[k] = row.doubleval
+                elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefixes):
+                    self.throughputs[k].append(row.doubleval)
+                else:
+                    rows[(row.ns,) + k] = row
+            return rows, qps
 
-        self.frame = pd.DataFrame(data, columns=self.columns)
-        if cached and not os.path.exists(cached_experiment):
-            os.makedirs('data') if not os.path.exists('data') else None
-            self.frame.to_pickle(cached_experiment)
+    def populate_data(self, rows, qps, read_csv):
+        if read_csv:
+            frame = pd.read_csv(self.cached_experiment)
+            return frame
 
-    def match_qps(self, session):
-        rows = {}  # keep temporary rows from query for later match with qps rows
-        qps = {}  # qps is a one row from query, where we can map it to percentile rows
-        query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
-            FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % self.experiment_id
-        statement = SimpleStatement(query, fetch_size=100)
-
-        for row in session.execute(statement):
-            k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
-            if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
-                qps[k] = row.doubleval
-            elif filter(lambda ns: ns in row.ns, self.aggressor_throughput_namespaces_prefixes):
-                self.throughputs[k].append(row.doubleval)
-            else:
-                rows[(row.ns,) + k] = row
-        return rows, qps
-
-    def populate_data(self, rows, qps):
         data = []
         for row in rows.itervalues():
             if row.valtype == "doubleval":
@@ -127,7 +129,15 @@ class Experiment(object):
                           max_throughput]
 
                 data.append(values)
-        return data
+
+        columns = ['ns', 'host', 'time', 'value', 'plugin_running_on', 'swan_loadpoint_qps',
+                   'achieved_qps_percent', 'swan_experiment', 'swan_aggressor_name', 'swan_phase',
+                   'swan_repetition', 'throughputs']
+        frame = pd.DataFrame(data, columns=columns)
+
+        frame.to_csv(self.cached_experiment)
+
+        return frame
 
     def get_frame(self):
         return self.frame
@@ -139,4 +149,5 @@ class Experiment(object):
 
 
 if __name__ == '__main__':
-    Experiment(experiment_id='57d25f69-d6d7-43e1-5c4e-3b5f5208acdc', cassandra_cluster=['127.0.0.1'], port=9042)
+    Experiment(experiment_id='7be3c448-4fa2-4178-75aa-e23d292d4030', cassandra_cluster=['127.0.0.1'],
+               port=9042, read_csv=False)

@@ -6,14 +6,15 @@ import experiment
 class TestExperiment(unittest.TestCase):
     def test_zero_samples(self):
         exp = experiment.Experiment(experiment_id='not existing experiment', name='first exp',
-                                    read_csv='test_data/empty.csv')
+                                    read_csv=True)
         self.assertTrue(len(exp.frame.index) == 0)
 
     def test_several_samples(self):
         exp = experiment.Experiment(
-            experiment_id='8ab3f479-a3f8-48cf-71cb-e4853caf9cac',
-            read_csv='test_data/experiments.csv')
-        self.assertTrue(len(exp.frame.index) == 9)
+            experiment_id='7be3c448-4fa2-4178-75aa-e23d292d4030',
+            read_csv=True)
+        self.assertTrue(len(exp.frame.index) == 1260)
+
 
 if __name__ == '__main__':
     unittest.main()
