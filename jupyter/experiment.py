@@ -14,8 +14,6 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 
-import data_reader
-
 
 class Experiment(object):
     """
@@ -59,7 +57,7 @@ class Experiment(object):
                              `username` with `password` are mandatory,
                              `ssl_version` is optional and created in case of missing
         :param read_csv: if no specify cassandra_cluster and port, try to read from a csv
-        :param cached: pickle experiment to data directory for offline usage
+        :param dir_csv: save csv experiment to data directory for offline usage
 
         Initializes an experiment from a given experiment id by using the cassandra cluster and
         session.
