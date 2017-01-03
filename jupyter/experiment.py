@@ -65,6 +65,9 @@ class Experiment(object):
         session.
         Set cassandra_cluster to an array of hostnames where cassandra nodes reside.
         """
+        if not os.path.exists(dir_csv):
+            os.makedirs(dir_csv)
+
         self.experiment_id = experiment_id
         self.cassandra_cluster = cassandra_cluster
         self.port = port
@@ -72,23 +75,16 @@ class Experiment(object):
         self.keyspace = keyspace
         self.aggressor_throughput_namespaces_prefixes = aggressor_throughput_namespaces_prefixes
         self.ssl_options = ssl_options
-        self.frame = None
-
-        if not os.path.exists(dir_csv):
-            os.makedirs(dir_csv)
-        self.cached_experiment = os.path.join(dir_csv, '%s.csv' % self.experiment_id)
-
         self.throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
+
+        self.cached_experiment = os.path.join(dir_csv, '%s.csv' % self.experiment_id)
 
         rows, qps = self.match_qps(read_csv)
         self.frame = self.populate_data(rows, qps, read_csv)
 
     def match_qps(self, read_csv):
-        rows = None
-        qps = None
-
         if read_csv:
-            return rows, qps
+            return None, None
         else:
             session = Experiment._create_or_get_session(self.cassandra_cluster, self.port,
                                                         self.ssl_options, self.keyspace)
