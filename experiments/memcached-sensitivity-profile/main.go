@@ -69,11 +69,18 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(ExSoftware)
 	}
 
-	metadata.Record("command_arguments", strings.Join(os.Args, ","))
-	metadata.Record("environment_variables", strings.Join(os.Environ(), ","))
+	err = metadata.RecordMap(map[string]string{
+		"command_arguments": 		strings.Join(os.Args, ","),
+		"environment_variables": 	strings.Join(os.Environ(), ","),
+		"experiment_name": 		conf.AppName(),
+	})
+
+	if err != nil {
+		logrus.Errorf("Cannot save metadata: %q", err.Error())
+		os.Exit(ExSoftware)
+	}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
-	metadata.Record("experiment_name", conf.AppName())
 	fmt.Println(uuid.String())
 
 	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
@@ -138,7 +145,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	} else {
 		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
 	}
-	metadata.Record("peak_load", strconv.Itoa(load))
 
 	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
@@ -154,12 +160,19 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	var beIteration int
 
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
-
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
-	metadata.Record("load_points", strconv.Itoa(loadPoints))
-
 	repetitions := sensitivity.RepetitionsFlag.Value()
-	metadata.Record("repetitions", strconv.Itoa(repetitions))
+
+	err = metadata.RecordMap(map[string]string{
+		"peak_load":	strconv.Itoa(load),
+		"load_points":	strconv.Itoa(loadPoints),
+		"repetitions":	strconv.Itoa(repetitions),
+	})
+
+	if err != nil {
+		logrus.Errorf("Cannot save metadata: %q", err.Error())
+		os.Exit(ExSoftware)
+	}
 
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
