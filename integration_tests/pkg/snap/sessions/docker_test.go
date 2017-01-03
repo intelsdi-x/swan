@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
-	"strconv"
 	"testing"
 	"time"
 
@@ -15,12 +13,12 @@ import (
 	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/kubernetes"
 	"github.com/intelsdi-x/athena/pkg/snap"
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/kubesnap"
+	"github.com/intelsdi-x/athena/pkg/snap/sessions/docker"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnapKubesnapSession(t *testing.T) {
+func TestSnapDockerSession(t *testing.T) {
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
 		snapteld := testhelpers.NewSnapteld()
 		err := snapteld.Start()
@@ -37,7 +35,7 @@ func TestSnapKubesnapSession(t *testing.T) {
 		loader, err := snap.NewPluginLoader(loaderConfig)
 		So(err, ShouldBeNil)
 
-		err = loader.Load(snap.KubesnapDockerCollector, snap.FilePublisher)
+		err = loader.Load(snap.DockerCollector, snap.FilePublisher)
 		So(err, ShouldBeNil)
 		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.FilePublisher)
 		So(err, ShouldBeNil)
@@ -75,19 +73,19 @@ func TestSnapKubesnapSession(t *testing.T) {
 		defer podHandle.Clean()
 		defer podHandle.Stop()
 
-		// Prepare Kubesnap Session.
+		// Prepare Docker Session.
 		/*experimentID, err := uuid.NewV4()
 		So(err, ShouldBeNil)
 		phaseID, err := uuid.NewV4()
 		So(err, ShouldBeNil)*/
 
-		Convey("Launching Kubesnap Session", func() {
-			kubesnapConfig := kubesnap.DefaultConfig()
-			kubesnapConfig.SnapteldAddress = snapteldAddress
-			kubesnapConfig.Publisher = publisher
-			kubesnapLauncher, err := kubesnap.NewSessionLauncher(kubesnapConfig)
+		Convey("Launching Docker Session", func() {
+			dockerConfig := docker.DefaultConfig()
+			dockerConfig.SnapteldAddress = snapteldAddress
+			dockerConfig.Publisher = publisher
+			dockerLauncher, err := docker.NewSessionLauncher(dockerConfig)
 			So(err, ShouldBeNil)
-			kubesnapHandle, err := kubesnapLauncher.LaunchSession(
+			dockerHandle, err := dockerLauncher.LaunchSession(
 				nil,
 				/*phase.Session{
 					ExperimentID: experimentID.String(),
@@ -97,32 +95,28 @@ func TestSnapKubesnapSession(t *testing.T) {
 				"foo:bar",
 			)
 			So(err, ShouldBeNil)
-			So(kubesnapHandle.IsRunning(), ShouldBeTrue)
-			kubesnapHandle.Wait()
+			So(dockerHandle.IsRunning(), ShouldBeTrue)
+			dockerHandle.Wait()
 			time.Sleep(5 * time.Second) // One hit does not always yield results.
-			kubesnapHandle.Stop()
+			dockerHandle.Stop()
 
-			// Check results here.
-			content, err := ioutil.ReadFile(resultsFileName)
+			// one measurement should contains more then one metric.
+			oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(resultsFileName)
 			So(err, ShouldBeNil)
-			So(string(content), ShouldNotBeEmpty)
+			So(len(oneMeasurement), ShouldBeGreaterThan, 0)
 
 			Convey("There should be CPU results of docker containers on Kubernetes", func() {
-				cpuStatsRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/cpu_stats/cpu_usage/total_usage\|(\d+)`)
-				cpuStatsMatches := cpuStatsRegex.FindStringSubmatch(string(content))
-				So(len(cpuStatsMatches), ShouldBeGreaterThanOrEqualTo, 2)
-				cpuUsage, err := strconv.Atoi(cpuStatsMatches[1])
+				requestedMetric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
 				So(err, ShouldBeNil)
-				So(cpuUsage, ShouldBeGreaterThan, 0)
+				So(requestedMetric.Data.(float64), ShouldBeGreaterThan, 0)
+				So(requestedMetric.Tags[`foo`], ShouldEqual, `bar`)
+			})
 
-				Convey("There should be Memory results of docker containers on Kubernetes", func() {
-					memoryUsageRegex := regexp.MustCompile(`/intel/docker/\S+/cgroups/memory_stats/usage/usage\|(\d+)`)
-					memoryUsageMatches := memoryUsageRegex.FindStringSubmatch(string(content))
-					So(len(memoryUsageMatches), ShouldBeGreaterThanOrEqualTo, 2)
-					memoryUsage, err := strconv.Atoi(memoryUsageMatches[1])
-					So(err, ShouldBeNil)
-					So(memoryUsage, ShouldBeGreaterThan, 0)
-				})
+			Convey("There should be Memory results of docker containers on Kubernetes", func() {
+				requestedMetric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/memory_stats/usage/usage`, oneMeasurement)
+				So(err, ShouldBeNil)
+				So(requestedMetric.Data.(float64), ShouldBeGreaterThan, 0)
+				So(requestedMetric.Tags[`foo`], ShouldEqual, `bar`)
 			})
 		})
 	})

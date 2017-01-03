@@ -1,4 +1,4 @@
-package kubesnap
+package docker
 
 import (
 	"time"
@@ -10,7 +10,7 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
 
-// DefaultConfig returns default configuration for Kubesnap Session Launcher.
+// DefaultConfig returns default configuration for Docker Session Launcher.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
 	sessions.ApplyCassandraConfiguration(publisher)
@@ -22,7 +22,7 @@ func DefaultConfig() Config {
 	}
 }
 
-// Config contains configuration for Kubesnap Session Launcher.
+// Config contains configuration for Docker Session Launcher.
 type Config struct {
 	SnapteldAddress string
 	Publisher       *wmap.PublishWorkflowMapNode
@@ -35,7 +35,7 @@ type SessionLauncher struct {
 	snapClient *client.Client
 }
 
-// NewSessionLauncher constructs Kubesnap Session Launcher.
+// NewSessionLauncher constructs Docker Session Launcher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
@@ -49,13 +49,13 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		return nil, err
 	}
 
-	err = loader.Load(snap.KubesnapDockerCollector, snap.CassandraPublisher)
+	err = loader.Load(snap.DockerCollector, snap.CassandraPublisher)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession([]string{"/intel/docker/*/cgroups/*"},
+		session: snap.NewSession([]string{"/intel/docker/*/stats/cgroups/*"},
 			config.Interval,
 			snapClient,
 			config.Publisher,

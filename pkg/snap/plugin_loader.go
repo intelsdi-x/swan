@@ -10,12 +10,10 @@ import (
 )
 
 const (
-	// KubesnapDockerCollector is name of snap plugin binary.
-	KubesnapDockerCollector = "kubesnap-plugin-collector-docker"
+	// DockerCollector is name of snap plugin binary.
+	DockerCollector = "snap-plugin-collector-docker"
 	// MutilateCollector is name of snap plugin binary.
 	MutilateCollector string = "snap-plugin-collector-mutilate"
-	// SessionCollector is name of snap plugin binary.
-	SessionCollector string = "snap-plugin-collector-session-test"
 	// SPECjbbCollector is name of snap plugin binary used to collect metrics from SPECjbb output file.
 	SPECjbbCollector string = "snap-plugin-collector-specjbb"
 	// MockCollector is Snap testing mock collector
@@ -29,7 +27,7 @@ const (
 	// SessionPublisher is name of snap plugin binary.
 	SessionPublisher = "snap-plugin-publisher-session-test"
 	// FilePublisher is Snap testing file publisher
-	FilePublisher = "snap-plugin-publisher-mock-file"
+	FilePublisher = "snap-plugin-publisher-file"
 	// CaffeInferenceCollector is a name of the snap plugin binary
 	CaffeInferenceCollector = "snap-plugin-collector-caffe-inference"
 )

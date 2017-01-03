@@ -14,8 +14,8 @@ func TestGetPluginNameAndType(t *testing.T) {
 		So(pluginType, ShouldEqual, "publisher")
 	})
 
-	Convey("kubesnap-plugin-collector-docker should return type collector and name docker", t, func() {
-		name, pluginType, err := GetPluginNameAndType(KubesnapDockerCollector)
+	Convey("snap-plugin-collector-docker should return type collector and name docker", t, func() {
+		name, pluginType, err := GetPluginNameAndType(DockerCollector)
 		So(err, ShouldBeNil)
 		So(name, ShouldEqual, "docker")
 		So(pluginType, ShouldEqual, "collector")

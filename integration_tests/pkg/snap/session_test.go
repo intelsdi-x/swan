@@ -3,10 +3,9 @@
 package snap
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
-	"strings"
+	"os"
 	"testing"
 	"time"
 
@@ -27,24 +26,19 @@ func TestSnap(t *testing.T) {
 		err := s.Stop()
 		So(err, ShouldBeNil)
 		So(s.IsRunning(), ShouldBeFalse)
-		dat, err := ioutil.ReadFile(metricsFile)
+
+		// one measurement should contains more then one metric.
+		oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(metricsFile)
 		So(err, ShouldBeNil)
-		So(dat, ShouldNotBeEmpty)
-		dat = bytes.Trim(dat, "\n\r")
+		So(len(oneMeasurement), ShouldBeGreaterThan, 0)
 
-		lines := strings.Split(string(dat), "\n")
-		So(len(lines), ShouldEqual, 1)
-		columns := strings.Split(lines[0], "|")
-		So(len(columns), ShouldEqual, 4)
-		tags := strings.Split(columns[1], ",")
-		So(tags, ShouldHaveLength, 1)
+		metric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
+		So(err, ShouldBeNil)
+		So(metric.Tags["foo"], ShouldEqual, "bar")
 
-		So(columns[1], ShouldEqual, "/intel/mock/foo")
-		//TODO(iwan): uncomment when we upgrade Snap (0.14 does not save tags in file publisher)
-		/*So("foo=bar", ShouldBeIn, tags)
 		host, err := os.Hostname()
 		So(err, ShouldBeNil)
-		So("plugin_running_on="+host, ShouldBeIn, tags)*/
+		So(metric.Tags["plugin_running_on"], ShouldEqual, host)
 	}
 
 	Convey("While having Snapteld running", t, func() {
@@ -72,7 +66,7 @@ func TestSnap(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				err = pluginLoader.Load(snap.MockCollector)
+				err = pluginLoader.Load(snap.DockerCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -82,7 +76,7 @@ func TestSnap(t *testing.T) {
 					m := c.GetMetricCatalog()
 					So(m.Err, ShouldBeNil)
 					for _, metric := range m.Catalog {
-						if metric.Namespace == "/intel/mock/foo" {
+						if metric.Namespace == "/intel/docker/*/stats/cgroups/cpu_stats/cpu_usage/total_usage" {
 							found = true
 							break
 						}
@@ -95,7 +89,7 @@ func TestSnap(t *testing.T) {
 					err := pluginLoader.Load(snap.FilePublisher)
 					So(err, ShouldBeNil)
 
-					publisher = wmap.NewPublishNode("mock-file", snap.PluginAnyVersion)
+					publisher = wmap.NewPublishNode("file", snap.PluginAnyVersion)
 
 					So(publisher, ShouldNotBeNil)
 
@@ -109,13 +103,12 @@ func TestSnap(t *testing.T) {
 
 					Convey("While starting a Snap experiment session", func() {
 						s = snap.NewSession(
-							[]string{"/intel/mock/foo"},
+							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 							1*time.Second,
 							c,
 							publisher,
 						)
 						So(s, ShouldNotBeNil)
-						s.CollectNodeConfigItems = append(s.CollectNodeConfigItems, snap.CollectNodeConfigItem{Ns: "/intel/mock", Key: "password", Value: "some random password"})
 
 						err := s.Start("foo:bar")
 
