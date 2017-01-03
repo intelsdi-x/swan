@@ -5,7 +5,8 @@ import experiment
 
 class TestExperiment(unittest.TestCase):
     def test_zero_samples(self):
-        exp = experiment.Experiment(experiment_id='', read_csv='test_data/empty.csv')
+        exp = experiment.Experiment(experiment_id='not existing experiment', name='first exp',
+                                    read_csv='test_data/empty.csv')
         self.assertTrue(len(exp.frame.index) == 0)
 
     def test_several_samples(self):

@@ -67,7 +67,7 @@ class Experiment(object):
         """
         self.experiment_id = experiment_id
         cached_experiment = os.path.join('data', '%s.pkl' % self.experiment_id)
-        if os.path.exists(cached_experiment):
+        if cached and os.path.exists(cached_experiment):
             self.frame = pd.read_pickle(cached_experiment)
             return
 
@@ -90,6 +90,7 @@ class Experiment(object):
 
         self.frame = pd.DataFrame(data, columns=self.columns)
         if cached and not os.path.exists(cached_experiment):
+            os.makedirs('data') if not os.path.exists('data') else None
             self.frame.to_pickle(cached_experiment)
 
     def match_qps(self, session):
