@@ -134,13 +134,17 @@ func CreateExperimentDir(uuid string) (experimentDirectory string, logFile *os.F
 }
 
 // GetPeakLoad runs tuning in order to determine the peak load.
-func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenerator, slo int) (int, error) {
-	prTask, err := hpLauncher.Launch()
+func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenerator, slo int) (peakLoad int, err error) {
+	var prTask executor.TaskHandle
+	prTask, err = hpLauncher.Launch()
 	if err != nil {
 		return 0, errors.Wrap(err, "cannot launch memcached")
 	}
 	defer func() {
-		prTask.Stop()
+		errLocal := prTask.Stop()
+		if err == nil {
+			err = errLocal
+		}
 		prTask.Clean()
 	}()
 
@@ -149,10 +153,10 @@ func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenera
 		return 0, errors.Wrap(err, "cannot populate memcached")
 	}
 
-	load, _, err := loadGenerator.Tune(slo)
+	peakLoad, _, err = loadGenerator.Tune(slo)
 	if err != nil {
 		return 0, errors.Wrap(err, "tuning failed")
 	}
 
-	return int(load), nil
+	return
 }

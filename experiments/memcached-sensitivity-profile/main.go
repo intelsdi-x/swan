@@ -10,6 +10,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/snap"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -118,7 +120,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	hpLauncher := memcached.New(hpExecutor, memcachedConfig)
+	hpLauncher := executor.ServiceLauncher{memcached.New(hpExecutor, memcachedConfig)}
 
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
@@ -187,7 +189,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			for repetition := 0; repetition < repetitions; repetition++ {
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
-				err := func() error {
+				err := func() (err error) {
 					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
@@ -202,7 +204,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					_, err := common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					_, err = common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -212,7 +214,10 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
 					}
 					defer func() {
-						hpHandle.Stop()
+						errLocal := hpHandle.Stop()
+						if err == nil {
+							err = errLocal
+						}
 						hpHandle.Clean()
 					}()
 
@@ -231,7 +236,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					// Launch BE tasks when we are not in baseline.
 					if beLauncher.Launcher != nil {
-						beHandle, err := beLauncher.Launcher.Launch()
+						var beHandle executor.TaskHandle
+						beHandle, err = beLauncher.Launcher.Launch()
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 						}
@@ -242,7 +248,8 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						// Majority of LauncherSessionPairs do not use Swan.
 						if beLauncher.SnapSessionLauncher != nil {
 							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+							var aggressorSnapHandle snap.SessionHandle
+							aggressorSnapHandle, err = beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 							}
