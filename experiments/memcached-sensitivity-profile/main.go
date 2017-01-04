@@ -163,12 +163,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		"repetitions":       strconv.Itoa(repetitions),
 		"load_duration":     loadDuration.String(),
 	}
-	// Store environment as metadata with "ENVIRON_" prefix) to make it
-	// distinguishable from other metadata records.
+	// Store SWAN_ environment configuration.
 	for _, env := range os.Environ() {
 		fields := strings.SplitN(env, "=", 2)
-		prefixedKey := "ENVIRON_" + fields[0]
-		records[prefixedKey] = fields[1]
+		key, value := fields[0], fields[1]
+		if strings.HasPrefix(key, "SWAN_") {
+			records[key] = value
+		}
 	}
 	err = metadata.RecordMap(records)
 	if err != nil {
