@@ -307,14 +307,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	case <-taskWatcher.started:
 		// Pod succesfully started.
 	case <-taskWatcher.stopped:
-		// Look into exit state to determine if start up failed or completed immediately.
-		// TODO(skonefal): We don't have stdout & stderr when pod fails.
-		exitCode, err := taskHandle.ExitCode()
-		if err != nil || exitCode != 0 {
-			LogUnsucessfulExecution(command, k8s.Name(), taskHandle)
-		} else {
-			LogSuccessfulExecution(command, k8s.Name(), taskHandle)
-		}
+		// Pod stopped for some reason (might be failure or success depending on expected pod lifetime)
 	}
 
 	return taskHandle, nil

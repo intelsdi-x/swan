@@ -252,13 +252,12 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), port)
 	if !m.isListening(address, serviceListenTimeout) {
-		executor.LogUnsucessfulExecution(command, exec.Name(), handle)
-
 		defer executor.StopCleanAndErase(handle)
+		ec, _ := handle.ExitCode()
 
 		return nil, errors.Errorf(
-			"failed to connect to service %q on %q: timeout on connection to %q",
-			command, exec.Name(), address)
+			"failed to connect to service %q on %q: timeout on connection to %q; task status is %v and exit code is %d",
+			command, exec.Name(), address, handle.Status(), ec)
 	}
 
 	return handle, nil

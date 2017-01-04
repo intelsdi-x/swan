@@ -66,9 +66,8 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
-	hasStopOrWaitInvoked := make(chan struct{})
 
-	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited, hasStopOrWaitInvoked)
+	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited)
 
 	// Wait for local task in go routine.
 	go func() {
@@ -91,16 +90,6 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 		stdoutFile.Sync()
 		stderrFile.Sync()
-
-		select {
-		case <-hasStopOrWaitInvoked:
-			// If Wait or Stop has been invoked on TaskHandle, then exit is expected.
-			LogSuccessfulExecution(command, l.Name(), taskHandle)
-
-		default:
-			// If process exited before Wait or Stop, it might have ended prematurely.
-			LogUnsucessfulExecution(command, l.Name(), taskHandle)
-		}
 	}()
 
 	return taskHandle, nil
@@ -116,9 +105,6 @@ type localTaskHandle struct {
 	// It is used to signal task termination.
 	hasProcessExited chan struct{}
 
-	// This channel is closed when Stop or Wait has been invoked on TaskHandle.
-	// It is used to signal that process exit is expected by user.
-	hasStopOrWaitInvoked chan struct{}
 	// internal flag controlling closing of hasStopOrWaitInvoked channel
 	stopOrWaitChannelClosed bool
 }
@@ -128,14 +114,12 @@ func newLocalTaskHandle(
 	cmdHandler *exec.Cmd,
 	stdoutFile *os.File,
 	stderrFile *os.File,
-	hasProcessExited chan struct{},
-	hasStopOrWaitBeenInvoked chan struct{}) *localTaskHandle {
+	hasProcessExited chan struct{}) *localTaskHandle {
 	t := &localTaskHandle{
-		cmdHandler:           cmdHandler,
-		stdoutFile:           stdoutFile,
-		stderrFile:           stderrFile,
-		hasProcessExited:     hasProcessExited,
-		hasStopOrWaitInvoked: hasStopOrWaitBeenInvoked,
+		cmdHandler:       cmdHandler,
+		stdoutFile:       stdoutFile,
+		stderrFile:       stderrFile,
+		hasProcessExited: hasProcessExited,
 	}
 	return t
 }
@@ -160,7 +144,6 @@ func (taskHandle *localTaskHandle) getPid() int {
 
 // Stop terminates the local task.
 func (taskHandle *localTaskHandle) Stop() error {
-	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return nil
 	}
@@ -263,7 +246,6 @@ func eraseOutput(outputFile *os.File) error {
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
 func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
-	taskHandle.signalStopOrWaitInvocation()
 	if taskHandle.isTerminated() {
 		return true
 	}
@@ -286,13 +268,4 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 
 func (taskHandle *localTaskHandle) Address() string {
 	return "127.0.0.1"
-}
-
-func (taskHandle *localTaskHandle) signalStopOrWaitInvocation() {
-	if taskHandle.stopOrWaitChannelClosed {
-		return
-	}
-
-	close(taskHandle.hasStopOrWaitInvoked)
-	taskHandle.stopOrWaitChannelClosed = true
 }

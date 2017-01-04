@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/athena/pkg/executor"
 	"github.com/intelsdi-x/athena/pkg/executor/mocks"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -130,6 +131,7 @@ func TestKubernetesLauncher(t *testing.T) {
 		Convey("When Launcher cannot bind TCP connection to endpoint to check if service responds, we should receive an error", func() {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			handle.On("Status").Return(executor.TERMINATED)
 			k8s.isListening = getIsListeningFunc(false)
 			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
 
