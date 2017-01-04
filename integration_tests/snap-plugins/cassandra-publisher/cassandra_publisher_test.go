@@ -54,8 +54,8 @@ func TestCassandraPublisher(t *testing.T) {
 	value, tags, err := getValueAndTagsFromCassandra()
 	Convey("When getting values from Cassandra", t, func() {
 		So(err, ShouldBeNil)
-		Convey("Stored value in Cassandra should equal 1", func() {
-			So(value, ShouldEqual, 1)
+		Convey("Stored value in Cassandra should be greater then 0", func() {
+			So(value, ShouldBeGreaterThan, 0)
 		})
 		Convey("Tags should be approprierate", func() {
 			So(tags["swan_experiment"], ShouldEqual, "example-experiment")
@@ -73,7 +73,7 @@ func loadSnapPlugins(snapteldAddress string) (err error) {
 		return err
 	}
 
-	return pluginLoader.Load(snap.CassandraPublisher, snap.SessionCollector)
+	return pluginLoader.Load(snap.CassandraPublisher, snap.DockerCollector)
 }
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
@@ -103,7 +103,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	cassandraPublisher.AddConfigItem("server", "localhost")
 
 	snapSession := snap.NewSession(
-		[]string{"/intel/swan/session/metric1"},
+		[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 		1*time.Second,
 		snapClient,
 		cassandraPublisher)

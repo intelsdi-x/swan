@@ -65,8 +65,6 @@ To use your local ~/.glide please make sure that this directory exists and `SHAR
   1. `checker.sh`
 
 ## Troubleshooting
-- Vagrant 1.8.4 and Virtualbox 5.1.X aren't compatible, Virtualbox 5.0.10
-  works fine with this Vagrant version
 - If you can't run `make deps` because of unauthorized error, make sure you don't
   have in gitconfig:
   `[url "https://"]
