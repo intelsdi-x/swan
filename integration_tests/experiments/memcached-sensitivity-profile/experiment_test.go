@@ -117,6 +117,16 @@ func TestExperiment(t *testing.T) {
 					So(ns, ShouldNotBeBlank)
 					So(tags, ShouldNotBeEmpty)
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+
+					// Check metadata was saved.
+					var metadata map[string]string
+					err = session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? ALLOW FILTERING`, experimentID).Scan(&metadata)
+					So(err, ShouldBeNil)
+					So(metadata, ShouldNotBeEmpty)
+					So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")
+					So(metadata["load_points"], ShouldEqual, "1")
+					So(metadata["load_duration"], ShouldEqual, "1s")
+
 				})
 
 				Convey("While having two repetitions to phase", func() {

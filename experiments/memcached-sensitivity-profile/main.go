@@ -69,17 +69,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(ExSoftware)
 	}
 
-	err = metadata.RecordMap(map[string]string{
-		"command_arguments": 		strings.Join(os.Args, ","),
-		"environment_variables": 	strings.Join(os.Environ(), ","),
-		"experiment_name": 		conf.AppName(),
-	})
-
-	if err != nil {
-		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(ExSoftware)
-	}
-
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
@@ -159,16 +148,30 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// We need to count fully executed aggressor loops to render progress bar correctly.
 	var beIteration int
 
+	// Read configuration.
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	repetitions := sensitivity.RepetitionsFlag.Value()
+	loadDuration := sensitivity.LoadDurationFlag.Value()
 
-	err = metadata.RecordMap(map[string]string{
-		"peak_load":	strconv.Itoa(load),
-		"load_points":	strconv.Itoa(loadPoints),
-		"repetitions":	strconv.Itoa(repetitions),
-	})
-
+	// Record metadata.
+	records := map[string]string{
+		"command_arguments": strings.Join(os.Args, ","),
+		"experiment_name":   conf.AppName(),
+		"peak_load":         strconv.Itoa(load),
+		"load_points":       strconv.Itoa(loadPoints),
+		"repetitions":       strconv.Itoa(repetitions),
+		"load_duration":     loadDuration.String(),
+	}
+	// Store SWAN_ environment configuration.
+	for _, env := range os.Environ() {
+		fields := strings.SplitN(env, "=", 2)
+		key, value := fields[0], fields[1]
+		if strings.HasPrefix(key, "SWAN_") {
+			records[key] = value
+		}
+	}
+	err = metadata.RecordMap(records)
 	if err != nil {
 		logrus.Errorf("Cannot save metadata: %q", err.Error())
 		os.Exit(ExSoftware)
@@ -254,7 +257,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					}
 
 					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
-					loadGeneratorHandle, err := loadGenerator.Load(phaseQPS, sensitivity.LoadDurationFlag.Value())
+					loadGeneratorHandle, err := loadGenerator.Load(phaseQPS, loadDuration)
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
