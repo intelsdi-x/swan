@@ -140,9 +140,10 @@ func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenera
 		return 0, errors.Wrap(err, "cannot launch memcached")
 	}
 	defer func() {
-		errLocal := prTask.Stop()
+		// If function terminated with error then we do not want to overwrite it with any errors in defer.
+		errStop := prTask.Stop()
 		if err == nil {
-			err = errLocal
+			err = errStop
 		}
 		prTask.Clean()
 	}()
