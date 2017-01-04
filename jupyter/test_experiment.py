@@ -9,7 +9,7 @@ class TestExperiment(unittest.TestCase):
             experiment.Experiment(experiment_id='not existing experiment', name='first exp',
                                   read_csv=True, dir_csv='test_data')
 
-        self.assertTrue(IOError, 'File data/not existing experiment.csv does not exist' in context.exception)
+        self.assertTrue(IOError, 'File test_data/not existing experiment.csv does not exist' in context.exception)
 
     def test_empty_sample(self):
         exp = experiment.Experiment(experiment_id='empty', read_csv=True, dir_csv='test_data')
