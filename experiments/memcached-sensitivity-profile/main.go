@@ -11,7 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
 	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/snap"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -187,9 +187,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
 			for repetition := 0; repetition < repetitions; repetition++ {
+				// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
+				var processes []executor.TaskHandle
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
-				err := func() (err error) {
+				err := func() error {
 					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
@@ -204,7 +206,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					_, err = common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					_, err := common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -213,13 +215,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					if err != nil {
 						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
 					}
-					defer func() {
-						errLocal := hpHandle.Stop()
-						if err == nil {
-							err = errLocal
-						}
-						hpHandle.Clean()
-					}()
+					processes = append(processes, hpHandle)
 
 					err = loadGenerator.Populate()
 					if err != nil {
@@ -236,20 +232,16 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					// Launch BE tasks when we are not in baseline.
 					if beLauncher.Launcher != nil {
-						var beHandle executor.TaskHandle
-						beHandle, err = beLauncher.Launcher.Launch()
+						beHandle, err := beLauncher.Launcher.Launch()
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 						}
-						defer func() {
-							beHandle.Stop()
-							beHandle.Clean()
-						}()
-						// Majority of LauncherSessionPairs do not use Swan.
+						processes = append(processes, beHandle)
+
+						// Majority of LauncherSessionPairs do not use Snap.
 						if beLauncher.SnapSessionLauncher != nil {
 							logrus.Debugf("starting snap session: ")
-							var aggressorSnapHandle snap.SessionHandle
-							aggressorSnapHandle, err = beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 							}
@@ -284,6 +276,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					return nil
 				}()
+
+				// Collecting all the errors that might have been encountered.
+				errColl := &errcollection.ErrorCollection{}
+				errColl.Add(err)
+				for _, th := range processes {
+					errColl.Add(th.Stop())
+					errColl.Add(th.Clean())
+				}
+
+				// If any error was found then we should log details and terminate the experiment if stopOnError is set.
+				err = errColl.GetErrIfAny()
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
