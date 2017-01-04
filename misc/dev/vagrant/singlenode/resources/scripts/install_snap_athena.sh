@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e -x
+set -e
 
 SNAP_VERSION="1.0.0"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
@@ -38,7 +38,6 @@ if [ ! -f /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION} 
   chmod +x  $GOPATH/bin/snap-plugin-processor-tag
   touch /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}
 fi
-
 
 echo "Installing Athena & its K8s..."
 if [ ! -d $ATHENA_DIR ]; then
