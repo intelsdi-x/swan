@@ -30,7 +30,11 @@ deps_jupyter:
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
-	(./scripts/build_plugins.sh)
+	(go install ./misc/snap-plugin-collector-session-test)
+	(go install ./misc/snap-plugin-publisher-session-test)
+	(go install ./misc/snap-plugin-collector-mutilate)
+	(go install ./misc/snap-plugin-collector-specjbb)
+	(go install ./misc/snap-plugin-collector-caffe-inference)
 
 build_image:
 	(./scripts/build_docker_image.sh)
