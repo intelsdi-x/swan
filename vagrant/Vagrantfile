@@ -115,6 +115,8 @@ EOF
       rm -fr /usr/local/go
       tar xvf /tmp/go1.7.linux-amd64.tar.gz -C /usr/local
     fi
+    echo Installing python packages
+    pip install s3cmd
 SCRIPT
 
   $configure_etcd = <<SCRIPT
@@ -160,10 +162,10 @@ SCRIPT
     mkdir -p /var/data/cassandra
     chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
     # Create and enable systemd unit
-    cp $HOME_DIR/athena/vagrant/resources/cassandra.service /etc/systemd/system
+    cp $HOME_DIR/athena/vagrant/resources/configs/cassandra.service /etc/systemd/system
     mkdir -p /opt/athena/resources
-    cp $HOME_DIR/athena/vagrant/resources/keyspace.cql /opt/athena/resources
-    cp $HOME_DIR/athena/vagrant/resources/table.cql /opt/athena/resources
+    cp $HOME_DIR/athena/vagrant/resources/configs/keyspace.cql /opt/athena/resources
+    cp $HOME_DIR/athena/vagrant/resources/configs/table.cql /opt/athena/resources
     systemctl daemon-reload
     systemctl enable cassandra.service
     echo "Restarting cassandra..."
@@ -242,6 +244,7 @@ SCRIPT
   if ! only_cache_dependencies
     config.vm.provision "shell", inline: $configure_docker, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $setup_user_env, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    config.vm.provision "shell", path: "resources/scripts/setup_public_keys.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_glide, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $install_godep, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
     config.vm.provision "shell", inline: $configure_cassandra, env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
