@@ -191,7 +191,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				var processes []executor.TaskHandle
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
-				err := func() error {
+				executeRepetition := func() error {
 					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
@@ -275,7 +275,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					}
 
 					return nil
-				}()
+				}
+				// Call repetition function.
+				err := executeRepetition()
 
 				// Collecting all the errors that might have been encountered.
 				errColl := &errcollection.ErrorCollection{}
