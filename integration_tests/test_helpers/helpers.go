@@ -1,4 +1,4 @@
-package sessions
+package testhelpers
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -19,7 +18,7 @@ import (
 // RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
 // with snapteld address
 func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL string) {
-	snapteld := testhelpers.NewSnapteld()
+	snapteld := NewSnapteld()
 	err := snapteld.Start()
 	convey.So(err, convey.ShouldBeNil)
 
