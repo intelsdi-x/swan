@@ -4,8 +4,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 )
 

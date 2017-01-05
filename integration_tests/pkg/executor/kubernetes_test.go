@@ -11,9 +11,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	testhelpers "github.com/intelsdi-x/athena/integration_tests/test_helpers"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/kubernetes"
+	testhelpers "github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

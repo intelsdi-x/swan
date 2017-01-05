@@ -3,7 +3,7 @@
 package isolation
 
 import (
-	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"

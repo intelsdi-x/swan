@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/errutil"
-	"github.com/intelsdi-x/athena/pkg/utils/sysctl"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/intelsdi-x/swan/pkg/utils/sysctl"
 )
 
 const (

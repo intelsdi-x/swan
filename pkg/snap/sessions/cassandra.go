@@ -1,7 +1,7 @@
 package sessions
 
 import (
-	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
 

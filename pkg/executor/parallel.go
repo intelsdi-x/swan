@@ -5,7 +5,7 @@ import (
 	"syscall"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // Parallel allows to run same command using same executor multiple times.

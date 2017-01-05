@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/executor"
-	. "github.com/intelsdi-x/athena/pkg/isolation/cgroup"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	. "github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

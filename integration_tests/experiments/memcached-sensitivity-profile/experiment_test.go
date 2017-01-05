@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/intelsdi-x/athena/integration_tests/test_helpers"
-	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

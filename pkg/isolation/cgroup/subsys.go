@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
 // Subsys returns true if the named subsystem is mounted.

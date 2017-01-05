@@ -36,7 +36,7 @@ func GetSwanBinPath() string {
 }
 
 const (
-	athenaPkg = "github.com/intelsdi-x/athena"
+	athenaPkg = "github.com/intelsdi-x/swan"
 )
 
 // GetAthenaPath returns absolute path to Athena root directory.
