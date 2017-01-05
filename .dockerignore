@@ -3,13 +3,11 @@
 artifacts/*
 build/*
 docs/*
-docs/*
 experiments/*
 .git*
 integration_tests/*
-misc/*snap*
+misc/*
 pkg/*
-scripts/*
 scripts/*
 swan-*.tar.gz
 vendor/*
