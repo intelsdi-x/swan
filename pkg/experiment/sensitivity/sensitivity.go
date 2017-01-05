@@ -6,7 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/phase"
 )

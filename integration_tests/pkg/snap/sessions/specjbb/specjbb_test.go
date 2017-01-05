@@ -4,9 +4,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

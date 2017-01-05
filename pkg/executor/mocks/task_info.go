@@ -3,7 +3,7 @@ package mocks
 import (
 	"os"
 
-	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/stretchr/testify/mock"
 )
 

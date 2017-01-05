@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	executorMocks "github.com/intelsdi-x/athena/pkg/executor/mocks"
-	"github.com/intelsdi-x/athena/pkg/snap"
-	snapMocks "github.com/intelsdi-x/athena/pkg/snap/mocks"
+	executorMocks "github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	snapMocks "github.com/intelsdi-x/swan/pkg/snap/mocks"
 )
 
 type SensitivityTestSuite struct {

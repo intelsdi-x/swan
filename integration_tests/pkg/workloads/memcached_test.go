@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/utils/env"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	. "github.com/smartystreets/goconvey/convey"
 )

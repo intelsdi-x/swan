@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // ThreadSet represents a subset of the available hyperthreads on a system.

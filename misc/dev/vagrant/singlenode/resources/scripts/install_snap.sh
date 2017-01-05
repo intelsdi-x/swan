@@ -39,16 +39,3 @@ if [ ! -f /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION} 
   touch /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}
 fi
 
-echo "Installing Athena & its K8s..."
-if [ ! -d $ATHENA_DIR ]; then
-    echo "Fetching Athena sources"
-    mkdir -p $ATHENA_DIR
-    git clone git@github.com:intelsdi-x/athena $ATHENA_DIR
-else
-    echo "Updating Athena sources"
-    pushd $ATHENA_DIR
-    git pull
-    popd
-fi
-echo "Fetching kubernetes binaries for Athena"
-cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh

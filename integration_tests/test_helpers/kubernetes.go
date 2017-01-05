@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	client "k8s.io/kubernetes/pkg/client/unversioned"

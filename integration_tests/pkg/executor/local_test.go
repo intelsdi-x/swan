@@ -8,9 +8,9 @@ import (
 	"os/user"
 	"testing"
 
-	. "github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/isolation"
-	"github.com/intelsdi-x/athena/pkg/isolation/cgroup"
+	. "github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
 )

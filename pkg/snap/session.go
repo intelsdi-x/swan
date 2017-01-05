@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intelsdi-x/athena/pkg/conf"
 	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
 )
 
