@@ -1,5 +1,3 @@
-// +build parallel
-
 package integration
 
 import (

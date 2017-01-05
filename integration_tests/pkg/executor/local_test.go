@@ -1,5 +1,3 @@
-// +build parallel
-
 package executor
 
 import (

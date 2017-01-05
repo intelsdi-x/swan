@@ -1,5 +1,3 @@
-// +build parallel
-
 package isolation
 
 import (

@@ -1,5 +1,3 @@
-// +build sequential
-
 package executor
 
 import (
