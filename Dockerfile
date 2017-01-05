@@ -7,7 +7,7 @@ ENV HOME_DIR=/root \
     VAGRANT_USER=root
 
 # resources is storing vagrant scripts needed by this docker image.
-ADD misc/dev/vagrant/singlenode/resources /vagrant/resources
+ADD vagrant/resources /vagrant/resources
 
 WORKDIR /vagrant/resources
 RUN ./scripts/setup_env.sh && \
