@@ -10,6 +10,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/athena/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
@@ -107,7 +109,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	hpLauncher := memcached.New(hpExecutor, memcachedConfig)
+	hpLauncher := executor.ServiceLauncher{memcached.New(hpExecutor, memcachedConfig)}
 
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
@@ -188,9 +190,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
 			for repetition := 0; repetition < repetitions; repetition++ {
+				// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
+				var processes []executor.TaskHandle
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
-				err := func() error {
+				executeRepetition := func() error {
 					// Make progress bar to display current repetition.
 					if conf.LogLevel() == logrus.ErrorLevel {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
@@ -214,10 +218,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					if err != nil {
 						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
 					}
-					defer func() {
-						hpHandle.Stop()
-						hpHandle.Clean()
-					}()
+					processes = append(processes, hpHandle)
 
 					err = loadGenerator.Populate()
 					if err != nil {
@@ -238,11 +239,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 						}
-						defer func() {
-							beHandle.Stop()
-							beHandle.Clean()
-						}()
-						// Majority of LauncherSessionPairs do not use Swan.
+						processes = append(processes, beHandle)
+
+						// Majority of LauncherSessionPairs do not use Snap.
 						if beLauncher.SnapSessionLauncher != nil {
 							logrus.Debugf("starting snap session: ")
 							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
@@ -279,7 +278,20 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					}
 
 					return nil
-				}()
+				}
+				// Call repetition function.
+				err := executeRepetition()
+
+				// Collecting all the errors that might have been encountered.
+				errColl := &errcollection.ErrorCollection{}
+				errColl.Add(err)
+				for _, th := range processes {
+					errColl.Add(th.Stop())
+					errColl.Add(th.Clean())
+				}
+
+				// If any error was found then we should log details and terminate the experiment if stopOnError is set.
+				err = errColl.GetErrIfAny()
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
