@@ -58,11 +58,11 @@ func TestExperiment(t *testing.T) {
 		"SWAN_PEAK_LOAD":            "5000",
 		"SWAN_LOAD_DURATION":        "1s",
 		"SWAN_MUTILATE_WARMUP_TIME": "1s",
-		"SWAN_KUBE_APISERVER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-apiserver"),
-		"SWAN_KUBE_CONTROLLER_PATH": path.Join(fs.GetAthenaBinPath(), "kube-controller-manager"),
-		"SWAN_KUBELET_PATH":         path.Join(fs.GetAthenaBinPath(), "kubelet"),
-		"SWAN_KUBE_PROXY_PATH":      path.Join(fs.GetAthenaBinPath(), "kube-proxy"),
-		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetAthenaBinPath(), "kube-scheduler"),
+		"SWAN_KUBE_APISERVER_PATH":  path.Join(fs.GetSwanBinPath(), "kube-apiserver"),
+		"SWAN_KUBE_CONTROLLER_PATH": path.Join(fs.GetSwanBinPath(), "kube-controller-manager"),
+		"SWAN_KUBELET_PATH":         path.Join(fs.GetSwanBinPath(), "kubelet"),
+		"SWAN_KUBE_PROXY_PATH":      path.Join(fs.GetSwanBinPath(), "kube-proxy"),
+		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetSwanBinPath(), "kube-scheduler"),
 	}
 
 	Convey("When snapteld is launched", t, func() {

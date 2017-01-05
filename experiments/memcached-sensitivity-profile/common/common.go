@@ -35,7 +35,7 @@ var (
 )
 
 // PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
-// TODO: this should be put into athena:/pkg/snap
+// TODO: this should be put into swan:/pkg/snap
 func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	// Create connection with Snap.
 	logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())

@@ -18,7 +18,7 @@ var (
 )
 
 // NewRemote is helper for creating remotes with default sshConfig.
-// TODO: this should be put into athena:/pkg/executors
+// TODO: this should be put into swan:/pkg/executors
 func NewRemote(ip string) (executor.Executor, error) {
 	// TODO: Have ability to choose user using parameter here.
 	user, err := user.Current()

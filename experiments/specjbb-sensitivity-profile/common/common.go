@@ -58,7 +58,7 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 }
 
 // prepareSnapSpecjbbSessionLauncher prepares a SessionLauncher that runs SPECjbb collector and records that into storage.
-// TODO: this should be put into athena:/pkg/snap
+// TODO: this should be put into swan:/pkg/snap
 func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.SnapteldHTTPEndpoint.Value() != "none" {
