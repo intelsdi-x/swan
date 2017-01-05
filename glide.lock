@@ -1,5 +1,5 @@
-hash: ca7205beaf46e444af03130404dd56493c2e837e3738ec5fbe323e84538aaf2f
-updated: 2017-01-04T14:18:51.948194355+01:00
+hash: 6791727db365c025c675e607c752c7503438ad6f0c365854c35050b89896b633
+updated: 2017-01-05T15:45:48.990338834+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -170,7 +170,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/intelsdi-x/athena
-  version: c75a1d540ca203b2b41ec43abde4afe6a18c01a2
+  version: 685c5e0315f74326835a6d98ccb18ca48e258045
   subpackages:
   - integration_tests/test_helpers
   - pkg/conf
@@ -184,6 +184,7 @@ imports:
   - pkg/snap/mocks
   - pkg/snap/sessions
   - pkg/snap/sessions/caffe
+  - pkg/snap/sessions/docker
   - pkg/snap/sessions/mutilate
   - pkg/snap/sessions/specjbb
   - pkg/utils/env
@@ -286,6 +287,8 @@ imports:
   - codec/codecgen
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: github.com/vektra/errors
+  version: c64d83aba85aa4392895aadeefabbd24e89f3580
 - name: github.com/vrischmann/jsonutil
   version: 694784f9315ee9fc763c1d30f28753cba21307aa
 - name: go4.org
@@ -322,7 +325,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 9c60d1c508f5134d1ca726b4641db998f2523357
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
   subpackages:
   - unix
 - name: google.golang.org/appengine
@@ -538,5 +541,5 @@ imports:
   - plugin/pkg/client/auth/oidc
   - third_party/forked/golang/reflect
 testImports:
-- name: github.com/vektra/errors
-  version: c64d83aba85aa4392895aadeefabbd24e89f3580
+- name: github.com/pivotal-golang/bytefmt
+  version: b12c1522f4cbb5f35861bd5dd2c39a4fa996441a
