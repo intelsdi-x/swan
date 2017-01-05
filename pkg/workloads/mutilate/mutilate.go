@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/pkg/errors"
 )

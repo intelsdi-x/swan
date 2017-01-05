@@ -4,9 +4,9 @@ import (
 	"path"
 	"testing"
 
+	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

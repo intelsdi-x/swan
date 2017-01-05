@@ -1,8 +1,8 @@
 package sessions
 
 import (
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/conf"
 )
 
 // ApplyCassandraConfiguration is a helper which applies the Cassandra related settings from
