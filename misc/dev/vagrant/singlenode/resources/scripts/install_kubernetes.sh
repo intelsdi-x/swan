@@ -4,6 +4,8 @@
 # scripts.
 set -x -e -o pipefail
 
+source $HOME_DIR/.bash_profile
+
 K8S_VERSION="v1.4.0-alpha.2-serenity"
 
 CACHE_DIRECTORY=/cache
@@ -21,8 +23,7 @@ function downloadK8s() {
 }
 
 pushd `dirname $0`
-    SWAN_ROOT=`pwd`/../../
-    SWAN_BIN=${SWAN_ROOT}misc/bin
+    SWAN_BIN=${SWAN_DIR}/misc/bin
 
     mkdir -p ${SWAN_BIN}
 
