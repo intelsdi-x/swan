@@ -4,10 +4,10 @@ import (
 	"os/user"
 	"runtime"
 
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/isolation"
-	"github.com/intelsdi-x/athena/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 // NewRemote is helper for creating remotes with default sshConfig.
-// TODO: this should be put into athena:/pkg/executors
+// TODO: this should be put into swan:/pkg/executors
 func NewRemote(ip string) (executor.Executor, error) {
 	// TODO: Have ability to choose user using parameter here.
 	user, err := user.Current()

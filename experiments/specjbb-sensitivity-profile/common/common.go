@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/snap"
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 )
 
@@ -58,7 +58,7 @@ func prepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 }
 
 // prepareSnapSpecjbbSessionLauncher prepares a SessionLauncher that runs SPECjbb collector and records that into storage.
-// TODO: this should be put into athena:/pkg/snap
+// TODO: this should be put into swan:/pkg/snap
 func prepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
 	// NOTE: For debug it is convenient to disable snap for some experiment runs.
 	if snap.SnapteldHTTPEndpoint.Value() != "none" {

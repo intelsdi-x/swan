@@ -1,8 +1,8 @@
 package topology
 
 import (
-	"github.com/intelsdi-x/athena/pkg/isolation/topo"
-	"github.com/intelsdi-x/athena/pkg/utils/errutil"
+	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
 
 // sharedCacheThreads returns threads from one socket that share a last-level

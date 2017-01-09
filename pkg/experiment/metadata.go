@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/intelsdi-x/athena/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/conf"
 )
 
 // MetadataConfig encodes the settings for connecting to the database.

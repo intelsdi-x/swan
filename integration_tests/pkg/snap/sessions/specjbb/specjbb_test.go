@@ -4,10 +4,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/specjbb"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 func TestSnaptelSpecJbbSession(t *testing.T) {
@@ -15,12 +15,12 @@ func TestSnaptelSpecJbbSession(t *testing.T) {
 	Convey("When testing SpecJbbSnaptelSession ", t, func() {
 		Convey("We have snapteld running ", func() {
 
-			cleanupSnaptel, loader, snapteldAddress := sessions.RunAndTestSnaptel()
+			cleanupSnaptel, loader, snapteldAddress := testhelpers.RunAndTestSnaptel()
 			defer cleanupSnaptel()
 
 			Convey("And we loaded publisher plugin", func() {
 
-				cleanupMerticsFile, publisher, publisherDataFilePath := sessions.PreparePublisher(loader)
+				cleanupMerticsFile, publisher, publisherDataFilePath := testhelpers.PreparePublisher(loader)
 				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch specjbb session", func() {
@@ -31,7 +31,7 @@ func TestSnaptelSpecJbbSession(t *testing.T) {
 					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
-					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTaskInfo(path.Join(
+					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
 						fs.GetSwanPath(), "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
@@ -62,7 +62,7 @@ func TestSnaptelSpecJbbSession(t *testing.T) {
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := sessions.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
+							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
 							So(dataValid, ShouldBeTrue)
 						})
 					})

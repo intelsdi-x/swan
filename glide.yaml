@@ -4,23 +4,6 @@ import:
   version: 081307d9bc1364753142d5962fc1d795c742baaf
 - package: github.com/gocql/gocql
 - package: github.com/hailocab/gocassa
-- package: github.com/intelsdi-x/athena
-  version: master
-  subpackages:
-  - pkg/conf
-  - pkg/executor
-  - pkg/isolation
-  - pkg/isolation/cgroup
-  - pkg/isolation/topo
-  - pkg/kubernetes
-  - pkg/snap
-  - pkg/snap/sessions/mutilate
-  - pkg/utils/env
-  - pkg/utils/err_collection
-  - pkg/utils/errutil
-  - pkg/utils/fs
-  - pkg/utils/netutil
-  - pkg/utils/sysctl
 - package: github.com/intelsdi-x/snap-plugin-utilities
   version: 04621af7a3979bcb8aaf08c3b6542b43fe0bf6cf
   subpackages:
@@ -33,7 +16,12 @@ import:
   - control/plugin/cpolicy
   - core
   - core/ctypes
+  - mgmt/rest/client
+  - scheduler/wmap
 - package: github.com/montanaflynn/stats
+- package: github.com/intelsdi-x/snap-plugin-processor-tag
+  subpackages:
+  - tag
 - package: github.com/nu7hatch/gouuid
   version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - package: github.com/pkg/errors
@@ -42,9 +30,24 @@ import:
   subpackages:
   - mock
 - package: gopkg.in/cheggaaa/pb.v1
-testImport:
-- package: github.com/smartystreets/goconvey
-  version: 995f5b2e021c69b8b028ba6d0b05c1dd500783db
-  subpackages:
-  - convey
 - package: github.com/vektra/errors
+- package: golang.org/x/crypto
+  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
+  subpackages:
+  - ssh
+- package: gopkg.in/alecthomas/kingpin.v2
+  version: ~2.2.2
+- package: k8s.io/client-go
+  version: v1.4.0
+- package: k8s.io/kubernetes
+  version: 1.4.0
+  subpackages:
+  - pkg/api
+  - pkg/api/resource
+  - pkg/api/unversioned
+  - pkg/client/restclient
+  - pkg/client/unversioned
+  - pkg/labels
+  - pkg/watch
+testImport:
+- package: github.com/pivotal-golang/bytefmt

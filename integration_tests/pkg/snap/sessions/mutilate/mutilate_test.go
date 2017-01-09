@@ -4,10 +4,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
-	"github.com/intelsdi-x/swan/integration_tests/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 func TestSnapMutilateSession(t *testing.T) {
@@ -15,12 +15,12 @@ func TestSnapMutilateSession(t *testing.T) {
 	Convey("When testing MutilateSnapSession ", t, func() {
 		Convey("We have snapd running ", func() {
 
-			cleanupSnap, loader, snapteldAddress := sessions.RunAndTestSnaptel()
+			cleanupSnap, loader, snapteldAddress := testhelpers.RunAndTestSnaptel()
 			defer cleanupSnap()
 
 			Convey("And we loaded publisher plugin", func() {
 
-				cleanupMerticsFile, publisher, publisherDataFilePath := sessions.PreparePublisher(loader)
+				cleanupMerticsFile, publisher, publisherDataFilePath := testhelpers.PreparePublisher(loader)
 				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch mutilate session", func() {
@@ -31,7 +31,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
 					So(err, ShouldBeNil)
 
-					cleanupMockedFile, mockedTaskInfo := sessions.PrepareMockedTaskInfo(path.Join(
+					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
 						fs.GetSwanPath(), "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
 					defer cleanupMockedFile()
 
@@ -64,7 +64,7 @@ func TestSnapMutilateSession(t *testing.T) {
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := sessions.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
+							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
 							So(dataValid, ShouldBeTrue)
 						})
 					})
