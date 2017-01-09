@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	. "github.com/smartystreets/goconvey/convey"
 )

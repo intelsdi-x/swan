@@ -6,9 +6,9 @@ SNAP_VERSION="1.0.0"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
+SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 
 . $HOME_DIR/.bash_profile
-ATHENA_DIR=$GOPATH/src/github.com/intelsdi-x/athena
 
 echo "Installing Snap..."
 if [ ! -f /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz ]; then
@@ -39,16 +39,9 @@ if [ ! -f /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION} 
   touch /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}
 fi
 
-echo "Installing Athena & its K8s..."
-if [ ! -d $ATHENA_DIR ]; then
-    echo "Fetching Athena sources"
-    mkdir -p $ATHENA_DIR
-    git clone git@github.com:intelsdi-x/athena $ATHENA_DIR
-else
-    echo "Updating Athena sources"
-    pushd $ATHENA_DIR
-    git pull
-    popd
+echo "Installing snap-plugin-publisher-file (version $SNAP_PLUGIN_PUBLISHER_FILE_VERSION)..."
+if [ ! -f /cache/snap-plugin-processor-file-${SNAP_PLUGIN_PUBLISHER_FILE_VERSION} ]; then
+  wget -q https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O $GOPATH/bin/snap-plugin-publisher-file
+  chmod +x  $GOPATH/bin/snap-plugin-publisher-file
+  touch /cache/snap-plugin-publisher-file-${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}
 fi
-echo "Fetching kubernetes binaries for Athena"
-cd $ATHENA_DIR && ./misc/kubernetes/install_binaries.sh

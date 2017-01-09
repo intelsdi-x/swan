@@ -3,6 +3,8 @@ services:
 - docker
 language: go
 sudo: required
+before_install:
+- sudo apt-get install bash
 go:
 - 1.7
 before_install:

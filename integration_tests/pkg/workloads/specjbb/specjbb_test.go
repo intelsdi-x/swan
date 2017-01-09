@@ -8,7 +8,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -166,7 +166,7 @@ func TestSPECjbb(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(backendTaskHandle, ShouldNotBeNil)
 
-						Convey("And when I stop backend prematurely, " +
+						Convey("And when I stop backend prematurely, "+
 							"both backend and load generator should be terminated", func() {
 							// Wait for backend to be registered.
 							time.Sleep(20 * time.Second)

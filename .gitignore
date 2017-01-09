@@ -10,6 +10,11 @@ autom4te.cache/
 /artifacts.tgz
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/deep_learning/caffe/build/
+*.test
+/**/stderr
+/**/stdout
+/.vscode
+autom4te.cache/
 /workloads/low-level-aggressors/l1d
 /workloads/low-level-aggressors/l1i
 /workloads/low-level-aggressors/l3
