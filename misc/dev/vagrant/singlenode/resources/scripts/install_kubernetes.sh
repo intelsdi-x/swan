@@ -4,6 +4,8 @@
 # scripts.
 set -x -e -o pipefail
 
+source $HOME_DIR/.bash_profile
+
 K8S_VERSION="v1.4.0-alpha.2-serenity"
 
 CACHE_DIRECTORY=/cache
@@ -17,18 +19,17 @@ function downloadK8s() {
     if [ ! -f ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION} ] || [ ! -f ${CACHE_DIRECTORY}/$1 ] ; then
         wget -q https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/${1}.${K8S_VERSION} -O ${CACHE_DIRECTORY}/$1
     fi 
-    cp ${CACHE_DIRECTORY}/$1 ${ATHENA_BIN}
+    cp ${CACHE_DIRECTORY}/$1 ${SWAN_BIN}
 }
 
 pushd `dirname $0`
-    ATHENA_ROOT=`pwd`/../../
-    ATHENA_BIN=${ATHENA_ROOT}misc/bin
+    SWAN_BIN=${SWAN_DIR}/misc/bin
 
-    mkdir -p ${ATHENA_BIN}
+    mkdir -p ${SWAN_BIN}
 
     OPT=$1
-    if [ "${OPT}" = "--force" ] || [ ! -f  ${ATHENA_BIN}/.kube-services-${K8S_VERSION} ] ; then
-        pushd ${ATHENA_BIN}
+    if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_BIN}/.kube-services-${K8S_VERSION} ] ; then
+        pushd ${SWAN_BIN}
             downloadK8s kubectl
             downloadK8s kube-apiserver
             downloadK8s kube-controller-manager

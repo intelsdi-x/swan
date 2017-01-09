@@ -1,5 +1,3 @@
-// +build sequential parallel
-
 package executor
 
 import (
@@ -9,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/intelsdi-x/athena/pkg/executor"
+	. "github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/isolation"
-	"github.com/intelsdi-x/athena/pkg/isolation/topo"
-	"github.com/intelsdi-x/athena/pkg/utils/errutil"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
 
 var (

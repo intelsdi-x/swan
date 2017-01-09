@@ -1,5 +1,3 @@
-// +build parallel
-
 package executor
 
 import (
@@ -11,9 +9,9 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/executor"
-	. "github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	. "github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/crypto/ssh"
 )

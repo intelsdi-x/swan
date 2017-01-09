@@ -6,12 +6,12 @@ import (
 	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/conf"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/snap"
-	"github.com/intelsdi-x/athena/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/pkg/errors"
 )
@@ -35,7 +35,7 @@ var (
 )
 
 // PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
-// TODO: this should be put into athena:/pkg/snap
+// TODO: this should be put into swan:/pkg/snap
 func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
 	// Create connection with Snap.
 	logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"

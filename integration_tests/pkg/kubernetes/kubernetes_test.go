@@ -1,5 +1,3 @@
-// +build sequential
-
 package kubernetes
 
 import (
@@ -12,14 +10,14 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/executor"
-	"github.com/intelsdi-x/athena/pkg/kubernetes"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
-	kubectlBinPath = path.Join(fs.GetAthenaBinPath(), "kubectl")
+	kubectlBinPath = path.Join(fs.GetSwanBinPath(), "kubectl")
 )
 
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.

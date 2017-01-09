@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/athena/pkg/utils/fs"
+	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,7 +17,7 @@ const (
 )
 
 func TestConf(t *testing.T) {
-	testReadmePath := path.Join(fs.GetAthenaPath(), "pkg", "conf", "test_file.md")
+	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "test_file.md")
 	Convey("While using Conf pkg", t, func() {
 		logLevelFlag.clear()
 		defer logLevelFlag.clear()

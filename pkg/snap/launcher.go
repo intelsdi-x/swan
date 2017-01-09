@@ -1,6 +1,6 @@
 package snap
 
-import "github.com/intelsdi-x/athena/pkg/executor"
+import "github.com/intelsdi-x/swan/pkg/executor"
 
 // SessionHandle is handle for Snap Collection session. It can be stopped from here.
 // NOTE: In SnapSessionHandle Stop() method needs to ensure that the session has completed it's work.

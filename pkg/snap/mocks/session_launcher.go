@@ -1,9 +1,9 @@
 package mocks
 
-import "github.com/intelsdi-x/athena/pkg/snap"
+import "github.com/intelsdi-x/swan/pkg/snap"
 import "github.com/stretchr/testify/mock"
 
-import "github.com/intelsdi-x/athena/pkg/executor"
+import "github.com/intelsdi-x/swan/pkg/executor"
 
 // SessionLauncher ...
 type SessionLauncher struct {

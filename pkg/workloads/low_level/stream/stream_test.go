@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/intelsdi-x/athena/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

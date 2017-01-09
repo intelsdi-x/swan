@@ -34,22 +34,3 @@ func GetSwanExperimentPath() string {
 func GetSwanBinPath() string {
 	return path.Join(os.Getenv("GOPATH"), "src", swanPkg, "misc", "bin")
 }
-
-const (
-	athenaPkg = "github.com/intelsdi-x/athena"
-)
-
-// GetAthenaPath returns absolute path to Athena root directory.
-func GetAthenaPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", athenaPkg)
-}
-
-// GetAthenaBuildPath returns absolute path to Athena build directory.
-func GetAthenaBuildPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", athenaPkg, "build")
-}
-
-// GetAthenaBinPath returns absolute path to Athena misc/bin directory.
-func GetAthenaBinPath() string {
-	return path.Join(os.Getenv("GOPATH"), "src", athenaPkg, "misc", "bin")
-}
