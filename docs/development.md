@@ -53,7 +53,7 @@ Mock generation is done by Mockery tool.
 Sometimes Mockery is not able to resolve all imports in file correctly.
 Developer needs to use it manually, that's why we are vendoring our mocks.
 
-To generate mocks go to desired package and ```mockery -name ".*" -case underscore```
+To generate mocks go to desired package and ```mockery -name=".*" -inpkg -testonly -case=underscore```
 
 In case of error: `could not import <pkg> (can't find import: <pkg>)`
 Do the `go install <pkg>`
