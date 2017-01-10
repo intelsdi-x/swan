@@ -14,7 +14,7 @@ a so-called _sensitivity profile_, which describes the violation of _Quality of 
 
 Following figure illustrates _Memcached sensitivity experiment_ architecture.
 
-![Swan architecture](Swan-arch.png)
+![Swan architecture](swan-arch.png)
 
 The main components here are:
 
