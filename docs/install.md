@@ -10,9 +10,7 @@ Swan provides a Vagrantfile, which describes the pre-configured CentOS 7 virtual
 
 1. Swan directory mounted in the guest file system (it resides in the host OS, but it is also accessed from virtual machine).
 
-2. [Athena](https://github.com/intelsdi-x/athena) repository  placed in `$GOPATH/src/github.com/intelsdi-x/athena`.
-
-3. Additional software packages:
+2. Additional software packages:
     * docker
     * gengetopt
     * git
@@ -29,18 +27,18 @@ Swan provides a Vagrantfile, which describes the pre-configured CentOS 7 virtual
 
     [Glide](https://github.com/Masterminds/glide) is a tool for managing the vendor directory within a Go package. All dependencies are cached in the `~/.glide` folder (this directory is shared between virtual machine and host OS). 
 
-4. A running [docker](https://www.docker.com/) service and a running [Cassandra](http://cassandra.apache.org/) docker container, needed for storing experiment results.
+3. A running [docker](https://www.docker.com/) service and a running [Cassandra](http://cassandra.apache.org/) docker container, needed for storing experiment results.
 
-5. [Snap](https://github.com/intelsdi-x/snap) binary placed in `$GOPATH/bin/`.
+4. [Snap](https://github.com/intelsdi-x/snap) binary placed in `$GOPATH/bin/`.
 
-6. [Kubernetes](http://kubernetes.io/) binaries placed in  `$GOPATH/src/github.com/intelsdi-x/athena/misc/bin`.
+5. [Kubernetes](http://kubernetes.io/) binaries placed in  `$GOPATH/src/github.com/intelsdi-x/swan/misc/bin`.
 
-7. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
+6. Workloads binaries placed in `$HOME/swan/workloads/`. To read more about available workloads, please refer to description [here](https://github.com/intelsdi-x/swan/blob/master/experiments/memcached-sensitivity-profile/README.md#aggressor-configuration).
 
-8. Prepared docker swan image `centos_swan_image`, used during experiment, which run on [Kubernetes](http://kubernetes.io/). This image contains all necessary workloads that could be used during experiment (during Vagrant provisioning you will see that workloads are built twice - one time in the virtual machine and the second in the Docker image).
+7. Prepared docker swan image `centos_swan_image`, used during experiment, which run on [Kubernetes](http://kubernetes.io/). This image contains all necessary workloads that could be used during experiment (during Vagrant provisioning you will see that workloads are built twice - one time in the virtual machine and the second in the Docker image).
 
 ## Prerequisites
-You need a read access to [Athena](https://github.com/intelsdi-x/athena) and [Swan](https://github.com/intelsdi-x/swan) repositories. If you don't have it, please contact [Swan](https://github.com/intelsdi-x/swan) repository administrators.
+You need a read access to [Swan](https://github.com/intelsdi-x/swan) repository. If you don't have it, please contact [Swan](https://github.com/intelsdi-x/swan) repository administrators.
 
 ## Install OS dependencies
 **1. Git**

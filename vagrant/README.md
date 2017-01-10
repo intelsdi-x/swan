@@ -59,7 +59,7 @@ To use your local ~/.glide please make sure that this directory exists and `SHAR
   1. `setup_git.sh`
   1. `setup_services.sh`
   1. `install_golang.sh`
-  1. `install_snap_athena.sh`
+  1. `install_snap.sh`
   1. `post_install.sh`
   1. `install_project_deps.sh`
   1. `checker.sh`
