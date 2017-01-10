@@ -33,29 +33,29 @@ Swan does not force any type of experiment. Instead, it provides abstractions an
 
 The life cycle abstraction is composed of the following interfaces:
 
-* [Launcher](https://github.com/intelsdi-x/athena/tree/master/pkg/executor/launcher.go) which in general translates the workload configuration into string which can be directly launched as in command line. It offers method `Launch()`.
+* [Launcher](../pkg/executor/launcher.go) which in general translates the workload configuration into string which can be directly launched as in command line. It offers method `Launch()`.
 
-* [Executor](https://github.com/intelsdi-x/athena/tree/master/pkg/executor/executor.go) which takes care of how to launch the workload. It offers method `Execute()` which takes command as a string parameter. 
+* [Executor](../pkg/executor/executor.go) which takes care of how to launch the workload. It offers method `Execute()` which takes command as a string parameter. 
 
-* [TaskHandle](https://github.com/intelsdi-x/athena/tree/master/pkg/executor/task_handle.go) which controls launched workload, has information about the task's status and is responsible of delivering workload's `stderr` and `stdout`. _Launcher_ on `Launch()` and _Executor_ on `Execute()` returns _TaskHandle_.
+* [TaskHandle](../pkg/executor/task_handle.go) which controls launched workload, has information about the task's status and is responsible of delivering workload's `stderr` and `stdout`. _Launcher_ on `Launch()` and _Executor_ on `Execute()` returns _TaskHandle_.
 
 Isolation consists of a single interface:
 
-* [Isolation](https://github.com/intelsdi-x/athena/tree/master/pkg/isolation/isolation.go) which can be used to limit workload access to shared resources like CPU.
+* [Isolation](../pkg/isolation/isolation.go) which can be used to limit workload access to shared resources like CPU.
 
 _Swan_ provides already implemented executors:
-* [Local](https://github.com/intelsdi-x/athena/tree/master/pkg/executor/local.go) - for launching workloads on _Swan_ host
-* [Remote](https://github.com/intelsdi-x/athena/tree/master/pkg/executor/remote.go) - for launching workloads on remote hosts (using ssh)
-* [Kubernetes](https://github.com/intelsdi-x/athena/blob/master/pkg/executor/kubernetes.go) - for launching workloads on kubernetes
+* [Local](../pkg/executor/local.go) - for launching workloads on _Swan_ host
+* [Remote](../pkg/executor/remote.go) - for launching workloads on remote hosts (using ssh)
+* [Kubernetes](../pkg/executor/kubernetes.go) - for launching workloads on kubernetes
 
-and launchers for some aggressors that can be viewed at [swan/pkg/workloads](https://github.com/intelsdi-x/swan/tree/master/pkg/workloads).
+and launchers for some aggressors that can be viewed at [swan/pkg/workloads](../pkg/workloads).
 
-As an illustration for the abstractions above [l1data](https://github.com/intelsdi-x/swan/blob/master/pkg/workloads/low_level/l1data/l1data.go) aggressor `Launcher` implementation will be explained in detail. The `l1data.New()` method takes `Executor` and configuration as input parameters and then the workload can be started by calling `l1data.Launch()`. Internally in the `Launch()` method the command line string is build from provided configuration and then it's passed to the provided `Executor` which will take care of executing it (locally, remotely or on Kubernetes). Note that what to launch and how to launch it is clearly separated into two abstractions: Launcher and Executor. It allows using single `Launcher` with several `Executors`. 
+As an illustration for the abstractions above [l1data](../pkg/workloads/low_level/l1data/l1data.go) aggressor `Launcher` implementation will be explained in detail. The `l1data.New()` method takes `Executor` and configuration as input parameters and then the workload can be started by calling `l1data.Launch()`. Internally in the `Launch()` method the command line string is build from provided configuration and then it's passed to the provided `Executor` which will take care of executing it (locally, remotely or on Kubernetes). Note that what to launch and how to launch it is clearly separated into two abstractions: Launcher and Executor. It allows using single `Launcher` with several `Executors`. 
 
 
 ## Results
 
-_Snap_ gathers experiment results using collector plugins for mutilate and caffe (in inference mode) and publish then using [Cassandra publisher](https://github.com/intelsdi-x/snap-plugin-collector-cassandra) (see [here](https://github.com/intelsdi-x/swan/tree/master/misc) for more details).
+_Snap_ gathers experiment results using collector plugins for mutilate and caffe (in inference mode) and publish then using [Cassandra publisher](https://github.com/intelsdi-x/snap-plugin-collector-cassandra) (see [here](../misc) for more details).
 
 
 ## Experiment

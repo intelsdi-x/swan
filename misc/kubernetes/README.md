@@ -11,7 +11,7 @@ mkdir -p $GOPATH/src/k8s.io/kubernetes
 git clone https://github.com/kubernetes/kubernetes.git $GOPATH/src/k8s.io/kubernetes
 cd $GOPATH/src/k8s.io/kubernetes
 git checkout v1.4.0-alpha.3
-patch -p1 < $GOPATH/src/intelsdi-x/athena/misc/kubernetes/addtoleration.patch
+patch -p1 < $GOPATH/src/intelsdi-x/swan/misc/kubernetes/addtoleration.patch
 make WHAT='cmd/kube-apiserver'
 ```
 
