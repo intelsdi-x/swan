@@ -101,6 +101,7 @@ func TestSnap(t *testing.T) {
 
 					Convey("While starting a Snap experiment session", func() {
 						s = snap.NewSession(
+							"swan-test-dummy",
 							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 							1*time.Second,
 							c,

@@ -34,6 +34,9 @@ type CollectNodeConfigItem struct {
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
+	// TaskName is name of task in Snap.
+	TaskName string
+
 	// Schedule defines the schedule type and interval for the listed metrics.
 	Schedule *client.Schedule
 
@@ -56,6 +59,7 @@ type Session struct {
 // NewSession generates a session with a name and a list of metrics to tag.
 // The interval cannot be less than second granularity.
 func NewSession(
+	taskName string,
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
@@ -83,6 +87,7 @@ func (s *Session) Start(tags string) error {
 	}
 
 	t := &task{
+		Name:     s.TaskName,
 		Version:  1,
 		Schedule: s.Schedule,
 	}

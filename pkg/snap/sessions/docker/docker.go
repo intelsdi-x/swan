@@ -55,7 +55,9 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	}
 
 	return &SessionLauncher{
-		session: snap.NewSession([]string{"/intel/docker/*/stats/cgroups/*"},
+		session: snap.NewSession(
+			"swan-docker-session",
+			[]string{"/intel/docker/*/stats/cgroups/*"},
 			config.Interval,
 			snapClient,
 			config.Publisher,

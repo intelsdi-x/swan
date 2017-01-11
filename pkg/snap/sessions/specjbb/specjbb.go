@@ -57,6 +57,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 
 	return &SessionLauncher{
 		session: snap.NewSession(
+			"swan-specjbb-session",
 			[]string{
 				"/intel/swan/specjbb/*/min",
 				"/intel/swan/specjbb/*/percentile/50th",
