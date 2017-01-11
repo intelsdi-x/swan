@@ -18,29 +18,34 @@ func getBinaryNameFromCommand(command string) (string, error) {
 	return name, nil
 }
 
-func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File, err error) {
+func createOutputDirectory(command string, prefix string) (string, error) {
 	if len(command) == 0 {
-		return nil, nil, errors.New("empty command string")
+		return "", errors.New("empty command string")
 	}
 
 	commandName, err := getBinaryNameFromCommand(command)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	directoryPrivileges := os.FileMode(0755)
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get working directory")
+		return "", errors.Wrap(err, "failed to get working directory")
 	}
 	outputDir, err := ioutil.TempDir(pwd, prefix+"_"+commandName+"_")
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to create output directory for %q", commandName)
+		return "", errors.Wrapf(err, "failed to create output directory for %q", commandName)
 	}
 	if err = os.Chmod(outputDir, directoryPrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for dir %q", outputDir)
+		os.RemoveAll(outputDir)
+		return "", errors.Wrapf(err, "failed to set privileges for dir %q", outputDir)
 	}
 
+	return outputDir, nil
+}
+
+func createExecutorOutputFiles(outputDir string) (stdout, stderr *os.File, err error) {
 	filePrivileges := os.FileMode(0644)
 
 	stdoutFileName := path.Join(outputDir, "stdout")

@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
 
@@ -44,9 +45,13 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// TODO: delete this as we use PID namespace instead
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
+	outputDirectory, err := createOutputDirectory(command, "local")
 	if err != nil {
-		eraseOutput(stdoutFile)
+		return nil, errors.Wrapf(err, "createOutputDirectory for command %q failed", command)
+	}
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
+	if err != nil {
+		removeDirectory(outputDirectory)
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -58,7 +63,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		eraseOutput(stdoutFile)
+		removeDirectory(outputDirectory)
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
@@ -88,8 +93,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		stdoutFile.Sync()
-		stderrFile.Sync()
+		taskHandle.clean()
 	}()
 
 	return taskHandle, nil
@@ -206,39 +210,50 @@ func (taskHandle *localTaskHandle) StderrFile() (*os.File, error) {
 	return taskHandle.stderrFile, nil
 }
 
-// Clean removes files to which stdout and stderr of executed command was written.
+func (taskHandle *localTaskHandle) clean() error {
+	errCol := errcollection.ErrorCollection{}
+
+	taskHandle.stdoutFile.Sync()
+	taskHandle.stderrFile.Sync()
+
+	if taskHandle.stdoutFile != nil {
+		_, err := taskHandle.stdoutFile.Stat()
+		// When stat can be successfully invoked, it means that file descriptor is OK.
+		if err == nil {
+			errCol.Add(taskHandle.stdoutFile.Close())
+		}
+	}
+
+	if taskHandle.stderrFile != nil {
+		_, err := taskHandle.stdoutFile.Stat()
+		// When stat can be successfully invoked, it means that file descriptor is OK.
+		if err == nil {
+			errCol.Add(taskHandle.stderrFile.Close())
+		}
+	}
+
+	return errCol.GetErrIfAny()
+}
+
+// Deprecated: Does nothing.
 func (taskHandle *localTaskHandle) Clean() error {
-	// Close stdout.
-	stdoutErr := taskHandle.stdoutFile.Close()
-
-	// Close stderr.
-	stderrErr := taskHandle.stderrFile.Close()
-
-	if stdoutErr != nil {
-		return errors.Wrapf(stdoutErr, "close on file %q failed", taskHandle.stdoutFile.Name())
-	}
-
-	if stderrErr != nil {
-		return errors.Wrapf(stderrErr, "close on file %q failed", taskHandle.stderrFile.Name())
-	}
-
 	return nil
 }
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	return eraseOutput(taskHandle.stdoutFile)
+	outputDir := filepath.Dir(taskHandle.stdoutFile.Name())
+	return removeDirectory(outputDir)
 }
 
-// eraseOutput requires only one file from stdout and stderr files. It's looking for parent dir and remove it.
-func eraseOutput(outputFile *os.File) error {
-	// Remove temporary directory created for stdout and stderr.
-	if outputFile == nil {
+// removeDirectory removes directory if exists.
+func removeDirectory(directory string) error {
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		return nil
 	}
-	outputDir := filepath.Dir(outputFile.Name())
-	if err := os.RemoveAll(outputDir); err != nil {
-		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
+
+	if err := os.RemoveAll(directory); err != nil {
+		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
 	}
 	return nil
 }

@@ -704,8 +704,14 @@ func (kw *kubernetesWatcher) setupLogs() {
 		}
 
 		// Prepare local files
-		stdoutFile, stderrFile, err := createExecutorOutputFiles(kw.command, "kubernetes")
+		outputDirectory, err := createOutputDirectory(kw.command, "kubernetes")
+		if err != nil {
+			log.Errorf("K8s task watcher: cannot create output directory for pod %q [logsReady state]: %s", kw.pod.Name, err.Error())
+			close(kw.logsReady)
+			return
+		}
 
+		stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
 		if err != nil {
 			log.Warnf("K8s task watcher: cannot create output files for pod %q [logsReady state]: %s", kw.pod.Name, err.Error())
 			close(kw.logsReady)

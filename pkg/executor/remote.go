@@ -81,8 +81,13 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "connection.sewSessionWithPty for command %q failed with error %v", command, err)
 	}
 
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
+	output, err := createOutputDirectory(command, "remote")
 	if err != nil {
+		return nil, errors.Wrapf(err, "createOutputDirectory for command %q failed", command)
+	}
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(output)
+	if err != nil {
+		removeDirectory(output)
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -304,7 +309,7 @@ func (taskHandle *remoteTaskHandle) StderrFile() (*os.File, error) {
 	return file, nil
 }
 
-// Clean removes files to which stdout and stderr of executed command was written.
+// Deprecated: Does nothing.
 func (taskHandle *remoteTaskHandle) Clean() error {
 	return nil
 }
