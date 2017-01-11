@@ -22,9 +22,13 @@ const (
 // TestSPECjbb is an integration test with SPECjbb components.
 func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
+	if _, err := os.Stat(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
+		t.Logf("Skipping test: unable to access jar file in %s", specjbbLoadGeneratorConfig.PathToBinary)
+		t.SkipNow()
+	}
 
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
@@ -129,7 +133,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
@@ -185,7 +188,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
