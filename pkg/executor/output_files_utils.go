@@ -8,7 +8,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
-	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -77,12 +76,12 @@ func syncAndClose(file *os.File) error {
 	var errCol errcollection.ErrorCollection
 	err := file.Sync()
 	if err != nil {
-		errCol.Add(errCol)
+		errCol.Add(err)
 		log.Errorf("Cannnot sync stdout file: %s", err.Error())
 	}
 	err = file.Close()
 	if err != nil {
-		errCol.Add(errCol)
+		errCol.Add(err)
 		log.Errorf("Cannot close stdout file: %s", err.Error())
 	}
 	return errCol.GetErrIfAny()
