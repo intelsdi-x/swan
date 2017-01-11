@@ -45,7 +45,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	//"path"
 	"sync"
 	"time"
 
@@ -258,10 +258,23 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// Make sure that at least one line of text is outputed from pod, to unblock .GetLogs() on apiserver call
 	// with streamed response (when follow=true). Check SCE-883 for details or kubernetes #31446 issue.
 	// https://github.com/kubernetes/kubernetes/pull/31446
-	command = "echo;" + command
+	wrappedCommand := "echo;" + command
+
+	// Prepare local files
+	outputDirectory, err := createOutputDirectory(command, "kubernetes")
+	if err != nil {
+		log.Errorf("Kubernetes Execute: cannot create output directory for command %q [logsReady state]: %s", command, err.Error())
+		return nil, err
+	}
+
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
+	if err != nil {
+		log.Errorf("Kubernetes Execute: cannot create output files for command %q [logsReady state]: %s", command, err.Error())
+		return nil, err
+	}
 
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
-	podManifest, err := k8s.newPod(command)
+	podManifest, err := k8s.newPod(wrappedCommand)
 	if err != nil {
 		log.Errorf("K8s executor: cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
@@ -277,6 +290,9 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(pod))
 	taskHandle := &kubernetesTaskHandle{
 		podName:         pod.Name,
+		stdout:          stdoutFile.Name(),
+		stderr:          stderrFile.Name(),
+		logdir:          outputDirectory,
 		started:         make(chan struct{}),
 		logsReady:       make(chan struct{}),
 		stopped:         make(chan struct{}),
@@ -288,7 +304,10 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		podsAPI:    podsAPI,
 		pod:        pod,
 		taskHandle: taskHandle,
-		command:    command,
+		command:    wrappedCommand,
+
+		stdout: stdoutFile,
+		stderr: stderrFile,
 
 		started:         taskHandle.started,
 		logsReady:       taskHandle.logsReady,
@@ -331,14 +350,6 @@ type kubernetesTaskHandle struct {
 
 	podName   string
 	podHostIP string
-}
-
-func (th *kubernetesTaskHandle) setFileNames(stdoutFile, stderrFile string) {
-	th.stdout = stdoutFile
-	th.stderr = stderrFile
-
-	outputDir, _ := path.Split(th.stdout)
-	th.logdir = outputDir
 }
 
 func (th *kubernetesTaskHandle) isTerminated() bool {
@@ -692,36 +703,17 @@ func (kw *kubernetesWatcher) setupLogs() {
 			return
 		}
 
-		// Prepare local files
-		outputDirectory, err := createOutputDirectory(kw.command, "kubernetes")
-		if err != nil {
-			log.Errorf("K8s task watcher: cannot create output directory for pod %q [logsReady state]: %s", kw.pod.Name, err.Error())
-			close(kw.logsReady)
-			return
-		}
-
-		stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
-		if err != nil {
-			log.Warnf("K8s task watcher: cannot create output files for pod %q [logsReady state]: %s", kw.pod.Name, err.Error())
-			close(kw.logsReady)
-			return
-		}
-
-		log.Debugf("K8s task watcher: created temporary files stdout path: %q stderr path: %q",
-			stdoutFile.Name(), stderrFile.Name())
-		kw.taskHandle.setFileNames(stdoutFile.Name(), stderrFile.Name())
-
 		// Start "copier" goroutine for copying logs api to local files.
 		go func() {
 			log.Debugf("K8s copier: started")
-			_, err := io.Copy(stdoutFile, logStream)
+			_, err := io.Copy(kw.stdout, logStream)
 			if err != nil {
-				log.Warnf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
+				log.Errorf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
 			}
-			stdoutFile.Sync()
+			kw.stdout.Sync()
 			log.Debugf("K8s copier: copy and sync done - closing files descriptors...")
-			stdoutFile.Close()
-			stderrFile.Close()
+			kw.stdout.Close()
+			kw.stderr.Close()
 			log.Debug("K8s copier: done")
 		}()
 
