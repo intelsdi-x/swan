@@ -87,7 +87,7 @@ func (m *ClusterTaskHandle) Wait(timeout time.Duration) bool {
 	return isMasterTerminated
 }
 
-// Deprecated: Does nothing.
+// Clean Deprecated: Does nothing.
 func (m *ClusterTaskHandle) Clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 
