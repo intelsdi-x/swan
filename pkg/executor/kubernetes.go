@@ -45,7 +45,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	//"path"
 	"sync"
 	"time"
 
@@ -263,13 +262,13 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// Prepare local files
 	outputDirectory, err := createOutputDirectory(command, "kubernetes")
 	if err != nil {
-		log.Errorf("Kubernetes Execute: cannot create output directory for command %q [logsReady state]: %s", command, err.Error())
+		log.Errorf("Kubernetes Execute: cannot create output directory for command %q: %s", command, err.Error())
 		return nil, err
 	}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
 	if err != nil {
-		log.Errorf("Kubernetes Execute: cannot create output files for command %q [logsReady state]: %s", command, err.Error())
+		log.Errorf("Kubernetes Execute: cannot create output files for command %q: %s", command, err.Error())
 		return nil, err
 	}
 
@@ -447,6 +446,9 @@ func (th *kubernetesTaskHandle) Clean() error {
 // EraseOutput deletes the stdout and stderr files.
 // NOTE: EraseOutput will block until output directory is available.
 func (th *kubernetesTaskHandle) EraseOutput() error {
+	if th.Status() != TERMINATED {
+		return errors.New("Cannot EraseOutput of running task")
+	}
 	log.Debug("K8s task handle: waiting for logsReady channel to be closed")
 	<-th.logsReady
 	log.Debug("K8s task handle: logs ready channel must have been closed")
@@ -472,10 +474,6 @@ func (th *kubernetesTaskHandle) Address() string {
 // NOTE: StdoutFile will block until stdout file is available.
 func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 	log.Debugf("k8s task handle: stdout: wait for logs ready")
-	<-th.logsReady
-	if th.stdout == "" {
-		return nil, errors.New("stdout file has been already closed or it is not created yet")
-	}
 	return openFile(th.stdout)
 }
 
@@ -483,11 +481,6 @@ func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 // NOTE: StderrFile will block until stderr file is available.
 func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
 	log.Debugf("k8s task handle: stdout: wait for logs ready")
-	<-th.logsReady
-	if th.stderr == "" {
-		return nil, errors.New("stderr file has been already closed or it is not created yet")
-	}
-
 	return openFile(th.stderr)
 }
 
@@ -698,8 +691,7 @@ func (kw *kubernetesWatcher) setupLogs() {
 		// Wire up logs to task handle stdout.
 		logStream, err := kw.podsAPI.GetLogs(kw.pod.Name, &api.PodLogOptions{Follow: true}).Stream()
 		if err != nil {
-			log.Warnf("K8s task watcher: cannot create a stream [logsReady state]: %s ", err.Error())
-			close(kw.logsReady)
+			log.Warnf("K8s task watcher: cannot create log stream [logsReady state]: %s ", err.Error())
 			return
 		}
 
