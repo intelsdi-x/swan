@@ -465,13 +465,7 @@ func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
 	if th.stdout == "" {
 		return nil, errors.New("stdout file has been already closed or it is not created yet")
 	}
-
-	file, err := os.Open(th.stdout)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to open stdout file")
-	}
-
-	return file, nil
+	return openFile(th.stdout)
 }
 
 // StderrFile returns a file handle to the stderr file for the pod.
@@ -483,12 +477,7 @@ func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
 		return nil, errors.New("stderr file has been already closed or it is not created yet")
 	}
 
-	file, err := os.Open(th.stderr)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to open stderr file")
-	}
-
-	return file, nil
+	return openFile(th.stderr)
 }
 
 type kubernetesWatcher struct {

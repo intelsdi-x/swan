@@ -148,26 +148,15 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 				*exitCode = exitError.Waitmsg.ExitStatus()
 			}
 		}
-
-		// We need to close the channel before we call LogSuccessfulExecution() or LogUnsuccessfulExecution().
-		// Otherwise it won't be possible to retrieve exit code from the task handle.
 		close(hasProcessExited)
 
-		err = stdoutFile.Sync()
+		err = syncAndClose(stdoutFile)
 		if err != nil {
-			log.Errorf("Cannnot sync stdout file: %s", err.Error())
+			log.Errorf("Cannot syncAndClose stdout file: %s", err.Error())
 		}
-		err = stdoutFile.Close()
+		err = syncAndClose(stderrFile)
 		if err != nil {
-			log.Errorf("Cannot close stdout file: %s", err.Error())
-		}
-		err = stderrFile.Sync()
-		if err != nil {
-			log.Errorf("Cannot sync stderr file: %s", err.Error())
-		}
-		err = stderrFile.Close()
-		if err != nil {
-			log.Errorf("Cannot close stderr file: %s", err.Error())
+			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
 		}
 	}()
 
@@ -283,30 +272,12 @@ func (taskHandle *remoteTaskHandle) ExitCode() (int, error) {
 
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *remoteTaskHandle) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stdoutFilePath); err != nil {
-		return nil, errors.Wrapf(err, "unable to stat stdout file at %q", taskHandle.stdoutFilePath)
-	}
-
-	file, err := os.Open(taskHandle.stdoutFilePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to open stdout file at %q", taskHandle.stdoutFilePath)
-	}
-
-	return file, nil
+	return openFile(taskHandle.stdoutFilePath)
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *remoteTaskHandle) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stderrFilePath); err != nil {
-		return nil, errors.Wrapf(err, "unable to stat stderr file at %q", taskHandle.stderrFilePath)
-	}
-
-	file, err := os.Open(taskHandle.stderrFilePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to open stderr file at %q", taskHandle.stderrFilePath)
-	}
-
-	return file, nil
+	return openFile(taskHandle.stderrFilePath)
 }
 
 // Deprecated: Does nothing.

@@ -72,7 +72,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
 
-	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited)
+	taskHandle := newLocalTaskHandle(cmd, stdoutFile.Name(), stderrFile.Name(), hasProcessExited)
 
 	// Wait for local task in go routine.
 	go func() {
@@ -93,7 +93,14 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		taskHandle.clean()
+		err = syncAndClose(stdoutFile)
+		if err != nil {
+			log.Errorf("Cannot syncAndClose stdout file: %s", err.Error())
+		}
+		err = syncAndClose(stderrFile)
+		if err != nil {
+			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
+		}
 	}()
 
 	return taskHandle, nil
@@ -101,9 +108,9 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 // localTaskHandle implements TaskHandle interface.
 type localTaskHandle struct {
-	cmdHandler *exec.Cmd
-	stdoutFile *os.File
-	stderrFile *os.File
+	cmdHandler     *exec.Cmd
+	stdoutFilePath string
+	stderrFilePath string
 
 	// This channel is closed immediately when process exits.
 	// It is used to signal task termination.
@@ -116,13 +123,13 @@ type localTaskHandle struct {
 // newLocalTaskHandle returns a localTaskHandle instance.
 func newLocalTaskHandle(
 	cmdHandler *exec.Cmd,
-	stdoutFile *os.File,
-	stderrFile *os.File,
+	stdoutFile string,
+	stderrFile string,
 	hasProcessExited chan struct{}) *localTaskHandle {
 	t := &localTaskHandle{
 		cmdHandler:       cmdHandler,
-		stdoutFile:       stdoutFile,
-		stderrFile:       stderrFile,
+		stdoutFilePath:   stdoutFile,
+		stderrFilePath:   stderrFile,
 		hasProcessExited: hasProcessExited,
 	}
 	return t
@@ -192,47 +199,12 @@ func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *localTaskHandle) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
-		return nil, errors.Wrapf(err, "os.stat on file %q failed", taskHandle.stdoutFile.Name())
-	}
-
-	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stdoutFile, nil
+	return openFile(taskHandle.stdoutFilePath)
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *localTaskHandle) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
-		return nil, errors.Wrapf(err, "os.stat on file %q failed", taskHandle.stderrFile.Name())
-	}
-
-	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stderrFile, nil
-}
-
-func (taskHandle *localTaskHandle) clean() error {
-	errCol := errcollection.ErrorCollection{}
-
-	taskHandle.stdoutFile.Sync()
-	taskHandle.stderrFile.Sync()
-
-	if taskHandle.stdoutFile != nil {
-		_, err := taskHandle.stdoutFile.Stat()
-		// When stat can be successfully invoked, it means that file descriptor is OK.
-		if err == nil {
-			errCol.Add(taskHandle.stdoutFile.Close())
-		}
-	}
-
-	if taskHandle.stderrFile != nil {
-		_, err := taskHandle.stdoutFile.Stat()
-		// When stat can be successfully invoked, it means that file descriptor is OK.
-		if err == nil {
-			errCol.Add(taskHandle.stderrFile.Close())
-		}
-	}
-
-	return errCol.GetErrIfAny()
+	return openFile(taskHandle.stderrFilePath)
 }
 
 // Deprecated: Does nothing.
@@ -242,7 +214,7 @@ func (taskHandle *localTaskHandle) Clean() error {
 
 // EraseOutput removes task's stdout & stderr files.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	outputDir := filepath.Dir(taskHandle.stdoutFile.Name())
+	outputDir := filepath.Dir(taskHandle.stdoutFilePath)
 	return removeDirectory(outputDir)
 }
 

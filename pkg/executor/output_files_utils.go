@@ -6,6 +6,9 @@ import (
 	"path"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -68,4 +71,32 @@ func createExecutorOutputFiles(outputDir string) (stdout, stderr *os.File, err e
 	}
 
 	return stdout, stderr, err
+}
+
+func syncAndClose(file *os.File) error {
+	var errCol errcollection.ErrorCollection
+	err := file.Sync()
+	if err != nil {
+		errCol.Add(errCol)
+		log.Errorf("Cannnot sync stdout file: %s", err.Error())
+	}
+	err = file.Close()
+	if err != nil {
+		errCol.Add(errCol)
+		log.Errorf("Cannot close stdout file: %s", err.Error())
+	}
+	return errCol.GetErrIfAny()
+}
+
+func openFile(fileName string) (*os.File, error) {
+	if _, err := os.Stat(fileName); err != nil {
+		return nil, errors.Wrapf(err, "unable to stat file at %q", fileName)
+	}
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open file at %q", fileName)
+	}
+
+	return file, nil
 }
