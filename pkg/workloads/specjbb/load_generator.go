@@ -184,9 +184,8 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 	return handles, nil
 }
 
-// Populate is not implemented.
+// Populate. SpecJBB backend is ready to use immediately after run and it does not need any population.
 func (loadGenerator loadGenerator) Populate() (err error) {
-	logrus.Warn("Populate function is not implemented.")
 	return nil
 }
 
