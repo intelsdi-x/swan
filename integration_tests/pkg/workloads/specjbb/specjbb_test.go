@@ -26,7 +26,7 @@ func TestSPECjbb(t *testing.T) {
 	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
 		t.Logf("Skipping test due to an error %s", err)
-		t.Skipf("SPECjbb binary is not distributed with Swan. It requires license and should be purchased " +
+		t.Skip("SPECjbb binary is not distributed with Swan. It requires license and should be purchased " +
 			"separately (see README for details).")
 	}
 
