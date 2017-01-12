@@ -3,6 +3,7 @@ package specjbb
 import (
 	"bufio"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -23,9 +24,10 @@ const (
 func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
-	if _, err := os.Stat(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
-		t.Logf("Skipping test: unable to access jar file in %s", specjbbLoadGeneratorConfig.PathToBinary)
-		t.SkipNow()
+	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
+		t.Logf("Skipping test due to an error %s", err)
+		t.Skipf("SPECjbb binary is not distributed with Swan. It requires license and should be purchased " +
+			"separately (see README for details).")
 	}
 
 	Convey("While using default config", t, func() {
