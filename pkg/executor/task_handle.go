@@ -47,7 +47,7 @@ type TaskControl interface {
 	Wait(timeout time.Duration) bool
 	// Deprecated: Does nothing.
 	Clean() error
-	// EraseOutput removes task's stdout & stderr files.
+	// EraseOutput deletes the directory where output files resides.
 	EraseOutput() error
 }
 

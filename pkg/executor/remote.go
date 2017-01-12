@@ -3,7 +3,6 @@ package executor
 import (
 	"fmt"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
+	"path/filepath"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -285,15 +285,10 @@ func (taskHandle *remoteTaskHandle) Clean() error {
 	return nil
 }
 
-// EraseOutput removes task's stdout & stderr files.
+// EraseOutput deletes the directory where stdout file resides.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(taskHandle.stdoutFilePath)
-
-	// Remove temporary directory created for stdout and stderr.
-	if err := os.RemoveAll(outputDir); err != nil {
-		return err
-	}
-	return nil
+	outputDir := filepath.Dir(taskHandle.stdoutFilePath)
+	return removeDirectory(outputDir)
 }
 
 // Wait waits for the command to finish with the given timeout time.

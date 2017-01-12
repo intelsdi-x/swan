@@ -211,22 +211,10 @@ func (taskHandle *localTaskHandle) Clean() error {
 	return nil
 }
 
-// EraseOutput removes task's stdout & stderr files.
+// EraseOutput deletes the directory where stdout file resides.
 func (taskHandle *localTaskHandle) EraseOutput() error {
 	outputDir := filepath.Dir(taskHandle.stdoutFilePath)
 	return removeDirectory(outputDir)
-}
-
-// removeDirectory removes directory if exists.
-func removeDirectory(directory string) error {
-	if _, err := os.Stat(directory); os.IsNotExist(err) {
-		return nil
-	}
-
-	if err := os.RemoveAll(directory); err != nil {
-		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
-	}
-	return nil
 }
 
 // Wait waits for the command to finish with the given timeout time.

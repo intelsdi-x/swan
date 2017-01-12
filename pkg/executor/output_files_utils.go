@@ -20,7 +20,8 @@ func getBinaryNameFromCommand(command string) (string, error) {
 	return name, nil
 }
 
-func createOutputDirectory(command string, prefix string) (string, error) {
+// createOutputDirectory creates directory for executor output and returns path to it when successful, or error if not.
+func createOutputDirectory(command string, prefix string) (createdDirectoryPath string, err error) {
 	if len(command) == 0 {
 		return "", errors.New("empty command string")
 	}
@@ -35,16 +36,16 @@ func createOutputDirectory(command string, prefix string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get working directory")
 	}
-	outputDir, err := ioutil.TempDir(pwd, prefix+"_"+commandName+"_")
+	createdDirectoryPath, err = ioutil.TempDir(pwd, prefix+"_"+commandName+"_")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create output directory for %q", commandName)
 	}
-	if err = os.Chmod(outputDir, directoryPrivileges); err != nil {
-		os.RemoveAll(outputDir)
-		return "", errors.Wrapf(err, "failed to set privileges for dir %q", outputDir)
+	if err = os.Chmod(createdDirectoryPath, directoryPrivileges); err != nil {
+		os.RemoveAll(createdDirectoryPath)
+		return "", errors.Wrapf(err, "failed to set privileges for dir %q", createdDirectoryPath)
 	}
 
-	return outputDir, nil
+	return createdDirectoryPath, nil
 }
 
 func createExecutorOutputFiles(outputDir string) (stdout, stderr *os.File, err error) {
@@ -98,4 +99,16 @@ func openFile(fileName string) (*os.File, error) {
 	}
 
 	return file, nil
+}
+
+// removeDirectory removes directory if exists.
+func removeDirectory(directory string) error {
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		return nil
+	}
+
+	if err := os.RemoveAll(directory); err != nil {
+		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
+	}
+	return nil
 }
