@@ -1,4 +1,4 @@
-package kubernetes_helpers
+package k8sports
 
 import (
 	"testing"

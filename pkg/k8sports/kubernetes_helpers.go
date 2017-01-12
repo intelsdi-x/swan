@@ -1,4 +1,4 @@
-package kubernetes_helpers
+package k8sports
 
 import (
 	"k8s.io/client-go/1.5/pkg/api/resource"
@@ -10,7 +10,7 @@ import (
 // functions 'IsPodReady' and 'GetPodQOS' that are needed by Swan thus basing on
 // kubernetes 'master' branch were reimplemented to meet original functionality.
 
-// IsPorReady returns true if Pod has condition ready fulfilled
+// IsPodReady returns true if Pod has condition ready fulfilled
 func IsPodReady(pod *v1.Pod) bool {
 	for i := range pod.Status.Conditions {
 		if pod.Status.Conditions[i].Type == v1.PodReady {

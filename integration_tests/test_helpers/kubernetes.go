@@ -6,34 +6,35 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/api"
+	v1 "k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/rest"
 )
 
 // KubeClient is a helper struct to communicate with K8s API. It stores
 // Kubernetes client and extends it to additional functionality needed
 // by integration tests.
 type KubeClient struct {
-	*client.Client
+	Clientset *kubernetes.Clientset
 	namespace string
 }
 
 // NewKubeClient creates KubeClient object based on given KubernetesConfig
 // structure. It returns error if given configuration is invalid.
 func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, error) {
-	kubectlConfig := &restclient.Config{
+	kubectlConfig := &rest.Config{
 		Host:     kubernetesConfig.Address,
 		Username: kubernetesConfig.Username,
 		Password: kubernetesConfig.Password,
 	}
 
-	cli, err := client.New(kubectlConfig)
+	cli, err := kubernetes.NewForConfig(kubectlConfig)
 	if err != nil {
 		return nil, err
 	}
 	return &KubeClient{
-		Client:    cli,
+		Clientset: cli,
 		namespace: kubernetesConfig.Namespace,
 	}, nil
 }
@@ -79,23 +80,23 @@ func (k *KubeClient) kubectlWait(filterFunction func() bool, timeout time.Durati
 }
 
 // GetPods gathers running and not running pods from K8s cluster.
-func (k *KubeClient) GetPods() ([]*api.Pod, []*api.Pod, error) {
-	pods, err := k.Pods(k.namespace).List(api.ListOptions{})
+func (k *KubeClient) GetPods() ([]*v1.Pod, []*v1.Pod, error) {
+	pods, err := k.Clientset.Core().Pods(k.namespace).List(api.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
-	var runningPods []*api.Pod
-	var notRunningPods []*api.Pod
+	var runningPods []*v1.Pod
+	var notRunningPods []*v1.Pod
 
 	for _, pod := range pods.Items {
 		switch pod.Status.Phase {
-		case api.PodRunning:
+		case v1.PodRunning:
 			runningPods = append(runningPods, &pod)
-		case api.PodPending:
-		case api.PodSucceeded:
-		case api.PodFailed:
+		case v1.PodPending:
+		case v1.PodSucceeded:
+		case v1.PodFailed:
 			notRunningPods = append(notRunningPods, &pod)
-		case api.PodUnknown:
+		case v1.PodUnknown:
 			return nil, nil, fmt.Errorf("at least one of pods is in Unknown state")
 		}
 	}
@@ -103,13 +104,13 @@ func (k *KubeClient) GetPods() ([]*api.Pod, []*api.Pod, error) {
 	return runningPods, notRunningPods, nil
 }
 
-func (k *KubeClient) getReadyNodes() ([]*api.Node, error) {
-	nodes, err := k.Nodes().List(api.ListOptions{})
+func (k *KubeClient) getReadyNodes() ([]*v1.Node, error) {
+	nodes, err := k.Clientset.Core().Nodes().List(api.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var readyNodes []*api.Node
+	var readyNodes []*v1.Node
 	for _, node := range nodes.Items {
 		for _, condition := range node.Status.Conditions {
 			if condition.Type == "Ready" && condition.Status != "True" {
@@ -124,12 +125,12 @@ func (k *KubeClient) getReadyNodes() ([]*api.Node, error) {
 // DeletePod with given podName.
 func (k *KubeClient) DeletePod(podName string) error {
 	var oneSecond int64 = 1
-	return k.Pods(k.namespace).Delete(podName, &api.DeleteOptions{GracePeriodSeconds: &oneSecond})
+	return k.Clientset.Core().Pods(k.namespace).Delete(podName, &api.DeleteOptions{GracePeriodSeconds: &oneSecond})
 }
 
 // Node assume just one node a return it. Note panics if unavaiable (this is just test helper!).
-func (k *KubeClient) node() *api.Node {
-	nodes, err := k.Nodes().List(api.ListOptions{})
+func (k *KubeClient) node() *v1.Node {
+	nodes, err := k.Clientset.Core().Nodes().List(api.ListOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -140,8 +141,8 @@ func (k *KubeClient) node() *api.Node {
 }
 
 // UpdateNode updates nodes metadata e.g. taints (Note: can panic).
-func (k *KubeClient) UpdateNode(node *api.Node) {
-	_, err := k.Client.Nodes().Update(node)
+func (k *KubeClient) UpdateNode(node *v1.Node) {
+	_, err := k.Clientset.Core().Nodes().Update(node)
 	if err != nil {
 		panic(err)
 	}
@@ -173,7 +174,7 @@ func (k *KubeClient) UntaintNode() {
 	}
 	node := k.node()
 	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-	_, err = k.Client.Nodes().Update(node)
+	_, err = k.Clientset.Core().Nodes().Update(node)
 	if err != nil {
 		panic(err)
 	}
