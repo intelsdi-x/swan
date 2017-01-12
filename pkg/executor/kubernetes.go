@@ -678,9 +678,10 @@ func (kw *kubernetesWatcher) setupLogs() {
 
 		// Start "copier" goroutine for copying logs api to local files.
 		go func() {
-			stdoutFile, err := openFile(kw.stdoutFilePath)
+			log.Infof("stdout file path to open: %s", kw.stdoutFilePath)
+			stdoutFile, err := os.OpenFile(kw.stdoutFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
 			if err != nil {
-				log.Errorf("K8s copier: cannot open file log copying: %s", err.Error())
+				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
 			}
 			defer syncAndClose(stdoutFile)
@@ -693,5 +694,9 @@ func (kw *kubernetesWatcher) setupLogs() {
 
 			log.Debugf("K8s copier: log copy and sync done for pod %q", kw.pod.Name)
 		}()
+
+		//log.Debugf("K8s copier: before sleep %q", kw.pod.Name)
+		//time.Sleep(5 * time.Second)
+		//log.Debugf("K8s copier: after sleep %q", kw.pod.Name)
 	})
 }

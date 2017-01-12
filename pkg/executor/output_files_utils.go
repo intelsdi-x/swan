@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const outputFilePrivileges = os.FileMode(0644)
+
 func getBinaryNameFromCommand(command string) (string, error) {
 	argsSplit := strings.Split(command, " ")
 	if len(argsSplit) == 0 {
@@ -48,29 +50,23 @@ func createOutputDirectory(command string, prefix string) (createdDirectoryPath 
 	return createdDirectoryPath, nil
 }
 
-func createExecutorOutputFiles(outputDir string) (stdout, stderr *os.File, err error) {
-	filePrivileges := os.FileMode(0644)
-
+func createExecutorOutputFiles(outputDir string) (stdoutFile, stderrFile *os.File, err error) {
 	stdoutFileName := path.Join(outputDir, "stdout")
-	stdout, err = os.Create(stdoutFileName)
+	stdoutFile, err = os.OpenFile(stdoutFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "creating %q failed", stdoutFileName)
 	}
-	if err = stdout.Chmod(filePrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stdout.Name())
-	}
 
 	stderrFileName := path.Join(outputDir, "stderr")
-	stderr, err = os.OpenFile(stderrFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC|os.O_SYNC, 0666)
+	stderrFile, err = os.OpenFile(stderrFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
+		// Clean created stdout.
+		stdoutFile.Close()
 		os.Remove(stdoutFileName)
 		return nil, nil, errors.Wrapf(err, "os.Create failed for path %q", stderrFileName)
 	}
-	if err = stderr.Chmod(filePrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stderr.Name())
-	}
 
-	return stdout, stderr, err
+	return stdoutFile, stderrFile, nil
 }
 
 func syncAndClose(file *os.File) error {
