@@ -18,7 +18,7 @@ import (
 
 // Constants representing plugin name, version, type and unit of measurement used.
 const (
-	NAME        = "caffeinference"
+	NAME        = "caffe-inference"
 	VERSION     = 1
 	TYPE        = plugin.CollectorPluginType
 	METRICNAME  = "batches"

@@ -21,12 +21,12 @@ var (
 )
 
 func TestCaffeInferenceCollectorPlugin(t *testing.T) {
-	Convey("When I create Caffe-inference plugin object", t, func() {
+	Convey("When I create caffe-inference plugin object", t, func() {
 		caffePlugin := InferenceCollector{}
 
 		Convey("I should receive meta data for plugin", func() {
 			meta := Meta()
-			So(meta.Name, ShouldEqual, "caffeinference")
+			So(meta.Name, ShouldEqual, "caffe-inference")
 			So(meta.Version, ShouldEqual, 1)
 			So(meta.Type, ShouldEqual, snapPlugin.CollectorPluginType)
 		})
