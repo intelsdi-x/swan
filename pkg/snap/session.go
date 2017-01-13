@@ -69,6 +69,7 @@ func NewSession(
 	secondString := fmt.Sprintf("%ds", int(interval.Seconds()))
 
 	return &Session{
+		TaskName: taskName,
 		Schedule: &client.Schedule{
 			Type:     "simple",
 			Interval: secondString,
