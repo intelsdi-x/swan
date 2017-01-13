@@ -24,13 +24,13 @@ Note:
 - whenPodFinished always calls whenPodReady - if pod finished it had to be running before - to setup logs,
 - whenPodFinished may be skipped at all then outputCopied never closed
 
-Communication with taskHandle through started/stopped and logsReady happens:
+Communication with taskHandle is through taskWatcher events:
 - whenPodReady it signals to "started" to taskHandle (Execute method is unblocked)
 - whenPodFinished it just examines the state of pod and stores it exit code you can read taskHandle.ExitCode,
 - whenPodDeleted signals by closing "stopped" channel - taskHandle.Status() return terminated,
 
 
-The logs are prepared ("copier" goroutine) with setupLogs() and happens at every ocasions (but only once).
+The logs are prepared ("copier" goroutine) with setupLogs() and happens at every occasion (but only once).
 
 Every "handler" (when*) and every action like setupLogs() and deletePod() can happen only once.
 
@@ -259,6 +259,20 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// https://github.com/kubernetes/kubernetes/pull/31446
 	wrappedCommand := "echo;" + command
 
+	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
+	podManifest, err := k8s.newPod(wrappedCommand)
+	if err != nil {
+		log.Errorf("K8s executor: cannot create pod manifest")
+		return nil, errors.Wrapf(err, "cannot create pod manifest")
+	}
+
+	pod, err := podsAPI.Create(podManifest)
+	if err != nil {
+		log.Errorf("K8s executor: cannot schedule pod %q with namespace %q", k8s.config.PodName, k8s.config.Namespace)
+		return nil, errors.Wrapf(err, "cannot schedule pod %q with namespace %q",
+			k8s.config.PodName, k8s.config.Namespace)
+	}
+
 	// Prepare local files
 	outputDirectory, err := createOutputDirectory(command, "kubernetes")
 	if err != nil {
@@ -275,22 +289,6 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	// Those file descriptors are local to scope of Execute function and does not leak anywhere.
 	defer syncAndClose(stdoutFile)
 	defer syncAndClose(stderrFile)
-
-	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
-	podManifest, err := k8s.newPod(wrappedCommand)
-	if err != nil {
-		removeDirectory(outputDirectory)
-		log.Errorf("K8s executor: cannot create pod manifest")
-		return nil, errors.Wrapf(err, "cannot create pod manifest")
-	}
-
-	pod, err := podsAPI.Create(podManifest)
-	if err != nil {
-		removeDirectory(outputDirectory)
-		log.Errorf("K8s executor: cannot schedule pod %q with namespace %q", k8s.config.PodName, k8s.config.Namespace)
-		return nil, errors.Wrapf(err, "cannot schedule pod %q with namespace %q",
-			k8s.config.PodName, k8s.config.Namespace)
-	}
 
 	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(pod))
 	taskHandle := &kubernetesTaskHandle{
@@ -310,6 +308,8 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		command:    wrappedCommand,
 
 		stdoutFilePath: stdoutFile.Name(),
+
+		logsCopyFinished: make(chan struct{}, 1),
 
 		started:         taskHandle.started,
 		stopped:         taskHandle.stopped,
@@ -473,10 +473,11 @@ type kubernetesWatcher struct {
 
 	stdoutFilePath string
 
-	started         chan struct{}
-	stopped         chan struct{}
-	requestDelete   chan struct{}
-	exitCodeChannel chan int
+	started          chan struct{}
+	stopped          chan struct{}
+	logsCopyFinished chan struct{}
+	requestDelete    chan struct{}
+	exitCodeChannel  chan int
 
 	taskHandle *kubernetesTaskHandle
 
@@ -642,7 +643,10 @@ func (kw *kubernetesWatcher) whenPodDeleted() {
 	kw.oncePodDeleted.Do(func() {
 		kw.setupLogs()
 		log.Debug("K8s task watcher: pod stopped [stopped]")
+		// wait for logs to finish copying before announcing pod termination.
+		<-kw.logsCopyFinished
 		close(kw.stopped)
+
 	})
 }
 
@@ -673,12 +677,14 @@ func (kw *kubernetesWatcher) setupLogs() {
 		logStream, err := kw.podsAPI.GetLogs(kw.pod.Name, &api.PodLogOptions{Follow: true}).Stream()
 		if err != nil {
 			log.Warnf("K8s task watcher: cannot create log stream: %s ", err.Error())
+			close(kw.logsCopyFinished)
 			return
 		}
 
 		// Start "copier" goroutine for copying logs api to local files.
 		go func() {
-			log.Infof("stdout file path to open: %s", kw.stdoutFilePath)
+			defer close(kw.logsCopyFinished)
+
 			stdoutFile, err := os.OpenFile(kw.stdoutFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
 			if err != nil {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
@@ -694,9 +700,5 @@ func (kw *kubernetesWatcher) setupLogs() {
 
 			log.Debugf("K8s copier: log copy and sync done for pod %q", kw.pod.Name)
 		}()
-
-		//log.Debugf("K8s copier: before sleep %q", kw.pod.Name)
-		//time.Sleep(5 * time.Second)
-		//log.Debugf("K8s copier: after sleep %q", kw.pod.Name)
 	})
 }
