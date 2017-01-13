@@ -6,11 +6,13 @@ Kubernetes executor under the hood is using these are three components:
 	- runs in main goroutine,
 	- gives back control to user by returning newly created taskHandle
 - watcher:
-	- prepares log files and creates "copier",
+	- creates "log copier" via setupLogs() funcion invocation
 	- responsible for monitoring state of Pod and passing to information to taskHandle,
 	- also in case of failure or part of cleaning up or when asked directly by taskHandle - deletes pod,
 - copier:
-	- is responsible for copying logs from streamed kubernetes response and closing files after,
+	- Resides in setupLogs() function
+	- It is responsible for copying logs from streamed kubernetes response
+	- Closes logsCopyFinished channel when logs finishes streaming or failed to create stream
 
 
 Actually pod transitions by those phases which maps to those handles:
@@ -286,15 +288,16 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		log.Errorf("Kubernetes Execute: cannot create output files for command %q: %s", command, err.Error())
 		return nil, err
 	}
-	// Those file descriptors are local to scope of Execute function and does not leak anywhere.
-	defer syncAndClose(stdoutFile)
-	defer syncAndClose(stderrFile)
+	stdoutFileName := stdoutFile.Name()
+	stderrFileName := stderrFile.Name()
+	stdoutFile.Close()
+	stderrFile.Close()
 
 	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(pod))
 	taskHandle := &kubernetesTaskHandle{
 		podName:         pod.Name,
-		stdoutFilePath:  stdoutFile.Name(),
-		stderrFilePath:  stderrFile.Name(),
+		stdoutFilePath:  stdoutFileName,
+		stderrFilePath:  stderrFileName,
 		started:         make(chan struct{}),
 		stopped:         make(chan struct{}),
 		requestDelete:   make(chan struct{}, 1),
@@ -307,7 +310,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		taskHandle: taskHandle,
 		command:    wrappedCommand,
 
-		stdoutFilePath: stdoutFile.Name(),
+		stdoutFilePath: stdoutFileName,
 
 		logsCopyFinished: make(chan struct{}, 1),
 
