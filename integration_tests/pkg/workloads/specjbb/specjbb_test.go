@@ -3,6 +3,7 @@ package specjbb
 import (
 	"bufio"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -22,9 +23,14 @@ const (
 // TestSPECjbb is an integration test with SPECjbb components.
 func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
+	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
+		t.Logf("Skipping test due to an error %s", err)
+		t.Skip("SPECjbb binary is not distributed with Swan. It requires license and should be purchased " +
+			"separately (see README for details).")
+	}
 
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
@@ -129,7 +135,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
@@ -185,7 +190,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
 		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {

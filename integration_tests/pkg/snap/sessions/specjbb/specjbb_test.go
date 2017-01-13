@@ -4,10 +4,10 @@ import (
 	"path"
 	"testing"
 
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 )
 
 func TestSnaptelSpecJbbSession(t *testing.T) {
