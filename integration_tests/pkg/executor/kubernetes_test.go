@@ -190,8 +190,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			executorConfig.LaunchTimeout = 1 * time.Second
 			k8sexecutor, err := executor.NewKubernetes(executorConfig)
 			So(err, ShouldBeNil)
-			_, err = k8sexecutor.Execute("wrong command")
+			handle, err := k8sexecutor.Execute("wrong command")
 			So(err, ShouldBeNil)
+			defer handle.EraseOutput()
 		})
 
 		Convey("Timeout should not block execution because of files being unavailable", func() {

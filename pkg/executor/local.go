@@ -44,9 +44,13 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// TODO: delete this as we use PID namespace instead
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "local")
+	outputDirectory, err := createOutputDirectory(command, "local")
 	if err != nil {
-		eraseOutput(stdoutFile)
+		return nil, errors.Wrapf(err, "createOutputDirectory for command %q failed", command)
+	}
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
+	if err != nil {
+		removeDirectory(outputDirectory)
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -58,7 +62,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		eraseOutput(stdoutFile)
+		removeDirectory(outputDirectory)
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
@@ -67,7 +71,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
 
-	taskHandle := newLocalTaskHandle(cmd, stdoutFile, stderrFile, hasProcessExited)
+	taskHandle := newLocalTaskHandle(cmd, stdoutFile.Name(), stderrFile.Name(), hasProcessExited)
 
 	// Wait for local task in go routine.
 	go func() {
@@ -88,8 +92,14 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 			}
 		}
 
-		stdoutFile.Sync()
-		stderrFile.Sync()
+		err = syncAndClose(stdoutFile)
+		if err != nil {
+			log.Errorf("Cannot syncAndClose stdout file: %s", err.Error())
+		}
+		err = syncAndClose(stderrFile)
+		if err != nil {
+			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
+		}
 	}()
 
 	return taskHandle, nil
@@ -97,9 +107,9 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 // localTaskHandle implements TaskHandle interface.
 type localTaskHandle struct {
-	cmdHandler *exec.Cmd
-	stdoutFile *os.File
-	stderrFile *os.File
+	cmdHandler     *exec.Cmd
+	stdoutFilePath string
+	stderrFilePath string
 
 	// This channel is closed immediately when process exits.
 	// It is used to signal task termination.
@@ -112,13 +122,13 @@ type localTaskHandle struct {
 // newLocalTaskHandle returns a localTaskHandle instance.
 func newLocalTaskHandle(
 	cmdHandler *exec.Cmd,
-	stdoutFile *os.File,
-	stderrFile *os.File,
+	stdoutFile string,
+	stderrFile string,
 	hasProcessExited chan struct{}) *localTaskHandle {
 	t := &localTaskHandle{
 		cmdHandler:       cmdHandler,
-		stdoutFile:       stdoutFile,
-		stderrFile:       stderrFile,
+		stdoutFilePath:   stdoutFile,
+		stderrFilePath:   stderrFile,
 		hasProcessExited: hasProcessExited,
 	}
 	return t
@@ -188,59 +198,23 @@ func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *localTaskHandle) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stdoutFile.Name()); err != nil {
-		return nil, errors.Wrapf(err, "os.stat on file %q failed", taskHandle.stdoutFile.Name())
-	}
-
-	taskHandle.stdoutFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stdoutFile, nil
+	return openFile(taskHandle.stdoutFilePath)
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *localTaskHandle) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stderrFile.Name()); err != nil {
-		return nil, errors.Wrapf(err, "os.stat on file %q failed", taskHandle.stderrFile.Name())
-	}
-
-	taskHandle.stderrFile.Seek(0, os.SEEK_SET)
-	return taskHandle.stderrFile, nil
+	return openFile(taskHandle.stderrFilePath)
 }
 
-// Clean removes files to which stdout and stderr of executed command was written.
+// Deprecated: Does nothing.
 func (taskHandle *localTaskHandle) Clean() error {
-	// Close stdout.
-	stdoutErr := taskHandle.stdoutFile.Close()
-
-	// Close stderr.
-	stderrErr := taskHandle.stderrFile.Close()
-
-	if stdoutErr != nil {
-		return errors.Wrapf(stdoutErr, "close on file %q failed", taskHandle.stdoutFile.Name())
-	}
-
-	if stderrErr != nil {
-		return errors.Wrapf(stderrErr, "close on file %q failed", taskHandle.stderrFile.Name())
-	}
-
 	return nil
 }
 
-// EraseOutput removes task's stdout & stderr files.
+// EraseOutput deletes the directory where stdout file resides.
 func (taskHandle *localTaskHandle) EraseOutput() error {
-	return eraseOutput(taskHandle.stdoutFile)
-}
-
-// eraseOutput requires only one file from stdout and stderr files. It's looking for parent dir and remove it.
-func eraseOutput(outputFile *os.File) error {
-	// Remove temporary directory created for stdout and stderr.
-	if outputFile == nil {
-		return nil
-	}
-	outputDir := filepath.Dir(outputFile.Name())
-	if err := os.RemoveAll(outputDir); err != nil {
-		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", outputDir)
-	}
-	return nil
+	outputDir := filepath.Dir(taskHandle.stdoutFilePath)
+	return removeDirectory(outputDir)
 }
 
 // Wait waits for the command to finish with the given timeout time.

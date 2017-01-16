@@ -3,7 +3,6 @@ package executor
 import (
 	"fmt"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
+	"path/filepath"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -81,8 +81,13 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "connection.sewSessionWithPty for command %q failed with error %v", command, err)
 	}
 
-	stdoutFile, stderrFile, err := createExecutorOutputFiles(command, "remote")
+	output, err := createOutputDirectory(command, "remote")
 	if err != nil {
+		return nil, errors.Wrapf(err, "createOutputDirectory for command %q failed", command)
+	}
+	stdoutFile, stderrFile, err := createExecutorOutputFiles(output)
+	if err != nil {
+		removeDirectory(output)
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
@@ -143,26 +148,15 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 				*exitCode = exitError.Waitmsg.ExitStatus()
 			}
 		}
-
-		// We need to close the channel before we call LogSuccessfulExecution() or LogUnsuccessfulExecution().
-		// Otherwise it won't be possible to retrieve exit code from the task handle.
 		close(hasProcessExited)
 
-		err = stdoutFile.Sync()
+		err = syncAndClose(stdoutFile)
 		if err != nil {
-			log.Errorf("Cannnot sync stdout file: %s", err.Error())
+			log.Errorf("Cannot syncAndClose stdout file: %s", err.Error())
 		}
-		err = stdoutFile.Close()
+		err = syncAndClose(stderrFile)
 		if err != nil {
-			log.Errorf("Cannot close stdout file: %s", err.Error())
-		}
-		err = stderrFile.Sync()
-		if err != nil {
-			log.Errorf("Cannot sync stderr file: %s", err.Error())
-		}
-		err = stderrFile.Close()
-		if err != nil {
-			log.Errorf("Cannot close stderr file: %s", err.Error())
+			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
 		}
 	}()
 
@@ -278,46 +272,23 @@ func (taskHandle *remoteTaskHandle) ExitCode() (int, error) {
 
 // StdoutFile returns a file handle for file to the task's stdout file.
 func (taskHandle *remoteTaskHandle) StdoutFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stdoutFilePath); err != nil {
-		return nil, errors.Wrapf(err, "unable to stat stdout file at %q", taskHandle.stdoutFilePath)
-	}
-
-	file, err := os.Open(taskHandle.stdoutFilePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to open stdout file at %q", taskHandle.stdoutFilePath)
-	}
-
-	return file, nil
+	return openFile(taskHandle.stdoutFilePath)
 }
 
 // StderrFile returns a file handle for file to the task's stderr file.
 func (taskHandle *remoteTaskHandle) StderrFile() (*os.File, error) {
-	if _, err := os.Stat(taskHandle.stderrFilePath); err != nil {
-		return nil, errors.Wrapf(err, "unable to stat stderr file at %q", taskHandle.stderrFilePath)
-	}
-
-	file, err := os.Open(taskHandle.stderrFilePath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to open stderr file at %q", taskHandle.stderrFilePath)
-	}
-
-	return file, nil
+	return openFile(taskHandle.stderrFilePath)
 }
 
-// Clean removes files to which stdout and stderr of executed command was written.
+// Deprecated: Does nothing.
 func (taskHandle *remoteTaskHandle) Clean() error {
 	return nil
 }
 
-// EraseOutput removes task's stdout & stderr files.
+// EraseOutput deletes the directory where stdout file resides.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
-	outputDir, _ := path.Split(taskHandle.stdoutFilePath)
-
-	// Remove temporary directory created for stdout and stderr.
-	if err := os.RemoveAll(outputDir); err != nil {
-		return err
-	}
-	return nil
+	outputDir := filepath.Dir(taskHandle.stdoutFilePath)
+	return removeDirectory(outputDir)
 }
 
 // Wait waits for the command to finish with the given timeout time.

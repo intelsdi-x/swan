@@ -6,8 +6,12 @@ import (
 	"path"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
+
+const outputFilePrivileges = os.FileMode(0644)
 
 func getBinaryNameFromCommand(command string) (string, error) {
 	argsSplit := strings.Split(command, " ")
@@ -18,49 +22,89 @@ func getBinaryNameFromCommand(command string) (string, error) {
 	return name, nil
 }
 
-func createExecutorOutputFiles(command, prefix string) (stdout, stderr *os.File, err error) {
+// createOutputDirectory creates directory for executor output and returns path to it when successful, or error if not.
+func createOutputDirectory(command string, prefix string) (createdDirectoryPath string, err error) {
 	if len(command) == 0 {
-		return nil, nil, errors.New("empty command string")
+		return "", errors.New("empty command string")
 	}
 
 	commandName, err := getBinaryNameFromCommand(command)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	directoryPrivileges := os.FileMode(0755)
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get working directory")
+		return "", errors.Wrap(err, "failed to get working directory")
 	}
-	outputDir, err := ioutil.TempDir(pwd, prefix+"_"+commandName+"_")
+	createdDirectoryPath, err = ioutil.TempDir(pwd, prefix+"_"+commandName+"_")
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to create output directory for %q", commandName)
+		return "", errors.Wrapf(err, "failed to create output directory for %q", commandName)
 	}
-	if err = os.Chmod(outputDir, directoryPrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for dir %q", outputDir)
+	if err = os.Chmod(createdDirectoryPath, directoryPrivileges); err != nil {
+		os.RemoveAll(createdDirectoryPath)
+		return "", errors.Wrapf(err, "failed to set privileges for dir %q", createdDirectoryPath)
 	}
 
-	filePrivileges := os.FileMode(0644)
+	return createdDirectoryPath, nil
+}
 
+func createExecutorOutputFiles(outputDir string) (stdoutFile, stderrFile *os.File, err error) {
 	stdoutFileName := path.Join(outputDir, "stdout")
-	stdout, err = os.Create(stdoutFileName)
+	stdoutFile, err = os.OpenFile(stdoutFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "creating %q failed", stdoutFileName)
 	}
-	if err = stdout.Chmod(filePrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stdout.Name())
-	}
 
 	stderrFileName := path.Join(outputDir, "stderr")
-	stderr, err = os.OpenFile(stderrFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC|os.O_SYNC, 0666)
+	stderrFile, err = os.OpenFile(stderrFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
+		// Clean created stdout.
+		stdoutFile.Close()
 		os.Remove(stdoutFileName)
 		return nil, nil, errors.Wrapf(err, "os.Create failed for path %q", stderrFileName)
 	}
-	if err = stderr.Chmod(filePrivileges); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to set privileges for file %q", stderr.Name())
+
+	return stdoutFile, stderrFile, nil
+}
+
+func syncAndClose(file *os.File) error {
+	var errCol errcollection.ErrorCollection
+	err := file.Sync()
+	if err != nil {
+		errCol.Add(err)
+		log.Errorf("Cannnot sync stdout file: %s", err.Error())
+	}
+	err = file.Close()
+	if err != nil {
+		errCol.Add(err)
+		log.Errorf("Cannot close stdout file: %s", err.Error())
+	}
+	return errCol.GetErrIfAny()
+}
+
+func openFile(fileName string) (*os.File, error) {
+	if _, err := os.Stat(fileName); err != nil {
+		return nil, errors.Wrapf(err, "unable to stat file at %q", fileName)
 	}
 
-	return stdout, stderr, err
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open file at %q", fileName)
+	}
+
+	return file, nil
+}
+
+// removeDirectory removes directory if exists.
+func removeDirectory(directory string) error {
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		return nil
+	}
+
+	if err := os.RemoveAll(directory); err != nil {
+		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
+	}
+	return nil
 }

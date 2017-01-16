@@ -87,8 +87,7 @@ func (m *ClusterTaskHandle) Wait(timeout time.Duration) bool {
 	return isMasterTerminated
 }
 
-// Clean cleans master and agents temporary resources.
-// It also closes the tasks' stdout & stderr files.
+// Clean Deprecated: Does nothing.
 func (m *ClusterTaskHandle) Clean() (err error) {
 	var errCollection errcollection.ErrorCollection
 

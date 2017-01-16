@@ -1,12 +1,12 @@
 package executor
 
 import (
-	"testing"
-
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"os"
 	"path"
+	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -47,7 +47,9 @@ func TestBinaryNameFromCommand(t *testing.T) {
 
 func TestCreateExecutorOutputFiles(t *testing.T) {
 	Convey("I should be able to create files and folders for experiment details", t, func() {
-		stdout, stderr, err := createExecutorOutputFiles("command", "test")
+		outputDir, err := createOutputDirectory("command", "test")
+		So(err, ShouldBeNil)
+		stdout, stderr, err := createExecutorOutputFiles(outputDir)
 		So(err, ShouldBeNil)
 		So(stdout, ShouldNotBeNil)
 		So(stderr, ShouldNotBeNil)
