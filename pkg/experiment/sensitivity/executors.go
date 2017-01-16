@@ -8,6 +8,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"fmt"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
 
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	kubernetesMaster = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
 )
 
 // NewRemote is helper for creating remotes with default sshConfig.
@@ -38,8 +40,13 @@ func NewRemote(ip string) (executor.Executor, error) {
 func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory ExecutorFactoryFunc, cleanup func(), err error) {
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
-		k8sConfig.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\"" // Enable AddToleration path by default.
-		k8sLauncher := kubernetes.New(executor.NewLocal(), executor.NewLocal(), k8sConfig)
+		masterAddress := kubernetesMaster.Value()
+		apiAddress := fmt.Sprintf("%s:%s", masterAddress, 8080)
+		masterExecutor, err := NewRemote(masterAddress)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
 		k8sClusterTaskHandle, err := k8sLauncher.Launch()
 		if err != nil {
 			return nil, nil, nil, err
@@ -55,6 +62,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		hpExecutorConfig.PodNamePrefix = "swan-hp"
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
+		hpExecutorConfig.Address = apiAddress
 
 		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
 		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
@@ -73,6 +81,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
 			config.Privileged = true // swan aggressor use unshare, which requires sudo.
+			config.Address = apiAddress
 			return executor.NewKubernetes(config)
 		}
 	} else {
