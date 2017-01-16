@@ -57,6 +57,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 
 	return &SessionLauncher{
 		session: snap.NewSession(
+			"swan-caffe-inference-session",
 			[]string{"/intel/swan/caffe/inference/*/batches"},
 			config.Interval,
 			snapClient,

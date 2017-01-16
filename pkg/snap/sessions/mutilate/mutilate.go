@@ -57,6 +57,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 
 	return &SessionLauncher{
 		session: snap.NewSession(
+			"swan-mutilate-session",
 			[]string{
 				"/intel/swan/mutilate/*/avg",
 				"/intel/swan/mutilate/*/std",
