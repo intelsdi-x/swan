@@ -1,6 +1,7 @@
 package sensitivity
 
 import (
+	"fmt"
 	"os/user"
 	"runtime"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
-	"fmt"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
 
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
-	kubernetesMaster = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
+	kubernetesMaster    = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
 )
 
 // NewRemote is helper for creating remotes with default sshConfig.
