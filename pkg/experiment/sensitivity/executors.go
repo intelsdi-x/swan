@@ -41,7 +41,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
 		masterAddress := kubernetesMaster.Value()
-		apiAddress := fmt.Sprintf("%s:%s", masterAddress, 8080)
+		apiAddress := fmt.Sprintf("%s:%s", masterAddress, "8080")
 		masterExecutor, err := NewRemote(masterAddress)
 		if err != nil {
 			return nil, nil, nil, err
