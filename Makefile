@@ -5,8 +5,8 @@ TEST_OPT?=""
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env test_integration
-unit_test: deps_godeps test_unit
+integration_test: show_env test_integration test_integration_jupyter
+unit_test: deps_godeps test_unit test_unit_jupyter
 
 deps_all: deps_godeps deps_jupyter
 build_all: deps_all build_workloads build_plugins build_swan
@@ -85,12 +85,18 @@ test_unit:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./misc/...
 
+test_unit_jupyter:
+	(cd jupyter; py.test)
+
 test_integration:
 	go test -i ./integration_tests/... ./experiments/... ./misc/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
-	(cd jupyter; py.test)
+
+test_integration_jupyter:
+	sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id_stdout.txt
+	cat jupyter/integration_tests/experiment_id_stdout.txt | jupyter nbconvert --to script jupyter/integration_tests/integration_tests.ipynb
 
 cleanup:
 	rm -fr misc/**/*log

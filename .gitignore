@@ -8,6 +8,7 @@
 autom4te.cache/
 /artifacts
 /artifacts.tgz
+/jupyter/data
 /workloads/data_caching/memcached/memcached-1.4.25/build/
 /workloads/data_caching/memcached/memcached-1.4.25/config*
 /workloads/data_caching/memcached/memcached-1.4.25/.deps
