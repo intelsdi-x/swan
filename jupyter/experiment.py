@@ -94,7 +94,7 @@ class Experiment(object):
     def read_data_from_cassandra(self, cassandra_cluster, port, keyspace, ssl_options, experiment_id):
         session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
-                        FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % experiment_id
+                        FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % experiment_id
         statement = SimpleStatement(query, fetch_size=100)
 
         return session.execute(statement)
