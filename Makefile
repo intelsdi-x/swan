@@ -96,7 +96,7 @@ test_integration:
 
 test_integration_jupyter:
 	sudo -E snapteld -t 0 -p 8181 --control-listen-port 8082 &
-	sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
+	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo pkill snapteld
 	jupyter nbconvert --to script jupyter/integration_tests/integration_tests.ipynb
 	cat jupyter/integration_tests/experiment_id.stdout | python jupyter/integration_tests/integration_tests.py
