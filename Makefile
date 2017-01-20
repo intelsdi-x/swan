@@ -95,14 +95,19 @@ test_integration:
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
 
 test_integration_jupyter:
-	sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id_stdout.txt
-	cat jupyter/integration_tests/experiment_id_stdout.txt | jupyter nbconvert --to script jupyter/integration_tests/integration_tests.ipynb
+	sudo -E snapteld -t 0 -p 8181 --control-listen-port 8082 &
+	sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
+	sudo pkill snapteld
+	jupyter nbconvert --to script jupyter/integration_tests/integration_tests.ipynb
+	cat jupyter/integration_tests/experiment_id.stdout | python jupyter/integration_tests/integration_tests.py
+	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
 cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapteld_*
+	rm -fr jupyter/integration_tests/*.stdout
 
 remove_vendor:
 	rm -fr vendor/
