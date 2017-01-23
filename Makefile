@@ -5,15 +5,15 @@ TEST_OPT?=""
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env test_integration test_integration_jupyter
+integration_test: show_env test_integration
 unit_test: deps_godeps test_unit test_unit_jupyter
 
 deps_all: deps_godeps deps_jupyter
 build_all: deps_all build_workloads build_plugins build_swan
 build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
-build_and_test_all: build_all test_lint test_unit test_integration
-test_all: test_lint test_unit test_integration
+build_and_test_all: build_all test_all
+test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
@@ -94,7 +94,7 @@ test_integration:
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
 
-test_integration_jupyter:
+e2e_test:
 	sudo -E snapteld -t 0 -p 8181 --control-listen-port 8082 &
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo pkill snapteld
