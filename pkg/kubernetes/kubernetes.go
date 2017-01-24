@@ -30,11 +30,11 @@ const (
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	pathKubeAPIServerFlag   = conf.NewStringFlag("kube_apiserver_path", "Path to kube-apiserver binary", path.Join(fs.GetSwanBinPath(), "apiserver"))
-	pathKubeControllerFlag  = conf.NewStringFlag("kube_controller_path", "Path to kube-controller-manager binary", path.Join(fs.GetSwanBinPath(), "controller-manager"))
+	pathKubeAPIServerFlag   = conf.NewStringFlag("kube_apiserver_path", "Path to apiserver binary", path.Join(fs.GetSwanBinPath(), "apiserver"))
+	pathKubeControllerFlag  = conf.NewStringFlag("kube_controller_path", "Path to controller-manager binary", path.Join(fs.GetSwanBinPath(), "controller-manager"))
 	pathKubeletFlag         = conf.NewStringFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetSwanBinPath(), "kubelet"))
-	pathKubeProxyFlag       = conf.NewStringFlag("kube_proxy_path", "Path to kube-proxy binary", path.Join(fs.GetSwanBinPath(), "proxy"))
-	pathKubeSchedulerFlag   = conf.NewStringFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetSwanBinPath(), "scheduler"))
+	pathKubeProxyFlag       = conf.NewStringFlag("kube_proxy_path", "Path to proxy binary", path.Join(fs.GetSwanBinPath(), "proxy"))
+	pathKubeSchedulerFlag   = conf.NewStringFlag("kube_scheduler_path", "Path to scheduler binary", path.Join(fs.GetSwanBinPath(), "scheduler"))
 	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
