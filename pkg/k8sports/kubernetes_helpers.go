@@ -24,10 +24,11 @@ func IsPodReady(pod *v1.Pod) bool {
 
 var (
 	// Resource CPU and Memory
-	resNum = int(2)
-	zeroQ  = resource.MustParse("0")
+	supportedResourceNumber = int(2)
+	zeroQ                   = resource.MustParse("0")
 )
 
+// Supported Resources are: CPU and Memory.
 func isSupportedRes(res *v1.ResourceName) bool {
 	if *res == v1.ResourceCPU || *res == v1.ResourceMemory {
 		return true
@@ -35,7 +36,9 @@ func isSupportedRes(res *v1.ResourceName) bool {
 	return false
 }
 
-func processRequests(container *v1.Container, requests v1.ResourceList) {
+// countRequests iterates over given container and counts the
+// values for set Requests. The result is kept in 'request' ResourceList.
+func countRequests(container *v1.Container, requests v1.ResourceList) {
 	for reqName, reqQuantity := range container.Resources.Requests {
 		if isSupportedRes(&reqName) {
 			if reqQuantity.Cmp(zeroQ) == 1 {
@@ -50,7 +53,10 @@ func processRequests(container *v1.Container, requests v1.ResourceList) {
 	}
 }
 
-func processLimits(container *v1.Container, limits v1.ResourceList) int {
+// countLimits iterates over given container and counts the
+// values for set Limits. The result is kept in 'limits' ResourceList.
+// It returns the number of found supported Limits.
+func countLimits(container *v1.Container, limits v1.ResourceList) int {
 	limitsFound := make(map[v1.ResourceName]int)
 	for lName, lQuantity := range container.Resources.Limits {
 		if isSupportedRes(&lName) {
@@ -68,17 +74,19 @@ func processLimits(container *v1.Container, limits v1.ResourceList) int {
 	return len(limitsFound)
 }
 
-func isGuaranteed(requests, limits v1.ResourceList, isQos bool) bool {
-	if isQos {
-		for rName, rVal := range requests {
-			limit, ok := limits[rName]
-			if !ok || limit.Cmp(rVal) != 0 {
-				isQos = false
-				break
-			}
+// Class is Guaranteed only if Requests equals Limits globally
+// meaning that the same resources must be set and the values
+// must be equal.
+func isGuaranteed(requests, limits v1.ResourceList) bool {
+	guaranteed := true
+	for rName, rVal := range requests {
+		limit, ok := limits[rName]
+		if !ok || limit.Cmp(rVal) != 0 {
+			guaranteed = false
+			break
 		}
 	}
-	if isQos && len(requests) == len(limits) {
+	if guaranteed && len(requests) == len(limits) {
 		return true
 	}
 	return false
@@ -89,15 +97,20 @@ func isGuaranteed(requests, limits v1.ResourceList, isQos bool) bool {
 // Guaranteed - if across all containers request equals limits (CPU and Mem)
 // Burstable - if across all containers requests and limits differs (CPU and Mem)
 func GetPodQOS(pod *v1.Pod) qos.QOSClass {
+	// Pod's Requests
 	requests := v1.ResourceList{}
+	// Pod's Limits
 	limits := v1.ResourceList{}
-	isQos := true
-	for _, container := range pod.Spec.Containers {
-		processRequests(&container, requests)
 
-		lFound := processLimits(&container, limits)
-		if lFound != resNum {
-			isQos = false
+	guaranteed := true
+	for _, container := range pod.Spec.Containers {
+		countRequests(&container, requests)
+
+		limitsFound := countLimits(&container, limits)
+		if limitsFound != supportedResourceNumber {
+			// For Guaranteed all supported Resources need
+			// to have limits set.
+			guaranteed = false
 		}
 	}
 
@@ -105,7 +118,8 @@ func GetPodQOS(pod *v1.Pod) qos.QOSClass {
 		return qos.BestEffort
 	}
 
-	if isGuaranteed(requests, limits, isQos) {
+	// Check if 'Guaranteed' is fulfilled.
+	if guaranteed && isGuaranteed(requests, limits) {
 		return qos.Guaranteed
 	}
 

@@ -48,7 +48,7 @@ func newPod(name string, containers []v1.Container) *v1.Pod {
 
 func TestGetPodQOS(t *testing.T) {
 
-	// Cases for BestEffort
+	// Checks against BestEffort
 	Convey("A Pod with single Container without limits and requests set shall have BestEffort class", t, func() {
 		class := GetPodQOS(newPod("BestEffort-Pod", []v1.Container{
 			newContainer("BestEffort-Container", newRes("", ""), newRes("", "")),
@@ -83,7 +83,7 @@ func TestGetPodQOS(t *testing.T) {
 		So(class, ShouldEqual, qos.BestEffort)
 	})
 
-	// Cases for Quarantee
+	// Checks against Guaranteed
 	Convey("A Pod with single Container with equal limits and requests set shall have Guaranteed class", t, func() {
 		class := GetPodQOS(newPod("Guaranteed-Pod", []v1.Container{
 			newContainer("Guaranteed-Container", newRes("100m", "100Mi"), newRes("100m", "100Mi")),
@@ -128,8 +128,8 @@ func TestGetPodQOS(t *testing.T) {
 		So(class, ShouldEqual, qos.Guaranteed)
 	})
 
-	// User shall not be allowed to pass request > limits. However this shows
-	// algorithm itself can be
+	// User shall not be allowed to pass request > limits. However this show how algorithm works:
+	// by summing up values in all containers
 	Convey("A Pod has CPU and Memory set for Burstable but it will be classified as Guaranteed", t, func() {
 		class := GetPodQOS(newPod("Guaranteed-Pod", []v1.Container{
 			newContainer("Guaranteed-Container1", newRes("45m", "55Mi"), newRes("55m", "45Mi")),
@@ -138,7 +138,7 @@ func TestGetPodQOS(t *testing.T) {
 		So(class, ShouldEqual, qos.Guaranteed)
 	})
 
-	// Cases for Burstable
+	// Check against Burstable
 	Convey("A Pod with single Container with request/limits set to meet Burstable class should have Burstable class", t, func() {
 		class := GetPodQOS(newPod("Burstable-Pod", []v1.Container{
 			newContainer("Burstable-Container", newRes("", "100Mi"), newRes("", "")),
