@@ -72,16 +72,16 @@ class Experiment(object):
         if read_csv:
             self.frame = pd.read_csv(self.cached_experiment)
         else:
-            session_exec = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
-            rows, qps, throughputs = self.match_qps(session_exec, aggressor_throughput_namespaces_prefixes)
+            response = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
+            rows, qps, throughputs = self.match_qps(response, aggressor_throughput_namespaces_prefixes)
             self.frame = self.create_df(rows, qps, throughputs)
 
-    def match_qps(self, exec_session, aggressor_throughput_namespaces_prefixes):
+    def match_qps(self, response, aggressor_throughput_namespaces_prefixes):
         rows = {}  # keep temporary rows from query for later match with qps rows
         qps = {}  # qps is a one row from query, where we can map it to percentile rows
         throughputs = defaultdict(list)  # keep throughputs from all aggressors to join it later with main DF
 
-        for row in exec_session:
+        for row in response:
             k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
             if row.ns == "/intel/swan/%s/%s/qps" % (row.ns.split("/")[3], row.host):
                 qps[k] = row.doubleval
@@ -94,7 +94,7 @@ class Experiment(object):
     def read_data_from_cassandra(self, cassandra_cluster, port, keyspace, ssl_options, experiment_id):
         session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
         query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
-                        FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'""" % experiment_id
+                        FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % experiment_id
         statement = SimpleStatement(query, fetch_size=100)
 
         return session.execute(statement)

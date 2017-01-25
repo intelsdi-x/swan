@@ -6,14 +6,14 @@ TEST_OPT?=""
 # for compatibility purposes.
 deps: deps_all
 integration_test: show_env test_integration
-unit_test: deps_godeps test_unit
+unit_test: deps_godeps test_unit test_unit_jupyter
 
 deps_all: deps_godeps deps_jupyter
 build_all: deps_all build_workloads build_plugins build_swan
 build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
-build_and_test_all: build_all test_lint test_unit test_integration
-test_all: test_lint test_unit test_integration
+build_and_test_all: build_all test_all
+test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
@@ -85,18 +85,28 @@ test_unit:
 	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./experiments/...
 	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./misc/...
 
+test_unit_jupyter:
+	(cd jupyter; py.test)
+
 test_integration:
 	go test -i ./integration_tests/... ./experiments/... ./misc/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
 	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
-	(cd jupyter; py.test)
+
+e2e_test:
+	sudo service snapteld start
+	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
+	sudo service snapteld stop
+	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
+	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
 cleanup:
 	rm -fr misc/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapteld_*
+	rm -fr jupyter/integration_tests/*.stdout
 
 remove_vendor:
 	rm -fr vendor/
