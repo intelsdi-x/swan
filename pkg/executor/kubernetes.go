@@ -133,7 +133,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Namespace:      v1.NamespaceDefault,
 		Privileged:     false,
 		HostNetwork:    false,
-		LaunchTimeout:  0,
+		LaunchTimeout:  30 * time.Second,
 	}
 }
 
