@@ -3,8 +3,9 @@ package executor
 import (
 	"testing"
 
-	"k8s.io/kubernetes/pkg/kubelet/qos"
+	"k8s.io/client-go/1.5/pkg/kubelet/qos"
 
+	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -21,10 +22,10 @@ func TestKubernetes(t *testing.T) {
 		config := DefaultKubernetesConfig()
 
 		Convey("with default unspecified resources, expect BestEffort", func() {
-			podExecutor := &kubernetes{config, nil}
+			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("be")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(pod), ShouldEqual, qos.BestEffort)
+			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.BestEffort)
 		})
 
 		Convey("with CPU/Memory limit and requests euqal, expect Guaranteed", func() {
@@ -32,10 +33,10 @@ func TestKubernetes(t *testing.T) {
 			config.CPULimit = 100
 			config.MemoryRequest = 1000
 			config.MemoryLimit = 1000
-			podExecutor := &kubernetes{config, nil}
+			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("hp")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(pod), ShouldEqual, qos.Guaranteed)
+			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Guaranteed)
 		})
 
 		Convey("with CPU/Memory limit and requests but not equal, expect Burstable", func() {
@@ -43,19 +44,19 @@ func TestKubernetes(t *testing.T) {
 			config.CPULimit = 100
 			config.MemoryRequest = 10
 			config.MemoryLimit = 1000
-			podExecutor := &kubernetes{config, nil}
+			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burstable")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(pod), ShouldEqual, qos.Burstable)
+			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Burstable)
 		})
 
 		Convey("with no CPU limit and request, expect Burstable", func() {
 			config.CPURequest = 1
 			config.CPULimit = 0
-			podExecutor := &kubernetes{config, nil}
+			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burst")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(pod), ShouldEqual, qos.Burstable)
+			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Burstable)
 		})
 
 	})
@@ -63,7 +64,7 @@ func TestKubernetes(t *testing.T) {
 	Convey("Kubernetes pod executor pod names", t, func() {
 
 		Convey("have desired name", func() {
-			podExecutor := &kubernetes{KubernetesConfig{PodName: "foo"}, nil}
+			podExecutor := &k8s{KubernetesConfig{PodName: "foo"}, nil}
 			name, err := podExecutor.generatePodName()
 			So(err, ShouldBeNil)
 			So(name, ShouldEqual, "foo")
@@ -71,7 +72,7 @@ func TestKubernetes(t *testing.T) {
 		})
 
 		Convey("have desired prefix", func() {
-			podExecutor := &kubernetes{KubernetesConfig{PodNamePrefix: "foo"}, nil}
+			podExecutor := &k8s{KubernetesConfig{PodNamePrefix: "foo"}, nil}
 			name, err := podExecutor.generatePodName()
 			So(err, ShouldBeNil)
 			So(name, ShouldStartWith, "foo-")
@@ -80,7 +81,7 @@ func TestKubernetes(t *testing.T) {
 
 		Convey("with default config", func() {
 
-			podExecutor := &kubernetes{DefaultKubernetesConfig(), nil}
+			podExecutor := &k8s{DefaultKubernetesConfig(), nil}
 			names := make(map[string]struct{})
 
 			Convey("have default prefix", func() {

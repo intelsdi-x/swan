@@ -53,15 +53,20 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/resource"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/kubelet/qos"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/watch"
+	"k8s.io/client-go/1.5/kubernetes"
+	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
+	"k8s.io/client-go/1.5/pkg/api/v1"
+
+	"k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/1.5/pkg/api/resource"
+	"k8s.io/client-go/1.5/pkg/api/unversioned"
+	"k8s.io/client-go/1.5/pkg/labels"
+	"k8s.io/client-go/1.5/pkg/watch"
+	"k8s.io/client-go/1.5/rest"
+
 	"path/filepath"
+
+	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 )
 
 const (
@@ -125,68 +130,68 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
-		Namespace:      api.NamespaceDefault,
+		Namespace:      v1.NamespaceDefault,
 		Privileged:     false,
 		HostNetwork:    false,
 		LaunchTimeout:  0,
 	}
 }
 
-type kubernetes struct {
-	config KubernetesConfig
-	client *client.Client
+type k8s struct {
+	config    KubernetesConfig
+	clientset *kubernetes.Clientset
 }
 
 // NewKubernetes returns an executor which lets the user run commands in pods in a
 // kubernetes cluster.
 func NewKubernetes(config KubernetesConfig) (Executor, error) {
-	k8s := &kubernetes{
+	k8s := &k8s{
 		config: config,
 	}
 
 	var err error
-	k8s.client, err = client.New(&restclient.Config{
+	k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
 		Host:     config.Address,
 		Username: config.Username,
 		Password: config.Password,
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't initilize kubernetes client for host '%s'", config.Address)
+		return nil, errors.Wrapf(err, "can't initilize kubernetes clientset for host '%s'", config.Address)
 	}
 
 	return k8s, nil
 }
 
 // containerResources helper to create ResourceRequirments for the container.
-func (k8s *kubernetes) containerResources() api.ResourceRequirements {
+func (k8s *k8s) containerResources() v1.ResourceRequirements {
 
 	// requests
-	resourceListRequests := api.ResourceList{}
+	resourceListRequests := v1.ResourceList{}
 	if k8s.config.CPURequest > 0 {
-		resourceListRequests[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
+		resourceListRequests[v1.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPURequest, resource.DecimalSI)
 	}
 	if k8s.config.MemoryRequest > 0 {
-		resourceListRequests[api.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryRequest, resource.DecimalSI)
+		resourceListRequests[v1.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryRequest, resource.DecimalSI)
 	}
 
 	// limits
-	resourceListLimits := api.ResourceList{}
+	resourceListLimits := v1.ResourceList{}
 	if k8s.config.CPULimit > 0 {
-		resourceListLimits[api.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
+		resourceListLimits[v1.ResourceCPU] = *resource.NewMilliQuantity(k8s.config.CPULimit, resource.DecimalSI)
 	}
 	if k8s.config.MemoryLimit > 0 {
-		resourceListLimits[api.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryLimit, resource.DecimalSI)
+		resourceListLimits[v1.ResourceMemory] = *resource.NewQuantity(k8s.config.MemoryLimit, resource.DecimalSI)
 	}
 
-	return api.ResourceRequirements{
+	return v1.ResourceRequirements{
 		Requests: resourceListRequests,
 		Limits:   resourceListLimits,
 	}
 }
 
 // Name returns user-friendly name of executor.
-func (k8s *kubernetes) Name() string {
+func (k8s *k8s) Name() string {
 	return "Kubernetes Executor"
 }
 
@@ -196,7 +201,7 @@ func (k8s *kubernetes) Name() string {
 // this case pod spawning should fail).
 // It returns string as a Pod name which should be used or error if cannot
 // generate random suffix.
-func (k8s *kubernetes) generatePodName() (string, error) {
+func (k8s *k8s) generatePodName() (string, error) {
 	if k8s.config.PodName != "" {
 		return k8s.config.PodName, nil
 	}
@@ -214,7 +219,7 @@ func (k8s *kubernetes) generatePodName() (string, error) {
 // newPod is a helper to build in-memory struture representing pod
 // before sending it as request to API server. It can returns also
 // error if cannot generate Pod name.
-func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
+func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 
 	resources := k8s.containerResources()
 	podName, err := k8s.generatePodName()
@@ -223,26 +228,26 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 	}
 
 	var zero int64
-	return &api.Pod{
+	return &v1.Pod{
 		TypeMeta: unversioned.TypeMeta{},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      podName,
 			Namespace: k8s.config.Namespace,
 			Labels:    map[string]string{"name": podName},
 		},
-		Spec: api.PodSpec{
+		Spec: v1.PodSpec{
 			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
-			SecurityContext:               &api.PodSecurityContext{HostNetwork: k8s.config.HostNetwork},
+			HostNetwork:                   k8s.config.HostNetwork,
 			TerminationGracePeriodSeconds: &zero,
-			Containers: []api.Container{
-				api.Container{
+			Containers: []v1.Container{
+				v1.Container{
 					Name:            k8s.config.ContainerName,
 					Image:           k8s.config.ContainerImage,
 					Command:         []string{"sh", "-c", command},
 					Resources:       resources,
-					ImagePullPolicy: api.PullIfNotPresent, // Default because swan image is not published yet.
-					SecurityContext: &api.SecurityContext{Privileged: &k8s.config.Privileged},
+					ImagePullPolicy: v1.PullIfNotPresent, // Default because swan image is not published yet.
+					SecurityContext: &v1.SecurityContext{Privileged: &k8s.config.Privileged},
 				},
 			},
 		},
@@ -251,8 +256,8 @@ func (k8s *kubernetes) newPod(command string) (*api.Pod, error) {
 
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
-func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
-	podsAPI := k8s.client.Pods(k8s.config.Namespace)
+func (k8s *k8s) Execute(command string) (TaskHandle, error) {
+	podsAPI := k8s.clientset.Core().Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
 	// This is a workaround for kubernetes #31446 & SCE-883.
@@ -293,8 +298,9 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	stdoutFile.Close()
 	stderrFile.Close()
 
-	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(pod))
-	taskHandle := &kubernetesTaskHandle{
+	// After client-go supports GetPodQOS change to qos.GetPodQOS(pod)
+	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, k8sports.GetPodQOS(pod))
+	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
 		stdoutFilePath:  stdoutFileName,
 		stderrFilePath:  stderrFileName,
@@ -304,7 +310,7 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 		exitCodeChannel: make(chan int, 1),
 	}
 
-	taskWatcher := &kubernetesWatcher{
+	taskWatcher := &k8sWatcher{
 		podsAPI:    podsAPI,
 		pod:        pod,
 		taskHandle: taskHandle,
@@ -337,9 +343,9 @@ func (k8s *kubernetes) Execute(command string) (TaskHandle, error) {
 	return taskHandle, nil
 }
 
-// kubernetesTaskHandle implements the TaskHandle interface
-type kubernetesTaskHandle struct {
-	podsAPI       client.PodInterface
+// k8sTaskHandle implements the TaskHandle interface
+type k8sTaskHandle struct {
+	podsAPI       corev1.PodInterface
 	stopped       chan struct{}
 	started       chan struct{}
 	requestDelete chan struct{}
@@ -355,7 +361,7 @@ type kubernetesTaskHandle struct {
 	podHostIP string
 }
 
-func (th *kubernetesTaskHandle) isTerminated() bool {
+func (th *k8sTaskHandle) isTerminated() bool {
 	select {
 	case <-th.stopped:
 		return true
@@ -365,7 +371,7 @@ func (th *kubernetesTaskHandle) isTerminated() bool {
 }
 
 // Stop will delete the pod and block caller until done.
-func (th *kubernetesTaskHandle) Stop() error {
+func (th *k8sTaskHandle) Stop() error {
 	if th.isTerminated() {
 		return nil
 	}
@@ -387,7 +393,7 @@ func (th *kubernetesTaskHandle) Stop() error {
 }
 
 // Status returns the current task state in terms of RUNNING or TERMINATED.
-func (th *kubernetesTaskHandle) Status() TaskState {
+func (th *k8sTaskHandle) Status() TaskState {
 	if th.isTerminated() {
 		return TERMINATED
 	}
@@ -396,7 +402,7 @@ func (th *kubernetesTaskHandle) Status() TaskState {
 }
 
 // ExitCode returns the exit code of the container running in the pod.
-func (th *kubernetesTaskHandle) ExitCode() (int, error) {
+func (th *k8sTaskHandle) ExitCode() (int, error) {
 	if !th.isTerminated() {
 		return 0, errors.New("task is still running")
 	}
@@ -423,7 +429,7 @@ func (th *kubernetesTaskHandle) ExitCode() (int, error) {
 
 // Wait blocks until the pod terminates _or_ if timeout is provided, will exit ealier with
 // false if the pod didn't terminate before the provided timeout.
-func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
+func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
 	if th.isTerminated() {
 		return true
 	}
@@ -443,36 +449,36 @@ func (th *kubernetesTaskHandle) Wait(timeout time.Duration) bool {
 }
 
 // Clean. Deprecated: does nothing.
-func (th *kubernetesTaskHandle) Clean() error {
+func (th *k8sTaskHandle) Clean() error {
 	return nil
 }
 
 // EraseOutput deletes the directory where stdout file resides.
-func (th *kubernetesTaskHandle) EraseOutput() error {
+func (th *k8sTaskHandle) EraseOutput() error {
 	outputDir := filepath.Dir(th.stdoutFilePath)
 	return removeDirectory(outputDir)
 }
 
 // Address returns the host IP where the pod was scheduled.
-func (th *kubernetesTaskHandle) Address() string {
+func (th *k8sTaskHandle) Address() string {
 	return th.podHostIP
 }
 
 // StdoutFile returns a file handle to the stdout file for the pod.
 // NOTE: StdoutFile will block until stdout file is available.
-func (th *kubernetesTaskHandle) StdoutFile() (*os.File, error) {
+func (th *k8sTaskHandle) StdoutFile() (*os.File, error) {
 	return openFile(th.stdoutFilePath)
 }
 
 // StderrFile returns a file handle to the stderr file for the pod.
 // NOTE: StderrFile will block until stderr file is available.
-func (th *kubernetesTaskHandle) StderrFile() (*os.File, error) {
+func (th *k8sTaskHandle) StderrFile() (*os.File, error) {
 	return openFile(th.stderrFilePath)
 }
 
-type kubernetesWatcher struct {
-	podsAPI client.PodInterface
-	pod     *api.Pod
+type k8sWatcher struct {
+	podsAPI corev1.PodInterface
+	pod     *v1.Pod
 
 	stdoutFilePath string
 
@@ -482,7 +488,7 @@ type kubernetesWatcher struct {
 	requestDelete    chan struct{}
 	exitCodeChannel  chan int
 
-	taskHandle *kubernetesTaskHandle
+	taskHandle *k8sTaskHandle
 
 	command string
 
@@ -494,7 +500,7 @@ type kubernetesWatcher struct {
 }
 
 // watch creates instance of TaskHandle and is responsible for keeping it in-sync with k8s cluster
-func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
+func (kw *k8sWatcher) watch(timeout time.Duration) error {
 	selectorRaw := fmt.Sprintf("name=%s", kw.pod.Name)
 	selector, err := labels.Parse(selectorRaw)
 	if err != nil {
@@ -529,7 +535,7 @@ func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
 				}
 
 				// Don't care about anything else than pods.
-				pod, ok := event.Object.(*api.Pod)
+				pod, ok := event.Object.(*v1.Pod)
 				if !ok {
 					continue
 				}
@@ -539,21 +545,23 @@ func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
 				case watch.Added, watch.Modified:
 					switch pod.Status.Phase {
 
-					case api.PodPending:
+					case v1.PodPending:
 						continue
 
-					case api.PodRunning:
-						if api.IsPodReady(pod) {
+					case v1.PodRunning:
+						// After client-go supports it change to
+						// v1.IsPodReady(pod)
+						if k8sports.IsPodReady(pod) {
 							kw.whenPodReady()
 						} else {
 							log.Debug("K8s task watcher: Running but not ready")
 						}
 
-					case api.PodFailed, api.PodSucceeded:
+					case v1.PodFailed, v1.PodSucceeded:
 						kw.whenPodFinished(pod)
 						kw.deletePod()
 
-					case api.PodUnknown:
+					case v1.PodUnknown:
 						log.Warnf("K8s task watcher: pod %q with command %q is in unknown phase. "+
 							"Probably state of the pod could not be obtained, "+
 							"typically due to an error in communicating with the host of the pod", pod.Name, kw.command)
@@ -592,7 +600,7 @@ func (kw *kubernetesWatcher) watch(timeout time.Duration) error {
 
 // ----------------------------- when pod ready
 // closeStarted close started channel to indicate that pod has just started.
-func (kw *kubernetesWatcher) whenPodReady() {
+func (kw *k8sWatcher) whenPodReady() {
 	kw.oncePodReady.Do(func() {
 		log.Debug("K8s task watcher: Pod ready handler - mark Pod as running.")
 		kw.hasBeenRunning = true
@@ -604,7 +612,7 @@ func (kw *kubernetesWatcher) whenPodReady() {
 
 // whenPodFinished handler to acquire exit code from pod and pass it taskHandle.
 // Additionally call whenPodReady handler to setupLogs and mark pod as running.
-func (kw *kubernetesWatcher) whenPodFinished(pod *api.Pod) {
+func (kw *k8sWatcher) whenPodFinished(pod *v1.Pod) {
 	kw.oncePodFinished.Do(func() {
 		kw.whenPodReady()
 		kw.setExitCode(pod)
@@ -614,7 +622,7 @@ func (kw *kubernetesWatcher) whenPodFinished(pod *api.Pod) {
 
 // setExitCode retrieves exit code from the cluster and sends it to task handle.
 // Used only by whenPodFinished handler.
-func (kw *kubernetesWatcher) setExitCode(pod *api.Pod) {
+func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 
 	// Send exit code and close channel.
 	sendExitCode := func(exitCode int) {
@@ -632,7 +640,7 @@ func (kw *kubernetesWatcher) setExitCode(pod *api.Pod) {
 		}
 		exitCode = int(status.State.Terminated.ExitCode)
 	}
-	if pod.Status.Phase == api.PodFailed {
+	if pod.Status.Phase == v1.PodFailed {
 		log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
 	} else {
 		log.Debugf("K8s task watcher: exit code retrieved: %d", exitCode)
@@ -642,7 +650,7 @@ func (kw *kubernetesWatcher) setExitCode(pod *api.Pod) {
 
 // whenPodDeleted handler on when watcher receives "deleted" event to signal taskHandle
 // that pod is "stopped" and optionally setup the logs.
-func (kw *kubernetesWatcher) whenPodDeleted() {
+func (kw *k8sWatcher) whenPodDeleted() {
 	kw.oncePodDeleted.Do(func() {
 		kw.setupLogs()
 		log.Debug("K8s task watcher: pod stopped [stopped]")
@@ -654,7 +662,7 @@ func (kw *kubernetesWatcher) whenPodDeleted() {
 }
 
 // deletePod action that body is executed only once to ask kubernetes to deleted pod.
-func (kw *kubernetesWatcher) deletePod() {
+func (kw *k8sWatcher) deletePod() {
 	kw.onceDeletePod.Do(func() {
 
 		// Setting gracePeriodSeconds to zero will erase pod from API server and won't wait for it to exit.
@@ -672,12 +680,12 @@ func (kw *kubernetesWatcher) deletePod() {
 }
 
 // setupLogs action creates log files and initializes goroutine that copies stream from kubernetes.
-func (kw *kubernetesWatcher) setupLogs() {
+func (kw *k8sWatcher) setupLogs() {
 	kw.onceSetupLogs.Do(func() {
 		log.Debugf("K8s task watcher: setting up logs for pod %q", kw.pod.Name)
 
 		// Wire up logs to task handle stdout.
-		logStream, err := kw.podsAPI.GetLogs(kw.pod.Name, &api.PodLogOptions{Follow: true}).Stream()
+		logStream, err := kw.podsAPI.GetLogs(kw.pod.Name, &v1.PodLogOptions{Follow: true}).Stream()
 		if err != nil {
 			log.Warnf("K8s task watcher: cannot create log stream: %s ", err.Error())
 			close(kw.logsCopyFinished)

@@ -6,39 +6,30 @@ set -x -e -o pipefail
 
 source $HOME_DIR/.bash_profile
 
-K8S_VERSION="v1.4.0-alpha.2-serenity"
+K8S_VERSION="v1.5.1"
 
 CACHE_DIRECTORY=/cache
 
 if [ ! -d /cache ]; then
-    mkdir ~/.cache || true
+    mkdir -p ~/.cache
     CACHE_DIRECTORY=~/.cache
 fi
-
-function downloadK8s() {
-    if [ ! -f ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION} ] || [ ! -f ${CACHE_DIRECTORY}/$1 ] ; then
-        wget -q https://s3-us-west-2.amazonaws.com/intel-sdi.eo.swan.kubernetes/${1}.${K8S_VERSION} -O ${CACHE_DIRECTORY}/$1
-    fi 
-    cp ${CACHE_DIRECTORY}/$1 ${SWAN_BIN}
-}
 
 pushd `dirname $0`
     SWAN_BIN=${SWAN_DIR}/misc/bin
 
     mkdir -p ${SWAN_BIN}
 
-    OPT=$1
-    if [ "${OPT}" = "--force" ] || [ ! -f  ${SWAN_BIN}/.kube-services-${K8S_VERSION} ] ; then
-        pushd ${SWAN_BIN}
-            downloadK8s kubectl
-            downloadK8s kube-apiserver
-            downloadK8s kube-controller-manager
-            downloadK8s kube-proxy
-            downloadK8s kube-scheduler
-            downloadK8s kubelet
-            chmod +x ./*
-            touch .kube-services-${K8S_VERSION}
-            touch ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION}
-        popd
+    if [ ! -f ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION} ]; then
+	# instead of downloading multiple binaries only hyperkube is downloaded
+	wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
+	chmod +x ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
+
+	touch ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION}
     fi
+    # to make usage easier - symlinks are generated for hyperkube in PATH
+    cp ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION} ${SWAN_BIN}/hyperkube
+    pushd ${SWAN_BIN}
+    ./hyperkube --make-symlinks
+    popd
 popd

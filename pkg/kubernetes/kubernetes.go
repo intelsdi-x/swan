@@ -13,9 +13,10 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/rest"
 )
 
 const (
@@ -29,11 +30,11 @@ const (
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	pathKubeAPIServerFlag   = conf.NewStringFlag("kube_apiserver_path", "Path to kube-apiserver binary", path.Join(fs.GetSwanBinPath(), "kube-apiserver"))
-	pathKubeControllerFlag  = conf.NewStringFlag("kube_controller_path", "Path to kube-controller-manager binary", path.Join(fs.GetSwanBinPath(), "kube-controller-manager"))
+	pathKubeAPIServerFlag   = conf.NewStringFlag("kube_apiserver_path", "Path to apiserver binary", path.Join(fs.GetSwanBinPath(), "apiserver"))
+	pathKubeControllerFlag  = conf.NewStringFlag("kube_controller_path", "Path to controller-manager binary", path.Join(fs.GetSwanBinPath(), "controller-manager"))
 	pathKubeletFlag         = conf.NewStringFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetSwanBinPath(), "kubelet"))
-	pathKubeProxyFlag       = conf.NewStringFlag("kube_proxy_path", "Path to kube-proxy binary", path.Join(fs.GetSwanBinPath(), "kube-proxy"))
-	pathKubeSchedulerFlag   = conf.NewStringFlag("kube_scheduler_path", "Path to kube-scheduler binary", path.Join(fs.GetSwanBinPath(), "kube-scheduler"))
+	pathKubeProxyFlag       = conf.NewStringFlag("kube_proxy_path", "Path to proxy binary", path.Join(fs.GetSwanBinPath(), "proxy"))
+	pathKubeSchedulerFlag   = conf.NewStringFlag("kube_scheduler_path", "Path to scheduler binary", path.Join(fs.GetSwanBinPath(), "scheduler"))
 	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
@@ -124,9 +125,9 @@ func UniqueConfig() (Config, error) {
 }
 
 // Type used for UT mocking purposes.
-type getReadyNodesFunc func(k8sAPIAddress string) ([]api.Node, error)
+type getReadyNodesFunc func(k8sAPIAddress string) ([]v1.Node, error)
 
-type kubernetes struct {
+type k8s struct {
 	master        executor.Executor
 	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubelelNodesCount const.
 	config        Config
@@ -139,7 +140,7 @@ type kubernetes struct {
 // NOTE: Currently we support only single-kubelet (single-minion) kubernetes. We also does not
 // support ip lookup for pods. To support that we need to setup flannel or calico as well. (SCE-551)
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
-	return kubernetes{
+	return k8s{
 		master:        master,
 		minion:        minion,
 		config:        config,
@@ -149,14 +150,14 @@ func New(master executor.Executor, minion executor.Executor, config Config) exec
 }
 
 // Name returns human readable name for job.
-func (m kubernetes) Name() string {
+func (m k8s) Name() string {
 	return "Kubernetes [single-kubelet]"
 }
 
 // Launch starts the kubernetes cluster. It returns a cluster
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a cluster.
-func (m kubernetes) Launch() (handle executor.TaskHandle, err error) {
+func (m k8s) Launch() (handle executor.TaskHandle, err error) {
 	for retry := uint64(0); retry <= m.config.RetryCount; retry++ {
 		handle, err = m.tryLaunchCluster()
 		if err != nil {
@@ -171,7 +172,7 @@ func (m kubernetes) Launch() (handle executor.TaskHandle, err error) {
 	return nil, err
 }
 
-func (m kubernetes) tryLaunchCluster() (executor.TaskHandle, error) {
+func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 	handle, err := m.launchCluster()
 	if err != nil {
 		return nil, err
@@ -186,11 +187,10 @@ func (m kubernetes) tryLaunchCluster() (executor.TaskHandle, error) {
 		}
 		return nil, err
 	}
-
 	return handle, nil
 }
 
-func (m kubernetes) launchCluster() (executor.TaskHandle, error) {
+func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	// Launch kube-apiserver using master executor.
 	apiHandle, err := m.launchService(
 		m.master, getKubeAPIServerCommand(m.config), m.config.KubeAPIPort)
@@ -244,7 +244,7 @@ func (m kubernetes) launchCluster() (executor.TaskHandle, error) {
 }
 
 // launchService executes service and check if it is listening on it's endpoint.
-func (m kubernetes) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
+func (m k8s) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
 	handle, err := exec.Execute(command)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
@@ -263,7 +263,7 @@ func (m kubernetes) launchService(exec executor.Executor, command string, port i
 	return handle, nil
 }
 
-func (m kubernetes) waitForReadyNode(apiServerAddress string) error {
+func (m k8s) waitForReadyNode(apiServerAddress string) error {
 	for idx := 0; idx < readyNodeRetryCountFlag.Value(); idx++ {
 		nodes, err := m.getReadyNodes(apiServerAddress)
 		if err != nil {
@@ -280,27 +280,27 @@ func (m kubernetes) waitForReadyNode(apiServerAddress string) error {
 	return errors.New("kubelet could not register in time")
 }
 
-func getReadyNodes(k8sAPIAddress string) ([]api.Node, error) {
-	kubectlConfig := &restclient.Config{
+func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
+	kubectlConfig := &rest.Config{
 		Host:     k8sAPIAddress,
 		Username: "",
 		Password: "",
 	}
 
-	k8sClient, err := client.New(kubectlConfig)
+	k8sClientset, err := kubernetes.NewForConfig(kubectlConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create new Kubernetes client on %q", k8sAPIAddress)
 	}
 
-	nodes, err := k8sClient.Nodes().List(api.ListOptions{})
+	nodes, err := k8sClientset.Core().Nodes().List(api.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain Kubernetes node list on %q", k8sAPIAddress)
 	}
 
-	var readyNodes []api.Node
+	var readyNodes []v1.Node
 	for _, node := range nodes.Items {
 		for _, condition := range node.Status.Conditions {
-			if condition.Type == api.NodeReady && condition.Status == api.ConditionTrue {
+			if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
 				readyNodes = append(readyNodes, node)
 			}
 		}

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
-	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/client-go/1.5/pkg/api/v1"
 )
 
 func TestKubernetesLauncherConfiguration(t *testing.T) {
@@ -60,8 +60,8 @@ func getMockedTaskHandle(outputFile *os.File) *mocks.TaskHandle {
 	return handle
 }
 
-func getNodeListFunc(resultNodes []api.Node, resultError error) getReadyNodesFunc {
-	return func(k8sAPIAddress string) ([]api.Node, error) {
+func getNodeListFunc(resultNodes []v1.Node, resultError error) getReadyNodesFunc {
+	return func(k8sAPIAddress string) ([]v1.Node, error) {
 		return resultNodes, resultError
 	}
 }
@@ -89,16 +89,16 @@ func TestKubernetesLauncher(t *testing.T) {
 		handle := getMockedTaskHandle(outputFile)
 
 		// Prepare Kubernetes Launcher
-		var k8s kubernetes
-		k8s = New(master, minion, config).(kubernetes)
+		var k8sLauncher k8s
+		k8sLauncher = New(master, minion, config).(k8s)
 
 		Convey("When everything succeed, on Launch method we should receive not-nil task handle and no error", func() {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
-			k8s.isListening = getIsListeningFunc(true)
-			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
+			k8sLauncher.isListening = getIsListeningFunc(true)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
-			resultHandle, err := k8s.Launch()
+			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 			So(resultHandle, ShouldNotBeNil)
 		})
@@ -106,10 +106,10 @@ func TestKubernetesLauncher(t *testing.T) {
 			err := errors.New("mocked-error")
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
-			k8s.isListening = getIsListeningFunc(true)
-			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
+			k8sLauncher.isListening = getIsListeningFunc(true)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
-			resultHandle, err := k8s.Launch()
+			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 			So(err.Error(), ShouldContainSubstring, err.Error())
@@ -119,10 +119,10 @@ func TestKubernetesLauncher(t *testing.T) {
 			err := errors.New("mocked-error")
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
-			k8s.isListening = getIsListeningFunc(true)
-			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
+			k8sLauncher.isListening = getIsListeningFunc(true)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
-			resultHandle, err := k8s.Launch()
+			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 			So(err.Error(), ShouldContainSubstring, err.Error())
@@ -132,10 +132,10 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			handle.On("Status").Return(executor.TERMINATED)
-			k8s.isListening = getIsListeningFunc(false)
-			k8s.getReadyNodes = getNodeListFunc([]api.Node{api.Node{}}, nil)
+			k8sLauncher.isListening = getIsListeningFunc(false)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
-			resultHandle, err := k8s.Launch()
+			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 
@@ -150,10 +150,10 @@ func TestKubernetesLauncher(t *testing.T) {
 			err := errors.New("mocked-error")
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
-			k8s.isListening = getIsListeningFunc(true)
-			k8s.getReadyNodes = getNodeListFunc(nil, err)
+			k8sLauncher.isListening = getIsListeningFunc(true)
+			k8sLauncher.getReadyNodes = getNodeListFunc(nil, err)
 
-			resultHandle, err := k8s.Launch()
+			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 			So(err.Error(), ShouldContainSubstring, err.Error())
