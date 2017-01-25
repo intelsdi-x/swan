@@ -98,8 +98,7 @@ e2e_test:
 	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo service snapteld stop
-	jupyter nbconvert --to script jupyter/integration_tests/integration_tests.ipynb
-	cat jupyter/integration_tests/experiment_id.stdout | python jupyter/integration_tests/integration_tests.py
+	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
 	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
 cleanup:
