@@ -49,6 +49,7 @@ class Profile(object):
         specified slo (performance target).
         """
         self.exp = e
+        self.metadata = self.exp.get_metadata()
         self.slo = slo
         self.categories = []
         self.data_frame = self.exp.get_frame()
@@ -82,7 +83,7 @@ class Profile(object):
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
 
             throughputs = aggressor_frame['throughputs'].tolist()
-            throughputs.extend([np.nan] * (len(longest_loadpoints) - len(throughputs)))
+            throughputs.extend([np.nan] * (int(self.metadata.get_value('metadata', 'load_points')) - len(throughputs)))
 
             self.throughput_per_aggressor[name] = throughputs
 

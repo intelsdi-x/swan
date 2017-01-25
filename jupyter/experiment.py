@@ -13,6 +13,10 @@ import pandas as pd
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
+from cassandra.query import named_tuple_factory, ordered_dict_factory
+
+
+pd.set_option('max_colwidth',400)
 
 
 class Experiment(object):
@@ -68,12 +72,17 @@ class Experiment(object):
 
         self.name = name if name else experiment_id
         self.cached_experiment = os.path.join(dir_csv, '%s.csv' % experiment_id)
+        self.cached_meta_data_experiment = os.path.join(dir_csv, '%s_meta.csv' % experiment_id)
 
         if read_csv:
             self.frame = pd.read_csv(self.cached_experiment)
+            self.meta = pd.read_csv(self.cached_meta_data_experiment)
         else:
-            response = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
-            rows, qps, throughputs = self.match_qps(response, aggressor_throughput_namespaces_prefixes)
+            data, meta = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
+
+            self._meta = pd.DataFrame.from_dict(meta[0], orient='index')
+
+            rows, qps, throughputs = self.match_qps(data, aggressor_throughput_namespaces_prefixes)
             self.frame = self.create_df(rows, qps, throughputs)
 
     def match_qps(self, response, aggressor_throughput_namespaces_prefixes):
@@ -93,11 +102,24 @@ class Experiment(object):
 
     def read_data_from_cassandra(self, cassandra_cluster, port, keyspace, ssl_options, experiment_id):
         session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
-        query = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
-                        FROM snap.metrics WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % experiment_id
-        statement = SimpleStatement(query, fetch_size=100)
 
-        return session.execute(statement)
+        query_for_data = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
+                            FROM snap.metrics
+                            WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % experiment_id
+        query_for_meta = """SELECT metadata
+                            FROM swan.metadata
+                            WHERE experiment_id = \'%s\' ALLOW FILTERING""" % experiment_id
+
+        response_data = self.__execute_query(query_for_data, session, named_tuple_factory)
+        response_meta = self.__execute_query(query_for_meta, session, ordered_dict_factory)
+
+        return response_data, response_meta
+
+    def __execute_query(self, query, session, row_factory):
+        session.row_factory = row_factory
+        statement = SimpleStatement(query, fetch_size=100)
+        response = session.execute(statement)
+        return response
 
     def create_df(self, rows, qps, throughputs):
         data = []
@@ -123,12 +145,16 @@ class Experiment(object):
         frame = pd.DataFrame(data, columns=columns)
 
         if not os.path.exists(self.cached_experiment):
-            frame.to_csv(self.cached_experiment)
+            self.get_frame().to_csv(self.cached_experiment)
+            self.get_metadata().to_csv(self.cached_meta_data_experiment)
 
         return frame
 
     def get_frame(self):
         return self.frame
+
+    def get_metadata(self):
+        return self._meta
 
     def _repr_html_(self):
         df_of_99th = self.frame.loc[self.frame['ns'].str.contains('/percentile/99th')]
