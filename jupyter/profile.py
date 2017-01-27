@@ -67,8 +67,8 @@ class Profile(object):
         loadpoints_for_all_aggressors = [df['swan_loadpoint_qps'].astype(float).tolist() for (_, df) in
                                          self.p99_by_aggressor]
 
-        meta_load_points = int(self.metadata.get_value('metadata', 'load_points')
-        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda lps: lps == meta_load_points)
+        meta_load_points = self.metadata['load_points'].astype(int).iloc[0]
+        longest_loadpoints = np.amax(loadpoints_for_all_aggressors, axis=0)
 
         data = []
         index = []
@@ -97,7 +97,7 @@ class Profile(object):
             self.latency_qps_aggrs[name] = aggressor_frame['value'].as_matrix()
             self.latency_qps_aggrs['slo'] = [slo for i in qps]
 
-        self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs, orient='index').T
+        self.latency_qps_aggrs_frame = pd.DataFrame.from_dict(self.latency_qps_aggrs)
 
         peak = np.amax(longest_loadpoints)
         loadpoints = map(lambda c: (float(c) / peak) * 100, longest_loadpoints)
