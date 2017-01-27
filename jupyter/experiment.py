@@ -76,7 +76,7 @@ class Experiment(object):
 
         if read_csv:
             self.frame = pd.read_csv(self.cached_experiment)
-            self.meta = pd.read_csv(self.cached_meta_data_experiment)
+            self._meta = pd.read_csv(self.cached_meta_data_experiment)
         else:
             data, meta = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
 
@@ -145,8 +145,8 @@ class Experiment(object):
         frame = pd.DataFrame(data, columns=columns)
 
         if not os.path.exists(self.cached_experiment):
-            self.get_frame().to_csv(self.cached_experiment)
-            self.get_metadata().to_csv(self.cached_meta_data_experiment)
+            frame.to_csv(self.cached_experiment)
+            self._meta.to_csv(self.cached_meta_data_experiment)
 
         return frame
 
