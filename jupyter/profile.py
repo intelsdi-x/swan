@@ -49,6 +49,7 @@ class Profile(object):
         specified slo (performance target).
         """
         self.exp = e
+        self.metadata = self.exp.get_metadata()
         self.slo = slo
         self.categories = []
         self.data_frame = self.exp.get_frame()
@@ -65,7 +66,9 @@ class Profile(object):
         # find max of loadpoints for every aggressor by length, then take first one longest loadpoint and return it"
         loadpoints_for_all_aggressors = [df['swan_loadpoint_qps'].astype(float).tolist() for (_, df) in
                                          self.p99_by_aggressor]
-        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda lps: len(lps))
+
+        meta_load_points = int(self.metadata.get_value('metadata', 'load_points')
+        longest_loadpoints = max(loadpoints_for_all_aggressors, key=lambda lps: lps == meta_load_points)
 
         data = []
         index = []
@@ -82,7 +85,7 @@ class Profile(object):
             qps = aggressor_frame['swan_loadpoint_qps'].tolist()
 
             throughputs = aggressor_frame['throughputs'].tolist()
-            throughputs.extend([np.nan] * (len(longest_loadpoints) - len(throughputs)))
+            throughputs.extend([np.nan] * (meta_load_points - len(throughputs)))
 
             self.throughput_per_aggressor[name] = throughputs
 
