@@ -1,16 +1,17 @@
 package: github.com/intelsdi-x/swan
 import:
 - package: github.com/Sirupsen/logrus
-  version: 081307d9bc1364753142d5962fc1d795c742baaf
+  version: ~0.11.0
 - package: github.com/gocql/gocql
-- package: github.com/hailocab/gocassa
+- package: github.com/intelsdi-x/snap-plugin-processor-tag
+  version: ~3.0.0
+  subpackages:
+  - tag
 - package: github.com/intelsdi-x/snap-plugin-utilities
-  version: 04621af7a3979bcb8aaf08c3b6542b43fe0bf6cf
   subpackages:
   - config
-  - logger
 - package: github.com/intelsdi-x/snap
-  version: 1.0.0
+  version: ~1.0.0
   subpackages:
   - control/plugin
   - control/plugin/cpolicy
@@ -19,25 +20,40 @@ import:
   - mgmt/rest/client
   - scheduler/wmap
 - package: github.com/montanaflynn/stats
-- package: github.com/intelsdi-x/snap-plugin-processor-tag
-  subpackages:
-  - tag
+  version: ~0.2.0
 - package: github.com/nu7hatch/gouuid
-  version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - package: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: ~0.8.0
+- package: github.com/smartystreets/goconvey
+  version: ~1.6.2
+  subpackages:
+  - convey
 - package: github.com/stretchr/testify
+  version: ~1.1.4
   subpackages:
   - mock
-- package: gopkg.in/cheggaaa/pb.v1
-- package: github.com/vektra/errors
 - package: golang.org/x/crypto
-  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
   subpackages:
   - ssh
 - package: gopkg.in/alecthomas/kingpin.v2
-  version: ~2.2.2
+  version: ~2.2.3
+- package: gopkg.in/cheggaaa/pb.v1
+  version: ~1.0.7
+- package: k8s.io/kubernetes
+  version: 1.5.1
 - package: k8s.io/client-go
-  version: v1.5.0
+  version: 1.5.0
+  subpackages:
+  - 1.5/kubernetes
+  - 1.5/kubernetes/typed/core/v1
+  - 1.5/pkg/api
+  - 1.5/pkg/api/resource
+  - 1.5/pkg/api/unversioned
+  - 1.5/pkg/api/v1
+  - 1.5/pkg/kubelet/qos
+  - 1.5/pkg/labels
+  - 1.5/pkg/watch
+  - 1.5/rest
 testImport:
 - package: github.com/pivotal-golang/bytefmt
+- package: github.com/vektra/errors
