@@ -110,17 +110,17 @@ function _check_s3_params() {
 function download {
     _check_s3_params
 
-    s3cmd sync -c ${S3_CREDS_LOCATION} s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
+    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
     FNAME=$(cat ./latest_build)
-    s3cmd sync -c ${S3_CREDS_LOCATION} s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
+    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
 }
 
 function upload {
     _check_s3_params
 
     FNAME=$(cat ./latest_build)
-    s3cmd put -c ${S3_CREDS_LOCATION} ./${FNAME} s3://${BUCKET_NAME}/build_artifacts/
-    s3cmd put -c ${S3_CREDS_LOCATION} ./latest_build s3://${BUCKET_NAME}/build_artifacts/
+    s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./${FNAME} s3://${BUCKET_NAME}/build_artifacts/
+    s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./latest_build s3://${BUCKET_NAME}/build_artifacts/
 }
 
 case ${1} in
