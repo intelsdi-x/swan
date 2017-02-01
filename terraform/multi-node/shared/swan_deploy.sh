@@ -16,7 +16,7 @@ export HOME_DIR=/home/${USER}
 export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
 export VAGRANT_USER=${USER}
 
-export KUBERNETES_VERSION=v1.4.0-alpha.2-serenity
+export KUBERNETES_VERSION=v1.5.1
 
 pushd /vagrant/resources/scripts
 
