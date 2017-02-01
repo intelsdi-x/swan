@@ -41,12 +41,10 @@ curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_V
 
 tar xzf kubernetes-server-linux-amd64.tar.gz
 
-sudo cp kubernetes/server/bin/kubectl /usr/bin/kubectl
-sudo cp kubernetes/server/bin/kube-apiserver /usr/bin/kube-apiserver
-sudo cp kubernetes/server/bin/kube-controller-manager usr/bin/kube-controller-manager
-sudo cp kubernetes/server/bin/kube-proxy /usr/bin/kube-proxy
-sudo cp kubernetes/server/bin/kube-scheduler /usr/bin/kube-scheduler
-sudo cp kubernetes/server/bin/kubelet /usr/bin/kubelet
+sudo cp kubernetes/server/bin/hyperkube /usr/bin/hyperkube
+pushd /usr/bin
+sudo hyperkube --make-symlinks
+popd
 
 echo "Download & install swan artifacts"
 bash ./artifacts.sh download

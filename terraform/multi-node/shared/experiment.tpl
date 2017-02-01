@@ -48,4 +48,9 @@ export SWAN_MUTILATE_AGENT_CONNECTIONS_DEPTH="8"
 export SWAN_MUTILATE_MASTER="${node1}"
 export SWAN_MUTILATE_AGENT="${node2},${node3}"
 
-sudo -E memcached-sensitivity-profile --kubelet_path=/usr/bin/kubelet --kube_apiserver_path=/usr/bin/kube-apiserver --kube_controller_path=/usr/bin/kube-controller-manager --kube_proxy_path=/usr/bin/kube-proxy --kube_scheduler_path=/usr/bin/kube-scheduler --snap_plugins_path=/usr/bin
+sudo -E memcached-sensitivity-profile --kubelet_path=/usr/bin/kubelet \
+                                      --kube_apiserver_path=/usr/bin/apiserver \
+                                      --kube_controller_path=/usr/bin/controller-manager \
+                                      --kube_proxy_path=/usr/bin/proxy \
+                                      --kube_scheduler_path=/usr/bin/scheduler \
+                                      --snap_plugins_path=/usr/bin
