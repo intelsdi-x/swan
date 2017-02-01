@@ -15,6 +15,7 @@ export SWAN_HP_KUBERNETES_MEMORY_RESOURCE="5000000000"
 export SWAN_KUBE_ALLOW_PRIVILEGED="true"
 export SWAN_KUBE_APISERVER_ARGS="--insecure-bind-address=${controller_ip}"
 export SWAN_KUBE_LOGLEVEL="4"
+export SWAN_KUBERNETES_MASTER="${controller_ip}"
 # Experiment isolations
 export SWAN_HP_SETS="0,1,2,3:0"
 export SWAN_BE_SETS="4,5,6,7,12,13,14,15:0"

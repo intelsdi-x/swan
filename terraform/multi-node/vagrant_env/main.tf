@@ -56,5 +56,6 @@ module "swan_deploy" {
 
   count           = "${var.count}"
   connection_info = "${module.conn_vars.return_map}"
+  hosts_ip_list = ["${vagrant_vbox.vbox.*.private_ip}"]
   repo_path       = "${var.repo_path}"
 }

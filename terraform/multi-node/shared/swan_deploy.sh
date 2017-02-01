@@ -37,12 +37,16 @@ sudo systemctl start snapteld
 sudo cp -r ${HOME_DIR}/.ssh/* /root/.ssh
 
 echo "Installing kubernetes"
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kubectl.$KUBERNETES_VERSION /usr/bin/kubectl
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kube-apiserver.$KUBERNETES_VERSION /usr/bin/kube-apiserver
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kube-controller-manager.$KUBERNETES_VERSION /usr/bin/kube-controller-manager
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kube-proxy.$KUBERNETES_VERSION /usr/bin/kube-proxy
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kube-scheduler.$KUBERNETES_VERSION /usr/bin/kube-scheduler
-sudo s3cmd -c $S3_CREDS_LOCATION sync s3://swan-artifacts/kubelet.$KUBERNETES_VERSION /usr/bin/kubelet
+curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/kubernetes-server-linux-amd64.tar.gz -o kubernetes-server-linux-amd64.tar.gz
+
+tar xzf kubernetes-server-linux-amd64.tar.gz
+
+sudo cp kubernetes/server/bin/kubectl /usr/bin/kubectl
+sudo cp kubernetes/server/bin/kube-apiserver /usr/bin/kube-apiserver
+sudo cp kubernetes/server/bin/kube-controller-manager usr/bin/kube-controller-manager
+sudo cp kubernetes/server/bin/kube-proxy /usr/bin/kube-proxy
+sudo cp kubernetes/server/bin/kube-scheduler /usr/bin/kube-scheduler
+sudo cp kubernetes/server/bin/kubelet /usr/bin/kubelet
 
 echo "Download & install swan artifacts"
 bash ./artifacts.sh download
