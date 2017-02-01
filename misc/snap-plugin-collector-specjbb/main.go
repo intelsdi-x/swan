@@ -1,14 +1,12 @@
 package main
 
 import (
-	"os"
 	"time"
 
-	"github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-specjbb/specjbb"
 )
 
 func main() {
-	meta := specjbb.Meta()
-	plugin.Start(meta, specjbb.NewSpecjbb(time.Now()), os.Args[1])
+	plugin.StartCollector(specjbb.NewSpecjbb(time.Now()), specjbb.NAME, specjbb.VERSION)
 }
