@@ -37,7 +37,7 @@ sudo systemctl start snapteld
 sudo cp -r ${HOME_DIR}/.ssh/* /root/.ssh
 
 echo "Installing kubernetes"
-curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/kubernetes-server-linux-amd64.tar.gz -o kubernetes-server-linux-amd64.tar.gz
+curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/kubernetes-server-linux-amd64.tar.gz -o kubernetes-server-linux-amd64.tar.gz
 
 tar xzf kubernetes-server-linux-amd64.tar.gz
 
