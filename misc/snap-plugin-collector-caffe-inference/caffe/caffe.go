@@ -9,10 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +17,6 @@ import (
 const (
 	NAME        = "caffe-inference"
 	VERSION     = 1
-	TYPE        = plugin.CollectorPluginType
 	METRICNAME  = "batches"
 	UNIT        = "batches"
 	DESCRIPTION = "Images classified by caffe (in batches)"
@@ -44,44 +40,38 @@ type InferenceCollector struct {
 
 // GetMetricTypes implements plugin.PluginCollector interface.
 // Single metric only: /intel/swan/caffe/inference/img which holds number of processed images.
-func (InferenceCollector) GetMetricTypes(configType plugin.ConfigType) ([]plugin.MetricType, error) {
-	var metrics []plugin.MetricType
+func (InferenceCollector) GetMetricTypes(configType plugin.Config) ([]plugin.Metric, error) {
+	var metrics []plugin.Metric
 
-	namespace := core.NewNamespace(namespace...)
+	namespace := plugin.NewNamespace(namespace...)
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	namespace = namespace.AddStaticElement(METRICNAME)
-	metrics = append(metrics, plugin.MetricType{Namespace_: namespace, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: namespace, Unit: UNIT, Version: VERSION})
 
 	return metrics, nil
 }
 
 // CollectMetrics implements plugin.PluginCollector interface.
-func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plugin.MetricType, error) {
-	var metrics []plugin.MetricType
+func (InferenceCollector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.Metric, error) {
+	var metrics []plugin.Metric
 
 	for _, requestedMetric := range metricTypes {
-		requestedMetricNamespace := requestedMetric.Namespace().String()
+		requestedMetricNamespace := strings.Join(append([]string{""}, requestedMetric.Namespace.Strings()...), "/")
 		pluginPrefixNamespace := strings.Join(append([]string{""}, namespace...), "/")
 		if strings.HasPrefix(requestedMetricNamespace, pluginPrefixNamespace) != true {
 			log.Errorf("requested metric %q does not match to the caffe inference collector provided metric (prefix) %q", requestedMetric, pluginPrefixNamespace)
 			return metrics, ErrNspace
 		}
 
-		sourceFilePath, err := config.GetConfigItem(requestedMetric, "stdout_file")
+		sourceFileName, err := requestedMetric.Config.GetString("stdout_file")
 		if err != nil {
 			log.Errorf("stdout_file missing or wrong in config for namespace: %s, error: %s", requestedMetricNamespace, err.Error())
 			return metrics, ErrConf
 		}
 
-		sourceFileName, ok := sourceFilePath.(string)
-		if !ok {
-			log.Errorf("stdout_file name invalid for namespace %s", requestedMetricNamespace)
-			return metrics, ErrConf
-		}
-
 		batches, err := parseOutputFile(sourceFileName)
 		if err != nil {
-			log.Errorf("parsing caffe output (%s) for namespace %s failed: %s", sourceFilePath.(string), requestedMetricNamespace, err.Error())
+			log.Errorf("parsing caffe output (%s) for namespace %s failed: %s", sourceFileName, requestedMetricNamespace, err.Error())
 			return metrics, ErrParse
 		}
 
@@ -90,25 +80,25 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 		const swanNamespacePrefix = 5
 
 		hostname := ""
-		if requestedMetric.Namespace_[namespaceHostnameIndex].Value == "*" {
+		if requestedMetric.Namespace.Element(namespaceHostnameIndex).Value == "*" {
 			hostname, err = os.Hostname()
 			if err != nil {
 				log.Errorf("cannot determine hostname: %s", err.Error())
 				return metrics, ErrPlugin
 			}
 		} else {
-			hostname = requestedMetric.Namespace_[namespaceHostnameIndex].Value
+			hostname = requestedMetric.Namespace.Element(namespaceHostnameIndex).Value
 		}
 
-		metric := plugin.MetricType{Namespace_: requestedMetric.Namespace_,
-			Unit_:        requestedMetric.Unit_,
-			Version_:     requestedMetric.Version_,
-			Description_: DESCRIPTION}
-		metric.Namespace_[namespaceHostnameIndex].Value = hostname
-		metric.Timestamp_ = time.Now()
+		metric := plugin.Metric{Namespace: requestedMetric.Namespace,
+			Unit:        requestedMetric.Unit,
+			Version:     requestedMetric.Version,
+			Description: DESCRIPTION}
+		metric.Namespace[namespaceHostnameIndex].Value = hostname
+		metric.Timestamp = time.Now()
 
 		//Parsing caffe output succeeded so images holds value of processed images
-		metric.Data_ = batches
+		metric.Data = batches
 
 		metrics = append(metrics, metric)
 	}
@@ -116,35 +106,32 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.MetricType) ([]plu
 }
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
-func (InferenceCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	policy := cpolicy.New()
-	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
+func (InferenceCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	policy := plugin.ConfigPolicy{}
+	err := policy.AddNewStringRule([]string{}, "stdout_file", true)
 	if err != nil {
 		log.Errorf("cannot create new string rule: %s", err.Error())
 		return policy, ErrPlugin
 	}
-	policyNode := cpolicy.NewPolicyNode()
-	policyNode.Add(stdoutFile)
-	policy.Add(namespace, policyNode)
 
 	return policy, nil
 }
 
 // Meta returns plugin metadata.
-func Meta() *plugin.PluginMeta {
-	meta := plugin.NewPluginMeta(
-		NAME,
-		VERSION,
-		TYPE,
-		[]string{plugin.SnapGOBContentType},
-		[]string{plugin.SnapGOBContentType},
-		plugin.Unsecure(true),
-		plugin.RoutingStrategy(plugin.DefaultRouting),
-		plugin.CacheTTL(1*time.Second),
-	)
-
-	return meta
-}
+//func Meta() *plugin.PluginMeta {
+//	meta := plugin.NewPluginMeta(
+//		NAME,
+//		VERSION,
+//		TYPE,
+//		[]string{plugin.SnapGOBContentType},
+//		[]string{plugin.SnapGOBContentType},
+//		plugin.Unsecure(true),
+//		plugin.RoutingStrategy(plugin.DefaultRouting),
+//		plugin.CacheTTL(1*time.Second),
+//	)
+//
+//	return meta
+//}
 
 // Longest valid output will look like following:
 // I1109 13:24:05.241741  2329 caffe.cpp:275] Batch 99, loss = 0.75406
