@@ -2,21 +2,19 @@ package sessionPublisher
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core/ctypes"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/pkg/errors"
 )
 
 const (
-	name       = "session-test"
-	version    = 1
-	pluginType = plugin.PublisherPluginType
+	// NAME is name of the plugin used to register it in Snap.
+	NAME = "session-test"
+	// VERSION represents version of the plugin.
+	VERSION = 1
 )
 
 // The SessionPublisher is a test publisher hosted in swan which enables
@@ -25,19 +23,12 @@ type SessionPublisher struct{}
 
 // Publish is an implementation needed for the Publisher interface and here,
 // stores metrics by namespace and tags to a file, defined in the plugin configuration.
-func (f *SessionPublisher) Publish(contentType string, content []byte, config map[string]ctypes.ConfigValue) error {
-	var metrics []plugin.MetricType
+func (f SessionPublisher) Publish(inputMetrics []plugin.Metric, config plugin.Config) error {
+	var metrics []plugin.Metric
 
-	fileout := config["file"].(ctypes.ConfigValueStr).Value
-
-	switch contentType {
-	case plugin.SnapGOBContentType:
-		dec := gob.NewDecoder(bytes.NewBuffer(content))
-		if err := dec.Decode(&metrics); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("Unknown content type '%s'", contentType)
+	fileout, err := config.GetString("file")
+	if err != nil {
+		errors.Wrap(err, "Unable to retrive file from configuration")
 	}
 
 	file, err := os.OpenFile(fileout, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
@@ -49,7 +40,7 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 	w := bufio.NewWriter(file)
 	for _, m := range metrics {
 		var tags []string
-		for key, value := range m.Tags() {
+		for key, value := range m.Tags {
 			tags = append(tags, key+"="+value)
 		}
 
@@ -57,9 +48,9 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 		w.WriteString(
 			fmt.Sprintf(
 				"%s\t%s\t%v\n",
-				"/"+strings.Join(m.Namespace().Strings(), "/"),
+				"/"+strings.Join(m.Namespace.Strings(), "/"),
 				strings.Join(tags, ","),
-				m.Data(),
+				m.Data,
 			))
 	}
 	w.Flush()
@@ -69,22 +60,16 @@ func (f *SessionPublisher) Publish(contentType string, content []byte, config ma
 
 // GetConfigPolicy is an implementation needed for the Publisher interface and here,
 // returns configuration requiring 'swan_experiment' and 'swan_phase' to be set.
-func (f *SessionPublisher) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	cp := cpolicy.New()
-	config := cpolicy.NewPolicyNode()
-
-	r1, err := cpolicy.NewStringRule("file", true)
+func (f SessionPublisher) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	cp := plugin.ConfigPolicy{}
+	err := cp.AddNewStringRule([]string{""}, "file", true)
 	if err != nil {
 		panic(err)
 	}
-	r1.Description = "Absolute path to the output file for publishing"
-
-	config.Add(r1)
-	cp.Add([]string{""}, config)
 	return cp, nil
 }
 
 // Meta returns a plugin meta data.
-func Meta() *plugin.PluginMeta {
-	return plugin.NewPluginMeta(name, version, pluginType, []string{plugin.SnapGOBContentType}, []string{plugin.SnapGOBContentType})
-}
+//func Meta() *plugin.PluginMeta {
+//	return plugin.NewPluginMeta(NAME, VERSION, pluginType, []string{plugin.SnapGOBContentType}, []string{plugin.SnapGOBContentType})
+//}
