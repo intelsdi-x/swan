@@ -8,54 +8,50 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 )
 
-// Constants representing plugin name, version, type and unit of measurement used.
+// Constants representing collector name, version, type and unit of measurement used.
 const (
 	NAME    = "mutilate"
 	VERSION = 1
-	TYPE    = snapPlugin.CollectorPluginType
 	UNIT    = "ns"
 )
 
-type plugin struct {
+type collector struct {
 	now time.Time
 }
 
 // NewMutilate creates new mutilate collector.
-func NewMutilate(now time.Time) snapPlugin.CollectorPlugin {
-	return &plugin{now}
+func NewMutilate(now time.Time) plugin.Collector {
+	return plugin.Collector(collector{now})
 }
 
-// GetMetricTypes implements plugin.PluginCollector interface.
-func (mutilate *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+// GetMetricTypes implements collector.PluginCollector interface.
+func (mutilate collector) GetMetricTypes(configType plugin.Config) ([]plugin.Metric, error) {
+	var metrics []plugin.Metric
 
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("avg"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("std"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("min"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "5th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "10th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "90th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "95th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("percentile", "99th"), Unit_: UNIT, Version_: VERSION})
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace("qps"), Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("avg"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("std"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("min"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "5th"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "10th"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "90th"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "95th"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "99th"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("qps"), Unit: UNIT, Version: VERSION})
 
 	customNamespace := createNewMetricNamespace("percentile")
 	customNamespace = customNamespace.AddDynamicElement("percentile", "Custom percentile from mutilate").AddStaticElement("custom")
 
-	metrics = append(metrics, snapPlugin.MetricType{Namespace_: customNamespace, Unit_: UNIT, Version_: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: customNamespace, Unit: UNIT, Version: VERSION})
 
 	return metrics, nil
 }
 
-func createNewMetricNamespace(metricName ...string) core.Namespace {
-	namespace := core.NewNamespace("intel", "swan", "mutilate")
+func createNewMetricNamespace(metricName ...string) plugin.Namespace {
+	namespace := plugin.NewNamespace("intel", "swan", "mutilate")
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	for _, value := range metricName {
 		namespace = namespace.AddStaticElement(value)
@@ -64,18 +60,18 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 	return namespace
 }
 
-// CollectMetrics implements plugin.PluginCollector interface.
-func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+// CollectMetrics implements collector.PluginCollector interface.
+func (mutilate collector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.Metric, error) {
+	var metrics []plugin.Metric
 
-	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
+	sourceFileName, err := metricTypes[0].Config.GetString("stdout_file")
 	if err != nil {
 		msg := fmt.Sprintf("No file path set - no metrics are collected: %s", err.Error())
 		log.Error(msg)
 		return metrics, errors.New(msg)
 	}
 
-	rawMetrics, err := parse.File(sourceFilePath.(string))
+	rawMetrics, err := parse.File(sourceFileName)
 	if err != nil {
 		msg := fmt.Sprintf("Mutilate output parsing failed: %s", err.Error())
 		log.Error(msg)
@@ -93,12 +89,12 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 	const swanNamespacePrefix = len([...]string{"intel", "swan", "mutilate", "hostname"})
 
 	for _, metricType := range metricTypes {
-		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
-		metric.Namespace_[namespaceHostnameIndex].Value = hostname
-		metric.Timestamp_ = mutilate.now
+		metric := plugin.Metric{Namespace: metricType.Namespace, Unit: metricType.Unit, Version: metricType.Version}
+		metric.Namespace[namespaceHostnameIndex].Value = hostname
+		metric.Timestamp = mutilate.now
 
 		// Strips prefix. For example: '/intel/swan/mutilate/<hostname>/avg' to '/avg'.
-		metricNamespaceSuffix := metric.Namespace_[swanNamespacePrefix:]
+		metricNamespaceSuffix := metric.Namespace[swanNamespacePrefix:]
 
 		// Convert slice of namespace elements to slice of strings.
 		metricNamespaceSuffixStrings := []string{}
@@ -110,7 +106,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 		metricName := strings.Join(metricNamespaceSuffixStrings, "/")
 
 		if value, ok := rawMetrics.Raw[metricName]; ok {
-			metric.Data_ = value
+			metric.Data = value
 		} else {
 			// If metric wasn't found directly in raw metrics map, it may be a custom
 			// percentile latency. For example, 'percentile/*/custom'.
@@ -133,7 +129,7 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 					// Specialize '*' to for example '99_999th'.
 					metricNamespaceSuffix[1].Value = percentileStringSanitized
 
-					metric.Data_ = value
+					metric.Data = value
 				} else {
 					log.Errorf("Could not find raw metric for key '%s': skipping metric", parse.MutilatePercentileCustom)
 				}
@@ -149,29 +145,29 @@ func (mutilate *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]s
 
 }
 
-// GetConfigPolicy implements plugin.PluginCollector interface.
-func (mutilate *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	stdoutFile, _ := cpolicy.NewStringRule("stdout_file", true)
-	experiment := cpolicy.NewPolicyNode()
-	experiment.Add(stdoutFile)
-	policy := cpolicy.New()
-	policy.Add([]string{"intel", "swan", "mutilate"}, experiment)
+// GetConfigPolicy implements collector.PluginCollector interface.
+func (mutilate collector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	policy := plugin.NewConfigPolicy()
+	err := policy.AddNewStringRule([]string{"intel", "swan", "mutilate"}, "stdout_file", true)
+	if err != nil {
+		return plugin.ConfigPolicy{}, err
+	}
 
-	return policy, nil
+	return *policy, nil
 }
 
-// Meta returns plugin metadata.
-func Meta() *snapPlugin.PluginMeta {
-	meta := snapPlugin.NewPluginMeta(
-		NAME,
-		VERSION,
-		TYPE,
-		[]string{snapPlugin.SnapGOBContentType},
-		[]string{snapPlugin.SnapGOBContentType},
-		snapPlugin.Unsecure(true),
-		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-		snapPlugin.CacheTTL(1*time.Second),
-	)
-
-	return meta
-}
+// Meta returns collector metadata.
+//func Meta() *snapPlugin.PluginMeta {
+//	meta := snapPlugin.NewPluginMeta(
+//		NAME,
+//		VERSION,
+//		TYPE,
+//		[]string{snapPlugin.SnapGOBContentType},
+//		[]string{snapPlugin.SnapGOBContentType},
+//		snapPlugin.Unsecure(true),
+//		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
+//		snapPlugin.CacheTTL(1*time.Second),
+//	)
+//
+//	return meta
+//}
