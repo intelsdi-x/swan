@@ -1,3 +1,14 @@
+data "template_file" "experiment" {
+  template = "${file("${path.module}/experiment.tpl")}"
+
+  vars = {
+    controller_ip = "${element(var.hosts_ip_list, 0)}"
+    node1         = "${element(var.hosts_ip_list, 1)}"
+    node2         = "${element(var.hosts_ip_list, 2)}"
+    node3         = "${element(var.hosts_ip_list, 3)}"
+  }
+}
+
 resource "null_resource" "deploying_swan" {
   count = "${var.count}"
 
@@ -18,28 +29,30 @@ resource "null_resource" "deploying_swan" {
 
   # Upload S3 auth file to remote environment.
   provisioner "local-exec" {
-    command = "cat $HOME/swan_s3_creds/.s3cfg > .s3cfg" 
+    command = "cat $HOME/swan_s3_creds/.s3cfg > .s3cfg"
   }
+
   provisioner "file" {
-    source = ".s3cfg"
+    source      = ".s3cfg"
     destination = "/home/${element(var.connection_info["user"], count.index)}/swan_s3_creds/.s3cfg"
   }
 
   # Upload vagrant deployment to remote environment.
   provisioner "file" {
-    source = "${var.repo_path}/misc/dev/vagrant/singlenode/resources"
+    source      = "${var.repo_path}/misc/dev/vagrant/singlenode/resources"
     destination = "/vagrant/"
   }
 
   # Upload artifacts uploader/downloader to remote environment.
   provisioner "file" {
-    source = "${var.repo_path}/scripts/artifacts.sh"
+    source      = "${var.repo_path}/scripts/artifacts.sh"
     destination = "/vagrant/resources/scripts/artifacts.sh"
   }
 
   # Upload experiment configuartion to remote environment.
   provisioner "file" {
-    source = "${var.repo_path}/terraform/multi-node/shared/experiment.sh"
+    #source = "${var.repo_path}/terraform/multi-node/shared/experiment.sh"
+    content     = "${data.template_file.experiment.rendered}"
     destination = "/home/${element(var.connection_info["user"], count.index)}/experiment.sh"
   }
 
@@ -47,5 +60,4 @@ resource "null_resource" "deploying_swan" {
   provisioner "remote-exec" {
     script = "${var.repo_path}/terraform/multi-node/shared/swan_deploy.sh"
   }
-
 }

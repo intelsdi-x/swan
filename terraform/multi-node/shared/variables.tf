@@ -14,9 +14,14 @@ EOF
 }
 
 variable "count" {
-    description = "number of machines to connect to"
+  description = "number of machines to connect to"
+}
+
+variable hosts_ip_list {
+  description = "list of private IPs"
+  type        = "list"
 }
 
 variable "repo_path" {
-    description = "Path to swan repository"
+  description = "Path to swan repository"
 }

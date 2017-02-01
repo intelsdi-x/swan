@@ -125,7 +125,17 @@ func (m *Metadata) Connect() error {
 		return err
 	}
 
-	if err := session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+	_, err = session.Query("select * from system_schema.keyspaces;").Iter().SliceMap()
+	if err != nil {
+		return err
+	}
+
+	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+		return err
+	}
+
+	_, err = session.Query("select * from system_schema.keyspaces;").Iter().SliceMap()
+	if err != nil {
 		return err
 	}
 

@@ -87,8 +87,9 @@ module "update_mesh" {
 
 module "swan_deploy" {
   source = "../shared"
-  
+
   count           = "${var.count}"
+  hosts_ip_list   = ["${aws_instance.cluster.*.private_ip}"]
   connection_info = "${module.conn_vars.return_map}"
   repo_path       = "${var.repo_path}"
 }
