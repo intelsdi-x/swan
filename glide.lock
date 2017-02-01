@@ -1,5 +1,5 @@
-hash: 121512000c75490e70591e120cc7e5968106bb248af18c420e79ef17b0543145
-updated: 2017-01-31T15:22:18.260761272+01:00
+hash: 89c6dc4324738751ec35ae30e2f1693e18b9ff2ff40e7a598f4b085776acdc7e
+updated: 2017-02-01T14:25:10.392808348+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -130,6 +130,11 @@ imports:
   - pkg/schedule
   - pkg/stringutils
   - scheduler/wmap
+- name: github.com/intelsdi-x/snap-plugin-lib-go
+  version: ed851e36ef19aa204063ac1e30551ce1e50fa816
+  subpackages:
+  - v1/plugin
+  - v1/plugin/rpc
 - name: github.com/intelsdi-x/snap-plugin-processor-tag
   version: 2c6833e0eac8ed82c08178af43a16b3ab66fd093
   subpackages:
@@ -144,6 +149,8 @@ imports:
   version: 8ddce2a84170772b95dd5d576c48d517b22cac63
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
+- name: github.com/julienschmidt/httprouter
+  version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
