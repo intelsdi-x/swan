@@ -34,7 +34,7 @@ func NewSpecjbb(now time.Time) plugin.Collector {
 
 // GetMetricTypes implements collector.PluginCollector interface.
 func (specjbb *collector) GetMetricTypes(configType plugin.Config) ([]plugin.Metric, error) {
-	var metrics []plugin.Metric
+	metrics := []plugin.Metric{}
 
 	metricNames := [][]string{
 		[]string{"min"},
@@ -117,27 +117,11 @@ func (specjbb *collector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 
 // GetConfigPolicy implements collector.PluginCollector interface.
 func (specjbb *collector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
-	policy := plugin.ConfigPolicy{}
+	policy := plugin.NewConfigPolicy()
 	err := policy.AddNewStringRule(namespace, "stdout_file", true)
 	if err != nil {
-		return policy, errors.Wrap(err, "cannot create new string rule")
+		return *policy, errors.Wrap(err, "cannot create new string rule")
 	}
 
-	return policy, nil
+	return *policy, nil
 }
-
-// Meta returns collector metadata.
-//func Meta() *snapPlugin.PluginMeta {
-//	meta := snapPlugin.NewPluginMeta(
-//		NAME,
-//		VERSION,
-//		TYPE,
-//		[]string{snapPlugin.SnapGOBContentType},
-//		[]string{snapPlugin.SnapGOBContentType},
-//		snapPlugin.Unsecure(true),
-//		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-//		snapPlugin.CacheTTL(1*time.Second),
-//	)
-//
-//	return meta
-//}

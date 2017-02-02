@@ -8,5 +8,5 @@ import (
 )
 
 func main() {
-	plugin.StartCollector(mutilate.NewMutilate(time.Now()), mutilate.NAME, mutilate.VERSION)
+	plugin.StartCollector(mutilate.NewMutilate(time.Now()), mutilate.NAME, mutilate.VERSION, plugin.CacheTTL(1*time.Second))
 }

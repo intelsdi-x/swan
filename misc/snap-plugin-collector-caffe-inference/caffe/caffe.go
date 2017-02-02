@@ -107,31 +107,15 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 
 // GetConfigPolicy implements plugin.PluginCollector interface.
 func (InferenceCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
-	policy := plugin.ConfigPolicy{}
+	policy := plugin.NewConfigPolicy()
 	err := policy.AddNewStringRule([]string{}, "stdout_file", true)
 	if err != nil {
 		log.Errorf("cannot create new string rule: %s", err.Error())
-		return policy, ErrPlugin
+		return *policy, ErrPlugin
 	}
 
-	return policy, nil
+	return *policy, nil
 }
-
-// Meta returns plugin metadata.
-//func Meta() *plugin.PluginMeta {
-//	meta := plugin.NewPluginMeta(
-//		NAME,
-//		VERSION,
-//		TYPE,
-//		[]string{plugin.SnapGOBContentType},
-//		[]string{plugin.SnapGOBContentType},
-//		plugin.Unsecure(true),
-//		plugin.RoutingStrategy(plugin.DefaultRouting),
-//		plugin.CacheTTL(1*time.Second),
-//	)
-//
-//	return meta
-//}
 
 // Longest valid output will look like following:
 // I1109 13:24:05.241741  2329 caffe.cpp:275] Batch 99, loss = 0.75406

@@ -155,19 +155,3 @@ func (mutilate collector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 
 	return *policy, nil
 }
-
-// Meta returns collector metadata.
-//func Meta() *snapPlugin.PluginMeta {
-//	meta := snapPlugin.NewPluginMeta(
-//		NAME,
-//		VERSION,
-//		TYPE,
-//		[]string{snapPlugin.SnapGOBContentType},
-//		[]string{snapPlugin.SnapGOBContentType},
-//		snapPlugin.Unsecure(true),
-//		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-//		snapPlugin.CacheTTL(1*time.Second),
-//	)
-//
-//	return meta
-//}

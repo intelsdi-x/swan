@@ -8,5 +8,5 @@ import (
 )
 
 func main() {
-	plugin.StartCollector(specjbb.NewSpecjbb(time.Now()), specjbb.NAME, specjbb.VERSION)
+	plugin.StartCollector(specjbb.NewSpecjbb(time.Now()), specjbb.NAME, specjbb.VERSION, plugin.CacheTTL(1*time.Second))
 }
