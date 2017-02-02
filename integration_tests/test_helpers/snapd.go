@@ -39,7 +39,7 @@ func (s *Snapteld) Start() error {
 		return errors.New("Cannot find GOPATH")
 	}
 	snapteldPath := path.Join(gopath, "bin", "snapteld")
-	snapCommand := fmt.Sprintf("%s -t 0 -p %d --control-listen-port %d", snapteldPath, s.apiPort, s.rpcPort)
+	snapCommand := fmt.Sprintf("%s -t 0 -p %d --control-listen-port %d -l 1", snapteldPath, s.apiPort, s.rpcPort)
 
 	taskHandle, err := l.Execute(snapCommand)
 	if err != nil {
