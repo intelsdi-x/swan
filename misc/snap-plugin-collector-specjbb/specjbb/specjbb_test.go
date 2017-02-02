@@ -32,26 +32,6 @@ var (
 func TestSpecjbbCollectorPlugin(t *testing.T) {
 	Convey("When I create SPECjbb plugin object", t, func() {
 		specjbbPlugin := NewSpecjbb(now)
-
-		//Convey("I should receive meta data for plugin", func() {
-		//	meta := Meta()
-		//	So(meta.Name, ShouldEqual, "specjbb")
-		//	So(meta.Version, ShouldEqual, 1)
-		//	So(meta.Type, ShouldEqual, snapPlugin.CollectorPluginType)
-		//})
-
-		//Convey("I should receive information about required configuration", func() {
-		//	policy, err := specjbbPlugin.GetConfigPolicy()
-		//	So(err, ShouldBeNil)
-		//
-		//	experimentConfig := policy.Get(namespace).RulesAsTable()
-		//	So(experimentConfig, ShouldHaveLength, 1)
-		//	So(experimentConfig[0].Required, ShouldBeTrue)
-		//	So(experimentConfig[0].Name, ShouldEqual, "stdout_file")
-		//	So(experimentConfig[0].Type, ShouldEqual, "string")
-		//})
-
-		//config := snapPlugin.NewPluginConfigType()
 		metricTypes, err := specjbbPlugin.GetMetricTypes(plugin.Config{})
 		So(err, ShouldBeNil)
 

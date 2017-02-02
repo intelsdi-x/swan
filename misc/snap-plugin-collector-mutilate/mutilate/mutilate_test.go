@@ -15,26 +15,6 @@ func TestMutilatePlugin(t *testing.T) {
 	Convey("When I create mutilate collector object", t, func() {
 		now := time.Now()
 		mutilatePlugin := NewMutilate(now)
-
-		//Convey("I should receive information about required configuration", func() {
-		//	policy, err := mutilatePlugin.GetConfigPolicy()
-		//	So(err, ShouldBeNil)
-		//
-		//	experimentConfig := policy.Get([]string{"intel", "swan", "mutilate"}).RulesAsTable()
-		//	So(err, ShouldBeNil)
-		//	So(experimentConfig, ShouldHaveLength, 1)
-		//	So(experimentConfig[0].Required, ShouldBeTrue)
-		//	So(experimentConfig[0].Name, ShouldEqual, "stdout_file")
-		//	So(experimentConfig[0].Type, ShouldEqual, "string")
-		//})
-
-		//config := snapPlugin.NewPluginConfigType()
-		//phaseName := ctypes.ConfigValueStr{Value: "some random tag!"}
-		//config.AddItem("phase_name", phaseName)
-		//config.AddItem("experiment_name",
-		//	ctypes.ConfigValueStr{Value: "some random experiment!"})
-		//config.AddItem("stdout_file", ctypes.ConfigValueStr{Value: "mutilate.stdout"})
-
 		metricTypes, metricTypesError := mutilatePlugin.GetMetricTypes(plugin.Config{})
 
 		Convey("I should receive information about metrics", func() {

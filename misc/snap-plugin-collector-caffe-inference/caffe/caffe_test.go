@@ -22,24 +22,6 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 	Convey("When I create caffe-inference plugin object", t, func() {
 		caffePlugin := InferenceCollector{}
 
-		//Convey("I should receive meta data for plugin", func() {
-		//	meta := Meta()
-		//	So(meta.Name, ShouldEqual, "caffe-inference")
-		//	So(meta.Version, ShouldEqual, 1)
-		//	So(meta.Type, ShouldEqual, snapPlugin.CollectorPluginType)
-		//})
-
-		//Convey("I should receive information about required configuration", func() {
-		//	policy, err := caffePlugin.GetConfigPolicy()
-		//	So(err, ShouldBeNil)
-		//
-		//	experimentConfig := policy.
-		//	So(experimentConfig, ShouldHaveLength, 1)
-		//	So(experimentConfig[0].Required, ShouldBeTrue)
-		//	So(experimentConfig[0].Name, ShouldEqual, "stdout_file")
-		//	So(experimentConfig[0].Type, ShouldEqual, "string")
-		//})
-		
 		Convey("I should receive information about metrics", func() {
 			metricTypes, err := caffePlugin.GetMetricTypes(plugin.Config{})
 			So(err, ShouldBeNil)
