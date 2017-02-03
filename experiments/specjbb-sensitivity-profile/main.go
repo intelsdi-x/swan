@@ -24,28 +24,6 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
-const (
-	// ExperimentKey defines the key for Snap tag.
-	ExperimentKey = "swan_experiment"
-	// PhaseKey defines the key for Snap tag.
-	PhaseKey = "swan_phase"
-	// RepetitionKey defines the key for Snap tag.
-	RepetitionKey = "swan_repetition"
-	// LoadPointQPSKey defines the key for Snap tag.
-	LoadPointQPSKey = "swan_loadpoint_qps"
-	// AggressorNameKey defines the key for Snap tag.
-	AggressorNameKey = "swan_aggressor_name"
-
-	// See /usr/include/sysexits.h for refference regarding constants below
-
-	// ExUsage reperense command line user error exit code
-	ExUsage = 64
-	// ExSoftware represents internal software error exit code
-	ExSoftware = 70
-	// ExIOErr represents input/output error exit code
-	ExIOErr = 74
-)
-
 var (
 	specjbbIP = conf.NewStringFlag(
 		"specjbb_loadgenerator_ip",
@@ -67,14 +45,14 @@ func main() {
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 	// Create metadata associated with experiment
 	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
 	err = metadata.Connect()
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
@@ -86,7 +64,7 @@ func main() {
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
-		os.Exit(ExIOErr)
+		os.Exit(experiment.ExIOErr)
 	}
 
 	// Setup logging set to both output and logFile.
@@ -142,7 +120,7 @@ func main() {
 		load, err = common.GetPeakLoad(specjbbBackendLauncher, specjbbLoadGeneratorSessionPair.LoadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
-			os.Exit(ExSoftware)
+			os.Exit(experiment.ExSoftware)
 		}
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
@@ -189,7 +167,7 @@ func main() {
 	err = metadata.RecordMap(records)
 	if err != nil {
 		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	// Iterate over aggressors
@@ -243,11 +221,11 @@ func main() {
 					}
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						ExperimentKey, uuid.String(),
-						PhaseKey, phaseName,
-						RepetitionKey, repetition,
-						LoadPointQPSKey, phaseQPS,
-						AggressorNameKey, aggressorName,
+						experiment.ExperimentKey, uuid.String(),
+						experiment.PhaseKey, phaseName,
+						experiment.RepetitionKey, repetition,
+						experiment.LoadPointQPSKey, phaseQPS,
+						experiment.AggressorNameKey, aggressorName,
 					)
 
 					// Launch aggressor task(s) when we are not in baseline.
@@ -314,7 +292,7 @@ func main() {
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
-						os.Exit(ExSoftware)
+						os.Exit(experiment.ExSoftware)
 					}
 				}
 			} // repetition

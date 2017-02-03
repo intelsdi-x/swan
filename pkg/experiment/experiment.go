@@ -15,6 +15,28 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+const (
+	// ExperimentKey defines the key for Snap tag.
+	ExperimentKey = "swan_experiment"
+	// PhaseKey defines the key for Snap tag.
+	PhaseKey = "swan_phase"
+	// RepetitionKey defines the key for Snap tag.
+	RepetitionKey = "swan_repetition"
+	// LoadPointQPSKey defines the key for Snap tag.
+	LoadPointQPSKey = "swan_loadpoint_qps"
+	// AggressorNameKey defines the key for Snap tag.
+	AggressorNameKey = "swan_aggressor_name"
+
+	// See /usr/include/sysexits.h for refference regarding constants below
+
+	// ExUsage reperense command line user error exit code
+	ExUsage = 64
+	// ExSoftware represents internal software error exit code
+	ExSoftware = 70
+	// ExIOErr represents input/output error exit code
+	ExIOErr = 74
+)
+
 // Configuration - set of parameters to control the experiment.
 type Configuration struct {
 	LogLevel log.Level

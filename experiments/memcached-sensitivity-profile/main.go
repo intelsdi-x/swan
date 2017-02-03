@@ -24,28 +24,6 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
-const (
-	// ExperimentKey defines the key for Snap tag.
-	ExperimentKey = "swan_experiment"
-	// PhaseKey defines the key for Snap tag.
-	PhaseKey = "swan_phase"
-	// RepetitionKey defines the key for Snap tag.
-	RepetitionKey = "swan_repetition"
-	// LoadPointQPSKey defines the key for Snap tag.
-	LoadPointQPSKey = "swan_loadpoint_qps"
-	// AggressorNameKey defines the key for Snap tag.
-	AggressorNameKey = "swan_aggressor_name"
-
-	// See /usr/include/sysexits.h for refference regarding constants below
-
-	// ExUsage reperense command line user error exit code
-	ExUsage = 64
-	// ExSoftware represents internal software error exit code
-	ExSoftware = 70
-	// ExIOErr represents input/output error exit code
-	ExIOErr = 74
-)
-
 func main() {
 	// Preparing application - setting name, help, aprsing flags etc.
 	experimentStart := time.Now()
@@ -55,7 +33,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	err := conf.ParseFlags()
 	if err != nil {
 		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		os.Exit(ExUsage)
+		os.Exit(experiment.ExUsage)
 	}
 	logrus.SetLevel(conf.LogLevel())
 
@@ -63,13 +41,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
 	err = metadata.Connect()
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
@@ -78,7 +56,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
-		os.Exit(ExIOErr)
+		os.Exit(experiment.ExIOErr)
 	}
 
 	// Setup logging set to both output and logFile.
@@ -95,7 +73,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
 	if err != nil {
 		logrus.Errorf("Cannot create executors: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 	defer cleanup()
 
@@ -103,7 +81,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
 		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
@@ -116,13 +94,13 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
 	if err != nil {
 		logrus.Errorf("Cannot create load generator: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	snapSession, err := mutilatesession.NewSessionLauncherDefault()
 	if err != nil {
 		logrus.Errorf("Cannot create snap session: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	// Retrieve peak load from flags and overwrite it when required.
@@ -131,7 +109,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
-			os.Exit(ExSoftware)
+			os.Exit(experiment.ExSoftware)
 		}
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
@@ -177,7 +155,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	err = metadata.RecordMap(records)
 	if err != nil {
 		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(ExSoftware)
+		os.Exit(experiment.ExSoftware)
 	}
 
 	for _, beLauncher := range beLaunchers {
@@ -227,11 +205,11 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 					}
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						ExperimentKey, uuid.String(),
-						PhaseKey, phaseName,
-						RepetitionKey, repetition,
-						LoadPointQPSKey, phaseQPS,
-						AggressorNameKey, aggressorName,
+						experiment.ExperimentKey, uuid.String(),
+						experiment.PhaseKey, phaseName,
+						experiment.RepetitionKey, repetition,
+						experiment.LoadPointQPSKey, phaseQPS,
+						experiment.AggressorNameKey, aggressorName,
 					)
 
 					// Launch BE tasks when we are not in baseline.
@@ -296,7 +274,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				if err != nil {
 					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
 					if stopOnError {
-						os.Exit(ExSoftware)
+						os.Exit(experiment.ExSoftware)
 					}
 				}
 			}
