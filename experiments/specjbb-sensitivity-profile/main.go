@@ -82,7 +82,7 @@ func main() {
 	fmt.Println(uuid.String())
 
 	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(ExIOErr)
@@ -221,7 +221,7 @@ func main() {
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					_, err := common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}

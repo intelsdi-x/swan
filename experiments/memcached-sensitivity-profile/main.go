@@ -74,7 +74,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
-	experimentDirectory, logFile, err := common.CreateExperimentDir(uuid.String())
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(ExIOErr)
@@ -209,7 +209,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					_, err := common.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}

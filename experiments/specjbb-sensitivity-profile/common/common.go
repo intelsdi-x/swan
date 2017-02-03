@@ -2,55 +2,14 @@ package common
 
 import (
 	"fmt"
-	"os"
-	"path"
-	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/pkg/errors"
 )
-
-// CreateRepetitionDir creates folders that store repetition logs inside experiment's directory.
-func CreateRepetitionDir(experimentDirectory, phaseName string, repetition int) (string, error) {
-	repetitionDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
-	err := os.MkdirAll(repetitionDir, 0777)
-	if err != nil {
-		return "", errors.Wrapf(err, "could not create dir %q", repetitionDir)
-	}
-
-	err = os.Chdir(repetitionDir)
-	if err != nil {
-		return "", errors.Wrapf(err, "could not change to dir %q", repetitionDir)
-	}
-
-	return repetitionDir, nil
-}
-
-// CreateExperimentDir creates directory structure for the experiment.
-func CreateExperimentDir(uuid string) (experimentDirectory string, logFile *os.File, err error) {
-	experimentDirectory = path.Join(os.TempDir(), conf.AppName(), uuid)
-	err = os.MkdirAll(experimentDirectory, 0777)
-	if err != nil {
-		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
-	}
-	err = os.Chdir(experimentDirectory)
-	if err != nil {
-		return "", &os.File{}, errors.Wrapf(err, "cannot chdir to experiment directory", experimentDirectory)
-	}
-
-	masterLogFilename := path.Join(experimentDirectory, "master.log")
-	logFile, err = os.OpenFile(masterLogFilename, os.O_WRONLY|os.O_CREATE, 0755)
-	if err != nil {
-		return "", &os.File{}, errors.Wrapf(err, "could not open log file %q", masterLogFilename)
-	}
-
-	return experimentDirectory, logFile, nil
-}
 
 // PrepareSnapSpecjbbSessionLauncher prepares a SessionLauncher that runs SPECjbb collector and records that into storage.
 // TODO: this should be put into swan:/pkg/snap
