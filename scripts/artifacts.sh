@@ -110,7 +110,9 @@ function _check_s3_params() {
 function download {
     _check_s3_params
 
-    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
+#    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
+	# tmp. workaround for testing
+	echo "swan_arti_stan.tar.gz" > ./latest_build
     FNAME=$(cat ./latest_build)
     s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
 }

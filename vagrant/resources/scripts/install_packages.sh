@@ -4,7 +4,7 @@ set -e
 
 echo "Installing centos packages..."
 echo Updating package lists
-yum makecache fast -y -q
+yum makecache -q
 yum update -y -q
 yum install -y -q epel-release  # Enables EPEL repo
 echo Installing packages
