@@ -2,7 +2,6 @@ package sensitivity
 
 import (
 	"fmt"
-	"os/user"
 	"runtime"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -18,25 +17,8 @@ var (
 	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 
 	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
-	KubernetesMasterFlag    = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
+	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
 )
-
-// NewRemote is helper for creating remotes with default sshConfig.
-// TODO: this should be put into swan:/pkg/executors
-func NewRemote(ip string) (executor.Executor, error) {
-	// TODO: Have ability to choose user using parameter here.
-	user, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-
-	sshConfig, err := executor.NewSSHConfig(ip, executor.DefaultSSHPort, user)
-	if err != nil {
-		return nil, err
-	}
-
-	return executor.NewRemote(sshConfig), nil
-}
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
 func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory ExecutorFactoryFunc, cleanup func(), err error) {
@@ -44,7 +26,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		k8sConfig := kubernetes.DefaultConfig()
 		masterAddress := KubernetesMasterFlag.Value()
 		apiAddress := fmt.Sprintf("%s:%s", masterAddress, "8080")
-		masterExecutor, err := NewRemote(masterAddress)
+		masterExecutor, err := executor.NewRemoteFromIP(masterAddress)
 		if err != nil {
 			return nil, nil, nil, err
 		}

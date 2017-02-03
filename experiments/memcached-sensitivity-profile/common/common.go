@@ -8,7 +8,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
@@ -63,7 +62,7 @@ func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 	agentsLoadGeneratorExecutors := []executor.Executor{}
 	if mutilateMasterFlag.Value() != mutilateMasterFlagDefault {
 		var err error
-		masterLoadGeneratorExecutor, err = sensitivity.NewRemote(mutilateMasterFlag.Value())
+		masterLoadGeneratorExecutor, err = executor.NewRemoteFromIP(mutilateMasterFlag.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +71,7 @@ func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.Loa
 	}
 	// Pack agents.
 	for _, agent := range mutilateAgentsFlag.Value() {
-		remoteExecutor, err := sensitivity.NewRemote(agent)
+		remoteExecutor, err := executor.NewRemoteFromIP(agent)
 		if err != nil {
 			return nil, err
 		}

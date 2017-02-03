@@ -3,15 +3,17 @@ package executor
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"strings"
 	"time"
+
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"path/filepath"
 )
 
 // Remote provisioning is responsible for providing the execution environment
@@ -22,6 +24,20 @@ type Remote struct {
 	commandDecorators isolation.Decorators
 	// Unique ID for the command which will be searched on the remote host.
 	unshareUUID string
+}
+
+// NewRemoteFromIP retrurns a Remote instance.
+// It takes IP to the destination host as parameter.
+func NewRemoteFromIP(ip string) (Executor, error) {
+	user, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+	sshConfig, err := NewSSHConfig(ip, DefaultSSHPort, user)
+	if err != nil {
+		return nil, err
+	}
+	return NewRemote(sshConfig), nil
 }
 
 // NewRemote returns a Remote instance.
