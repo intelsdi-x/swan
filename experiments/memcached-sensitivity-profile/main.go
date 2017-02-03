@@ -16,6 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/nu7hatch/gouuid"
@@ -118,7 +119,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(ExSoftware)
 	}
 
-	snapSession, err := common.PrepareSnapMutilateSessionLauncher()
+	snapSession, err := mutilatesession.NewSessionLauncherDefault()
 	if err != nil {
 		logrus.Errorf("Cannot create snap session: %q", err.Error())
 		os.Exit(ExSoftware)
