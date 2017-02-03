@@ -9,7 +9,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
@@ -78,12 +77,12 @@ func PrepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 	txICount := specjbb.TxICountFlag.Value()
 	if ip != "127.0.0.1" {
 		var err error
-		loadGeneratorExecutor, err = sensitivity.NewRemote(ip)
+		loadGeneratorExecutor, err = executor.NewRemoteFromIP(ip)
 		if err != nil {
 			return nil, err
 		}
 		for i := 1; i <= txICount; i++ {
-			transactionInjector, err := sensitivity.NewRemote(ip)
+			transactionInjector, err := executor.NewRemoteFromIP(ip)
 			if err != nil {
 				return nil, err
 			}
