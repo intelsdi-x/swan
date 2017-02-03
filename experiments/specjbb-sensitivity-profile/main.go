@@ -16,6 +16,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/nu7hatch/gouuid"
@@ -126,7 +127,9 @@ func main() {
 	if err != nil {
 		return
 	}
-	specjbbSnapSession, err := common.PrepareSnapSpecjbbSessionLauncher()
+
+	// Note: DefaultConfig shall set SnaptelAddress.
+	specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault()
 	if err != nil {
 		return
 	}

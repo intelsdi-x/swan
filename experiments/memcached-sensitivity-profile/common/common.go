@@ -5,8 +5,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 	"github.com/pkg/errors"
 )
@@ -28,22 +26,6 @@ var (
 		"mutilate_agent",
 		"Mutilate agent hosts for remote executor. Can be specified many times for multiple agents setup.")
 )
-
-// PrepareSnapMutilateSessionLauncher prepares a SessionLauncher that runs mutilate collector and records that into storage.
-// TODO: this should be put into swan:/pkg/snap
-func PrepareSnapMutilateSessionLauncher() (snap.SessionLauncher, error) {
-	// Create connection with Snap.
-	logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())
-	// TODO(bp): Make helper for passing host:port or only host option here.
-
-	mutilateConfig := mutilatesession.DefaultConfig()
-	mutilateConfig.SnapteldAddress = snap.SnapteldHTTPEndpoint.Value()
-	mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateConfig)
-	if err != nil {
-		return nil, err
-	}
-	return mutilateSnapSession, nil
-}
 
 // PrepareMutilateGenerator creates new LoadGenerator based on mutilate.
 func PrepareMutilateGenerator(memcacheIP string, memcachePort int) (executor.LoadGenerator, error) {

@@ -1,33 +1,10 @@
 package common
 
 import (
-	"fmt"
-
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/pkg/errors"
 )
-
-// PrepareSnapSpecjbbSessionLauncher prepares a SessionLauncher that runs SPECjbb collector and records that into storage.
-// TODO: this should be put into swan:/pkg/snap
-func PrepareSnapSpecjbbSessionLauncher() (snap.SessionLauncher, error) {
-	// NOTE: For debug it is convenient to disable snap for some experiment runs.
-	if snap.SnapteldHTTPEndpoint.Value() != "none" {
-		// Create connection with Snap.
-		logrus.Info("Connecting to Snapteld on ", snap.SnapteldHTTPEndpoint.Value())
-		specjbbConfig := specjbbsession.DefaultConfig()
-		specjbbConfig.SnapteldAddress = snap.SnapteldHTTPEndpoint.Value()
-		specjbbSnapSession, err := specjbbsession.NewSessionLauncher(specjbbConfig)
-		if err != nil {
-			return nil, err
-		}
-		return specjbbSnapSession, nil
-	}
-	return nil, fmt.Errorf("snap http endpoint is not present, cannot prepare SPECjbb session launcher")
-}
 
 // PrepareSpecjbbLoadGenerator creates new LoadGenerator based on specjbb.
 func PrepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {

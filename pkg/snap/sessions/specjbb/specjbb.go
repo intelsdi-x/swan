@@ -36,6 +36,12 @@ type SessionLauncher struct {
 	snapClient *client.Client
 }
 
+// NewSessionLauncherDefault creates SessionLauncher based on values
+// returned by DefaultConfig().
+func NewSessionLauncherDefault() (*SessionLauncher, error) {
+	return NewSessionLauncher(DefaultConfig())
+}
+
 // NewSessionLauncher constructs SPECjbbSnapSessionLauncher.
 func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
