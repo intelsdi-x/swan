@@ -1,6 +1,8 @@
 package experiment
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gocql/gocql"
@@ -152,6 +154,24 @@ func (m *Metadata) RecordMap(metadata MetadataMap) error {
 		return err
 	}
 
+	return nil
+}
+
+// RecordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
+// in the metadata information
+func (m *Metadata) RecordEnv(prefix string) error {
+	metadata := MetadataMap{}
+	// Store environment configuration.
+	for _, env := range os.Environ() {
+		if strings.HasPrefix(env, prefix) {
+			fields := strings.SplitN(env, "=", 2)
+			metadata[fields[0]] = fields[1]
+		}
+	}
+	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
+		m.experimentID, time.Now(), metadata).Exec(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -126,8 +126,12 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		defer bar.Finish()
 	}
 
-	// We need to count fully executed aggressor loops to render progress bar correctly.
-	var beIteration int
+	// Store SWAN_ environment configuration.
+	err = metadata.RecordEnv("SWAN_")
+	if err != nil {
+		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
 
 	// Read configuration.
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
@@ -144,19 +148,15 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		"repetitions":       strconv.Itoa(repetitions),
 		"load_duration":     loadDuration.String(),
 	}
-	// Store SWAN_ environment configuration.
-	for _, env := range os.Environ() {
-		fields := strings.SplitN(env, "=", 2)
-		key, value := fields[0], fields[1]
-		if strings.HasPrefix(key, "SWAN_") {
-			records[key] = value
-		}
-	}
+
 	err = metadata.RecordMap(records)
 	if err != nil {
 		logrus.Errorf("Cannot save metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
+
+	// We need to count fully executed aggressor loops to render progress bar correctly.
+	var beIteration int
 
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
