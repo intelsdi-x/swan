@@ -37,6 +37,21 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.SetLevel(conf.LogLevel())
 
+	// generate example configuration
+	for _, v := range conf.GetConfiguration() {
+
+		if strings.Contains(v.Name, "-") {
+			continue
+		}
+
+		fmt.Printf("# %s\n", v.Help)
+		if v.Default != "" {
+			fmt.Printf("# Default: %s\n", v.Default)
+		}
+		fmt.Printf("SWAN_%s=%v\n", strings.ToUpper(v.Name), v.Value)
+	}
+	os.Exit(1)
+
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
 	if err != nil {
