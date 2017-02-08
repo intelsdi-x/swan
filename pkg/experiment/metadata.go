@@ -127,7 +127,19 @@ func (m *Metadata) Connect() error {
 		return err
 	}
 
-	if err := session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+	// NOTE: Schema consistency check is ignored by CREATE query. (https://git-wip-us.apache.org/repos/asf?p=cassandra.git;a=blob_plain;f=doc/native_protocol_v4.spec)
+	// To ensure schema consistency we perform a simple SELECT query on 'system_schema.keyspaces'.
+	// Consistency level is taken from 'cluster.Consistency' variable, it can also be defined for individual Query.
+	if err = session.Query("SELECT * FROM system_schema.keyspaces;").Exec(); err != nil {
+		return err
+	}
+
+	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+		return err
+	}
+
+	// NOTE: Same issue as above.
+	if err = session.Query("SELECT * FROM system_schema.keyspaces;").Exec(); err != nil {
 		return err
 	}
 
