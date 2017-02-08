@@ -119,8 +119,18 @@ func TestExperiment(t *testing.T) {
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 
 					// Check metadata was saved.
-					var metadata map[string]string
-					err = session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? ALLOW FILTERING`, experimentID).Scan(&metadata)
+					var (
+						metadata     = make(map[string]string)
+						iterMetadata map[string]string
+					)
+
+					iter := session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? ALLOW FILTERING`, experimentID).Iter()
+					for iter.Scan(&iterMetadata) {
+						So(iterMetadata, ShouldNotBeEmpty)
+						for k, v := range iterMetadata {
+							metadata[k] = v
+						}
+					}
 					So(err, ShouldBeNil)
 					So(metadata, ShouldNotBeEmpty)
 					So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")

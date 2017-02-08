@@ -137,8 +137,12 @@ func main() {
 		defer bar.Finish()
 	}
 
-	// We need to count fully executed aggressor loops to render progress bar correctly.
-	var beIteration int
+	// Add Swan environment variable
+	err = metadata.RecordEnv("SWAN_")
+	if err != nil {
+		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
 
 	// Read configuration.
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
@@ -155,20 +159,15 @@ func main() {
 		"repetitions":       strconv.Itoa(repetitions),
 		"load_duration":     loadDuration.String(),
 	}
-	// Store SWAN_ environment configuration.
-	for _, env := range os.Environ() {
-		fields := strings.SplitN(env, "=", 2)
-		key, value := fields[0], fields[1]
-		if strings.HasPrefix(key, "SWAN_") {
-			records[key] = value
-		}
-	}
 
 	err = metadata.RecordMap(records)
 	if err != nil {
 		logrus.Errorf("Cannot save metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
+
+	// We need to count fully executed aggressor loops to render progress bar correctly.
+	var beIteration int
 
 	// Iterate over aggressors
 	for _, beLauncher := range aggressorSessionLaunchers {
