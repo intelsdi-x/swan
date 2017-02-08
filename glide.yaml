@@ -3,20 +3,17 @@ import:
 - package: github.com/Sirupsen/logrus
   version: ~0.11.0
 - package: github.com/gocql/gocql
+- package: github.com/intelsdi-x/snap-plugin-lib-go
+  version: master
+  subpackages:
+  - v1/plugin
 - package: github.com/intelsdi-x/snap-plugin-processor-tag
   version: ~3.0.0
   subpackages:
   - tag
-- package: github.com/intelsdi-x/snap-plugin-utilities
-  subpackages:
-  - config
 - package: github.com/intelsdi-x/snap
   version: ~1.0.0
   subpackages:
-  - control/plugin
-  - control/plugin/cpolicy
-  - core
-  - core/ctypes
   - mgmt/rest/client
   - scheduler/wmap
 - package: github.com/montanaflynn/stats
@@ -39,8 +36,6 @@ import:
   version: ~2.2.3
 - package: gopkg.in/cheggaaa/pb.v1
   version: ~1.0.7
-- package: k8s.io/kubernetes
-  version: 1.5.1
 - package: k8s.io/client-go
   version: 1.5.0
   subpackages:
@@ -54,6 +49,8 @@ import:
   - 1.5/pkg/labels
   - 1.5/pkg/watch
   - 1.5/rest
+- package: k8s.io/kubernetes
+  version: 1.5.1
 testImport:
 - package: github.com/pivotal-golang/bytefmt
 - package: github.com/vektra/errors

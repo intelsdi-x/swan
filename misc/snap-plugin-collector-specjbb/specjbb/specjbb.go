@@ -7,19 +7,15 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	snapPlugin "github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/parser"
 	"github.com/pkg/errors"
 )
 
-// Constants representing plugin name, version, type and unit of measurement used.
+// Constants representing collector name, version, type and unit of measurement used.
 const (
 	NAME    = "specjbb"
 	VERSION = 1
-	TYPE    = snapPlugin.CollectorPluginType
 	UNIT    = "ns"
 )
 
@@ -27,18 +23,18 @@ var (
 	namespace = []string{"intel", "swan", "specjbb"}
 )
 
-type plugin struct {
+type collector struct {
 	now time.Time
 }
 
 // NewSpecjbb creates new specjbb collector.
-func NewSpecjbb(now time.Time) snapPlugin.CollectorPlugin {
-	return &plugin{now}
+func NewSpecjbb(now time.Time) plugin.Collector {
+	return &collector{now}
 }
 
-// GetMetricTypes implements plugin.PluginCollector interface.
-func (specjbb *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+// GetMetricTypes implements collector.PluginCollector interface.
+func (specjbb *collector) GetMetricTypes(configType plugin.Config) ([]plugin.Metric, error) {
+	metrics := []plugin.Metric{}
 
 	metricNames := [][]string{
 		[]string{"min"},
@@ -51,14 +47,14 @@ func (specjbb *plugin) GetMetricTypes(configType snapPlugin.ConfigType) ([]snapP
 		[]string{"issued_requests"}}
 
 	for _, metricName := range metricNames {
-		metrics = append(metrics, snapPlugin.MetricType{Namespace_: createNewMetricNamespace(metricName...), Unit_: UNIT, Version_: VERSION})
+		metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace(metricName...), Unit: UNIT, Version: VERSION})
 	}
 
 	return metrics, nil
 }
 
-func createNewMetricNamespace(metricName ...string) core.Namespace {
-	namespace := core.NewNamespace(namespace...)
+func createNewMetricNamespace(metricName ...string) plugin.Namespace {
+	namespace := plugin.NewNamespace(namespace...)
 	namespace = namespace.AddDynamicElement("hostname", "Name of the host that reports the metric")
 	for _, value := range metricName {
 		namespace = namespace.AddStaticElement(value)
@@ -67,18 +63,18 @@ func createNewMetricNamespace(metricName ...string) core.Namespace {
 	return namespace
 }
 
-// CollectMetrics implements plugin.PluginCollector interface.
-func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]snapPlugin.MetricType, error) {
-	var metrics []snapPlugin.MetricType
+// CollectMetrics implements collector.PluginCollector interface.
+func (specjbb *collector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.Metric, error) {
+	var metrics []plugin.Metric
 
-	sourceFilePath, err := config.GetConfigItem(metricTypes[0], "stdout_file")
+	sourceFileName, err := metricTypes[0].Config.GetString("stdout_file")
 	if err != nil {
 		msg := fmt.Sprintf("No file path set - no metrics are collected: %s", err.Error())
 		log.Error(msg)
 		return metrics, errors.Wrap(err, msg)
 	}
 
-	rawMetrics, err := parser.FileWithLatencies(sourceFilePath.(string))
+	rawMetrics, err := parser.FileWithLatencies(sourceFileName)
 	if err != nil {
 		msg := fmt.Sprintf("SPECjbb output parsing failed: %s", err.Error())
 		log.Error(msg)
@@ -96,12 +92,12 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 	const swanNamespacePrefix = 4
 
 	for _, metricType := range metricTypes {
-		metric := snapPlugin.MetricType{Namespace_: metricType.Namespace_, Unit_: metricType.Unit_, Version_: metricType.Version_}
-		metric.Namespace_[namespaceHostnameIndex].Value = hostname
-		metric.Timestamp_ = specjbb.now
+		metric := plugin.Metric{Namespace: metricType.Namespace, Unit: metricType.Unit, Version: metricType.Version}
+		metric.Namespace[namespaceHostnameIndex].Value = hostname
+		metric.Timestamp = specjbb.now
 
 		// Strips prefix. For example: '/intel/swan/specjbb/<hostname>/avg' to '/avg'.
-		metricNamespaceSuffix := metric.Namespace_[swanNamespacePrefix:]
+		metricNamespaceSuffix := metric.Namespace[swanNamespacePrefix:]
 
 		// Convert slice of namespace elements to string, so ['percentile', '95th'] becomes 'percentile/95th'
 		metricName := metricNamespaceSuffix[0].Value
@@ -109,7 +105,7 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 			metricName = strings.Join([]string{metricName, namespace.Value}, "/")
 		}
 		if value, ok := rawMetrics.Raw[metricName]; ok {
-			metric.Data_ = value
+			metric.Data = value
 		}
 
 		metrics = append(metrics, metric)
@@ -119,32 +115,13 @@ func (specjbb *plugin) CollectMetrics(metricTypes []snapPlugin.MetricType) ([]sn
 
 }
 
-// GetConfigPolicy implements plugin.PluginCollector interface.
-func (specjbb *plugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	policy := cpolicy.New()
-	stdoutFile, err := cpolicy.NewStringRule("stdout_file", true)
+// GetConfigPolicy implements collector.PluginCollector interface.
+func (specjbb *collector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	policy := plugin.NewConfigPolicy()
+	err := policy.AddNewStringRule(namespace, "stdout_file", true)
 	if err != nil {
-		return policy, errors.Wrap(err, "cannot create new string rule")
+		return *policy, errors.Wrap(err, "cannot create new string rule")
 	}
-	policyNode := cpolicy.NewPolicyNode()
-	policyNode.Add(stdoutFile)
-	policy.Add(namespace, policyNode)
 
-	return policy, nil
-}
-
-// Meta returns plugin metadata.
-func Meta() *snapPlugin.PluginMeta {
-	meta := snapPlugin.NewPluginMeta(
-		NAME,
-		VERSION,
-		TYPE,
-		[]string{snapPlugin.SnapGOBContentType},
-		[]string{snapPlugin.SnapGOBContentType},
-		snapPlugin.Unsecure(true),
-		snapPlugin.RoutingStrategy(snapPlugin.DefaultRouting),
-		snapPlugin.CacheTTL(1*time.Second),
-	)
-
-	return meta
+	return *policy, nil
 }
