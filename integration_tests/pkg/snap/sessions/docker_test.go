@@ -71,12 +71,6 @@ func TestSnapDockerSession(t *testing.T) {
 		defer podHandle.Clean()
 		defer podHandle.Stop()
 
-		// Prepare Docker Session.
-		/*experimentID, err := uuid.NewV4()
-		So(err, ShouldBeNil)
-		phaseID, err := uuid.NewV4()
-		So(err, ShouldBeNil)*/
-
 		Convey("Launching Docker Session", func() {
 			dockerConfig := docker.DefaultConfig()
 			dockerConfig.SnapteldAddress = snapteldAddress
@@ -85,11 +79,6 @@ func TestSnapDockerSession(t *testing.T) {
 			So(err, ShouldBeNil)
 			dockerHandle, err := dockerLauncher.LaunchSession(
 				nil,
-				/*phase.Session{
-					ExperimentID: experimentID.String(),
-					PhaseID:      phaseID.String(),
-					RepetitionID: 1,
-				},*/
 				"foo:bar",
 			)
 			So(err, ShouldBeNil)

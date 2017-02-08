@@ -9,7 +9,7 @@ import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
-	"github.com/intelsdi-x/swan/pkg/experiment/phase"
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	. "github.com/smartystreets/goconvey/convey"
@@ -110,9 +110,9 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		cassandraPublisher)
 
 	tags := fmt.Sprintf("%s:%s,%s:%s,%s:%d",
-		phase.ExperimentKey, "example-experiment",
-		phase.PhaseKey, "example-phase",
-		phase.RepetitionKey, 42)
+		experiment.ExperimentKey, "example-experiment",
+		experiment.PhaseKey, "example-phase",
+		experiment.RepetitionKey, 42)
 
 	err = snapSession.Start(tags)
 	if err != nil {
