@@ -117,7 +117,7 @@ func main() {
 	load := sensitivity.PeakLoadFlag.Value()
 
 	if load == sensitivity.RunTuningPhase {
-		load, err = common.GetPeakLoad(specjbbBackendLauncher, specjbbLoadGeneratorSessionPair.LoadGenerator, sensitivity.SLOFlag.Value())
+		load, err = experiment.GetPeakLoad(specjbbBackendLauncher, specjbbLoadGeneratorSessionPair.LoadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
 			os.Exit(experiment.ExSoftware)
