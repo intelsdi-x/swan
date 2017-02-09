@@ -106,7 +106,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
 	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
-		load, err = common.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
+		load, err = experiment.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
 		if err != nil {
 			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
 			os.Exit(experiment.ExSoftware)
