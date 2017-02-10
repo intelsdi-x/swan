@@ -40,8 +40,9 @@ var (
 	)
 	isEnvParsed = false
 
-	DumpConfigFlag             = NewBoolFlag("config-dump", "Dump config flag", false)                                      // Note: dash is include in name, to exclude it from dumping.
-	DumpConfigExperimentIdFlag = NewStringFlag("config-dump-experiment-id", "Dump config flag based on experiment id.", "") // Note: dash is include in name, to exclude it from dumping.
+	// Note: dash include in name is required to excluded it from dumping.
+	DumpConfigFlag             = NewBoolFlag("config-dump", "Dump configuration as environment script.", false)
+	DumpConfigExperimentIdFlag = NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
 )
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
