@@ -38,22 +38,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.SetLevel(conf.LogLevel())
 
-	// Dump flags as environment files if requested.
-	if conf.DumpConfigFlag.Value() {
-		previousExperimentID := conf.DumpConfigExperimentIDFlag.Value()
-		if previousExperimentID != "" {
-			metadata := experiment.NewMetadata(previousExperimentID, experiment.MetadataConfigFromFlags())
-			err = metadata.Connect()
-			errutil.Check(err)
-			flags, err := metadata.GetGroup("flags")
-			errutil.Check(err)
-			fmt.Println(conf.DumpConfigMap(flags))
-		} else {
-			fmt.Println(conf.DumpConfig())
-		}
-
-		os.Exit(0)
-	}
+	experiment.ManageConfiguration()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
