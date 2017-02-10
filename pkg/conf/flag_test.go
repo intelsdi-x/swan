@@ -176,12 +176,13 @@ func TestConfiguration(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		// Gather configuration.
-		configuration := getFlags()
+		// External interface (just returns current value by name).
+		flagMap := GetFlags()
 
+		// Gather configuration and put into map (for testing purposes).
 		// Prepare map with all flags for easier assertions.
 		flags := map[string]struct{ Name, Value, Default, Help string }{}
-		for _, flag := range configuration {
+		for _, flag := range getFlags() {
 			flags[flag.Name] = flag
 		}
 
@@ -191,26 +192,38 @@ func TestConfiguration(t *testing.T) {
 		So(flag.Name, ShouldEqual, stringTestFlag.name)
 		So(flag.Value, ShouldEqual, providedString)
 		So(flag.Default, ShouldEqual, defaultString)
+		valueFromMap, ok := flagMap[stringTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(valueFromMap, ShouldEqual, providedString)
 
 		// int
 		flag, ok = flags[intTestFlag.name]
 		So(ok, ShouldBeTrue)
 		So(flag.Name, ShouldEqual, intTestFlag.name)
 		So(fmt.Sprintf("%d", defaultInt), ShouldEqual, flag.Default)
-		So(providedInt, ShouldEqual, flag.Value)
+		So(flag.Value, ShouldEqual, providedInt)
+		valueFromMap, ok = flagMap[intTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(valueFromMap, ShouldEqual, providedInt)
 
 		// duration
 		flag, ok = flags[durTestFlag.name]
 		So(ok, ShouldBeTrue)
 		So(durTestFlag.name, ShouldEqual, flag.Name)
 		So(fmt.Sprintf("%s", defaultDuration), ShouldEqual, flag.Default)
-		So(providedDuration, ShouldEqual, flag.Value)
+		So(flag.Value, ShouldEqual, providedDuration)
+		valueFromMap, ok = flagMap[durTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(valueFromMap, ShouldEqual, providedDuration)
 
 		// slice
 		flag, ok = flags[sliceTestFlag.name]
 		So(ok, ShouldBeTrue)
 		So(sliceTestFlag.name, ShouldEqual, flag.Name)
-		So(flag.Value, ShouldEqual, "foo1,foo2")
+		So(flag.Value, ShouldEqual, providedSlice)
+		valueFromMap, ok = flagMap[sliceTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(valueFromMap, ShouldEqual, providedSlice)
 
 	})
 }
