@@ -10,26 +10,26 @@ import (
 )
 
 const (
+	// CaffeInferenceCollector is a name of the snap plugin binary
+	CaffeInferenceCollector = "snap-plugin-collector-caffe-inference"
 	// DockerCollector is name of snap plugin binary.
 	DockerCollector = "snap-plugin-collector-docker"
 	// MutilateCollector is name of snap plugin binary.
 	MutilateCollector string = "snap-plugin-collector-mutilate"
+	// RDTCollector is Snap RDT Metric collector
+	RDTCollector = "snap-plugin-collector-rdt"
 	// SPECjbbCollector is name of snap plugin binary used to collect metrics from SPECjbb output file.
 	SPECjbbCollector string = "snap-plugin-collector-specjbb"
-	// MockCollector is Snap testing mock collector
-	MockCollector = "snap-plugin-collector-mock1"
 
 	// TagProcessor is name of snap plugin binary.
 	TagProcessor string = "snap-plugin-processor-tag"
 
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
-	// SessionPublisher is name of snap plugin binary.
-	SessionPublisher = "snap-plugin-publisher-session-test"
 	// FilePublisher is Snap testing file publisher
 	FilePublisher = "snap-plugin-publisher-file"
-	// CaffeInferenceCollector is a name of the snap plugin binary
-	CaffeInferenceCollector = "snap-plugin-collector-caffe-inference"
+	// SessionPublisher is name of snap plugin binary.
+	SessionPublisher = "snap-plugin-publisher-session-test"
 )
 
 var (
