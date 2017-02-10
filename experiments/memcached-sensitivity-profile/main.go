@@ -37,20 +37,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.SetLevel(conf.LogLevel())
 
-	// // stdout
-	// fmt.Println(conf.GenerateEnviornmentConfiguration())
-	//
-	// // bool
-	// log.Println("stopOnError:", sensitivity.StopOnErrorFlag.Value())
-	// // int
-	// log.Println("loadPoints:", sensitivity.LoadPointsCountFlag.Value())
-	// // duration
-	// log.Println("loadDuration:", sensitivity.LoadDurationFlag.Value())
-	// // // // agents
-	// // log.Println("agents:", common.mutilateAgentsFlag.Value())
-	//
-	// os.Exit(1)
-
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
 	if err != nil {
@@ -66,6 +52,26 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
+
+	// Store configuration in metdata.
+	configuration := conf.GetConfiguration()
+	_ = configuration
+	configMap := map[string]string{}
+	metadata.RecordMap(configMap)
+
+	// // stdout
+	// fmt.Println(conf.GenerateEnviornmentConfiguration())
+	//
+	// // bool
+	// log.Println("stopOnError:", sensitivity.StopOnErrorFlag.Value())
+	// // int
+	// log.Println("loadPoints:", sensitivity.LoadPointsCountFlag.Value())
+	// // duration
+	// log.Println("loadDuration:", sensitivity.LoadDurationFlag.Value())
+	// // // // agents
+	// // log.Println("agents:", common.mutilateAgentsFlag.Value())
+	//
+	// os.Exit(1)
 
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
