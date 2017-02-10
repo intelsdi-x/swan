@@ -10,6 +10,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	. "github.com/smartystreets/goconvey/convey"
+	"os"
 )
 
 func TestSnapRDTSession(t *testing.T) {
@@ -27,8 +28,10 @@ func TestSnapRDTSession(t *testing.T) {
 
 				publisherMetricsFile := tmpFile.Name()
 				loader.Load(snap.FilePublisher)
+				tmpFile.Close()
+				defer os.Remove(publisherMetricsFile)
 
-				pluginName, _, err := snap.GetPluginNameAndType(snap.SessionPublisher)
+				pluginName, _, err := snap.GetPluginNameAndType(snap.FilePublisher)
 				So(err, ShouldBeNil)
 
 				publisher := wmap.NewPublishNode(pluginName, snap.PluginAnyVersion)
@@ -56,8 +59,8 @@ func TestSnapRDTSession(t *testing.T) {
 					Convey("Later we checked if task is running", func() {
 						So(handle.IsRunning(), ShouldBeTrue)
 
-						Convey("In order to read and test published data", func() {
-							content, err := ioutil.ReadFile(tmpFile.Name())
+						Convey("In order to read published data", func() {
+							content, err := ioutil.ReadFile(publisherMetricsFile)
 							So(err, ShouldBeNil)
 							So(content, ShouldNotBeEmpty)
 						})
