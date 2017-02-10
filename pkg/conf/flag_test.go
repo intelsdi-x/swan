@@ -224,6 +224,5 @@ func TestConfiguration(t *testing.T) {
 		valueFromMap, ok = flagMap[sliceTestFlag.name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedSlice)
-
 	})
 }
