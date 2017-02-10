@@ -1,16 +1,15 @@
 package specjbb
 
 import (
-	"path"
+	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	. "github.com/smartystreets/goconvey/convey"
-	"io/ioutil"
-	"time"
 )
 
 func TestSnaptelSpecJbbSession(t *testing.T) {
