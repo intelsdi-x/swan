@@ -148,3 +148,70 @@ func TestFlags(t *testing.T) {
 		})
 	})
 }
+
+func TestConfiguration(t *testing.T) {
+	Convey("While using flags, we can extract right values for differnt types.", t, func() {
+
+		// Prepare all kinds of flags.
+		defaultString := "http://foo-bar"
+		stringTestFlag := NewStringFlag("stringTest", "stringDesc", defaultString)
+		providedString := "bar-foo"
+
+		defaultInt := 628
+		intTestFlag := NewIntFlag("intTest", "intDesc", defaultInt)
+		providedInt := "13"
+
+		defaultDuration := 123 * time.Second
+		durTestFlag := NewDurationFlag("durationTest", "durDesc", defaultDuration)
+		providedDuration := "2h0m0s"
+
+		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc")
+		providedSlice := "foo1,foo2"
+
+		cmd, err := app.Parse([]string{
+			"--intTest", providedInt,
+			"--durationTest", providedDuration,
+			"--stringTest", providedString,
+			"--sliceTest", providedSlice,
+		}) //
+		So(err, ShouldBeNil)
+		Println(cmd)
+
+		// Gather configuration.
+		configuration := GetConfiguration()
+
+		// Prepare map with all flags for easier assertions.
+		flags := map[string]struct{ Name, Value, Default, Help string }{}
+		for _, flag := range configuration {
+			flags[flag.Name] = flag
+		}
+
+		// string
+		flag, ok := flags[stringTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(flag.Name, ShouldEqual, stringTestFlag.name)
+		So(flag.Value, ShouldEqual, providedString)
+		So(flag.Default, ShouldEqual, defaultString)
+
+		// int
+		flag, ok = flags[intTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(flag.Name, ShouldEqual, intTestFlag.name)
+		So(fmt.Sprintf("%d", defaultInt), ShouldEqual, flag.Default)
+		So(providedInt, ShouldEqual, flag.Value)
+
+		// duration
+		flag, ok = flags[durTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(durTestFlag.name, ShouldEqual, flag.Name)
+		So(fmt.Sprintf("%s", defaultDuration), ShouldEqual, flag.Default)
+		So(providedDuration, ShouldEqual, flag.Value)
+
+		// slice
+		flag, ok = flags[sliceTestFlag.name]
+		So(ok, ShouldBeTrue)
+		So(sliceTestFlag.name, ShouldEqual, flag.Name)
+		So(flag.Value, ShouldEqual, "foo1,foo2")
+
+	})
+}

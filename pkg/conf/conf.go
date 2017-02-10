@@ -17,11 +17,13 @@
 package conf
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -108,10 +110,16 @@ func ParseEnv() error {
 }
 
 // GetConfiguration returns current, default, keys and descrition for every flag.
+// Notes: order is important because it logically groups flags.
 func GetConfiguration() (configuration []struct{ Name, Value, Default, Help string }) {
 
 	for _, f := range app.Model().Flags {
 
+		// if f.Name != "load_duration" {
+		// 	continue
+		// }
+
+		// Returned values are basic types (string, int) or time.Duration and then serialized to string.
 		var value interface{} // golang native type
 
 		// First handle pkg/conf swan internal flags implmentation.
@@ -122,6 +130,7 @@ func GetConfiguration() (configuration []struct{ Name, Value, Default, Help stri
 
 			// Extract reflect.Value from kingpin interface (kingpin.Value).
 			reflectValue := reflect.ValueOf(f.Value)
+
 			// Dereference point from reflect.Value.
 			// Value represent a pointer to something lke kingping.boolValue or kingping.stringValue, so extrac the _Value struct itself.
 			elem := reflectValue.Elem()
@@ -132,8 +141,8 @@ func GetConfiguration() (configuration []struct{ Name, Value, Default, Help stri
 			switch elem.Kind() {
 
 			case reflect.Int64, reflect.Int:
-				// Int flags for some reason aren't stored as struct.
-				value = elem.Int()
+				// Special case for duration flag that is not stored in
+				value = time.Duration(elem.Int())
 
 			case reflect.Struct:
 
@@ -169,4 +178,29 @@ func GetConfiguration() (configuration []struct{ Name, Value, Default, Help stri
 	}
 
 	return configuration
+}
+
+// GenerateEnviornmentConfiguration evironment based configuration based on current values of flags.
+func GenerateEnviornmentConfiguration() string {
+	buffer := &bytes.Buffer{}
+
+	buffer.WriteString("# Export are values.\n")
+	buffer.WriteString("set -o allexport\n")
+
+	for _, v := range GetConfiguration() {
+
+		// Skip kingping builtin flags that aren't compatibile with environment based configuration.
+		if strings.Contains(v.Name, "-") {
+			continue
+		}
+
+		fmt.Fprintf(buffer, "\n# %s\n", v.Help)
+		if v.Default != "" {
+			fmt.Fprintf(buffer, "# Default: %s\n", v.Default)
+		}
+		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(v.Name), v.Value)
+	}
+
+	buffer.WriteString("set +o allexport")
+	return buffer.String()
 }
