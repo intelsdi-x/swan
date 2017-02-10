@@ -178,7 +178,7 @@ func TestConfiguration(t *testing.T) {
 		Println(cmd)
 
 		// Gather configuration.
-		configuration := GetConfiguration()
+		configuration := getFlags()
 
 		// Prepare map with all flags for easier assertions.
 		flags := map[string]struct{ Name, Value, Default, Help string }{}

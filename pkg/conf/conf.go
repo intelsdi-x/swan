@@ -39,6 +39,9 @@ var (
 		"error", // Default Error log level.
 	)
 	isEnvParsed = false
+
+	DumpConfigFlag             = NewBoolFlag("config-dump", "Dump config flag", false)                                      // Note: dash is include in name, to exclude it from dumping.
+	DumpConfigExperimentIdFlag = NewStringFlag("config-dump-experiment-id", "Dump config flag based on experiment id.", "") // Note: dash is include in name, to exclude it from dumping.
 )
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
@@ -109,27 +112,28 @@ func ParseEnv() error {
 	return errors.Wrapf(err, "could not parse enviroment flags")
 }
 
-// GetConfiguration returns current, default, keys and descrition for every flag.
+// getFlags returns current, default, keys and descrition for every flag.
 // Notes: order is important because it logically groups flags.
-func GetConfiguration() (configuration []struct{ Name, Value, Default, Help string }) {
+func getFlags() (flags []struct{ Name, Value, Default, Help string }) {
 
-	for _, f := range app.Model().Flags {
+	for _, flag := range app.Model().Flags {
 
-		// if f.Name != "load_duration" {
-		// 	continue
-		// }
+		// Skip kingpin builtin flags that aren't compatibile with environment based configuration.
+		if strings.Contains(flag.Name, "-") {
+			continue
+		}
 
 		// Returned values are basic types (string, int) or time.Duration and then serialized to string.
 		var value interface{} // golang native type
 
 		// First handle pkg/conf swan internal flags implmentation.
-		if slv, ok := f.Value.(*StringListValue); ok {
+		if slv, ok := flag.Value.(*StringListValue); ok {
 			value = slv.String()
 		} else {
 			// Use reflection to extract value hidden in non exported kingpin implmentation.
 
 			// Extract reflect.Value from kingpin interface (kingpin.Value).
-			reflectValue := reflect.ValueOf(f.Value)
+			reflectValue := reflect.ValueOf(flag.Value)
 
 			// Dereference point from reflect.Value.
 			// Value represent a pointer to something lke kingping.boolValue or kingping.stringValue, so extrac the _Value struct itself.
@@ -164,43 +168,61 @@ func GetConfiguration() (configuration []struct{ Name, Value, Default, Help stri
 					value = valueInField.Int()
 
 				default:
-					fmt.Sprintf("unhandled flag %s kind=%s", f.Name, elem.Kind())
+					fmt.Sprintf("unhandled flag %s kind=%s", flag.Name, elem.Kind())
 				}
 			}
 		}
 
-		configuration = append(configuration, struct{ Name, Value, Default, Help string }{
-			Name:    f.Name,
-			Help:    f.Help,
-			Default: strings.Join(f.Default, ","),
+		flags = append(flags, struct{ Name, Value, Default, Help string }{
+			Name:    flag.Name,
+			Help:    flag.Help,
+			Default: strings.Join(flag.Default, ","),
 			Value:   fmt.Sprintf("%v", value), // serialize value to String.
 		})
 	}
 
-	return configuration
+	return flags
 }
 
-// GenerateEnviornmentConfiguration evironment based configuration based on current values of flags.
-func GenerateEnviornmentConfiguration() string {
+// DumpConfig evironment based configuration based on current values of flags.
+// Includes "allexport" directives for bash.
+func DumpConfig() string {
+	return DumpConfigMap(nil)
+}
+
+// DumpConfig evironment based configuration based on current values and overwritten by given flagMap.
+// Includes "allexport" directives for bash.
+func DumpConfigMap(flagMap map[string]string) string {
 	buffer := &bytes.Buffer{}
 
 	buffer.WriteString("# Export are values.\n")
 	buffer.WriteString("set -o allexport\n")
 
-	for _, v := range GetConfiguration() {
-
-		// Skip kingping builtin flags that aren't compatibile with environment based configuration.
-		if strings.Contains(v.Name, "-") {
-			continue
-		}
+	for _, v := range getFlags() {
 
 		fmt.Fprintf(buffer, "\n# %s\n", v.Help)
 		if v.Default != "" {
 			fmt.Fprintf(buffer, "# Default: %s\n", v.Default)
 		}
-		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(v.Name), v.Value)
+
+		// Override current values with provided from flagMap.
+		value := v.Value
+		if mapValue, ok := flagMap[v.Name]; ok {
+			value = mapValue
+		}
+
+		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(v.Name), value)
 	}
 
 	buffer.WriteString("set +o allexport")
 	return buffer.String()
+}
+
+// GetFlagsMap returns flags as map with current values.
+func GetFlags() map[string]string {
+	flagsMap := map[string]string{}
+	for _, flag := range getFlags() {
+		flagsMap[flag.Name] = flag.Value
+	}
+	return flagsMap
 }

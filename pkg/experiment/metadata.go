@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -134,7 +135,7 @@ func (m *Metadata) Connect() error {
 		return err
 	}
 
-	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, group text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
 		return err
 	}
 
@@ -146,27 +147,26 @@ func (m *Metadata) Connect() error {
 	return nil
 }
 
+// storeMap
+func (m *Metadata) storeMap(metadata MetadataMap, group string) error {
+	return m.session.Query(`INSERT INTO swan.metadata (experiment_id, group, time, metadata) VALUES (?, ?, ?, ?)`, m.experimentID, group, time.Now(), metadata).Exec()
+}
+
 // Record stores a key and value and associates with the experiment id.
 func (m *Metadata) Record(key string, value string) error {
 	metadata := MetadataMap{}
 	metadata[key] = value
-
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.storeMap(metadata, "")
 }
 
 // RecordMap stores a key and value map and associates with the experiment id.
 func (m *Metadata) RecordMap(metadata MetadataMap) error {
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
+	return m.storeMap(metadata, "")
+}
 
-	return nil
+// RecordMapGroup stores a key and value map and associates with the experiment id as group.
+func (m *Metadata) RecordMapGroup(metadata MetadataMap, group string) error {
+	return m.storeMap(metadata, group)
 }
 
 // RecordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
@@ -180,11 +180,7 @@ func (m *Metadata) RecordEnv(prefix string) error {
 			metadata[fields[0]] = fields[1]
 		}
 	}
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
-	return nil
+	return m.storeMap(metadata, "environ")
 }
 
 // Get retrieves all metadata maps from the database.
@@ -202,6 +198,28 @@ func (m *Metadata) Get() ([]MetadataMap, error) {
 	}
 
 	return out, nil
+}
+
+// GetGroup retrive signle group from the database.
+// Returns error if no group or too many groups found.
+func (m *Metadata) GetGroup(group string) (MetadataMap, error) {
+	var metadata MetadataMap
+
+	maps := []MetadataMap{}
+
+	iter := m.session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? AND group = ? ALLOW FILTERING`, m.experimentID, group).Iter()
+	for iter.Scan(&metadata) {
+		maps = append(maps, metadata)
+	}
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
+	// Make sure that only one map withing experiment exists.
+	if len(maps) != 1 {
+		return nil, fmt.Errorf("Cannot retrieve previous experiment ID flags configuration: %q for group %q", m.experimentID, group)
+	}
+	return maps[0], nil
 }
 
 // Clear deletes all metadata entries associated with the current experiment id.

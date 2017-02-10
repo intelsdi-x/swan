@@ -18,6 +18,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
@@ -37,6 +38,23 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	}
 	logrus.SetLevel(conf.LogLevel())
 
+	// Dump flags as environment files if requested.
+	if conf.DumpConfigFlag.Value() {
+		previousExperimentID := conf.DumpConfigExperimentIdFlag.Value()
+		if previousExperimentID != "" {
+			metadata := experiment.NewMetadata(previousExperimentID, experiment.MetadataConfigFromFlags())
+			err = metadata.Connect()
+			errutil.Check(err)
+			flags, err := metadata.GetGroup("flags")
+			errutil.Check(err)
+			fmt.Println(conf.DumpConfigMap(flags))
+		} else {
+			fmt.Println(conf.DumpConfig())
+		}
+
+		os.Exit(0)
+	}
+
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
 	if err != nil {
@@ -53,25 +71,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
-	// Store configuration in metdata.
-	configuration := conf.GetConfiguration()
-	_ = configuration
-	configMap := map[string]string{}
-	metadata.RecordMap(configMap)
+	// Write configuration as metadata.
+	err = metadata.RecordMapGroup(conf.GetFlags(), "flags")
+	errutil.Check(err)
 
-	// // stdout
-	// fmt.Println(conf.GenerateEnviornmentConfiguration())
-	//
-	// // bool
-	// log.Println("stopOnError:", sensitivity.StopOnErrorFlag.Value())
-	// // int
-	// log.Println("loadPoints:", sensitivity.LoadPointsCountFlag.Value())
-	// // duration
-	// log.Println("loadDuration:", sensitivity.LoadDurationFlag.Value())
-	// // // // agents
-	// // log.Println("agents:", common.mutilateAgentsFlag.Value())
-	//
-	// os.Exit(1)
+	// Store SWAN_ environment configuration.
+	err = metadata.RecordEnv("SWAN_")
+	if err != nil {
+		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
+	os.Exit(1)
 
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
@@ -144,13 +154,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
 		defer bar.Finish()
-	}
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv("SWAN_")
-	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
 	}
 
 	// Read configuration.
