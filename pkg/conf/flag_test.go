@@ -168,14 +168,13 @@ func TestConfiguration(t *testing.T) {
 		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc")
 		providedSlice := "foo1,foo2"
 
-		cmd, err := app.Parse([]string{
+		_, err := app.Parse([]string{
 			"--intTest", providedInt,
 			"--durationTest", providedDuration,
 			"--stringTest", providedString,
 			"--sliceTest", providedSlice,
-		}) //
+		})
 		So(err, ShouldBeNil)
-		Println(cmd)
 
 		// Gather configuration.
 		configuration := getFlags()
