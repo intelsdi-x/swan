@@ -40,7 +40,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	// Dump flags as environment files if requested.
 	if conf.DumpConfigFlag.Value() {
-		previousExperimentID := conf.DumpConfigExperimentIdFlag.Value()
+		previousExperimentID := conf.DumpConfigExperimentIDFlag.Value()
 		if previousExperimentID != "" {
 			metadata := experiment.NewMetadata(previousExperimentID, experiment.MetadataConfigFromFlags())
 			err = metadata.Connect()

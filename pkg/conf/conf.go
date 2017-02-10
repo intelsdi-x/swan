@@ -40,9 +40,11 @@ var (
 	)
 	isEnvParsed = false
 
-	// Note: dash include in name is required to excluded it from dumping.
-	DumpConfigFlag             = NewBoolFlag("config-dump", "Dump configuration as environment script.", false)
-	DumpConfigExperimentIdFlag = NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
+	// DumpConfigFlag name include dash to excluded it from dumping.
+	DumpConfigFlag = NewBoolFlag("config-dump", "Dump configuration as environment script.", false)
+
+	// DumpConfigExperimentIDFlag name include dash to excluded it from dumping.
+	DumpConfigExperimentIDFlag = NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
 )
 
 // SetHelpPath sets the help message for CLI rendering the file from given file.
@@ -191,7 +193,7 @@ func DumpConfig() string {
 	return DumpConfigMap(nil)
 }
 
-// DumpConfig evironment based configuration based on current values and overwritten by given flagMap.
+// DumpConfigMap evironment based configuration based on current values and overwritten by given flagMap.
 // Includes "allexport" directives for bash.
 func DumpConfigMap(flagMap map[string]string) string {
 	buffer := &bytes.Buffer{}
@@ -219,7 +221,7 @@ func DumpConfigMap(flagMap map[string]string) string {
 	return buffer.String()
 }
 
-// GetFlagsMap returns flags as map with current values.
+// GetFlags returns flags as map with current values.
 func GetFlags() map[string]string {
 	flagsMap := map[string]string{}
 	for _, flag := range getFlags() {
