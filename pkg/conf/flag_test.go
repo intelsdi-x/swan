@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 func TestEnvFlag(t *testing.T) {
 	Convey("While using Flag struct, it should construct proper swan environment var name", t, func() {
-		So(NewStringFlag("test_name", "", "").envName(), ShouldEqual, "SWAN_TEST_NAME")
+		So(envName("test_name"), ShouldEqual, "SWAN_TEST_NAME")
 	})
 }
 
@@ -20,25 +21,16 @@ func TestFlags(t *testing.T) {
 		Convey("When some custom String Flag is defined", func() {
 			// Register custom flag.
 			customFlag := NewStringFlag("custom_string_arg", "help", "default")
-			customFlag.clear()
-			defer customFlag.clear()
+			So(customFlag.Value(), ShouldEqual, "default")
 
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, "default")
-			})
-
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
-			})
+			ParseFlags()
+			So(customFlag.Value(), ShouldEqual, "default")
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := "customContent"
-				os.Setenv(customFlag.envName(), customValue)
+				os.Setenv(envName(customFlag.Name), customValue)
 
-				err := ParseEnv()
-				So(err, ShouldBeNil)
+				ParseFlags()
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
@@ -46,25 +38,17 @@ func TestFlags(t *testing.T) {
 		Convey("When some custom Int Flag is defined", func() {
 			// Register custom flag.
 			customFlag := NewIntFlag("custom_int_arg", "help", 23424)
-			customFlag.clear()
-			defer customFlag.clear()
 
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, 23424)
-			})
+			So(customFlag.Value(), ShouldEqual, 23424)
 
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
-			})
+			ParseFlags()
+			So(customFlag.Value(), ShouldEqual, 23424)
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := 12
-				os.Setenv(customFlag.envName(), fmt.Sprintf("%d", customValue))
+				os.Setenv(envName(customFlag.Name), fmt.Sprintf("%d", customValue))
 
-				err := ParseEnv()
-				So(err, ShouldBeNil)
+				ParseFlags()
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
@@ -72,25 +56,16 @@ func TestFlags(t *testing.T) {
 		Convey("When some custom Slice Flag is defined", func() {
 			// Register custom flag.
 			customFlag := NewSliceFlag("custom_slice_arg", "help")
-			customFlag.clear()
-			defer customFlag.clear()
 
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldResemble, []string{})
-			})
+			So(customFlag.Value(), ShouldResemble, []string{})
 
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldResemble, customFlag.defaultValue)
-			})
+			ParseFlags()
+			So(customFlag.Value(), ShouldResemble, []string{})
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
-				customValue := fmt.Sprintf("A%sB%sC", stringListDelimiter, stringListDelimiter)
-				os.Setenv(customFlag.envName(), customValue)
-
-				err := ParseEnv()
-				So(err, ShouldBeNil)
+				customValue := "A,B,C"
+				os.Setenv(envName(customFlag.Name), customValue)
+				ParseFlags()
 				So(customFlag.Value(), ShouldResemble, []string{"A", "B", "C"})
 			})
 		})
@@ -98,25 +73,17 @@ func TestFlags(t *testing.T) {
 		Convey("When some custom Bool Flag is defined", func() {
 			// Register custom flag.
 			customFlag := NewBoolFlag("custom_bool_arg", "help", false)
-			customFlag.clear()
-			defer customFlag.clear()
 
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, false)
-			})
+			So(customFlag.Value(), ShouldEqual, false)
 
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
-			})
+			ParseFlags()
+			So(customFlag.Value(), ShouldEqual, false)
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := true
-				os.Setenv(customFlag.envName(), fmt.Sprintf("%v", customValue))
+				os.Setenv(envName(customFlag.Name), fmt.Sprintf("%v", customValue))
 
-				err := ParseEnv()
-				So(err, ShouldBeNil)
+				ParseFlags()
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
@@ -124,25 +91,17 @@ func TestFlags(t *testing.T) {
 		Convey("When some custom Duration Flag is defined", func() {
 			// Register custom flag.
 			customFlag := NewDurationFlag("custom_duration_arg", "help", 99*time.Millisecond)
-			customFlag.clear()
-			defer customFlag.clear()
 
-			Convey("Without parse it should be default", func() {
-				So(customFlag.Value(), ShouldEqual, 99*time.Millisecond)
-			})
+			So(customFlag.Value(), ShouldEqual, 99*time.Millisecond)
 
-			Convey("When we do not define any environment variable we should have default value after parse", func() {
-				err := ParseEnv()
-				So(err, ShouldBeNil)
-				So(customFlag.Value(), ShouldEqual, customFlag.defaultValue)
-			})
+			ParseFlags()
+			So(customFlag.Value(), ShouldEqual, 99*time.Millisecond)
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := 1234 * time.Second
-				os.Setenv(customFlag.envName(), customValue.String())
+				os.Setenv(envName(customFlag.Name), customValue.String())
 
-				err := ParseEnv()
-				So(err, ShouldBeNil)
+				ParseFlags()
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
@@ -168,60 +127,63 @@ func TestConfiguration(t *testing.T) {
 		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc")
 		providedSlice := "foo1,foo2"
 
-		_, err := app.Parse([]string{
+		flag.CommandLine.Parse([]string{
 			"--intTest", providedInt,
 			"--durationTest", providedDuration,
 			"--stringTest", providedString,
 			"--sliceTest", providedSlice,
 		})
-		So(err, ShouldBeNil)
 
 		// External interface (just returns current value by name).
 		flagMap := GetFlags()
 
 		// Gather configuration and put into map (for testing purposes).
 		// Prepare map with all flags for easier assertions.
-		flags := map[string]struct{ Name, Value, Default, Help string }{}
+		flags := map[string]flag.Flag{}
 		for _, flag := range getFlagsDefinition() {
-			flags[flag.Name] = flag
+			flags[flag.Name] = *flag
 		}
 
 		// string
-		flag, ok := flags[stringTestFlag.name]
+		name := stringTestFlag.Name
+		flag, ok := flags[name]
 		So(ok, ShouldBeTrue)
-		So(flag.Name, ShouldEqual, stringTestFlag.name)
-		So(flag.Value, ShouldEqual, providedString)
-		So(flag.Default, ShouldEqual, defaultString)
-		valueFromMap, ok := flagMap[stringTestFlag.name]
+		So(flag.Name, ShouldEqual, name)
+		So(flag.Value.String(), ShouldEqual, providedString)
+		So(flag.DefValue, ShouldEqual, defaultString)
+		valueFromMap, ok := flagMap[name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedString)
 
 		// int
-		flag, ok = flags[intTestFlag.name]
+		name = intTestFlag.Name
+		flag, ok = flags[name]
 		So(ok, ShouldBeTrue)
-		So(flag.Name, ShouldEqual, intTestFlag.name)
-		So(fmt.Sprintf("%d", defaultInt), ShouldEqual, flag.Default)
-		So(flag.Value, ShouldEqual, providedInt)
-		valueFromMap, ok = flagMap[intTestFlag.name]
+		So(flag.Name, ShouldEqual, name)
+		So(fmt.Sprintf("%d", defaultInt), ShouldEqual, flag.DefValue)
+		So(flag.Value.String(), ShouldEqual, providedInt)
+		valueFromMap, ok = flagMap[name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedInt)
 
 		// duration
-		flag, ok = flags[durTestFlag.name]
+		name = durTestFlag.Name
+		flag, ok = flags[name]
 		So(ok, ShouldBeTrue)
-		So(durTestFlag.name, ShouldEqual, flag.Name)
-		So(fmt.Sprintf("%s", defaultDuration), ShouldEqual, flag.Default)
-		So(flag.Value, ShouldEqual, providedDuration)
-		valueFromMap, ok = flagMap[durTestFlag.name]
+		So(name, ShouldEqual, flag.Name)
+		So(fmt.Sprintf("%s", defaultDuration), ShouldEqual, flag.DefValue)
+		So(flag.Value.String(), ShouldEqual, providedDuration)
+		valueFromMap, ok = flagMap[name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedDuration)
 
 		// slice
-		flag, ok = flags[sliceTestFlag.name]
+		name = sliceTestFlag.Name
+		flag, ok = flags[name]
 		So(ok, ShouldBeTrue)
-		So(sliceTestFlag.name, ShouldEqual, flag.Name)
-		So(flag.Value, ShouldEqual, providedSlice)
-		valueFromMap, ok = flagMap[sliceTestFlag.name]
+		So(name, ShouldEqual, flag.Name)
+		So(flag.Value.String(), ShouldEqual, providedSlice)
+		valueFromMap, ok = flagMap[name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedSlice)
 

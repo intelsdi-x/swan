@@ -1,6 +1,7 @@
 package experiment
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -10,11 +11,9 @@ import (
 )
 
 var (
-	// DumpConfigFlag name includes dash to excluded it from dumping.
-	dumpConfigFlag = conf.NewBoolFlag("config-dump", "Dump configuration as environment script.", false)
-
-	// DumpConfigExperimentIDFlag name includes dash to excluded it from dumping.
-	dumpConfigExperimentIDFlag = conf.NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
+	// Both flags are defined using directly go native "flag" package to not be registered as experiment configuration.
+	dumpConfig             = flag.Bool("config-dump", false, "Dump configuration as environment script.")
+	dumpConfigExperimentID = flag.String("config-dump-experiment-id", "", "Dump configuration based on experiment ID.")
 )
 
 // Configure handles configuration parsing, generation and restoration based on config-* flags.
@@ -22,15 +21,11 @@ var (
 // This function must reside in experiment package because depends on metadata access.
 func Configure() {
 
-	err := conf.ParseFlags()
-	if err != nil {
-		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		os.Exit(ExUsage)
-	}
+	conf.ParseFlags()
 	logrus.SetLevel(conf.LogLevel())
 
-	if dumpConfigFlag.Value() {
-		previousExperimentID := dumpConfigExperimentIDFlag.Value()
+	if *dumpConfig {
+		previousExperimentID := *dumpConfigExperimentID
 		if previousExperimentID != "" {
 			metadata := NewMetadata(previousExperimentID, MetadataConfigFromFlags())
 			err := metadata.Connect()
