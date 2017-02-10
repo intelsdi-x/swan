@@ -1,10 +1,11 @@
 package conf
 
 import (
-	"fmt"
+	"strings"
+	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"testing"
 )
 
 func TestStringListValue(t *testing.T) {
@@ -28,7 +29,7 @@ func TestStringListValue(t *testing.T) {
 			So(strListValue.Set("C,D"), ShouldBeNil)
 			So(strListValue.Get(), ShouldResemble, []string{"A", "B", "C", "D"})
 
-			So(strListValue.String(), ShouldEqual, fmt.Sprintf("%v", []string{"A", "B", "C", "D"}))
+			So(strListValue.String(), ShouldEqual, strings.Join([]string{"A", "B", "C", "D"}, ","))
 		})
 	})
 }
