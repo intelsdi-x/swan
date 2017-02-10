@@ -12,9 +12,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnaptelRDTSession(t *testing.T) {
+func TestSnapRDTSession(t *testing.T) {
 
-	Convey("When testing RDT Session ", t, func() {
+	SkipConvey("When testing RDT Session ", t, func() {
 		Convey("We have snapteld running ", func() {
 
 			cleanupSnaptel, loader, snapteldAddress := testhelpers.RunAndTestSnaptel()
