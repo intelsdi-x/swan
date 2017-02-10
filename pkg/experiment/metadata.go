@@ -101,7 +101,8 @@ func (m *Metadata) Connect() error {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
 
 	// TODO(niklas): make consistency configurable.
-	cluster.Consistency = gocql.One
+	cluster.Consistency = gocql.LocalOne
+	cluster.SerialConsistency = gocql.LocalSerial
 
 	cluster.ProtoVersion = 4
 	cluster.Timeout = m.config.CassandraConnectionTimeout
