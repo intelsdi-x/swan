@@ -66,7 +66,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-	os.Exit(1)
 
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
