@@ -1,4 +1,4 @@
-package specjbb
+package rdt
 
 import (
 	"io/ioutil"
@@ -12,7 +12,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnaptelSpecJbbSession(t *testing.T) {
+func TestSnaptelRDTSession(t *testing.T) {
 
 	Convey("When testing RDT Session ", t, func() {
 		Convey("We have snapteld running ", func() {
@@ -38,13 +38,13 @@ func TestSnaptelSpecJbbSession(t *testing.T) {
 
 				Convey("Then we prepared and launch specjbb session", func() {
 
-					rdtSessionConfig := rdt.DefaultConfig()
-					rdtSessionConfig.SnapteldAddress = snapteldAddress
-					rdtSessionConfig.Publisher = publisher
-					rdtSession, err := rdt.NewSessionLauncher(rdtSessionConfig)
+					sessionConfig := rdt.DefaultConfig()
+					sessionConfig.SnapteldAddress = snapteldAddress
+					sessionConfig.Publisher = publisher
+					session, err := rdt.NewSessionLauncher(sessionConfig)
 					So(err, ShouldBeNil)
 
-					handle, err := rdtSession.LaunchSession(nil, "foo:bar")
+					handle, err := session.LaunchSession(nil, "foo:bar")
 					So(err, ShouldBeNil)
 
 					defer func() {

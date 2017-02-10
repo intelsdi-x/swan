@@ -30,7 +30,7 @@ type Config struct {
 }
 
 // SessionLauncher configures & launches snap workflow for gathering
-// metrics from SPECjbb.
+// metrics from RDT.
 type SessionLauncher struct {
 	session    *snap.Session
 	snapClient *client.Client
