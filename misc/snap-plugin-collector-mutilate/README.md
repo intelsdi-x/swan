@@ -67,5 +67,4 @@ The current available metrics from the collector are:
 |`/intel/swan/mutilate/*/percentile/90th`| float64 | The 90th percentile read latency (in microseconds) | 33.4us |
 |`/intel/swan/mutilate/*/percentile/95th`| float64 | The 95th percentile read latency (in microseconds) | 43.1us |
 |`/intel/swan/mutilate/*/percentile/99th`| float64 | The 99th percentile read latency (in microseconds) | 59.5us |
-|`/intel/swan/mutilate/*/percentile/*/custom`| float64 | The mutilate version which ships with swan has a custom flag to get user specified read latencies | 1777.887805us |
 |`/intel/swan/mutilate/*/qps`| float64 | Queries Per Second i.e. load | 4993.1 queries per second |

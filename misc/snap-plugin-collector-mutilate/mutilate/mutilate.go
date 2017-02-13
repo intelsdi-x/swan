@@ -42,11 +42,6 @@ func (mutilate collector) GetMetricTypes(configType plugin.Config) ([]plugin.Met
 	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "99th"), Unit: UNIT, Version: VERSION})
 	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("qps"), Unit: UNIT, Version: VERSION})
 
-	customNamespace := createNewMetricNamespace("percentile")
-	customNamespace = customNamespace.AddDynamicElement("percentile", "Custom percentile from mutilate").AddStaticElement("custom")
-
-	metrics = append(metrics, plugin.Metric{Namespace: customNamespace, Unit: UNIT, Version: VERSION})
-
 	return metrics, nil
 }
 
@@ -108,34 +103,7 @@ func (mutilate collector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 		if value, ok := rawMetrics.Raw[metricName]; ok {
 			metric.Data = value
 		} else {
-			// If metric wasn't found directly in raw metrics map, it may be a custom
-			// percentile latency. For example, 'percentile/*/custom'.
-			// If the rawMetrics gathered contains non-default LatencyPercentile field e.g '99.99900',
-			// we provide it here.
-			// Swan provides a patched version of mutilate, which let's a user provide
-			// a custom percentile value for mutilate to report. By default, Mutilate
-			// reports p5, p10, p90, p95 and p99.
-			if rawMetrics.LatencyPercentile != "" &&
-				len(metricNamespaceSuffix) == 3 &&
-				metricNamespaceSuffix[0].Value == "percentile" &&
-				metricNamespaceSuffix[1].Value == "*" && metricNamespaceSuffix[1].Name == "percentile" &&
-				metricNamespaceSuffix[2].Value == "custom" {
-
-				if value, ok := rawMetrics.Raw[parse.MutilatePercentileCustom]; ok {
-					// Snap namespaces may not have '.' so we have to replace with "_".
-					percentileStringSanitized := strings.Replace(
-						fmt.Sprintf("%sth", rawMetrics.LatencyPercentile), ".", "_", 1)
-
-					// Specialize '*' to for example '99_999th'.
-					metricNamespaceSuffix[1].Value = percentileStringSanitized
-
-					metric.Data = value
-				} else {
-					log.Errorf("Could not find raw metric for key '%s': skipping metric", parse.MutilatePercentileCustom)
-				}
-			} else {
-				log.Errorf("Could not find raw metric for key '%s': skipping metric", metricName)
-			}
+			log.Errorf("Could not find raw metric for key '%s': skipping metric", metricName)
 		}
 
 		metrics = append(metrics, metric)
