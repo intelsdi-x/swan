@@ -16,9 +16,9 @@ class TestExperiment(unittest.TestCase):
         self.assertTrue(len(exp.frame.index) == 0)
 
     def test_several_samples(self):
-        exp = experiment.Experiment(experiment_id='7be3c448-4fa2-4178-75aa-e23d292d4030',
+        exp = experiment.Experiment(experiment_id='afa8531c-ab17-4a76-696c-90a14c0bda07',
                                     read_csv=True,  dir_csv='test_data')
-        self.assertTrue(len(exp.frame.index) == 1260)
+        self.assertTrue(len(exp.frame.index) == 180)
 
 
 if __name__ == '__main__':
