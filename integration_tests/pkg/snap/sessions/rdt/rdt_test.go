@@ -39,7 +39,7 @@ func TestSnapRDTSession(t *testing.T) {
 
 				publisher.AddConfigItem("file", publisherMetricsFile)
 
-				Convey("Then we prepared and launch specjbb session", func() {
+				Convey("Then we prepared and launch RDT collection session", func() {
 
 					sessionConfig := rdt.DefaultConfig()
 					sessionConfig.SnapteldAddress = snapteldAddress
