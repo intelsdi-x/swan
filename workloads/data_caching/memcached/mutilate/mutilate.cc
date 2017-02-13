@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
     int step = atoi(step_ptr);
 
     printf("%-7s %7s %7s %7s %7s %7s %7s %7s %7s %8s %8s\n",
-           "#type", "avg", "std", "min", "5th", "10th",
+           "#type", "avg", "min", "1st", "5th", "10th",
            "90th", "95th", "99th", "QPS", "target");
 
     for (int q = min; q <= max; q += step) {
@@ -586,8 +586,6 @@ int main(int argc, char **argv) {
     stats.print_stats("read",   stats.get_sampler);
     stats.print_stats("update", stats.set_sampler);
     stats.print_stats("op_q",   stats.op_sampler);
-
-    stats.print_swan_latency(stats.get_sampler, options.swanpercentile);
 
     int total = stats.gets + stats.sets;
 
@@ -1034,8 +1032,6 @@ void args_to_options(options_t* options) {
   options->threads = args.threads_arg;
   options->server_given = args.server_given;
   options->roundrobin = args.roundrobin_given;
-
-  options->swanpercentile = args.swanpercentile_arg;
 
   int connections = options->connections;
   if (options->roundrobin) {

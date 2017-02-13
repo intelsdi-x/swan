@@ -1,15 +1,6 @@
 Mutilate [![Build Status](https://img.shields.io/travis/dterei/mutilate.svg?style=flat)](https://travis-ci.org/dterei/mutilate)
 ========
 
-Swan Team Changes
-============
-Added option --swanpercentile (-X) that accepts percentile and
-returns maximum latency per percentile (default: 99.9).
-
-
-Description
-============
-
 Mutilate is a memcached load generator designed for high request
 rates, good tail-latency measurements, and realistic request stream
 generation.
