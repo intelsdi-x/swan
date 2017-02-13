@@ -10,7 +10,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSnaptelSpecJbbSession(t *testing.T) {
+func TestSnapSpecJbbSession(t *testing.T) {
 
 	Convey("When testing SpecJbbSnaptelSession ", t, func() {
 		Convey("We have snapteld running ", func() {
