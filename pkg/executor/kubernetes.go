@@ -70,9 +70,7 @@ import (
 )
 
 const (
-	defaultContainerImage = "jess/stress" // TODO: replace with "centos_swan_image" when available.
-
-	dockerSockPath = "unix:///var/run/docker.sock"
+	defaultContainerImage = "centos_swan_image"
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
