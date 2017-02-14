@@ -113,7 +113,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		}
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
-		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
+		logrus.Infof("Skipping tuning phase, using peakload %d", load)
 	}
 
 	// Initialiaze progress bar when log level is error.
