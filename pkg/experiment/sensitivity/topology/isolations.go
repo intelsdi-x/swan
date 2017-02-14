@@ -8,6 +8,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -44,7 +45,8 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 		l1Isolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beL1CPUs, PreferredNode: manualTopology.beL1NumaNodes[0]}
 		hpIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.hpCPUs, PreferredNode: manualTopology.hpNumaNodes[0]}
 	} else {
-		defaultTopology := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		errutil.Check(err)
 		l1Isolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.siblingThreadsToHpThreads.AvailableThreads().AsSlice(), PreferredNode: defaultTopology.numaNode}
 		llcIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.sharingLLCButNotL1Threads.AsSlice(), PreferredNode: defaultTopology.numaNode}
 		hpIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.hpThreadIDs.AsSlice(), PreferredNode: defaultTopology.numaNode}
@@ -56,29 +58,35 @@ func isManualPolicy() bool {
 	return hpSetsFlag.Value() != "" && beSetsFlag.Value() != ""
 }
 
-func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) defaultTopology {
+func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) (defaultTopology, error) {
 	var topology defaultTopology
 	var err error
 
 	threadSet := sharedCacheThreads()
 	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
-	errutil.Check(err)
+	if err != nil {
+		return topology, errors.Wrapf(err, "there is not enough cpus to run HP task (%d required)", hpCPUCount)
+	}
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
 	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.hpThreadIDs)
-	errutil.Check(err)
+	if err != nil {
+		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.hpThreadIDs)
+	}
 	topology.siblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
 	remaining := threadSet.AvailableThreads().Difference(topology.hpThreadIDs)
 	topology.sharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
-	errutil.Check(err)
+	if err != nil {
+		return topology, errors.Wrapf(err, "cannot allocate remaining threads for BE task (%d required, %d left) - minimum 2 CPUs are required to run experiment", beCPUCount, len(remaining.AsSlice()))
+	}
 
 	topology.isHpCPUExclusive = isHpCPUExclusive
 	topology.isBeCPUExclusive = isBeCPUExclusive
 
-	return topology
+	return topology, nil
 }
 
 type manualTopology struct {
