@@ -114,6 +114,7 @@ func main() {
 	defer kubernetesHandle.Stop()
 
 	specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
+	specjbbBackendExecutorConfig.PodNamePrefix = "specjbb-backend"
 	specjbbBackendExecutorConfig.MemoryLimit = 10000000000
 	specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
 	if err != nil {
