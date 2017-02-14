@@ -1,0 +1,46 @@
+---
+
+- name: create stamps directory
+  file:
+    path: "{{ swan_location }}/stamps"
+    state: directory
+
+- name: register docker stamp location
+  stat: path={{ swan_location }}/stamps/docker.stamp
+  register: docker_stamp
+
+- name: copy docker repository configuration
+  template:
+    src: docker.repo.j2
+    dest: "{{ centos_repo_location }}/docker.repo"
+  when: docker_stamp.stat.exists == False
+
+- name: install Docker daemon
+  yum:
+    name: docker-engine,python-docker-py
+    state: latest
+  when: docker_stamp.stat.exists == False
+
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_ssh_user }}"
+    groups: docker
+    append: yes
+  when: docker_stamp.stat.exists == False
+
+- name: reload systemd
+  shell: systemctl daemon-reload
+  when: docker_stamp.stat.exists == False  
+
+- name: Run and enable docker daemon
+  systemd:
+    name: docker
+    enabled: yes
+    state: restarted
+  when: docker_stamp.stat.exists == False
+
+- name: create docker stamp
+  file:
+    path: "{{ swan_location }}/stamps/docker.stamp"
+    state: touch
+  when: docker_stamp.stat.exists == False  

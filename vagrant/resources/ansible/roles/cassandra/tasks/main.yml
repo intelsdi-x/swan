@@ -1,0 +1,63 @@
+---
+
+- name: install docker
+  include_role:
+    name: docker
+
+- name: create stamps directory
+  file:
+    path: "{{ swan_location }}/stamps"
+    state: directory
+
+- name: register cassandra stamp location
+  stat: path={{ swan_location }}/stamps/cassandra.stamp
+  register: cassandra_stamp
+
+- name: create resources directory
+  file:
+    path: "{{ swan_location }}/resources"
+    state: directory
+  when: cassandra_stamp.stat.exists == False
+
+- name: copy cassandra service
+  template:
+    src: cassandra.service.j2
+    dest: "{{ systemd_unit_location }}/cassandra.service"
+  when: cassandra_stamp.stat.exists == False
+
+- name: copy cassandra keyspace
+  template:
+    src: keyspace.cql.j2
+    dest: "{{ swan_location }}/resources/keyspace.cql"
+  when: cassandra_stamp.stat.exists == False
+
+- name: copy cassandra table
+  template:
+    src: table.cql.j2
+    dest: "{{ swan_location }}/resources/table.cql"
+  when: cassandra_stamp.stat.exists == False
+
+- name: Pull Cassandra image
+  docker_image:
+    name: cassandra
+    tag: 3.5
+  when: cassandra_stamp.stat.exists == False
+
+- name: Prepare Cassandra storage directory
+  file:
+    path: /var/data/cassandra
+    state: directory
+  when: cassandra_stamp.stat.exists == False
+
+- name: Run and enable Cassandra daemon
+  systemd:
+    name: cassandra
+    enabled: yes
+    state: restarted
+  when: cassandra_stamp.stat.exists == False
+
+- name: create cassandra stamp
+  file:
+    path: "{{ swan_location }}/stamps/cassandra.stamp"
+    state: touch
+  when: cassandra_stamp.stat.exists == False  

@@ -1,0 +1,59 @@
+---
+
+- name: install environmental
+  include_role:
+    name: environmental
+
+- name: install k8s
+  include_role:
+    name: k8s
+  become: true
+
+- name: create stamps directory
+  file:
+    path: "{{ swan_location }}/stamps"
+    state: directory
+
+- name: register repository stamp location
+  stat: path={{ swan_location }}/stamps/repository.stamp
+  register: repository_stamp
+
+- name: link swan to {{ ansible_user_dir }}
+  file:
+    src: "{{ ansible_user_dir }}/go/src/github.com/intelsdi-x/swan"
+    dest: "{{ ansible_user_dir }}/swan"
+    state: link
+  when: repository_stamp.stat.exists == False
+
+- name: flushing old k8s installation (if any)
+  file:
+    path: "{{ ansible_user_dir }}/swan/misc/bin"
+    state: absent
+  when: repository_stamp.stat.exists == False
+
+- name: creating k8s target directory
+  file:
+    path: "{{ ansible_user_dir }}/swan/misc/bin"
+    state: directory
+  when: repository_stamp.stat.exists == False
+
+- name: installing hyperkube in target location
+  copy:
+    src: "/cache/hyperkube-{{ k8s_version }}"
+    dest: "{{ ansible_user_dir }}/swan/misc/bin/hyperkube"
+    remote_src: true
+    mode: 0755
+  when: repository_stamp.stat.exists == False
+
+- name: generating links to k8s services
+  shell: "./hyperkube --make-symlinks"
+  args:
+    chdir: "{{ ansible_user_dir }}/swan/misc/bin"
+  when: repository_stamp.stat.exists == False
+
+- name: create repository stamp
+  file:
+    path: "{{ swan_location }}/stamps/repository.stamp"
+    state: touch
+  become: true
+  when: repository_stamp.stat.exists == False

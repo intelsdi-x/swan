@@ -1,0 +1,24 @@
+centos_repo_location: "/etc/yum.repos.d/"
+systemd_unit_location: "/etc/systemd/system"
+swan_location: "/opt/swan"
+ccache_configuration: /etc/ccache.conf
+openblas_location: /opt/OpenBLAS
+gopath: "{{ ansible_user_dir }}/go"
+swan_repo_location: "{{ ansible_user_dir }}/swan"
+jupyter_requirements_location: "{{ swan_repo_location }}/jupyter/requirements.txt"
+devel: "yes"
+
+production_packages: docker-engine, snap-telemetry, boost, deltarpm, etcd, gengetopt, gflags, glog, hdf5, hg, htop, iptables, leveldb, libcgroup-tools, lmdb, moreutils-parallel, nmap-ncat, numactl, openblas, opencv, perf, protobuf, psmisc, pssh, python-pip, snappy, scons, sudo, tree, vim, wget
+developer_packages: boost-devel, cppzmq-devel, gflags-devel, glog-devel, hdf5-devel, java-1.8.0-openjdk-devel, leveldb-devel, libevent-devel, lmdb-devel, openblas-devel, opencv-devel, protobuf-devel, python-devel, snappy-devel, zeromq-devel, ccache, gcc-c++, git
+
+go_version: "1.7"
+glide_version: "v0.12.2"
+godep_version: "v74"
+k8s_version: "v1.5.1"
+
+snap_plugin_collector_docker_version: 5
+snap_plugin_processor_tag_version: 3
+snap_plugin_publisher_cassandra_version: 5
+snap_plugin_publisher_file_version: 2
+
+

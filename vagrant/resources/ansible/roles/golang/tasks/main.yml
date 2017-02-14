@@ -1,0 +1,76 @@
+---
+
+- name: create stamps directory
+  file:
+    path: "{{ swan_location }}/stamps"
+    state: directory
+
+- name: register go stamp location
+  stat: path={{ swan_location }}/stamps/go.stamp
+  register: go_stamp
+
+- name: downloading go
+  get_url:
+    url: "https://storage.googleapis.com/golang/go{{ go_version }}.linux-amd64.tar.gz"
+    dest: "/cache/go-{{ go_version }}"
+  when: go_stamp.stat.exists == False
+
+- name: unpacking go
+  unarchive:
+    src: "/cache/go-{{ go_version }}"
+    dest: "/usr/local"
+    remote_src: true
+  when: go_stamp.stat.exists == False
+
+- name: downloading glide
+  get_url:
+    url: "https://github.com/Masterminds/glide/releases/download/{{ glide_version }}/glide-{{ glide_version }}-linux-amd64.tar.gz"
+    dest: "/cache/glide-{{ glide_version }}"
+  when: go_stamp.stat.exists == False
+
+- name: creating glide temp
+  file:
+    path: /tmp/glide
+    state: directory
+  when: go_stamp.stat.exists == False
+
+- name: unpacking glide
+  unarchive:
+    src: "/cache/glide-{{ glide_version }}"
+    dest: "/tmp/glide"
+    remote_src: true
+  when: go_stamp.stat.exists == False
+
+- name: installing glide
+  copy:
+    src: "/tmp/glide/linux-amd64/glide"
+    dest: "/usr/bin/glide"
+    remote_src: true
+    mode: 0755
+  when: go_stamp.stat.exists == False
+
+- name: cleaning up glide temp
+  file:
+    path: /tmp/glide
+    state: absent
+  when: go_stamp.stat.exists == False
+
+- name: downloading godep
+  get_url:
+    url: "https://github.com/tools/godep/releases/download/{{ godep_version }}/godep_linux_amd64"
+    dest: "/cache/godep-{{ godep_version }}"
+  when: go_stamp.stat.exists == False
+
+- name: installing godep
+  copy:
+    src: "/cache/godep-{{ godep_version }}"
+    dest: "/usr/bin/godep"
+    remote_src: true
+    mode: 0755
+  when: go_stamp.stat.exists == False
+
+- name: create go stamp
+  file:
+    path: "{{ swan_location }}/stamps/go.stamp"
+    state: touch
+  when: go_stamp.stat.exists == False

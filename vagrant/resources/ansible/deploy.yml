@@ -1,0 +1,50 @@
+---
+
+- name: prepare environment
+  hosts: swan
+  gather_facts: true
+  become: true
+  roles:
+   - { role: environmental }
+
+- name: install snap
+  hosts: swan
+  gather_facts: true
+  become: true
+  roles:
+   - { role: snap }
+
+- name: download k8s
+  hosts: swan
+  gather_facts: true
+  become: true
+  roles:
+   - { role: k8s }
+
+- name: download cassandra
+  hosts: swan
+  gather_facts: true
+  become: true
+  roles:
+   - { role: cassandra }
+
+- name: install golang
+  hosts: swan
+  gather_facts: true
+  become: true
+  roles:
+   - { role: golang }
+
+- name: install repository
+  hosts: swan
+  gather_facts: true
+  become: false
+  roles:
+   - { role: repository }
+
+- name: prepare workloads
+  hosts: swan
+  gather_facts: true
+  become: false
+  roles:
+   - { role: workloads }

@@ -1,0 +1,36 @@
+[Unit]
+Description=Apache Cassandra
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker rm -f cassandra-swan
+ExecStartPre=/usr/bin/docker pull cassandra:3.5
+ExecStart=/usr/bin/docker run \
+  --name cassandra-swan \
+  --net host \
+  -e CASSANDRA_LISTEN_ADDRESS=127.0.0.1 \
+  -e CASSANDRA_CLUSTER_NAME=cassandra-swan \
+  -v /var/data/cassandra:/var/lib/cassandra \
+  cassandra:3.5
+ExecStartPost=/usr/bin/docker run \
+  --rm \
+  --net host \
+  cassandra:3.5 \
+  bash -c 'while ! echo "show host" | cqlsh localhost ; do sleep 1; done'
+ExecStartPost=/usr/bin/docker run \
+  --rm \
+  --net host \
+  -v /opt/swan/resources:/resources \
+  cassandra:3.5 \
+  cqlsh localhost --file /resources/keyspace.cql
+ExecStartPost=/usr/bin/docker run \
+  --rm \
+  --net host \
+  -v /opt/swan/resources:/resources \
+  cassandra:3.5 \
+  cqlsh localhost --file /resources/table.cql
+[Install]
+WantedBy=multi-user.target

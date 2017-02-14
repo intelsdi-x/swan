@@ -1,0 +1,90 @@
+---
+
+- name: create stamps directory
+  file:
+    path: "{{ swan_location }}/stamps"
+    state: directory
+
+- name: register environmental stamp location
+  stat: path={{ swan_location }}/stamps/environmental.stamp
+  register: environmental_stamp
+
+- name: disable selinux
+  selinux:
+    state: disabled
+  when: environmental_stamp.stat.exists == False
+
+- name: generate root bash_profile
+  template:
+    src: bash_profile.j2
+    dest: "/root/.bash_profile"
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: generate user bash_profile
+  template:
+    src: bash_profile.j2
+    dest: "{{ ansible_user_dir }}/.bash_profile"
+  when: environmental_stamp.stat.exists == False
+
+- name: create ssh directory for root
+  file:
+    path: "/root/.ssh"
+    state: directory
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: create ssh directory for user
+  file:
+    path: "{{ ansible_user_dir }}/.ssh"
+    state: directory
+  when: environmental_stamp.stat.exists == False
+
+- name: copy generated known_hosts for root
+  template:
+    src: known_hosts.j2
+    dest: /root/.ssh/known_hosts
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: copy generated known_hosts for user
+  template:
+    src: known_hosts.j2
+    dest: "{{ ansible_user_dir }}/.ssh/known_hosts"
+  when: environmental_stamp.stat.exists == False
+
+- name: remove generated private key if exists
+  file:
+    path: "/root/.ssh/id_rsa"
+    state: absent
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: generate new private key
+  shell: ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: allow ssh connectivity 
+  shell: "cat /root/.ssh/id_rsa >> /root/.ssh/authorized_keys"
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: set valid permissions for authorized_keys
+  file:
+    path: "/root/.ssh/authorized_keys"
+    mode: 0644
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: add localhost to known_hosts
+  shell: ssh-keyscan localhost >> /root/.ssh/known_hosts
+  become: true
+  when: environmental_stamp.stat.exists == False
+
+- name: create environmental stamp
+  file:
+    path: "{{ swan_location }}/stamps/environmental.stamp"
+    state: touch
+  become: true
+  when: environmental_stamp.stat.exists == False

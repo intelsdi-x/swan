@@ -1,0 +1,16 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+GOPATH=$HOME/go
+CCACHE_CONFIGPATH={{ ccache_configuration }}
+PATH=/usr/lib64/ccache/:$PATH:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin:$HOME/go/bin
+SWAN_DIR=$HOME/go/src/github.com/intelsdi-x/swan
+PYTHONPATH=$PYTHONPATH:$HOME/go/src/github.com/intelsdi-x/swan
+OPENBLAS_PATH={{ openblas_location }}
+LD_LIBRARY_PATH={{ openblas_location }}/lib:/usr/lib
