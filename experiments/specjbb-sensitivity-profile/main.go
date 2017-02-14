@@ -37,7 +37,8 @@ func main() {
                      It executes workloads and triggers gathering of metrics like latency (SLI)`)
 	err := conf.ParseFlags()
 	if err != nil {
-		return
+		logrus.Errorf("Cannot parse flags: %q", err.Error())
+		os.Exit(experiment.ExUsage)
 	}
 	logrus.SetLevel(conf.LogLevel())
 
