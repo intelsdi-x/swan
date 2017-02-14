@@ -23,14 +23,10 @@ import (
 	//"github.com/pkg/errors"
 	//"golang.org/x/tools/cmd/fiximports/testdata/src/titanic.biz/bar"
 	//"gopkg.in/cheggaaa/pb.v1"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 var (
-	controllerAddress = conf.NewStringFlag(
-		"specjbb_controller_ip",
-		"Address of the SPECjbb controller",
-		"127.0.0.1")
-
 	loadGeneratorOneAddress = conf.NewStringFlag(
 		"specjbb_load_generator_one",
 		"Address of the first SPECjbb Load Generator host",
@@ -48,7 +44,8 @@ func main() {
 	conf.SetHelp(`TBD`)
 	err := conf.ParseFlags()
 	if err != nil {
-		return
+		logrus.Fatalf("Could not parse flags: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
 	}
 	logrus.SetLevel(logrus.DebugLevel)
 
@@ -106,8 +103,18 @@ func main() {
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	//aggressorSessionLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, aggressorSessionLaunchers...)
 
+	kubernetesExecutor := executor.NewLocal()
+	kubernetesConfig := kubernetes.DefaultConfig()
+	kubernetesLauncher := kubernetes.New(kubernetesExecutor, kubernetesExecutor, kubernetesConfig)
+	kubernetesHandle, err := kubernetesLauncher.Launch()
+	if err != nil {
+		logrus.Errorf("could not prepare kubernetes cluster: %s", err)
+		os.Exit(experiment.ExSoftware)
+	}
+	defer kubernetesHandle.Stop()
+
 	specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
-	specjbbBackendExecutorConfig.MemoryLimit = 10
+	specjbbBackendExecutorConfig.MemoryLimit = 10000000000
 	specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
 	if err != nil {
 		logrus.Errorf("could not prepare specjbbBackendExecutor: %s", err)
@@ -116,7 +123,7 @@ func main() {
 
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-	backendConfig.ControllerAddress = controllerAddress.Value()
+	backendConfig.ControllerAddress = specjbb.ControllerAddress.Value()
 	backendConfig.JVMHeapMemoryGBs = 8
 	specjbbBackendLauncher := specjbb.NewBackend(specjbbBackendExecutor, backendConfig)
 
@@ -131,7 +138,7 @@ func main() {
 		logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
 		os.Exit(experiment.ExSoftware)
 	}
-	controllerExecutor, err := executor.NewRemoteFromIP(controllerAddress.Value())
+	controllerExecutor, err := executor.NewRemoteFromIP(specjbb.ControllerAddress.Value())
 	if err != nil {
 		logrus.Errorf("could not prepare controllerExecutor: %s", err)
 		os.Exit(experiment.ExSoftware)
