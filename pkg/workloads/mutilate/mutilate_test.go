@@ -31,12 +31,11 @@ const (
 	latencyPercentile      = "99.9234"
 
 	correctMutilateQPS    = 4450
-	correctMutilateSLI    = 75
+	correctMutilateSLI    = 56
 	correctMutilateOutput = `#type       avg     std     min     5th    10th    90th    95th    99th
 read       20.9    11.9    11.9    12.5    13.1    32.4    39.0    56.8
 update      0.0     0.0     0.0     0.0     0.0     0.0     0.0     0.0
 op_q        1.0     0.0     1.0     1.0     1.0     1.1     1.1     1.1
-Swan latency for percentile 99.923400: 75.125312
 
 Total QPS = 4450.3 (89007 / 20.0s)
 Peak QPS  = 71164.8
