@@ -6,18 +6,17 @@ import (
 )
 
 // PrepareSpecjbbLoadGenerator creates new LoadGenerator based on specjbb.
-func PrepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
+func PrepareSpecjbbLoadGenerator(controllerAddress string, transactionInjectorsCount int) (executor.LoadGenerator, error) {
 	var loadGeneratorExecutor executor.Executor
 	var transactionInjectors []executor.Executor
-	txICount := specjbb.TxICountFlag.Value()
-	if ip != "127.0.0.1" {
+	if controllerAddress != "127.0.0.1" {
 		var err error
-		loadGeneratorExecutor, err = executor.NewRemoteFromIP(ip)
+		loadGeneratorExecutor, err = executor.NewRemoteFromIP(controllerAddress)
 		if err != nil {
 			return nil, err
 		}
-		for i := 1; i <= txICount; i++ {
-			transactionInjector, err := executor.NewRemoteFromIP(ip)
+		for i := 0; i < transactionInjectorsCount; i++ {
+			transactionInjector, err := executor.NewRemoteFromIP(controllerAddress)
 			if err != nil {
 				return nil, err
 			}
@@ -25,15 +24,14 @@ func PrepareSpecjbbLoadGenerator(ip string) (executor.LoadGenerator, error) {
 		}
 	} else {
 		loadGeneratorExecutor = executor.NewLocal()
-		for i := 1; i <= txICount; i++ {
+		for i := 0; i < transactionInjectorsCount; i++ {
 			transactionInjector := executor.NewLocal()
 			transactionInjectors = append(transactionInjectors, transactionInjector)
 		}
 	}
 
-	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
-	specjbbLoadGeneratorConfig.ControllerIP = ip
-	specjbbLoadGeneratorConfig.TxICount = txICount
+	specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
+	specjbbLoadGeneratorConfig.ControllerAddress = controllerAddress
 
 	loadGeneratorLauncher := specjbb.NewLoadGenerator(loadGeneratorExecutor,
 		transactionInjectors, specjbbLoadGeneratorConfig)

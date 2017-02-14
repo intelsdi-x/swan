@@ -22,14 +22,14 @@ const (
 
 func TestCommandsWithDefaultConfig(t *testing.T) {
 	Convey("While having default config", t, func() {
-		defaultConfig := NewDefaultConfig()
+		defaultConfig := DefaultLoadGeneratorConfig()
 
 		Convey("and SPECjbb transaction injector command", func() {
 			command := getTxICommand(defaultConfig, transactionInjectorIndex)
 			Convey("Should contain txinjector mode", func() {
 				So(command, ShouldContainSubstring, "-m txinjector")
 			})
-			Convey("Should contain controller IP with host property", func() {
+			Convey("Should contain controller address host property", func() {
 				So(command, ShouldContainSubstring, "-Dspecjbb.controller.host=127.0.0.1")
 			})
 			Convey("Should contain proper group", func() {

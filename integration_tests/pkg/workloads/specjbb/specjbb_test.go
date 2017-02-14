@@ -23,7 +23,7 @@ const (
 // TestSPECjbb is an integration test with SPECjbb components.
 func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
-	specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
+	specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
 	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
 		t.Logf("Skipping test due to an error %s", err)
 		t.Skip("SPECjbb binary is not distributed with Swan. It requires license and should be purchased " +
@@ -31,8 +31,6 @@ func TestSPECjbb(t *testing.T) {
 	}
 
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig.TxICount = txICount
-
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
 			transactionInjector := executor.NewLocal()
@@ -54,7 +52,7 @@ func TestSPECjbb(t *testing.T) {
 
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-					backendConfig.JVMHeapMemory = 1
+					backendConfig.JVMHeapMemoryGBs = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
@@ -93,7 +91,7 @@ func TestSPECjbb(t *testing.T) {
 							//1s: Initializing... (init) OK
 							// We should look for the proper lines to be sure that our configuration works.
 							substringInitialization := "Initializing... (init) OK"
-							substringBackend := "Agent GRP1.Backend.JVM2 has attached to Controller"
+							substringBackend := "Agent GRP1.Backend.specjbbbackend1 has attached to Controller"
 							substringTxI := "Agent GRP1.TxInjector.JVM1 has attached to Controller"
 							var matchLoad, matchBackend, matchTxI bool
 							for scanner.Scan() {
@@ -135,8 +133,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig.TxICount = txICount
-
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
 			transactionInjector := executor.NewLocal()
@@ -157,7 +153,7 @@ func TestSPECjbb(t *testing.T) {
 
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-					backendConfig.JVMHeapMemory = 1
+					backendConfig.JVMHeapMemoryGBs = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
@@ -190,8 +186,6 @@ func TestSPECjbb(t *testing.T) {
 
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig.TxICount = txICount
-
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
 			transactionInjector := executor.NewLocal()
@@ -245,7 +239,7 @@ func TestSPECjbb(t *testing.T) {
 		})
 	})
 	Convey("While using default config", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
+		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
 
 		Convey("And launching SPECjbb load without transaction injectors", func() {
 			var transactionInjectors []executor.Executor
@@ -264,7 +258,7 @@ func TestSPECjbb(t *testing.T) {
 				})
 				Convey("And after adding the SPECjbb backend", func() {
 					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-					backendConfig.JVMHeapMemory = 1
+					backendConfig.JVMHeapMemoryGBs = 1
 					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
 					backendTaskHandle, err := backendLauncher.Launch()
 
@@ -315,9 +309,8 @@ func TestSPECjbb(t *testing.T) {
 		})
 	})
 	Convey("While using config with no existing path to binary", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.NewDefaultConfig()
+		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
 		specjbbLoadGeneratorConfig.PathToBinary = "/no/existing/path"
-		specjbbLoadGeneratorConfig.TxICount = txICount
 
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
