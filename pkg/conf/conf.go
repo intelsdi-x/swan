@@ -109,9 +109,9 @@ func ParseEnv() error {
 	return errors.Wrapf(err, "could not parse enviroment flags")
 }
 
-// getFlags returns current, default, keys and descrition for every flag.
+// getFlagsDefinition returns current, default, keys and descrition for every flag.
 // Notes: order is important because it logically groups flags.
-func getFlags() (flags []struct{ Name, Value, Default, Help string }) {
+func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) {
 
 	for _, flag := range app.Model().Flags {
 
@@ -181,13 +181,12 @@ func getFlags() (flags []struct{ Name, Value, Default, Help string }) {
 	return flags
 }
 
-// DumpConfig evironment based configuration based on current values of flags.
-// Includes "allexport" directives for bash.
+// DumpConfig dumps evironment based configuration with current values of flags.
 func DumpConfig() string {
 	return DumpConfigMap(nil)
 }
 
-// DumpConfigMap evironment based configuration based on current values and overwritten by given flagMap.
+// DumpConfigMap dumps evironment based configuration with current values overwritten by given flagMap.
 // Includes "allexport" directives for bash.
 func DumpConfigMap(flagMap map[string]string) string {
 	buffer := &bytes.Buffer{}
@@ -195,20 +194,20 @@ func DumpConfigMap(flagMap map[string]string) string {
 	buffer.WriteString("# Export are values.\n")
 	buffer.WriteString("set -o allexport\n")
 
-	for _, v := range getFlags() {
+	for _, fd := range getFlagsDefinition() {
 
-		fmt.Fprintf(buffer, "\n# %s\n", v.Help)
-		if v.Default != "" {
-			fmt.Fprintf(buffer, "# Default: %s\n", v.Default)
+		fmt.Fprintf(buffer, "\n# %s\n", fd.Help)
+		if fd.Default != "" {
+			fmt.Fprintf(buffer, "# Default: %s\n", fd.Default)
 		}
 
 		// Override current values with provided from flagMap.
-		value := v.Value
-		if mapValue, ok := flagMap[v.Name]; ok {
+		value := fd.Value
+		if mapValue, ok := flagMap[fd.Name]; ok {
 			value = mapValue
 		}
 
-		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(v.Name), value)
+		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(fd.Name), value)
 	}
 
 	buffer.WriteString("set +o allexport")
@@ -218,7 +217,7 @@ func DumpConfigMap(flagMap map[string]string) string {
 // GetFlags returns flags as map with current values.
 func GetFlags() map[string]string {
 	flagsMap := map[string]string{}
-	for _, flag := range getFlags() {
+	for _, flag := range getFlagsDefinition() {
 		flagsMap[flag.Name] = flag.Value
 	}
 	return flagsMap

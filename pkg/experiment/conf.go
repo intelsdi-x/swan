@@ -9,18 +9,17 @@ import (
 )
 
 var (
-	// DumpConfigFlag name include dash to excluded it from dumping.
+	// DumpConfigFlag name includes dash to excluded it from dumping.
 	dumpConfigFlag = conf.NewBoolFlag("config-dump", "Dump configuration as environment script.", false)
 
-	// DumpConfigExperimentIDFlag name include dash to excluded it from dumping.
+	// DumpConfigExperimentIDFlag name includes dash to excluded it from dumping.
 	dumpConfigExperimentIDFlag = conf.NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
 )
 
 // ManageConfiguration handles configuration script generation and restoration based on config-* flags.
-// Note: exists program if user decided to dump configration.
+// Note: exits if configuration dump was requested.
 func ManageConfiguration() {
 
-	// Dump flags as environment files if requested.
 	if dumpConfigFlag.Value() {
 		previousExperimentID := dumpConfigExperimentIDFlag.Value()
 		if previousExperimentID != "" {

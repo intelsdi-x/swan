@@ -182,7 +182,7 @@ func TestConfiguration(t *testing.T) {
 		// Gather configuration and put into map (for testing purposes).
 		// Prepare map with all flags for easier assertions.
 		flags := map[string]struct{ Name, Value, Default, Help string }{}
-		for _, flag := range getFlags() {
+		for _, flag := range getFlagsDefinition() {
 			flags[flag.Name] = flag
 		}
 
