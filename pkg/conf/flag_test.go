@@ -224,5 +224,49 @@ func TestConfiguration(t *testing.T) {
 		valueFromMap, ok = flagMap[sliceTestFlag.name]
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedSlice)
+
+		Convey("Configuration file is also generted correctly", func() {
+
+			body := DumpConfig()
+			requriredParts := []string{
+				"# stringDesc",
+				"# Default: http://foo-bar",
+				"SWAN_STRINGTEST=bar-foo",
+				"# intDesc",
+				"# Default: 628",
+				"SWAN_INTTEST=13",
+				"# durDesc",
+				"# Default: 2m3s",
+				"SWAN_DURATIONTEST=2h0m0s",
+				"# sliceDesc",
+				"SWAN_SLICETEST=foo1,foo2",
+				"set +o allexport",
+			}
+
+			for _, part := range requriredParts {
+				So(body, ShouldContainSubstring, part)
+			}
+
+			Convey("even with overwritten given values", func() {
+				body := DumpConfigMap(map[string]string{
+					"stringTest":   "newString",
+					"intTest":      "17",
+					"durationTest": "3h",
+					"sliceTest":    "bar1,bar2",
+				})
+				requriredParts := []string{
+					"SWAN_STRINGTEST=",
+					"SWAN_INTTEST=17",
+					"SWAN_DURATIONTEST=3h",
+					"SWAN_SLICETEST=bar1,bar2",
+				}
+
+				for _, part := range requriredParts {
+					So(body, ShouldContainSubstring, part)
+				}
+
+			})
+		})
 	})
+
 }
