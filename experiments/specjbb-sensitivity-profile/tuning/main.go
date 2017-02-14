@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"strings"
+	//"strconv"
+	//"strings"
 	//"time"
 
 	"github.com/Sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	//"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	//"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	//"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
@@ -56,12 +56,12 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 	// Create metadata associated with experiment
-	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
-	err = metadata.Connect()
-	if err != nil {
-		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	//metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
+	//err = metadata.Connect()
+	//if err != nil {
+	//	logrus.Errorf("Cannot connect to metadata database %q", err.Error())
+	//	os.Exit(experiment.ExSoftware)
+	//}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 
@@ -150,33 +150,33 @@ func main() {
 
 	// Metadata.
 
-	err = metadata.RecordEnv("SWAN_")
-	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	//err = metadata.RecordEnv("SWAN_")
+	//if err != nil {
+	//	logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+	//	os.Exit(experiment.ExSoftware)
+	//}
 
 	// Read configuration.
 	//stopOnError := sensitivity.StopOnErrorFlag.Value()
 	//loadPoints := sensitivity.LoadPointsCountFlag.Value()
-	repetitions := sensitivity.RepetitionsFlag.Value()
+	//repetitions := sensitivity.RepetitionsFlag.Value()
 	//loadDuration := sensitivity.LoadDurationFlag.Value()
 
 	// Record metadata.
-	records := map[string]string{
-		"command_arguments": strings.Join(os.Args, ","),
-		"experiment_name":   conf.AppName(),
-		//"peak_load":         strconv.Itoa(load),
-		//"load_points":       strconv.Itoa(loadPoints),
-		"repetitions": strconv.Itoa(repetitions),
-		//"load_duration":     loadDuration.String(),
-	}
+	//records := map[string]string{
+	//	"command_arguments": strings.Join(os.Args, ","),
+	//	"experiment_name":   conf.AppName(),
+	//"peak_load":         strconv.Itoa(load),
+	//"load_points":       strconv.Itoa(loadPoints),
+	//"repetitions": strconv.Itoa(repetitions),
+	//"load_duration":     loadDuration.String(),
+	//}
 
-	err = metadata.RecordMap(records)
-	if err != nil {
-		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	//err = metadata.RecordMap(records)
+	//if err != nil {
+	//	logrus.Errorf("Cannot save metadata: %q", err.Error())
+	//	os.Exit(experiment.ExSoftware)
+	//}
 
 	// Run tuning.
 
