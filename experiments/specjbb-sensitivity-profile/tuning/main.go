@@ -129,24 +129,43 @@ func main() {
 	specjbbBackendLauncher := specjbb.NewBackend(specjbbBackendExecutor, backendConfig)
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
-	txInjectorExecutorOne, err := executor.NewRemoteFromIP(loadGeneratorOneAddress.Value())
-	if err != nil {
-		logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
-		os.Exit(experiment.ExSoftware)
-	}
-	txInjectorExecutorTwo, err := executor.NewRemoteFromIP(loadGeneratorTwoAddress.Value())
-	if err != nil {
-		logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
-		os.Exit(experiment.ExSoftware)
-	}
-	controllerExecutor, err := executor.NewRemoteFromIP(specjbb.ControllerAddress.Value())
-	if err != nil {
-		logrus.Errorf("could not prepare controllerExecutor: %s", err)
-		os.Exit(experiment.ExSoftware)
-	}
+	//txInjectorExecutorOne, err := executor.NewRemoteFromIP(loadGeneratorOneAddress.Value())
+	//if err != nil {
+	//	logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
+	//txInjectorExecutorTwo, err := executor.NewRemoteFromIP(loadGeneratorTwoAddress.Value())
+	//if err != nil {
+	//	logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
+	//controllerExecutor, err := executor.NewRemoteFromIP(specjbb.ControllerAddress.Value())
+	//if err != nil {
+	//	logrus.Errorf("could not prepare controllerExecutor: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
 
-	loadGeneratorExecutors := []executor.Executor{txInjectorExecutorOne, txInjectorExecutorTwo}
+	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
+	txInjectorExecutorOne := executor.NewLocal()
+	//if err != nil {
+	//	logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
+	//txInjectorExecutorTwo := executor.NewLocal()
+	//if err != nil {
+	//	logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
+	controllerExecutor := executor.NewLocal()
+	//if err != nil {
+	//	logrus.Errorf("could not prepare controllerExecutor: %s", err)
+	//	os.Exit(experiment.ExSoftware)
+	//}
+
+	//loadGeneratorExecutors := []executor.Executor{txInjectorExecutorOne, txInjectorExecutorTwo}
+	loadGeneratorExecutors := []executor.Executor{txInjectorExecutorOne}
 	loadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
+	loadGeneratorConfig.ControllerAddress = specjbb.ControllerAddress.Value()
 	specjbbLoadGenerator := specjbb.NewLoadGenerator(controllerExecutor, loadGeneratorExecutors, loadGeneratorConfig)
 
 	// Metadata.
