@@ -1,12 +1,19 @@
 package experiment
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/pkg/conf"
+)
+
+const (
+	metadataKindEmpty   = ""
+	metadataKindFlags   = "flags"
+	metadataKindEnviron = "environ"
 )
 
 // MetadataConfig encodes the settings for connecting to the database.
@@ -100,7 +107,8 @@ func (m *Metadata) Connect() error {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
 
 	// TODO(niklas): make consistency configurable.
-	cluster.Consistency = gocql.One
+	cluster.Consistency = gocql.LocalOne
+	cluster.SerialConsistency = gocql.LocalSerial
 
 	cluster.ProtoVersion = 4
 	cluster.Timeout = m.config.CassandraConnectionTimeout
@@ -134,7 +142,7 @@ func (m *Metadata) Connect() error {
 		return err
 	}
 
-	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, kind text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
 		return err
 	}
 
@@ -146,27 +154,32 @@ func (m *Metadata) Connect() error {
 	return nil
 }
 
+// storeMap
+func (m *Metadata) storeMap(metadata MetadataMap, kind string) error {
+	return m.session.Query(`INSERT INTO swan.metadata (experiment_id, kind, time, metadata) VALUES (?, ?, ?, ?)`, m.experimentID, kind, time.Now(), metadata).Exec()
+}
+
 // Record stores a key and value and associates with the experiment id.
 func (m *Metadata) Record(key string, value string) error {
 	metadata := MetadataMap{}
 	metadata[key] = value
-
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.storeMap(metadata, metadataKindEmpty)
 }
 
 // RecordMap stores a key and value map and associates with the experiment id.
 func (m *Metadata) RecordMap(metadata MetadataMap) error {
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
+	return m.storeMap(metadata, metadataKindEmpty)
+}
 
-	return nil
+// // RecordKindMap stores a key and value map and associates with the experiment id grouped by "kind".
+// func (m *Metadata) RecordKindMap(kind string, metadata MetadataMap) error {
+// 	return m.storeMap(metadata, kind)
+// }
+
+// RecordFlags saves whole flags based configuration in the metadata information.
+func (m *Metadata) RecordFlags() error {
+	metadata := conf.GetFlags()
+	return m.storeMap(metadata, metadataKindFlags)
 }
 
 // RecordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
@@ -180,11 +193,7 @@ func (m *Metadata) RecordEnv(prefix string) error {
 			metadata[fields[0]] = fields[1]
 		}
 	}
-	if err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, time, metadata) VALUES (?, ?, ?)`,
-		m.experimentID, time.Now(), metadata).Exec(); err != nil {
-		return err
-	}
-	return nil
+	return m.storeMap(metadata, metadataKindEnviron)
 }
 
 // Get retrieves all metadata maps from the database.
@@ -202,6 +211,28 @@ func (m *Metadata) Get() ([]MetadataMap, error) {
 	}
 
 	return out, nil
+}
+
+// GetGroup retrive signle kind from the database.
+// Returns error if no kind or too many groups found.
+func (m *Metadata) GetGroup(kind string) (MetadataMap, error) {
+	var metadata MetadataMap
+
+	maps := []MetadataMap{}
+
+	iter := m.session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? AND group = ? ALLOW FILTERING`, m.experimentID, kind).Iter()
+	for iter.Scan(&metadata) {
+		maps = append(maps, metadata)
+	}
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
+	// Make sure that only one map withing experiment exists.
+	if len(maps) != 1 {
+		return nil, fmt.Errorf("Cannot retrieve metadata for experiment ID  %q and %q kind", m.experimentID, kind)
+	}
+	return maps[0], nil
 }
 
 // Clear deletes all metadata entries associated with the current experiment id.

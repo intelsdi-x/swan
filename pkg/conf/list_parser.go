@@ -1,9 +1,9 @@
 package conf
 
 import (
-	"fmt"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"strings"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const stringListDelimiter = ","
@@ -27,7 +27,8 @@ func (s *StringListValue) Set(value string) error {
 
 // String returns string value from StringListVar. Implements kingpin.Value.
 func (s *StringListValue) String() string {
-	return fmt.Sprintf("%v", ([]string)(*s))
+	// return fmt.Sprintf("%v", ([]string)(*s))
+	return strings.Join(*s, stringListDelimiter)
 }
 
 // Get retrieves content of StringListVar. Implements kingpin.Getter.

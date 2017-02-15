@@ -17,8 +17,13 @@
 package conf
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -102,4 +107,118 @@ func ParseEnv() error {
 	}
 
 	return errors.Wrapf(err, "could not parse enviroment flags")
+}
+
+// getFlagsDefinition returns current, default, keys and description for every flag.
+// Notes: order is important because it logically groups flags.
+func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) {
+
+	for _, flag := range app.Model().Flags {
+
+		// Skip kingpin builtin flags that aren't compatible with environment based configuration.
+		if strings.Contains(flag.Name, "-") {
+			continue
+		}
+
+		// Returned values are basic types (string, int) or time.Duration and then serialized to string.
+		var value interface{} // golang native type
+
+		// First handle pkg/conf swan internal flags implementation.
+		if slv, ok := flag.Value.(*StringListValue); ok {
+			value = slv.String()
+		} else {
+			// Use reflection to extract value hidden in non exported kingpin implementation.
+
+			// Extract reflect.Value from kingpin interface (kingpin.Value).
+			reflectValue := reflect.ValueOf(flag.Value)
+
+			// Dereference point from reflect.Value.
+			// Value represent a pointer to something like kingpin.boolValue or kingpin.stringValue, so extract the _Value struct itself.
+			elem := reflectValue.Elem()
+
+			// Basing on underlying type convert to native type.
+			// Laws of reflection:
+			// "The second property is that the Kind of a reflection object describes the underlying type, not the static type."
+			switch elem.Kind() {
+
+			case reflect.Int64, reflect.Int:
+				// Special case for exploit kingpin duration flag implementation (not struct{v Value} generated implementations).
+				value = time.Duration(elem.Int())
+
+			case reflect.Struct:
+
+				// Get field that is used in kingpin to store value (pointer)
+				// and dereference pointer.
+				field := elem.FieldByName("v")
+				valueInField := field.Elem()
+
+				// Check the underlying type of value stored in v.
+				switch valueInField.Kind() {
+
+				case reflect.String:
+					value = valueInField.String()
+
+				case reflect.Bool:
+					value = valueInField.Bool()
+
+				case reflect.Int64, reflect.Int:
+					value = valueInField.Int()
+
+				default:
+					fmt.Sprintf("unhandled flag %s kind=%s", flag.Name, elem.Kind())
+				}
+			}
+		}
+
+		flags = append(flags, struct{ Name, Value, Default, Help string }{
+			Name:    flag.Name,
+			Help:    flag.Help,
+			Default: strings.Join(flag.Default, ","),
+			Value:   fmt.Sprintf("%v", value), // serialize value to String.
+		})
+	}
+
+	return flags
+}
+
+// DumpConfig dumps environment based configuration with current values of flags.
+func DumpConfig() string {
+	return DumpConfigMap(nil)
+}
+
+// DumpConfigMap dumps environment based configuration with current values overwritten by given flagMap.
+// Includes "allexport" directives for bash.
+func DumpConfigMap(flagMap map[string]string) string {
+	buffer := &bytes.Buffer{}
+
+	buffer.WriteString("# Export are values.\n")
+	buffer.WriteString("set -o allexport\n")
+
+	for _, fd := range getFlagsDefinition() {
+
+		fmt.Fprintf(buffer, "\n# %s\n", fd.Help)
+		if fd.Default != "" {
+			fmt.Fprintf(buffer, "# Default: %s\n", fd.Default)
+		}
+
+		// Override current values with provided from flagMap.
+		value := fd.Value
+		if mapValue, ok := flagMap[fd.Name]; ok {
+			value = mapValue
+		}
+
+		fmt.Fprintf(buffer, "SWAN_%s=%v\n", strings.ToUpper(fd.Name), value)
+	}
+
+	buffer.WriteString("set +o allexport")
+	return buffer.String()
+}
+
+// GetFlags returns flags as map with current values.
+func GetFlags() map[string]string {
+	flagsMap := map[string]string{}
+	for _, flag := range getFlagsDefinition() {
+		flagsMap[flag.Name] = flag.Value
+	}
+	return flagsMap
 }

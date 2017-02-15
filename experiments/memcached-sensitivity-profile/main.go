@@ -18,6 +18,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
@@ -30,12 +31,8 @@ func main() {
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		os.Exit(experiment.ExUsage)
-	}
-	logrus.SetLevel(conf.LogLevel())
+
+	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -52,6 +49,17 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
+
+	// Write configuration as metadata.
+	err = metadata.RecordFlags()
+	errutil.Check(err)
+
+	// Store SWAN_ environment configuration.
+	err = metadata.RecordEnv("SWAN_")
+	if err != nil {
+		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
 
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
 	if err != nil {
@@ -124,13 +132,6 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
 		defer bar.Finish()
-	}
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv("SWAN_")
-	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
 	}
 
 	// Read configuration.
