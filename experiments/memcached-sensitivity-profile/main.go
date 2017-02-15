@@ -31,14 +31,8 @@ func main() {
 	conf.SetAppName("memcached-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
 It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		os.Exit(experiment.ExUsage)
-	}
-	logrus.SetLevel(conf.LogLevel())
 
-	experiment.ManageConfiguration()
+	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -57,7 +51,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	fmt.Println(uuid.String())
 
 	// Write configuration as metadata.
-	err = metadata.RecordMapGroup(conf.GetFlags(), "flags")
+	err = metadata.RecordFlags()
 	errutil.Check(err)
 
 	// Store SWAN_ environment configuration.

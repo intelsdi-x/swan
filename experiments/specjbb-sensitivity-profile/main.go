@@ -36,14 +36,7 @@ func main() {
 	conf.SetAppName("specjbb-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
                      It executes workloads and triggers gathering of metrics like latency (SLI)`)
-	err := conf.ParseFlags()
-	if err != nil {
-		logrus.Errorf("Cannot parse flags: %q", err.Error())
-		os.Exit(experiment.ExUsage)
-	}
-	logrus.SetLevel(conf.LogLevel())
-
-	experiment.ManageConfiguration()
+	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -63,7 +56,7 @@ func main() {
 	fmt.Println(uuid.String())
 
 	// Write configuration as metadata.
-	err = metadata.RecordMapGroup(conf.GetFlags(), "flags")
+	err = metadata.RecordFlags()
 	errutil.Check(err)
 
 	// Store SWAN_ environment configuration.

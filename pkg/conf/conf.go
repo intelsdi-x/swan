@@ -109,13 +109,13 @@ func ParseEnv() error {
 	return errors.Wrapf(err, "could not parse enviroment flags")
 }
 
-// getFlagsDefinition returns current, default, keys and descrition for every flag.
+// getFlagsDefinition returns current, default, keys and description for every flag.
 // Notes: order is important because it logically groups flags.
 func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) {
 
 	for _, flag := range app.Model().Flags {
 
-		// Skip kingpin builtin flags that aren't compatibile with environment based configuration.
+		// Skip kingpin builtin flags that aren't compatible with environment based configuration.
 		if strings.Contains(flag.Name, "-") {
 			continue
 		}
@@ -123,26 +123,26 @@ func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) 
 		// Returned values are basic types (string, int) or time.Duration and then serialized to string.
 		var value interface{} // golang native type
 
-		// First handle pkg/conf swan internal flags implmentation.
+		// First handle pkg/conf swan internal flags implementation.
 		if slv, ok := flag.Value.(*StringListValue); ok {
 			value = slv.String()
 		} else {
-			// Use reflection to extract value hidden in non exported kingpin implmentation.
+			// Use reflection to extract value hidden in non exported kingpin implementation.
 
 			// Extract reflect.Value from kingpin interface (kingpin.Value).
 			reflectValue := reflect.ValueOf(flag.Value)
 
 			// Dereference point from reflect.Value.
-			// Value represent a pointer to something lke kingping.boolValue or kingping.stringValue, so extrac the _Value struct itself.
+			// Value represent a pointer to something like kingpin.boolValue or kingpin.stringValue, so extract the _Value struct itself.
 			elem := reflectValue.Elem()
 
-			// Basing on underlaying type convert to native type.
+			// Basing on underlying type convert to native type.
 			// Laws of reflection:
 			// "The second property is that the Kind of a reflection object describes the underlying type, not the static type."
 			switch elem.Kind() {
 
 			case reflect.Int64, reflect.Int:
-				// Special case for duration flag that is not stored in
+				// Special case for exploit kingpin duration flag implementation (not struct{v Value} generated implementations).
 				value = time.Duration(elem.Int())
 
 			case reflect.Struct:
@@ -181,12 +181,12 @@ func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) 
 	return flags
 }
 
-// DumpConfig dumps evironment based configuration with current values of flags.
+// DumpConfig dumps environment based configuration with current values of flags.
 func DumpConfig() string {
 	return DumpConfigMap(nil)
 }
 
-// DumpConfigMap dumps evironment based configuration with current values overwritten by given flagMap.
+// DumpConfigMap dumps environment based configuration with current values overwritten by given flagMap.
 // Includes "allexport" directives for bash.
 func DumpConfigMap(flagMap map[string]string) string {
 	buffer := &bytes.Buffer{}

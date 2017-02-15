@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
@@ -16,9 +17,17 @@ var (
 	dumpConfigExperimentIDFlag = conf.NewStringFlag("config-dump-experiment-id", "Dump configuration based on experiment ID.", "")
 )
 
-// ManageConfiguration handles configuration script generation and restoration based on config-* flags.
-// Note: exits if configuration dump was requested.
-func ManageConfiguration() {
+// Configure handles configuration parsing, generation and restoration based on config-* flags.
+// Note: exits if configuration generation was requested.
+// This function must reside in experiment package because depends on metadata access.
+func Configure() {
+
+	err := conf.ParseFlags()
+	if err != nil {
+		logrus.Errorf("Cannot parse flags: %q", err.Error())
+		os.Exit(ExUsage)
+	}
+	logrus.SetLevel(conf.LogLevel())
 
 	if dumpConfigFlag.Value() {
 		previousExperimentID := dumpConfigExperimentIDFlag.Value()
