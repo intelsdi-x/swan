@@ -150,7 +150,7 @@ func TestFlags(t *testing.T) {
 }
 
 func TestConfiguration(t *testing.T) {
-	Convey("While using flags, we can extract right values for differnt types.", t, func() {
+	Convey("While using flags, we can extract right values for different types.", t, func() {
 
 		// Prepare all kinds of flags.
 		defaultString := "http://foo-bar"
@@ -225,7 +225,7 @@ func TestConfiguration(t *testing.T) {
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedSlice)
 
-		Convey("Configuration file is also generted correctly", func() {
+		Convey("Configuration file is also generated correctly", func() {
 
 			body := DumpConfig()
 			requriredParts := []string{
@@ -254,14 +254,14 @@ func TestConfiguration(t *testing.T) {
 					"durationTest": "3h",
 					"sliceTest":    "bar1,bar2",
 				})
-				requriredParts := []string{
-					"SWAN_STRINGTEST=",
+				expectedParts := []string{
+					"SWAN_STRINGTEST=newString",
 					"SWAN_INTTEST=17",
 					"SWAN_DURATIONTEST=3h",
 					"SWAN_SLICETEST=bar1,bar2",
 				}
 
-				for _, part := range requriredParts {
+				for _, part := range expectedParts {
 					So(body, ShouldContainSubstring, part)
 				}
 
