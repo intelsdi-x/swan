@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,8 @@ const (
 	MutilateStd = "std"
 	// MutilateMin represent min.
 	MutilateMin = "min"
+	// MutilatePercentile1st represent 1st latency percentile [us].
+	MutilatePercentile1st = "percentile/1st"
 	// MutilatePercentile5th represent 5th latency percentile [us].
 	MutilatePercentile5th = "percentile/5th"
 	// MutilatePercentile10th represent 10th latency percentile [us].
@@ -60,14 +63,24 @@ func File(path string) (Results, error) {
 func Parse(reader io.Reader) (Results, error) {
 	metrics := newResults()
 	scanner := bufio.NewScanner(reader)
+	columnToMetric := map[int]string{}
+
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			return newResults(), err
 		}
 
 		line := scanner.Text()
-		if strings.HasPrefix(line, "read") {
-			latencies, err := parseReadLatencies(line)
+		if strings.HasPrefix(line, "#type") {
+			m, err := parseHeader(line)
+			if err != nil {
+				return newResults(), err
+			}
+
+			columnToMetric = m
+
+		} else if strings.HasPrefix(line, "read") {
+			latencies, err := parseLatencies(line, columnToMetric)
 			if err != nil {
 				return newResults(), err
 			}
@@ -91,41 +104,74 @@ func Parse(reader io.Reader) (Results, error) {
 	return metrics, nil
 }
 
+func parseHeader(line string) (map[int]string, error) {
+	fields := strings.Fields(line)
+
+	// TODO: Validate length of fields slice.
+
+	result := map[int]string{}
+
+	if fields[0] != "#type" {
+		return result, fmt.Errorf("Expect '%s' to start with '#type'", line)
+	}
+
+	labels := fields[1:]
+
+	labelToMetric := map[string]string{
+		"avg":  MutilateAvg,
+		"std":  MutilateStd,
+		"min":  MutilateMin,
+		"1st":  MutilatePercentile1st,
+		"5th":  MutilatePercentile5th,
+		"10th": MutilatePercentile10th,
+		"90th": MutilatePercentile90th,
+		"95th": MutilatePercentile95th,
+		"99th": MutilatePercentile99th,
+		"qps":  MutilateQPS,
+	}
+
+	for index, label := range labels {
+		metric, ok := labelToMetric[label]
+		if !ok {
+			return result, fmt.Errorf("No metric found for label '%s'", label)
+		}
+
+		result[index] = metric
+	}
+
+	return result, nil
+}
+
 // Parse line from Mutilate with read latencies. For example:
 // "read       20.8    23.1    11.9    13.3    13.4    33.4    43.1    59.5"
 // Returns a metrics map of {"avg": 20.8, "std": 23.1, ...}.
-func parseReadLatencies(line string) (map[string]float64, error) {
-	var (
-		avg float64
-		std float64
-		min float64
-		p5  float64
-		p10 float64
-		p90 float64
-		p95 float64
-		p99 float64
-	)
+func parseLatencies(line string, columnToMetric map[int]string) (map[string]float64, error) {
+	fields := strings.Fields(line)
 
-	const fields = 8
+	// TODO: Validate length of fields slice.
 
-	if n, err := fmt.Sscanf(line, "read %f %f %f %f %f %f %f %f", &avg, &std, &min, &p5, &p10, &p90, &p95, &p99); err != nil {
-		if n != fields {
-			return nil, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, n)
+	// Assume first field is the row type, for example 'read'.
+	latencies := fields[1:]
+
+	// Store latencies according to discovered column to metric mapping (from table header).
+	result := map[string]float64{}
+
+	for index, latency := range latencies {
+		// Convert latency string to float64.
+		value, err := strconv.ParseFloat(latency, 64)
+		if err != nil {
+			return result, fmt.Errorf("'%s' latency value must be a float: %s", latency, err.Error())
 		}
 
-		return nil, err
+		key, ok := columnToMetric[index]
+		if !ok {
+			return result, fmt.Errorf("No metric found for column index %d", index)
+		}
+
+		result[key] = value
 	}
 
-	return map[string]float64{
-		MutilateAvg:            avg,
-		MutilateStd:            std,
-		MutilateMin:            min,
-		MutilatePercentile5th:  p5,
-		MutilatePercentile10th: p10,
-		MutilatePercentile90th: p90,
-		MutilatePercentile95th: p95,
-		MutilatePercentile99th: p99,
-	}, nil
+	return result, nil
 }
 
 // Parse the measured number of queries per second for latency measurement.
