@@ -22,8 +22,6 @@ type Remote struct {
 	sshConfig *SSHConfig
 	// Note that by default on Decorate PID isolation is added at the end.
 	commandDecorators isolation.Decorators
-	// Unique ID for the command which will be searched on the remote host.
-	unshareUUID string
 }
 
 // NewRemoteFromIP retrurns a Remote instance.
@@ -42,35 +40,17 @@ func NewRemoteFromIP(ip string) (Executor, error) {
 
 // NewRemote returns a Remote instance.
 func NewRemote(sshConfig *SSHConfig) Remote {
-	var uuidStr string
-
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		uuidStr = string(time.Now().Unix())
-	} else {
-		uuidStr = uuid.String()
-	}
 	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: []isolation.Decorator{},
-		unshareUUID:       uuidStr,
 	}
 }
 
 // NewRemoteIsolated returns a Remote instance.
 func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Remote {
-	var uuidStr string
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		uuidStr = string(time.Now().Unix())
-	} else {
-		uuidStr = uuid.String()
-	}
-
 	return Remote{
 		sshConfig:         sshConfig,
 		commandDecorators: decorators,
-		unshareUUID:       uuidStr,
 	}
 }
 
@@ -118,10 +98,18 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
 	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
 
+	unshareUUIDStr := ""
+	unshareUUID, err := uuid.NewV4()
+	if err != nil {
+		unshareUUIDStr = string(time.Now().Unix())
+	} else {
+		unshareUUIDStr = unshareUUID.String()
+	}
+
 	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
 	// On the server the example command will look the following:
 	// unshare --fork --pid --mount-proc sh -c /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
-	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c '%s #%s'`, stringForSh, remote.unshareUUID)
+	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c '%s #%s'`, stringForSh, unshareUUIDStr)
 
 	log.Debug("Starting '", stringForSh, "' remotely")
 	err = session.Start(stringForSh)
@@ -143,7 +131,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	exitCode = &exitCodeInt
 
 	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile.Name(), stderrFile.Name(),
-		remote.sshConfig.Host, remote.unshareUUID, exitCode, hasProcessExited)
+		remote.sshConfig.Host, unshareUUIDStr, exitCode, hasProcessExited)
 
 	// Wait for remote task in go routine.
 	go func() {
