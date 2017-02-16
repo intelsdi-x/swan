@@ -142,7 +142,7 @@ func (m *Metadata) Connect() error {
 		return err
 	}
 
-	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, kind text, time timestamp, metadata map<text,text>, PRIMARY KEY ((experiment_id), time),) WITH CLUSTERING ORDER BY (time DESC);").Exec(); err != nil {
+	if err = session.Query("CREATE TABLE IF NOT EXISTS swan.metadata (experiment_id text, kind text, time timestamp, timeuuid TIMEUUID, metadata map<text,text>, PRIMARY KEY ((experiment_id), timeuuid),) WITH CLUSTERING ORDER BY (timeuuid DESC);").Exec(); err != nil {
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (m *Metadata) Connect() error {
 
 // storeMap
 func (m *Metadata) storeMap(metadata MetadataMap, kind string) error {
-	return m.session.Query(`INSERT INTO swan.metadata (experiment_id, kind, time, metadata) VALUES (?, ?, ?, ?)`, m.experimentID, kind, time.Now(), metadata).Exec()
+	return m.session.Query(`INSERT INTO swan.metadata (experiment_id, kind, time, timeuuid, metadata) VALUES (?, ?, ?, ?, ?)`, m.experimentID, kind, time.Now(), gocql.TimeUUID(), metadata).Exec()
 }
 
 // Record stores a key and value and associates with the experiment id.
