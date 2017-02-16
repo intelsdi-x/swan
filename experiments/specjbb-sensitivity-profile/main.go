@@ -26,7 +26,7 @@ import (
 
 var (
 	// TxICountFlag is flag containing number of Transaction Injectors used.
-	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group in cluster", 1)
+	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
 )
 
 func main() {
