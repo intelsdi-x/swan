@@ -18,6 +18,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
@@ -26,19 +27,21 @@ import (
 
 var (
 	// TxICountFlag is flag containing number of Transaction Injectors used.
-	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group in cluster", 1)
+	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
 )
 
 func main() {
 	conf.SetAppName("specjbb-sensitivity-profile")
 	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
                      It executes workloads and triggers gathering of metrics like latency (SLI)`)
-	err := conf.ParseFlags()
+	experiment.Configure()
+
+	// Generate an experiment ID and start the metadata session.
+	uuid, err := uuid.NewV4()
 	if err != nil {
-		logrus.Fatalf("Could not parse flags: %q", err.Error())
+		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-	logrus.SetLevel(conf.LogLevel())
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -55,9 +58,18 @@ func main() {
 	}
 
 	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
-
-	//By default print only UUID of the experiment and nothing more on the stdout
 	fmt.Println(uuid.String())
+
+	// Write configuration as metadata.
+	err = metadata.RecordFlags()
+	errutil.Check(err)
+
+	// Store SWAN_ environment configuration.
+	err = metadata.RecordEnv("SWAN_")
+	if err != nil {
+		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
 
 	// Each experiment should have it's own directory to store logs and errors
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
@@ -123,7 +135,7 @@ func main() {
 		}
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
-		logrus.Infof("Skipping Tunning phase, using peakload %d", load)
+		logrus.Infof("Skipping tuning phase, using peakload %d", load)
 	}
 
 	// Initialiaze progress bar when log level is error.
@@ -134,13 +146,6 @@ func main() {
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
 		defer bar.Finish()
-	}
-
-	// Add Swan environment variable
-	err = metadata.RecordEnv("SWAN_")
-	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
 	}
 
 	// Read configuration.
