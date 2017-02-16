@@ -5,6 +5,30 @@ import (
 	"time"
 )
 
+func getBackendCommand(conf BackendConfig) string {
+	// See: https://intelsdi.atlassian.net/wiki/display/SCE/SpecJBB+experiment+tuning
+	return fmt.Sprint("java -jar",
+		" -server", // Compilation takes more time but offers additional optimizations
+
+		fmt.Sprintf(" -Djava.util.concurrent.ForkJoinPool.common.parallelism=%d", conf.Parallelism), // Amount of threads equal to amount of hyper threads
+
+		fmt.Sprintf(" -Xms%dg -Xmx%dg", conf.JVMHeapMemoryGBs, conf.JVMHeapMemoryGBs), // Allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
+		" -XX:NativeMemoryTracking=summary",                                           // Memory monitoring purposes
+		" -XX:+UseParallelGC",                                                         // Parallel garbage collector
+		fmt.Sprintf(" -XX:ParallelGCThreads=%d", conf.Parallelism),                    // Sets the value of n to the number of logical processors. The value of n is the same as the number of logical processors up to a value of 8.
+		fmt.Sprintf(" -XX:ConcGCThreads=%d", conf.Parallelism/2),                      // Currently half of PGCThreads.
+		" -XX:InitiatingHeapOccupancyPercent=80",                                      // Using more memory then default 45% before GC kicks in
+		" -XX:MaxGCPauseMillis=100",                                                   //Sets a target value for desired maximum pause time. The default value is 200 milliseconds. The specified value does not adapt to your heap size.
+
+		ControllerHostProperty, conf.ControllerAddress,
+		" ", conf.PathToBinary,
+		" -m backend",
+		" -G GRP1",
+		" -J ", conf.JvmID,
+		" -p ", PathToPropsFileForHpFlag.Value(),
+	)
+}
+
 // Load command performs load of given injection rate for given duration.
 func getControllerLoadCommand(config LoadGeneratorConfig, injectionRate int, duration time.Duration) string {
 	return fmt.Sprint("java -jar",
@@ -40,7 +64,8 @@ func getReporterCommand(config LoadGeneratorConfig, rawFileName string, slo int)
 		" -cIRtarget ", slo,
 		" -p ", config.PathToProps,
 		" -raw ", config.PathToOutputTemplate,
-		" -s ", rawFileName)
+		" -s ", rawFileName,
+		" -p ", config.PathToProps)
 }
 
 // TxI command starts transaction injector.

@@ -61,36 +61,13 @@ func NewBackend(exec executor.Executor, config BackendConfig) Backend {
 	}
 }
 
-func (b Backend) buildCommand() string {
-	// See: https://intelsdi.atlassian.net/wiki/display/SCE/SpecJBB+experiment+tuning
-	return fmt.Sprint("java -jar",
-		" -server", // Compilation takes more time but offers additional optimizations
-
-		fmt.Sprintf(" -Djava.util.concurrent.ForkJoinPool.common.parallelism=%d", b.conf.Parallelism), // Amount of threads equal to amount of hyper threads
-
-		fmt.Sprintf(" -Xms%dg -Xmx%dg", b.conf.JVMHeapMemoryGBs, b.conf.JVMHeapMemoryGBs), // Allocate whole heap available; docs: For best performance, set -Xms to the same size as the maximum heap size
-		" -XX:NativeMemoryTracking=summary",                                               // Memory monitoring purposes
-		" -XX:+UseParallelGC",                                                             // Parallel garbage collector
-		fmt.Sprintf(" -XX:ParallelGCThreads=%d", b.conf.Parallelism),                      // Sets the value of n to the number of logical processors. The value of n is the same as the number of logical processors up to a value of 8.
-		fmt.Sprintf(" -XX:ConcGCThreads=%d", b.conf.Parallelism/2),                        // Currently half of PGCThreads.
-		" -XX:InitiatingHeapOccupancyPercent=80",                                          // Using more memory then default 45% before GC kicks in
-		" -XX:MaxGCPauseMillis=100",                                                       //Sets a target value for desired maximum pause time. The default value is 200 milliseconds. The specified value does not adapt to your heap size.
-
-		ControllerHostProperty, b.conf.ControllerAddress,
-		" ", b.conf.PathToBinary,
-		" -m backend",
-		" -G GRP1",
-		" -J ", b.conf.JvmID,
-		" -p ", PathToPropsFileForHpFlag.Value(),
-	)
-}
-
 // Launch starts the Backend component. It returns a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (b Backend) Launch() (executor.TaskHandle, error) {
-	task, err := b.exec.Execute(b.buildCommand())
+	command := getBackendCommand(b.conf)
+	task, err := b.exec.Execute(command)
 	if err != nil {
-		return nil, errors.Wrapf(err, "launch of SPECjbb backend failed. command: %q", b.buildCommand())
+		return nil, errors.Wrapf(err, "launch of SPECjbb backend failed. command: %q", command)
 	}
 	return task, nil
 }

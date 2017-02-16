@@ -3,12 +3,13 @@ package parser
 import (
 	"bufio"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -86,13 +87,8 @@ func FileWithHBIRRT(path string) (int, error) {
 // ParseRawFileName retrieves name of raw file from specjbb output represented as:
 // 6s: Binary log file is /home/vagrant/go/src/github.com/intelsdi-x/swan/workloads/web_serving/specjbb/specjbb2015-D-20160921-00002.data.gz
 func ParseRawFileName(reader io.Reader) (string, error) {
-	var rawFileName string
-	var submatch []string
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return "", err
-		}
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		// <Mon Nov 14 14:53:39 CET 2016> org.spec.jbb.controller: Controller start
@@ -102,45 +98,47 @@ func ParseRawFileName(reader io.Reader) (string, error) {
 		line := strings.Join(strings.Fields(scanner.Text()), "")
 		regex := regexp.MustCompile("Binarylogfileis([/a-zA-Z-_.0-9]+)")
 		if regex.MatchString(line) {
-			submatch = regex.FindStringSubmatch(line)
+			submatch := regex.FindStringSubmatch(line)
 			// Submatch should have length = 2, First is matched string, the second is value of a group (name of a file).
 			if len(submatch) < 2 {
-				return "", fmt.Errorf("Raw file name not found")
+				return "", errors.New("Raw file name not found")
 			}
-			rawFileName = submatch[len(submatch)-1]
+			rawFileName := submatch[len(submatch)-1]
 			return rawFileName, nil
 		}
 	}
-	return "", fmt.Errorf("Raw file name not found")
+	if err := scanner.Err(); err != nil {
+		return "", errors.Wrap(err, "could read from io.reader")
+	}
+	return "", errors.New("Raw file name not found")
 }
 
 // ParseHBIRRT retrieves geo mean of critical jops from specjbb output represented as:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func ParseHBIRRT(reader io.Reader) (int, error) {
-	var submatch []string
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return 0, err
-		}
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
 		regex := regexp.MustCompile("RUNRESULT:[()a-zA-Z,0-9=-]+critical-jOPS=([0-9]+)")
 		if regex.MatchString(line) {
-			submatch = regex.FindStringSubmatch(line)
+			submatch := regex.FindStringSubmatch(line)
 			// Submatch should have length = 2, First is matched string, the second is value of a group (value of jops).
 			if len(submatch) < 2 {
-				return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
+				return 0, errors.New("Run result not found, cannot determine critical-jops")
 			}
 			hbir, err := strconv.Atoi(submatch[len(submatch)-1])
 			if err != nil {
-				return 0, fmt.Errorf("Bad value type found for critical-jops")
+				return 0, errors.New("Bad value type found for critical-jops")
 			}
 			return hbir, nil
 		}
 	}
-	return 0, fmt.Errorf("Run result not found, cannot determine critical-jops")
+	if err := scanner.Err(); err != nil {
+		return 0, errors.Wrap(err, "cannot parse HBIRRT: could not read from io.reader")
+	}
+	return 0, errors.New("Run result not found, cannot determine critical-jops")
 }
 
 // ParseLatencies retrieves metrics from specjbb output represented as:
@@ -165,9 +163,6 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 	// (rIR:aIR:PR = 4000:3960:3350) (tPR = 48530) [PR is under limit]
 	rRemote := regexp.MustCompile("[<a-zA-Z:0-9]+PRESET:[a-zA-Z=0-9]+finished,(steady|settle)status=\\[[a-zA-Z]+\\][()]rIR:aIR:PR=([0-9]+):([0-9]+):([0-9]+)")
 	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return newResults(), err
-		}
 		// Remove whitespaces, as SPECjbb generates random number of spaces to create a good-looking table.
 		// To parse output we need a constant form of it.
 		line := strings.Join(strings.Fields(scanner.Text()), "")
@@ -191,6 +186,9 @@ func ParseLatencies(reader io.Reader) (Results, error) {
 			metricsRaw[QPSKey] = processedRequests
 			metricsRaw[IssuedRequestsKey] = issuedRequests
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return newResults(), errors.Wrap(err, "cannot parse latencies: cannot read from io.reader")
 	}
 	metrics.Raw = metricsRaw
 
@@ -260,7 +258,7 @@ func parseTotalPurchaseLatencies(line string) (map[string]uint64, error) {
 	if numberOfItems, err := fmt.Sscanf(line, "TotalPurchase,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,",
 		&success, &partial, &failed, &skipFail, &probes, &samples, &min, &p50, &p90, &p95, &p99, &max); err != nil {
 		if numberOfItems != fields {
-			return nil, fmt.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
+			return nil, errors.Errorf("Incorrect number of fields: expected %d but got %d", fields, numberOfItems)
 		}
 
 		return nil, err
