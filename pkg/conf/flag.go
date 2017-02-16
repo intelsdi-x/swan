@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// EnvironmentPrefix is prefix that is used for evironment based configuration.
 const EnvironmentPrefix = "SWAN_"
 
 // Registry of flag names (required for proper ordering and semantic grouping instead of lexicographical order).
