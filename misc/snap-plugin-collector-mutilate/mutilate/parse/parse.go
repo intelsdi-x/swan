@@ -106,9 +106,6 @@ func Parse(reader io.Reader) (Results, error) {
 
 func parseHeader(line string) (map[int]string, error) {
 	fields := strings.Fields(line)
-
-	// TODO: Validate length of fields slice.
-
 	result := map[int]string{}
 
 	if fields[0] != "#type" {
@@ -133,7 +130,7 @@ func parseHeader(line string) (map[int]string, error) {
 	for index, label := range labels {
 		metric, ok := labelToMetric[label]
 		if !ok {
-			return result, fmt.Errorf("No metric found for label '%s'", label)
+			return map[int]string{}, fmt.Errorf("No metric found for label '%s'", label)
 		}
 
 		result[index] = metric
@@ -148,7 +145,11 @@ func parseHeader(line string) (map[int]string, error) {
 func parseLatencies(line string, columnToMetric map[int]string) (map[string]float64, error) {
 	fields := strings.Fields(line)
 
-	// TODO: Validate length of fields slice.
+	foundLatencies := (len(fields) - 1)
+	expectedLatencies := len(columnToMetric)
+	if foundLatencies != expectedLatencies {
+		return map[string]float64{}, fmt.Errorf("Incorrect number of fields: expected %d but got %d", expectedLatencies, foundLatencies)
+	}
 
 	// Assume first field is the row type, for example 'read'.
 	latencies := fields[1:]
@@ -160,12 +161,12 @@ func parseLatencies(line string, columnToMetric map[int]string) (map[string]floa
 		// Convert latency string to float64.
 		value, err := strconv.ParseFloat(latency, 64)
 		if err != nil {
-			return result, fmt.Errorf("'%s' latency value must be a float: %s", latency, err.Error())
+			return map[string]float64{}, fmt.Errorf("'%s' latency value must be a float: %s", latency, err.Error())
 		}
 
 		key, ok := columnToMetric[index]
 		if !ok {
-			return result, fmt.Errorf("No metric found for column index %d", index)
+			return map[string]float64{}, fmt.Errorf("No metric found for column index %d", index)
 		}
 
 		result[key] = value

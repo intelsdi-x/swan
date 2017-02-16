@@ -74,7 +74,7 @@ func TestStdoutParser(t *testing.T) {
 		data, err := File(path)
 
 		So(data.Raw, ShouldHaveLength, 0)
-		So(err.Error(), ShouldEqual, "'thisIsNotANumber' latency value must be a float")
+		So(err.Error(), ShouldStartWith, "'thisIsNotANumber' latency value must be a float")
 	})
 }
 
