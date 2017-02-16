@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -46,7 +44,12 @@ func runExp(command string, args ...string) (string, error) {
 }
 
 func TestExperiment(t *testing.T) {
-	memcachedSensitivityProfileBin := path.Join(fs.GetSwanBuildPath(), "experiments", "memcached", "memcached-sensitivity-profile")
+
+	memcachedSensitivityProfileBin, err := exec.LookPath("memcached-sensitivity-profile")
+	if err != nil {
+		panic(err)
+	}
+
 	memcacheDockerBin := "memcached"
 	l1dDockerBin := "l1d"
 
@@ -59,11 +62,6 @@ func TestExperiment(t *testing.T) {
 		"SWAN_PEAK_LOAD":            "5000",
 		"SWAN_LOAD_DURATION":        "1s",
 		"SWAN_MUTILATE_WARMUP_TIME": "1s",
-		"SWAN_KUBE_APISERVER_PATH":  path.Join(fs.GetSwanBinPath(), "kube-apiserver"),
-		"SWAN_KUBE_CONTROLLER_PATH": path.Join(fs.GetSwanBinPath(), "kube-controller-manager"),
-		"SWAN_KUBELET_PATH":         path.Join(fs.GetSwanBinPath(), "kubelet"),
-		"SWAN_KUBE_PROXY_PATH":      path.Join(fs.GetSwanBinPath(), "kube-proxy"),
-		"SWAN_KUBE_SCHEDULER_PATH":  path.Join(fs.GetSwanBinPath(), "kube-scheduler"),
 	}
 
 	Convey("When snapteld is launched", t, func() {

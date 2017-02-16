@@ -3,8 +3,7 @@ package testhelpers
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"path"
+	"os/exec"
 	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
@@ -34,11 +33,12 @@ func NewSnapteldOnPort(apiPort, rpcPort int) *Snapteld {
 // Start starts Snap daemon and wait until it is responsive.
 func (s *Snapteld) Start() error {
 	l := executor.NewLocal()
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		return errors.New("Cannot find GOPATH")
+
+	snapteldPath, err := exec.LookPath("snapteld")
+	if err != nil {
+		return errors.New("cannot find snapteld in PATH")
 	}
-	snapteldPath := path.Join(gopath, "bin", "snapteld")
+
 	snapCommand := fmt.Sprintf("%s --plugin-trust 0 --api-port %d --control-listen-port %d --log-level 1", snapteldPath, s.apiPort, s.rpcPort)
 
 	taskHandle, err := l.Execute(snapCommand)

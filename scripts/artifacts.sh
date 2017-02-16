@@ -58,10 +58,6 @@ function dist {
 }
 
 function install_swan {
-    if [ "${UID}" != 0 ]; then
-        >&2 echo "Only root can perform this operation"
-        exit 1
-    fi
 
     if [ "${PREFIX}" == "" ]; then
         PREFIX="/usr/"

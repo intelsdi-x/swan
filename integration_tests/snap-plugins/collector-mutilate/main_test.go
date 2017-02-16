@@ -1,8 +1,7 @@
 package mutilate
 
 import (
-	"os"
-	"path"
+	"os/exec"
 	"testing"
 
 	"github.com/intelsdi-x/snap/control"
@@ -13,9 +12,9 @@ import (
 func TestMutilatePluginLoad(t *testing.T) {
 	// TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 	SkipConvey("Ensure mutilate plugin can be loaded", t, func() {
-		basePath := os.Getenv("GOPATH")
-		pluginPath := path.Join(basePath, "src", "github.com", "intelsdi-x", "swan", "misc",
-			"snap-plugin-collector-mutilate", "snap-plugin-collector-mutilate")
+		pluginPath, err := exec.LookPath("snap-plugin-collector-mutilate")
+		So(err, ShouldBeNil)
+
 		pluginControl := control.New(control.GetDefaultConfig())
 		pluginControl.Start()
 		requestedPlugin, requestedPluginError := core.NewRequestedPlugin(pluginPath)
