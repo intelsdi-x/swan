@@ -13,8 +13,8 @@ import (
 
 const (
 	defaultControllerIP   = "127.0.0.1"
-	defaultCustomerNumber = 100
-	defaultProductsNumber = 100
+	defaultCustomerNumber = 100000 // Default as in SPECjbb.
+	defaultProductsNumber = 100000 // Default as in SPECjbb.
 )
 
 var (
@@ -63,6 +63,7 @@ var (
 
 // LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
 type LoadGeneratorConfig struct {
+	JVMOptions
 	ControllerAddress    string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=").
 	PathToBinary         string // PathToBinary is a path to specjbb2015.jar.
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
@@ -75,6 +76,7 @@ type LoadGeneratorConfig struct {
 // DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
 func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
+		JVMOptions:           DefaultJVMOptions(),
 		ControllerAddress:    ControllerAddress.Value(),
 		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
 		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),

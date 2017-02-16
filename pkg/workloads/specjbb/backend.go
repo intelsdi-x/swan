@@ -29,21 +29,19 @@ var (
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
 type BackendConfig struct {
+	JVMOptions
 	PathToBinary      string
 	ControllerAddress string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=")
 	JvmID             string // JvmId is an ID of a JVM dedicated for a Backend (-J <jvmid>)
-	JVMHeapMemoryGBs  int    // JVMHeapMemoryGBs is number of GBs available for JVM heap.
-	Parallelism       int    // Amount of threads in ForkJoinPool.
 }
 
 // DefaultSPECjbbBackendConfig is a constructor for BackendConfig with default parameters.
 func DefaultSPECjbbBackendConfig() BackendConfig {
 	return BackendConfig{
+		JVMOptions:        DefaultJVMOptions(),
 		PathToBinary:      PathToBinaryForHpFlag.Value(),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
-		JVMHeapMemoryGBs:  JVMHeapMemoryGBs.Value(),
-		Parallelism:       8,
 	}
 }
 
