@@ -57,6 +57,8 @@ import (
 	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
 	"k8s.io/client-go/1.5/pkg/api/v1"
 
+	"k8s.io/client-go/1.5/tools/clientcmd"
+
 	"k8s.io/client-go/1.5/pkg/api"
 	"k8s.io/client-go/1.5/pkg/api/resource"
 	"k8s.io/client-go/1.5/pkg/api/unversioned"
@@ -66,11 +68,17 @@ import (
 
 	"path/filepath"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
+
 	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 )
 
 const (
 	defaultContainerImage = "centos_swan_image"
+)
+
+var (
+	kubeconfigFlag = conf.NewStringFlag("kubeconfig", "absolute path to the kubeconfig file", "/etc/kubernetes/kubelet.conf")
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -148,11 +156,18 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	}
 
 	var err error
-	k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
-		Host:     config.Address,
-		Username: config.Username,
-		Password: config.Password,
-	})
+	kubeConfigPath := kubeconfigFlag.Value()
+	if _, err := os.Stat(kubeConfigPath); os.IsNotExist(err) {
+		k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
+			Host:     config.Address,
+			Username: config.Username,
+			Password: config.Password,
+		})
+	} else {
+		var kubeconfig *rest.Config
+		kubeconfig, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+		k8s.clientset, err = kubernetes.NewForConfig(kubeconfig)
+	}
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't initilize kubernetes clientset for host '%s'", config.Address)
