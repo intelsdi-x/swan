@@ -19,7 +19,7 @@ var (
 	StopOnErrorFlag = conf.NewBoolFlag("stop", "Stop experiment in a case of error", false)
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase
 	// It omits tuning phase.
-	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tunning phase).", 0) // "0" means include tunning phase
+	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tuning phase).", 0) // "0" means include tuning phase
 )
 
 const (
