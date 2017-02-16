@@ -46,7 +46,7 @@ func getReporterCommand(config LoadGeneratorConfig, rawFileName string, slo int)
 // TxI command starts transaction injector.
 func getTxICommand(config LoadGeneratorConfig, TxIJVMID int) string {
 	return fmt.Sprint("java -jar",
-		ControllerHostProperty, config.ControllerIP,
+		ControllerHostProperty, config.ControllerAddress,
 		" ", config.PathToBinary,
 		" -m txinjector",
 		" -G GRP1",

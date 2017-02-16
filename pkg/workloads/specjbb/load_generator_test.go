@@ -23,7 +23,7 @@ func TestSPECjbbLoadGenerator(t *testing.T) {
 	Convey("When creating load generator", t, func() {
 		controller := new(mocks.Executor)
 		transactionInjector := new(mocks.Executor)
-		config := NewDefaultConfig()
+		config := DefaultLoadGeneratorConfig()
 		config.PathToBinary = "test"
 
 		loadGenerator := NewLoadGenerator(controller, []executor.Executor{

@@ -13,7 +13,6 @@ import (
 
 const (
 	defaultControllerIP   = "127.0.0.1"
-	defaultTxICount       = 1 // Default number of Transaction Injector components.
 	defaultCustomerNumber = 100
 	defaultProductsNumber = 100
 )
@@ -28,11 +27,8 @@ var (
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
 	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/usr/share/specjbb/config/template-D.raw")
 
-	// IPFlag specifies IP address of a controller component of SPECjbb2015 benchmark.
-	IPFlag = conf.NewStringFlag("specjbb_controller_ip", "IP address of a SPECjbb controller component", defaultControllerIP)
-
-	// TxICountFlag specifies number of Transaction Injector components in one group.
-	TxICountFlag = conf.NewIntFlag("specjbb_txl_count", "Number of Transaction injectors run in a cluster", defaultTxICount)
+	// ControllerAddress specifies ControllerAddress address of a controller component of SPECjbb2015 benchmark.
+	ControllerAddress = conf.NewStringFlag("specjbb_controller_ip", "ControllerAddress address of a SPECjbb controller component", defaultControllerIP)
 
 	// CustomerNumberFlag specifies number of customers.
 	CustomerNumberFlag = conf.NewIntFlag("specjbb_customer_number", "Number of customers", defaultCustomerNumber)
@@ -66,33 +62,22 @@ var (
 )
 
 // LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
-// Supported options:
-// IP - property "-Dspecjbb.controller.host=" - IP address of a SPECjbb controller component (default:127.0.0.1)
-// PathToBinary - path to specjbb2015.jar
-// PathToProps - path to property file that stores basic configuration.
-// TxICount - number of Transaction Injectors in a group.
-// CustomerNumber - number of customers used to generate load.
-// ProductNuber - number of products used to generate load.
-// BinaryDataOutputDir - dir where binary raw data file is stored during run of SPECjbb.
-// PathToOutputTemplate - path to template used to generate report from.
 type LoadGeneratorConfig struct {
-	ControllerIP         string
-	PathToBinary         string
-	PathToProps          string
-	TxICount             int
-	CustomerNumber       int
-	ProductNumber        int
-	BinaryDataOutputDir  string
-	PathToOutputTemplate string
+	ControllerAddress    string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=").
+	PathToBinary         string // PathToBinary is a path to specjbb2015.jar.
+	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
+	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
+	ProductNumber        int    // ProductNumber is a number of products used to generate load.
+	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 }
 
-// NewDefaultConfig is a constructor for Config with default parameters.
-func NewDefaultConfig() LoadGeneratorConfig {
+// DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
+func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
-		ControllerIP:         IPFlag.Value(),
+		ControllerAddress:    ControllerAddress.Value(),
 		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
 		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),
-		TxICount:             TxICountFlag.Value(),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),

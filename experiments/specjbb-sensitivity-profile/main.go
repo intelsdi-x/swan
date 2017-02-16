@@ -26,10 +26,8 @@ import (
 )
 
 var (
-	specjbbIP = conf.NewStringFlag(
-		"specjbb_loadgenerator_ip",
-		"IP of the SPECjbb Load Generator host",
-		"127.0.0.1")
+	// TxICountFlag is flag containing number of Transaction Injectors used.
+	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
 )
 
 func main() {
@@ -100,14 +98,14 @@ func main() {
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	aggressorSessionLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, aggressorSessionLaunchers...)
 
-	specjbbHost := specjbbIP.Value()
+	specjbbControllerAddress := specjbb.ControllerAddress.Value()
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-	backendConfig.IP = specjbbHost
+	backendConfig.ControllerAddress = specjbbControllerAddress
 	specjbbBackendLauncher := specjbb.NewBackend(hpExecutor, backendConfig)
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
-	specjbbLoadGenerator, err := common.PrepareSpecjbbLoadGenerator(specjbbHost)
+	specjbbLoadGenerator, err := common.PrepareSpecjbbLoadGenerator(specjbbControllerAddress, TxICountFlag.Value())
 	if err != nil {
 		return
 	}
