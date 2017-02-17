@@ -78,9 +78,18 @@ const (
 )
 
 var (
-	kubeconfigFlag      = conf.NewStringFlag("kubeconfig", "absolute path to the kubeconfig file", "~/.kube/config")
-	namespaceExperiment = conf.NewStringFlag("namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
-	nodeNameExperiment  = conf.NewStringFlag("nodename", "run experiment on selected node", "")
+	kubeconfigFlag      = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
+	namespaceExperiment = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+
+	hostname = func() string {
+		hostname, err := os.Hostname()
+		if err != nil {
+			panic(fmt.Sprintf("%s", err.Error()))
+		}
+		return hostname
+	}()
+
+	hostNameExperiment  = conf.NewStringFlag("kubernetes_hostname", "run experiment pods on selected host", hostname)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -93,12 +102,10 @@ type KubernetesConfig struct {
 	// - PodNamePrefix(by default is "swan") - If PodName field is not
 	// configured, this field is used as a prefix for random generated Pod
 	// name.
-	NodeName       string
+	Hostname       string
 	PodName        string
 	PodNamePrefix  string
 	Address        string
-	Username       string
-	Password       string
 	CPURequest     int64
 	CPULimit       int64
 	MemoryRequest  int64
@@ -127,12 +134,10 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
-		NodeName:       nodeNameExperiment.Value(),
+		Hostname:       hostNameExperiment.Value(),
 		PodName:        "",
 		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
-		Username:       "",
-		Password:       "",
 		CPURequest:     0,
 		CPULimit:       0,
 		MemoryRequest:  0,
@@ -161,11 +166,9 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 
 	var err error
 	kubeConfigPath := kubeconfigFlag.Value()
-	if _, err := os.Stat(kubeConfigPath); os.IsNotExist(err) {
+	if kubeConfigPath == "" {
 		k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
 			Host:     config.Address,
-			Username: config.Username,
-			Password: config.Password,
 		})
 	} else {
 		var kubeconfig *rest.Config
@@ -253,7 +256,7 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: v1.PodSpec{
-			NodeName:                      k8s.config.NodeName,
+			NodeName:                      k8s.config.Hostname,
 			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
 			HostNetwork:                   k8s.config.HostNetwork,

@@ -14,8 +14,8 @@ var (
 	hpKubernetesCPUResourceFlag    = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
 	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
 
-	runOnKubernetesFlag = conf.NewBoolFlag("run_on_kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
-	runOnExistingKubernetesFlag = conf.NewBoolFlag("run_on_existing_kubernetes", "Launch HP and BE tasks on existing Kubernetes cluster.", false)
+	runOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	runOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster.", false)
 
 	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
