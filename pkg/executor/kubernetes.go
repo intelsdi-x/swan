@@ -78,7 +78,9 @@ const (
 )
 
 var (
-	kubeconfigFlag = conf.NewStringFlag("kubeconfig", "absolute path to the kubeconfig file", "/etc/kubernetes/kubelet.conf")
+	kubeconfigFlag      = conf.NewStringFlag("kubeconfig", "absolute path to the kubeconfig file", "~/.kube/config")
+	namespaceExperiment = conf.NewStringFlag("namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	nodeNameExperiment  = conf.NewStringFlag("nodename", "run experiment on selected node", "")
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -91,6 +93,7 @@ type KubernetesConfig struct {
 	// - PodNamePrefix(by default is "swan") - If PodName field is not
 	// configured, this field is used as a prefix for random generated Pod
 	// name.
+	NodeName       string
 	PodName        string
 	PodNamePrefix  string
 	Address        string
@@ -124,6 +127,7 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
+		NodeName:       nodeNameExperiment.Value(),
 		PodName:        "",
 		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
@@ -136,7 +140,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
-		Namespace:      v1.NamespaceDefault,
+		Namespace:      namespaceExperiment.Value(),
 		Privileged:     false,
 		HostNetwork:    false,
 		LaunchTimeout:  30 * time.Second,
@@ -249,12 +253,13 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: v1.PodSpec{
+			NodeName:                      k8s.config.NodeName,
 			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
 			HostNetwork:                   k8s.config.HostNetwork,
 			TerminationGracePeriodSeconds: &zero,
 			Containers: []v1.Container{
-				v1.Container{
+				{
 					Name:            k8s.config.ContainerName,
 					Image:           k8s.config.ContainerImage,
 					Command:         []string{"sh", "-c", command},
