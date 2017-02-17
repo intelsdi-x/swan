@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
 
@@ -23,26 +24,30 @@ var (
 
 // LogLevel returns configured logLevel from input option or env variable.
 // If it cannot parse the log level, it returns default value.
-func LogLevel() logrus.Level {
+func LogLevel() (logrus.Level, error) {
 	level, err := logrus.ParseLevel(logLevelFlag.Value())
-	if err == nil {
-		return level
+	if err != nil {
+		return logrus.PanicLevel, errors.Wrap(err, "cannot parse 'log' level flag")
 	}
-	// Programmer error.
-	panic(errors.Wrap(err, "parsing log level failed"))
+	return level, nil
 }
 
 // ParseFlags parse both the command line flags of the process and
 // environment variables. Command line flags override values from
 // environment.
-func ParseFlags() {
+func ParseFlags() error {
+	var errCollection errcollection.ErrorCollection
 	flag.VisitAll(func(flag *flag.Flag) {
 		value := os.Getenv(envName(flag.Name))
 		if value != "" {
-			flag.Value.Set(value)
+			err := flag.Value.Set(value)
+			if err != nil {
+				errCollection.Add(errors.Wrapf(err, "cannot parse %q flag", flag.Name))
+			}
 		}
 	})
 	flag.Parse()
+	return errCollection.GetErrIfAny()
 }
 
 // getFlagsDefinition returns definition of all flags for internal purpose.

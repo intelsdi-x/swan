@@ -32,7 +32,7 @@ var (
 func main() {
 	// Preparing application - setting name, help, aprsing flags etc.
 	experimentStart := time.Now()
-	experiment.Configure()
+	errorLevelEnabled := experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -127,7 +127,7 @@ func main() {
 	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
 	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(beLaunchers)
-	if conf.LogLevel() == logrus.ErrorLevel {
+	if errorLevelEnabled {
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
@@ -176,7 +176,7 @@ func main() {
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
 					// Make progress bar to display current repetition.
-					if conf.LogLevel() == logrus.ErrorLevel {
+					if errorLevelEnabled {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 						bar.Prefix(prefix)

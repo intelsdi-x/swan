@@ -19,10 +19,15 @@ var (
 // Configure handles configuration parsing, generation and restoration based on config-* flags.
 // Note: exits if configuration generation was requested.
 // This function must reside in experiment package because depends on metadata access.
-func Configure() {
+// Returns information about current log level.
+func Configure() bool {
 
-	conf.ParseFlags()
-	logrus.SetLevel(conf.LogLevel())
+	err := conf.ParseFlags()
+	errutil.Check(err)
+
+	level, err := conf.LogLevel()
+	errutil.Check(err)
+	logrus.SetLevel(level)
 
 	if *dumpConfig {
 		previousExperimentID := *dumpConfigExperimentID
@@ -38,4 +43,5 @@ func Configure() {
 		}
 		os.Exit(0)
 	}
+	return level == logrus.ErrorLevel
 }
