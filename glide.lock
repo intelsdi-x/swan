@@ -1,12 +1,6 @@
-hash: f70b39c38ba556880b2839b2a4d17f6f7904e3bf28545ddfaf43c87fe12deede
-updated: 2017-02-02T18:41:19.070052913+01:00
+hash: d8a75352080e14743203b81b1a48e3fb7b5b47b5808d11b7c99e202082c10242
+updated: 2017-02-17T12:30:44.892035967+01:00
 imports:
-- name: github.com/alecthomas/template
-  version: a0175ee3bccc567396460bf5acd36800cb10c49c
-  subpackages:
-  - parse
-- name: github.com/alecthomas/units
-  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/appc/spec
   version: db96f94ae6b227fe4d8288527ead8927181620f6
   subpackages:
@@ -174,7 +168,7 @@ imports:
 - name: github.com/robfig/cron
   version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/Sirupsen/logrus
-  version: d26492970760ca5d33129d2d799e34be5c4782eb
+  version: c078b1e43f58d563c74cebe63c85789e76ddb627
 - name: github.com/smartystreets/assertions
   version: 443d812296a84445c202c085f19e18fc238f8250
   subpackages:
@@ -285,8 +279,6 @@ imports:
   - naming
   - peer
   - transport
-- name: gopkg.in/alecthomas/kingpin.v2
-  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 - name: gopkg.in/cheggaaa/pb.v1
   version: d7e6ca3010b6f084d8056847f55d7f572f180678
 - name: gopkg.in/inf.v0
