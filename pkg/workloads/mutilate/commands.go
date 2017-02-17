@@ -47,8 +47,8 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 	baseCommand := fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToBinary),
 		fmt.Sprintf(" -s %s:%d", config.MemcachedHost, config.MemcachedPort),
-		fmt.Sprintf(" --warmup %d --noload ", int(config.WarmupTime.Seconds())),
-		fmt.Sprintf(" -K %d -V %d", config.KeySize, config.ValueSize),
+		fmt.Sprintf(" --warmup %d --noload", int(config.WarmupTime.Seconds())),
+		fmt.Sprintf(" -K %s -V %s -i %s", config.KeySize, config.ValueSize, config.InterArrivalDist),
 		fmt.Sprintf(" -T %d", config.MasterThreads),
 		fmt.Sprintf(" -d %d -c %d", config.AgentConnectionsDepth, config.AgentConnections),
 		fmt.Sprintf(" -r %d", config.Records),
