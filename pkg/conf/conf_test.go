@@ -1,13 +1,10 @@
 package conf
 
 import (
-	"io/ioutil"
 	"os"
-	"path"
 	"testing"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,39 +14,33 @@ const (
 )
 
 func TestConf(t *testing.T) {
-	testReadmePath := path.Join(fs.GetSwanPath(), "pkg", "conf", "test_file.md")
 	Convey("While using Conf pkg", t, func() {
-		logLevelFlag.clear()
-		defer logLevelFlag.clear()
-
-		SetAppName(testAppName)
-		SetHelpPath(testReadmePath)
-
-		Convey("Name and help should match to specified one", func() {
-			So(AppName(), ShouldEqual, testAppName)
-
-			readmeData, err := ioutil.ReadFile(testReadmePath)
-			if err != nil {
-				panic(err)
-			}
-			So(app.Help, ShouldEqual, string(readmeData)[:])
-		})
 
 		Convey("Log level can be fetched", func() {
-			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
+			level, err := LogLevel()
+			So(err, ShouldBeNil)
+			So(level, ShouldEqual, logrus.ErrorLevel)
 		})
 
 		Convey("Log level can be fetched from env", func() {
-			// Default one.
-			So(LogLevel(), ShouldEqual, logrus.ErrorLevel)
-
-			os.Setenv(logLevelFlag.envName(), "debug")
-
-			err := ParseEnv()
+			level, err := LogLevel()
 			So(err, ShouldBeNil)
+			So(level, ShouldEqual, logrus.ErrorLevel)
+
+			os.Setenv(envName(logLevelFlag.Name), "debug")
+
+			ParseFlags()
 
 			// Should be from environment.
-			So(LogLevel(), ShouldEqual, logrus.DebugLevel)
+			level, err = LogLevel()
+			So(err, ShouldBeNil)
+			So(level, ShouldEqual, logrus.DebugLevel)
+		})
+
+		Convey("Validation for flags from env still works", func() {
+			os.Setenv(envName(CassandraConnectionTimeout.Name), "foo-is-not-duration")
+			err := ParseFlags()
+			So(err, ShouldNotBeNil)
 		})
 	})
 }

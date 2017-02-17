@@ -105,7 +105,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper configuration and with l1d aggressors", func() {
-				args := []string{"--aggr", "l1d"}
+				args := []string{"-aggr", "l1d"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -203,7 +203,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			SkipConvey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--memcached_path", memcacheDockerBin}
+				args := []string{"-run_on_kubernetes", "-kube_allow_privileged", "-memcached_path", memcacheDockerBin}
 				_, err := runExp(memcachedSensitivityProfileBin, args...)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
@@ -211,7 +211,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			SkipConvey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"--run_on_kubernetes", "--kube_allow_privileged", "--aggr", "l1d", "--memcached_path", memcacheDockerBin, "--l1d_path", l1dDockerBin}
+				args := []string{"-run_on_kubernetes", "-kube_allow_privileged", "-aggr", "l1d", "-memcached_path", memcacheDockerBin, "-l1d_path", l1dDockerBin}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -233,7 +233,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("While setting zero repetitions to phase", func() {
-				args := []string{"--aggr", "l1d"}
+				args := []string{"-aggr", "l1d"}
 				os.Setenv("SWAN_LOAD_POINTS", "1")
 				os.Setenv("SWAN_REPS", "0")
 				Convey("Experiment should pass with no errors", func() {
@@ -243,7 +243,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With wrong aggresor name", func() {
-				args := []string{"--aggr", "l1e"}
+				args := []string{"-aggr", "l1e"}
 				_, err := runExp(memcachedSensitivityProfileBin, args...)
 				So(err, ShouldNotBeNil)
 			})
