@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 function dist {
     ARTIFACTS_PATH="$(pwd)/artifacts/"
     mkdir -p ${ARTIFACTS_PATH}/{bin,lib}
@@ -11,9 +13,14 @@ function dist {
     # install low level aggressors
     install -D -m755 ./workloads/low-level-aggressors/{l1d,l1i,l3,memBw,stream.100M} ${ARTIFACTS_PATH}/bin
     # copy go binaries
-    cp ${GOPATH}/bin/* ${ARTIFACTS_PATH}/bin
     install -D -m755 ./build/experiments/memcached/memcached-sensitivity-profile ${ARTIFACTS_PATH}/bin
     install -D -m755 ./build/experiments/specjbb/specjbb-sensitivity-profile ${ARTIFACTS_PATH}/bin
+
+    # snap & plugins
+    cp ${GOPATH}/bin/{snaptel,snapteld,snap-plugin-collector-caffe-inference,snap-plugin-collector-docker,snap-plugin-collector-mutilate,snap-plugin-collector-specjbb,snap-plugin-processor-tag,snap-plugin-publisher-cassandra,snap-plugin-publisher-file,snap-plugin-publisher-session-test} ${ARTIFACTS_PATH}/bin
+
+    # kubernetes
+    cp --no-dereference misc/bin/{apiserver,controller-manager,federation-apiserver,federation-controller-manager,hyperkube,kubectl,kubelet,proxy,scheduler} ${ARTIFACTS_PATH}/bin
 
     # install specjbb
     install -d ${ARTIFACTS_PATH}/share/specjbb
