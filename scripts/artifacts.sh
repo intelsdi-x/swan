@@ -65,16 +65,16 @@ function dist {
 }
 
 function install_swan {
-
     if [ "${PREFIX}" == "" ]; then
-        PREFIX="/usr/"
+        PREFIX="/opt/swan/"
+        mkdir -p $PREFIX
     fi
-
     tar xf $(cat ./latest_build) -C ${PREFIX}
     export LD_LIBRARY_PATH="${PREFIX}/lib":$LD_LIBRARY_PATH
     export PATH="${PREFIX}/bin":$PATH
     caffe init
 }
+
 
 function uninstall_swan {
     if [ "${UID}" != 0 ]; then
