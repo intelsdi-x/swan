@@ -30,6 +30,7 @@ pushd `dirname $0`
     # to make usage easier - symlinks are generated for hyperkube in PATH
     cp ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION} ${SWAN_BIN}/hyperkube
     pushd ${SWAN_BIN}
-    ./hyperkube --make-symlinks
+    ./hyperkube --make-symlinks 
+    true # ignore any errors  (like existing symlinks)
     popd
 popd
