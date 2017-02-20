@@ -67,17 +67,17 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	}
 }
 
-type reporter struct {
-	executor executor.Executor
-	config   LoadGeneratorConfig
-}
-
-func newReporter(executor executor.Executor, config LoadGeneratorConfig) reporter {
-	return reporter{
-		executor: executor,
-		config:   config,
-	}
-}
+//type reporter struct {
+//	executor executor.Executor
+//	config   LoadGeneratorConfig
+//}
+//
+//func newReporter(executor executor.Executor, config LoadGeneratorConfig) reporter {
+//	return reporter{
+//		executor: executor,
+//		config:   config,
+//	}
+//}
 
 type loadGenerator struct {
 	controller           executor.Executor
@@ -198,8 +198,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 
 	// Run reporter to calculate critical jops value from raw results.
 	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName, slo)
-	reporter := newReporter(executor.NewLocal(), loadGenerator.config)
-	reporterHandle, err := reporter.executor.Execute(reporterCommand)
+	reporterHandle, err := loadGenerator.controller.Execute(reporterCommand)
 	reporterHandle.Wait(0)
 
 	outReporter, err := reporterHandle.StdoutFile()
