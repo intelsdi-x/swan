@@ -93,7 +93,7 @@ func getReporterCommand(config LoadGeneratorConfig, rawFileName string, slo int)
 		" -p ", config.PathToProps,
 		" -raw ", config.PathToOutputTemplate,
 		" -s ", rawFileName,
-		" -p ", config.PathToProps)
+	)
 }
 
 // TxI command starts transaction injector.
