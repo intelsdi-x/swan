@@ -31,7 +31,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.GetSwanPath(), "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
+						testhelpers.SwanPath, "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")

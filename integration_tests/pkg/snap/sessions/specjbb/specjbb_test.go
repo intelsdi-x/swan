@@ -31,7 +31,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.GetSwanPath(), "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
+						testhelpers.SwanPath, "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, "foo:bar")

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/smartystreets/goconvey/convey"
 )
+
+var SwanPath = path.Join(os.Getenv("GOPATH"), "src", "github.com/intelsdi-x/swan")
 
 // RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
 // with snapteld address
