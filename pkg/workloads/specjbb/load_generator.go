@@ -48,7 +48,7 @@ type LoadGeneratorConfig struct {
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
 	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
-	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
 }
