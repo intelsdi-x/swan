@@ -26,7 +26,8 @@ import (
 )
 
 var (
-	appName = os.Args[0]
+	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
+	appName                  = os.Args[0]
 )
 
 func main() {
@@ -68,7 +69,7 @@ func main() {
 	}
 
 	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Validate preconditions.
@@ -92,7 +93,9 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
-	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
+	if includeBaselinePhaseFlag.Value() {
+		beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
+	}
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
