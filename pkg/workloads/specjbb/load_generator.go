@@ -220,7 +220,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	return hbirRt, 0, err
 }
 
-// Load start load on backed injection rate value.
+// Load starts SPECjbb load on backed with given injection rate value.
 // The task will do the load for specified amount of time.
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
 	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
