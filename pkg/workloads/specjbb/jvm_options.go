@@ -11,11 +11,13 @@ var (
 	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 10)
 )
 
+// JVMOptions is group of options used to configure JVM for SPECjbb.
 type JVMOptions struct {
 	JVMHeapMemoryGBs  int
 	ParallelGCThreads int
 }
 
+// DefaultJVMOptions returns sane JVMOptions.
 func DefaultJVMOptions() JVMOptions {
 	return JVMOptions{
 		JVMHeapMemoryGBs:  JVMHeapMemoryGBs.Value(),
@@ -23,6 +25,7 @@ func DefaultJVMOptions() JVMOptions {
 	}
 }
 
+// GetJVMOptions returns string with JVM Options based on JVMOptions structure.
 func (j JVMOptions) GetJVMOptions() string {
 	return fmt.Sprint(
 		" -server", // Compilation takes more time but offers additional optimizations

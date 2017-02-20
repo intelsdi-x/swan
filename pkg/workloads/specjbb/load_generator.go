@@ -157,14 +157,20 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 	return nil
 }
 
-// Tune calculates maximum capacity of a machine without any time constraints. Accepts SLO in us (10000us = 10ms).
-// Then it builds RT curve (increase load from 1% of HBIR to 100%, step 1%).
-// By using RT curve it generates report in which reporter
-// calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
-// We use critical jops value because maximum capacity (HBIR) is high above our desired SLA.
+// Tune calculates maximum number of "critical java operations" under SLO
+// @param slo: SLO in us (sane values are above 5000us [5ms])
+//
+// It generates High Bound Injection Rate [HBIR] curve to determine the load under slo value.
+// See SPECjbb readme (https://www.spec.org/jbb2015/docs/userguide.pdf) for details.
+//
 // Exemplary output for machine capacity, HBIR = 12000:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
+	if slo < 5000 {
+		logrus.Errorf("SLO for tuning SPECjbb should be above 5000us (5ms). Function received %d", slo)
+		return 0, 0, errors.Errorf("SLO for tuning SPECjbb should be above 5000us (5ms). Function received %d", slo)
+	}
+
 	hbirRtCommand := getControllerTuneCommand(loadGenerator.config)
 	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
 	if err != nil {
@@ -214,8 +220,8 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	return hbirRt, 0, err
 }
 
-// Load starts a load on the specific workload with the defined loadPoint (injection rate value).
-// The task will do the load for specified amount of time (in milliseconds).
+// Load starts SPECjbb load on backed with given injection rate value.
+// The task will do the load for specified amount of time.
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
 	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
 	controllerHandle, err := loadGenerator.controller.Execute(loadCommand)
