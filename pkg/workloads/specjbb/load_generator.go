@@ -50,6 +50,7 @@ type LoadGeneratorConfig struct {
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
 	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
+	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
 }
 
 // DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
@@ -63,6 +64,7 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
+		HandshakeTimeoutMs:   600000,
 	}
 }
 
@@ -155,7 +157,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 	return nil
 }
 
-// Tune calculates maximum capacity of a machine without any time constraints.
+// Tune calculates maximum capacity of a machine without any time constraints. Accepts SLO in us (10000us = 10ms).
 // Then it builds RT curve (increase load from 1% of HBIR to 100%, step 1%).
 // By using RT curve it generates report in which reporter
 // calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).

@@ -27,12 +27,11 @@ var (
 	// binaryDataOutputDir represents directory for storing binary log file of the run.
 	binaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 
-	//specjbb.forkjoin.workers
+	// Maximum number of worker threads in ForkJoinPool in each tier on the Backend side.
 	forkjoinWorkers = " -Dspecjbb.forkjoin.workers="
 
 	// Timeout (in milliseconds) for initial Controller <-> Agent handshaking.
-	handshakeTimeoutProperty      = " -Dspecjbb.controller.handshake.timeout="
-	handshakeTimeoutPropertyValue = 600000
+	handshakeTimeoutProperty = " -Dspecjbb.controller.handshake.timeout="
 )
 
 func getBackendCommand(conf BackendConfig) string {
@@ -77,7 +76,7 @@ func controllerSubCommand(config LoadGeneratorConfig) string {
 		productNumberProperty, config.ProductNumber,
 		binaryDataOutputDir, config.BinaryDataOutputDir,
 		controllerHostProperty, config.ControllerAddress,
-		handshakeTimeoutProperty, handshakeTimeoutPropertyValue,
+		handshakeTimeoutProperty, config.HandshakeTimeoutMs,
 		" -jar ", config.PathToBinary,
 		" -m distcontroller",
 		" -p ", config.PathToProps,

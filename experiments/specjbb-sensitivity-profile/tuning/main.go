@@ -39,15 +39,21 @@ var (
 	)
 )
 
+var (
+	appName = os.Args[0]
+)
+
 func main() {
-	conf.SetAppName("specjbb-tunnig-experiment")
-	conf.SetHelp(`TBD`)
 	err := conf.ParseFlags()
 	if err != nil {
 		logrus.Fatalf("Could not parse flags: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 	logrus.SetLevel(logrus.DebugLevel)
+	formatter := new(logrus.TextFormatter)
+	formatter.TimestampFormat = "2000-01-02 15:04:05"
+	formatter.FullTimestamp = true
+	logrus.SetFormatter(formatter)
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -63,13 +69,13 @@ func main() {
 	//	os.Exit(experiment.ExSoftware)
 	//}
 
-	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	logrus.Info("Starting Experiment with uuid ", uuid.String())
 
 	//By default print only UUID of the experiment and nothing more on the stdout
 	fmt.Println(uuid.String())
 
 	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
@@ -131,24 +137,24 @@ func main() {
 	specjbbBackendLauncher := specjbb.NewBackend(specjbbBackendExecutor, backendConfig)
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
-	//txInjectorExecutorOne, err := executor.NewRemoteFromIP(loadGeneratorOneAddress.Value())
-	//if err != nil {
-	//	logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
-	//	os.Exit(experiment.ExSoftware)
-	//}
+	txInjectorExecutorOne, err := executor.NewRemoteFromIP(loadGeneratorOneAddress.Value())
+	if err != nil {
+		logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
+		os.Exit(experiment.ExSoftware)
+	}
 	//txInjectorExecutorTwo, err := executor.NewRemoteFromIP(loadGeneratorTwoAddress.Value())
 	//if err != nil {
 	//	logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
 	//	os.Exit(experiment.ExSoftware)
 	//}
-	//controllerExecutor, err := executor.NewRemoteFromIP(specjbb.ControllerAddress.Value())
-	//if err != nil {
-	//	logrus.Errorf("could not prepare controllerExecutor: %s", err)
-	//	os.Exit(experiment.ExSoftware)
-	//}
+	controllerExecutor, err := executor.NewRemoteFromIP(specjbb.ControllerAddress.Value())
+	if err != nil {
+		logrus.Errorf("could not prepare controllerExecutor: %s", err)
+		os.Exit(experiment.ExSoftware)
+	}
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
-	txInjectorExecutorOne := executor.NewLocal()
+	//txInjectorExecutorOne := executor.NewLocal()
 	//if err != nil {
 	//	logrus.Errorf("could not prepare txInjectorExecutorOne: %s", err)
 	//	os.Exit(experiment.ExSoftware)
@@ -158,7 +164,7 @@ func main() {
 	//	logrus.Errorf("could not prepare txInjectorExecutorTwo: %s", err)
 	//	os.Exit(experiment.ExSoftware)
 	//}
-	controllerExecutor := executor.NewLocal()
+	//controllerExecutor := executor.NewLocal()
 	//if err != nil {
 	//	logrus.Errorf("could not prepare controllerExecutor: %s", err)
 	//	os.Exit(experiment.ExSoftware)
@@ -209,7 +215,7 @@ func main() {
 	}
 	defer backend.Stop()
 
-	qps, load, err := specjbbLoadGenerator.Tune(25)
+	qps, load, err := specjbbLoadGenerator.Tune(10000)
 	if err != nil {
 		logrus.Errorf("could not prepare specjbbLoadGenerator: %s", err)
 		os.Exit(experiment.ExSoftware)
