@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 function dist {
     ARTIFACTS_PATH="$(pwd)/artifacts/"
     mkdir -p ${ARTIFACTS_PATH}/{bin,lib}
