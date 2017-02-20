@@ -1,7 +1,6 @@
 package specjbb
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -178,23 +177,23 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 	txIHandles, err := loadGenerator.runTransactionInjectors()
 	if err != nil {
-		return 0, 0, fmt.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
+		return 0, 0, errors.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
 	}
 
 	controllerHandle.Wait(0)
 	clear(txIHandles)
 
-	outController, err := controllerHandle.StdoutFile()
+	controllerStdOut, err := controllerHandle.StdoutFile()
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "could not read controller output file %s", outController.Name())
+		return 0, 0, errors.Wrapf(err, "could not read controller output file %s", controllerStdOut.Name())
 	}
-	rawFileName, err := parser.FileWithRawFileName(outController.Name())
+	rawFileName, err := parser.FileWithRawFileName(controllerStdOut.Name())
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "could not get binary file name from controller output file %s", outController.Name())
+		return 0, 0, errors.Wrapf(err, "could not get binary file name from controller output file %s", controllerStdOut.Name())
 	}
 
 	if rawFileName == "" {
-		return 0, 0, fmt.Errorf("Could not get raw results file name from an output file %s", outController.Name())
+		return 0, 0, errors.Errorf("Could not get raw results file name from an output file %s", controllerStdOut.Name())
 	}
 
 	// Run reporter to calculate critical jops value from raw results.
@@ -230,7 +229,7 @@ func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duratio
 	}
 	txIHandles, err := loadGenerator.runTransactionInjectors()
 	if err != nil {
-		return nil, fmt.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
+		return nil, errors.Errorf("execution of SPECjbb HBIR RT transaction injectors failed with error: %s", err.Error())
 	}
 
 	return executor.NewClusterTaskHandle(controllerHandle, txIHandles), nil
