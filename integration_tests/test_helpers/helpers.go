@@ -16,6 +16,7 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
+// SwanPath is an absolute path of project.
 var SwanPath = path.Join(os.Getenv("GOPATH"), "src", "github.com/intelsdi-x/swan")
 
 // RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
