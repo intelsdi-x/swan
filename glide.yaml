@@ -32,8 +32,6 @@ import:
 - package: golang.org/x/crypto
   subpackages:
   - ssh
-- package: gopkg.in/alecthomas/kingpin.v2
-  version: ~2.2.3
 - package: gopkg.in/cheggaaa/pb.v1
   version: ~1.0.7
 - package: k8s.io/client-go

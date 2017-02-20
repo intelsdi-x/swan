@@ -25,8 +25,9 @@ const (
 	masterThreads          = 4
 	masterConnections      = 23
 	masterConnectionsDepth = 1
-	keySize                = 3
-	valueSize              = 5
+	keySize                = "3"
+	valueSize              = "5"
+	intearrivaldist        = "fb_ia"
 	latencyPercentile      = "99.9234"
 
 	correctMutilateQPS    = 4450
@@ -82,6 +83,7 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.config.MasterConnectionsDepth = masterConnectionsDepth
 	s.config.KeySize = keySize
 	s.config.ValueSize = valueSize
+	s.config.InterArrivalDist = intearrivaldist
 	s.mutilate.config = s.config
 
 	s.mAgentHandle1 = new(mocks.TaskHandle)

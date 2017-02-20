@@ -1,37 +1,18 @@
-// conf is a helper for SWAN configuration for both command line interface
-// and environment variables.
-// It gives ability to register arguments which will be fetched from
-// CLI input OR environment variable.
-// By default it registers following options:
-// <SWAN_LOG> -l --log <Log level for Swan 0:debug; 1:info; 2:warn; 3:error; 4:fatal, 5:panic> Default: 3
-//
-// When `ParseEnv` is executed, only the environment arguments are parsed and
-// ready to be used in `promises` variables.
-// `ParseOnlyEnv` can be run multiple times.
-//
-// When `ParseFlagAndEnv` is executed, the arguments from both CLI and Env are parsed.
-// In case of --help option - it prints help.
-// It's recommend to run it only once, since to have `conf` with registered all needed options from
-// system. When help option is executed it will then show whole overview of the Swan configuration.
-
 package conf
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"reflect"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	app = kingpin.New("swan", "No help available")
 	// Default flags and values.
 	logLevelFlag = NewStringFlag(
 		"log",
@@ -41,144 +22,49 @@ var (
 	isEnvParsed = false
 )
 
-// SetHelpPath sets the help message for CLI rendering the file from given file.
-// We need to expose this function so other packages can set the app help.
-func SetHelpPath(readmePath string) {
-	readmeData, err := ioutil.ReadFile(readmePath)
-	if err != nil {
-		panic(errors.Wrapf(err, "reading %s failed", readmePath))
-	}
-	app.Help = string(readmeData)[:]
-}
-
-// SetHelp sets the help message for the CLI.
-// We need to expose this function so other packages can set the app help.
-func SetHelp(help string) {
-	app.Help = help
-}
-
-// SetAppName sets application name for CLI output.
-// We need to expose this function so other packages can set the app name.
-func SetAppName(name string) {
-	app.Name = name
-}
-
 // LogLevel returns configured logLevel from input option or env variable.
 // If it cannot parse the log level, it returns default value.
-func LogLevel() logrus.Level {
+func LogLevel() (logrus.Level, error) {
 	level, err := logrus.ParseLevel(logLevelFlag.Value())
-	if err == nil {
-		return level
+	if err != nil {
+		return logrus.PanicLevel, errors.Wrap(err, "cannot parse 'log' level flag")
 	}
-
-	level, err = logrus.ParseLevel(logLevelFlag.defaultValue)
-	if err == nil {
-		return level
-
-	}
-
-	// Programmer error.
-	panic(errors.Wrap(err, "parsing log level failed"))
-}
-
-// AppName returns specified app name.
-func AppName() string {
-	return app.Name
+	return level, nil
 }
 
 // ParseFlags parse both the command line flags of the process and
-// environment variables.
+// environment variables. Command line flags override values from
+// environment.
 func ParseFlags() error {
-	_, err := app.Parse(os.Args[1:])
-	if err == nil {
-		isEnvParsed = true
-		return nil
-	}
-
-	return errors.Wrapf(err, "could not parse command line flags")
-}
-
-// ParseEnv parse the environment for arguments.
-func ParseEnv() error {
-	_, err := app.Parse([]string{})
-	if err == nil {
-		isEnvParsed = true
-		return nil
-	}
-
-	return errors.Wrapf(err, "could not parse enviroment flags")
-}
-
-// getFlagsDefinition returns current, default, keys and description for every flag.
-// Notes: order is important because it logically groups flags.
-func getFlagsDefinition() (flags []struct{ Name, Value, Default, Help string }) {
-
-	for _, flag := range app.Model().Flags {
-
-		// Skip kingpin builtin flags that aren't compatible with environment based configuration.
-		if strings.Contains(flag.Name, "-") {
-			continue
-		}
-
-		// Returned values are basic types (string, int) or time.Duration and then serialized to string.
-		var value interface{} // golang native type
-
-		// First handle pkg/conf swan internal flags implementation.
-		if slv, ok := flag.Value.(*StringListValue); ok {
-			value = slv.String()
-		} else {
-			// Use reflection to extract value hidden in non exported kingpin implementation.
-
-			// Extract reflect.Value from kingpin interface (kingpin.Value).
-			reflectValue := reflect.ValueOf(flag.Value)
-
-			// Dereference point from reflect.Value.
-			// Value represent a pointer to something like kingpin.boolValue or kingpin.stringValue, so extract the _Value struct itself.
-			elem := reflectValue.Elem()
-
-			// Basing on underlying type convert to native type.
-			// Laws of reflection:
-			// "The second property is that the Kind of a reflection object describes the underlying type, not the static type."
-			switch elem.Kind() {
-
-			case reflect.Int64, reflect.Int:
-				// Special case for exploit kingpin duration flag implementation (not struct{v Value} generated implementations).
-				value = time.Duration(elem.Int())
-
-			case reflect.Struct:
-
-				// Get field that is used in kingpin to store value (pointer)
-				// and dereference pointer.
-				field := elem.FieldByName("v")
-				valueInField := field.Elem()
-
-				// Check the underlying type of value stored in v.
-				switch valueInField.Kind() {
-
-				case reflect.String:
-					value = valueInField.String()
-
-				case reflect.Bool:
-					value = valueInField.Bool()
-
-				case reflect.Int64, reflect.Int:
-					value = valueInField.Int()
-
-				default:
-					fmt.Sprintf("unhandled flag %s kind=%s", flag.Name, elem.Kind())
-				}
+	var errCollection errcollection.ErrorCollection
+	flag.VisitAll(func(flag *flag.Flag) {
+		value := os.Getenv(envName(flag.Name))
+		if value != "" {
+			err := flag.Value.Set(value)
+			if err != nil {
+				errCollection.Add(errors.Wrapf(err, "cannot parse %q flag", flag.Name))
 			}
 		}
+	})
+	flag.Parse()
+	return errCollection.GetErrIfAny()
+}
 
-		flags = append(flags, struct{ Name, Value, Default, Help string }{
-			Name:    flag.Name,
-			Help:    flag.Help,
-			Default: strings.Join(flag.Default, ","),
-			Value:   fmt.Sprintf("%v", value), // serialize value to String.
-		})
+// getFlagsDefinition returns definition of all flags for internal purpose.
+func getFlagsDefinition() (flags []*flag.Flag) {
+	// Get all flags.
+	flagsMap := map[string]*flag.Flag{}
+	flag.VisitAll(func(flag *flag.Flag) {
+		flagsMap[flag.Name] = flag
+	})
+
+	// Filter by registered names.
+	for _, name := range flagNames {
+		if flag, ok := flagsMap[name]; ok {
+			flags = append(flags, flag)
+		}
 	}
-
-	return flags
+	return
 }
 
 // DumpConfig dumps environment based configuration with current values of flags.
@@ -196,13 +82,13 @@ func DumpConfigMap(flagMap map[string]string) string {
 
 	for _, fd := range getFlagsDefinition() {
 
-		fmt.Fprintf(buffer, "\n# %s\n", fd.Help)
-		if fd.Default != "" {
-			fmt.Fprintf(buffer, "# Default: %s\n", fd.Default)
+		fmt.Fprintf(buffer, "\n# %s\n", fd.Usage)
+		if fd.DefValue != "" {
+			fmt.Fprintf(buffer, "# Default: %s\n", fd.DefValue)
 		}
 
 		// Override current values with provided from flagMap.
-		value := fd.Value
+		value := fd.Value.String()
 		if mapValue, ok := flagMap[fd.Name]; ok {
 			value = mapValue
 		}
@@ -218,7 +104,7 @@ func DumpConfigMap(flagMap map[string]string) string {
 func GetFlags() map[string]string {
 	flagsMap := map[string]string{}
 	for _, flag := range getFlagsDefinition() {
-		flagsMap[flag.Name] = flag.Value
+		flagsMap[flag.Name] = flag.Value.String()
 	}
 	return flagsMap
 }

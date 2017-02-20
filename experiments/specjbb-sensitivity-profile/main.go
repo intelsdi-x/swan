@@ -28,13 +28,15 @@ import (
 var (
 	// TxICountFlag is flag containing number of Transaction Injectors used.
 	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
+	specjbbIP    = conf.NewStringFlag(
+		"specjbb_loadgenerator_ip",
+		"IP of the SPECjbb Load Generator host",
+		"127.0.0.1")
+	appName = os.Args[0]
 )
 
 func main() {
-	conf.SetAppName("specjbb-sensitivity-profile")
-	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-                     It executes workloads and triggers gathering of metrics like latency (SLI)`)
-	experiment.Configure()
+	errorLevelEnabled := experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -57,7 +59,7 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 
-	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
 	// Write configuration as metadata.
@@ -65,14 +67,14 @@ func main() {
 	errutil.Check(err)
 
 	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv("SWAN_")
+	err = metadata.RecordEnv(conf.EnvironmentPrefix)
 	if err != nil {
 		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
 	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
@@ -141,7 +143,7 @@ func main() {
 	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
 	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(aggressorSessionLaunchers)
-	if conf.LogLevel() == logrus.ErrorLevel {
+	if errorLevelEnabled {
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
@@ -150,6 +152,7 @@ func main() {
 
 	// Read configuration.
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
+
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	repetitions := sensitivity.RepetitionsFlag.Value()
 	loadDuration := sensitivity.LoadDurationFlag.Value()
@@ -157,7 +160,7 @@ func main() {
 	// Record metadata.
 	records := map[string]string{
 		"command_arguments": strings.Join(os.Args, ","),
-		"experiment_name":   conf.AppName(),
+		"experiment_name":   appName,
 		"peak_load":         strconv.Itoa(load),
 		"load_points":       strconv.Itoa(loadPoints),
 		"repetitions":       strconv.Itoa(repetitions),
@@ -192,7 +195,7 @@ func main() {
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
 					// Make progress bar to display current repetition.
-					if conf.LogLevel() == logrus.ErrorLevel {
+					if errorLevelEnabled {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 						bar.Prefix(prefix)

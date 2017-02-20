@@ -25,14 +25,15 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+var (
+	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
+	appName                  = os.Args[0]
+)
+
 func main() {
 	// Preparing application - setting name, help, aprsing flags etc.
 	experimentStart := time.Now()
-	conf.SetAppName("memcached-sensitivity-profile")
-	conf.SetHelp(`Sensitivity experiment runs different measurements to test the performance of co-located workloads on a single node.
-It executes workloads and triggers gathering of certain metrics like latency (SLI) and the achieved number of Request per Second (QPS/RPS)`)
-
-	experiment.Configure()
+	errorLevelEnabled := experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -47,7 +48,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(experiment.ExSoftware)
 	}
 
-	logrus.Info("Starting Experiment ", conf.AppName(), " with uuid ", uuid.String())
+	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid.String())
 	fmt.Println(uuid.String())
 
 	// Write configuration as metadata.
@@ -55,20 +56,20 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	errutil.Check(err)
 
 	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv("SWAN_")
+	err = metadata.RecordEnv(conf.EnvironmentPrefix)
 	if err != nil {
 		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), conf.AppName())
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
 	}
 
 	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Validate preconditions.
@@ -92,7 +93,9 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		os.Exit(experiment.ExSoftware)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
-	beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
+	if includeBaselinePhaseFlag.Value() {
+		beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
+	}
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
@@ -127,7 +130,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Initialiaze progress bar when log level is error.
 	var bar *pb.ProgressBar
 	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(beLaunchers)
-	if conf.LogLevel() == logrus.ErrorLevel {
+	if errorLevelEnabled {
 		bar = pb.StartNew(totalPhases)
 		bar.ShowCounters = false
 		bar.ShowTimeLeft = true
@@ -143,7 +146,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 	// Record metadata.
 	records := map[string]string{
 		"command_arguments": strings.Join(os.Args, ","),
-		"experiment_name":   conf.AppName(),
+		"experiment_name":   appName,
 		"peak_load":         strconv.Itoa(load),
 		"load_points":       strconv.Itoa(loadPoints),
 		"repetitions":       strconv.Itoa(repetitions),
@@ -176,7 +179,7 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
 					// Make progress bar to display current repetition.
-					if conf.LogLevel() == logrus.ErrorLevel {
+					if errorLevelEnabled {
 						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
 						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
 						bar.Prefix(prefix)
@@ -282,5 +285,5 @@ It executes workloads and triggers gathering of certain metrics like latency (SL
 		}
 		beIteration++
 	}
-	logrus.Infof("Ended experiment %s with uuid %s in %s", conf.AppName(), uuid.String(), time.Since(experimentStart).String())
+	logrus.Infof("Ended experiment %s with uuid %s in %s", appName, uuid.String(), time.Since(experimentStart).String())
 }

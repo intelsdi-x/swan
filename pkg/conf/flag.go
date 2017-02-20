@@ -1,194 +1,149 @@
 package conf
 
 import (
+	"flag"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 )
 
-// flag represents option's definition from CLI and Environment variable.
-type flag struct {
-	name        string
-	description string
+// EnvironmentPrefix is prefix that is used for evironment based configuration.
+const EnvironmentPrefix = "SWAN_"
+
+// Registry of flag names (required for proper ordering and semantic grouping instead of lexicographical order).
+// Note: only the flags registered by our wrappers will dumped/stored in metadata.
+var flagNames []string
+
+func registerName(name string) {
+	flagNames = append(flagNames, name)
 }
 
-// envName returns name converted to swan environment variable name.
-// In order to create environment variable name from flag we need to make it uppercase
-// and add SWAN prefix. For instance: "cassandra_host" will be "SWAN_CASSANDRA_HOST".
-func (f flag) envName() string {
-	return fmt.Sprintf("%s_%s", "SWAN", strings.ToUpper(f.name))
+func envName(name string) string {
+	return fmt.Sprintf("%s%s", EnvironmentPrefix, strings.ToUpper(name))
 }
 
-// clear unset the corresponded environment variable.
-func (f flag) clear() {
-	os.Unsetenv(f.envName())
+// Flag represents option's definition from CLI and Environment variable.
+type Flag struct {
+	Name  string
+	usage string
 }
 
-// StringFlag represents flag with string value.
+// StringFlag ...
 type StringFlag struct {
-	flag
-	defaultValue string
-	value        *string
+	Flag
+	value *string
 }
 
 // NewStringFlag is a constructor of StringFlag struct.
-func NewStringFlag(flagName string, description string, defaultValue string) StringFlag {
-	strFlag := StringFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
+func NewStringFlag(name string, usage string, value string) StringFlag {
+	registerName(name)
+	return StringFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
 		},
-		defaultValue: defaultValue,
+		value: flag.String(name, value, usage),
 	}
-
-	strFlag.value = app.Flag(flagName, description).
-		Default(defaultValue).OverrideDefaultFromEnvar(strFlag.envName()).String()
-	isEnvParsed = false
-
-	return strFlag
 }
 
 // Value returns value of defined flag after parse.
-// NOTE: If conf is not parsed it returns default value (!)
 func (s StringFlag) Value() string {
-	if !isEnvParsed {
-		return s.defaultValue
-	}
-
 	return *s.value
 }
 
 // IntFlag represents flag with int value.
 type IntFlag struct {
-	flag
-	defaultValue int
-	value        *int
+	Flag
+	value *int
 }
 
 // NewIntFlag is a constructor of IntFlag struct.
-func NewIntFlag(flagName string, description string, defaultValue int) IntFlag {
-	intFlag := IntFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
+func NewIntFlag(name string, usage string, value int) IntFlag {
+	registerName(name)
+	return IntFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
 		},
-		defaultValue: defaultValue,
+		value: flag.Int(name, value, usage),
 	}
 
-	intFlag.value = app.Flag(flagName, description).
-		Default(fmt.Sprintf("%d", defaultValue)).OverrideDefaultFromEnvar(intFlag.envName()).Int()
-	isEnvParsed = false
-
-	return intFlag
 }
 
 // Value returns value of defined flag after parse.
-// NOTE: If conf is not parsed it returns default value (!)
 func (i IntFlag) Value() int {
-	if !isEnvParsed {
-		return i.defaultValue
-	}
-
 	return *i.value
 }
 
-// SliceFlag represents flag with slice value.
+// SliceFlag represents flag with slice string values.
 type SliceFlag struct {
-	flag
-	defaultValue []string
-	value        *[]string
+	Flag
+	value *string // stored as csv.
 }
 
 // NewSliceFlag is a constructor of SliceFlag struct.
-func NewSliceFlag(flagName string, description string) SliceFlag {
-	sliceFlag := SliceFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
+func NewSliceFlag(name string, usage string) SliceFlag {
+	registerName(name)
+	return SliceFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
 		},
+		value: flag.String(name, "", usage),
 	}
-
-	sliceFlag.value =
-		StringList(app.Flag(flagName, description).OverrideDefaultFromEnvar(sliceFlag.envName()))
-	isEnvParsed = false
-
-	return sliceFlag
 }
 
 // Value returns value of defined flag after parse.
 func (s SliceFlag) Value() []string {
-	if !isEnvParsed {
+	if *s.value == "" {
 		return []string{}
 	}
 
-	return *s.value
+	return strings.Split(*s.value, ",")
 }
 
 // BoolFlag represents flag with bool value.
 type BoolFlag struct {
-	flag
-	defaultValue bool
-	value        *bool
+	Flag
+	value *bool
 }
 
 // NewBoolFlag is a constructor of BoolFlag struct.
-func NewBoolFlag(flagName string, description string, defaultValue bool) BoolFlag {
-	boolFlag := BoolFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
+func NewBoolFlag(name string, usage string, value bool) BoolFlag {
+	registerName(name)
+	return BoolFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
 		},
-		defaultValue: defaultValue,
+		value: flag.Bool(name, value, usage),
 	}
-
-	boolFlag.value = app.Flag(flagName, description).Default(fmt.Sprintf("%v", defaultValue)).
-		OverrideDefaultFromEnvar(boolFlag.envName()).Bool()
-	isEnvParsed = false
-
-	return boolFlag
 }
 
 // Value returns value of defined flag after parse.
-// NOTE: If conf is not parsed it returns default value (!)
 func (b BoolFlag) Value() bool {
-	if !isEnvParsed {
-		return b.defaultValue
-	}
-
 	return *b.value
 }
 
 // DurationFlag represents flag with duration value.
 type DurationFlag struct {
-	flag
-	defaultValue time.Duration
-	value        *time.Duration
+	Flag
+	value *time.Duration
 }
 
 // NewDurationFlag is a constructor of DurationFlag struct.
-func NewDurationFlag(flagName string, description string, defaultValue time.Duration) DurationFlag {
-	durationFlag := DurationFlag{
-		flag: flag{
-			name:        flagName,
-			description: description,
+func NewDurationFlag(name string, usage string, value time.Duration) DurationFlag {
+	registerName(name)
+	return DurationFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
 		},
-		defaultValue: defaultValue,
+		value: flag.Duration(name, value, usage),
 	}
-
-	durationFlag.value = app.Flag(flagName, description).Default(defaultValue.String()).
-		OverrideDefaultFromEnvar(durationFlag.envName()).Duration()
-	isEnvParsed = false
-
-	return durationFlag
 }
 
 // Value returns value of defined flag after parse.
-// NOTE: If conf is not parsed it returns default value (!)
 func (d DurationFlag) Value() time.Duration {
-	if !isEnvParsed {
-		return d.defaultValue
-	}
-
 	return *d.value
 }

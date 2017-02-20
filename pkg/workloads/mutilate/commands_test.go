@@ -51,10 +51,12 @@ func (s *MutilateTestSuite) soExpectBaseCommandOptions(command string) {
 		So(command, ShouldContainSubstring, expected)
 	})
 
-	Convey("Mutilate base command should contain keySize and valuSize option", s.T(), func() {
-		expected := fmt.Sprintf("-K %d", s.mutilate.config.KeySize)
+	Convey("Mutilate base command should contain keySize, valuSize and interArrivalDist option", s.T(), func() {
+		expected := fmt.Sprintf("-K %s", s.mutilate.config.KeySize)
 		So(command, ShouldContainSubstring, expected)
-		expected = fmt.Sprintf("-V %d", s.mutilate.config.ValueSize)
+		expected = fmt.Sprintf("-V %s", s.mutilate.config.ValueSize)
+		So(command, ShouldContainSubstring, expected)
+		expected = fmt.Sprintf("-i %s", s.mutilate.config.InterArrivalDist)
 		So(command, ShouldContainSubstring, expected)
 	})
 
