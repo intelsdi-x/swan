@@ -119,21 +119,23 @@ func main() {
 	}
 	defer kubernetesHandle.Stop()
 
-	//specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
-	//specjbbBackendExecutorConfig.PodNamePrefix = "specjbb-backend"
-	//specjbbBackendExecutorConfig.MemoryLimit = 10000000000
-	//specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
-	//if err != nil {
-	//	logrus.Errorf("could not prepare specjbbBackendExecutor: %s", err)
-	//	os.Exit(experiment.ExSoftware)
-	//}
+	specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
+	specjbbBackendExecutorConfig.PodNamePrefix = "specjbb-backend"
+	specjbbBackendExecutorConfig.MemoryLimit = 10000000000
+	specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
+	if err != nil {
+		logrus.Errorf("could not prepare specjbbBackendExecutor: %s", err)
+		os.Exit(experiment.ExSoftware)
+	}
 
-	specjbbBackendExecutor := executor.NewLocal()
+	//specjbbBackendExecutor := executor.NewLocal()
 
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
 	backendConfig.ControllerAddress = specjbb.ControllerAddress.Value()
 	backendConfig.JVMHeapMemoryGBs = 8
+	backendConfig.WorkerCount = 8
+	backendConfig.ParallelGCThreads = 4
 	specjbbBackendLauncher := specjbb.NewBackend(specjbbBackendExecutor, backendConfig)
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
