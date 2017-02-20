@@ -8,6 +8,7 @@ import (
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -156,7 +157,8 @@ func (m *Metadata) Connect() error {
 
 // storeMap
 func (m *Metadata) storeMap(metadata MetadataMap, kind string) error {
-	return m.session.Query(`INSERT INTO swan.metadata (experiment_id, kind, time, timeuuid, metadata) VALUES (?, ?, ?, ?, ?)`, m.experimentID, kind, time.Now(), gocql.TimeUUID(), metadata).Exec()
+	err := m.session.Query(`INSERT INTO swan.metadata (experiment_id, kind, time, timeuuid, metadata) VALUES (?, ?, ?, ?, ?)`, m.experimentID, kind, time.Now(), gocql.TimeUUID(), metadata).Exec()
+	return errors.Wrapf(err, "cannot publish metadata of kind %q", kind)
 }
 
 // Record stores a key and value and associates with the experiment id.
