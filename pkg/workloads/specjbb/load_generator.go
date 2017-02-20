@@ -13,8 +13,8 @@ import (
 
 const (
 	defaultControllerIP   = "127.0.0.1"
-	defaultCustomerNumber = 100
-	defaultProductsNumber = 100
+	defaultCustomerNumber = 100000 // Default as in SPECjbb.
+	defaultProductsNumber = 100000 // Default as in SPECjbb.
 )
 
 var (
@@ -38,43 +38,25 @@ var (
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
 	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/usr/share/specjbb/")
-
-	// ControllerHostProperty - string name for property that specifies controller host.
-	ControllerHostProperty = " -Dspecjbb.controller.host="
-
-	// ControllerTypeProperty - string name for property that specifies controller type.
-	ControllerTypeProperty = " -Dspecjbb.controller.type="
-
-	// InjectionRateProperty - string name for property that specifies ir.
-	InjectionRateProperty = " -Dspecjbb.controller.preset.ir="
-
-	// PresetDurationProperty - string name for property that specifies preset duration.
-	PresetDurationProperty = " -Dspecjbb.controller.preset.duration="
-
-	// CustomerNumberProperty represents total number of customers.
-	CustomerNumberProperty = " -Dspecjbb.input.number_customers="
-
-	// ProductNumberProperty represents total number of products.
-	ProductNumberProperty = " -Dspecjbb.input.number_products="
-
-	// BinaryDataOutputDir represents directory for storing binary log file of the run.
-	BinaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 )
 
 // LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
 type LoadGeneratorConfig struct {
+	JVMOptions
 	ControllerAddress    string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=").
 	PathToBinary         string // PathToBinary is a path to specjbb2015.jar.
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
 	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
-	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
+	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
 }
 
 // DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
 func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
+		JVMOptions:           DefaultJVMOptions(),
 		ControllerAddress:    ControllerAddress.Value(),
 		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
 		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),
@@ -82,6 +64,7 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
+		HandshakeTimeoutMs:   600000,
 	}
 }
 
@@ -174,15 +157,21 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 	return nil
 }
 
-// Tune calculates maximum capacity of a machine without any time constraints.
-// Then it builds RT curve (increase load from 1% of HBIR to 100%, step 1%).
-// By using RT curve it generates report in which reporter
-// calculates Geo-mean of (critical-jOPS@ 10ms, 25ms, 50ms, 75ms and 100ms response time SLAs).
-// We use critical jops value because maximum capacity (HBIR) is high above our desired SLA.
+// Tune calculates maximum number of "critical java operations" under SLO
+// @param slo: SLO in us (sane values are above 5000us [5ms])
+//
+// It generates High Bound Injection Rate [HBIR] curve to determine the load under slo value.
+// See SPECjbb readme (https://www.spec.org/jbb2015/docs/userguide.pdf) for details.
+//
 // Exemplary output for machine capacity, HBIR = 12000:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
-	hbirRtCommand := getControllerHBIRRTCommand(loadGenerator.config)
+	if slo < 5000 {
+		logrus.Errorf("SLO for tuning SPECjbb should be above 5000us (5ms). Function received %d", slo)
+		return 0, 0, errors.Errorf("SLO for tuning SPECjbb should be above 5000us (5ms). Function received %d", slo)
+	}
+
+	hbirRtCommand := getControllerTuneCommand(loadGenerator.config)
 	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "execution of SPECjbb HBIR RT failed. command: %q", hbirRtCommand)
@@ -231,8 +220,8 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	return hbirRt, 0, err
 }
 
-// Load starts a load on the specific workload with the defined loadPoint (injection rate value).
-// The task will do the load for specified amount of time (in milliseconds).
+// Load start load on backed injection rate value.
+// The task will do the load for specified amount of time.
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
 	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
 	controllerHandle, err := loadGenerator.controller.Execute(loadCommand)
