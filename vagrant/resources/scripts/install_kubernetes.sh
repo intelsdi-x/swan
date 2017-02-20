@@ -21,16 +21,15 @@ pushd `dirname $0`
     mkdir -p ${SWAN_BIN}
 
     if [ ! -f ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION} ]; then
-	# instead of downloading multiple binaries only hyperkube is downloaded
-	wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
-	chmod +x ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
+        # instead of downloading multiple binaries only hyperkube is downloaded
+        wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
+        chmod +x ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION}
 
-	touch ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION}
+        touch ${CACHE_DIRECTORY}/.kube-services-${K8S_VERSION}
     fi
     # to make usage easier - symlinks are generated for hyperkube in PATH
     cp ${CACHE_DIRECTORY}/hyperkube-${K8S_VERSION} ${SWAN_BIN}/hyperkube
     pushd ${SWAN_BIN}
-    ./hyperkube --make-symlinks 
-    true # ignore any errors  (like existing symlinks)
+    ./hyperkube --make-symlinks || true # ignore any errors  (like existing symlinks)
     popd
 popd
