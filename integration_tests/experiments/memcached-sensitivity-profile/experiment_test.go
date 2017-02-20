@@ -12,6 +12,7 @@ import (
 
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
@@ -136,6 +137,7 @@ func TestExperiment(t *testing.T) {
 					So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")
 					So(metadata["load_points"], ShouldEqual, "1")
 					So(metadata["load_duration"], ShouldEqual, "1s")
+					So(metadata[experiment.CPUModelNameKey], ShouldNotEqual, "")
 
 				})
 

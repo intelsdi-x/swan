@@ -37,6 +37,7 @@ const (
 // GetPlatformMetrics returns map of strings with platform metrics.
 // If metric could not be retreived value for the key is empty string.
 func GetPlatformMetrics() (platformMetrics map[string]string) {
+	platformMetrics = make(map[string]string)
 	item, err := CPUModelName()
 	if err != nil {
 		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CPUModelNameKey, err.Error()))

@@ -62,6 +62,12 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 
+	err = metadata.RecordPlatformMetrics()
+	if err != nil {
+		logrus.Errorf("Cannot save platform metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
+
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
