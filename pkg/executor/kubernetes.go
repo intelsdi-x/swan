@@ -89,7 +89,7 @@ var (
 		return hostname
 	}()
 
-	hostNameExperiment  = conf.NewStringFlag("kubernetes_hostname", "run experiment pods on selected host", hostname)
+	nodeNameExperiment  = conf.NewStringFlag("kubernetes_nodename", "run experiment pods on selected node", hostname)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -102,8 +102,8 @@ type KubernetesConfig struct {
 	// - PodNamePrefix(by default is "swan") - If PodName field is not
 	// configured, this field is used as a prefix for random generated Pod
 	// name.
-	Hostname       string
 	PodName        string
+	NodeName       string
 	PodNamePrefix  string
 	Address        string
 	CPURequest     int64
@@ -134,7 +134,7 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
-		Hostname:       hostNameExperiment.Value(),
+		NodeName:       nodeNameExperiment.Value(),
 		PodName:        "",
 		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
@@ -256,7 +256,7 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: v1.PodSpec{
-			NodeName:                      k8s.config.Hostname,
+			NodeName:                      k8s.config.NodeName,
 			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
 			HostNetwork:                   k8s.config.HostNetwork,
