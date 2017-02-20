@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	metadataKindEmpty   = ""
-	metadataKindFlags   = "flags"
-	metadataKindEnviron = "environ"
+	metadataKindEmpty    = ""
+	metadataKindFlags    = "flags"
+	metadataKindEnviron  = "environ"
+	metadataKindPlatform = "platform"
 )
 
 // MetadataConfig encodes the settings for connecting to the database.
@@ -196,6 +197,13 @@ func (m *Metadata) RecordEnv(prefix string) error {
 		}
 	}
 	return m.storeMap(metadata, metadataKindEnviron)
+}
+
+// RecordPlatformMetrics stores platform specific metadata.
+// Platform metrics are metadataKindPlatform type.
+func (m *Metadata) RecordPlatformMetrics() error {
+	platformMetrics := GetPlatformMetrics()
+	return m.storeMap(platformMetrics, metadataKindPlatform)
 }
 
 // Get retrieves all metadata maps from the database.
