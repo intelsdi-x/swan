@@ -44,13 +44,6 @@ func main() {
 		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-
-	// Generate an experiment ID and start the metadata session.
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
 	// Create metadata associated with experiment
 	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
 	err = metadata.Connect()
@@ -70,6 +63,12 @@ func main() {
 	err = metadata.RecordEnv(conf.EnvironmentPrefix)
 	if err != nil {
 		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		os.Exit(experiment.ExSoftware)
+	}
+
+	err = metadata.RecordPlatformMetrics()
+	if err != nil {
+		logrus.Errorf("Cannot save platform metadata: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
