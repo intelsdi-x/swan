@@ -38,27 +38,6 @@ var (
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
 	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/usr/share/specjbb/")
-
-	// ControllerHostProperty - string name for property that specifies controller host.
-	ControllerHostProperty = " -Dspecjbb.controller.host="
-
-	// ControllerTypeProperty - string name for property that specifies controller type.
-	ControllerTypeProperty = " -Dspecjbb.controller.type="
-
-	// InjectionRateProperty - string name for property that specifies ir.
-	InjectionRateProperty = " -Dspecjbb.controller.preset.ir="
-
-	// PresetDurationProperty - string name for property that specifies preset duration.
-	PresetDurationProperty = " -Dspecjbb.controller.preset.duration="
-
-	// CustomerNumberProperty represents total number of customers.
-	CustomerNumberProperty = " -Dspecjbb.input.number_customers="
-
-	// ProductNumberProperty represents total number of products.
-	ProductNumberProperty = " -Dspecjbb.input.number_products="
-
-	// BinaryDataOutputDir represents directory for storing binary log file of the run.
-	BinaryDataOutputDir = " -Dspecjbb.run.datafile.dir="
 )
 
 // LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
@@ -69,7 +48,7 @@ type LoadGeneratorConfig struct {
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
 	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
-	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 }
 
@@ -184,7 +163,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 // Exemplary output for machine capacity, HBIR = 12000:
 // RUN RESULT: hbIR (max attempted) = 12000, hbIR (settled) = 12000, max-jOPS = 11640, critical-jOPS = 2684
 func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err error) {
-	hbirRtCommand := getControllerHBIRRTCommand(loadGenerator.config)
+	hbirRtCommand := getControllerTuneCommand(loadGenerator.config)
 	controllerHandle, err := loadGenerator.controller.Execute(hbirRtCommand)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "execution of SPECjbb HBIR RT failed. command: %q", hbirRtCommand)

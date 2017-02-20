@@ -1,8 +1,6 @@
 package specjbb
 
 import (
-	"fmt"
-
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
@@ -22,9 +20,6 @@ var (
 	PathToPropsFileForHpFlag = conf.NewStringFlag("specjbb_props_path_hp",
 		"Path to SPECjbb properties file for high priority job (backend)",
 		"/usr/share/specjbb/config/specjbb2015.props")
-
-	// JVMHeapMemoryGBs specifies amount of heap memory available to JVM.
-	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 10)
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
@@ -33,6 +28,7 @@ type BackendConfig struct {
 	PathToBinary      string
 	ControllerAddress string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=")
 	JvmID             string // JvmId is an ID of a JVM dedicated for a Backend (-J <jvmid>)
+	WorkerCount       int
 }
 
 // DefaultSPECjbbBackendConfig is a constructor for BackendConfig with default parameters.
@@ -42,6 +38,7 @@ func DefaultSPECjbbBackendConfig() BackendConfig {
 		PathToBinary:      PathToBinaryForHpFlag.Value(),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
+		WorkerCount:       8,
 	}
 }
 
