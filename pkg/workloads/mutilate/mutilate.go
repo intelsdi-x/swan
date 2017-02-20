@@ -31,8 +31,9 @@ const (
 	defaultMasterConnectionsDepth = 4
 	defaultMasterAffinity         = false
 	defaultMasterBlocking         = true
-	defaultKeySize                = 30  // [bytes]
-	defaultValueSize              = 200 // [bytes]
+	defaultMasterKeySize          = "30"          // [bytes]
+	defaultMasterValueSize        = "200"         // [bytes]
+	defaultMasterInterArrivalDist = "exponential" // disabled
 	defaultMasterQPS              = 1000
 )
 
@@ -54,6 +55,9 @@ var (
 	masterAffinityFlag         = conf.NewBoolFlag("mutilate_master_affinity", "Mutilate master affinity (--affinity).", defaultMasterAffinity)
 	masterBlockingFlag         = conf.NewBoolFlag("mutilate_master_blocking", "Mutilate master blocking (--blocking -B).", defaultMasterBlocking)
 	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)
+	masterKeySizeFlag          = conf.NewStringFlag("mutilate_master_keysize", "Length of memcached keys (-K).", defaultMasterKeySize)
+	masterValueSizeFlag        = conf.NewStringFlag("mutilate_master_valuesize", "Length of memcached values (-V).", defaultMasterValueSize)
+	masterInterArrivalDistFlag = conf.NewStringFlag("mutilate_master_interarrivaldist", "Inter-arrival distribution (-i).", defaultMasterInterArrivalDist)
 )
 
 // Config contains all data for running mutilate.
@@ -70,13 +74,14 @@ type Config struct {
 	LatencyPercentile string
 	Records           int
 
-	AgentConnections      int  // -c
-	AgentConnectionsDepth int  // Max length of request pipeline. -d
-	MasterThreads         int  // -T
-	MasterAffinity        bool // Set CPU affinity for threads, round-robin (for Master)
-	MasterBlocking        bool // -B --blocking:  Use blocking epoll().  May increase latency (for Master).
-	KeySize               int  // Length of memcached keys. -K
-	ValueSize             int  // Length of memcached values. -V
+	AgentConnections      int    // -c
+	AgentConnectionsDepth int    // Max length of request pipeline. -d
+	MasterThreads         int    // -T
+	MasterAffinity        bool   // Set CPU affinity for threads, round-robin (for Master)
+	MasterBlocking        bool   // -B --blocking:  Use blocking epoll().  May increase latency (for Master).
+	KeySize               string // Length of memcached keys. -K
+	ValueSize             string // Length of memcached values. -V
+	InterArrivalDist      string // Inter-arrival distribution. -i
 
 	// Agent-mode options.
 	AgentThreads           int  // Number of threads for all agents. -T
@@ -120,8 +125,9 @@ func DefaultMutilateConfig() Config {
 		MasterConnectionsDepth: masterConnectionsDepthFlag.Value(),
 		MasterAffinity:         masterAffinityFlag.Value(),
 		MasterBlocking:         masterBlockingFlag.Value(),
-		KeySize:                defaultKeySize,
-		ValueSize:              defaultValueSize,
+		KeySize:                masterKeySizeFlag.Value(),
+		ValueSize:              masterValueSizeFlag.Value(),
+		InterArrivalDist:       masterInterArrivalDistFlag.Value(),
 		MasterQPS:              masterQPSFlag.Value(),
 		AgentPort:              agentAgentPortFlag.Value(),
 	}
