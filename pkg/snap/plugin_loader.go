@@ -33,18 +33,19 @@ const (
 )
 
 var (
+	// SnapteldAddress represents snap daemon address flag.
+	SnapteldAddress = conf.NewStringFlag("snapteld_address", "Address to snapteld in `http://%s:%s` format", "http://127.0.0.1:8181")
+
 	goPath = os.Getenv("GOPATH")
 
 	defaultPluginsPath = path.Join(goPath, "bin")
-
-	snapteldAddress = conf.NewStringFlag("snapteld_address", "Address to snapteld in `http://%s:%s` format", "http://127.0.0.1:8181")
 	pluginsPath     = conf.NewStringFlag("snap_plugins_path", "Path to Snap Plugins directory", defaultPluginsPath)
 )
 
 // DefaultPluginLoaderConfig returns default config for PluginLoader.
 func DefaultPluginLoaderConfig() PluginLoaderConfig {
 	return PluginLoaderConfig{
-		SnapteldAddress: snapteldAddress.Value(),
+		SnapteldAddress: SnapteldAddress.Value(),
 		PluginsPath:     pluginsPath.Value(),
 	}
 }
