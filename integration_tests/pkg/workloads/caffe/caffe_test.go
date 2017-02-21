@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -13,13 +12,11 @@ import (
 )
 
 func TestCaffeWithMockedExecutor(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	Convey("When I create Caffe with local executor and default configuration", t, func() {
 		localExecutor := executor.NewLocal()
-		caffeConfig := caffe.DefaultConfig()
-		fmt.Printf("caffeConfig = %+v\n", caffeConfig)
-		c := caffe.New(localExecutor, caffeConfig)
+		c := caffe.New(localExecutor, caffe.DefaultConfig())
 
 		Convey("When I launch the workload", func() {
 			handle, err := c.Launch()
