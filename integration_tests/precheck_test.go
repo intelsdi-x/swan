@@ -1,9 +1,9 @@
 package precheck
 
 import (
-	"os/exec"
 	"testing"
 
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -55,10 +55,9 @@ func TestFunction(t *testing.T) {
 
 	Convey("Make sure all depedencies are there", t, func() {
 		for _, executable := range requiredExecutables {
-			path, err := exec.LookPath(executable)
-			So(err, ShouldBeNil)
+			path := testhelpers.AssertFileExists(executable)
 			Println()
-			Printf(" %s found in: %s", executable, path)
+			Printf(" %s found in: %s ", executable, path)
 		}
 	})
 

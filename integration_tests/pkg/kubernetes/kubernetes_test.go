@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	. "github.com/smartystreets/goconvey/convey"
@@ -17,11 +18,10 @@ import (
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
 
+	kubectlBinPath := testhelpers.AssertFileExists("kubectl")
+
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While having local executor", t, func() {
-
-		kubectlBinPath, err := exec.LookPath("kubectl")
-		So(err, ShouldBeNil)
 
 		local := executor.NewLocal()
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strconv"
 	"strings"
@@ -13,11 +14,21 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/pkg/errors"
 	"github.com/smartystreets/goconvey/convey"
 )
 
 // SwanPath is an absolute path of project.
 var SwanPath = path.Join(os.Getenv("GOPATH"), "src", "github.com/intelsdi-x/swan")
+
+// AssertFileExists makes sure that executable is available in $PATH or panics returning location of exectuable.
+func AssertFileExists(executable string) string {
+	path, err := exec.LookPath(executable)
+	if err != nil {
+		panic(errors.Wrapf(err, "cannot find required binary %q in $PATH", executable))
+	}
+	return path
+}
 
 // RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
 // with snapteld address

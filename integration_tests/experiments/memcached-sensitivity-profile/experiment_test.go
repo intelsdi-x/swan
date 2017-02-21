@@ -45,10 +45,7 @@ func runExp(command string, args ...string) (string, error) {
 
 func TestExperiment(t *testing.T) {
 
-	memcachedSensitivityProfileBin, err := exec.LookPath("memcached-sensitivity-profile")
-	if err != nil {
-		panic(err)
-	}
+	memcachedSensitivityProfileBin := testhelpers.AssertFileExists("memcached-sensitivity-profile")
 
 	memcacheDockerBin := "memcached"
 	l1dDockerBin := "l1d"
