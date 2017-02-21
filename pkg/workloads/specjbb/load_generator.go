@@ -18,13 +18,13 @@ const (
 
 var (
 	// PathToBinaryForLoadGeneratorFlag specifies path to a SPECjbb2015 jar file for load generator.
-	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator", "/usr/share/specjbb/specjbb2015.jar")
+	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator", "/opt/swan/share/specjbb/specjbb2015.jar")
 
 	// PathToPropsFileForLoadGeneratorFlag specifies path to a SPECjbb2015 properties file for load generator.
-	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator", "/usr/share/specjbb/config/specjbb2015.props")
+	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator", "/opt/swan/share/specjbb/config/specjbb2015.props")
 
 	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
-	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/usr/share/specjbb/config/template-D.raw")
+	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/opt/swan/share/specjbb/config/template-D.raw")
 
 	// ControllerAddress specifies ControllerAddress address of a controller component of SPECjbb2015 benchmark.
 	ControllerAddress = conf.NewStringFlag("specjbb_controller_ip", "ControllerAddress address of a SPECjbb controller component", defaultControllerIP)
@@ -36,7 +36,7 @@ var (
 	ProductNumberFlag = conf.NewIntFlag("specjbb_product_number", "Number of products", defaultProductsNumber)
 
 	// BinaryDataOutputDirFlag specifies output dir for storing binary data.
-	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/usr/share/specjbb/")
+	BinaryDataOutputDirFlag = conf.NewStringFlag("specjbb_output_dir", "Path to location of storing binary data", "/opt/swan/share/specjbb/")
 )
 
 // LoadGeneratorConfig is a config for a SPECjbb2015 Load Generator.,
