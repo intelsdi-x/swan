@@ -8,7 +8,8 @@ if [ "$1" == "init" ]; then
         bash ./examples/cifar10/create_cifar10.sh
         cp ./cifar10_quick_iter_5000.caffemodel.h5 /tmp/caffe
         # make sure that /tmp/caffe folder is accessible for other users (capital X for search only on directories)
-        chmod o+rX /tmp/caffe
+        # caffe requires both executable and write permissions
+        chmod -R a+rwX /tmp/caffe
         exit 0
 fi
 ./bin/caffe "$@"

@@ -14,8 +14,8 @@ const (
 	ID = "caffe"
 
 	defaultBinaryRelativePath = "caffe"
-	defualCaffeLibPath        = "/usr/lib"
-	defaultModel              = "/usr/share/caffe/examples/cifar10/cifar10_quick_train_test.prototxt"
+	defualCaffeLibPath        = "/opt/swan/lib"
+	defaultModel              = "/opt/swan/share/caffe/examples/cifar10/cifar10_quick_train_test.prototxt"
 	defaultWeights            = "/tmp/caffe/cifar10_quick_iter_5000.caffemodel.h5"
 	defaultIterations         = 1000000000
 	defaultSigintEffect       = "stop"
