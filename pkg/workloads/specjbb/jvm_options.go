@@ -21,7 +21,7 @@ type JVMOptions struct {
 func DefaultJVMOptions() JVMOptions {
 	return JVMOptions{
 		JVMHeapMemoryGBs:  JVMHeapMemoryGBs.Value(),
-		ParallelGCThreads: 8,
+		ParallelGCThreads: 1,
 	}
 }
 

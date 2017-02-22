@@ -16,16 +16,15 @@ import (
 )
 
 const (
-	txICount     = 1
-	load         = 6000
-	loadDuration = 5 * time.Second
+	load         = 1000
+	loadDuration = 20 * time.Second
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
 func TestSPECjbb(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-	specjbbLoadGeneratorConfig.EraseOutput = false
+	specjbbLoadGeneratorConfig.EraseTuningOutput = false
 	specjbbLoadGeneratorConfig.JVMHeapMemoryGBs = 1
 	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
 		t.Logf("Skipping test due to an error %s", err)
@@ -240,7 +239,7 @@ func TestSPECjbb(t *testing.T) {
 	})
 	SkipConvey("While using default config", t, func() {
 		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-		specjbbLoadGeneratorConfig.EraseOutput = true
+		specjbbLoadGeneratorConfig.EraseTuningOutput = true
 
 		Convey("And launching SPECjbb load without transaction injectors", func() {
 			var transactionInjectors []executor.Executor
@@ -311,7 +310,7 @@ func TestSPECjbb(t *testing.T) {
 	})
 	SkipConvey("While using config with no existing path to binary", t, func() {
 		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-		specjbbLoadGeneratorConfig.EraseOutput = true
+		specjbbLoadGeneratorConfig.EraseTuningOutput = true
 		specjbbLoadGeneratorConfig.PathToBinary = "/no/existing/path"
 
 		Convey("And launching SPECjbb load", func() {

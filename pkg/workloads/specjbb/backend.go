@@ -38,7 +38,7 @@ func DefaultSPECjbbBackendConfig() BackendConfig {
 		PathToBinary:      PathToBinaryForHpFlag.Value(),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
-		WorkerCount:       8,
+		WorkerCount:       1,
 	}
 }
 

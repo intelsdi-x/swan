@@ -50,7 +50,7 @@ type LoadGeneratorConfig struct {
 	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
-	EraseOutput          bool   // Erase stdout & stderr logs from processes ran by Load Generator.
+	EraseTuningOutput    bool   // Erase stdout & stderr logs from processes ran by Load Generator.
 }
 
 // DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
@@ -65,7 +65,7 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
 		HandshakeTimeoutMs:   600000,
-		EraseOutput:          true,
+		EraseTuningOutput0:    true,
 	}
 }
 
@@ -127,7 +127,7 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 		if err != nil {
 			logrus.Errorf("Could not start TransactionInjector with command %s", command)
 			stop(handles)
-			if loadGenerator.config.EraseOutput {
+			if loadGenerator.config.EraseTuningOutput {
 				erase(handles)
 			}
 			return nil, errors.Wrapf(err, "Could not start TransactionInjector with command %s", command)
@@ -169,7 +169,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 
 	controllerHandle.Wait(0)
 	stop(txIHandles)
-	if loadGenerator.config.EraseOutput {
+	if loadGenerator.config.EraseTuningOutput {
 		erase(txIHandles)
 	}
 
@@ -201,7 +201,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 		return 0, 0, errors.Wrapf(err, "could not get critical jops from reporter output file %s", outReporter.Name())
 	}
 
-	if loadGenerator.config.EraseOutput {
+	if loadGenerator.config.EraseTuningOutput {
 		controllerHandle.EraseOutput()
 		reporterHandle.EraseOutput()
 	}
