@@ -28,7 +28,7 @@ type BackendConfig struct {
 	PathToBinary      string
 	ControllerAddress string // ControllerAddress is an address of a SPECjbb controller component ("-Dspecjbb.controller.host=")
 	JvmID             string // JvmId is an ID of a JVM dedicated for a Backend (-J <jvmid>)
-	WorkerCount       int
+	WorkerCount       int    // Amount of threads in ForkJoinPool that will be serving requests.
 }
 
 // DefaultSPECjbbBackendConfig is a constructor for BackendConfig with default parameters.
@@ -38,7 +38,7 @@ func DefaultSPECjbbBackendConfig() BackendConfig {
 		PathToBinary:      PathToBinaryForHpFlag.Value(),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
-		WorkerCount:       8,
+		WorkerCount:       1,
 	}
 }
 

@@ -16,7 +16,7 @@ func DefaultConfig() Config {
 	sessions.ApplyCassandraConfiguration(publisher)
 
 	return Config{
-		SnapteldAddress: snap.SnapteldHTTPEndpoint.Value(),
+		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
 		Publisher:       publisher,
 	}

@@ -7,12 +7,9 @@ import (
 	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
 )
 
-// SnapteldHTTPEndpoint represents snap daemon address flag.
-var SnapteldHTTPEndpoint = conf.NewStringFlag("snapteld_addr", "Snapteld HTTP Endpoint", "http://127.0.0.1:8181")
 
 type task struct {
 	Version  int
