@@ -65,7 +65,7 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
 		HandshakeTimeoutMs:   600000,
-		EraseTuningOutput0:    true,
+		EraseTuningOutput:    true,
 	}
 }
 
