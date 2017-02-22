@@ -33,13 +33,11 @@ func runExp(command string, args ...string) (string, error) {
 	c.Stderr = b
 	out, err := c.Output()
 	if err != nil {
+		Printf("[Out]==> %s", string(out))
+		Printf("[Err]==> %s", b.String())
 		Printf("[Warning]==> %s", err)
 		return "", err
 	}
-
-	Printf("[Out]==> %s", string(out))
-	Printf("[Err]==> %s", b.String())
-
 	return getUUID(out), nil
 }
 
