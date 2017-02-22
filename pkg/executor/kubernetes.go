@@ -57,6 +57,8 @@ import (
 	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
 	"k8s.io/client-go/1.5/pkg/api/v1"
 
+	"k8s.io/client-go/1.5/tools/clientcmd"
+
 	"k8s.io/client-go/1.5/pkg/api"
 	"k8s.io/client-go/1.5/pkg/api/resource"
 	"k8s.io/client-go/1.5/pkg/api/unversioned"
@@ -66,11 +68,28 @@ import (
 
 	"path/filepath"
 
+	"github.com/intelsdi-x/swan/pkg/conf"
+
 	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 )
 
 const (
 	defaultContainerImage = "centos_swan_image"
+)
+
+var (
+	kubeconfigFlag      = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
+	namespaceExperiment = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+
+	hostname = func() string {
+		hostname, err := os.Hostname()
+		if err != nil {
+			panic(fmt.Sprintf("%s", err.Error()))
+		}
+		return hostname
+	}()
+
+	nodeNameExperiment  = conf.NewStringFlag("kubernetes_nodename", "run experiment pods on selected node", hostname)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -84,10 +103,9 @@ type KubernetesConfig struct {
 	// configured, this field is used as a prefix for random generated Pod
 	// name.
 	PodName        string
+	NodeName       string
 	PodNamePrefix  string
 	Address        string
-	Username       string
-	Password       string
 	CPURequest     int64
 	CPULimit       int64
 	MemoryRequest  int64
@@ -116,11 +134,10 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
+		NodeName:       nodeNameExperiment.Value(),
 		PodName:        "",
 		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
-		Username:       "",
-		Password:       "",
 		CPURequest:     0,
 		CPULimit:       0,
 		MemoryRequest:  0,
@@ -128,7 +145,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
-		Namespace:      v1.NamespaceDefault,
+		Namespace:      namespaceExperiment.Value(),
 		Privileged:     false,
 		HostNetwork:    false,
 		LaunchTimeout:  30 * time.Second,
@@ -148,11 +165,16 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	}
 
 	var err error
-	k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
-		Host:     config.Address,
-		Username: config.Username,
-		Password: config.Password,
-	})
+	kubeConfigPath := kubeconfigFlag.Value()
+	if kubeConfigPath == "" {
+		k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
+			Host:     config.Address,
+		})
+	} else {
+		var kubeconfig *rest.Config
+		kubeconfig, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+		k8s.clientset, err = kubernetes.NewForConfig(kubeconfig)
+	}
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't initilize kubernetes clientset for host '%s'", config.Address)
@@ -234,12 +256,13 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 			Labels:    map[string]string{"name": podName},
 		},
 		Spec: v1.PodSpec{
+			NodeName:                      k8s.config.NodeName,
 			DNSPolicy:                     "Default",
 			RestartPolicy:                 "Never",
 			HostNetwork:                   k8s.config.HostNetwork,
 			TerminationGracePeriodSeconds: &zero,
 			Containers: []v1.Container{
-				v1.Container{
+				{
 					Name:            k8s.config.ContainerName,
 					Image:           k8s.config.ContainerImage,
 					Command:         []string{"sh", "-c", command},

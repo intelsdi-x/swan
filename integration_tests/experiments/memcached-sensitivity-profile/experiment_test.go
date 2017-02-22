@@ -205,7 +205,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			SkipConvey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"-run_on_kubernetes", "-kube_allow_privileged", "-memcached_path", memcacheDockerBin}
+				args := []string{"-kubernetes", "-kube_allow_privileged", "-memcached_path", memcacheDockerBin}
 				_, err := runExp(memcachedSensitivityProfileBin, args...)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
@@ -213,7 +213,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			SkipConvey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"-run_on_kubernetes", "-kube_allow_privileged", "-aggr", "l1d", "-memcached_path", memcacheDockerBin, "-l1d_path", l1dDockerBin}
+				args := []string{"-kubernetes", "-kube_allow_privileged", "-aggr", "l1d", "-memcached_path", memcacheDockerBin, "-l1d_path", l1dDockerBin}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)

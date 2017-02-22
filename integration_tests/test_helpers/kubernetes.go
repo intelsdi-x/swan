@@ -25,8 +25,6 @@ type KubeClient struct {
 func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, error) {
 	kubectlConfig := &rest.Config{
 		Host:     kubernetesConfig.Address,
-		Username: kubernetesConfig.Username,
-		Password: kubernetesConfig.Password,
 	}
 
 	cli, err := kubernetes.NewForConfig(kubectlConfig)
