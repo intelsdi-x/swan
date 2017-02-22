@@ -45,9 +45,6 @@ func TestExperiment(t *testing.T) {
 
 	memcachedSensitivityProfileBin := testhelpers.AssertFileExists("memcached-sensitivity-profile")
 
-	memcacheDockerBin := "memcached"
-	l1dDockerBin := "l1d"
-
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
 		"SWAN_BE_SETS":              "0:0",
@@ -198,7 +195,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"-kubernetes", "-kube_allow_privileged", "-memcached_path", memcacheDockerBin}
+				args := []string{"-kubernetes", "-kube_allow_privileged"}
 				_, err := runExp(memcachedSensitivityProfileBin, args...)
 				Convey("Experiment should return with no errors", func() {
 					So(err, ShouldBeNil)
@@ -206,7 +203,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"-kubernetes", "-kube_allow_privileged", "-aggr", "l1d", "-memcached_path", memcacheDockerBin, "-l1d_path", l1dDockerBin}
+				args := []string{"-kubernetes", "-kube_allow_privileged", "-aggr", "l1d"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -218,6 +215,22 @@ func TestExperiment(t *testing.T) {
 					So(ns, ShouldNotBeBlank)
 					So(tags, ShouldNotBeEmpty)
 					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+				})
+			})
+
+			Convey("With proper kubernetes and caffe", func() {
+				args := []string{"-kubernetes", "-aggr", "caffe"}
+				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
+					So(err, ShouldBeNil)
+
+					var ns string
+					var tags map[string]string
+					err = session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Scan(&ns, &tags)
+					So(err, ShouldBeNil)
+					So(ns, ShouldNotBeBlank)
+					So(tags, ShouldNotBeEmpty)
+					So(tags["swan_aggressor_name"], ShouldEqual, "Caffe")
 				})
 			})
 
