@@ -58,6 +58,8 @@ func TestSPECjbb(t *testing.T) {
 
 					Reset(func() {
 						backendTaskHandle.Stop()
+						loadGeneratorTaskHandle.Clean()
+						loadGeneratorTaskHandle.EraseOutput()
 					})
 
 					Convey("Proper handle should be returned", func() {
@@ -81,7 +83,7 @@ func TestSPECjbb(t *testing.T) {
 							scanner := bufio.NewScanner(file)
 
 							// When SPECjbb composite mode is successfully started, the output is:
-							//1s:  Agent GRP1.Backend.JVM2 has attached to Controller
+							//1s:  Agent GRP1.Backend.specjbbbackend1 has attached to Controller
 							//     1s:  Agent GRP1.TxInjector.JVM1 has attached to Controller
 							//     1s:
 							//     1s: All agents have connected.
@@ -91,7 +93,7 @@ func TestSPECjbb(t *testing.T) {
 							// TxInjectors:
 							// JVM1, includes { Driver } @ [127.0.0.1:40910, 127.0.0.1:41757, 127.0.0.1:41462]
 							// Backends:
-							// JVM2, includes { SM(2),SP(2) } @ [127.0.0.1:38571, 127.0.0.1:45981, 127.0.0.1:35478]
+							// specjbbbackend1, includes { SM(2),SP(2) } @ [127.0.0.1:38571, 127.0.0.1:45981, 127.0.0.1:35478]
 							//
 							//1s: Initializing... (init) OK
 							// We should look for the proper lines to be sure that our configuration works.
@@ -216,7 +218,7 @@ func TestSPECjbb(t *testing.T) {
 				Convey("But when the SPECjbb backend is not added, controller should not have information about it in its logs", func() {
 					loadGeneratorTaskHandle.Wait(loadDuration)
 					scanner := bufio.NewScanner(file)
-					substringWithoutBackend := "Agent GRP1.Backend.JVM2 has attached to Controller"
+					substringWithoutBackend := "Agent GRP1.Backend.specjbbbackend1 has attached to Controller"
 					var matchWithoutBackend bool
 					for scanner.Scan() {
 						err := scanner.Err()
@@ -249,7 +251,7 @@ func TestSPECjbb(t *testing.T) {
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
 			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
-			Convey("Should retrun error.", func() {
+			Convey("Should return error.", func() {
 				So(loadGeneratorTaskHandle, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})
