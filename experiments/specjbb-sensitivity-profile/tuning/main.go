@@ -122,6 +122,9 @@ func main() {
 	specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
 	specjbbBackendExecutorConfig.PodNamePrefix = "specjbb-backend"
 	specjbbBackendExecutorConfig.MemoryLimit = 10000000000
+	specjbbBackendExecutorConfig.MemoryRequest = 10000000000
+	specjbbBackendExecutorConfig.CPULimit = 8000
+	specjbbBackendExecutorConfig.CPURequest = 8000
 	specjbbBackendExecutorConfig.Privileged = true
 	specjbbBackendExecutorConfig.HostNetwork = true
 	specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
@@ -178,6 +181,7 @@ func main() {
 	loadGeneratorExecutors := []executor.Executor{txInjectorExecutorOne}
 	loadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
 	loadGeneratorConfig.ControllerAddress = specjbb.ControllerAddress.Value()
+	loadGeneratorConfig.JVMHeapMemoryGBs = 3
 	specjbbLoadGenerator := specjbb.NewLoadGenerator(controllerExecutor, loadGeneratorExecutors, loadGeneratorConfig)
 
 	// Metadata.
