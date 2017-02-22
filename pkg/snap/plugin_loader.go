@@ -33,6 +33,7 @@ const (
 )
 
 var (
+	// SnapteldAddress represents snap daemon address flag.
 	SnapteldAddress = conf.NewStringFlag("snapteld_address", "Address to snapteld in `http://%s:%s` format", "http://127.0.0.1:8181")
 )
 
