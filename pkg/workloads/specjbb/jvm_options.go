@@ -8,7 +8,7 @@ import (
 
 var (
 	// JVMHeapMemoryGBs specifies amount of heap memory available to JVM.
-	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 10)
+	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 2)
 )
 
 // JVMOptions is group of options used to configure JVM for SPECjbb.

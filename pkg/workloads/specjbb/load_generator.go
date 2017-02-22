@@ -212,6 +212,10 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 // Load starts SPECjbb load on backend with given injection rate value.
 // The task will do the load for specified amount of time.
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
+	if len(loadGenerator.transactionInjectors) == 0 {
+		return nil, errors.New("Cannot generate load with empty transaction injector executors")
+	}
+
 	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
 	controllerHandle, err := loadGenerator.controller.Execute(loadCommand)
 	if err != nil {

@@ -22,9 +22,8 @@ const (
 
 // TestSPECjbb is an integration test with SPECjbb components.
 func TestSPECjbb(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 	specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-	specjbbLoadGeneratorConfig.EraseTuningOutput = false
 	specjbbLoadGeneratorConfig.JVMHeapMemoryGBs = 1
 	if _, err := exec.LookPath(specjbbLoadGeneratorConfig.PathToBinary); err != nil {
 		t.Logf("Skipping test due to an error %s", err)
@@ -48,6 +47,8 @@ func TestSPECjbb(t *testing.T) {
 
 				Reset(func() {
 					loadGeneratorTaskHandle.Stop()
+					loadGeneratorTaskHandle.Clean()
+					loadGeneratorTaskHandle.EraseOutput()
 				})
 
 				Convey("And after adding the SPECjbb backend", func() {
@@ -69,8 +70,12 @@ func TestSPECjbb(t *testing.T) {
 							So(loadIsTerminated, ShouldBeFalse)
 							backendIsTerminated := backendTaskHandle.Wait(loadDuration)
 							So(backendIsTerminated, ShouldBeFalse)
+
+							// Now wait for backend and transaction injectors to finish.
+							loadGeneratorTaskHandle.Wait(0)
+							backendTaskHandle.Wait(0)
+
 							output, err := loadGeneratorTaskHandle.StdoutFile()
-							fmt.Printf("STDOUT FILE: %s\n", output.Name())
 							So(err, ShouldBeNil)
 							file, err := os.Open(output.Name())
 							defer file.Close()
@@ -94,22 +99,22 @@ func TestSPECjbb(t *testing.T) {
 							substringInitialization := "Initializing... (init) OK"
 							substringBackend := "Agent GRP1.Backend.specjbbbackend1 has attached to Controller"
 							substringTxI := "Agent GRP1.TxInjector.JVM1 has attached to Controller"
-							var matchLoad, matchBackend, matchTxI bool
+							var initializationSuccessful, backendAttachedToController, transactionInjectorAttachedToController bool
 							for scanner.Scan() {
 								line := scanner.Text()
 								if result := strings.Contains(line, substringInitialization); result {
-									matchLoad = result
+									initializationSuccessful = result
 								} else if result := strings.Contains(line, substringBackend); result {
-									matchBackend = result
+									backendAttachedToController = result
 								} else if result := strings.Contains(line, substringTxI); result {
-									matchTxI = result
+									transactionInjectorAttachedToController = result
 								}
 							}
 							err = scanner.Err()
 							So(err, ShouldBeNil)
-							So(matchLoad, ShouldBeTrue)
-							So(matchBackend, ShouldBeTrue)
-							So(matchTxI, ShouldBeTrue)
+							So(initializationSuccessful, ShouldBeTrue)
+							So(backendAttachedToController, ShouldBeTrue)
+							So(transactionInjectorAttachedToController, ShouldBeTrue)
 
 							Convey("And I should be able to stop with no problem and be terminated", func() {
 								err = loadGeneratorTaskHandle.Stop()
@@ -131,7 +136,7 @@ func TestSPECjbb(t *testing.T) {
 		})
 
 	})
-	SkipConvey("While using default config", t, func() {
+	Convey("While using default config", t, func() {
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
 			transactionInjector := executor.NewLocal()
@@ -184,7 +189,8 @@ func TestSPECjbb(t *testing.T) {
 		})
 
 	})
-	SkipConvey("While using default config", t, func() {
+	//TODO(skonefal): Consider deleting this case.
+	Convey("While using default config", t, func() {
 		Convey("And launching SPECjbb load", func() {
 			var transactionInjectors []executor.Executor
 			transactionInjector := executor.NewLocal()
@@ -209,8 +215,7 @@ func TestSPECjbb(t *testing.T) {
 				file, err := os.Open(output.Name())
 				defer file.Close()
 				Convey("But when the SPECjbb backend is not added, controller should not have information about it in its logs", func() {
-					loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration)
-					So(loadIsTerminated, ShouldBeFalse)
+					loadGeneratorTaskHandle.Wait(loadDuration)
 					scanner := bufio.NewScanner(file)
 					substringWithoutBackend := "Agent GRP1.Backend.JVM2 has attached to Controller"
 					var matchWithoutBackend bool
@@ -237,108 +242,18 @@ func TestSPECjbb(t *testing.T) {
 
 		})
 	})
-	SkipConvey("While using default config", t, func() {
+	Convey("While using default config", t, func() {
 		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-		specjbbLoadGeneratorConfig.EraseTuningOutput = true
 
 		Convey("And launching SPECjbb load without transaction injectors", func() {
 			var transactionInjectors []executor.Executor
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
 			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
-
-			Convey("Proper handle should be returned", func() {
-				So(err, ShouldBeNil)
-				So(loadGeneratorTaskHandle, ShouldNotBeNil)
-
-				Reset(func() {
-					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
-					loadGeneratorTaskHandle.EraseOutput()
-				})
-				Convey("And after adding the SPECjbb backend", func() {
-					backendConfig := specjbb.DefaultSPECjbbBackendConfig()
-					backendConfig.JVMHeapMemoryGBs = 1
-					backendLauncher := specjbb.NewBackend(executor.NewLocal(), backendConfig)
-					backendTaskHandle, err := backendLauncher.Launch()
-
-					Reset(func() {
-						backendTaskHandle.Stop()
-						backendTaskHandle.Clean()
-						backendTaskHandle.EraseOutput()
-					})
-
-					Convey("Proper handle should be returned", func() {
-						So(err, ShouldBeNil)
-						So(backendTaskHandle, ShouldNotBeNil)
-
-						output, err := loadGeneratorTaskHandle.StdoutFile()
-						So(err, ShouldBeNil)
-						file, err := os.Open(output.Name())
-						defer file.Close()
-						Convey("But when the transaction injector is not added, controller should not have information about it in its logs", func() {
-							loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration)
-							So(loadIsTerminated, ShouldBeFalse)
-							scanner := bufio.NewScanner(file)
-							substringWithoutTxI := "Agent GRP1.TxInjector.JVM1 has attached to Controller"
-							var matchWithoutTxI bool
-							for scanner.Scan() {
-								err := scanner.Err()
-								So(err, ShouldBeNil)
-								line := scanner.Text()
-								if result := strings.Contains(line, substringWithoutTxI); result {
-									matchWithoutTxI = result
-									break
-								}
-							}
-							So(matchWithoutTxI, ShouldBeFalse)
-
-							Convey("And I should be able to stop with no problem and be terminated", func() {
-								err = loadGeneratorTaskHandle.Stop()
-								So(err, ShouldBeNil)
-
-								state := loadGeneratorTaskHandle.Status()
-								So(state, ShouldEqual, executor.TERMINATED)
-							})
-						})
-
-					})
-				})
+			Convey("Should retrun error.", func() {
+				So(loadGeneratorTaskHandle, ShouldBeNil)
+				So(err, ShouldNotBeNil)
 			})
-
-		})
-	})
-	SkipConvey("While using config with no existing path to binary", t, func() {
-		specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-		specjbbLoadGeneratorConfig.EraseTuningOutput = true
-		specjbbLoadGeneratorConfig.PathToBinary = "/no/existing/path"
-
-		Convey("And launching SPECjbb load", func() {
-			var transactionInjectors []executor.Executor
-			transactionInjector := executor.NewLocal()
-			transactionInjectors = append(transactionInjectors, transactionInjector)
-
-			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
-				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
-
-			Convey("Proper handle should be returned", func() {
-				So(err, ShouldBeNil)
-				So(loadGeneratorTaskHandle, ShouldNotBeNil)
-
-				Reset(func() {
-					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
-					loadGeneratorTaskHandle.EraseOutput()
-				})
-
-				Convey("But I should receive error and load generator should be terminated", func() {
-					loadIsTerminated := loadGeneratorTaskHandle.Wait(0)
-					So(loadIsTerminated, ShouldBeTrue)
-				})
-
-			})
-
 		})
 	})
 }
