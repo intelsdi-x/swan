@@ -133,6 +133,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 
 // Tune calculates maximum number of "critical java operations" under SLO
 // @param slo: SLO in us (sane values are above 5000us [5ms]). 5ms is lowest SLI taken into account by SPECjbb when calculating results, and it does not yield any results below it.
+// @note: Tune will not work properly when Controller is launched by Kubernetes Executor.
 //
 // It generates High Bound Injection Rate [HBIR] curve to determine the load under slo value.
 // See SPECjbb readme (https://www.spec.org/jbb2015/docs/userguide.pdf) for details.
