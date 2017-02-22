@@ -1,6 +1,8 @@
 #!/bin/bash
 
-cd $(dirname ${BASH_SOURCE[0]})/../share/caffe
+SWAN_BIN=$(dirname ${BASH_SOURCE[0]})
+cd $SWAN_BIN/../share/caffe
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SWAN_BIN/../lib
 if [ "$1" == "init" ]; then
         echo "Creating dataset"
         mkdir -p /tmp/caffe/examples/cifar10/

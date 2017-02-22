@@ -42,7 +42,7 @@ function dist {
 
     # install caffe
     install -d ${ARTIFACTS_PATH}/share/caffe
-    install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe"
+    install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe_wrapper.sh"
 
     install -D -m644 ./workloads/deep_learning/caffe/caffe_src/build/lib/* "${ARTIFACTS_PATH}/lib"
 
@@ -70,7 +70,7 @@ function install_swan {
     tar xf $(cat ./latest_build) -C ${PREFIX}
     export LD_LIBRARY_PATH="${PREFIX}/lib":$LD_LIBRARY_PATH
     export PATH="${PREFIX}/bin":$PATH
-    caffe init
+    caffe_wrapper.sh init
 }
 
 
