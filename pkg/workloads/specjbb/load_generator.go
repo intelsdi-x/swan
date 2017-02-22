@@ -197,7 +197,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 
 	// Run reporter to calculate critical jops value from raw results.
-	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName, slo)
+	reporterCommand := getReporterCommand(loadGenerator.config, rawFileName, slo)	
 	reporterHandle, err := loadGenerator.controller.Execute(reporterCommand)
 	reporterHandle.Wait(0)
 
