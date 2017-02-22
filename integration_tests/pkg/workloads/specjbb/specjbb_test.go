@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
