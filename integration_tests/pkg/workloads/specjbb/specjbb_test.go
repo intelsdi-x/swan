@@ -17,7 +17,7 @@ import (
 const (
 	txICount     = 1
 	load         = 6000
-	loadDuration = 40
+	loadDuration = 40 * time.Second
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
@@ -40,7 +40,7 @@ func TestSPECjbb(t *testing.T) {
 
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
+			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
 
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
@@ -48,8 +48,6 @@ func TestSPECjbb(t *testing.T) {
 
 				Reset(func() {
 					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
-					loadGeneratorTaskHandle.EraseOutput()
 				})
 
 				Convey("And after adding the SPECjbb backend", func() {
@@ -60,8 +58,6 @@ func TestSPECjbb(t *testing.T) {
 
 					Reset(func() {
 						backendTaskHandle.Stop()
-						backendTaskHandle.Clean()
-						backendTaskHandle.EraseOutput()
 					})
 
 					Convey("Proper handle should be returned", func() {
@@ -108,7 +104,7 @@ func TestSPECjbb(t *testing.T) {
 									matchTxI = result
 								}
 							}
-							err := scanner.Err()
+							err = scanner.Err()
 							So(err, ShouldBeNil)
 							So(matchLoad, ShouldBeTrue)
 							So(matchBackend, ShouldBeTrue)
@@ -142,7 +138,7 @@ func TestSPECjbb(t *testing.T) {
 
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
+			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
 				So(loadGeneratorTaskHandle, ShouldNotBeNil)
@@ -195,7 +191,7 @@ func TestSPECjbb(t *testing.T) {
 
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
+			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
 
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
@@ -212,7 +208,7 @@ func TestSPECjbb(t *testing.T) {
 				file, err := os.Open(output.Name())
 				defer file.Close()
 				Convey("But when the SPECjbb backend is not added, controller should not have information about it in its logs", func() {
-					loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration * time.Second)
+					loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration)
 					So(loadIsTerminated, ShouldBeFalse)
 					scanner := bufio.NewScanner(file)
 					substringWithoutBackend := "Agent GRP1.Backend.JVM2 has attached to Controller"
@@ -248,7 +244,7 @@ func TestSPECjbb(t *testing.T) {
 			var transactionInjectors []executor.Executor
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
+			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
 
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
@@ -280,7 +276,7 @@ func TestSPECjbb(t *testing.T) {
 						file, err := os.Open(output.Name())
 						defer file.Close()
 						Convey("But when the transaction injector is not added, controller should not have information about it in its logs", func() {
-							loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration * time.Second)
+							loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration)
 							So(loadIsTerminated, ShouldBeFalse)
 							scanner := bufio.NewScanner(file)
 							substringWithoutTxI := "Agent GRP1.TxInjector.JVM1 has attached to Controller"
@@ -323,7 +319,7 @@ func TestSPECjbb(t *testing.T) {
 
 			loadGeneratorLauncher := specjbb.NewLoadGenerator(executor.NewLocal(),
 				transactionInjectors, specjbbLoadGeneratorConfig)
-			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration*time.Second)
+			loadGeneratorTaskHandle, err := loadGeneratorLauncher.Load(load, loadDuration)
 
 			Convey("Proper handle should be returned", func() {
 				So(err, ShouldBeNil)
