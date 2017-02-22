@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
@@ -17,7 +18,7 @@ import (
 const (
 	txICount     = 1
 	load         = 6000
-	loadDuration = 40 * time.Second
+	loadDuration = 5 * time.Second
 )
 
 // TestSPECjbb is an integration test with SPECjbb components.
@@ -70,6 +71,7 @@ func TestSPECjbb(t *testing.T) {
 							backendIsTerminated := backendTaskHandle.Wait(loadDuration)
 							So(backendIsTerminated, ShouldBeFalse)
 							output, err := loadGeneratorTaskHandle.StdoutFile()
+							fmt.Printf("STDOUT FILE: %s\n", output.Name())
 							So(err, ShouldBeNil)
 							file, err := os.Open(output.Name())
 							defer file.Close()
