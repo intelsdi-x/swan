@@ -50,6 +50,7 @@ type LoadGeneratorConfig struct {
 	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
+	EraseOutput          bool   // Erase stdout & stderr logs from processes ran by Load Generator.
 }
 
 // DefaultLoadGeneratorConfig is a constructor for LoadGeneratorConfig with default parameters.
@@ -64,6 +65,7 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
 		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
 		HandshakeTimeoutMs:   600000,
+		EraseOutput:          true,
 	}
 }
 
@@ -107,16 +109,6 @@ func stop(transactionInjectorsHandles []executor.TaskHandle) {
 	}
 }
 
-// clean closes the transaction injectors tasks stdout & stderr files.
-func clean(transactionInjectorsHandles []executor.TaskHandle) {
-	for _, handle := range transactionInjectorsHandles {
-		err := handle.Clean()
-		if err != nil {
-			logrus.Errorf("Can't clean transaction injectors stdout/stderr files because of an error:%s", err.Error())
-		}
-	}
-}
-
 // erase removes transaction injectors tasks stdout & stderr files.
 func erase(transactionInjectorsHandles []executor.TaskHandle) {
 	for _, handle := range transactionInjectorsHandles {
@@ -127,12 +119,6 @@ func erase(transactionInjectorsHandles []executor.TaskHandle) {
 	}
 }
 
-func clear(transactionInjectorsHandles []executor.TaskHandle) {
-	stop(transactionInjectorsHandles)
-	erase(transactionInjectorsHandles)
-	clean(transactionInjectorsHandles)
-}
-
 func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHandle, error) {
 	handles := []executor.TaskHandle{}
 	for id, txI := range loadGenerator.transactionInjectors {
@@ -141,8 +127,9 @@ func (loadGenerator loadGenerator) runTransactionInjectors() ([]executor.TaskHan
 		if err != nil {
 			logrus.Errorf("Could not start TransactionInjector with command %s", command)
 			stop(handles)
-			clean(handles)
-			erase(handles)
+			if loadGenerator.config.EraseOutput {
+				erase(handles)
+			}
 			return nil, errors.Wrapf(err, "Could not start TransactionInjector with command %s", command)
 		}
 		handles = append(handles, handle)
@@ -157,7 +144,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 }
 
 // Tune calculates maximum number of "critical java operations" under SLO
-// @param slo: SLO in us (sane values are above 5000us [5ms])
+// @param slo: SLO in us (sane values are above 5000us [5ms]). 5ms is lowest SLI taken into account by SPECjbb when calculating results, and it does not yield any results below it.
 //
 // It generates High Bound Injection Rate [HBIR] curve to determine the load under slo value.
 // See SPECjbb readme (https://www.spec.org/jbb2015/docs/userguide.pdf) for details.
@@ -181,7 +168,10 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 	}
 
 	controllerHandle.Wait(0)
-	clear(txIHandles)
+	stop(txIHandles)
+	if loadGenerator.config.EraseOutput {
+		erase(txIHandles)
+	}
 
 	controllerStdOut, err := controllerHandle.StdoutFile()
 	if err != nil {
@@ -211,15 +201,15 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 		return 0, 0, errors.Wrapf(err, "could not get critical jops from reporter output file %s", outReporter.Name())
 	}
 
-	controllerHandle.EraseOutput()
-	controllerHandle.Clean()
-	reporterHandle.EraseOutput()
-	reporterHandle.Clean()
+	if loadGenerator.config.EraseOutput {
+		controllerHandle.EraseOutput()
+		reporterHandle.EraseOutput()
+	}
 
 	return hbirRt, 0, err
 }
 
-// Load starts SPECjbb load on backed with given injection rate value.
+// Load starts SPECjbb load on backend with given injection rate value.
 // The task will do the load for specified amount of time.
 func (loadGenerator loadGenerator) Load(injectionRate int, duration time.Duration) (executor.TaskHandle, error) {
 	loadCommand := getControllerLoadCommand(loadGenerator.config, injectionRate, duration)
