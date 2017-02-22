@@ -122,6 +122,8 @@ func main() {
 	specjbbBackendExecutorConfig := executor.DefaultKubernetesConfig()
 	specjbbBackendExecutorConfig.PodNamePrefix = "specjbb-backend"
 	specjbbBackendExecutorConfig.MemoryLimit = 10000000000
+	specjbbBackendExecutorConfig.Privileged = true
+	specjbbBackendExecutorConfig.HostNetwork = true
 	specjbbBackendExecutor, err := executor.NewKubernetes(specjbbBackendExecutorConfig)
 	if err != nil {
 		logrus.Errorf("could not prepare specjbbBackendExecutor: %s", err)
@@ -217,14 +219,14 @@ func main() {
 	}
 	defer backend.Stop()
 
-	qps, load, err := specjbbLoadGenerator.Tune(10000)
+	qps, sli, err := specjbbLoadGenerator.Tune(10000)
 	if err != nil {
 		logrus.Errorf("could not prepare specjbbLoadGenerator: %s", err)
 		os.Exit(experiment.ExSoftware)
 	}
 
 	logrus.Debugf("qps result: %d", qps)
-	logrus.Debugf("load result: %d", load)
+	logrus.Debugf("load result: %d", sli)
 
 	// Note: DefaultConfig shall set SnaptelAddress.
 	//specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault()
