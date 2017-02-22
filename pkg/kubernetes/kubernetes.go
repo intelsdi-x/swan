@@ -229,6 +229,10 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 // launchService executes service and check if it is listening on it's endpoint.
 func (m k8s) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
+	// becuase we can run kubernetes components using remote executor
+	// we need extend PATH of the default swan installation location
+	// TODO: remove hardcoded path and consider rewritting this as decorator
+	command = "env \"PATH=$PATH:/opt/swan/bin\" "+command 
 	handle, err := exec.Execute(command)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
