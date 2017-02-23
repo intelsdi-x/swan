@@ -1,0 +1,41 @@
+#!/bin/bash
+
+- name: install epel
+  include_role:
+    name: epel
+
+- name: register s3creds location
+  stat: path={{ swan_s3_creds }}
+  register: s3_creds
+
+- name: register specjbb iso location
+  stat: path=/tmp/specjbb.iso
+  register: iso_path
+
+- name: install pip
+  yum:
+    name: python-pip
+    state: latest
+  become: true
+
+- name: install s3cmd libs
+  pip:
+    name: s3cmd
+  become: true
+
+- name: download specjbb
+  shell: "s3cmd sync -c {{ swan_s3_creds }} s3://{{ swan_bucket_name }}/SPECjbb{{ specjbb_version }}.iso /tmp/specjbb.iso"
+  become: true
+  when: 
+    - s3_creds.stat.exists == True
+    - iso_path.stat.exists == False
+
+- name: mount specjbb iso
+  mount:
+    fstype: iso9660
+    opts: loop
+    name: /mnt
+    state: present
+    src: /tmp/specjbb.iso
+  become: true
+  when: iso_path.stat.exists == True

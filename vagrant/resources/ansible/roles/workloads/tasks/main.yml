@@ -1,125 +1,92 @@
 ---
 
-- name: create stamps directory
-  file:
-    path: "{{ swan_location }}/stamps"
-    state: directory
+# - name: create stamps directory
+#   file:
+#     path: "{{ swan_location }}/stamps"
+#     state: directory
 
-- name: register workloads stamp location
-  stat: path={{ swan_location }}/stamps/workloads.stamp
-  register: workload_stamp
+# - name: register workloads stamp location
+#   stat: path={{ swan_location }}/stamps/workloads.stamp
+#   register: workload_stamp
 
 - name: copy ccache configuration
   template:
     src: ccache.conf.j2
     dest: "{{ ccache_configuration }}"
   become: true
-  when: workload_stamp.stat.exists == False
 
-- name: install epel
-  yum:
-    name: epel-release
-    state: latest
+- name: prepare ccache cache directory
+  file:
+    path: "/cache/ccache"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
   become: true
-  when: workload_stamp.stat.exists == False
 
 - name: install the 'Development tools' package group
   yum:
-    name: "@development-tools"
-    state: latest
+    name: "@Development Tools"
+    state: present
   become: true
-  when: workload_stamp.stat.exists == False
 
 - name: install centos user packages
   yum:
     name: "{{ production_packages }}"
     state: latest
   become: true
-  when: workload_stamp.stat.exists == False
 
 - name: install developer packages
   yum:
     name: "{{ developer_packages }}"
     state: latest
   become: true
-  when: workload_stamp.stat.exists == False
-
-- name: install s3cmd libs
-  pip:
-    name: s3cmd
-  become: true
-  when: workload_stamp.stat.exists == False
 
 - name: install jupyter requirements
   pip:
     requirements: "{{ jupyter_requirements_location }}"
   become: true
-  when: workload_stamp.stat.exists == False
 
 - name: reseting repository
   make:
     chdir: "{{ ansible_user_dir }}/swan"
     target: repository_reset
-  when: workload_stamp.stat.exists == False
 
 - name: downloading dependencies
   make:
     chdir: "{{ ansible_user_dir }}/swan"
     target: deps_all
-    params:
-      PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
-      GOPATH: "{{ ansible_user_dir }}/go"
-  when: workload_stamp.stat.exists == False
-
-- name: downloading specjbb
-  shell: "./scripts/get_specjbb.sh -s . -c {{ ansible_user_dir }}/swan_s3_creds/.s3cfg -b swan-artifacts"
-  args:
-    chdir: "{{ ansible_user_dir }}/swan"
-  become: true
-  when: workload_stamp.stat.exists == False
+  environment:
+    PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+    GOPATH: "{{ ansible_user_dir }}/go"
 
 - name: building project (caffe multithreaded)
   make:
-    chdir: "{{ ansible_user_dir }}/swan"
+    chdir: "{{ gopath }}/src/github.com/intelsdi-x/swan"
     target: dist
-    params:
-      BUILD_OPENBLAS: "true"
-      CCACHECONFDIR: "{{ ccache_configuration }}"
-      PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
-      GOPATH: "{{ ansible_user_dir }}/go"
-  when: 
-    - build_image == "true"
-    - workload_stamp.stat.exists == False
+  environment:
+    BUILD_OPENBLAS: "true"
+    CCACHECONFDIR: "{{ ccache_configuration }}"
+    PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+    GOPATH: "{{ gopath }}"
 
-- name: building project (caffe singlethreaded)
-  make:
-    chdir: "{{ ansible_user_dir }}/swan"
-    target: dist
-    params:
-      CCACHECONFDIR: "{{ ccache_configuration }}"
-      PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
-      GOPATH: "{{ ansible_user_dir }}/go"
-  when: 
-    - build_image == "true"
-    - workload_stamp.stat.exists == False
+# - name: building project (caffe singlethreaded)
+#   make:
+#     chdir: "{{ ansible_user_dir }}/swan"
+#     target: dist
+#     params:
+#       CCACHECONFDIR: "{{ ccache_configuration }}"
+#       PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+#       GOPATH: "{{ ansible_user_dir }}/go"
+#   when:
+#     - build_image == "true"
 
 - name: building docker image
   make:
     chdir: "{{ ansible_user_dir }}/swan"
     target: build_image
-  when: 
-    - build_image == "true"
-    - workload_stamp.stat.exists == False
 
 - name: installing project
   make:
     chdir: "{{ ansible_user_dir }}/swan"
     target: install
   become: true
-  when: workload_stamp.stat.exists == False
-
-- name: create workload stamp
-  file:
-    path: "{{ swan_location }}/stamps/go.stamp"
-    state: touch
-  when: workload_stamp.stat.exists == False

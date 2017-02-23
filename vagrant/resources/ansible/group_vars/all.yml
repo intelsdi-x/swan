@@ -22,3 +22,6 @@ snap_plugin_publisher_cassandra_version: 5
 snap_plugin_publisher_file_version: 2
 
 
+swan_s3_creds: "{{ ansible_user_dir }}/swan_s3_creds/.s3cfg"
+swan_bucket_name: "swan-artifacts"
+specjbb_version: "2015_1_00"

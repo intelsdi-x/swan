@@ -1,33 +1,22 @@
 ---
 
-- name: create stamps directory
-  file:
-    path: "{{ swan_location }}/stamps"
-    state: directory
-
-- name: register etcd stamp location
-  stat: path={{ swan_location }}/stamps/etcd.stamp
-  register: etcd_stamp
+- name: prepare etcd service facts
+  systemd: name=etcd
+  register: etcd_service
 
 - name: install etcd
   yum:
     name: etcd
     state: latest
-  when: etcd_stamp.stat.exists == False  
+  when: etcd_service.status.SubState != "running"
 
 - name: reload systemd
   shell: systemctl daemon-reload
-  when: etcd_stamp.stat.exists == False  
+  when: etcd_service.status.SubState != "running"
 
 - name: Run and enable etcd daemon
   systemd:
     name: etcd
     enabled: yes
     state: restarted
-  when: etcd_stamp.stat.exists == False  
-
-- name: create etcd stamp
-  file:
-    path: "{{ swan_location }}/stamps/etcd.stamp"
-    state: touch
-  when: etcd_stamp.stat.exists == False  
+  when: etcd_service.status.SubState != "running"

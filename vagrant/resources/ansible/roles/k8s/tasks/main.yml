@@ -8,29 +8,12 @@
   include_role:
     name: etcd
 
-- name: create stamps directory
-  file:
-    path: "{{ swan_location }}/stamps"
-    state: directory
-
-- name: register k8s stamp location
-  stat: path={{ swan_location }}/stamps/k8s.stamp
-  register: k8s_stamp
-
 - name: creating /cache target directory
   file:
     path: "/cache"
     state: directory
-  when: k8s_stamp.stat.exists == False  
 
 - name: downloading hyperkube
   get_url:
     url: "https://storage.googleapis.com/kubernetes-release/release/{{ k8s_version }}/bin/linux/amd64/hyperkube"
     dest: "/cache/hyperkube-{{ k8s_version }}"
-  when: k8s_stamp.stat.exists == False  
-
-- name: create k8s stamp
-  file:
-    path: "{{ swan_location }}/stamps/k8s.stamp"
-    state: touch
-  when: k8s_stamp.stat.exists == False  

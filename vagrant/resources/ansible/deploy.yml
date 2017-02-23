@@ -3,14 +3,14 @@
 - name: prepare environment
   hosts: swan
   gather_facts: true
-  become: true
+  become: false
   roles:
    - { role: environmental }
 
 - name: install snap
   hosts: swan
   gather_facts: true
-  become: true
+  become: false
   roles:
    - { role: snap }
 

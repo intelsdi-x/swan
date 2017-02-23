@@ -9,33 +9,35 @@
     name: k8s
   become: true
 
-- name: create stamps directory
+- name: install specjbb
+  include_role:
+    name: specjbb
+  become: true
+
+- name: create {{ gopath }}/src/github.com/intelsdi-x/swan directory
   file:
-    path: "{{ swan_location }}/stamps"
+    dest: "{{ gopath }}/src/github.com/intelsdi-x/swan"
     state: directory
+    recurse: yes
 
-- name: register repository stamp location
-  stat: path={{ swan_location }}/stamps/repository.stamp
-  register: repository_stamp
-
-- name: link swan to {{ ansible_user_dir }}
-  file:
-    src: "{{ ansible_user_dir }}/go/src/github.com/intelsdi-x/swan"
-    dest: "{{ ansible_user_dir }}/swan"
-    state: link
-  when: repository_stamp.stat.exists == False
+- name: bind-mount swan to {{ ansible_user_dir }}
+  mount:
+    fstype: bind
+    opts: bind
+    name: "{{ gopath }}/src/github.com/intelsdi-x/swan"
+    state: present
+    src: "{{ ansible_user_dir }}/swan"
+  become: true
 
 - name: flushing old k8s installation (if any)
   file:
     path: "{{ ansible_user_dir }}/swan/misc/bin"
     state: absent
-  when: repository_stamp.stat.exists == False
 
 - name: creating k8s target directory
   file:
     path: "{{ ansible_user_dir }}/swan/misc/bin"
     state: directory
-  when: repository_stamp.stat.exists == False
 
 - name: installing hyperkube in target location
   copy:
@@ -43,17 +45,8 @@
     dest: "{{ ansible_user_dir }}/swan/misc/bin/hyperkube"
     remote_src: true
     mode: 0755
-  when: repository_stamp.stat.exists == False
 
 - name: generating links to k8s services
   shell: "./hyperkube --make-symlinks"
   args:
     chdir: "{{ ansible_user_dir }}/swan/misc/bin"
-  when: repository_stamp.stat.exists == False
-
-- name: create repository stamp
-  file:
-    path: "{{ swan_location }}/stamps/repository.stamp"
-    state: touch
-  become: true
-  when: repository_stamp.stat.exists == False
