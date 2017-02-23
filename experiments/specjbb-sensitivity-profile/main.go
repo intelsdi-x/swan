@@ -109,6 +109,9 @@ func main() {
 	specjbbControllerAddress := specjbb.ControllerAddress.Value()
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
+	backendConfig.JVMHeapMemoryGBs = 8
+	backendConfig.ParallelGCThreads = 4
+	backendConfig.WorkerCount = 4
 	backendConfig.ControllerAddress = specjbbControllerAddress
 	specjbbBackendLauncher := specjbb.NewBackend(hpExecutor, backendConfig)
 
