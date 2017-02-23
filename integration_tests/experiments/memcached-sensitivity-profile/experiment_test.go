@@ -203,7 +203,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"-kubernetes", "-kube_allow_privileged", "-aggr", "l1d"}
+				args := []string{"-kubernetes", "-aggr", "l1d", "-baseline", "false"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
@@ -219,7 +219,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper kubernetes and caffe", func() {
-				args := []string{"-kubernetes", "-aggr", "caffe"}
+				args := []string{"-kubernetes", "-aggr", "caffe", "-baseline", "false"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, args...)
 					So(err, ShouldBeNil)
