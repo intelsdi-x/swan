@@ -8,7 +8,7 @@ ADD ./centos_production_packages /centos_production_packages
 
 RUN yum makecache || true && \
     yum install -y epel-release && \
-    yum install -y $(cat /centos_production_packages)
+    yum install -y $(sed "s/,//g" /centos_production_packages)
 
 ADD artifacts.tar.gz /usr/
 
