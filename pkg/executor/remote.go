@@ -109,7 +109,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
 	// On the server the example command will look the following:
 	// unshare --fork --pid --mount-proc sh -c /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
-	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c '%s #%s'`, stringForSh, unshareUUIDStr)
+	// TODO: remove this hack - is just for debugging purposes to hunt a bug running k8s through remote executor! 
+	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c 'env "PATH=$PATH:/opt/swan/bin" %s #%s'`, stringForSh, unshareUUIDStr)
 
 	log.Debug("Starting '", stringForSh, "' remotely")
 	err = session.Start(stringForSh)
