@@ -39,6 +39,14 @@
     path: "{{ gopath }}"
     state: directory
 
+- name: fix gopath permissions
+  file:
+    dest: "{{ gopath }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    state: directory
+  become: true
+
 - name: create gopath/bin
   file:
     path: "{{ gopath }}/bin"
@@ -47,7 +55,18 @@
 - name: create gopath/src
   file:
     path: "{{ gopath }}/src"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     state: directory
+  become: true
+
+- name: fix gopath/src/github.com permissions
+  file:
+    dest: "{{ gopath }}/src/github.com"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    state: directory
+  become: true
 
 - name: create gopath/pkg
   file:

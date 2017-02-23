@@ -14,20 +14,11 @@
     name: specjbb
   become: true
 
-- name: create {{ gopath }}/src/github.com/intelsdi-x/swan directory
+- name: link {{ ansible_user_dir }} to swan
   file:
-    dest: "{{ gopath }}/src/github.com/intelsdi-x/swan"
-    state: directory
-    recurse: yes
-
-- name: bind-mount swan to {{ ansible_user_dir }}
-  mount:
-    fstype: bind
-    opts: bind
-    name: "{{ gopath }}/src/github.com/intelsdi-x/swan"
-    state: present
-    src: "{{ ansible_user_dir }}/swan"
-  become: true
+    src: "{{ gopath }}/src/github.com/intelsdi-x/swan"
+    dest: "{{ ansible_user_dir }}/swan"
+    state: link
 
 - name: flushing old k8s installation (if any)
   file:
@@ -50,3 +41,9 @@
   shell: "./hyperkube --make-symlinks"
   args:
     chdir: "{{ ansible_user_dir }}/swan/misc/bin"
+
+- name: placing specjbb binaries in repository
+  synchronize:
+    src: /mnt
+    dest: "{{ ansible_user_dir }}/swan/workloads/web_serving"
+  delegate_to: "{{ inventory_hostname }}"

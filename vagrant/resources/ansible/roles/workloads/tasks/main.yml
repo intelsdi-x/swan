@@ -1,14 +1,5 @@
 ---
 
-# - name: create stamps directory
-#   file:
-#     path: "{{ swan_location }}/stamps"
-#     state: directory
-
-# - name: register workloads stamp location
-#   stat: path={{ swan_location }}/stamps/workloads.stamp
-#   register: workload_stamp
-
 - name: copy ccache configuration
   template:
     src: ccache.conf.j2
