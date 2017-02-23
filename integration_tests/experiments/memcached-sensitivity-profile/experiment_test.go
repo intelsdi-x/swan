@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -43,8 +44,9 @@ func runExp(command string, args ...string) (string, error) {
 
 func TestExperiment(t *testing.T) {
 
-	memcachedSensitivityProfileBin := testhelpers.AssertFileExists("memcached-sensitivity-profile")
-
+	// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install). 
+	memcachedSensitivityProfileBin := path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
+	
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
 		"SWAN_BE_SETS":              "0:0",
