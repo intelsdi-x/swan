@@ -16,8 +16,6 @@ const (
 	MutilateStd = "std"
 	// MutilateMin represent min.
 	MutilateMin = "min"
-	// MutilatePercentile1st represent 1st latency percentile [us].
-	MutilatePercentile1st = "percentile/1st"
 	// MutilatePercentile5th represent 5th latency percentile [us].
 	MutilatePercentile5th = "percentile/5th"
 	// MutilatePercentile10th represent 10th latency percentile [us].
@@ -118,7 +116,6 @@ func parseHeader(line string) (map[int]string, error) {
 		"avg":  MutilateAvg,
 		"std":  MutilateStd,
 		"min":  MutilateMin,
-		"1st":  MutilatePercentile1st,
 		"5th":  MutilatePercentile5th,
 		"10th": MutilatePercentile10th,
 		"90th": MutilatePercentile90th,
