@@ -222,12 +222,6 @@ func main() {
 					}
 					processes = append(processes, hpHandle)
 
-					// Launch specjbb Load Generator to populate data
-					err = specjbbLoadGeneratorSessionPair.LoadGenerator.Populate()
-					if err != nil {
-						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
-					}
-
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
 						experiment.ExperimentKey, uuid.String(),
 						experiment.PhaseKey, phaseName,
