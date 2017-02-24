@@ -15,7 +15,7 @@ func TestFunction(t *testing.T) {
 	requiredExecutables := []string{
 
 		// aggressors
-		"caffe",
+		"caffe_wrapper.sh",
 		"l1d",
 		"l1i",
 		"l3",
