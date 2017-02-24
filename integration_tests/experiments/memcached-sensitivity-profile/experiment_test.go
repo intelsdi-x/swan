@@ -131,13 +131,14 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper configuration and with l1d aggressors", func() {
-				args := []string{"-aggr", "l1d", "-baseline=false"}
+				args := []string{"-aggr", "l1d"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 					So(err, ShouldBeNil)
 
-					tags, _, _, _ := loadDataFromCassandra(experimentID)
-					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+					tags, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+					So("None", ShouldBeIn, swanAggressorsNames)
+					So("L1 Data", ShouldBeIn, swanAggressorsNames)
 
 					// Check metadata was saved.
 					var (
