@@ -108,7 +108,7 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 // GetConfigPolicy implements plugin.PluginCollector interface.
 func (InferenceCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	policy := plugin.NewConfigPolicy()
-	err := policy.AddNewStringRule([]string{}, "stdout_file", true)
+	err := policy.AddNewStringRule([]string{"intel", "swan", "caffe", "inference"}, "stdout_file", true)
 	if err != nil {
 		log.Errorf("cannot create new string rule: %s", err.Error())
 		return *policy, ErrPlugin

@@ -8,7 +8,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/intelsdi-x/swan/pkg/utils/random"
 	"github.com/nu7hatch/gouuid"
@@ -30,11 +29,6 @@ const (
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	pathKubeAPIServerFlag   = conf.NewStringFlag("kube_apiserver_path", "Path to apiserver binary", path.Join(fs.GetSwanBinPath(), "apiserver"))
-	pathKubeControllerFlag  = conf.NewStringFlag("kube_controller_path", "Path to controller-manager binary", path.Join(fs.GetSwanBinPath(), "controller-manager"))
-	pathKubeletFlag         = conf.NewStringFlag("kubelet_path", "Path to kubelet binary", path.Join(fs.GetSwanBinPath(), "kubelet"))
-	pathKubeProxyFlag       = conf.NewStringFlag("kube_proxy_path", "Path to proxy binary", path.Join(fs.GetSwanBinPath(), "proxy"))
-	pathKubeSchedulerFlag   = conf.NewStringFlag("kube_scheduler_path", "Path to scheduler binary", path.Join(fs.GetSwanBinPath(), "scheduler"))
 	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
@@ -45,11 +39,6 @@ var (
 
 // Config contains all data for running kubernetes master & kubelet.
 type Config struct {
-	PathToKubeAPIServer  string
-	PathToKubeController string
-	PathToKubeScheduler  string
-	PathToKubeProxy      string
-	PathToKubelet        string
 
 	// Comma separated list of nodes in the etcd cluster
 	EtcdServers        string
@@ -78,24 +67,19 @@ type Config struct {
 // DefaultConfig is a constructor for Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		PathToKubeAPIServer:  pathKubeAPIServerFlag.Value(),
-		PathToKubeController: pathKubeControllerFlag.Value(),
-		PathToKubeScheduler:  pathKubeSchedulerFlag.Value(),
-		PathToKubeProxy:      pathKubeProxyFlag.Value(),
-		PathToKubelet:        pathKubeletFlag.Value(),
-		EtcdServers:          kubeEtcdServersFlag.Value(),
-		EtcdPrefix:           "/registry",
-		LogLevel:             logLevelFlag.Value(),
-		AllowPrivileged:      allowPrivilegedFlag.Value(),
-		KubeAPIPort:          8080,
-		KubeletPort:          10250,
-		KubeControllerPort:   10252,
-		KubeSchedulerPort:    10251,
-		KubeProxyPort:        10249,
-		ServiceAddresses:     "10.2.0.0/16",
-		KubeletArgs:          kubeletArgsFlag.Value(),
-		KubeAPIArgs:          kubeAPIArgsFlag.Value(),
-		RetryCount:           2,
+		EtcdServers:        kubeEtcdServersFlag.Value(),
+		EtcdPrefix:         "/registry",
+		LogLevel:           logLevelFlag.Value(),
+		AllowPrivileged:    allowPrivilegedFlag.Value(),
+		KubeAPIPort:        8080,
+		KubeletPort:        10250,
+		KubeControllerPort: 10252,
+		KubeSchedulerPort:  10251,
+		KubeProxyPort:      10249,
+		ServiceAddresses:   "10.2.0.0/16",
+		KubeletArgs:        kubeletArgsFlag.Value(),
+		KubeAPIArgs:        kubeAPIArgsFlag.Value(),
+		RetryCount:         2,
 	}
 }
 

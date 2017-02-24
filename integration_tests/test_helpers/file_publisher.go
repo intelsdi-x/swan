@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	
+	"github.com/pkg/errors"
 )
 
 // FilePublisherMetric is used for decoding content of file publisher.
@@ -38,7 +40,7 @@ func GetOneMeasurementFromFile(fileLocation string) ([]FilePublisherMetric, erro
 	measurements := strings.Split(string(content), "\n")
 
 	if err := json.Unmarshal([]byte(measurements[0]), &oneMeasurement); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "cannot parse output file measurments: %v", measurements)
 	}
 
 	return oneMeasurement, nil

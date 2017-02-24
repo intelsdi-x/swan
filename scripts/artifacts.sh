@@ -11,9 +11,14 @@ function dist {
     # install low level aggressors
     install -D -m755 ./workloads/low-level-aggressors/{l1d,l1i,l3,memBw,stream.100M} ${ARTIFACTS_PATH}/bin
     # copy go binaries
-    cp ${GOPATH}/bin/* ${ARTIFACTS_PATH}/bin
     install -D -m755 ./build/experiments/memcached/memcached-sensitivity-profile ${ARTIFACTS_PATH}/bin
     install -D -m755 ./build/experiments/specjbb/specjbb-sensitivity-profile ${ARTIFACTS_PATH}/bin
+
+    # snap & plugins
+    cp ${GOPATH}/bin/{snaptel,snapteld,snap-plugin-collector-caffe-inference,snap-plugin-collector-docker,snap-plugin-collector-mutilate,snap-plugin-collector-specjbb,snap-plugin-processor-tag,snap-plugin-publisher-cassandra,snap-plugin-publisher-file,snap-plugin-publisher-session-test} ${ARTIFACTS_PATH}/bin
+
+    # kubernetes
+    cp --no-dereference misc/bin/{apiserver,controller-manager,federation-apiserver,federation-controller-manager,hyperkube,kubectl,kubelet,proxy,scheduler} ${ARTIFACTS_PATH}/bin
 
     # install specjbb
     install -d ${ARTIFACTS_PATH}/share/specjbb
@@ -37,7 +42,7 @@ function dist {
 
     # install caffe
     install -d ${ARTIFACTS_PATH}/share/caffe
-    install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe"
+    install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe_wrapper.sh"
 
     install -D -m644 ./workloads/deep_learning/caffe/caffe_src/build/lib/* "${ARTIFACTS_PATH}/lib"
 
@@ -58,20 +63,16 @@ function dist {
 }
 
 function install_swan {
-    if [ "${UID}" != 0 ]; then
-        >&2 echo "Only root can perform this operation"
-        exit 1
-    fi
-
     if [ "${PREFIX}" == "" ]; then
-        PREFIX="/usr/"
+        PREFIX="/opt/swan/"
+        mkdir -p $PREFIX
     fi
-
     tar xf $(cat ./latest_build) -C ${PREFIX}
     export LD_LIBRARY_PATH="${PREFIX}/lib":$LD_LIBRARY_PATH
     export PATH="${PREFIX}/bin":$PATH
-    caffe init
+    caffe_wrapper.sh init
 }
+
 
 function uninstall_swan {
     if [ "${UID}" != 0 ]; then
