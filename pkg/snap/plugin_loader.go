@@ -104,7 +104,7 @@ func (l PluginLoader) load(plugin string) error {
 
 	pluginPath, err := exec.LookPath(plugin)
 	if err != nil {
-		return errors.Wrapf(err, "cannot find snap plugin %s in PATH", plugin)
+		return errors.Wrapf(err, "cannot find snap plugin %s in $PATH", plugin)
 	}
 
 	return l.pluginsClient.LoadPlugin(pluginPath)

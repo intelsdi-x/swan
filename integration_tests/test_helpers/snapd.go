@@ -36,7 +36,7 @@ func (s *Snapteld) Start() error {
 
 	snapteldPath, err := exec.LookPath("snapteld")
 	if err != nil {
-		return errors.New("cannot find snapteld in PATH")
+		return errors.New("cannot find snapteld in $PATH")
 	}
 
 	snapCommand := fmt.Sprintf("%s --plugin-trust 0 --api-port %d --control-listen-port %d --log-level 1", snapteldPath, s.apiPort, s.rpcPort)

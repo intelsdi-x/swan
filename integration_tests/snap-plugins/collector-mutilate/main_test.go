@@ -13,7 +13,6 @@ func TestMutilatePluginLoad(t *testing.T) {
 
 	pluginPath := testhelpers.AssertFileExists("snap-plugin-collector-mutilate")
 
-	// TODO(niklas): Fix race (https://intelsdi.atlassian.net/browse/SCE-316)
 	Convey("Ensure mutilate plugin can be loaded", t, func() {
 
 		pluginControl := control.New(control.GetDefaultConfig())

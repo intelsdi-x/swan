@@ -22,7 +22,7 @@ else
         executeAsVagrantUser make dist
 fi
 
-make PREFIX=/opt/swan install
+make install
 
 # -b specifies bucket name.
 # By default bucket name value is read from SWAN_BUCKET_NAME env variable.

@@ -3,9 +3,12 @@ package precheck
 import (
 	"testing"
 
+	"github.com/intelsdi-x/pkg/snap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const ()
 
 func TestFunction(t *testing.T) {
 
@@ -28,14 +31,16 @@ func TestFunction(t *testing.T) {
 		"snapteld",
 
 		// snap plugins
-		"snap-plugin-collector-caffe-inference",
-		"snap-plugin-collector-docker",
-		"snap-plugin-collector-mutilate",
-		"snap-plugin-collector-specjbb",
-		"snap-plugin-processor-tag",
-		"snap-plugin-publisher-cassandra",
-		"snap-plugin-publisher-file",
-		"snap-plugin-publisher-session-test",
+		snap.CaffeInferenceCollector,
+		snap.DockerCollector,
+		snap.MutilateCollector,
+		snap.SPECjbbCollector,
+		snap.TagProcessor,
+		snap.CassandraPublisher,
+		snap.FilePublisher,
+		snap.SessionPublisher,
+
+		// snap.RDTCollector - not yet available
 
 		// workloads
 		"memcached",
