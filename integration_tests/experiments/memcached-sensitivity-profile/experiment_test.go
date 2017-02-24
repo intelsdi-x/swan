@@ -136,7 +136,7 @@ func TestExperiment(t *testing.T) {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 					So(err, ShouldBeNil)
 
-					tags, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+					_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
 					So("None", ShouldBeIn, swanAggressorsNames)
 					So("L1 Data", ShouldBeIn, swanAggressorsNames)
 
