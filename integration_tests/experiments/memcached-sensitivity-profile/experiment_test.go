@@ -164,8 +164,8 @@ func TestExperiment(t *testing.T) {
 					So("0", ShouldBeIn, swanRepetitions)
 					So("1", ShouldBeIn, swanRepetitions)
 
-					So(swanAggressorsNames, ShouldHaveLength, 40)
-					So(swanRepetitions, ShouldHaveLength, 40)
+					So(swanAggressorsNames, ShouldHaveLength, 36)
+					So(swanRepetitions, ShouldHaveLength, 36)
 
 					So(iter.Close(), ShouldBeNil)
 
@@ -192,8 +192,8 @@ func TestExperiment(t *testing.T) {
 						So(tags["swan_repetition"], ShouldEqual, "0")
 					}
 
-					So(swanAggressorsNames, ShouldHaveLength, 40)
-					So(swanPhases, ShouldHaveLength, 40)
+					So(swanAggressorsNames, ShouldHaveLength, 36)
+					So(swanPhases, ShouldHaveLength, 36)
 
 					So("L1 Data", ShouldBeIn, swanAggressorsNames)
 					So("None", ShouldBeIn, swanAggressorsNames)

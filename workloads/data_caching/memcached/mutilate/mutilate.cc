@@ -587,8 +587,6 @@ int main(int argc, char **argv) {
     stats.print_stats("update", stats.set_sampler);
     stats.print_stats("op_q",   stats.op_sampler);
 
-    stats.print_swan_latency(stats.get_sampler, options.swanpercentile);
-
     int total = stats.gets + stats.sets;
 
     printf("\nTotal QPS = %.1f (%d / %.1fs)\n",
@@ -1034,8 +1032,6 @@ void args_to_options(options_t* options) {
   options->threads = args.threads_arg;
   options->server_given = args.server_given;
   options->roundrobin = args.roundrobin_given;
-
-  options->swanpercentile = args.swanpercentile_arg;
 
   int connections = options->connections;
   if (options->roundrobin) {

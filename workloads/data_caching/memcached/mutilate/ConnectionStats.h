@@ -207,11 +207,6 @@ class ConnectionStats {
 
     if (newline) printf("\n");
   }
-
-  void print_swan_latency(LogHistogramSampler &sampler, double percentile) {
-      printf("Swan latency for percentile %f: %f\n",
-             percentile, sampler.get_nth(percentile));
-  }
 #endif
 };
 

@@ -95,11 +95,6 @@ func (s *MutilateTestSuite) TestGetLoadCommand() {
 		So(command, ShouldContainSubstring, expected)
 	})
 
-	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
-		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile)
-		So(command, ShouldContainSubstring, expected)
-	})
-
 	Convey("Mutilate load command should contain qps option", s.T(), func() {
 		expected := fmt.Sprintf("-q %d", load)
 		So(command, ShouldContainSubstring, expected)
@@ -135,11 +130,6 @@ func (s *MutilateTestSuite) TestGetMultinodeLoadCommand() {
 
 	Convey("Mutilate load command should contain load duration", s.T(), func() {
 		expected := fmt.Sprintf("-t %d", int(duration.Seconds()))
-		So(command, ShouldContainSubstring, expected)
-	})
-
-	Convey("Mutilate load command should contain swan percentile option", s.T(), func() {
-		expected := fmt.Sprintf("--swanpercentile %s", s.mutilate.config.LatencyPercentile)
 		So(command, ShouldContainSubstring, expected)
 	})
 
