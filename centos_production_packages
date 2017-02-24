@@ -1,0 +1,1 @@
+docker-engine, snap-telemetry, boost, deltarpm, etcd, gengetopt, gflags, glog, hdf5, hg, htop, iptables, leveldb, libcgroup-tools, lmdb, moreutils-parallel, nmap-ncat, numactl, openblas, opencv, perf, protobuf, psmisc, pssh, python-pip, snappy, scons, sudo, tree, vim, wget, libevent, zeromq, libgomp

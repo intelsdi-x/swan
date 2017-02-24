@@ -1,0 +1,16 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+export GOPATH=$HOME/go
+export CCACHE_CONFIGPATH={{ ccache_configuration }}
+export PATH=/usr/lib64/ccache/:$PATH:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin:$HOME/go/bin
+export SWAN_DIR=$HOME/go/src/github.com/intelsdi-x/swan
+export PYTHONPATH=$PYTHONPATH:$HOME/go/src/github.com/intelsdi-x/swan
+export OPENBLAS_PATH={{ openblas_location }}
+export LD_LIBRARY_PATH={{ openblas_location }}/lib:/usr/lib

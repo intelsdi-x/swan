@@ -1,0 +1,82 @@
+---
+
+- name: create gopath/bin
+  file:
+    path: "{{ gopath }}/bin"
+    state: directory
+
+- name: create /cache
+  file:
+    path: "/cache"
+    state: directory
+  become: true
+
+- name: register systemd service
+  systemd: name=snapteld
+  register: snapteld_service
+
+- name: copy snap repository configuration
+  template:
+    src: snap.repo.j2
+    dest: "{{ centos_repo_location }}/snap.repo"
+  become: true
+  when: snapteld_service.status.CanStart == "yes"
+
+- name: install snapteld
+  yum:
+    name: snap-telemetry
+    state: latest
+  become: true
+  when: snapteld_service.status.CanStart == "yes"
+
+- name: downloading snap-plugin-collector-docker
+  get_url:
+    url: "https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/{{ snap_plugin_collector_docker_version }}/snap-plugin-collector-docker_linux_x86_64"
+    dest: "/cache/snap-plugin-collector-docker-{{ snap_plugin_collector_docker_version }}"
+  become: true
+
+- name: installing snap-plugin-collector-docker
+  copy:
+    src: "/cache/snap-plugin-collector-docker-{{ snap_plugin_collector_docker_version }}"
+    dest: "{{ gopath }}/bin/snap-plugin-collector-docker"
+    remote_src: true
+    mode: 0755
+
+- name: downloading snap-plugin-publisher-cassandra
+  get_url:
+    url: "https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/{{ snap_plugin_publisher_cassandra_version }}/snap-plugin-publisher-cassandra_linux_x86_64"
+    dest: "/cache/snap-plugin-publisher-cassandra-{{ snap_plugin_publisher_cassandra_version }}"
+  become: true
+
+- name: installing snap-plugin-publisher-cassandra
+  copy:
+    src: "/cache/snap-plugin-publisher-cassandra-{{ snap_plugin_publisher_cassandra_version }}"
+    dest: "{{ gopath }}/bin/snap-plugin-publisher-cassandra"
+    remote_src: true
+    mode: 0755
+
+- name: downloading snap-plugin-processor-tag
+  get_url:
+    url: "https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/{{ snap_plugin_processor_tag_version }}/snap-plugin-processor-tag_linux_x86_64"
+    dest: "/cache/snap-plugin-processor-tag-{{ snap_plugin_processor_tag_version }}"
+  become: true
+
+- name: installing snap-plugin-processor-tag
+  copy:
+    src: "/cache/snap-plugin-processor-tag-{{ snap_plugin_processor_tag_version }}"
+    dest: "{{ gopath }}/bin/snap-plugin-processor-tag"
+    remote_src: true
+    mode: 0755
+
+- name: downloading snap-plugin-publisher-file
+  get_url:
+    url: "https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/{{ snap_plugin_publisher_file_version }}/snap-plugin-publisher-file_linux_x86_64"
+    dest: "/cache/snap-plugin-publisher-file-{{ snap_plugin_publisher_file_version }}"
+  become: true
+
+- name: installing snap-plugin-publisher-file
+  copy:
+    src: "/cache/snap-plugin-publisher-file-{{ snap_plugin_publisher_file_version }}"
+    dest: "{{ gopath }}/bin/snap-plugin-publisher-file"
+    remote_src: true
+    mode: 0755

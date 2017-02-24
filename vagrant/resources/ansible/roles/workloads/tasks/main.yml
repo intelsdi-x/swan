@@ -1,0 +1,83 @@
+---
+
+- name: copy ccache configuration
+  template:
+    src: ccache.conf.j2
+    dest: "{{ ccache_configuration }}"
+  become: true
+
+- name: prepare ccache cache directory
+  file:
+    path: "/cache/ccache"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+  become: true
+
+- name: install the 'Development tools' package group
+  yum:
+    name: "@Development Tools"
+    state: present
+  become: true
+
+- name: install centos user packages
+  yum:
+    name: "{{ production_packages }}"
+    state: latest
+  become: true
+
+- name: install developer packages
+  yum:
+    name: "{{ developer_packages }}"
+    state: latest
+  become: true
+
+- name: install jupyter requirements
+  pip:
+    requirements: "{{ jupyter_requirements_location }}"
+  become: true
+
+- name: reseting repository
+  make:
+    chdir: "{{ ansible_user_dir }}/swan"
+    target: repository_reset
+
+- name: downloading dependencies
+  make:
+    chdir: "{{ ansible_user_dir }}/swan"
+    target: deps_all
+  environment:
+    PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+    GOPATH: "{{ ansible_user_dir }}/go"
+
+- name: building project (caffe multithreaded)
+  make:
+    chdir: "{{ gopath }}/src/github.com/intelsdi-x/swan"
+    target: dist
+  environment:
+    BUILD_OPENBLAS: "true"
+    CCACHECONFDIR: "{{ ccache_configuration }}"
+    PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+    GOPATH: "{{ gopath }}"
+
+# - name: building project (caffe singlethreaded)
+#   make:
+#     chdir: "{{ ansible_user_dir }}/swan"
+#     target: dist
+#     params:
+#       CCACHECONFDIR: "{{ ccache_configuration }}"
+#       PATH: "/usr/lib64/ccache/:/usr/local/bin:/bin/:/usr/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_user_dir }}/bin:/usr/local/go/bin:{{ ansible_user_dir }}/go/bin"
+#       GOPATH: "{{ ansible_user_dir }}/go"
+#   when:
+#     - build_image == "true"
+
+- name: building docker image
+  make:
+    chdir: "{{ ansible_user_dir }}/swan"
+    target: build_image
+
+- name: installing project
+  make:
+    chdir: "{{ ansible_user_dir }}/swan"
+    target: install
+  become: true

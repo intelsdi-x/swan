@@ -1,0 +1,22 @@
+---
+
+- name: prepare etcd service facts
+  systemd: name=etcd
+  register: etcd_service
+
+- name: install etcd
+  yum:
+    name: etcd
+    state: latest
+  when: etcd_service.status.SubState != "running"
+
+- name: reload systemd
+  shell: systemctl daemon-reload
+  when: etcd_service.status.SubState != "running"
+
+- name: Run and enable etcd daemon
+  systemd:
+    name: etcd
+    enabled: yes
+    state: restarted
+  when: etcd_service.status.SubState != "running"

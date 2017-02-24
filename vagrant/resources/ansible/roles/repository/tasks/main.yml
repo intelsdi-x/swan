@@ -1,0 +1,49 @@
+---
+
+- name: install environmental
+  include_role:
+    name: environmental
+
+- name: install k8s
+  include_role:
+    name: k8s
+  become: true
+
+- name: install specjbb
+  include_role:
+    name: specjbb
+  become: true
+
+- name: link {{ ansible_user_dir }} to swan
+  file:
+    src: "{{ gopath }}/src/github.com/intelsdi-x/swan"
+    dest: "{{ ansible_user_dir }}/swan"
+    state: link
+
+- name: flushing old k8s installation (if any)
+  file:
+    path: "{{ ansible_user_dir }}/swan/misc/bin"
+    state: absent
+
+- name: creating k8s target directory
+  file:
+    path: "{{ ansible_user_dir }}/swan/misc/bin"
+    state: directory
+
+- name: installing hyperkube in target location
+  copy:
+    src: "/cache/hyperkube-{{ k8s_version }}"
+    dest: "{{ ansible_user_dir }}/swan/misc/bin/hyperkube"
+    remote_src: true
+    mode: 0755
+
+- name: generating links to k8s services
+  shell: "./hyperkube --make-symlinks"
+  args:
+    chdir: "{{ ansible_user_dir }}/swan/misc/bin"
+
+- name: placing specjbb binaries in repository
+  synchronize:
+    src: /mnt
+    dest: "{{ ansible_user_dir }}/swan/workloads/web_serving"
+  delegate_to: "{{ inventory_hostname }}"

@@ -30,10 +30,10 @@ deps_jupyter:
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
-	(go install ./misc/snap-plugin-publisher-session-test)
-	(go install ./misc/snap-plugin-collector-mutilate)
-	(go install ./misc/snap-plugin-collector-specjbb)
-	(go install ./misc/snap-plugin-collector-caffe-inference)
+	go install ./misc/snap-plugin-publisher-session-test
+	go install ./misc/snap-plugin-collector-mutilate
+	go install ./misc/snap-plugin-collector-specjbb
+	go install ./misc/snap-plugin-collector-caffe-inference
 
 build_image:
 	(./scripts/build_docker_image.sh)
@@ -47,9 +47,6 @@ build_workloads:
 
 	# Prepare & Build Caffe workload.
 	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
-
-	# Get SPECjbb
-	(sudo ./scripts/get_specjbb.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb

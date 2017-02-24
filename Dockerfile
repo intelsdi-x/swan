@@ -2,19 +2,13 @@ FROM centos:7
 
 MAINTAINER https://github.com/intelsdi-x/swan
 
-ENV HOME_DIR=/root \
-    LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH \
-    VAGRANT_USER=root
+ENV LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
 
-# resources is storing vagrant scripts needed by this docker image.
-ADD vagrant/resources /vagrant/resources
+ADD ./centos_production_packages /centos_production_packages
 
-WORKDIR /vagrant/resources
-RUN ./scripts/setup_env.sh && \
-    ./scripts/copy_configuration.sh && \
-    ./scripts/install_packages.sh && \
-    ./scripts/post_install.sh
-WORKDIR /
+RUN yum makecache || true && \
+    yum install -y epel-release && \
+    yum install -y $(sed "s/,//g" /centos_production_packages)
 
 ADD artifacts.tar.gz /usr/
 

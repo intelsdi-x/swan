@@ -1,0 +1,19 @@
+---
+
+- name: install docker
+  include_role:
+    name: docker
+
+- name: install etcd
+  include_role:
+    name: etcd
+
+- name: creating /cache target directory
+  file:
+    path: "/cache"
+    state: directory
+
+- name: downloading hyperkube
+  get_url:
+    url: "https://storage.googleapis.com/kubernetes-release/release/{{ k8s_version }}/bin/linux/amd64/hyperkube"
+    dest: "/cache/hyperkube-{{ k8s_version }}"
