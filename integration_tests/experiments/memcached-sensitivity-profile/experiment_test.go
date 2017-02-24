@@ -47,7 +47,7 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 
 func TestExperiment(t *testing.T) {
 
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 
 	// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install).
 	memcachedSensitivityProfileBin := path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
