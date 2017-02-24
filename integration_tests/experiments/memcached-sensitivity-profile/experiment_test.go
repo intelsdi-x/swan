@@ -34,6 +34,12 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 	b := &bytes.Buffer{}
 	c.Stderr = b
 	out, err := c.Output()
+
+	// Extra logs vs asked explictly.
+	log.Debugf("[Out]==> %s", string(out))
+	log.Debugf("[Err]==> %s", b.String())
+	log.Debugf("[Warning]==> %s", err)
+
 	if err != nil {
 		if dumpOutputOnError {
 			Printf("[Out]==> %s", string(out))
@@ -42,6 +48,7 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 		}
 		return "", err
 	}
+
 	return getUUID(out), nil
 }
 
@@ -68,12 +75,15 @@ func TestExperiment(t *testing.T) {
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
 
-		// Snapteld default ports are 8181(API port) and 8082(RPC port).
-		snapteld := testhelpers.NewSnapteldOnPort(8181, 8082)
+		snapteld := testhelpers.NewSnapteldOnDefaultPorts()
 		err = snapteld.Start()
 		So(err, ShouldBeNil)
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
+
+		if !snapteld.Connected() {
+			t.Fatal("Could not connect to snapteld")
+		}
 
 		Reset(func() {
 			var errCollection errcollection.ErrorCollection
@@ -121,7 +131,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("With proper configuration and with l1d aggressors", func() {
-				args := []string{"-aggr", "l1d"}
+				args := []string{"-aggr", "l1d", "-baseline=false"}
 				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 					So(err, ShouldBeNil)

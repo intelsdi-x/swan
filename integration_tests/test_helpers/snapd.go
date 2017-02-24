@@ -30,6 +30,12 @@ func NewSnapteldOnPort(apiPort, rpcPort int) *Snapteld {
 	return &Snapteld{apiPort: apiPort, rpcPort: rpcPort}
 }
 
+// NewSnapteldOnDefaultPorts constructs Snapteld on chosen ports.
+func NewSnapteldOnDefaultPorts() *Snapteld {
+	// Snapteld default ports are 8181(API port) and 8082(RPC port).
+	return NewSnapteldOnPort(8181, 8082)
+}
+
 // Start starts Snap daemon and wait until it is responsive.
 func (s *Snapteld) Start() error {
 	l := executor.NewLocal()
