@@ -14,8 +14,8 @@ echo "Setting up environment..."
 ## Setting up envs
 addEnv "export GOPATH=\"$HOME_DIR/go\""
 addEnv 'export CCACHE_CONFIGPATH=/etc/ccache.conf'
-addEnv 'export SWAN_DIR=$GOPATH/src/github.com/intelsdi-x/swan'
-addEnv 'export PYTHONPATH=$PYTHONPATH:$SWAN_DIR'
+# jupyter intergration tests from notebooks
+addEnv 'export PYTHONPATH=$PYTHONPATH:$GOPATH/src/github.com/intelsdi-x/swan'
 addEnv 'export OPENBLAS_PATH=/opt/OpenBLAS'
 addEnv 'export LD_LIBRARY_PATH=$OPENBLAS_PATH/lib'
 addEnv 'export PATH=/usr/lib64/ccache/:$PATH:/opt/swan/bin:/usr/local/go/bin:$GOPATH/bin'

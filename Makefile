@@ -46,10 +46,7 @@ build_workloads:
 	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
-
-	# Get SPECjbb
-	(sudo ./scripts/get_specjbb.sh)
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
@@ -88,7 +85,7 @@ test_unit_jupyter:
 
 test_integration:
 	go test -i ./integration_tests/... 
-	./scripts/isolate-pid.sh go test $(TEST_OPT) ./integration_tests/... 
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
 e2e_test:
 	sudo service snapteld start
