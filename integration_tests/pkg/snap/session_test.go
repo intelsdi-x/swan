@@ -111,7 +111,7 @@ func TestSnap(t *testing.T) {
 								err := s.Wait()
 								So(err, ShouldBeNil)
 
-								err := s.Stop()
+								err = s.Stop()
 								So(err, ShouldBeNil)
 								So(s.IsRunning(), ShouldBeFalse)
 
