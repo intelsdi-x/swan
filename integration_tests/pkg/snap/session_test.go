@@ -40,9 +40,12 @@ func TestSnap(t *testing.T) {
 	}
 
 	Convey("While having Snapteld running", t, func() {
-		snapteld = testhelpers.NewSnapteld()
+		snapteld = testhelpers.NewSnapteldOnDefaultPorts()
 		err := snapteld.Start()
 		So(err, ShouldBeNil)
+
+		time.Sleep(5 * time.Second)
+		So(snapteld.Connected(), ShouldBeTrue)
 
 		defer func() {
 			if snapteld != nil {

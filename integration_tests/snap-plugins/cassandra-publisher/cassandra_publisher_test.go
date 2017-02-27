@@ -55,6 +55,9 @@ func TestCassandraPublisher(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Given enough time before checking data was stored - replace with onetime tasks in snap when available.
+	time.Sleep(5 * time.Second)
+
 	value, tags, err := getValueAndTagsFromCassandra()
 	Convey("When getting values from Cassandra", t, func() {
 		So(err, ShouldBeNil)
@@ -97,7 +100,14 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 	//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
 	///intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
 
-	err = session.Query(`SELECT doubleval, tags FROM snap.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`).Consistency(gocql.One).Scan(&value, &tags)
+	// Try 5 times before giving up.
+	for i := 0; i < 5; i++ {
+		err = session.Query(`SELECT doubleval, tags FROM snap.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`).Consistency(gocql.One).Scan(&value, &tags)
+		if err == nil || err != gocql.ErrNotFound {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
 
 	return value, tags, err
 }
