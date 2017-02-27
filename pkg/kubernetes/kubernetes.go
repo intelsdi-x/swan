@@ -35,15 +35,19 @@ var (
 	allowPrivilegedFlag     = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
 	kubeEtcdServersFlag     = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 	readyNodeRetryCountFlag = conf.NewIntFlag("kube_node_ready_retry_count", "Number of checks that kubelet is ready, before trying setup cluster again (with 1s interval between checks).", defaultReadyNodeRetryCount)
+
+	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
+	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
+
 )
 
 // Config contains all data for running kubernetes master & kubelet.
 type Config struct {
-
 	// Comma separated list of nodes in the etcd cluster
 	EtcdServers        string
 	EtcdPrefix         string
 	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
+	KubeAPIAddr	   string
 	KubeAPIPort        int
 	KubeControllerPort int
 	KubeSchedulerPort  int
@@ -71,6 +75,7 @@ func DefaultConfig() Config {
 		EtcdPrefix:         "/registry",
 		LogLevel:           logLevelFlag.Value(),
 		AllowPrivileged:    allowPrivilegedFlag.Value(),
+		KubeAPIAddr: 	    KubernetesMasterFlag.Value(),
 		KubeAPIPort:        8080,
 		KubeletPort:        10250,
 		KubeControllerPort: 10252,
@@ -81,6 +86,10 @@ func DefaultConfig() Config {
 		KubeAPIArgs:        kubeAPIArgsFlag.Value(),
 		RetryCount:         2,
 	}
+}
+
+func (c *Config) GetApiAddress() string {
+	return fmt.Sprintf("http://%s:%d", c.KubeAPIAddr, c.KubeAPIPort)
 }
 
 // UniqueConfig is a constructor for Config with default parameters and random ports and random etcd prefix.
@@ -185,7 +194,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kube-controller-manager using master executor.
 	controllerHandle, err := m.launchService(
-		m.master, getKubeControllerCommand(apiHandle, m.config), m.config.KubeControllerPort)
+		m.master, getKubeControllerCommand(m.config), m.config.KubeControllerPort)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -195,7 +204,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kube-scheduler using master executor.
 	schedulerHandle, err := m.launchService(
-		m.master, getKubeSchedulerCommand(apiHandle, m.config), m.config.KubeSchedulerPort)
+		m.master, getKubeSchedulerCommand(m.config), m.config.KubeSchedulerPort)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -206,7 +215,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	// Launch services on minion node.
 	// Launch kube-proxy using minion executor.
 	proxyHandle, err := m.launchService(
-		m.minion, getKubeProxyCommand(apiHandle, m.config), m.config.KubeProxyPort)
+		m.minion, getKubeProxyCommand(m.config), m.config.KubeProxyPort)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -216,7 +225,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kubelet using minion executor.
 	kubeletHandle, err := m.launchService(
-		m.minion, getKubeletCommand(apiHandle, m.config), m.config.KubeletPort)
+		m.minion, getKubeletCommand(m.config), m.config.KubeletPort)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
