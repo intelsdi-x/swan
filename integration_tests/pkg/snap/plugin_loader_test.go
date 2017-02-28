@@ -20,7 +20,7 @@ var plugins = []string{
 }
 
 func TestPluginLoader(t *testing.T) {
-	snapteld := testhelpers.NewSnapteld()
+	snapteld := testhelpers.NewSnapteldOnefaultPorts()
 	err := snapteld.Start()
 	if err != nil {
 		t.Fatalf("snapteld creation failed: %q", err)

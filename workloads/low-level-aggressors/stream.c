@@ -207,6 +207,11 @@ extern int omp_get_num_threads();
 int
 main()
     {
+
+#ifdef VERBOSE
+    printf("VERBOSE\n");
+#endif
+
     int			quantum, checktick();
     int			BytesPerWord;
     int			k;
@@ -302,6 +307,11 @@ main()
     printf(HLINE);
     
     /*	--- MAIN LOOP --- repeat test cases NTIMES times --- */
+#ifdef TUNED
+    printf("TUNED.\n");
+#else
+    printf("UNTUNED.\n");
+#endif
 
     scalar = 3.0;
     for (k=0; k<NTIMES; k++)

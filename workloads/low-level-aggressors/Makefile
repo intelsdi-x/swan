@@ -22,7 +22,7 @@ l3:
 	g++ -o l3 l3.c -lrt
 
 stream.100M:
-	gcc -O2 -fopenmp -DNTIMES=500 -DSTREAM_ARRAY_SIZE=100000000 stream.c -o stream.100M
+	gcc -O2 -fopenmp -DTUNED -DVERBOSE -DNTIMES=500 -DSTREAM_ARRAY_SIZE=100000000 stream.c -o stream.100M
 
 clean:
 	rm memCap
