@@ -15,6 +15,7 @@ curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.
 sudo yum install -y snap-telemetry
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
+systemctl status snap-telemetry
 
 echo "Installing snap-plugin-collector-docker (version $SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION)..."
 if [ ! -f /cache/snap-plugin-collector-docker-${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION} ]; then

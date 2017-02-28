@@ -14,7 +14,6 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -70,30 +69,10 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_WARMUP_TIME": "1s",
 	}
 
-	Convey("When snapteld is launched", t, func() {
+	Convey("When experiment folder is ready", t, func() {
 		var logDirPerm os.FileMode = 0755
 		err := os.MkdirAll(snapLogs, logDirPerm)
 		So(err, ShouldBeNil)
-
-		snapteld := testhelpers.NewSnapteldOnDefaultPorts()
-		err = snapteld.Start()
-		So(err, ShouldBeNil)
-
-		time.Sleep(5 * time.Second)
-
-		if !snapteld.Connected() {
-			t.Fatal("Could not connect to snapteld")
-		}
-
-		Reset(func() {
-			var errCollection errcollection.ErrorCollection
-			errCollection.Add(snapteld.Stop())
-			errCollection.Add(snapteld.CleanAndEraseOutput())
-			So(errCollection.GetErrIfAny(), ShouldBeNil)
-			if err == nil {
-				os.RemoveAll(snapLogs)
-			}
-		})
 
 		Convey("While doing experiment", func() {
 			for k, v := range envs {

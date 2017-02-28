@@ -18,22 +18,11 @@ import (
 
 func TestSnapDockerSession(t *testing.T) {
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
-		snapteld := testhelpers.NewSnapteld()
-		err := snapteld.Start()
-		So(err, ShouldBeNil)
 
-		defer snapteld.CleanAndEraseOutput()
-		defer snapteld.Stop()
+		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
+		defer cleanup()
 
-		snapteldAddress := fmt.Sprintf("http://%s:%d", "127.0.0.1", snapteld.Port())
-
-		// Load plugins.
-		loaderConfig := snap.DefaultPluginLoaderConfig()
-		loaderConfig.SnapteldAddress = snapteldAddress
-		loader, err := snap.NewPluginLoader(loaderConfig)
-		So(err, ShouldBeNil)
-
-		err = loader.Load(snap.DockerCollector, snap.FilePublisher)
+		err := loader.Load(snap.DockerCollector, snap.FilePublisher)
 		So(err, ShouldBeNil)
 		publisherPluginName, _, err := snap.GetPluginNameAndType(snap.FilePublisher)
 		So(err, ShouldBeNil)
@@ -73,7 +62,7 @@ func TestSnapDockerSession(t *testing.T) {
 
 		Convey("Launching Docker Session", func() {
 			dockerConfig := docker.DefaultConfig()
-			dockerConfig.SnapteldAddress = snapteldAddress
+			dockerConfig.SnapteldAddress = snapteldAddr
 			dockerConfig.Publisher = publisher
 			dockerLauncher, err := docker.NewSessionLauncher(dockerConfig)
 			So(err, ShouldBeNil)

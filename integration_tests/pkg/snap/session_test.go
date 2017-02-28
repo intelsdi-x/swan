@@ -1,7 +1,6 @@
 package snap
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -15,35 +14,17 @@ import (
 )
 
 func TestSnap(t *testing.T) {
-	var snapteld *testhelpers.Snapteld
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
 
 	Convey("While having Snapteld running", t, func() {
-		snapteld = testhelpers.NewSnapteldOnDefaultPorts()
-		err := snapteld.Start()
-		So(err, ShouldBeNil)
-
-		time.Sleep(5 * time.Second)
-		So(snapteld.Connected(), ShouldBeTrue)
-
-		defer func() {
-			if snapteld != nil {
-				err := snapteld.Stop()
-				err2 := snapteld.CleanAndEraseOutput()
-				So(err, ShouldBeNil)
-				So(err2, ShouldBeNil)
-			}
-		}()
-		snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
 
 		Convey("We are able to connect with snapteld", func() {
-			c, err := client.New(snapteldAddress, "v1", true)
-			So(err, ShouldBeNil)
 
 			loaderConfig := snap.DefaultPluginLoaderConfig()
-			loaderConfig.SnapteldAddress = snapteldAddress
+			c, err := client.New(loaderConfig.SnapteldAddress, "v1", true)
+			So(err, ShouldBeNil)
 			pluginLoader, err := snap.NewPluginLoader(loaderConfig)
 			So(err, ShouldBeNil)
 

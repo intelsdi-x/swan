@@ -11,76 +11,43 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCassandraPublisher(t *testing.T) {
 
-	snapteld := testhelpers.NewSnapteldOnDefaultPorts()
-	err := snapteld.Start()
-	if err != nil {
-		t.Error(err)
-	}
+	Convey("description", t, func() {
 
-	time.Sleep(5 * time.Second)
+		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
+		defer cleanup()
 
-	defer func() {
-		var errCollection errcollection.ErrorCollection
-		errCollection.Add(snapteld.Stop())
-		errCollection.Add(snapteld.CleanAndEraseOutput())
-		if err := errCollection.GetErrIfAny(); err != nil {
-			t.Fatalf("Cleaning up procedures fails: %s", err)
-		}
-	}()
-
-	if !snapteld.Connected() {
-		t.Fatal("Could not connect to snapteld")
-	}
-
-	snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
-	snapClient, err := client.New(snapteldAddress, "v1", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = loadSnapPlugins(snapteldAddress)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = runCassandraPublisherWorkflow(snapClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Given enough time before checking data was stored - replace with onetime tasks in snap when available.
-	time.Sleep(5 * time.Second)
-
-	value, tags, err := getValueAndTagsFromCassandra()
-	Convey("When getting values from Cassandra", t, func() {
+		err := loader.Load(snap.CassandraPublisher, snap.DockerCollector)
 		So(err, ShouldBeNil)
-		Convey("Stored value in Cassandra should be greater then 0", func() {
-			So(value, ShouldBeGreaterThan, 0)
-		})
-		Convey("Tags should be approprierate", func() {
-			So(tags["swan_experiment"], ShouldEqual, "example-experiment")
-			So(tags["swan_phase"], ShouldEqual, "example-phase")
-			So(tags["swan_repetition"], ShouldEqual, "42")
+
+		snapClient, err := client.New(snapteldAddr, "v1", true)
+		So(err, ShouldBeNil)
+
+		err = runCassandraPublisherWorkflow(snapClient)
+		So(err, ShouldBeNil)
+
+		// Given enough time before checking data was stored - replace with onetime tasks in snap when available.
+		time.Sleep(5 * time.Second)
+
+		value, tags, err := getValueAndTagsFromCassandra()
+		Convey("When getting values from Cassandra", t, func() {
+			So(err, ShouldBeNil)
+			Convey("Stored value in Cassandra should be greater then 0", func() {
+				So(value, ShouldBeGreaterThan, 0)
+			})
+			Convey("Tags should be approprierate", func() {
+				So(tags["swan_experiment"], ShouldEqual, "example-experiment")
+				So(tags["swan_phase"], ShouldEqual, "example-phase")
+				So(tags["swan_repetition"], ShouldEqual, "42")
+			})
 		})
 	})
-}
 
-func loadSnapPlugins(snapteldAddress string) (err error) {
-	pluginLoaderConfig := snap.DefaultPluginLoaderConfig()
-	pluginLoaderConfig.SnapteldAddress = snapteldAddress
-	pluginLoader, err := snap.NewPluginLoader(pluginLoaderConfig)
-	if err != nil {
-		return err
-	}
-
-	return pluginLoader.Load(snap.CassandraPublisher, snap.DockerCollector)
 }
 
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
