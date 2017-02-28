@@ -88,7 +88,8 @@ func DefaultConfig() Config {
 	}
 }
 
-func (c *Config) GetApiAddress() string {
+// GetKubeAPIAddress returns kube api server in HTTP format.
+func (c *Config) GetKubeAPIAddress() string {
 	return fmt.Sprintf("http://%s:%d", c.KubeAPIAddr, c.KubeAPIPort)
 }
 

@@ -22,12 +22,12 @@ func TestKubernetesLauncherConfiguration(t *testing.T) {
 
 		Convey("Privileged containers should be allowed to run by default", func() {
 			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=false")
-			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=false")
+			So(getKubeletCommand(config), ShouldContainSubstring, "--allow-privileged=false")
 
 			Convey("But they can be disallowed through configuration", func() {
 				config.AllowPrivileged = true
 				So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
-				So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
+				So(getKubeletCommand(config), ShouldContainSubstring, "--allow-privileged=true")
 			})
 		})
 
