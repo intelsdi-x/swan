@@ -47,7 +47,7 @@ type LoadGeneratorConfig struct {
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
 	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
-	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
 	EraseTuningOutput    bool   // Erase stdout & stderr logs from processes ran by Load Generator.
@@ -134,6 +134,7 @@ func (loadGenerator loadGenerator) Populate() (err error) {
 // Tune calculates maximum number of "critical java operations" under SLO
 // @param slo: SLO in us (sane values are above 5000us [5ms]). 5ms is lowest SLI taken into account by SPECjbb when calculating results, and it does not yield any results below it.
 // @note: Tune will not work properly when Controller is launched by Kubernetes Executor.
+// @note: Achieved SLI is always returned the same as SLO.
 //
 // It generates High Bound Injection Rate [HBIR] curve to determine the load under slo value.
 // See SPECjbb readme (https://www.spec.org/jbb2015/docs/userguide.pdf) for details.
@@ -194,7 +195,7 @@ func (loadGenerator loadGenerator) Tune(slo int) (qps int, achievedSLI int, err 
 		reporterHandle.EraseOutput()
 	}
 
-	return hbirRt, 0, err
+	return hbirRt, slo, err
 }
 
 // Load starts SPECjbb load on backend with given injection rate value.

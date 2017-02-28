@@ -109,6 +109,9 @@ func main() {
 	specjbbControllerAddress := specjbb.ControllerAddress.Value()
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
+	backendConfig.JVMHeapMemoryGBs = 8
+	backendConfig.ParallelGCThreads = 4
+	backendConfig.WorkerCount = 4
 	backendConfig.ControllerAddress = specjbbControllerAddress
 	specjbbBackendLauncher := specjbb.NewBackend(hpExecutor, backendConfig)
 
@@ -218,12 +221,6 @@ func main() {
 						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
 					}
 					processes = append(processes, hpHandle)
-
-					// Launch specjbb Load Generator to populate data
-					err = specjbbLoadGeneratorSessionPair.LoadGenerator.Populate()
-					if err != nil {
-						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
-					}
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
 						experiment.ExperimentKey, uuid.String(),
