@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -19,15 +20,13 @@ var plugins = []string{
 
 func TestPluginLoader(t *testing.T) {
 
-	config := snap.DefaultPluginLoaderConfig()
-	loader, err := snap.NewPluginLoader(config)
-	if err != nil {
-		t.Fatalf("snap plugin loading failed: %q", err)
-	}
-	c, err := client.New(config.SnapteldAddress, "v1", true)
-	pluginClient := snap.NewPlugins(c)
-
 	Convey("While having Snapteld running", t, func() {
+		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
+		defer cleanup()
+		c, err := client.New(snapteldAddr, "v1", true)
+		So(err, ShouldBeNil)
+
+		pluginClient := snap.NewPlugins(c)
 		for index, plugin := range plugins {
 			Convey(fmt.Sprintf("We try to load %s plugin (%d)", plugin, index), func() {
 				err := loader.Load(plugin)

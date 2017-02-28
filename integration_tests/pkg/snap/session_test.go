@@ -20,16 +20,16 @@ func TestSnap(t *testing.T) {
 
 	Convey("While having Snapteld running", t, func() {
 
+		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
+		defer cleanup()
+
 		Convey("We are able to connect with snapteld", func() {
 
-			loaderConfig := snap.DefaultPluginLoaderConfig()
-			c, err := client.New(loaderConfig.SnapteldAddress, "v1", true)
-			So(err, ShouldBeNil)
-			pluginLoader, err := snap.NewPluginLoader(loaderConfig)
+			c, err := client.New(snapteldAddr, "v1", true)
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				err = pluginLoader.Load(snap.DockerCollector)
+				err := loader.Load(snap.DockerCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -49,7 +49,7 @@ func TestSnap(t *testing.T) {
 				So(found, ShouldBeTrue)
 
 				Convey("Loading publishers", func() {
-					err := pluginLoader.Load(snap.FilePublisher)
+					err := loader.Load(snap.FilePublisher)
 					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("file", snap.PluginAnyVersion)
