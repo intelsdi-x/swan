@@ -9,7 +9,7 @@ import (
 // getKubeAPIServerCommand returns command for kube-apiserver.
 func getKubeAPIServerCommand(config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s", config.PathToKubeAPIServer),
+		fmt.Sprintf("apiserver"),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
 		fmt.Sprintf(" --etcd-servers=%s", config.EtcdServers),
@@ -25,7 +25,7 @@ func getKubeAPIServerCommand(config Config) string {
 // getKubeControllerCommand returns command for kube-controller-manager.
 func getKubeControllerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s", config.PathToKubeController),
+		fmt.Sprintf("controller-manager"),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
@@ -37,7 +37,7 @@ func getKubeControllerCommand(kubeAPIAddr executor.TaskHandle, config Config) st
 // getKubeSchedulerCommand returns command for kube-scheduler.
 func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s", config.PathToKubeScheduler),
+		fmt.Sprintf("scheduler"),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
 		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
@@ -49,7 +49,7 @@ func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) str
 // getKubeletCommand returns command for kubelet.
 func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s", config.PathToKubelet),
+		fmt.Sprintf("kubelet"),
 		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --address=0.0.0.0"),
@@ -63,7 +63,7 @@ func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 // getKubeProxyCommand returns command for kube-proxy.
 func getKubeProxyCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
 	return fmt.Sprint(
-		fmt.Sprintf("%s", config.PathToKubeProxy),
+		fmt.Sprintf("proxy"),
 		fmt.Sprintf(" --bind-address=0.0.0.0"),
 		fmt.Sprintf(" --v=%d", config.LogLevel),
 		fmt.Sprintf(" --healthz-port=%d", config.KubeProxyPort),

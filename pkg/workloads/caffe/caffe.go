@@ -13,9 +13,8 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID = "caffe"
 
-	defaultBinaryRelativePath = "caffe"
-	defualCaffeLibPath        = "/usr/lib"
-	defaultModel              = "/usr/share/caffe/examples/cifar10/cifar10_quick_train_test.prototxt"
+	defaultBinaryRelativePath = "caffe_wrapper.sh"
+	defaultModel              = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
 	defaultWeights            = "/tmp/caffe/cifar10_quick_iter_5000.caffemodel.h5"
 	defaultIterations         = 1000000000
 	defaultSigintEffect       = "stop"
@@ -24,12 +23,6 @@ const (
 var caffePath = conf.NewStringFlag(
 	"caffe_path",
 	"Path to script launching caffe as an aggressor", defaultBinaryRelativePath,
-)
-
-var caffeLibPath = conf.NewStringFlag(
-	"caffe_lib_path",
-	"Path to caffe libraries",
-	defualCaffeLibPath,
 )
 
 var caffeModel = conf.NewStringFlag(
@@ -70,7 +63,6 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		BinaryPath:       caffePath.Value(),
-		LibPath:          caffeLibPath.Value(),
 		ModelPath:        caffeModel.Value(),
 		WeightsPath:      caffeWeights.Value(),
 		IterationsNumber: caffeIterations.Value(),
@@ -95,8 +87,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (c Caffe) buildCommand() string {
-	return fmt.Sprintf("LD_LIBRARY_PATH=%q %s test -model %s -weights %s -iterations %d -sigint_effect %s",
-		c.conf.LibPath,
+	return fmt.Sprintf("%s test -model %s -weights %s -iterations %d -sigint_effect %s",
 		c.conf.BinaryPath,
 		c.conf.ModelPath,
 		c.conf.WeightsPath,

@@ -2,7 +2,7 @@
 
 set -e
 
-SNAP_VERSION="1.0.0"
+SNAP_VERSION="1.1.0"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
@@ -40,7 +40,7 @@ if [ ! -f /cache/snap-plugin-processor-tag-${SNAP_PLUGIN_PROCESSOR_TAG_VERSION} 
 fi
 
 echo "Installing snap-plugin-publisher-file (version $SNAP_PLUGIN_PUBLISHER_FILE_VERSION)..."
-if [ ! -f /cache/snap-plugin-processor-file-${SNAP_PLUGIN_PUBLISHER_FILE_VERSION} ]; then
+if [ ! -f /cache/snap-plugin-publisher-file-${SNAP_PLUGIN_PUBLISHER_FILE_VERSION} ]; then
   wget -q https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O $GOPATH/bin/snap-plugin-publisher-file
   chmod +x  $GOPATH/bin/snap-plugin-publisher-file
   touch /cache/snap-plugin-publisher-file-${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}

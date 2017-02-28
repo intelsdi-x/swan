@@ -12,16 +12,20 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCassandraPublisher(t *testing.T) {
 
-	snapteld := testhelpers.NewSnapteld()
+	snapteld := testhelpers.NewSnapteldOnDefaultPorts()
 	err := snapteld.Start()
 	if err != nil {
 		t.Error(err)
 	}
+
+	time.Sleep(5 * time.Second)
+
 	defer func() {
 		var errCollection errcollection.ErrorCollection
 		errCollection.Add(snapteld.Stop())
@@ -32,23 +36,23 @@ func TestCassandraPublisher(t *testing.T) {
 	}()
 
 	if !snapteld.Connected() {
-		t.Error("Could not connect to snapteld")
+		t.Fatal("Could not connect to snapteld")
 	}
 
 	snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
 	snapClient, err := client.New(snapteldAddress, "v1", true)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	err = loadSnapPlugins(snapteldAddress)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	err = runCassandraPublisherWorkflow(snapClient)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	value, tags, err := getValueAndTagsFromCassandra()
@@ -81,7 +85,11 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = "snap"
 	cluster.Consistency = gocql.All
-	session, _ := cluster.CreateSession()
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return 0, nil, errors.Wrapf(err, "cannot connect to cassandra: %v", cluster)
+	}
+
 	defer session.Close()
 
 	//cqlsh> select * from snap.metrics where ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;

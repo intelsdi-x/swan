@@ -94,8 +94,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 		mutilateConfig.ErasePopulateOutput = true
 		mutilateConfig.EraseTuneOutput = true
 		mutilateConfig.WarmupTime = 1 * time.Second
-		// Note: not sure if custom percentile is working correctly.
-		// TODO: added a custom percentile integration test.
 		mutilateConfig.LatencyPercentile = "99.1234"
 		mutilateConfig.MemcachedPort = memcachedConfig.Port
 		mutilateConfig.ErasePopulateOutput = true
@@ -149,7 +147,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 			SoNonZeroMetricExists("std")
 			SoNonZeroMetricExists("min")
 			SoNonZeroMetricExists("percentile/99th")
-			SoNonZeroMetricExists("percentile/custom")
 
 			_, currentGetCount := getMemcachedStats(mcAddress, t)
 			So(currentGetCount, ShouldBeGreaterThan, previousGetCnt)

@@ -10,7 +10,7 @@ import (
 )
 
 func TestMutilatePlugin(t *testing.T) {
-	const expectedMetricsCount = 10
+	const expectedMetricsCount = 9
 
 	Convey("When I create mutilate collector object", t, func() {
 		now := time.Now()
@@ -29,7 +29,6 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
 			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
 			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps", "ns")
-			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/percentile/*/custom", "ns")
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -60,7 +59,6 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/90th", 33.4, now},
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
-				{"/percentile/99_123400th/custom", 1777.887805, now},
 				{"/qps", 4993.1, now},
 			}
 
@@ -79,8 +77,6 @@ func TestMutilatePlugin(t *testing.T) {
 					t.Errorf("Expected metrics do not contain given metric %s", namespace)
 				}
 			}
-
-			So(strings.Join(metrics[8].Namespace.Strings(), "/"), ShouldNotEndWith, "percentile/percentile/99_999th/custom")
 		})
 
 		Convey("I should receive no metrics and error when no file path is set", func() {

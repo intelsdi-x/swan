@@ -74,9 +74,6 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 				"/intel/swan/mutilate/*/percentile/95th",
 				"/intel/swan/mutilate/*/percentile/99th",
 				"/intel/swan/mutilate/*/qps",
-				//TODO: Fetch the 99_999th value from MUTILATE task itself!
-				//It shall be redesigned ASAP
-				"/intel/swan/mutilate/*/percentile/*/custom",
 			},
 			config.Interval,
 			snapClient,

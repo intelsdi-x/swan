@@ -1,7 +1,7 @@
 .PHONY: build
 
 # Place for custom options for test commands.
-TEST_OPT?=""
+TEST_OPT?=
 
 # for compatibility purposes.
 deps: deps_all
@@ -46,10 +46,7 @@ build_workloads:
 	(cd workloads/low-level-aggressors && make -j4)
 
 	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh ${BUILD_OPENBLAS})
-
-	# Get SPECjbb
-	(sudo ./scripts/get_specjbb.sh)
+	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)
 
 build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
@@ -80,19 +77,15 @@ test_lint:
 	fgt golint ./integration_tests/...
 
 test_unit:
-	go test -i ./pkg/... ./experiments/... ./misc/...
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./pkg/...
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./experiments/...
-	./scripts/isolate-pid.sh go test $(TEST_OPT) -v ./misc/...
+	go test -i ./pkg/... ./misc/...
+	go test -p 1 $(TEST_OPT) ./pkg/... ./misc/...
 
 test_unit_jupyter:
 	(cd jupyter; py.test)
 
 test_integration:
-	go test -i ./integration_tests/... ./experiments/... ./misc/...
-	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./integration_tests/...
-	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./experiments/...
-	./scripts/isolate-pid.sh go test -p 1 -v $(TEST_OPT) ./misc/...
+	go test -i ./integration_tests/... 
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
 e2e_test:
 	sudo service snapteld start

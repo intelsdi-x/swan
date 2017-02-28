@@ -22,6 +22,7 @@ ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod og-wx /root/.ssh/authorized_keys
 ssh-keyscan localhost >> /root/.ssh/known_hosts
+ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
 
 ## SSH-agent veryfication
 ssh-add -l

@@ -258,9 +258,9 @@ func (m mutilate) getQPSAndLatencyFrom(stdoutFile *os.File) (qps int, achievedSL
 		return qps, achievedSLI, errors.New("could not retrieve MutilateQPS from mutilate parser")
 	}
 
-	rawSLI, ok := results.Raw[parse.MutilatePercentileCustom]
+	rawSLI, ok := results.Raw[parse.MutilatePercentile99th]
 	if !ok {
-		return qps, achievedSLI, errors.New("could not retrieve Custom Percentile from mutilate parser")
+		return qps, achievedSLI, errors.New("could not retrieve 99th percentile from mutilate parser")
 	}
 
 	return int(rawQPS), int(rawSLI), nil

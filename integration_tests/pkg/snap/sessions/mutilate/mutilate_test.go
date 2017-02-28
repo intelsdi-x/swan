@@ -6,7 +6,6 @@ import (
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/swan/pkg/utils/fs"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -32,7 +31,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						fs.GetSwanPath(), "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
+						testhelpers.SwanPath, "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")

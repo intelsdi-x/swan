@@ -3,8 +3,7 @@ package testhelpers
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"path"
+	"os/exec"
 	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
@@ -31,14 +30,21 @@ func NewSnapteldOnPort(apiPort, rpcPort int) *Snapteld {
 	return &Snapteld{apiPort: apiPort, rpcPort: rpcPort}
 }
 
+// NewSnapteldOnDefaultPorts constructs Snapteld on chosen ports.
+func NewSnapteldOnDefaultPorts() *Snapteld {
+	// Snapteld default ports are 8181(API port) and 8082(RPC port).
+	return NewSnapteldOnPort(8181, 8082)
+}
+
 // Start starts Snap daemon and wait until it is responsive.
 func (s *Snapteld) Start() error {
 	l := executor.NewLocal()
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		return errors.New("Cannot find GOPATH")
+
+	snapteldPath, err := exec.LookPath("snapteld")
+	if err != nil {
+		return errors.New("cannot find snapteld in $PATH")
 	}
-	snapteldPath := path.Join(gopath, "bin", "snapteld")
+
 	snapCommand := fmt.Sprintf("%s --plugin-trust 0 --api-port %d --control-listen-port %d --log-level 1", snapteldPath, s.apiPort, s.rpcPort)
 
 	taskHandle, err := l.Execute(snapCommand)

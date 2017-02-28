@@ -15,11 +15,11 @@ var (
 	// PathToBinaryForHpFlag specifies path to a SPECjbb2015 jar file for hp job.
 	PathToBinaryForHpFlag = conf.NewStringFlag("specjbb_path_hp",
 		"Path to SPECjbb jar for high priority job (backend)",
-		"/usr/share/specjbb/specjbb2015.jar")
+		"/opt/swan/share/specjbb/specjbb2015.jar")
 	// PathToPropsFileForHpFlag specifies path to a SPECjbb2015 properties file for hp job.
 	PathToPropsFileForHpFlag = conf.NewStringFlag("specjbb_props_path_hp",
 		"Path to SPECjbb properties file for high priority job (backend)",
-		"/usr/share/specjbb/config/specjbb2015.props")
+		"/opt/swan/share/specjbb/config/specjbb2015.props")
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
