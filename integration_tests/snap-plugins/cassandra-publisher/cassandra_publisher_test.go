@@ -35,7 +35,7 @@ func TestCassandraPublisher(t *testing.T) {
 		time.Sleep(5 * time.Second)
 
 		value, tags, err := getValueAndTagsFromCassandra()
-		Convey("When getting values from Cassandra", t, func() {
+		Convey("When getting values from Cassandra", func() {
 			So(err, ShouldBeNil)
 			Convey("Stored value in Cassandra should be greater then 0", func() {
 				So(value, ShouldBeGreaterThan, 0)
