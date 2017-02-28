@@ -108,6 +108,9 @@ repository_reset: cleanup remove_vendor
 	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
 	(cd workloads/deep_learning/caffe/openblas/; git clean -fddx; git reset --hard)
 
+integration_test_bins:
+	./scripts/integration_tests.sh
+
 show_env:
 	@ echo Environment variables:
 	@ echo ""
