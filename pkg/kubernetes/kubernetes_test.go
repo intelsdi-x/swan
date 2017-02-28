@@ -60,7 +60,6 @@ func TestKubernetesLauncher(t *testing.T) {
 		k8sLauncher = New(master, minion, config).(k8s)
 
 		Convey("When configuration is passed to Kubernetes Launcher", func() {
-			config := DefaultConfig()
 			handle := &mocks.TaskHandle{}
 			handle.On("Address").Return("127.0.0.1")
 
@@ -69,32 +68,29 @@ func TestKubernetesLauncher(t *testing.T) {
 			k8sLauncher.isListening = getIsListeningFunc(true)
 			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
 
-			resultHandle, err := k8sLauncher.Launch()
-			So(err, ShouldBeNil)
-			So(resultHandle, ShouldNotBeNil)
 
 			Convey("Privileged containers should be allowed to run by default", func() {
-				So(k8sLauncher.getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=false")
-				So(k8sLauncher.getKubeletCommand(config), ShouldContainSubstring, "--allow-privileged=false")
+				So(k8sLauncher.getKubeAPIServerCommand(), ShouldContainSubstring, "--allow-privileged=false")
+				So(k8sLauncher.getKubeletCommand(), ShouldContainSubstring, "--allow-privileged=false")
 
 				Convey("But they can be disallowed through configuration", func() {
-					config.AllowPrivileged = true
-					So(k8sLauncher.getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
-					So(k8sLauncher.getKubeletCommand(config), ShouldContainSubstring, "--allow-privileged=true")
+					k8sLauncher.config.AllowPrivileged = true
+					So(k8sLauncher.getKubeAPIServerCommand(), ShouldContainSubstring, "--allow-privileged=true")
+					So(k8sLauncher.getKubeletCommand(), ShouldContainSubstring, "--allow-privileged=true")
 				})
 			})
 
 			Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
-				So(k8sLauncher.getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
+				So(k8sLauncher.getKubeAPIServerCommand(), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
 
 				Convey("But etcd server location can be changed to arbitrary one", func() {
-					config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
-					So(k8sLauncher.getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
+					k8sLauncher.config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
+					So(k8sLauncher.getKubeAPIServerCommand(), ShouldContainSubstring, "--etcd-servers=" + k8sLauncher.config.EtcdServers)
 				})
 			})
 			Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {
-				config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
-				So(k8sLauncher.getKubeAPIServerCommand(config), ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
+				k8sLauncher.config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
+				So(k8sLauncher.getKubeAPIServerCommand(), ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
 			})
 
 		})
@@ -103,7 +99,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
@@ -114,7 +110,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
@@ -127,7 +123,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
@@ -140,7 +136,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			handle.On("Status").Return(executor.TERMINATED)
 			k8sLauncher.isListening = getIsListeningFunc(false)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
