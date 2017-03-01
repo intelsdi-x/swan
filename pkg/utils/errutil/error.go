@@ -11,3 +11,11 @@ func Check(err error) {
 		logrus.Fatalf("%v", err)
 	}
 }
+
+// CheckWithContext checks the error and exit if it is not nil. Logs additional context information.
+func CheckWithContext(err error, context string) {
+	if err != nil {
+		logrus.Debugf("%s: %+v", context, err)
+		logrus.Fatalf("%s: %v", context, err)
+	}
+}
