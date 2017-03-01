@@ -70,43 +70,43 @@ func TestKubernetesLauncher(t *testing.T) {
 
 			Convey("Privileged containers should be allowed to run by default", func() {
 				k8sLauncher.config.KubeletPort = 1234
-				kubeApiCommand := k8sLauncher.getKubeAPIServerCommand()
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 				kubeletCommand := k8sLauncher.getKubeletCommand()
 
-				So(kubeApiCommand.raw, ShouldContainSubstring, "--allow-privileged=false")
-				So(kubeApiCommand.healthCheckPort, ShouldEqual, 8080)
-				So(kubeApiCommand.exec.Name(), ShouldEqual, "Master Executor")
+				So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+				So(kubeAPICommand.healthCheckPort, ShouldEqual, 8080)
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 
 				So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=false")
 				So(kubeletCommand.healthCheckPort, ShouldEqual, 1234)
-				So(kubeApiCommand.exec.Name(), ShouldEqual, "Master Executor")
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 
 				Convey("But they can be disallowed through configuration", func() {
 					k8sLauncher.config.AllowPrivileged = true
-					kubeApiCommand := k8sLauncher.getKubeAPIServerCommand()
+					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 					kubeletCommand := k8sLauncher.getKubeletCommand()
 
-					So(kubeApiCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
+					So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 					So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 				})
 			})
 
 			Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
-				kubeApiCommand := k8sLauncher.getKubeAPIServerCommand()
-				So(kubeApiCommand.raw, ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
-				So(kubeApiCommand.exec.Name(), ShouldEqual, "Master Executor")
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+				So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 
 				Convey("But etcd server location can be changed to arbitrary one", func() {
 					k8sLauncher.config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
-					kubeApiCommand := k8sLauncher.getKubeAPIServerCommand()
-					So(kubeApiCommand.raw, ShouldContainSubstring, "--etcd-servers="+k8sLauncher.config.EtcdServers)
-					So(kubeApiCommand.exec.Name(), ShouldEqual, "Master Executor")
+					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+					So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers="+k8sLauncher.config.EtcdServers)
+					So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 				})
 			})
 			Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {
 				k8sLauncher.config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
-				kubeApiCommand := k8sLauncher.getKubeAPIServerCommand()
-				So(kubeApiCommand.raw, ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+				So(kubeAPICommand.raw, ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
 			})
 
 		})
