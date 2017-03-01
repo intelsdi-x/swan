@@ -38,6 +38,12 @@ var (
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
 )
 
+type kubeCommand struct {
+	exec            executor.Executor
+	raw             string
+	healthCheckPort int
+}
+
 // Config contains all data for running kubernetes master & kubelet.
 type Config struct {
 	// Comma separated list of nodes in the etcd cluster
@@ -184,7 +190,7 @@ func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	// Launch kube-apiserver using master executor.
 	kubeAPIServer := m.getKubeAPIServerCommand()
-	apiHandle, err := m.launchService(m.master, kubeAPIServer, m.config.KubeAPIPort)
+	apiHandle, err := m.launchService(kubeAPIServer)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot launch kube-apiserver using master executor")
 	}
@@ -192,7 +198,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kube-controller-manager using master executor.
 	kubeController := m.getKubeControllerCommand()
-	controllerHandle, err := m.launchService(m.master, kubeController, m.config.KubeControllerPort)
+	controllerHandle, err := m.launchService(kubeController)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -202,7 +208,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kube-scheduler using master executor.
 	kubeScheduler := m.getKubeSchedulerCommand()
-	schedulerHandle, err := m.launchService(m.master, kubeScheduler, m.config.KubeSchedulerPort)
+	schedulerHandle, err := m.launchService(kubeScheduler)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -213,7 +219,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	// Launch services on minion node.
 	// Launch kube-proxy using minion executor.
 	kubeProxyCommand := m.getKubeProxyCommand()
-	proxyHandle, err := m.launchService(m.minion, kubeProxyCommand, m.config.KubeProxyPort)
+	proxyHandle, err := m.launchService(kubeProxyCommand)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -223,7 +229,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 
 	// Launch kubelet using minion executor.
 	kubeletCommand := m.getKubeletCommand()
-	kubeletHandle, err := m.launchService(m.minion, kubeletCommand, m.config.KubeletPort)
+	kubeletHandle, err := m.launchService(kubeletCommand)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
@@ -235,85 +241,90 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 }
 
 // launchService executes service and check if it is listening on it's endpoint.
-func (m k8s) launchService(exec executor.Executor, command string, port int) (executor.TaskHandle, error) {
-	handle, err := exec.Execute(command)
+func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
+	handle, err := command.exec.Execute(command.raw)
 	if err != nil {
-		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command, exec.Name())
+		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command.raw, command.exec.Name())
 	}
 
-	address := fmt.Sprintf("%s:%d", handle.Address(), port)
+	address := fmt.Sprintf("%s:%d", handle.Address(), command.healthCheckPort)
 	if !m.isListening(address, serviceListenTimeout) {
 		defer executor.StopCleanAndErase(handle)
 		ec, _ := handle.ExitCode()
 
 		return nil, errors.Errorf(
 			"failed to connect to service %q on %q: timeout on connection to %q; task status is %v and exit code is %d",
-			command, exec.Name(), address, handle.Status(), ec)
+			command.raw, command.exec.Name(), address, handle.Status(), ec)
 	}
 
 	return handle, nil
 }
 
 // getKubeAPIServerCommand returns command for kube-apiserver.
-func (m k8s) getKubeAPIServerCommand() string {
-	return fmt.Sprint(
-		fmt.Sprintf("apiserver"),
-		fmt.Sprintf(" --v=%d", m.config.LogLevel),
-		fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
-		fmt.Sprintf(" --etcd-servers=%s", m.config.EtcdServers),
-		fmt.Sprintf(" --etcd-prefix=%s", m.config.EtcdPrefix),
-		fmt.Sprintf(" --insecure-bind-address=%s", m.config.KubeAPIAddr),
-		fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
-		fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
-		fmt.Sprintf(" --service-cluster-ip-range=%s", m.config.ServiceAddresses),
-		fmt.Sprintf(" %s", m.config.KubeAPIArgs),
-	)
+func (m k8s) getKubeAPIServerCommand() kubeCommand {
+	return kubeCommand{m.master,
+		fmt.Sprint(
+			fmt.Sprintf("apiserver"),
+			fmt.Sprintf(" --v=%d", m.config.LogLevel),
+			fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
+			fmt.Sprintf(" --etcd-servers=%s", m.config.EtcdServers),
+			fmt.Sprintf(" --etcd-prefix=%s", m.config.EtcdPrefix),
+			fmt.Sprintf(" --insecure-bind-address=%s", m.config.KubeAPIAddr),
+			fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
+			fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
+			fmt.Sprintf(" --service-cluster-ip-range=%s", m.config.ServiceAddresses),
+			fmt.Sprintf(" %s", m.config.KubeAPIArgs),
+		), m.config.KubeAPIPort}
 }
 
 // getKubeControllerCommand returns command for kube-controller-manager.
-func (m k8s) getKubeControllerCommand() string {
-	return fmt.Sprint(
-		fmt.Sprintf("controller-manager"),
-		fmt.Sprintf(" --v=%d", m.config.LogLevel),
-		fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
-		fmt.Sprintf(" --port=%d", m.config.KubeControllerPort),
-		fmt.Sprintf(" %s", m.config.KubeControllerArgs),
-	)
+func (m k8s) getKubeControllerCommand() kubeCommand {
+	return kubeCommand{m.master,
+		fmt.Sprint(
+			fmt.Sprintf("controller-manager"),
+			fmt.Sprintf(" --v=%d", m.config.LogLevel),
+			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" --port=%d", m.config.KubeControllerPort),
+			fmt.Sprintf(" %s", m.config.KubeControllerArgs),
+		), m.config.KubeControllerPort}
 }
 
 // getKubeSchedulerCommand returns command for kube-scheduler.
-func (m k8s) getKubeSchedulerCommand() string {
-	return fmt.Sprint(
-		fmt.Sprintf("scheduler"),
-		fmt.Sprintf(" --v=%d", m.config.LogLevel),
-		fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
-		fmt.Sprintf(" --port=%d", m.config.KubeSchedulerPort),
-		fmt.Sprintf(" %s", m.config.KubeSchedulerArgs),
-	)
+func (m k8s) getKubeSchedulerCommand() kubeCommand {
+	return kubeCommand{m.master,
+		fmt.Sprint(
+			fmt.Sprintf("scheduler"),
+			fmt.Sprintf(" --v=%d", m.config.LogLevel),
+			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" --port=%d", m.config.KubeSchedulerPort),
+			fmt.Sprintf(" %s", m.config.KubeSchedulerArgs),
+		), m.config.KubeSchedulerPort}
 }
 
 // getKubeletCommand returns command for kubelet.
-func (m k8s) getKubeletCommand() string {
-	return fmt.Sprint(
-		fmt.Sprintf("kubelet"),
-		fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
-		fmt.Sprintf(" --v=%d", m.config.LogLevel),
-		fmt.Sprintf(" --port=%d", m.config.KubeletPort),
-		fmt.Sprintf(" --read-only-port=0"),
-		fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
-		fmt.Sprintf(" %s", m.config.KubeletArgs),
-	)
+func (m k8s) getKubeletCommand() kubeCommand {
+	return kubeCommand{m.minion,
+		fmt.Sprint(
+			fmt.Sprintf("kubelet"),
+			fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
+			fmt.Sprintf(" --v=%d", m.config.LogLevel),
+			fmt.Sprintf(" --port=%d", m.config.KubeletPort),
+			fmt.Sprintf(" --read-only-port=0"),
+			fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" %s", m.config.KubeletArgs),
+		), m.config.KubeletPort}
 }
 
 // getKubeProxyCommand returns command for kube-proxy.
-func (m k8s) getKubeProxyCommand() string {
-	return fmt.Sprint(
-		fmt.Sprintf("proxy"),
-		fmt.Sprintf(" --v=%d", m.config.LogLevel),
-		fmt.Sprintf(" --healthz-port=%d", m.config.KubeProxyPort),
-		fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
-		fmt.Sprintf(" %s", m.config.KubeProxyArgs),
-	)
+func (m k8s) getKubeProxyCommand() kubeCommand {
+	return kubeCommand{m.minion,
+		fmt.Sprint(
+			fmt.Sprintf("proxy"),
+			fmt.Sprintf(" --v=%d", m.config.LogLevel),
+			fmt.Sprintf(" --healthz-port=%d", m.config.KubeProxyPort),
+			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" %s", m.config.KubeProxyArgs),
+		), m.config.KubeProxyPort}
 }
 
 func (m k8s) waitForReadyNode(apiServerAddress string) error {
