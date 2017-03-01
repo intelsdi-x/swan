@@ -17,10 +17,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	snapLogs = "/tmp/swan-integration-tests"
-)
-
 func getUUID(outs []byte) string {
 	So(outs, ShouldNotBeNil)
 	lines := strings.Split(string(outs), "\n")
@@ -69,168 +65,162 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_WARMUP_TIME": "1s",
 	}
 
-	Convey("When experiment folder is ready", t, func() {
-		var logDirPerm os.FileMode = 0755
-		err := os.MkdirAll(snapLogs, logDirPerm)
+	Convey("With environment prepared for experiment", t, func() {
+		for k, v := range envs {
+			os.Setenv(k, v)
+		}
+
+		session, err := getCassandraSession()
 		So(err, ShouldBeNil)
+		defer session.Close()
 
-		Convey("While doing experiment", func() {
-			for k, v := range envs {
-				os.Setenv(k, v)
+		loadDataFromCassandra := func(experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string) {
+
+			var ns string
+			iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+			for iter.Scan(&ns, &tags) {
+				log.Debugf("experimentID=%s ns=%s tags=%#v", experimentID, ns, tags)
+				So(ns, ShouldNotBeBlank)
+				So(tags, ShouldNotBeEmpty)
+				So(tags, ShouldContainKey, "swan_phase")
+				So(tags, ShouldContainKey, "swan_aggressor_name")
+				swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
+				swanPhases = append(swanPhases, tags["swan_phase"])
+				swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
 			}
+			So(iter.Close(), ShouldBeNil)
+			return
+		}
 
-			session, err := getCassandraSession()
-			So(err, ShouldBeNil)
-			defer session.Close()
+		Convey("With proper configuration and without aggressor phases", func() {
+			_, err := runExp(memcachedSensitivityProfileBin, true)
 
-			loadDataFromCassandra := func(experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string) {
-
-				var ns string
-				iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
-				for iter.Scan(&ns, &tags) {
-					log.Debugf("experimentID=%s ns=%s tags=%#v", experimentID, ns, tags)
-					So(ns, ShouldNotBeBlank)
-					So(tags, ShouldNotBeEmpty)
-					So(tags, ShouldContainKey, "swan_phase")
-					So(tags, ShouldContainKey, "swan_aggressor_name")
-					swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
-					swanPhases = append(swanPhases, tags["swan_phase"])
-					swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
-				}
-				So(iter.Close(), ShouldBeNil)
-				return
-			}
-
-			Convey("With proper configuration and without aggressor phases", func() {
-				_, err := runExp(memcachedSensitivityProfileBin, true)
-
-				Convey("Experiment should return with no errors", func() {
-					So(err, ShouldBeNil)
-				})
+			Convey("Experiment should return with no errors", func() {
+				So(err, ShouldBeNil)
 			})
+		})
 
-			Convey("With proper configuration and with l1d aggressors", func() {
-				args := []string{"-aggr", "l1d"}
-				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
-					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
-					So(err, ShouldBeNil)
+		Convey("With proper configuration and with l1d aggressors", func() {
+			args := []string{"-aggr", "l1d"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
 
-					_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
-					So("None", ShouldBeIn, swanAggressorsNames)
-					So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				So("None", ShouldBeIn, swanAggressorsNames)
+				So("L1 Data", ShouldBeIn, swanAggressorsNames)
 
-					// Check metadata was saved.
-					var (
-						metadata     = make(map[string]string)
-						iterMetadata map[string]string
-					)
+				// Check metadata was saved.
+				var (
+					metadata     = make(map[string]string)
+					iterMetadata map[string]string
+				)
 
-					iter := session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? ALLOW FILTERING`, experimentID).Iter()
-					for iter.Scan(&iterMetadata) {
-						So(iterMetadata, ShouldNotBeEmpty)
-						for k, v := range iterMetadata {
-							metadata[k] = v
-						}
+				iter := session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? ALLOW FILTERING`, experimentID).Iter()
+				for iter.Scan(&iterMetadata) {
+					So(iterMetadata, ShouldNotBeEmpty)
+					for k, v := range iterMetadata {
+						metadata[k] = v
 					}
-					So(err, ShouldBeNil)
-					So(metadata, ShouldNotBeEmpty)
-					So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")
-					So(metadata["load_points"], ShouldEqual, "1")
-					So(metadata["load_duration"], ShouldEqual, "1s")
-					So(metadata[experiment.CPUModelNameKey], ShouldNotEqual, "")
+				}
+				So(err, ShouldBeNil)
+				So(metadata, ShouldNotBeEmpty)
+				So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")
+				So(metadata["load_points"], ShouldEqual, "1")
+				So(metadata["load_duration"], ShouldEqual, "1s")
+				So(metadata[experiment.CPUModelNameKey], ShouldNotEqual, "")
 
-				})
-
-				Convey("While having two repetitions to phase", func() {
-					os.Setenv("SWAN_REPS", "2")
-					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
-					So(err, ShouldBeNil)
-
-					_, swanRepetitions, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
-
-					So("L1 Data", ShouldBeIn, swanAggressorsNames)
-					So("None", ShouldBeIn, swanAggressorsNames)
-
-					So("0", ShouldBeIn, swanRepetitions)
-					So("1", ShouldBeIn, swanRepetitions)
-
-					So(swanAggressorsNames, ShouldHaveLength, 36)
-					So(swanRepetitions, ShouldHaveLength, 36)
-
-				})
-
-				Convey("Experiment should succeed also with 2 load points", func() {
-					os.Setenv("SWAN_LOAD_POINTS", "2")
-					fmt.Println(args)
-					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
-					So(err, ShouldBeNil)
-
-					tags, _, swanAggressorsNames, swanPhases := loadDataFromCassandra(experimentID)
-
-					So(tags["swan_repetition"], ShouldEqual, "0")
-
-					So(swanAggressorsNames, ShouldHaveLength, 36)
-					So(swanPhases, ShouldHaveLength, 36)
-
-					So("L1 Data", ShouldBeIn, swanAggressorsNames)
-					So("None", ShouldBeIn, swanAggressorsNames)
-
-					So("Aggressor None; load point 0;", ShouldBeIn, swanPhases)
-
-				})
 			})
 
-			Convey("With proper kubernetes configuration and without phases", func() {
-				args := []string{"-kubernetes", "-kube_allow_privileged"}
-				_, err := runExp(memcachedSensitivityProfileBin, true, args...)
-				Convey("Experiment should return with no errors", func() {
-					So(err, ShouldBeNil)
-				})
+			Convey("While having two repetitions to phase", func() {
+				os.Setenv("SWAN_REPS", "2")
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				_, swanRepetitions, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+
+				So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				So("None", ShouldBeIn, swanAggressorsNames)
+
+				So("0", ShouldBeIn, swanRepetitions)
+				So("1", ShouldBeIn, swanRepetitions)
+
+				So(swanAggressorsNames, ShouldHaveLength, 36)
+				So(swanRepetitions, ShouldHaveLength, 36)
+
 			})
 
-			Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-				args := []string{"-kubernetes", "-aggr", "l1d", "-baseline=false", "-kube_allow_privileged"}
-				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
-					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
-					So(err, ShouldBeNil)
+			Convey("Experiment should succeed also with 2 load points", func() {
+				os.Setenv("SWAN_LOAD_POINTS", "2")
+				fmt.Println(args)
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
 
-					tags, _, _, _ := loadDataFromCassandra(experimentID)
-					So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
-				})
+				tags, _, swanAggressorsNames, swanPhases := loadDataFromCassandra(experimentID)
+
+				So(tags["swan_repetition"], ShouldEqual, "0")
+
+				So(swanAggressorsNames, ShouldHaveLength, 36)
+				So(swanPhases, ShouldHaveLength, 36)
+
+				So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				So("None", ShouldBeIn, swanAggressorsNames)
+
+				So("Aggressor None; load point 0;", ShouldBeIn, swanPhases)
+
 			})
+		})
 
-			Convey("With proper kubernetes and caffe", func() {
-				args := []string{"-kubernetes", "-aggr", "caffe", "-baseline=false", "-kube_allow_privileged"}
-				Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
-					experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
-					So(err, ShouldBeNil)
-
-					tags, _, _, _ := loadDataFromCassandra(experimentID)
-					So(tags["swan_aggressor_name"], ShouldEqual, "Caffe")
-				})
+		Convey("With proper kubernetes configuration and without phases", func() {
+			args := []string{"-kubernetes", "-kube_allow_privileged"}
+			_, err := runExp(memcachedSensitivityProfileBin, true, args...)
+			Convey("Experiment should return with no errors", func() {
+				So(err, ShouldBeNil)
 			})
+		})
 
-			Convey("With invalid configuration stop experiment if error", func() {
-				os.Setenv("SWAN_LOAD_POINTS", "abc")
-				_, err := runExp(memcachedSensitivityProfileBin, false)
-				So(err, ShouldNotBeNil)
+		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
+			args := []string{"-kubernetes", "-aggr", "l1d", "-baseline=false", "-kube_allow_privileged"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				tags, _, _, _ := loadDataFromCassandra(experimentID)
+				So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 			})
+		})
 
-			Convey("While setting zero repetitions to phase", func() {
-				args := []string{"-aggr", "l1d"}
-				os.Setenv("SWAN_LOAD_POINTS", "1")
-				os.Setenv("SWAN_REPS", "0")
-				Convey("Experiment should pass with no errors", func() {
-					_, err := runExp(memcachedSensitivityProfileBin, false, args...)
-					So(err, ShouldBeNil)
-				})
+		Convey("With proper kubernetes and caffe", func() {
+			args := []string{"-kubernetes", "-aggr", "caffe", "-baseline=false", "-kube_allow_privileged"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				tags, _, _, _ := loadDataFromCassandra(experimentID)
+				So(tags["swan_aggressor_name"], ShouldEqual, "Caffe")
 			})
+		})
 
-			Convey("With wrong aggresor name", func() {
-				args := []string{"-aggr", "not-existing-aggressor"}
+		Convey("With invalid configuration stop experiment if error", func() {
+			os.Setenv("SWAN_LOAD_POINTS", "abc")
+			_, err := runExp(memcachedSensitivityProfileBin, false)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("While setting zero repetitions to phase", func() {
+			args := []string{"-aggr", "l1d"}
+			os.Setenv("SWAN_LOAD_POINTS", "1")
+			os.Setenv("SWAN_REPS", "0")
+			Convey("Experiment should pass with no errors", func() {
 				_, err := runExp(memcachedSensitivityProfileBin, false, args...)
-				So(err, ShouldNotBeNil)
+				So(err, ShouldBeNil)
 			})
+		})
+
+		Convey("With wrong aggresor name", func() {
+			args := []string{"-aggr", "not-existing-aggressor"}
+			_, err := runExp(memcachedSensitivityProfileBin, false, args...)
+			So(err, ShouldNotBeNil)
 		})
 	})
 }

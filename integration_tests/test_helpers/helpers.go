@@ -28,15 +28,16 @@ func AssertFileExists(executable string) string {
 	return path
 }
 
-// RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
+// RunAndTestSnaptel checks snapteld on returning clenaup function, plugin loader and string
 // with snapteld address
+// Note: It is facade function that assumes snapteld is running all the time.
+// But can be easily replaced with self-provided snapteld.
 func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL string) {
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
 	loader, err := snap.NewPluginLoader(loaderConfig)
 	convey.So(err, convey.ShouldBeNil)
 	snaptelURL = loaderConfig.SnapteldAddress
-
 	cleanup = func() {}
 	return
 }
