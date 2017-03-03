@@ -14,6 +14,7 @@ before_script:
 script:
 - make test_lint 
 - make unit_test
+- make integration_test_build
 notifications:
   slack:
     rooms:
