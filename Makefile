@@ -87,6 +87,10 @@ test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
+# make sure that all integration tests are building without problem - not required directly for test_integration
+integration_test_build:
+	./scripts/integration_tests_build.sh
+
 e2e_test:
 	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
@@ -107,6 +111,7 @@ remove_vendor:
 repository_reset: cleanup remove_vendor
 	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
 	(cd workloads/deep_learning/caffe/openblas/; git clean -fddx; git reset --hard)
+
 
 show_env:
 	@ echo Environment variables:

@@ -1,7 +1,6 @@
 package testhelpers
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,7 +12,6 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -30,27 +28,17 @@ func AssertFileExists(executable string) string {
 	return path
 }
 
-// RunAndTestSnaptel starts snapteld on random port returning clenaup function, plugin loader and string
+// RunAndTestSnaptel checks snapteld on returning clenaup function, plugin loader and string
 // with snapteld address
+// Note: It is facade function that assumes snapteld is running all the time.
+// But can be easily replaced with self-provided snapteld.
 func RunAndTestSnaptel() (cleanup func(), loader *snap.PluginLoader, snaptelURL string) {
-	snapteld := NewSnapteld()
-	err := snapteld.Start()
-	convey.So(err, convey.ShouldBeNil)
 
 	loaderConfig := snap.DefaultPluginLoaderConfig()
-	snaptelURL = fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
-	loaderConfig.SnapteldAddress = snaptelURL
-
-	loader, err = snap.NewPluginLoader(loaderConfig)
-
+	loader, err := snap.NewPluginLoader(loaderConfig)
 	convey.So(err, convey.ShouldBeNil)
-
-	cleanup = func() {
-		var errCollection errcollection.ErrorCollection
-		errCollection.Add(snapteld.Stop())
-		errCollection.Add(snapteld.CleanAndEraseOutput())
-		convey.So(errCollection.GetErrIfAny(), convey.ShouldBeNil)
-	}
+	snaptelURL = loaderConfig.SnapteldAddress
+	cleanup = func() {}
 	return
 }
 

@@ -21,17 +21,19 @@ const (
 
 func TestKubernetesExecutor(t *testing.T) {
 	// Readable, simple, easy to debug, reproducible and reliable testing environment.
-	log.SetLevel(log.PanicLevel)
+	log.SetLevel(log.ErrorLevel)
+
 	config := kubernetes.DefaultConfig()
 	config.RetryCount = 0
 
+	// Pod executuor config.
 	executorConfig := executor.DefaultKubernetesConfig()
 	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
 	// Create kubectl helper for communicate with Kubernetes cluster.
 	kubectl, err := testhelpers.NewKubeClient(executorConfig)
 	if err != nil {
-		t.Errorf("Requested configuration is invalid: %q", err)
+		t.Fatalf("Requested configuration is invalid: %q", err)
 	}
 
 	// Create Kubernetes launcher and spawn Kubernetes cluster.
@@ -39,14 +41,14 @@ func TestKubernetesExecutor(t *testing.T) {
 	k8sLauncher := kubernetes.New(local, local, config)
 	k8sHandle, err := k8sLauncher.Launch()
 	if err != nil {
-		t.Errorf("Cannot start k8s cluster: %q", err)
+		t.Fatalf("Cannot start k8s cluster: %q", err)
 	}
 
 	// Make sure cluster is shut down and cleaned up when test ends.
 	defer func() {
 		errs := executor.StopCleanAndErase(k8sHandle)
 		if err := errs.GetErrIfAny(); err != nil {
-			t.Errorf("Cannot stop cluster: %q", err)
+			t.Fatalf("Cannot stop cluster: %q", err)
 		}
 	}()
 

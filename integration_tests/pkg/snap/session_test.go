@@ -1,7 +1,6 @@
 package snap
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -15,56 +14,22 @@ import (
 )
 
 func TestSnap(t *testing.T) {
-	var snapteld *testhelpers.Snapteld
 	var s *snap.Session
 	var publisher *wmap.PublishWorkflowMapNode
 	var metricsFile string
-	testStopping := func() {
-		s.Wait()
-		err := s.Stop()
-		So(err, ShouldBeNil)
-		So(s.IsRunning(), ShouldBeFalse)
-
-		// one measurement should contains more then one metric.
-		oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(metricsFile)
-		So(err, ShouldBeNil)
-		So(len(oneMeasurement), ShouldBeGreaterThan, 0)
-
-		metric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
-		So(err, ShouldBeNil)
-		So(metric.Tags["foo"], ShouldEqual, "bar")
-
-		host, err := os.Hostname()
-		So(err, ShouldBeNil)
-		So(metric.Tags["plugin_running_on"], ShouldEqual, host)
-	}
 
 	Convey("While having Snapteld running", t, func() {
-		snapteld = testhelpers.NewSnapteld()
-		err := snapteld.Start()
-		So(err, ShouldBeNil)
 
-		defer func() {
-			if snapteld != nil {
-				err := snapteld.Stop()
-				err2 := snapteld.CleanAndEraseOutput()
-				So(err, ShouldBeNil)
-				So(err2, ShouldBeNil)
-			}
-		}()
-		snapteldAddress := fmt.Sprintf("http://127.0.0.1:%d", snapteld.Port())
+		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
+		defer cleanup()
 
 		Convey("We are able to connect with snapteld", func() {
-			c, err := client.New(snapteldAddress, "v1", true)
-			So(err, ShouldBeNil)
 
-			loaderConfig := snap.DefaultPluginLoaderConfig()
-			loaderConfig.SnapteldAddress = snapteldAddress
-			pluginLoader, err := snap.NewPluginLoader(loaderConfig)
+			c, err := client.New(snapteldAddr, "v1", true)
 			So(err, ShouldBeNil)
 
 			Convey("Loading collectors", func() {
-				err = pluginLoader.Load(snap.DockerCollector)
+				err := loader.Load(snap.DockerCollector)
 				So(err, ShouldBeNil)
 
 				// Wait until metric is available in namespace.
@@ -84,7 +49,7 @@ func TestSnap(t *testing.T) {
 				So(found, ShouldBeTrue)
 
 				Convey("Loading publishers", func() {
-					err := pluginLoader.Load(snap.FilePublisher)
+					err := loader.Load(snap.FilePublisher)
 					So(err, ShouldBeNil)
 
 					publisher = wmap.NewPublishNode("file", snap.PluginAnyVersion)
@@ -122,7 +87,29 @@ func TestSnap(t *testing.T) {
 						Convey("Contacting snap to get the task status", func() {
 							So(s.IsRunning(), ShouldBeTrue)
 
-							Convey("Reading samples from file", testStopping)
+							Convey("Reading samples from file", func() {
+
+								err := s.Wait()
+								So(err, ShouldBeNil)
+
+								err = s.Stop()
+								So(err, ShouldBeNil)
+								So(s.IsRunning(), ShouldBeFalse)
+
+								// one measurement should contains more then one metric.
+								oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(metricsFile)
+								So(err, ShouldBeNil)
+								So(len(oneMeasurement), ShouldBeGreaterThan, 0)
+
+								metric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
+								So(err, ShouldBeNil)
+								So(metric.Tags["foo"], ShouldEqual, "bar")
+
+								host, err := os.Hostname()
+								So(err, ShouldBeNil)
+								So(metric.Tags["plugin_running_on"], ShouldEqual, host)
+							},
+							)
 						})
 					})
 				})

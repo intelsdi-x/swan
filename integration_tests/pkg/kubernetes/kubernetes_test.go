@@ -26,8 +26,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 		local := executor.NewLocal()
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
-			config, err := kubernetes.UniqueConfig()
-			So(err, ShouldBeNil)
+			config := kubernetes.DefaultConfig()
 
 			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 

@@ -2,7 +2,6 @@
 
 set -e
 
-SNAP_VERSION="1.1.0"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
@@ -10,13 +9,13 @@ SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 
 . $HOME_DIR/.bash_profile
 
-echo "Installing Snap..."
-if [ ! -f /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz ]; then
-    wget -q -P /cache https://github.com/intelsdi-x/snap/releases/download/${SNAP_VERSION}/snap-${SNAP_VERSION}-linux-amd64.tar.gz
-    tar xf /cache/snap-${SNAP_VERSION}-linux-amd64.tar.gz -C /cache
-    mv /cache/snaptel $GOPATH/bin
-    mv /cache/snapteld $GOPATH/bin
-fi
+
+# official 
+curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | sudo bash
+sudo yum install -y snap-telemetry
+systemctl enable snap-telemetry
+systemctl start snap-telemetry
+systemctl status snap-telemetry
 
 echo "Installing snap-plugin-collector-docker (version $SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION)..."
 if [ ! -f /cache/snap-plugin-collector-docker-${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION} ]; then
