@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	snapProcessorTag "github.com/intelsdi-x/snap-plugin-processor-tag/tag"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 
@@ -79,7 +79,7 @@ func NewSession(
 }
 
 // Start an experiment session.
-func (s *Session) Start(tags string) error {
+func (s *Session) Start(rawTags string) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -92,6 +92,15 @@ func (s *Session) Start(tags string) error {
 
 	wf := wmap.NewWorkflowMap()
 
+	var tags map[string]string
+	for _, pair := range strings.Split(rawTags, ",") {
+		kv := strings.Split(pair, ":")
+		tags[kv[0]] = kv[1]
+	}
+
+	wf.CollectNode.Tags["tags"] = tags
+
+
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)
 	}
@@ -102,21 +111,9 @@ func (s *Session) Start(tags string) error {
 
 	loaderConfig := DefaultPluginLoaderConfig()
 	loaderConfig.SnapteldAddress = s.pClient.URL
-	loader, err := NewPluginLoader(loaderConfig)
-	if err != nil {
-		return err
-	}
-
-	if err := loader.Load(TagProcessor); err != nil {
-		return err
-	}
-
-	pr := wmap.NewProcessNode(snapProcessorTag.Meta().Name, 3)
-	pr.AddConfigItem("tags", tags)
 
 	// Add specified publisher to workflow as well.
-	pr.Add(s.Publisher)
-	wf.CollectNode.Add(pr)
+	wf.CollectNode.Add(s.Publisher)
 
 	t.Workflow = wf
 

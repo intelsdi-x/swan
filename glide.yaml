@@ -7,10 +7,6 @@ import:
   version: master
   subpackages:
   - v1/plugin
-- package: github.com/intelsdi-x/snap-plugin-processor-tag
-  version: ~3.0.0
-  subpackages:
-  - tag
 - package: github.com/intelsdi-x/snap
   version: ~1.0.0
   subpackages:

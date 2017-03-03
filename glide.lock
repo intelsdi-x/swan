@@ -1,5 +1,5 @@
-hash: d8a75352080e14743203b81b1a48e3fb7b5b47b5808d11b7c99e202082c10242
-updated: 2017-02-17T12:30:44.892035967+01:00
+hash: 2cb6a6acc79fa1d85c95e6381730483164fb6cfd7a4464840db336b1980e469f
+updated: 2017-03-06T10:03:50.267466873Z
 imports:
 - name: github.com/appc/spec
   version: db96f94ae6b227fe4d8288527ead8927181620f6
@@ -37,7 +37,7 @@ imports:
   - httputil
   - timeutil
 - name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
 - name: github.com/docker/distribution
@@ -46,7 +46,7 @@ imports:
   - digest
   - reference
 - name: github.com/emicklei/go-restful
-  version: 7c47e2558a0bbbaba9ecab06bc6681e73028a28a
+  version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
   - log
   - swagger
@@ -57,7 +57,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 36d33bfe519efae5632669801b180bf1a245da3b
 - name: github.com/go-openapi/spec
-  version: 593aa4cf7a6f59a451c8f0d8af08a57328e6da54
+  version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
   version: 96d7b9ebd181a1735a1c9ac87914f2b32fbf56c9
 - name: github.com/gocql/gocql
@@ -67,7 +67,7 @@ imports:
   - internal/murmur
   - internal/streams
 - name: github.com/gogo/protobuf
-  version: e18d7aa8f8c624c915db340349aad4c49b10d173
+  version: 82d16f734d6d871204a3feb1a73cb220cc92574c
   subpackages:
   - proto
   - sortkeys
@@ -93,6 +93,10 @@ imports:
   - codec
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
+- name: github.com/howeyc/gopass
+  version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
+- name: github.com/imdario/mergo
+  version: 50d4dbd4eb0e84778abe37cefef140271d96fade
 - name: github.com/intelsdi-x/gomit
   version: 4f098da2bbb51d787be003e4abfbc25d01837564
 - name: github.com/intelsdi-x/snap
@@ -125,14 +129,10 @@ imports:
   - pkg/stringutils
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-lib-go
-  version: ed851e36ef19aa204063ac1e30551ce1e50fa816
+  version: af03307f16e97c41f966b1e00d340d3393d6675d
   subpackages:
   - v1/plugin
   - v1/plugin/rpc
-- name: github.com/intelsdi-x/snap-plugin-processor-tag
-  version: 2c6833e0eac8ed82c08178af43a16b3ab66fd093
-  subpackages:
-  - tag
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/jtolds/gls
@@ -168,7 +168,7 @@ imports:
 - name: github.com/robfig/cron
   version: 32d9c273155a0506d27cf73dd1246e86a470997e
 - name: github.com/Sirupsen/logrus
-  version: c078b1e43f58d563c74cebe63c85789e76ddb627
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/smartystreets/assertions
   version: 443d812296a84445c202c085f19e18fc238f8250
   subpackages:
@@ -181,7 +181,7 @@ imports:
   - convey/gotest
   - convey/reporting
 - name: github.com/spf13/pflag
-  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+  version: 94e98a55fb412fcbcfc302555cb990f5e1590627
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
@@ -215,6 +215,7 @@ imports:
   - openpgp/packet
   - openpgp/s2k
   - ssh
+  - ssh/terminal
 - name: golang.org/x/net
   version: 04557861f124410b768b1ba5bb3a91b705afbfc6
   subpackages:
@@ -367,6 +368,7 @@ imports:
   - 1.5/pkg/util/errors
   - 1.5/pkg/util/flowcontrol
   - 1.5/pkg/util/framer
+  - 1.5/pkg/util/homedir
   - 1.5/pkg/util/integer
   - 1.5/pkg/util/intstr
   - 1.5/pkg/util/json
@@ -388,7 +390,11 @@ imports:
   - 1.5/plugin/pkg/client/auth/gcp
   - 1.5/plugin/pkg/client/auth/oidc
   - 1.5/rest
+  - 1.5/tools/auth
+  - 1.5/tools/clientcmd
   - 1.5/tools/clientcmd/api
+  - 1.5/tools/clientcmd/api/latest
+  - 1.5/tools/clientcmd/api/v1
   - 1.5/tools/metrics
   - 1.5/transport
 - name: k8s.io/kubernetes
