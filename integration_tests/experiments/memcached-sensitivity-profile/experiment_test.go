@@ -185,8 +185,9 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				tags, _, _, _ := loadDataFromCassandra(experimentID)
+				tags, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
 				So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+				So("None", ShouldNotBeIn, swanAggressorsNames)
 			})
 		})
 
