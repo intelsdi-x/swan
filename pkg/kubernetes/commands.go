@@ -1,73 +1,38 @@
 package kubernetes
 
 import (
-	"fmt"
-
-	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/rest"
 )
 
-// getKubeAPIServerCommand returns command for kube-apiserver.
-func getKubeAPIServerCommand(config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf("apiserver"),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
-		fmt.Sprintf(" --etcd-servers=%s", config.EtcdServers),
-		fmt.Sprintf(" --etcd-prefix=%s", config.EtcdPrefix),
-		fmt.Sprintf(" --insecure-bind-address=0.0.0.0"),
-		fmt.Sprintf(" --insecure-port=%d", config.KubeAPIPort),
-		fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
-		fmt.Sprintf(" --service-cluster-ip-range=%s", config.ServiceAddresses),
-		fmt.Sprintf(" %s", config.KubeAPIArgs),
-	)
-}
+func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
+	kubectlConfig := &rest.Config{
+		Host:     k8sAPIAddress,
+		Username: "",
+		Password: "",
+	}
 
-// getKubeControllerCommand returns command for kube-controller-manager.
-func getKubeControllerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf("controller-manager"),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --address=0.0.0.0"),
-		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
-		fmt.Sprintf(" --port=%d", config.KubeControllerPort),
-		fmt.Sprintf(" %s", config.KubeControllerArgs),
-	)
-}
+	k8sClientset, err := kubernetes.NewForConfig(kubectlConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not create new Kubernetes client on %q", k8sAPIAddress)
+	}
 
-// getKubeSchedulerCommand returns command for kube-scheduler.
-func getKubeSchedulerCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf("scheduler"),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --address=0.0.0.0"),
-		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
-		fmt.Sprintf(" --port=%d", config.KubeSchedulerPort),
-		fmt.Sprintf(" %s", config.KubeSchedulerArgs),
-	)
-}
+	nodes, err := k8sClientset.Core().Nodes().List(api.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not obtain Kubernetes node list on %q", k8sAPIAddress)
+	}
 
-// getKubeletCommand returns command for kubelet.
-func getKubeletCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf("kubelet"),
-		fmt.Sprintf(" --allow-privileged=%v", config.AllowPrivileged),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --address=0.0.0.0"),
-		fmt.Sprintf(" --port=%d", config.KubeletPort),
-		fmt.Sprintf(" --read-only-port=0"),
-		fmt.Sprintf(" --api-servers=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
-		fmt.Sprintf(" %s", config.KubeletArgs),
-	)
-}
+	var readyNodes []v1.Node
+	for _, node := range nodes.Items {
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
+				readyNodes = append(readyNodes, node)
+			}
+		}
+	}
 
-// getKubeProxyCommand returns command for kube-proxy.
-func getKubeProxyCommand(kubeAPIAddr executor.TaskHandle, config Config) string {
-	return fmt.Sprint(
-		fmt.Sprintf("proxy"),
-		fmt.Sprintf(" --bind-address=0.0.0.0"),
-		fmt.Sprintf(" --v=%d", config.LogLevel),
-		fmt.Sprintf(" --healthz-port=%d", config.KubeProxyPort),
-		fmt.Sprintf(" --master=http://%s:%d", kubeAPIAddr.Address(), config.KubeAPIPort),
-		fmt.Sprintf(" %s", config.KubeProxyArgs),
-	)
+	return readyNodes, nil
 }

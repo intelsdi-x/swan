@@ -1,7 +1,6 @@
 package sensitivity
 
 import (
-	"fmt"
 	"runtime"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -17,8 +16,6 @@ var (
 	runOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 	runOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
 
-	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
-	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
@@ -26,9 +23,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 	cleanup = func() {}
 	if runOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
-		masterAddress := KubernetesMasterFlag.Value()
-		apiAddress := fmt.Sprintf("%s:%s", masterAddress, "8080")
-		masterExecutor, err := executor.NewRemoteFromIP(masterAddress)
+		masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -53,7 +48,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		hpExecutorConfig.PodNamePrefix = "swan-hp"
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
-		hpExecutorConfig.Address = apiAddress
+		hpExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
 
 		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
 		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
@@ -72,7 +67,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config.ContainerImage = "centos_swan_image"
 			config.Decorators = decorators
 			config.Privileged = true // swan aggressor use unshare, which requires sudo.
-			config.Address = apiAddress
+			config.Address = k8sConfig.GetKubeAPIAddress()
 			return executor.NewKubernetes(config)
 		}
 	} else {

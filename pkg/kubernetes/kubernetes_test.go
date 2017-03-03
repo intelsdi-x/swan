@@ -14,39 +14,6 @@ import (
 	"k8s.io/client-go/1.5/pkg/api/v1"
 )
 
-func TestKubernetesLauncherConfiguration(t *testing.T) {
-	Convey("When configuration is passed to Kubernetes Launcher", t, func() {
-		config := DefaultConfig()
-		handle := &mocks.TaskHandle{}
-		handle.On("Address").Return("127.0.0.1")
-
-		Convey("Privileged containers should be allowed to run by default", func() {
-			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=false")
-			So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=false")
-
-			Convey("But they can be disallowed through configuration", func() {
-				config.AllowPrivileged = true
-				So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--allow-privileged=true")
-				So(getKubeletCommand(handle, config), ShouldContainSubstring, "--allow-privileged=true")
-			})
-		})
-
-		Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
-			So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
-
-			Convey("But etcd server location can be changed to arbitrary one", func() {
-				config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
-				So(getKubeAPIServerCommand(config), ShouldContainSubstring, "--etcd-servers="+config.EtcdServers)
-			})
-		})
-		Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {
-			config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
-			So(getKubeAPIServerCommand(config), ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
-		})
-
-	})
-}
-
 func getMockedTaskHandle(outputFile *os.File) *mocks.TaskHandle {
 	handle := new(mocks.TaskHandle)
 	handle.On("StderrFile").Return(outputFile, nil)
@@ -81,9 +48,9 @@ func TestKubernetesLauncher(t *testing.T) {
 
 		// Prepare Executor Mocks
 		master := new(mocks.Executor)
-		master.On("Name").Return("Mocked Executor")
+		master.On("Name").Return("Master Executor")
 		minion := new(mocks.Executor)
-		minion.On("Name").Return("Mocked Executor")
+		minion.On("Name").Return("Minion Executor")
 
 		config := DefaultConfig()
 		handle := getMockedTaskHandle(outputFile)
@@ -91,6 +58,58 @@ func TestKubernetesLauncher(t *testing.T) {
 		// Prepare Kubernetes Launcher
 		var k8sLauncher k8s
 		k8sLauncher = New(master, minion, config).(k8s)
+
+		Convey("When configuration is passed to Kubernetes Launcher", func() {
+			handle := &mocks.TaskHandle{}
+			handle.On("Address").Return("127.0.0.1")
+
+			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
+			k8sLauncher.isListening = getIsListeningFunc(true)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{}, nil)
+
+			Convey("Privileged containers should be allowed to run by default", func() {
+				k8sLauncher.config.KubeletPort = 1234
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+				kubeletCommand := k8sLauncher.getKubeletCommand()
+
+				So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+				So(kubeAPICommand.healthCheckPort, ShouldEqual, 8080)
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+
+				So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+				So(kubeletCommand.healthCheckPort, ShouldEqual, 1234)
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+
+				Convey("But they can be disallowed through configuration", func() {
+					k8sLauncher.config.AllowPrivileged = true
+					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+					kubeletCommand := k8sLauncher.getKubeletCommand()
+
+					So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=true")
+					So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
+				})
+			})
+
+			Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+				So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
+				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+
+				Convey("But etcd server location can be changed to arbitrary one", func() {
+					k8sLauncher.config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
+					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+					So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers="+k8sLauncher.config.EtcdServers)
+					So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+				})
+			})
+			Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {
+				k8sLauncher.config.KubeAPIArgs = "--admission-control=\"AlwaysAdmit,AddToleration\""
+				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
+				So(kubeAPICommand.raw, ShouldContainSubstring, " --admission-control=\"AlwaysAdmit,AddToleration\"")
+			})
+
+		})
 
 		Convey("When everything succeed, on Launch method we should receive not-nil task handle and no error", func() {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
