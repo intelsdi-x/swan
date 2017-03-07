@@ -98,7 +98,7 @@ func (s *Session) Start(rawTags string) error {
 		tags[kv[0]] = kv[1]
 	}
 
-	wf.CollectNode.Tags["tags"] = tags
+	wf.CollectNode.Tags = map[string]map[string]string{"tags": tags}
 
 
 	for _, metric := range s.Metrics {
