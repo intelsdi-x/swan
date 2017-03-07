@@ -92,7 +92,7 @@ func (s *Session) Start(rawTags string) error {
 
 	wf := wmap.NewWorkflowMap()
 
-	var tags map[string]string
+	tags := make(map[string]string)
 	for _, pair := range strings.Split(rawTags, ",") {
 		kv := strings.Split(pair, ":")
 		tags[kv[0]] = kv[1]
