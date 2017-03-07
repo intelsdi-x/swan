@@ -20,9 +20,10 @@ test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 deps_godeps:
 	go get -u github.com/golang/lint/golint
 	go get -u github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
-	go get github.com/stretchr/testify # go get -u github.com/stretchr/testify fails miserably
-	go get -u github.com/vektra/mockery/.../
-	go get -u github.com/Masterminds/glide
+	# update (-u) testify and mockery fails miserably
+	go get github.com/stretchr/testify 
+	go get github.com/vektra/mockery/...
+	curl https://glide.sh/get | sh
 	glide install
 
 deps_jupyter:
