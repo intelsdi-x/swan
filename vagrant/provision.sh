@@ -53,10 +53,14 @@ cp /vagrant/resources/configs/table.cql /opt/swan/resources
 
 # ------------------------- PACKAGES
 echo `date` "Installing centos packages..."
-yum makecache fast -y -q
-yum update -y -q
-yum install -y -q epel-release  # Enables EPEL repo
 
+echo `date` "Makecache..."
+yum makecache fast -y -q
+echo `date` "Update all"
+yum update -y -q
+echo `date` "EPEL repo"
+yum install -y -q epel-release  # Enables EPEL repo
+echo `date` "SWAN deps"
 yum install -y -q \
     curl \
     wget \
@@ -140,13 +144,15 @@ echo `date` "Configuring cassandra..."
 mkdir -p /var/data/cassandra
 chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
 systemctl enable cassandra.service
+echo `date` "Restarting cassandra..."
 systemctl restart cassandra.service 
 daemonStatus cassandra
 
 # ----------------------------------------- WGET/CURL DOWNLOADING
 # -------------------------- golang
 echo `date` "Installing golang"
-GO_VERSION="1.7"
+GO_VERSION="1.7.3"
+mkdir -p /cache
 curl -s https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O /cache/go${GO_VERSION}.linux-amd64.tar.gz
 tar xf /cache/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
 
