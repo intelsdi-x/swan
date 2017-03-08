@@ -147,14 +147,14 @@ daemonStatus cassandra
 # -------------------------- golang
 echo `date` "Installing golang"
 GO_VERSION="1.7"
-wget -P /cache https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz
+curl -s https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O /cache/go${GO_VERSION}.linux-amd64.tar.gz
 tar xf /cache/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
 
 # ----------------------------- install snap
 # SNAP
 echo `date` "Installing snap-telemetry"
 curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | sudo bash
-sudo yum install -y snap-telemetry
+yum install -y snap-telemetry
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
 systemctl status snap-telemetry
