@@ -1,6 +1,8 @@
+echo `date` "Provisioning starting..." 
+
 set -x -e -o pipefail
 # ----------------------- setup env 
-echo "Setting up environment..."
+echo `date` "Setting up environment..."
 function addEnv() {
     grep "$1" $HOME_DIR/.bash_profile || echo "$1" >> $HOME_DIR/.bash_profile
 }
@@ -28,7 +30,7 @@ ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
 addGlobalEnv  'PATH=/usr/lib64/ccache:/sbin:/bin:/usr/sbin:/usr/bin:/opt/swan/bin'
 
 # -------------------- configs
-echo "Copying configs..."
+echo `date` "Copying configs..."
 
 mkdir -p /opt/swan/resources
 mkdir -p /cache/ccache
@@ -50,8 +52,7 @@ cp /vagrant/resources/configs/table.cql /opt/swan/resources
 
 
 # ------------------------- PACKAGES
-echo "Installing centos packages..."
-echo Updating package lists
+echo `date` "Installing centos packages..."
 yum makecache fast -y -q
 yum update -y -q
 yum install -y -q epel-release  # Enables EPEL repo
@@ -120,22 +121,22 @@ yum install -y -q \
 # yum clean all
 #
 
-echo "Reloading systemd..."
+echo `date` "Reloading systemd..."
 systemctl daemon-reload
 
-echo "Configuring docker..."
+echo `date` "Configuring docker..."
 gpasswd -a $VAGRANT_USER docker
 systemctl enable docker
 systemctl restart docker
 daemonStatus docker
 
-echo "Configuring etcd..."
+echo `date` "Configuring etcd..."
 systemctl enable etcd
 systemctl restart etcd
 daemonStatus etcd
 
 # WARNING pulls docker image
-echo "Configuring cassandra..."
+echo `date` "Configuring cassandra..."
 mkdir -p /var/data/cassandra
 chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
 systemctl enable cassandra.service
@@ -144,18 +145,21 @@ daemonStatus cassandra
 
 # ----------------------------------------- WGET/CURL DOWNLOADING
 # -------------------------- golang
+echo `date` "Installing golang"
 GO_VERSION="1.7"
 wget -P /cache https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz
 tar xf /cache/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
 
 # ----------------------------- install snap
 # SNAP
+echo `date` "Installing snap-telemetry"
 curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | sudo bash
 sudo yum install -y snap-telemetry
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
 systemctl status snap-telemetry
 
+echo `date` "Installing external snap plugins"
 # PLUGINS
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
@@ -167,6 +171,7 @@ wget https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/$
 wget https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O /opt/swan/bin/snap-plugin-publisher-file
 
 # -------------------------- KUBERNETEs
+echo `date` "Downloading hyperkube"
 K8S_VERSION="v1.5.1"
 # instead of downloading multiple binaries only hyperkube is downloaded
 wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O /opt/swan/bin/hyperkube
@@ -178,7 +183,7 @@ pushd /opt/swan/bin
 popd
 
 # ------------------------------- git setup
-## Preparing SSH environment for $VAGRANT_USER
+echo `date` "Preparing SSH environment for root and $VAGRANT_USER"
 
 ## Vagrant user
 touch $HOME_DIR/.ssh/known_hosts
@@ -210,22 +215,23 @@ ssh-add -l
 
 # -------------------------------- require s3 authoirzation
 
-echo "Installing python packages"
+echo `date` "Installing python packages"
 pip install s3cmd
 
-echo "get specjbb"
+echo `date` "Installing SpecJBB"
 pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
     ./scripts/get_specjbb.sh -s . -c $HOME_DIR/swan_s3_creds/.s3cfg -b swan-artifacts
 popd
 
 # -------------------------- public keys
+echo `date` "Installing public keys"
 if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/public_keys authorized_keys
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
 fi
 
 # ------------------------- post install
-echo "Rewriting permissions..."
+echo `date` "Rewriting permissions..."
 chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
 chown -R $VAGRANT_USER:$VAGRANT_USER /cache
 
@@ -250,4 +256,4 @@ chown -R $VAGRANT_USER:$VAGRANT_USER /cache
 #
 #     make install
 # popd
-
+echo `date` "Provisioning done."
