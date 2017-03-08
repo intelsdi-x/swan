@@ -56,13 +56,15 @@ yum makecache fast -y -q
 yum update -y -q
 yum install -y -q epel-release  # Enables EPEL repo
 
-
 yum install -y -q \
+    curl \
+    wget \
     python-pip \
     docker-engine \
     etcd \
     java-1.8.0-openjdk-devel \
-    git
+    git \
+    sudo
 
 # echo Installing packages
 # yum groupinstall -y -q "Development tools"
@@ -203,11 +205,8 @@ git config --global url."git@github.com:".insteadOf "https://github.com/"
 # VAGRANT: git rewrite
 executeAsVagrantUser git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-
 ## SSH-agent veryfication
 ssh-add -l
-
-
 
 # -------------------------------- require s3 authoirzation
 
