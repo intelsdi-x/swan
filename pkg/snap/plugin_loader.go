@@ -21,9 +21,6 @@ const (
 	// SPECjbbCollector is name of snap plugin binary used to collect metrics from SPECjbb output file.
 	SPECjbbCollector string = "snap-plugin-collector-specjbb"
 
-	// TagProcessor is name of snap plugin binary.
-	TagProcessor string = "snap-plugin-processor-tag"
-
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
 	// FilePublisher is Snap testing file publisher
