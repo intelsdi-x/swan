@@ -80,20 +80,6 @@ func TestSnapDockerSession(t *testing.T) {
 			oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(resultsFileName)
 			So(err, ShouldBeNil)
 			So(len(oneMeasurement), ShouldBeGreaterThan, 0)
-
-			Convey("There should be CPU results of docker containers on Kubernetes", func() {
-				requestedMetric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
-				So(err, ShouldBeNil)
-				So(requestedMetric.Data.(float64), ShouldBeGreaterThan, 0)
-				So(requestedMetric.Tags[`foo`], ShouldEqual, `bar`)
-			})
-
-			Convey("There should be Memory results of docker containers on Kubernetes", func() {
-				requestedMetric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/memory_stats/usage/usage`, oneMeasurement)
-				So(err, ShouldBeNil)
-				So(requestedMetric.Data.(float64), ShouldBeGreaterThan, 0)
-				So(requestedMetric.Tags[`foo`], ShouldEqual, `bar`)
-			})
 		})
 	})
 }
