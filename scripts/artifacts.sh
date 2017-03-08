@@ -42,31 +42,25 @@ function dist {
 
     # install caffe
     install -d ${ARTIFACTS_PATH}/share/caffe
+
     install -D -m755 ./workloads/deep_learning/caffe/caffe_wrapper.sh "${ARTIFACTS_PATH}/bin/caffe_wrapper.sh"
-
     install -D -m644 ./workloads/deep_learning/caffe/caffe_src/build/lib/* "${ARTIFACTS_PATH}/lib"
-
     install -D -m755 ./workloads/deep_learning/caffe/caffe_src/build/tools/caffe.bin "${ARTIFACTS_PATH}/share/caffe/bin/caffe"
     install -D -m755 ./workloads/deep_learning/caffe/caffe_src/data/cifar10/get_cifar10.sh "${ARTIFACTS_PATH}/share/caffe/data/cifar10/get_cifar10.sh"	
     install -D -m755 ./workloads/deep_learning/caffe/caffe_src/build/tools/compute_image_mean "${ARTIFACTS_PATH}/share/caffe/build/tools/compute_image_mean"
     install -D -m755 ./workloads/deep_learning/caffe/caffe_src/build/examples/cifar10/convert_cifar_data.bin "${ARTIFACTS_PATH}/share/caffe/build/examples/cifar10/convert_cifar_data.bin"
     install -D -m644 ./workloads/deep_learning/caffe/cifar10_quick_iter_5000.caffemodel.h5 "${ARTIFACTS_PATH}/share/caffe/cifar10_quick_iter_5000.caffemodel.h5"
 
+    # 
     install -d ${ARTIFACTS_PATH}/share/caffe/examples/cifar10/
     install -D -m644 ./workloads/deep_learning/caffe/caffe_src/examples/cifar10/* "${ARTIFACTS_PATH}/share/caffe/examples/cifar10/" 
 
-    # pack
-    FILENAME="swan-$(date +%m%d%y-%H%M).tar.gz"
-    echo ${FILENAME} > ./latest_build
-
-    tar -czf ${FILENAME} -C ${ARTIFACTS_PATH} .
+    tar -czf swan.tgz -C ${ARTIFACTS_PATH} .
 }
 
 function install_swan {
-    if [ "${PREFIX}" == "" ]; then
-        PREFIX="/opt/swan/"
-        mkdir -p $PREFIX
-    fi
+    PREFIX="/opt/swan/"
+    mkdir -p $PREFIX
     tar xf $(cat ./latest_build) -C ${PREFIX}
     export LD_LIBRARY_PATH="${PREFIX}/lib":$LD_LIBRARY_PATH
     export PATH="${PREFIX}/bin":$PATH
@@ -74,55 +68,20 @@ function install_swan {
 }
 
 
-function uninstall_swan {
-    if [ "${UID}" != 0 ]; then
-        >&2 echo "Only root can perform this operation"
-        exit 1
-    fi
-
-    if [ "${PREFIX}" == "" ]; then
-        PREFIX="/usr/"
-    fi
-
-    FILELIST=$(tar ztf $(cat ./latest_build))
-    for listed_file in $FILELIST; do
-        if [[ -f ${PREFIX}/${listed_file} ]]; then
-            rm -v ${PREFIX}/${listed_file}
-        fi
-    done
-}
-
-function _check_s3_params() {
-    if [ ! $(which s3cmd) ]; then
-        echo "s3cmd is not installed"
-        exit 1
-    fi
-    if [ "${BUCKET_NAME}" == "" ]; then
-        echo "Provide bucket name"
-        exit 1
-    fi
-
-    if [ ! -f "${S3_CREDS_LOCATION}" ]; then
-        echo "Provide S3 creds"
-        exit 1
-    fi
-}
-
-function download {
-    _check_s3_params
-
-    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
-    FNAME=$(cat ./latest_build)
-    s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
-}
-
-function upload {
-    _check_s3_params
-
-    FNAME=$(cat ./latest_build)
-    s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./${FNAME} s3://${BUCKET_NAME}/build_artifacts/
-    s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./latest_build s3://${BUCKET_NAME}/build_artifacts/
-}
+#
+# function download {
+#     s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/latest_build ./latest_build
+#     FNAME=$(cat ./latest_build)
+#     s3cmd sync -c ${S3_CREDS_LOCATION} --no-preserve s3://${BUCKET_NAME}/build_artifacts/${FNAME} ./${FNAME}
+# }
+#
+# function upload {
+#     _check_s3_params
+#
+#     FNAME=$(cat ./latest_build)
+#     s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./${FNAME} s3://${BUCKET_NAME}/build_artifacts/
+#     s3cmd put -c ${S3_CREDS_LOCATION} --no-preserve ./latest_build s3://${BUCKET_NAME}/build_artifacts/
+# }
 
 case ${1} in
     "dist" )
