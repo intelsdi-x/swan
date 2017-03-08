@@ -9,10 +9,17 @@ $ eval "$(ssh-agent -s)"
 $ ssh-add ~/.ssh/id_rsa  # if not already added to host ssh agent
 $ vagrant plugin install vagrant-vbguest  # automatic guest additions
 $ vagrant box update
-$ vagrant up  # takes a few minutes
+$ vagrant up
 $ vagrant ssh
 > cd swan
 > make build_swan
+```
+
+Manual provisioning:
+```
+vagrant destroy -f && vagrant up --no-provision
+vagrant ssh
+sudo 
 ```
 
 ## Setup
@@ -48,39 +55,14 @@ There is a possibility to use your local ~/.glide for caching golang dependencie
 ***Please be informed that every single glide operation inside VM might affect your host's ~/.glide.***
 To use your local ~/.glide please make sure that this directory exists and `SHARE_GLIDE_CACHE` environmental variable is set to "true"
 
-## Manually running provision scripts
-- Before running provision scripts, import your private ssh key into your GitHub account.
-- All scripts are stored in `/vagrant/resources/scripts`.
-- To manually run provision scripts run `./enter_developer_mode.sh <private key location>`
-- Scripts order:
-  1. `setup_env.sh`
-  1. `copy_configuration.sh`
-  1. `install_packages.sh`
-  1. `setup_git.sh`
-  1. `setup_services.sh`
-  1. `install_golang.sh`
-  1. `install_snap.sh`
-  1. `post_install.sh`
-  1. `install_project_deps.sh`
-  1. `checker.sh`
-
 ## Troubleshooting
-- If you can't run `make deps` because of unauthorized error, make sure you don't
-  have in gitconfig:
-  `[url "https://"]
-           insteadOf = git://`
-  Warning: removing this will disable ssh-agent authorization and in effect private repositories like cassandra plugin will become inaccessible.
-  Note: (if you using proxying) make sure that your proxy can handle ssh connections.
 - The integration tests require cassandra to be running. In this
   environment, systemd is responsible for keeping it alive. You can see
   how it's doing by running `systemctl status cassandra` and
   `journalctl -fu cassandra`
-- If you get permission errors when trying to run the integration tests,
-  you may need to remove build artifacts first by running `make clean`.
-- If you get Caffe errors during building workloads saying
-  'libcaffe.o cant not find "xxx"', go into caffe_src dir and run 'make clean'
-- If you get a connection error when attempting to SSH into the guest
-  VM and you're behind a proxy you may need to add an override rule to ignore
-  SSH traffic to localhost.
 - To re-run the VM provisioning shell scripts, do
   `vagrant up --provision`
+  or manually start from zero:
+  `vagrant destroy -f && vagrant up --no-provision && vagrant ssh`
+  `sudo /vagrant/provision.sh`
+
