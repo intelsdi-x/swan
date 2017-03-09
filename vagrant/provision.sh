@@ -185,6 +185,11 @@ wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
 
+chmod +x ${SWAN_BIN}/snap-plugin-collector-docker
+chmod +x ${SWAN_BIN}/snap-plugin-publisher-cassandra
+chmod +x ${SWAN_BIN}/snap-plugin-processor-tag
+chmod +x ${SWAN_BIN}/snap-plugin-publisher-file
+
 # -------------------------- KUBERNETEs
 echo `date` "Downloading hyperkube"
 
