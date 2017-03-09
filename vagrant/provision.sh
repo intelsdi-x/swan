@@ -20,7 +20,7 @@ function addEnv() {
 #}
 
 function executeAsVagrantUser() {
-        sudo -E -u $VAGRANT_USER -s PATH=$PATH GOPATH=$GOPATH CCACHECONFDIR=$CCACHECONFDIR "$@"
+        sudo -i -u $VAGRANT_USER "$@"
 }
 function daemonStatus() {
     echo "$1 service status: $(systemctl show -p SubState $1 | cut -d'=' -f2)"
@@ -260,15 +260,14 @@ chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
 ln -sv ${SWAN_BIN}/* /bin/
 
 # --------------------------------- as swan user 
-#echo `date` "make deps"
-#pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
-#   executeAsVagrantUser make deps_all
-#popd
+echo `date` "make deps"
+pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
+   executeAsVagrantUser make deps_all
+popd
 
 # --------------------------------- make dist && install
 # echo "make dist & make install"
 
-#
 # pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 #     
 #     executeAsVagrantUser make repository_reset
