@@ -270,12 +270,18 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memBw ${SWAN_BIN}
     # stream 
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/stream.100M ${SWAN_BIN}
+
     # HP workload
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/mutilate ${SWAN_BIN}
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memcached ${SWAN_BIN}
+
     # specjbb as tgs
     s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/specjbb.tgz /tmp/specjbb.tgz
-    tar xzvf /tmp/specjbb.tgz -C /opt/swan
+    tar xzvf /tmp/specjbb.tgz -C /opt/swan/share
+
+    # caffe as tgz
+    # s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/caffe.tgz /tmp/caffe.tgz
+    # tar xzvf /tmp/caffe.tgz -C /opt/swan/share
 fi
 
 # ------------------------- post install
