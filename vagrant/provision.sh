@@ -79,6 +79,7 @@ yum install -y -q \
     wget \
     docker-engine \
     python-pip \
+    python-devel \
     etcd \
     java-1.8.0-openjdk-devel \
     git \
@@ -259,10 +260,30 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
 fi
 
+# ------------------------- grab all the binaries 
+echo `date` "Installing public keys"
+if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
+    # low level aggressors from iBench
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l1d ${SWAN_BIN}
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l1i ${SWAN_BIN}
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l3 ${SWAN_BIN}
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memBw ${SWAN_BIN}
+    # stream 
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/stream.100M ${SWAN_BIN}
+    # HP workload
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/mutilate ${SWAN_BIN}
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memcached ${SWAN_BIN}
+    # specjbb as tgs
+    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/specjbb.tgz /tmp/specjbb.tgz
+    tar xzvf /tmp/specjbb.tgz -C /opt/swan
+fi
+
 # ------------------------- post install
 echo `date` "Rewriting permissions..."
 chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
+chown -R $VAGRANT_USER:$VAGRANT_USER /opt/swan
 ln -sv ${SWAN_BIN}/* /bin/
+
 
 # --------------------------------- as swan user 
 #echo `date` "make deps"
