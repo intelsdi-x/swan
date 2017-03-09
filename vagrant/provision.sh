@@ -40,7 +40,7 @@ mkdir -p /opt/swan/resources
 mkdir -p ${SWAN_BIN}
 
 #------------- docker repo
-cp /vagrant//configs/docker.repo /etc/yum.repos.d/docker.repo
+#cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
 
 # ccache
 #cp /vagrant/resources/configs/ccache.conf /etc/ccache.conf
@@ -71,11 +71,11 @@ yum install -y -q \
     curl \
     wget \
     python-pip \
-    docker-engine \
     etcd \
     java-1.8.0-openjdk-devel \
     git \
-    sudo
+    sudo \ 
+    yum-utils
 
 # echo Installing packages
 # yum groupinstall -y -q "Development tools"
@@ -131,14 +131,21 @@ yum install -y -q \
 # yum clean all
 #
 
+
 echo `date` "Reloading systemd..."
 systemctl daemon-reload
 
-echo `date` "Configuring docker..."
-gpasswd -a $VAGRANT_USER docker
-systemctl enable docker
-systemctl restart docker
+# https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
+echo `date` "Install docker..."
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum makecache fast
+yum install docker-ce
+systemctl start docker
+docker run hello-world
+
 daemonStatus docker
+systemctl enable docker
+gpasswd -a $VAGRANT_USER docker
 
 echo `date` "Configuring etcd..."
 systemctl enable etcd
