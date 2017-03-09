@@ -260,10 +260,10 @@ chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
 ln -sv ${SWAN_BIN}/* /bin/
 
 # --------------------------------- as swan user 
-echo `date` "make deps"
-pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
-   executeAsVagrantUser make deps_all
-popd
+#echo `date` "make deps"
+#pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
+#   executeAsVagrantUser make deps_all
+#popd
 
 # --------------------------------- make dist && install
 # echo "make dist & make install"
