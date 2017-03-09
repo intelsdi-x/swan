@@ -35,7 +35,6 @@ func TestExecutables(t *testing.T) {
 		snap.DockerCollector,
 		snap.MutilateCollector,
 		snap.SPECjbbCollector,
-		snap.TagProcessor,
 		snap.CassandraPublisher,
 		snap.FilePublisher,
 		snap.SessionPublisher,

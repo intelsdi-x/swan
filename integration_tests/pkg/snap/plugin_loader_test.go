@@ -13,7 +13,6 @@ import (
 var plugins = []string{
 	snap.DockerCollector,
 	snap.MutilateCollector,
-	snap.TagProcessor,
 	snap.CassandraPublisher,
 	snap.SessionPublisher,
 }
