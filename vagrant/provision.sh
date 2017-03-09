@@ -2,6 +2,13 @@ echo `date` "Provisioning starting..."
 
 set -x -e -o pipefail
 
+GO_VERSION="1.7.5"
+K8S_VERSION="v1.5.1"
+SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
+SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
+SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
+SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
+
 # ----------------------- setup env 
 echo `date` "Setting up environment..."
 function addEnv() {
@@ -172,10 +179,7 @@ systemctl status snap-telemetry
 
 echo `date` "Installing external snap plugins"
 # PLUGINS
-SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
-SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
-SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
-SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
+
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
@@ -183,7 +187,7 @@ wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/relea
 
 # -------------------------- KUBERNETEs
 echo `date` "Downloading hyperkube"
-K8S_VERSION="v1.5.1"
+
 # instead of downloading multiple binaries only hyperkube is downloaded
 wget --no-verbose https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
 chmod +x ${SWAN_BIN}/hyperkube
@@ -224,7 +228,7 @@ chmod og-wx /root/.ssh/authorized_keys
 
 # -------------------------- golang
 echo `date` "Downloading golang"
-GO_VERSION="1.7.3"
+
 GOTGZ=/tmp/go${GO_VERSION}.linux-amd64.tar.gz
 wget --no-verbose https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O $GOTGZ
 
