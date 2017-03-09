@@ -223,10 +223,14 @@ chmod og-wx /root/.ssh/authorized_keys
 #ssh-add -l
 
 # -------------------------- golang
-echo `date` "Installing golang"
+echo `date` "Downloading golang"
 GO_VERSION="1.7.3"
-wget https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O /tmp/go${GO_VERSION}.linux-amd64.tar.gz
-tar xf /tmp/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
+GOTGZ=/tmp/go${GO_VERSION}.linux-amd64.tar.gz
+wget --no-verbose https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O $GOTGZ
+
+echo `date` "Installing golang"
+mkdir -p /usr/local
+tar -C /usr/local -xzf $GOTGZ 
 
 # -------------------------------- require s3 authoirzation
 
@@ -235,6 +239,7 @@ pip install s3cmd
 
 echo `date` "Installing SpecJBB"
 pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
+    # requires as root
     ./scripts/get_specjbb.sh -s . -c $HOME_DIR/swan_s3_creds/.s3cfg -b swan-artifacts
 popd
 
