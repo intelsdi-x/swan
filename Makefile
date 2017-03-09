@@ -5,7 +5,7 @@ TEST_OPT?=
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env test_integration
+integration_test: show_env deps_all build_plugins build_swan integration_test_build test_integration
 unit_test: deps test_unit test_unit_jupyter
 
 deps_all: deps_godeps deps_jupyter
