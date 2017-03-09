@@ -1,14 +1,17 @@
 echo `date` "Provisioning starting..." 
 
 set -x -e -o pipefail
+
 # ----------------------- setup env 
 echo `date` "Setting up environment..."
 function addEnv() {
     grep "$1" $HOME_DIR/.bash_profile || echo "$1" >> $HOME_DIR/.bash_profile
 }
-function addGlobalEnv() {
-    grep "$1" /etc/environment || echo "$1" >> /etc/environment
-}
+
+#function addGlobalEnv() {
+#    grep "$1" /etc/environment || echo "$1" >> /etc/environment
+#}
+
 function executeAsVagrantUser() {
         sudo -E -u $VAGRANT_USER -s PATH=$PATH GOPATH=$GOPATH CCACHECONFDIR=$CCACHECONFDIR "$@"
 }
@@ -18,26 +21,26 @@ function daemonStatus() {
 
 ## Setting up envs
 addEnv "export GOPATH=\"$HOME_DIR/go\""
-addEnv 'export CCACHE_CONFIGPATH=/etc/ccache.conf'
+# addEnv 'export CCACHE_CONFIGPATH=/etc/ccache.conf'
 # jupyter intergration tests from notebooks
 addEnv 'export PYTHONPATH=$PYTHONPATH:$GOPATH/src/github.com/intelsdi-x/swan'
-addEnv 'export PATH=/usr/lib64/ccache/:$PATH:/opt/swan/bin:/usr/local/go/bin:$GOPATH/bin'
+addEnv 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin'
 
 ## Create convenient symlinks in the home directory
 ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
 
 ## Make sure that all required packages are also available for remote access. 
-addGlobalEnv  'PATH=/usr/lib64/ccache:/sbin:/bin:/usr/sbin:/usr/bin:/opt/swan/bin'
+#addGlobalEnv  'PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/swan/bin'
 
 # -------------------- configs
 echo `date` "Copying configs..."
+SWAN_BIN=/opt/swan/bin
 
 mkdir -p /opt/swan/resources
-mkdir -p /cache/ccache
-
+mkdir -p ${SWAN_BIN}
 
 #------------- docker repo
-cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
+cp /vagrant//configs/docker.repo /etc/yum.repos.d/docker.repo
 
 # ccache
 #cp /vagrant/resources/configs/ccache.conf /etc/ccache.conf
@@ -50,16 +53,19 @@ cp /vagrant/resources/configs/cassandra.service /etc/systemd/system
 cp /vagrant/resources/configs/keyspace.cql /opt/swan/resources
 cp /vagrant/resources/configs/table.cql /opt/swan/resources
 
-
 # ------------------------- PACKAGES
 echo `date` "Installing centos packages..."
 
 echo `date` "Makecache..."
 yum makecache fast -y -q
-echo `date` "Update all"
-yum update -y -q
+
+# takes about 5 minutes
+#echo `date` "Update all"
+#yum update -y -q
+
 echo `date` "EPEL repo"
 yum install -y -q epel-release  # Enables EPEL repo
+
 echo `date` "SWAN deps"
 yum install -y -q \
     curl \
@@ -148,18 +154,10 @@ echo `date` "Restarting cassandra..."
 systemctl restart cassandra.service 
 daemonStatus cassandra
 
-# ----------------------------------------- WGET/CURL DOWNLOADING
-# -------------------------- golang
-echo `date` "Installing golang"
-GO_VERSION="1.7.3"
-mkdir -p /cache
-curl -s https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O /cache/go${GO_VERSION}.linux-amd64.tar.gz
-tar xf /cache/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
-
 # ----------------------------- install snap
 # SNAP
 echo `date` "Installing snap-telemetry"
-curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | sudo bash
+curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | bash
 yum install -y snap-telemetry
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
@@ -171,21 +169,20 @@ SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
-wget https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O /opt/swan/bin/snap-plugin-collector-docker
-wget https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O /opt/swan/bin/snap-plugin-publisher-cassandra
-wget https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O /opt/swan/bin/snap-plugin-processor-tag
-wget https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O /opt/swan/bin/snap-plugin-publisher-file
+wget https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
+wget https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
+wget https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
+wget https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
 
 # -------------------------- KUBERNETEs
 echo `date` "Downloading hyperkube"
 K8S_VERSION="v1.5.1"
 # instead of downloading multiple binaries only hyperkube is downloaded
-wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O /opt/swan/bin/hyperkube
-chmod +x /opt/swan/bin/hyperkube
+wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
+chmod +x ${SWAN_BIN}/hyperkube
 
-pushd /opt/swan/bin
-
-./hyperkube --make-symlinks 
+pushd ${SWAN_BIN}
+    ./hyperkube --make-symlinks 
 popd
 
 # ------------------------------- git setup
@@ -204,20 +201,25 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 ssh-keyscan localhost >> /root/.ssh/known_hosts
 ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
 
-# Add key to SSH agent (fail when no ssh-agent is accessible, one won't be able to download private repos)
-# Add ssh keys for root - needed to run an experiment
+# Generte ssh keys for root - needed to run an experiment
 rm -rf /root/.ssh/id_rsa
 ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod og-wx /root/.ssh/authorized_keys
 
+### Enable this if you require access to private repos.
 ## ROOT: configure
-git config --global url."git@github.com:".insteadOf "https://github.com/"
+#git config --global url."git@github.com:".insteadOf "https://github.com/"
 # VAGRANT: git rewrite
-executeAsVagrantUser git config --global url."git@github.com:".insteadOf "https://github.com/"
-
+#executeAsVagrantUser git config --global url."git@github.com:".insteadOf "https://github.com/"
 ## SSH-agent veryfication
-ssh-add -l
+#ssh-add -l
+
+# -------------------------- golang
+echo `date` "Installing golang"
+GO_VERSION="1.7.3"
+wget https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz -O /tmp/go${GO_VERSION}.linux-amd64.tar.gz
+tar xf /tmp/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local
 
 # -------------------------------- require s3 authoirzation
 
@@ -239,15 +241,17 @@ fi
 # ------------------------- post install
 echo `date` "Rewriting permissions..."
 chown -R $VAGRANT_USER:$VAGRANT_USER $HOME_DIR
-chown -R $VAGRANT_USER:$VAGRANT_USER /cache
+ln -sv ${SWAN_BIN}/* /bin/
 
-# as swan user 
+# --------------------------------- as swan user 
+echo `date` "make deps"
+pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
+   executeAsVagrantUser make deps_all
+popd
 
 # --------------------------------- make dist && install
 # echo "make dist & make install"
-#
-#
-# BUILD_OPENBLAS=""
+
 #
 # pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
 #     
