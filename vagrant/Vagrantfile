@@ -12,6 +12,8 @@ Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
 
+
+  ################ BUILD DOCKER IMAGE LOGIC
   # build_docker_image variable is used to enable building
   # of docker image and multithreaded caffe.
   # By default, for development purposes, this value is set to "true"
@@ -29,7 +31,8 @@ Vagrant.configure(2) do |config|
   if ENV["BUILD_CACHED_IMAGE"]
     build_docker_image = ENV['BUILD_CACHED_IMAGE']
   end
-
+  ################ BUILD DOCKER IMAGE LOGIC
+  
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -91,23 +94,12 @@ Vagrant.configure(2) do |config|
     # centos7 for us-east
     # COPY AMI ID HERE
     # non-cached ami: ami-6d1c2007
-    aws.ami = "ami-f034e7e6"
+    aws.ami = "ami-6d1c2007"
     aws.instance_package_timeout = 60000
     aws.instance_type = "m4.large"
     aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
   end
 
-  config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_public_keys.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_services.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_snap.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_kubernetes.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/post_install.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_DOCKER_IMAGE' => build_docker_image}
-  config.vm.provision "shell", path: "resources/scripts/checker.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  config.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_DOCKER_IMAGE' => build_docker_image}
 end

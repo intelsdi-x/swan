@@ -5,7 +5,7 @@ TEST_OPT?=
 
 # for compatibility purposes.
 deps: deps_all
-integration_test: show_env test_integration
+integration_test: show_env deps_all build_plugins build_swan integration_test_build test_integration
 unit_test: deps test_unit test_unit_jupyter
 
 deps_all: deps_godeps deps_jupyter
@@ -18,16 +18,18 @@ test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
 # deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
 deps_godeps:
-	go get -u github.com/golang/lint/golint
-	go get -u github.com/GeertJohan/fgt # return exit, fgt runs any command for you and exits with exitcode 1
-	# update (-u) testify and mockery fails miserably
+	# update (-u) testify and mockery fails often
+	go get github.com/golang/lint/golint
+	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify 
-	go get github.com/vektra/mockery/...
-	curl https://glide.sh/get | sh
+	# only required to generate mocks
+	#go get github.com/vektra/mockery/...
+	curl -s https://glide.sh/get | sh
 	glide install
 
 deps_jupyter:
 	# Jupyter building
+	sudo yum install -y gcc
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
@@ -36,38 +38,10 @@ build_plugins:
 	(go install ./misc/snap-plugin-collector-specjbb)
 	(go install ./misc/snap-plugin-collector-caffe-inference)
 
-build_image:
-	(./scripts/build_docker_image.sh)
-
-build_workloads:
-	# Some workloads are Git Submodules
-	git submodule update --init --recursive
-
-	(cd workloads/data_caching/memcached && ./build.sh)
-	(cd workloads/low-level-aggressors && make -j4)
-
-	# Prepare & Build Caffe workload.
-	(cd ./workloads/deep_learning/caffe && ./build_caffe.sh)
-
 build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
-
-dist: build_workloads build_plugins build_swan
-	(./scripts/artifacts.sh dist)
-
-install:
-	(./scripts/artifacts.sh install)
-
-uninstall:
-	(./scripts/artifacts.sh uninstall)
-
-download:
-	(BUCKET_NAME="${BUCKET_NAME}" S3_CREDS_LOCATION="${S3_CREDS_LOCATION}" ./scripts/artifacts.sh download)
-
-upload:
-	(BUCKET_NAME="${BUCKET_NAME}" S3_CREDS_LOCATION="${S3_CREDS_LOCATION}" ./scripts/artifacts.sh upload)
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
