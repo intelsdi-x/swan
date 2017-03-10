@@ -4,33 +4,26 @@
 TEST_OPT?=
 
 # for compatibility purposes.
-deps: deps_all
-integration_test: show_env deps_all build_plugins build_swan integration_test_build test_integration
-unit_test: deps test_unit test_unit_jupyter
+deps: deps_godeps
+integration_test: show_env deps_godeps build_plugins build_swan integration_test_build test_integration
+unit_test: deps test_unit
 
-deps_all: deps_godeps 
-build_all: deps_all build_workloads build_plugins build_swan
+build_all: deps_godeps build_workloads build_plugins build_swan
 build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
 test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
 
-# deps not covered by "vendor" folder (testing/developing env) rather than application (excluding convey)
+# deps not covered by "vendor" folder (testing/developing env) rather than application 
 deps_godeps:
-	# update (-u) testify and mockery fails often
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify 
-	# only required for unittests
-	go get github.com/vektra/mockery/...
+	# only required for generating mocks.
+	#go get github.com/vektra/mockery/...
 	curl -s https://glide.sh/get | sh
 	glide install
-
-deps_jupyter:
-	# Jupyter building
-	sudo yum install -y gcc
-	(cd jupyter; sudo pip install -r requirements.txt)
 
 build_plugins:
 	(go install ./misc/snap-plugin-publisher-session-test)
@@ -55,18 +48,22 @@ test_unit:
 	go test -i ./pkg/... ./misc/...
 	go test -p 1 $(TEST_OPT) ./pkg/... ./misc/...
 
-test_unit_jupyter:
-	(cd jupyter; py.test)
+# make sure that all integration tests are building without problem - not required directly for test_integration
+test_integration_build:
+	./scripts/integration_tests_build.sh
 
 test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
-# make sure that all integration tests are building without problem - not required directly for test_integration
-integration_test_build:
-	./scripts/integration_tests_build.sh
+
+deps_jupyter:
+	# Required for jupyter building.
+	sudo yum install -y gcc
+	(cd jupyter; sudo pip install -r requirements.txt)
 
 e2e_test: deps_jupyter
+        (cd jupyter; py.test)
 	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo service snapteld stop
