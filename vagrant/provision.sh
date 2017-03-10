@@ -48,7 +48,8 @@ mkdir -p /opt/swan/resources
 mkdir -p ${SWAN_BIN}
 
 #------------- docker repo
-cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
+#cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
+### replace with docker-ce below
 
 # yum optmizie
 #cp /vagrant/resources/configs/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf
@@ -79,9 +80,16 @@ yum install -y -q \
     python-pip \
     python-devel \
     etcd \
+    libcgroup-tools \
     java-1.8.0-openjdk-devel \
     git \
     sudo
+
+# developer tools
+yum install -y -q \
+    vim \
+    tmux \
+    htop
 
 # echo Installing packages
 # yum groupinstall -y -q "Development tools"
@@ -146,9 +154,9 @@ systemctl daemon-reload
 
 # https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
 echo `date` "Install docker..."
-#yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-#yum makecache fast
-#yum install docker-ce
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum makecache fast
+yum install docker-ce
 systemctl start docker
 docker run hello-world
 

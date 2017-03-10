@@ -8,7 +8,7 @@ deps: deps_all
 integration_test: show_env deps_all build_plugins build_swan integration_test_build test_integration
 unit_test: deps test_unit test_unit_jupyter
 
-deps_all: deps_godeps deps_jupyter
+deps_all: deps_godeps 
 build_all: deps_all build_workloads build_plugins build_swan
 build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
@@ -22,8 +22,8 @@ deps_godeps:
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify 
-	# only required to generate mocks
-	#go get github.com/vektra/mockery/...
+	# only required for unittests
+	go get github.com/vektra/mockery/...
 	curl -s https://glide.sh/get | sh
 	glide install
 
@@ -66,7 +66,7 @@ test_integration:
 integration_test_build:
 	./scripts/integration_tests_build.sh
 
-e2e_test:
+e2e_test: deps_jupyter
 	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo service snapteld stop
@@ -82,11 +82,6 @@ cleanup:
 
 remove_vendor:
 	rm -fr vendor/
-
-repository_reset: cleanup remove_vendor
-	(cd workloads/deep_learning/caffe/caffe_src/; git clean -fddx; git reset --hard)
-	(cd workloads/deep_learning/caffe/openblas/; git clean -fddx; git reset --hard)
-
 
 show_env:
 	@ echo Environment variables:
