@@ -155,8 +155,8 @@ systemctl daemon-reload
 # https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
 echo `date` "Install docker..."
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-yum makecache fast
-yum install docker-ce
+yum makecache fast -y -q
+yum install -y docker-ce
 systemctl start docker
 docker run hello-world
 
