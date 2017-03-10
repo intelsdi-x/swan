@@ -5,7 +5,7 @@ TEST_OPT?=
 
 # for compatibility purposes.
 deps: deps_godeps
-integration_test: show_env deps_godeps build_plugins build_swan test_integration_build test_integration
+integration_test: show_env deps_godeps test_integration_build build_plugins build_swan test_integration
 unit_test: deps test_unit
 
 build_all: deps_godeps build_workloads build_plugins build_swan
