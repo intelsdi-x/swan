@@ -7,6 +7,7 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 func TestSnapMutilateSession(t *testing.T) {
@@ -37,6 +38,9 @@ func TestSnapMutilateSession(t *testing.T) {
 					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
 					So(err, ShouldBeNil)
 
+					snapSession, ok := handle.(*snap.Session)
+					So(ok, ShouldBeTrue)
+
 					defer func() {
 						err := handle.Stop()
 						So(err, ShouldBeNil)
@@ -58,12 +62,11 @@ func TestSnapMutilateSession(t *testing.T) {
 							"95th":   "43.10000",
 							"99th":   "59.50000",
 							"qps":    "4993.10000",
-							"custom": "1777.88781",
 						}
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
+							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics, snapSession)
 							So(dataValid, ShouldBeTrue)
 						})
 					})

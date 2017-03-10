@@ -7,6 +7,7 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 func TestSnapSpecJbbSession(t *testing.T) {
@@ -37,6 +38,9 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, "foo:bar")
 					So(err, ShouldBeNil)
 
+					snapSession, ok := handle.(*snap.Session)
+					So(ok, ShouldBeTrue)
+
 					defer func() {
 						err := handle.Stop()
 						So(err, ShouldBeNil)
@@ -61,7 +65,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
+							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics, snapSession)
 							So(dataValid, ShouldBeTrue)
 						})
 					})
