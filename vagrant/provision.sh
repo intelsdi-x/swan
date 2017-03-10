@@ -268,6 +268,11 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     echo `date` "Installing public keys"
     s3cmd get s3://swan-artifacts/public_keys authorized_keys
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
+    
+    # glide cache
+    s3cmd get s3://swan-artifacts/glide-cache-2017-03-10.tgz /tmp/glide-cache.tgz
+    tar --strip-components 2 -C ${HOME_DIR} -xzf /tmp/glide-cache.tgz
+    chown -R ${VAGRANT_USER}:${VAGRANT_USER} ${HOME_DIR}/.glide
 
     # ------------------------- grab all the binaries 
     # low level aggressors from iBench
@@ -286,7 +291,8 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     s3cmd sync s3://swan-artifacts/workloads/specjbb /opt/swan/share/specjbb/
 
     # caffe
-    s3cmd sync s3://swan-artifacts/workloads/caffe /opt/swan/share/caffe/
+    s3cmd sync s3://swan-artifacts/workloads/caffe/bin/ /opt/swan/bin/
+    s3cmd sync s3://swan-artifacts/workloads/caffe/caffe/share/ /opt/swan/share
 
     # docker image
     s3cmd sync s3://swan-artifacts/workloads/centos_swan_image.tgz /tmp/centos_swan_image.tgz
