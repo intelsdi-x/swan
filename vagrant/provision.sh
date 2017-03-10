@@ -292,7 +292,7 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
 
     # caffe
     s3cmd sync s3://swan-artifacts/workloads/caffe/bin/ /opt/swan/bin/
-    s3cmd sync s3://swan-artifacts/workloads/caffe/caffe/share/ /opt/swan/share
+    s3cmd sync s3://swan-artifacts/workloads/caffe/caffe/share/ /opt/swan/share/
 
     # docker image
     s3cmd sync s3://swan-artifacts/workloads/centos_swan_image.tgz /tmp/centos_swan_image.tgz
