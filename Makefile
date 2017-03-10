@@ -56,14 +56,13 @@ test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
-
 deps_jupyter:
 	# Required for jupyter building.
 	sudo yum install -y gcc
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 e2e_test: deps_jupyter
-        (cd jupyter; py.test)
+	(cd jupyter; py.test)
 	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	sudo service snapteld stop
