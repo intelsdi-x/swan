@@ -82,6 +82,7 @@ yum install -y -q \
     etcd \
     libcgroup-tools \
     java-1.8.0-openjdk-devel \
+    nmap-ncat \
     git \
     sudo
 
@@ -288,11 +289,11 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     s3cmd sync s3://swan-artifacts/workloads/memcached ${SWAN_BIN}/
 
     # specjbb 
-    s3cmd sync s3://swan-artifacts/workloads/specjbb /opt/swan/share/specjbb/
+    s3cmd sync s3://swan-artifacts/workloads/specjbb /opt/swan/share/
 
     # caffe
     s3cmd sync s3://swan-artifacts/workloads/caffe/bin/ /opt/swan/bin/
-    s3cmd sync s3://swan-artifacts/workloads/caffe/caffe/share/ /opt/swan/share/
+    s3cmd sync s3://swan-artifacts/workloads/caffe/share/caffe/ /opt/swan/share/caffe/
 
     # docker image
     s3cmd sync s3://swan-artifacts/workloads/centos_swan_image.tgz /tmp/centos_swan_image.tgz
