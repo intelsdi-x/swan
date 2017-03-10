@@ -12,8 +12,6 @@ Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
 
-  build_cached_image = ENV["BUILD_CACHED_IMAGE"] ? "true" : "false"
-  
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -79,5 +77,7 @@ Vagrant.configure(2) do |config|
     override.ssh.username = data['ssh_username'] || "centos"
   end
 
-  config.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_CACHED_IMAGE' => build_cached_image}
+  if ENV["BUILD_CACHED_IMAGE"]
+    config.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  end
 end
