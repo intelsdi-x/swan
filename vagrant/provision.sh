@@ -249,8 +249,6 @@ tar -C /usr/local -xzf $GOTGZ
 ## SSH-agent veryfication
 #ssh-add -l
 
-
-
 # -------------------------- public keys
 echo `date` "PRIVATE componentes...."
 if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
@@ -281,6 +279,11 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
 
     # caffe
     s3cmd sync s3://swan-artifacts/workloads/caffe /opt/swan/share/caffe/
+
+    # docker image
+    s3cmd sync s3://swan-artifacts/workloads/centos_swan_image.tgz /tmp/centos_swan_image.tgz
+    gunzip /tmp/centos_swan_image.tgz 
+    docker image import /tmp/centos_swan_image.tar centos_swan_image
 fi
 
 
