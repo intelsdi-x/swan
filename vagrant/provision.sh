@@ -9,23 +9,21 @@ SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 
+# use some sane defaults if it run manually (please run as root)
+HOME_DIR="${HOME_DIR:-/home/vagrant}"
+VAGRANT_USER="${VAGRANT_USER:-vagrant}"
+SWAN_BIN=/opt/swan/bin
+
 # ----------------------- setup env 
 echo `date` "Setting up environment..."
+
+# function executeAsVagrantUser() {
+#         sudo -i -u $VAGRANT_USER "$@"
+# }
+
 function addEnv() {
     grep "$1" $HOME_DIR/.bash_profile || echo "$1" >> $HOME_DIR/.bash_profile
 }
-
-#function addGlobalEnv() {
-#    grep "$1" /etc/environment || echo "$1" >> /etc/environment
-#}
-
-function executeAsVagrantUser() {
-        sudo -i -u $VAGRANT_USER "$@"
-}
-function daemonStatus() {
-    echo "$1 service status: $(systemctl show -p SubState $1 | cut -d'=' -f2)"
-}
-
 ## Setting up envs
 addEnv "export GOPATH=\"$HOME_DIR/go\""
 # addEnv 'export CCACHE_CONFIGPATH=/etc/ccache.conf'
@@ -36,21 +34,21 @@ addEnv 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin'
 ## Create convenient symlinks in the home directory
 ln -sf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
 
+### TODO: resolve issue with PATH
+#function addGlobalEnv() {
+#    grep "$1" /etc/environment || echo "$1" >> /etc/environment
+#}
 ## Make sure that all required packages are also available for remote access. 
 #addGlobalEnv  'PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/swan/bin'
 
 # -------------------- configs
 echo `date` "Copying configs..."
-SWAN_BIN=/opt/swan/bin
 
 mkdir -p /opt/swan/resources
 mkdir -p ${SWAN_BIN}
 
 #------------- docker repo
 cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
-
-# ccache
-#cp /vagrant/resources/configs/ccache.conf /etc/ccache.conf
 
 # yum optmizie
 #cp /vagrant/resources/configs/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf
@@ -139,6 +137,9 @@ yum install -y -q \
 # yum clean all
 #
 
+function daemonStatus() {
+    echo "$1 service status: $(systemctl show -p SubState $1 | cut -d'=' -f2)"
+}
 
 echo `date` "Reloading systemd..."
 systemctl daemon-reload
@@ -224,14 +225,6 @@ ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod og-wx /root/.ssh/authorized_keys
 
-### Enable this if you require access to private repos.
-## ROOT: configure
-#git config --global url."git@github.com:".insteadOf "https://github.com/"
-# VAGRANT: git rewrite
-#executeAsVagrantUser git config --global url."git@github.com:".insteadOf "https://github.com/"
-## SSH-agent veryfication
-#ssh-add -l
-
 # -------------------------- golang
 echo `date` "Downloading golang"
 
@@ -242,47 +235,54 @@ echo `date` "Installing golang"
 mkdir -p /usr/local
 tar -C /usr/local -xzf $GOTGZ 
 
+
+##################################
+# PRIVATE PART
+#################################
 # -------------------------------- require s3 authoirzation
 
-echo `date` "Installing python packages"
-pip install s3cmd
+### Enable this if you require access to private repos.
+## ROOT: configure
+#git config --global url."git@github.com:".insteadOf "https://github.com/"
+# VAGRANT: git rewrite
+#executeAsVagrantUser git config --global url."git@github.com:".insteadOf "https://github.com/"
+## SSH-agent veryfication
+#ssh-add -l
 
-echo `date` "Installing SpecJBB"
-pushd $HOME_DIR/go/src/github.com/intelsdi-x/swan/
-    # requires as root
-    ./scripts/get_specjbb.sh -s . -c $HOME_DIR/swan_s3_creds/.s3cfg -b swan-artifacts
-popd
+
 
 # -------------------------- public keys
-echo `date` "Installing public keys"
+echo `date` "PRIVATE componentes...."
 if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/public_keys authorized_keys
+    cp $HOME_DIR/swan_s3_creds/.s3cfg ~/.s3cfg
+
+    echo `date` "Installing s3cmd"
+    pip install s3cmd
+
+    echo `date` "Installing public keys"
+    s3cmd get s3://swan-artifacts/public_keys authorized_keys
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
-fi
 
-# ------------------------- grab all the binaries 
-echo `date` "Installing public keys"
-if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
+    # ------------------------- grab all the binaries 
     # low level aggressors from iBench
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l1d ${SWAN_BIN}
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l1i ${SWAN_BIN}
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/l3 ${SWAN_BIN}
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memBw ${SWAN_BIN}
+    s3cmd sync s3://swan-artifacts/workloads/l1d ${SWAN_BIN}/
+    s3cmd sync s3://swan-artifacts/workloads/l1i ${SWAN_BIN}/
+    s3cmd sync s3://swan-artifacts/workloads/l3 ${SWAN_BIN}/
+    s3cmd sync s3://swan-artifacts/workloads/memBw ${SWAN_BIN}/
     # stream 
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/stream.100M ${SWAN_BIN}
+    s3cmd sync s3://swan-artifacts/workloads/stream.100M ${SWAN_BIN}/
 
-    # HP workload
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/mutilate ${SWAN_BIN}
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/memcached ${SWAN_BIN}
+    # memcached
+    s3cmd sync s3://swan-artifacts/workloads/mutilate ${SWAN_BIN}/
+    s3cmd sync s3://swan-artifacts/workloads/memcached ${SWAN_BIN}/
 
-    # specjbb as tgs
-    s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/specjbb.tgz /tmp/specjbb.tgz
-    tar xzvf /tmp/specjbb.tgz -C /opt/swan/share
+    # specjbb 
+    s3cmd sync s3://swan-artifacts/workloads/specjbb /opt/swan/share/specjbb/
 
-    # caffe as tgz
-    # s3cmd get -c $HOME_DIR/swan_s3_creds/.s3cfg s3://swan-artifacts/workloads/caffe.tgz /tmp/caffe.tgz
-    # tar xzvf /tmp/caffe.tgz -C /opt/swan/share
+    # caffe
+    s3cmd sync s3://swan-artifacts/workloads/caffe /opt/swan/share/caffe/
 fi
+
 
 # ------------------------- post install
 echo `date` "Rewriting permissions..."
