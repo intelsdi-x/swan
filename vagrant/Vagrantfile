@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
 
-  build_cached_image = "true"  ENV["BUILD_CACHED_IMAGE"] ? "true" : "false"
+  build_cached_image = ENV["BUILD_CACHED_IMAGE"] ? "true" : "false"
   
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
