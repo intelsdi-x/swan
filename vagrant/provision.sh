@@ -48,7 +48,8 @@ mkdir -p /opt/swan/resources
 mkdir -p ${SWAN_BIN}
 
 #------------- docker repo
-cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
+#cp /vagrant/resources/configs/docker.repo /etc/yum.repos.d/docker.repo
+### replace with docker-ce below
 
 # yum optmizie
 #cp /vagrant/resources/configs/fastestmirror.conf /etc/yum/pluginconf.d/fastestmirror.conf
@@ -79,9 +80,17 @@ yum install -y -q \
     python-pip \
     python-devel \
     etcd \
+    libcgroup-tools \
     java-1.8.0-openjdk-devel \
+    nmap-ncat \
     git \
     sudo
+
+# developer tools
+yum install -y -q \
+    vim \
+    tmux \
+    htop
 
 # echo Installing packages
 # yum groupinstall -y -q "Development tools"
@@ -146,9 +155,9 @@ systemctl daemon-reload
 
 # https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
 echo `date` "Install docker..."
-#yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-#yum makecache fast
-#yum install docker-ce
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum makecache fast -y -q
+yum install -y docker-ce
 systemctl start docker
 docker run hello-world
 
@@ -260,6 +269,11 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     echo `date` "Installing public keys"
     s3cmd get s3://swan-artifacts/public_keys authorized_keys
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
+    
+    # glide cache
+    s3cmd get s3://swan-artifacts/glide-cache-2017-03-10.tgz /tmp/glide-cache.tgz
+    tar --strip-components 2 -C ${HOME_DIR} -xzf /tmp/glide-cache.tgz
+    chown -R ${VAGRANT_USER}:${VAGRANT_USER} ${HOME_DIR}/.glide
 
     ### sync everything
     # installing manually requires first to
@@ -268,23 +282,6 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
 
     # ------------------------- grab all the binaries 
     # low level aggressors from iBench
-    # s3cmd sync s3://swan-artifacts/workloads/l1d ${SWAN_BIN}/
-    # s3cmd sync s3://swan-artifacts/workloads/l1i ${SWAN_BIN}/
-    # s3cmd sync s3://swan-artifacts/workloads/l3 ${SWAN_BIN}/
-    # s3cmd sync s3://swan-artifacts/workloads/memBw ${SWAN_BIN}/
-    # # stream 
-    # s3cmd sync s3://swan-artifacts/workloads/stream.100M ${SWAN_BIN}/
-    #
-    # # memcached
-    # s3cmd sync s3://swan-artifacts/workloads/mutilate ${SWAN_BIN}/
-    # s3cmd sync s3://swan-artifacts/workloads/memcached ${SWAN_BIN}/
-    #
-    # # specjbb 
-    # s3cmd sync s3://swan-artifacts/workloads/specjbb /opt/swan/share/specjbb/
-    #
-    # # caffe
-    # s3cmd sync s3://swan-artifacts/workloads/caffe /opt/swan/share/caffe/
-
     # docker image
     s3cmd sync s3://swan-artifacts/workloads/centos_swan_image.tgz /tmp/centos_swan_image.tgz
     gunzip /tmp/centos_swan_image.tgz 
