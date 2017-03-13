@@ -13,9 +13,9 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID = "caffe"
 
-	defaultBinaryRelativePath = "caffe_wrapper.sh"
+	defaultBinaryRelativePath = "caffe.sh"
 	defaultModel              = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
-	defaultWeights            = "/tmp/caffe/cifar10_quick_iter_5000.caffemodel.h5"
+	defaultWeights            = "data/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
 	defaultIterations         = 1000000000
 	defaultSigintEffect       = "stop"
 )
