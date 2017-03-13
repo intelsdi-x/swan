@@ -241,7 +241,7 @@ func main() {
 						// In case of some aggressor we measure work done by them thus snaptel collector is needed.
 						if beLauncher.SnapSessionLauncher != nil {
 							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 							}
