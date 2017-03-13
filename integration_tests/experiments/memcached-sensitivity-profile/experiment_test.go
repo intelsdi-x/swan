@@ -76,9 +76,11 @@ func TestExperiment(t *testing.T) {
 
 		loadDataFromCassandra := func(experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string) {
 
+			metricsCount := 0
 			var ns string
 			iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
 			for iter.Scan(&ns, &tags) {
+				metricsCount++
 				log.Debugf("experimentID=%s ns=%s tags=%#v", experimentID, ns, tags)
 				So(ns, ShouldNotBeBlank)
 				So(tags, ShouldNotBeEmpty)
@@ -88,6 +90,9 @@ func TestExperiment(t *testing.T) {
 				swanPhases = append(swanPhases, tags["swan_phase"])
 				swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
 			}
+			log.Debugf("%d metrics found in cassandra for experiment id %q", metricsCount, experimentID)
+			So(metricsCount, ShouldBeGreaterThan, 0)
+
 			So(iter.Close(), ShouldBeNil)
 			return
 		}

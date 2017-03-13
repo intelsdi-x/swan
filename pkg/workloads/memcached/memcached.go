@@ -16,7 +16,7 @@ const (
 	name = "Memcached"
 	// DefaultPort represents default memcached port.
 	defaultPort            = 11211
-	defaultUser            = "memcached"
+	defaultUser            = "root"
 	defaultNumThreads      = 4
 	defaultMaxMemoryMB     = 64
 	defaultNumConnections  = 1024

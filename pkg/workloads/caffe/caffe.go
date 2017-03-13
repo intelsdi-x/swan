@@ -2,7 +2,6 @@ package caffe
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -13,9 +12,9 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID = "caffe"
 
-	defaultBinaryRelativePath = "caffe_wrapper.sh"
+	defaultBinaryRelativePath = "caffe.sh"
 	defaultModel              = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
-	defaultWeights            = "/tmp/caffe/cifar10_quick_iter_5000.caffemodel.h5"
+	defaultWeights            = "examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
 	defaultIterations         = 1000000000
 	defaultSigintEffect       = "stop"
 )
@@ -96,25 +95,13 @@ func (c Caffe) buildCommand() string {
 }
 
 // Launch launches Caffe workload. It's implementation of workload.Launcher interface.
-// Caffe needs to run from it's own working directory, because
-// solver look for relative paths when dealing with training and testing
-// sets.
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
-	currentWorkingDir, err := os.Getwd()
+	command := c.buildCommand()
+	return c.exec.Execute(command)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not obtain working directory")
+		return nil, errors.Wrapf(err, "cannot launch caffe with command %q", command)
 	}
-	defer popWorkingDir(currentWorkingDir)
-	task, err = c.exec.Execute(c.buildCommand())
-	if err != nil {
-		return nil, err
-	}
-
-	return task, err
-}
-
-func popWorkingDir(workdir string) {
-	os.Chdir(workdir)
+	return
 }
 
 // Name returns human readable name for job.

@@ -9,27 +9,9 @@
 Vagrant.configure(2) do |config|
 
   aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
-
-  vagrant_user=ENV['VAGRANT_USER'] || 'vagrant'
-
-  # build_docker_image variable is used to enable building
-  # of docker image and multithreaded caffe.
-  # By default, for development purposes, this value is set to "true"
-  # which means that all of required artifacts are going to be built.
-  build_docker_image = "true"
-
-  # If vagrant is used to run Integration Tests on Kopernik, then
-  # usually we don't have to rebuild all of artifacts due to AMI caching.
-  if File.exists?(aws_data_file)
-    build_docker_image = "false"
-  end
-
-  # Developer can override all of this settings with enviromental variable
-  # and force build behavior.
-  if ENV["BUILD_CACHED_IMAGE"]
-    build_docker_image = ENV['BUILD_CACHED_IMAGE']
-  end
-
+  vagrant_user = ENV['VAGRANT_USER'] || 'vagrant'
+  build_cached_image = ENV["BUILD_CACHED_IMAGE"] ? true : false
+  
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -61,9 +43,6 @@ Vagrant.configure(2) do |config|
 
     override.ssh.insert_key = true
     override.ssh.keys_only = true
-    if ENV["SHARE_GLIDE_CACHE"] == "true" and File.directory?(File.expand_path("#{ENV['HOME']}/.glide"))
-      override.vm.synced_folder "#{ENV['HOME']}/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
-    end
   end
 
   config.vm.provider :aws do |aws, override|
@@ -88,26 +67,23 @@ Vagrant.configure(2) do |config|
     override.vm.box = "aws"
     # requiretty cannot be set in sudoers for vagrant to work
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
-    # centos7 for us-east
-    # COPY AMI ID HERE
-    # non-cached ami: ami-6d1c2007
-    aws.ami = "ami-f034e7e6"
+
     aws.instance_package_timeout = 60000
     aws.instance_type = "m4.large"
     aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
-  end
 
-  config.vm.provision "shell", path: "resources/scripts/setup_env.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/copy_configuration.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_packages.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_git.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_public_keys.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/setup_services.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_golang.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_snap.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_kubernetes.sh", env: {'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/post_install.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
-  config.vm.provision "shell", path: "resources/scripts/install_project_deps.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir, 'BUILD_DOCKER_IMAGE' => build_docker_image}
-  config.vm.provision "shell", path: "resources/scripts/checker.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    # centos7 for us-east
+    # COPY AMI ID HERE
+    # non-cached ami: ami-6d1c2007
+    ### USE BASE/CACHED IMAGE
+    #aws.ami = "ami-6d1c2007" # base image
+    aws.ami = "ami-3a66cf2c" # 2017-03-15 11:00 UTC
+
+  end
+ 
+  if build_cached_image
+    config.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+  end
+  
 end
