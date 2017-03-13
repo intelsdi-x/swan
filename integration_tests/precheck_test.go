@@ -10,12 +10,12 @@ import (
 
 const ()
 
-func TestFunction(t *testing.T) {
+func TestExecutables(t *testing.T) {
 
 	requiredExecutables := []string{
 
 		// aggressors
-		"caffe_wrapper.sh",
+		"caffe.sh",
 		"l1d",
 		"l1i",
 		"l3",

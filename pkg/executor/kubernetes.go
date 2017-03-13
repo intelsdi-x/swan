@@ -89,7 +89,7 @@ var (
 		return hostname
 	}()
 
-	nodeNameExperiment  = conf.NewStringFlag("kubernetes_nodename", "run experiment pods on selected node", hostname)
+	nodeNameExperiment = conf.NewStringFlag("kubernetes_nodename", "run experiment pods on selected node", hostname)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -168,7 +168,7 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	kubeConfigPath := kubeconfigFlag.Value()
 	if kubeConfigPath == "" {
 		k8s.clientset, err = kubernetes.NewForConfig(&rest.Config{
-			Host:     config.Address,
+			Host: config.Address,
 		})
 	} else {
 		var kubeconfig *rest.Config
@@ -293,6 +293,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		log.Errorf("K8s executor: cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
+	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, k8sports.GetPodQOS(podManifest))
 
 	pod, err := podsAPI.Create(podManifest)
 	if err != nil {

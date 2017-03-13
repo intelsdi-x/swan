@@ -10,11 +10,11 @@ go:
 before_install:
 - echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
 before_script:
-- make deps_godeps 
+- make deps
 script:
 - make test_lint 
 - make unit_test
-- make integration_test_build
+- make test_integration_build
 notifications:
   slack:
     rooms:
