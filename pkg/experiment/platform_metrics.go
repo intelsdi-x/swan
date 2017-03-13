@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"regexp"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -184,9 +185,10 @@ func PowerGovernor() (string, error) {
 		return "", errors.Wrapf(err, "Failed to scan sysfs for CPU devices")
 	}
 
+	re := regexp.MustCompile("cpu[0-9]+")
 	output := []string{}
 	for _, file := range files {
-		if file.IsDir() && strings.HasPrefix(file.Name(), "cpu") {
+		if file.IsDir() && re.MatchString(file.Name()) {
 			cpufreq := path.Join(dir, file.Name(), "cpufreq/scaling_governor")
 
 			// Just try to read it. Don't try to be smart here. Failure is OK.
