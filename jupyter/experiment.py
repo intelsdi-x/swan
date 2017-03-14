@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 """
 This module contains the convience class to read experiment data and generate sensitivity
 profiles. See profile.py for more information.
@@ -127,8 +129,12 @@ class Experiment(object):
             if row.valtype == "doubleval":
                 k = (row.tags['swan_aggressor_name'], row.tags['swan_phase'], row.tags['swan_repetition'])
 
-                achieved_qps = (qps[k] / float(row.tags['swan_loadpoint_qps']))
-                percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
+                expectedQPS = float(row.tags['swan_loadpoint_qps'])
+                if expectedQPS == 0.0:
+                    percent_qps = achieved_qps = '+∞'
+                else:
+                    achieved_qps = qps[k] / expectedQPS
+                    percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
 
                 max_throughput = max(throughputs[k]) if k in throughputs else np.nan
 
