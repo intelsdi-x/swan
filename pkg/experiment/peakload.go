@@ -9,7 +9,7 @@ import (
 func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenerator, slo int) (peakLoad int, err error) {
 	prTask, err := hpLauncher.Launch()
 	if err != nil {
-		return 0, errors.Wrap(err, "cannot launch specjbb backend")
+		return 0, errors.Wrap(err, "tunning: cannot launch high-priority task backend")
 	}
 	defer func() {
 		// If function terminated with error then we do not want to overwrite it with any errors in defer.
@@ -22,7 +22,7 @@ func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenera
 
 	err = loadGenerator.Populate()
 	if err != nil {
-		return 0, errors.Wrap(err, "cannot populate memcached")
+		return 0, errors.Wrap(err, "tunning: cannot populate high-priority task with data")
 	}
 
 	peakLoad, _, err = loadGenerator.Tune(slo)
