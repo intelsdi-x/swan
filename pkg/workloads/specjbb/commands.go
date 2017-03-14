@@ -3,6 +3,7 @@ package specjbb
 import (
 	"fmt"
 	"time"
+	"path"
 )
 
 var (
@@ -44,7 +45,7 @@ func getBackendCommand(conf BackendConfig) string {
 		" -m backend",
 		" -G GRP1",
 		" -J ", conf.JvmID,
-		" -p ", PathToPropsFileForHpFlag.Value(),
+		" -p ", path.Join(PathToSPECjbb.Value(), "config/specjbb2015.props"),
 	)
 }
 

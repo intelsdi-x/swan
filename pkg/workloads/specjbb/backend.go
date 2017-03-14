@@ -1,6 +1,8 @@
 package specjbb
 
 import (
+	"path"
+
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
@@ -12,14 +14,10 @@ const (
 )
 
 var (
-	// PathToBinaryForHpFlag specifies path to a SPECjbb2015 jar file for hp job.
-	PathToBinaryForHpFlag = conf.NewStringFlag("specjbb_path_hp",
-		"Path to SPECjbb jar for high priority job (backend)",
-		"/opt/swan/share/specjbb/specjbb2015.jar")
-	// PathToPropsFileForHpFlag specifies path to a SPECjbb2015 properties file for hp job.
-	PathToPropsFileForHpFlag = conf.NewStringFlag("specjbb_props_path_hp",
-		"Path to SPECjbb properties file for high priority job (backend)",
-		"/opt/swan/share/specjbb/config/specjbb2015.props")
+	// PathToSPECjbb specifies path to a SPECjbb2015 jar file for hp job.
+	PathToSPECjbb = conf.NewStringFlag("specjbb_path",
+		"Path to SPECjbb",
+		"/opt/swan/share/specjbb")
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
@@ -35,7 +33,7 @@ type BackendConfig struct {
 func DefaultSPECjbbBackendConfig() BackendConfig {
 	return BackendConfig{
 		JVMOptions:        DefaultJVMOptions(),
-		PathToBinary:      PathToBinaryForHpFlag.Value(),
+		PathToBinary:      path.Join(PathToSPECjbb.Value(), "specjbb2015.jar"),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
 		WorkerCount:       1,
