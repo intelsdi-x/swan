@@ -12,10 +12,10 @@ import (
 var (
 	hpKubernetesCPUResourceFlag    = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
 	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
+	hpIsContainerPrivilegedFlag    = conf.NewBoolFlag("hp_privileged_container", "Configures HP task container as privileged when required.", false)
 
-	runOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	runOnKubernetesFlag         = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 	runOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
-
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
@@ -49,6 +49,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
 		hpExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
+		hpExecutorConfig.Privileged = hpIsContainerPrivilegedFlag.Value()
 
 		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
 		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
