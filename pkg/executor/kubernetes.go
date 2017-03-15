@@ -78,8 +78,10 @@ const (
 )
 
 var (
-	kubeconfigFlag      = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
-	namespaceExperiment = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	kubeconfigFlag              = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
+	hpIsContainerPrivilegedFlag = conf.NewBoolFlag("hp_privileged_container", "configures HP task container as privileged when required.", false)
+	namespaceExperiment         = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	podLaunchTimeoutFlag        = conf.NewDurationFlag("pod_launch_timeout", "pod launch timeout", 30*time.Second)
 
 	hostname = func() string {
 		hostname, err := os.Hostname()
@@ -146,9 +148,9 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
 		Namespace:      namespaceExperiment.Value(),
-		Privileged:     false,
+		Privileged:     hpIsContainerPrivilegedFlag.Value(),
 		HostNetwork:    false,
-		LaunchTimeout:  30 * time.Second,
+		LaunchTimeout:  podLaunchTimeoutFlag.Value(),
 	}
 }
 

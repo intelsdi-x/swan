@@ -73,21 +73,21 @@ func TestKubernetesLauncher(t *testing.T) {
 				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 				kubeletCommand := k8sLauncher.getKubeletCommand()
 
-				So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+				So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 				So(kubeAPICommand.healthCheckPort, ShouldEqual, 8080)
 				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 
-				So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+				So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 				So(kubeletCommand.healthCheckPort, ShouldEqual, 1234)
 				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
 
 				Convey("But they can be disallowed through configuration", func() {
-					k8sLauncher.config.AllowPrivileged = true
+					k8sLauncher.config.AllowPrivileged = false
 					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 					kubeletCommand := k8sLauncher.getKubeletCommand()
 
-					So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=true")
-					So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
+					So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=false")
+					So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=false")
 				})
 			})
 
