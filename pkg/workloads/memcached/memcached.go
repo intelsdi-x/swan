@@ -121,10 +121,6 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 		if err := task.Clean(); err != nil {
 			log.Errorf("failed to cleanup memcached task. Error: %q", err.Error())
 		}
-
-		if err := task.EraseOutput(); err != nil {
-			log.Errorf("failed to erase output of memcached task. Error: %q", err.Error())
-		}
 		return nil, errors.Errorf("failed to connect to memcached instance. Timeout on connection to %q",
 			address)
 	}
