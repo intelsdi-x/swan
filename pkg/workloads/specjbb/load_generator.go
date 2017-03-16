@@ -2,6 +2,7 @@ package specjbb
 
 import (
 	"time"
+	"path"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -17,15 +18,6 @@ const (
 )
 
 var (
-	// PathToBinaryForLoadGeneratorFlag specifies path to a SPECjbb2015 jar file for load generator.
-	PathToBinaryForLoadGeneratorFlag = conf.NewStringFlag("specjbb_path_lg", "Path to SPECjbb jar for load generator", "/opt/swan/share/specjbb/specjbb2015.jar")
-
-	// PathToPropsFileForLoadGeneratorFlag specifies path to a SPECjbb2015 properties file for load generator.
-	PathToPropsFileForLoadGeneratorFlag = conf.NewStringFlag("specjbb_props_path_lg", "Path to SPECjbb properties file for load generator", "/opt/swan/share/specjbb/config/specjbb2015.props")
-
-	// PathToOutputTemplateFlag specifies path to a SPECjbb2015 output template file.
-	PathToOutputTemplateFlag = conf.NewStringFlag("specjbb_output_template_path", "Path to SPECjbb output template file", "/opt/swan/share/specjbb/config/template-D.raw")
-
 	// ControllerAddress specifies ControllerAddress address of a controller component of SPECjbb2015 benchmark.
 	ControllerAddress = conf.NewStringFlag("specjbb_controller_ip", "ControllerAddress address of a SPECjbb controller component", defaultControllerIP)
 
@@ -47,7 +39,7 @@ type LoadGeneratorConfig struct {
 	PathToProps          string // PathToProps is a path to property file that stores basic configuration.
 	CustomerNumber       int    // CustomerNumber is a number of customers used to generate load.
 	ProductNumber        int    // ProductNumber is a number of products used to generate load.
-	BinaryDataOutputDir  string // binaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
+	BinaryDataOutputDir  string // BinaryDataOutputDir is a dir where binary raw data file is stored during run of SPECjbb.
 	PathToOutputTemplate string // PathToOutputTemplate is a path to template used to generate report from.
 	HandshakeTimeoutMs   int    // HandshakeTimeoutMs is timeout (in milliseconds) for initial Controller <-> Agent handshaking.
 	EraseTuningOutput    bool   // Erase stdout & stderr logs from processes ran by Load Generator.
@@ -58,12 +50,12 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		JVMOptions:           DefaultJVMOptions(),
 		ControllerAddress:    ControllerAddress.Value(),
-		PathToBinary:         PathToBinaryForLoadGeneratorFlag.Value(),
-		PathToProps:          PathToPropsFileForLoadGeneratorFlag.Value(),
+		PathToBinary:         path.Join(PathToSPECjbb.Value(), "specjbb2015.jar"),
+		PathToProps:          path.Join(PathToSPECjbb.Value(), "config/specjbb2015.props"),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
-		PathToOutputTemplate: PathToOutputTemplateFlag.Value(),
+		PathToOutputTemplate: path.Join(PathToSPECjbb.Value(), "config/template-D.raw"),
 		HandshakeTimeoutMs:   600000,
 		EraseTuningOutput:    true,
 	}
