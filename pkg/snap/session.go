@@ -131,7 +131,7 @@ func (s *Session) Start(rawTags string) error {
 
 // GetTags get common tags for all metrics.
 func (s *Session) GetTags() map[string]string {
-	return s.task.Workflow.CollectNode.Tags["tags"]
+	return s.task.Workflow.CollectNode.Tags[""]
 }
 
 // IsRunning checks if Snap task is running.
