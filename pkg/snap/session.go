@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"strings"
+
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/pkg/errors"
-	"strings"
 )
-
 
 type task struct {
 	Version  int
@@ -98,8 +98,7 @@ func (s *Session) Start(rawTags string) error {
 		tags[kv[0]] = kv[1]
 	}
 
-	wf.CollectNode.Tags = map[string]map[string]string{"tags": tags}
-
+	wf.CollectNode.Tags = map[string]map[string]string{"": tags}
 
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)
