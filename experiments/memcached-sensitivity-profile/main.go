@@ -233,7 +233,7 @@ func main() {
 						// Majority of LauncherSessionPairs do not use Snap.
 						if beLauncher.SnapSessionLauncher != nil {
 							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, beLauncher.Launcher.Name())
+							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 							}

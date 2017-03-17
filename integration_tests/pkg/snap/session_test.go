@@ -2,7 +2,6 @@ package snap
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -87,34 +86,16 @@ func TestSnap(t *testing.T) {
 						Convey("Contacting snap to get the task status", func() {
 							So(s.IsRunning(), ShouldBeTrue)
 
-							Convey("Reading samples from file", func() {
+							err = s.Wait()
+							So(err, ShouldBeNil)
 
-								err := s.Wait()
-								So(err, ShouldBeNil)
-
-								err = s.Stop()
-								So(err, ShouldBeNil)
-								So(s.IsRunning(), ShouldBeFalse)
-
-								// one measurement should contains more then one metric.
-								oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(metricsFile)
-								So(err, ShouldBeNil)
-								So(len(oneMeasurement), ShouldBeGreaterThan, 0)
-
-								metric, err := testhelpers.GetMetric(`/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage`, oneMeasurement)
-								So(err, ShouldBeNil)
-								So(metric.Tags["foo"], ShouldEqual, "bar")
-
-								host, err := os.Hostname()
-								So(err, ShouldBeNil)
-								So(metric.Tags["plugin_running_on"], ShouldEqual, host)
-							},
-							)
+							err = s.Stop()
+							So(err, ShouldBeNil)
+							So(s.IsRunning(), ShouldBeFalse)
 						})
 					})
 				})
 			})
 		})
 	})
-
 }

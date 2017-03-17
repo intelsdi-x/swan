@@ -85,7 +85,7 @@ func PrepareMockedTaskInfo(outFilePath string) (cleanup func(), mockedTaskInfo *
 // if we have all columns, if yes, then we compare read data against expectedMetrics.
 // Function returns bool, which if true means that all data are valid, if false - data have not been read properly.
 // If data do not match expected data, convey.So is "thrown"
-func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string) (validData bool) {
+func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]string, session *snap.Session) (validData bool) {
 	retries := 50
 	validData = false
 	expectedColumnsNum := 3
@@ -126,9 +126,7 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 			// Now we are sure that we have all data so we begin validation
 			for i := 0; i < len(expectedMetrics); i++ {
 				columns := strings.Split(lines[i], "\t")
-				soMetricRowIsValid(
-					expectedMetrics,
-					columns[0], columns[1], columns[2])
+				soMetricRowIsValid(expectedMetrics, columns[0], columns[1], columns[2], session)
 			}
 			validData = true
 			break
@@ -140,14 +138,14 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 // soMetricRowIsValid function takes 3 strings:
 // namespace, tags, value - and checks if provided value is almost equal
 // corresponding one from expectedMetrics
-func soMetricRowIsValid(
-	expectedMetrics map[string]string,
-	namespace, tags, value string) {
+func soMetricRowIsValid(expectedMetrics map[string]string, namespace, tags, value string, session *snap.Session) {
 
 	// Check tags.
 	tagsSplitted := strings.Split(tags, ",")
 	convey.So(len(tagsSplitted), convey.ShouldBeGreaterThanOrEqualTo, 1)
-	convey.So("foo=bar", convey.ShouldBeIn, tagsSplitted)
+
+	convey.So(session.GetTags(), convey.ShouldContainKey, "foo")
+	convey.So(session.GetTags()["foo"], convey.ShouldEqual, "bar")
 
 	// Split namespace string
 	namespaceSplitted := strings.Split(namespace, "/")
