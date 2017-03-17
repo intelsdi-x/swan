@@ -31,32 +31,27 @@ class Experiment(object):
     CASSANDRA_SESSION = None  # one instance for all existing notebook experiments
 
     @staticmethod
-    def _create_or_get_session(cassandra_cluster, port, ssl_options, keyspace):
+    def _create_or_get_session(cassandra_cluster, port, ssl_options):
         if not Experiment.CASSANDRA_SESSION:
             auth_provider = None
             if ssl_options:
-                if 'ssl_version' not in ssl_options:
-                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                    context.options |= ssl.OP_NO_SSLv2
-                    context.options |= ssl.OP_NO_SSLv3
-                    ssl_options['ssl_version'] = context.protocol
-
-                auth_provider = PlainTextAuthProvider(username=ssl_options['username'],
-                                                      password=ssl_options['password'])
+                username = ssl_options.pop('username')
+                password = ssl_options.pop('password')
+                auth_provider = PlainTextAuthProvider(username, password)
 
             cluster = Cluster(cassandra_cluster, port=port, ssl_options=ssl_options, auth_provider=auth_provider)
-            Experiment.CASSANDRA_SESSION = cluster.connect(keyspace)
+            Experiment.CASSANDRA_SESSION = cluster.connect()
 
         return Experiment.CASSANDRA_SESSION
 
-    def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspace='snap',
+    def __init__(self, experiment_id, cassandra_cluster=None, port=9042, name=None, keyspaces=('snap', 'swan'),
                  aggressor_throughput_namespaces_prefixes=(), ssl_options=None, read_csv=False, dir_csv='data'):
         """
         :param experiment_id: string of experiment_id gathered from cassandra
         :param name: optional name of the experiment if missing, experiment_id is given instead
         :param cassandra_cluster: ip of cassandra cluster in a string format
         :param port: endpoint od cassandra cluster [int]
-        :param keyspace: keyspace used in cassandra cluster
+        :param keyspaces: keyspaces used in cassandra cluster. First is for data, second is for metadata.
         :param aggressor_throughput_namespaces_prefixes: get work done for aggressor by specify ns prefix in cassandra
         :param ssl_options used during secure connection.
             Keys needed are: `ca_certs`, `keyfile`, `certfile` which are absolute paths,
@@ -80,7 +75,7 @@ class Experiment(object):
             self.frame = pd.read_csv(self.cached_experiment)
             self._meta = pd.read_csv(self.cached_meta_data_experiment)
         else:
-            data, meta = self.read_data_from_cassandra(cassandra_cluster, port, keyspace, ssl_options, experiment_id)
+            data, meta = self.read_data_from_cassandra(cassandra_cluster, port, keyspaces, ssl_options, experiment_id)
 
             self._meta = pd.DataFrame.from_dict(meta[0], orient='index')
 
@@ -102,15 +97,15 @@ class Experiment(object):
                 rows[(row.ns,) + k] = row
         return rows, qps, throughputs
 
-    def read_data_from_cassandra(self, cassandra_cluster, port, keyspace, ssl_options, experiment_id):
-        session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options, keyspace)
+    def read_data_from_cassandra(self, cassandra_cluster, port, keyspaces, ssl_options, experiment_id):
+        session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options)
 
         query_for_data = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
-                            FROM snap.metrics
-                            WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % experiment_id
+                            FROM %s.metrics
+                            WHERE tags['swan_experiment'] = \'%s\'  ALLOW FILTERING""" % (keyspaces[0], experiment_id)
         query_for_meta = """SELECT metadata
-                            FROM swan.metadata
-                            WHERE experiment_id = \'%s\' ALLOW FILTERING""" % experiment_id
+                            FROM %s.metadata
+                            WHERE experiment_id = \'%s\' ALLOW FILTERING""" % (keyspaces[1], experiment_id)
 
         response_data = self.__execute_query(query_for_data, session, named_tuple_factory)
         response_meta = self.__execute_query(query_for_meta, session, ordered_dict_factory)
@@ -131,7 +126,7 @@ class Experiment(object):
 
                 expectedQPS = float(row.tags['swan_loadpoint_qps'])
                 if expectedQPS == 0.0:
-                    percent_qps = achieved_qps = '+∞'
+                    percent_qps = '+∞'
                 else:
                     achieved_qps = qps[k] / expectedQPS
                     percent_qps = '{percent:.2%}'.format(percent=achieved_qps)
