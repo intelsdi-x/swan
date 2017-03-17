@@ -4,7 +4,6 @@
 This module contains the convience class to read experiment data and generate sensitivity
 profiles. See profile.py for more information.
 """
-import ssl
 import os.path
 
 from collections import defaultdict
