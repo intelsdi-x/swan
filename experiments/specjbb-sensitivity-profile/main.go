@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/specjbb-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -20,9 +19,10 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
+
+	"github.com/Sirupsen/logrus"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
-	"gopkg.in/cheggaaa/pb.v1"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 )
 
 func main() {
-	errorLevelEnabled := experiment.Configure()
+	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
 	uuid, err := uuid.NewV4()
@@ -142,16 +142,6 @@ func main() {
 		logrus.Infof("Skipping tuning phase, using peakload %d", load)
 	}
 
-	// Initialiaze progress bar when log level is error.
-	var bar *pb.ProgressBar
-	totalPhases := sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value() * len(aggressorSessionLaunchers)
-	if errorLevelEnabled {
-		bar = pb.StartNew(totalPhases)
-		bar.ShowCounters = false
-		bar.ShowTimeLeft = true
-		defer bar.Finish()
-	}
-
 	// Read configuration.
 	stopOnError := sensitivity.StopOnErrorFlag.Value()
 
@@ -175,9 +165,6 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 
-	// We need to count fully executed aggressor loops to render progress bar correctly.
-	var beIteration int
-
 	// Iterate over aggressors
 	for _, beLauncher := range aggressorSessionLaunchers {
 		// For each aggressor iterate over defined loadpoints
@@ -196,18 +183,6 @@ func main() {
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
-					// Make progress bar to display current repetition.
-					if errorLevelEnabled {
-						completedPhases := beIteration * sensitivity.LoadPointsCountFlag.Value() * sensitivity.RepetitionsFlag.Value()
-						prefix := fmt.Sprintf("[%02d / %02d] %s, repetition %d ", completedPhases+loadPoint+repetition+1, totalPhases, phaseName, repetition)
-						bar.Prefix(prefix)
-						// Changes to progress bar should be applied immediately
-						bar.AlwaysUpdate = true
-						bar.Update()
-						bar.AlwaysUpdate = false
-						defer bar.Add(1)
-					}
-
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
 					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
@@ -299,6 +274,5 @@ func main() {
 				}
 			} // repetition
 		} // loadpoints
-		beIteration++
 	} // aggressors
 }
