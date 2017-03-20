@@ -1,8 +1,7 @@
 pytest
-cassandra-driver
+cassandra-driver==3.8.1
 jupyter
-numpy
+numpy==1.12.1
 pylint
-cython
-pandas
-plotly
+Cython==0.25.2
+pandas==0.19.2
