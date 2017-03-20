@@ -18,12 +18,17 @@ restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
 	sudo systemctl restart snap-telemetry
 
-deps:
+glide:
+	# Workaround for https://github.com/minishift/minishift/issues/571
+	mkdir -p ${GOPATH}/bin
+	wget https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
+	curl -s https://glide.sh/get | sh
+	
+deps: glide
 	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
 	go get github.com/golang/lint/golint
 	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify 
-	curl -s https://glide.sh/get | sh
 	glide -q install
 
 build_plugins:
