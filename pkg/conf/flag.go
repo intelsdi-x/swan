@@ -156,22 +156,22 @@ type IntSetFlag struct {
 	value *isolation.IntSet
 }
 
-// NewRangeFlag is a constructor of string range based flags
+// NewIntSetFlag is a constructor of string range based flags
 func NewIntSetFlag(name string, usage string, value string) *IntSetFlag {
 	registerName(name)
 	intSet, err := isolation.NewIntSetFromRange(value)
 	if err != nil {
 		panic(fmt.Errorf("invalid default value for IntSetFlag: %q", value))
 	}
-	intSetFlag := IntSetFlag{
+	intSetFlag := &IntSetFlag{
 		Flag: Flag{
 			Name:  name,
 			usage: usage,
 		},
 		value: &intSet,
 	}
-	flag.Var(&intSetFlag, name, usage)
-	return &intSetFlag
+	flag.Var(intSetFlag, name, usage)
+	return intSetFlag
 }
 
 // Value returns value of defined flag after parse.
@@ -179,17 +179,21 @@ func (isf *IntSetFlag) Value() isolation.IntSet {
 	return *isf.value
 }
 
+// Set new value for IntSetFlag.
 func (isf *IntSetFlag) Set(value string) error {
-	fmt.Println("Set:", value)
 	intSet, err := isolation.NewIntSetFromRange(value)
 	if err != nil {
 		return err
 	}
 	isf.value = &intSet
-	fmt.Printf("isf = %+v\n", isf)
 	return nil
 }
 
+// String method returns IntSet as string.
 func (isf *IntSetFlag) String() string {
-	return isf.value.AsRangeString()
+	// Required because Internally go flag package creates zero value instance.
+	if isf.value != nil {
+		return isf.value.AsRangeString()
+	}
+	return ""
 }

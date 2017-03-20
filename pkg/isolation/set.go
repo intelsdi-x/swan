@@ -2,6 +2,7 @@ package isolation
 
 import (
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -118,8 +119,10 @@ func (s IntSet) AsSlice() []int {
 // AsRangeString returns a traditional cgroup set representation.
 // For example, "0,1,2,3,4,5,34,46,47,48"
 func (s IntSet) AsRangeString() string {
+	intSlice := s.AsSlice()
+	sort.Ints(intSlice)
 	elemStrs := []string{}
-	for elem := range s {
+	for _, elem := range intSlice {
 		elemStrs = append(elemStrs, strconv.Itoa(elem))
 	}
 	return strings.Join(elemStrs, ",")
