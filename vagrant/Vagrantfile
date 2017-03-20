@@ -10,7 +10,7 @@ Vagrant.configure(2) do |config|
 
   aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
   vagrant_user = ENV['VAGRANT_USER'] || 'vagrant'
-  build_cached_image = ENV["BUILD_CACHED_IMAGE"] ? true : false
+  build_cached_image = ENV["BUILD_CACHED_IMAGE"] == 'true' ? true : false
   
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
@@ -78,7 +78,7 @@ Vagrant.configure(2) do |config|
     # non-cached ami: ami-6d1c2007
     ### USE BASE/CACHED IMAGE
     #aws.ami = "ami-6d1c2007" # base image
-    aws.ami = "ami-3a66cf2c" # 2017-03-15 11:00 UTC
+    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-3a66cf2c") # 2017-03-15 11:00 UTC
 
   end
  
