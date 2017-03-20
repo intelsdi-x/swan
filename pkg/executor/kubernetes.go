@@ -46,31 +46,26 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/k8sports"
 	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/1.5/kubernetes"
 	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-
-	"k8s.io/client-go/1.5/tools/clientcmd"
-
 	"k8s.io/client-go/1.5/pkg/api"
 	"k8s.io/client-go/1.5/pkg/api/resource"
 	"k8s.io/client-go/1.5/pkg/api/unversioned"
+	"k8s.io/client-go/1.5/pkg/api/v1"
 	"k8s.io/client-go/1.5/pkg/labels"
 	"k8s.io/client-go/1.5/pkg/watch"
 	"k8s.io/client-go/1.5/rest"
-
-	"path/filepath"
-
-	"github.com/intelsdi-x/swan/pkg/conf"
-
-	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
+	"k8s.io/client-go/1.5/tools/clientcmd"
 )
 
 const (
@@ -78,8 +73,10 @@ const (
 )
 
 var (
-	kubeconfigFlag      = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
-	namespaceExperiment = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	kubeconfigFlag                = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
+	kubernetesPrivilegedPodsFlag  = conf.NewBoolFlag("kubernetes_privileged_pods", "configures all the containers as privileged when required.", false)
+	namespaceExperiment           = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	kubernetesPodLunchTimeoutFlag = conf.NewDurationFlag("kubernetes_pod_launch_timeout", "pod launch timeout", 30*time.Second)
 
 	hostname = func() string {
 		hostname, err := os.Hostname()
@@ -146,9 +143,9 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
 		Namespace:      namespaceExperiment.Value(),
-		Privileged:     false,
+		Privileged:     kubernetesPrivilegedPodsFlag.Value(),
 		HostNetwork:    false,
-		LaunchTimeout:  30 * time.Second,
+		LaunchTimeout:  kubernetesPodLunchTimeoutFlag.Value(),
 	}
 }
 

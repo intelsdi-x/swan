@@ -30,7 +30,7 @@ var (
 	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
-	allowPrivilegedFlag     = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelete ).", false)
+	allowPrivilegedFlag     = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelet).", true)
 	kubeEtcdServersFlag     = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 	readyNodeRetryCountFlag = conf.NewIntFlag("kube_node_ready_retry_count", "Number of checks that kubelet is ready, before trying setup cluster again (with 1s interval between checks).", defaultReadyNodeRetryCount)
 
