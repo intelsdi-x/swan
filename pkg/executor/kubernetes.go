@@ -78,8 +78,9 @@ const (
 )
 
 var (
-	kubeconfigFlag      = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
-	namespaceExperiment = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
+	kubeconfigFlag                 = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
+	kubernetesPodLaunchTimeoutFlag = conf.NewDurationFlag("kubernetes_pod_launch_timeout", "timeout for launching a new Kubernetes pod", 30*time.Second)
+	namespaceExperiment            = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
 
 	hostname = func() string {
 		hostname, err := os.Hostname()
@@ -148,7 +149,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Namespace:      namespaceExperiment.Value(),
 		Privileged:     false,
 		HostNetwork:    false,
-		LaunchTimeout:  30 * time.Second,
+		LaunchTimeout:  kubernetesPodLaunchTimeoutFlag.Value(),
 	}
 }
 
