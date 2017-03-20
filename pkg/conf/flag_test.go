@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -105,6 +106,24 @@ func TestFlags(t *testing.T) {
 				So(customFlag.Value(), ShouldEqual, customValue)
 			})
 		})
+
+		Convey("When some custom IntSet Flag is defined", func() {
+			// Register custom flag.
+			customFlag := NewIntSetFlag("custom_intset_arg", "help", "")
+
+			So(customFlag.Value(), ShouldResemble, isolation.IntSet{})
+
+			ParseFlags()
+			So(customFlag.Value(), ShouldResemble, isolation.IntSet{})
+
+			Convey("When we define custom environment variable we should have custom value after parse", func() {
+				err := os.Setenv(envName(customFlag.Name), "1,3-4,7-8")
+				So(err, ShouldBeNil)
+
+				ParseFlags()
+				So(customFlag.Value(), ShouldResemble, isolation.IntSet{1: {}, 3: {}, 4: {}, 7: {}, 8: {}})
+			})
+		})
 	})
 }
 
@@ -127,11 +146,16 @@ func TestConfiguration(t *testing.T) {
 		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc")
 		providedSlice := "foo1,foo2"
 
+		intSetTestFlag := NewIntSetFlag("intSetTest", "intSetDesc", "")
+		providedIntSet := "1,3-5"
+		providedIntSetFlat := "1,3,4,5"
+
 		flag.CommandLine.Parse([]string{
 			"--intTest", providedInt,
 			"--durationTest", providedDuration,
 			"--stringTest", providedString,
 			"--sliceTest", providedSlice,
+			"--intSetTest", providedIntSet,
 		})
 
 		// External interface (just returns current value by name).
@@ -187,6 +211,16 @@ func TestConfiguration(t *testing.T) {
 		So(ok, ShouldBeTrue)
 		So(valueFromMap, ShouldEqual, providedSlice)
 
+		// intSet
+		name = intSetTestFlag.Name
+		flag, ok = flags[name]
+		So(ok, ShouldBeTrue)
+		So(name, ShouldEqual, flag.Name)
+		So(flag.Value.String(), ShouldEqual, providedIntSetFlat)
+		valueFromMap, ok = flagMap[name]
+		So(ok, ShouldBeTrue)
+		So(valueFromMap, ShouldEqual, providedIntSetFlat)
+
 		Convey("Configuration file is also generated correctly", func() {
 
 			body := DumpConfig()
@@ -202,6 +236,8 @@ func TestConfiguration(t *testing.T) {
 				"SWAN_DURATIONTEST=2h0m0s",
 				"# sliceDesc",
 				"SWAN_SLICETEST=foo1,foo2",
+				"# intSetDesc",
+				"SWAN_INTSETTEST=1,3,4,5",
 				"set +o allexport",
 			}
 
@@ -215,12 +251,14 @@ func TestConfiguration(t *testing.T) {
 					"intTest":      "17",
 					"durationTest": "3h",
 					"sliceTest":    "bar1,bar2",
+					"intSetTest":   "1,3,4,5",
 				})
 				expectedParts := []string{
 					"SWAN_STRINGTEST=newString",
 					"SWAN_INTTEST=17",
 					"SWAN_DURATIONTEST=3h",
 					"SWAN_SLICETEST=bar1,bar2",
+					"SWAN_INTSETTEST=1,3,4,5",
 				}
 
 				for _, part := range expectedParts {

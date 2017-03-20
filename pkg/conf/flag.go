@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
 // EnvironmentPrefix is prefix that is used for evironment based configuration.
@@ -146,4 +148,48 @@ func NewDurationFlag(name string, usage string, value time.Duration) DurationFla
 // Value returns value of defined flag after parse.
 func (d DurationFlag) Value() time.Duration {
 	return *d.value
+}
+
+// IntSetFlag represents flag with set of integers value.
+type IntSetFlag struct {
+	Flag
+	value *isolation.IntSet
+}
+
+// NewRangeFlag is a constructor of string range based flags
+func NewIntSetFlag(name string, usage string, value string) *IntSetFlag {
+	registerName(name)
+	intSet, err := isolation.NewIntSetFromRange(value)
+	if err != nil {
+		panic(fmt.Errorf("invalid default value for IntSetFlag: %q", value))
+	}
+	intSetFlag := IntSetFlag{
+		Flag: Flag{
+			Name:  name,
+			usage: usage,
+		},
+		value: &intSet,
+	}
+	flag.Var(&intSetFlag, name, usage)
+	return &intSetFlag
+}
+
+// Value returns value of defined flag after parse.
+func (isf *IntSetFlag) Value() isolation.IntSet {
+	return *isf.value
+}
+
+func (isf *IntSetFlag) Set(value string) error {
+	fmt.Println("Set:", value)
+	intSet, err := isolation.NewIntSetFromRange(value)
+	if err != nil {
+		return err
+	}
+	isf.value = &intSet
+	fmt.Printf("isf = %+v\n", isf)
+	return nil
+}
+
+func (isf *IntSetFlag) String() string {
+	return isf.value.AsRangeString()
 }

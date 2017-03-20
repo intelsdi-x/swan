@@ -40,6 +40,7 @@ func ParseFlags() error {
 	flag.VisitAll(func(flag *flag.Flag) {
 		value := os.Getenv(envName(flag.Name))
 		if value != "" {
+			fmt.Println("value:", flag.Name, value)
 			err := flag.Value.Set(value)
 			if err != nil {
 				errCollection.Add(errors.Wrapf(err, "cannot parse %q flag", flag.Name))
