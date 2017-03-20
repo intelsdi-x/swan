@@ -9,7 +9,7 @@ import pandas as pd
 from IPython.core.display import HTML
 
 
-IS_PLOTLY_INSTALLED = True
+_is_plotly_installed = True
 
 try:
     from plotly.offline import iplot, init_notebook_mode
@@ -17,7 +17,7 @@ try:
 
     init_notebook_mode(connected=False)
 except ImportError:
-    IS_PLOTLY_INSTALLED = False
+    _is_plotly_installed = False
 
 
 Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
@@ -168,7 +168,7 @@ class Profile(object):
         :param to_max: show comparison between Baseline and 'worst case' (max latency violations for all aggressors in
             each load point.)
         """
-        if not IS_PLOTLY_INSTALLED:
+        if not _is_plotly_installed:
             print("Please install plot.ly first.")
             return
 
@@ -243,7 +243,7 @@ class Profile(object):
 
 
 def compare_experiments(exps, slo=500, fill=True, to_max=True):
-    if not IS_PLOTLY_INSTALLED:
+    if not _is_plotly_installed:
         print("Please install plot.ly first.")
         return
 
