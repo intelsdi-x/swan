@@ -49,6 +49,10 @@ import:
   - 1.5/rest
 - package: k8s.io/kubernetes
   version: 1.5.1
+- package: github.com/fsouza/go-dockerclient
+  version: master
+- package: github.com/docker/docker
+  version: 1.13.1
 testImport:
 - package: github.com/pivotal-golang/bytefmt
 - package: github.com/vektra/errors
