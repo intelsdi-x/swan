@@ -13,24 +13,27 @@ import (
 
 var (
 
-	// Should CPUs be used exclusively?
-	hpCPUExclusiveFlag = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
-	beCPUExclusiveFlag = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
+	// HpCPUExclusiveFlag should be used to specify that HP task will use cores assigned exclusively.
+	HpCPUExclusiveFlag = conf.NewBoolFlag("hp_exclusive_cores", "Has high priority task exclusive cores", false)
+	// BeCPUExclusiveFlag should be used to specify that BE task will use cores assigned exclusively.
+	BeCPUExclusiveFlag = conf.NewBoolFlag("be_exclusive_cores", "Has best effort task exclusive cores", false)
 
 	// For CPU count based isolation policy flags.
 	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 
-	// For manually provided isolation policy.
-	hpSetsFlag   = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
-	beSetsFlag   = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
-	beL1SetsFlag = conf.NewStringFlag("be_l1_sets", "BE for l1 aggressors cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	// HpSetsFlag should be used to set HP task cpuset.
+	HpSetsFlag = conf.NewStringFlag("hp_sets", "HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	// BeSetsFlag should be used to set BE task cpuset.
+	BeSetsFlag = conf.NewStringFlag("be_sets", "BE cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
+	// BeL1SetsFlag should be used to set BE task cpuset when one wants to provide L1 cache isolation.
+	BeL1SetsFlag = conf.NewStringFlag("be_l1_sets", "BE for l1 aggressors cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2", "")
 )
 
 type defaultTopology struct {
-	hpThreadIDs               isolation.IntSet
-	sharingLLCButNotL1Threads isolation.IntSet
-	siblingThreadsToHpThreads topo.ThreadSet
+	HpThreadIDs               isolation.IntSet
+	SharingLLCButNotL1Threads isolation.IntSet
+	SiblingThreadsToHpThreads topo.ThreadSet
 	numaNode                  int
 	isHpCPUExclusive          bool
 	isBeCPUExclusive          bool
@@ -40,22 +43,22 @@ type defaultTopology struct {
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
-		manualTopology := newManualTopology(hpSetsFlag.Value(), beSetsFlag.Value(), beL1SetsFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
-		llcIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beCPUs, PreferredNode: manualTopology.beNumaNodes[0]}
-		l1Isolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.beL1CPUs, PreferredNode: manualTopology.beL1NumaNodes[0]}
-		hpIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.hpCPUs, PreferredNode: manualTopology.hpNumaNodes[0]}
+		manualTopology := NewManualTopology(HpSetsFlag.Value(), BeSetsFlag.Value(), BeL1SetsFlag.Value(), HpCPUExclusiveFlag.Value(), BeCPUExclusiveFlag.Value())
+		llcIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.BeCPUs, PreferredNode: manualTopology.beNumaNodes[0]}
+		l1Isolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.BeL1CPUs, PreferredNode: manualTopology.beL1NumaNodes[0]}
+		hpIsolation = isolation.Numactl{PhyscpubindCPUs: manualTopology.HpCPUs, PreferredNode: manualTopology.hpNumaNodes[0]}
 	} else {
-		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), hpCPUExclusiveFlag.Value(), beCPUExclusiveFlag.Value())
+		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value(), HpCPUExclusiveFlag.Value(), BeCPUExclusiveFlag.Value())
 		errutil.Check(err)
-		l1Isolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.siblingThreadsToHpThreads.AvailableThreads().AsSlice(), PreferredNode: defaultTopology.numaNode}
-		llcIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.sharingLLCButNotL1Threads.AsSlice(), PreferredNode: defaultTopology.numaNode}
-		hpIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.hpThreadIDs.AsSlice(), PreferredNode: defaultTopology.numaNode}
+		l1Isolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.SiblingThreadsToHpThreads.AvailableThreads().AsSlice(), PreferredNode: defaultTopology.numaNode}
+		llcIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.SharingLLCButNotL1Threads.AsSlice(), PreferredNode: defaultTopology.numaNode}
+		hpIsolation = isolation.Numactl{PhyscpubindCPUs: defaultTopology.HpThreadIDs.AsSlice(), PreferredNode: defaultTopology.numaNode}
 	}
 	return
 }
 
 func isManualPolicy() bool {
-	return hpSetsFlag.Value() != "" && beSetsFlag.Value() != ""
+	return HpSetsFlag.Value() != "" && BeSetsFlag.Value() != ""
 }
 
 func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExclusive bool) (defaultTopology, error) {
@@ -63,22 +66,22 @@ func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExc
 	var err error
 
 	threadSet := sharedCacheThreads()
-	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
+	topology.HpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
 	if err != nil {
 		return topology, errors.Wrapf(err, "there is not enough cpus to run HP task (%d required)", hpCPUCount)
 	}
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
-	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.hpThreadIDs)
+	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.HpThreadIDs)
 	if err != nil {
-		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.hpThreadIDs)
+		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.HpThreadIDs)
 	}
-	topology.siblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
+	topology.SiblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
-	remaining := threadSet.AvailableThreads().Difference(topology.hpThreadIDs)
-	topology.sharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
+	remaining := threadSet.AvailableThreads().Difference(topology.HpThreadIDs)
+	topology.SharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
 	if err != nil {
 		return topology, errors.Wrapf(err, "cannot allocate remaining threads for BE task (%d required, %d left) - minimum 2 CPUs are required to run experiment", beCPUCount, len(remaining.AsSlice()))
 	}
@@ -89,24 +92,26 @@ func newDefaultTopology(hpCPUCount, beCPUCount int, isHpCPUExclusive, isBeCPUExc
 	return topology, nil
 }
 
-type manualTopology struct {
-	hpCPUs           []int
+// ManualTopology represents flag-based cpuset topology for the experiment.
+type ManualTopology struct {
+	HpCPUs           []int
 	hpNumaNodes      []int
-	beCPUs           []int
+	BeCPUs           []int
 	beNumaNodes      []int
-	beL1CPUs         []int
+	BeL1CPUs         []int
 	beL1NumaNodes    []int
 	isHpCPUExclusive bool
 	isBeCPUExclusive bool
 }
 
-func newManualTopology(hpSets, beSets, beL1Sets string, isHpCPUExclusive, isBeCPUExclusive bool) manualTopology {
-	topology := manualTopology{}
-	topology.hpCPUs, topology.hpNumaNodes = parseSlices(hpSets)
-	topology.beCPUs, topology.beNumaNodes = parseSlices(beSets)
-	topology.beL1CPUs, topology.beL1NumaNodes = topology.beCPUs, topology.beNumaNodes
+// NewManualTopology prepares instance of ManualTopology based on flags that user passed.
+func NewManualTopology(hpSets, beSets, beL1Sets string, isHpCPUExclusive, isBeCPUExclusive bool) ManualTopology {
+	topology := ManualTopology{}
+	topology.HpCPUs, topology.hpNumaNodes = parseSlices(hpSets)
+	topology.BeCPUs, topology.beNumaNodes = parseSlices(beSets)
+	topology.BeL1CPUs, topology.beL1NumaNodes = topology.BeCPUs, topology.beNumaNodes
 	if beL1Sets != "" {
-		topology.beL1CPUs, topology.beL1NumaNodes = parseSlices(beL1Sets)
+		topology.BeL1CPUs, topology.beL1NumaNodes = parseSlices(beL1Sets)
 	}
 	topology.isHpCPUExclusive = isHpCPUExclusive
 	topology.isBeCPUExclusive = isBeCPUExclusive
