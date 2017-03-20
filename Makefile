@@ -21,7 +21,7 @@ restart_snap:
 glide:
 	# Workaround for https://github.com/minishift/minishift/issues/571
 	mkdir -p ${GOPATH}/bin
-	wget https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
+	wget -q https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
 	curl -s https://glide.sh/get | sh
 	
 deps: glide
