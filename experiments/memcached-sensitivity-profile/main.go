@@ -27,6 +27,7 @@ import (
 
 var (
 	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
+	mutilateWaitTimeoutFlag  = conf.NewDurationFlag("mutilate_wait_timeout", "amount of time to wait for mutilate cluster to stop", 0)
 	appName                  = os.Args[0]
 )
 
@@ -249,7 +250,14 @@ func main() {
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
-					loadGeneratorHandle.Wait(0)
+					if !loadGeneratorHandle.Wait(mutilateWaitTimeoutFlag.Value()) {
+						logrus.Warn("Mutilate cluster failed to stop on its own. Attempting to stop...")
+						err := loadGeneratorHandle.Stop()
+						if err != nil {
+							logrus.Errorf("Stopping mutilate cluster errored: %q", err)
+							return errors.Wrap(err, "stopping mutilate cluster errored")
+						}
+					}
 
 					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
 					if err != nil {
