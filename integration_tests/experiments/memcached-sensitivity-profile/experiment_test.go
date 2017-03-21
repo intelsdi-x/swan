@@ -25,18 +25,28 @@ func getUUID(outs []byte) string {
 }
 
 func runExp(command string, dumpOutputOnError bool, args ...string) (string, error) {
+	env := ""
+	for _, e := range os.Environ() {
+		if strings.Contains(e, "SWAN_") {
+			env += e + " "
+		}
+	}
+	fullCommand := "sudo -E env PATH=$PATH " + env + " " + command + " " + strings.Join(args, " ")
+	// Extra logs vs asked explictly.
+	log.Debugf("[FullCommand]==> %q", fullCommand)
+
 	c := exec.Command(command, args...)
 	b := &bytes.Buffer{}
 	c.Stderr = b
 	out, err := c.Output()
 
-	// Extra logs vs asked explictly.
 	log.Debugf("[Out]==> %s", string(out))
 	log.Debugf("[Err]==> %s", b.String())
 	log.Debugf("[Warning]==> %s", err)
 
 	if err != nil {
 		if dumpOutputOnError {
+			Printf("[FullCommand]==> %q", fullCommand)
 			Printf("[Out]==> %s", string(out))
 			Printf("[Err]==> %s", b.String())
 			Printf("[Warning]==> %s", err)
@@ -45,6 +55,25 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 	}
 
 	return getUUID(out), nil
+}
+
+func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string, metricsCount int) {
+
+	var ns string
+	iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+	for iter.Scan(&ns, &tags) {
+		metricsCount++
+		swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
+		swanPhases = append(swanPhases, tags["swan_phase"])
+		swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
+	}
+	err := iter.Close()
+	if err != nil {
+		panic(err)
+	}
+	log.Debugf("experimentID=%s metrics=%d ns=%s tags=%#v", experimentID, metricsCount, ns, tags)
+
+	return
 }
 
 func TestExperiment(t *testing.T) {
@@ -74,29 +103,6 @@ func TestExperiment(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer session.Close()
 
-		loadDataFromCassandra := func(experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string) {
-
-			metricsCount := 0
-			var ns string
-			iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
-			for iter.Scan(&ns, &tags) {
-				metricsCount++
-				log.Debugf("experimentID=%s ns=%s tags=%#v", experimentID, ns, tags)
-				So(ns, ShouldNotBeBlank)
-				So(tags, ShouldNotBeEmpty)
-				So(tags, ShouldContainKey, "swan_phase")
-				So(tags, ShouldContainKey, "swan_aggressor_name")
-				swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
-				swanPhases = append(swanPhases, tags["swan_phase"])
-				swanRepetitions = append(swanRepetitions, tags["swan_repetition"])
-			}
-			log.Debugf("%d metrics found in cassandra for experiment id %q", metricsCount, experimentID)
-			So(metricsCount, ShouldBeGreaterThan, 0)
-
-			So(iter.Close(), ShouldBeNil)
-			return
-		}
-
 		Convey("With proper configuration and without aggressor phases", func() {
 			_, err := runExp(memcachedSensitivityProfileBin, true)
 
@@ -111,7 +117,7 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				_, _, swanAggressorsNames, _, _ := loadDataFromCassandra(session, experimentID)
 				So("None", ShouldBeIn, swanAggressorsNames)
 				So("Caffe", ShouldBeIn, swanAggressorsNames)
 			})
@@ -123,7 +129,8 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				_, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
 				So("None", ShouldBeIn, swanAggressorsNames)
 				So("L1 Data", ShouldBeIn, swanAggressorsNames)
 
@@ -154,7 +161,8 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				_, swanRepetitions, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				_, swanRepetitions, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
 
 				So("L1 Data", ShouldBeIn, swanAggressorsNames)
 				So("None", ShouldBeIn, swanAggressorsNames)
@@ -173,7 +181,8 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				tags, _, swanAggressorsNames, swanPhases := loadDataFromCassandra(experimentID)
+				tags, _, swanAggressorsNames, swanPhases, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
 
 				So(tags["swan_repetition"], ShouldEqual, "0")
 
@@ -202,7 +211,8 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				tags, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
 				So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
 				So("None", ShouldNotBeIn, swanAggressorsNames)
 			})
@@ -214,7 +224,8 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				tags, _, _, _ := loadDataFromCassandra(experimentID)
+				tags, _, _, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
 				So(tags["swan_aggressor_name"], ShouldEqual, "Caffe")
 			})
 		})
