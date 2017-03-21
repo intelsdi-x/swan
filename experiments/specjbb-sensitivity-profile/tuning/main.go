@@ -4,26 +4,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	//"strconv"
-	//"strings"
-	//"time"
 
-	"github.com/Sirupsen/logrus"
-	//"github.com/intelsdi-x/swan/experiments/specjbb-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
-	//"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	//"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
-	//"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
-	//"github.com/intelsdi-x/swan/pkg/utils/err_collection"
-	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
-	"github.com/nu7hatch/gouuid"
-	//"github.com/pkg/errors"
-	//"golang.org/x/tools/cmd/fiximports/testdata/src/titanic.biz/bar"
-	//"gopkg.in/cheggaaa/pb.v1"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
+	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/nu7hatch/gouuid"
 )
 
 var (

@@ -32,8 +32,6 @@ import:
 - package: golang.org/x/crypto
   subpackages:
   - ssh
-- package: gopkg.in/cheggaaa/pb.v1
-  version: ~1.0.7
 - package: k8s.io/client-go
   version: 1.5.0
   subpackages:
