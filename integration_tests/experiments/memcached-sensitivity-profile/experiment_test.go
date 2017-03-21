@@ -56,8 +56,8 @@ func TestExperiment(t *testing.T) {
 
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
-		"SWAN_BE_SETS":              "0:0",
-		"SWAN_HP_SETS":              "0:0",
+		"SWAN_BE_RANGE":             "0",
+		"SWAN_HP_RANGE":             "0",
 		"SWAN_REPS":                 "1",
 		"SWAN_LOAD_POINTS":          "1",
 		"SWAN_PEAK_LOAD":            "5000",
