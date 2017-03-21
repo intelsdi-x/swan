@@ -117,7 +117,7 @@ func TestExperiment(t *testing.T) {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
-				_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				_, _, swanAggressorsNames, _, _ := loadDataFromCassandra(session, experimentID)
 				So("None", ShouldBeIn, swanAggressorsNames)
 				So("Caffe", ShouldBeIn, swanAggressorsNames)
 			})
