@@ -1,9 +1,0 @@
-log_level: 1
-control:
-    auto_discover_path: /home/snap/snap-v0.13.0-beta/plugin
-    max_running_plugins: 500
-plugins:
-    publisher:
-        cassandra:
-            all:
-                server: cassandra-1
