@@ -74,7 +74,9 @@ To learn more about *Sensitivity Profile* read the [Sensitivity Experiment](../e
 
 ## Visualizing data using Jupyter
 
-We are using [plotly](https://plot.ly/) interactive plots. To render *Sensitivity char* from a profile use the following method:
+Before using [plotly](https://plot.ly/) for interactive plots, you need to [install it](https://plot.ly/python/getting-started/#installation) 
+
+ To render *Sensitivity chart* from a profile use the following method:
 
 ```python
 p1.sensitivity_chart(fill=True, to_max=False)

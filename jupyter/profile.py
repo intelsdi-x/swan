@@ -5,10 +5,19 @@ import itertools
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objs as go
 
 from IPython.core.display import HTML
-from plotly.offline import iplot
+
+
+_is_plotly_installed = True
+
+try:
+    from plotly.offline import iplot, init_notebook_mode
+    import plotly.graph_objs as go
+
+    init_notebook_mode(connected=False)
+except ImportError:
+    _is_plotly_installed = False
 
 
 Y_AXIS_MAX = 2  # range of Y-axis on charts is 2 times SLO max
@@ -159,6 +168,10 @@ class Profile(object):
         :param to_max: show comparison between Baseline and 'worst case' (max latency violations for all aggressors in
             each load point.)
         """
+        if not _is_plotly_installed:
+            print("Please install plot.ly first.")
+            return
+
         categories = self.categories
         gradients = ['rgb(7, 249, 128)', 'rgb(0, 0, 255)', 'rgb(243, 255, 8)', 'rgb(255, 178, 54)',
                      'rgb(255, 93, 13)', 'rgb(255, 31, 10)', 'rgb(255, 8, 0)']
@@ -230,6 +243,10 @@ class Profile(object):
 
 
 def compare_experiments(exps, slo=500, fill=True, to_max=True):
+    if not _is_plotly_installed:
+        print("Please install plot.ly first.")
+        return
+
     categories = ["Baseline",]
     data = []
     for exp in exps:
