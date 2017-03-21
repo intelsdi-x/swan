@@ -77,6 +77,7 @@ func main() {
 
 	// Setup logging set to both output and logFile.
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
+	logrus.Debugf("log level:", logrus.GetLevel())
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Validate preconditions.
