@@ -11,5 +11,5 @@ type Taskset struct {
 
 // Decorate command with taskset prefix.
 func (ts Taskset) Decorate(command string) string {
-	return fmt.Sprintf("taskset --cpu-list=%s -- %s", ts.CPUList.AsRangeString(), command)
+	return fmt.Sprintf("taskset -c %s %s", ts.CPUList.AsRangeString(), command)
 }
