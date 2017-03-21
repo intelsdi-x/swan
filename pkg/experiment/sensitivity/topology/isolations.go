@@ -14,9 +14,9 @@ var (
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 
 	// For manually provided isolation policy.
-	hpSetsFlag   = conf.NewIntSetFlag("hp_sets", "HP cpuset range", "")
-	beSetsFlag   = conf.NewIntSetFlag("be_sets", "BE cpuset range", "")
-	beL1SetsFlag = conf.NewIntSetFlag("be_l1_sets", "BE for l1 aggressors cpuset range", "")
+	hpRangeFlag   = conf.NewIntSetFlag("hp_range", "HP cpuset range", "")
+	beRangeFlag   = conf.NewIntSetFlag("be_range", "BE cpuset range", "")
+	beL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range", "")
 )
 
 type defaultTopology struct {
@@ -29,9 +29,9 @@ type defaultTopology struct {
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
-		llcIsolation = isolation.Taskset{beSetsFlag.Value()}
-		l1Isolation = isolation.Taskset{beL1SetsFlag.Value()}
-		hpIsolation = isolation.Taskset{hpSetsFlag.Value()}
+		llcIsolation = isolation.Taskset{beRangeFlag.Value()}
+		l1Isolation = isolation.Taskset{beL1RangeFlag.Value()}
+		hpIsolation = isolation.Taskset{hpRangeFlag.Value()}
 	} else {
 		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value())
 		errutil.Check(err)
@@ -43,7 +43,7 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 }
 
 func isManualPolicy() bool {
-	return hpSetsFlag.Value().AsRangeString() != "" && beSetsFlag.Value().AsRangeString() != ""
+	return hpRangeFlag.Value().AsRangeString() != "" && beRangeFlag.Value().AsRangeString() != ""
 }
 
 func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
