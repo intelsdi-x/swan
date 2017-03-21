@@ -105,6 +105,18 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
+		Convey("With caffe agrressor and baseline", func() {
+			args := []string{"-aggr", "caffe"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				_, _, swanAggressorsNames, _ := loadDataFromCassandra(experimentID)
+				So("None", ShouldBeIn, swanAggressorsNames)
+				So("Caffe", ShouldBeIn, swanAggressorsNames)
+			})
+		})
+
 		Convey("With proper configuration and with l1d aggressors", func() {
 			args := []string{"-aggr", "l1d"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
