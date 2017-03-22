@@ -33,10 +33,10 @@ deps: glide
 
 build_plugins:
 	mkdir -p build/plugins
-	(cd build/plugins; go build ../../misc/snap-plugin-publisher-session-test)
-	(cd build/plugins; go build ../../misc/snap-plugin-collector-mutilate)
-	(cd build/plugins; go build ../../misc/snap-plugin-collector-specjbb)
-	(cd build/plugins; go build ../../misc/snap-plugin-collector-caffe-inference)
+	(cd build/plugins; go build ../../plugins/snap-plugin-publisher-session-test)
+	(cd build/plugins; go build ../../plugins/snap-plugin-collector-mutilate)
+	(cd build/plugins; go build ../../plugins/snap-plugin-collector-specjbb)
+	(cd build/plugins; go build ../../plugins/snap-plugin-collector-caffe-inference)
 
 build_swan:
 	mkdir -p build/experiments/memcached build/experiments/specjbb
@@ -54,12 +54,12 @@ install:
 test_lint:
 	fgt golint ./pkg/...
 	fgt golint ./experiments/...
-	fgt golint ./misc/...
+	fgt golint ./plugins/...
 	fgt golint ./integration_tests/...
 
 test_unit:
-	go test -i ./pkg/... ./misc/...
-	go test -p 1 $(TEST_OPT) ./pkg/... ./misc/...
+	go test -i ./pkg/... ./plugins/...
+	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
 test_integration_build:
@@ -83,7 +83,7 @@ e2e_test: deps_jupyter
 	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
 cleanup:
-	rm -fr misc/**/*log
+	rm -fr plugins/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapteld_*

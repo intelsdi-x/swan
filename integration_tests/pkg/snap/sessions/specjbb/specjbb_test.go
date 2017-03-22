@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 func TestSnapSpecJbbSession(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.SwanPath, "misc/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
+						testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, "foo:bar")
@@ -50,7 +50,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 						So(handle.IsRunning(), ShouldBeTrue)
 
 						// These are results from test output file
-						// in "src/github.com/intelsdi-x/swan/misc/
+						// in "src/github.com/intelsdi-x/swan/plugins/
 						// snap-plugin-collector-specjbb/specjbb/specjbb.stdout"
 						expectedMetrics := map[string]string{
 							"min":             "300",

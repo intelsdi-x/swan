@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 func TestSnapMutilateSession(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.SwanPath, "misc/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
+						testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
 					defer cleanupMockedFile()
 
 					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
@@ -50,18 +50,18 @@ func TestSnapMutilateSession(t *testing.T) {
 						So(handle.IsRunning(), ShouldBeTrue)
 
 						// These are results from test output file
-						// in "src/github.com/intelsdi-x/swan/misc/
+						// in "src/github.com/intelsdi-x/swan/plugins/
 						// snap-plugin-collector-mutilate/mutilate/mutilate.stdout"
 						expectedMetrics := map[string]string{
-							"avg":    "20.80000",
-							"std":    "23.10000",
-							"min":    "11.90000",
-							"5th":    "13.30000",
-							"10th":   "13.40000",
-							"90th":   "33.40000",
-							"95th":   "43.10000",
-							"99th":   "59.50000",
-							"qps":    "4993.10000",
+							"avg":  "20.80000",
+							"std":  "23.10000",
+							"min":  "11.90000",
+							"5th":  "13.30000",
+							"10th": "13.40000",
+							"90th": "33.40000",
+							"95th": "43.10000",
+							"99th": "59.50000",
+							"qps":  "4993.10000",
 						}
 
 						Convey("In order to read and test published data", func() {

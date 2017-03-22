@@ -9,7 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
-	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
+	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-mutilate/mutilate/parse"
 )
 
 // Constants representing collector name, version, type and unit of measurement used.
