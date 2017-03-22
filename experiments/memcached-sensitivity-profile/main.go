@@ -92,7 +92,14 @@ func main() {
 		logrus.Errorf("Cannot create executors: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-	defer cleanup()
+	defer func() {
+		if cleanup != nil {
+			err := cleanup()
+			if err == nil {
+				logrus.Errorf("Cannot clean the environment: %q", err)
+			}
+		}
+	}()
 
 	// Create BE workloads.
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)

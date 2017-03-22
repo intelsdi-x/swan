@@ -95,7 +95,14 @@ func main() {
 		return
 	}
 	// On exit performa deferred cleanup.
-	defer cleanup()
+	defer func() {
+		if cleanup != nil {
+			err := cleanup()
+			if err == nil {
+				logrus.Errorf("Cannot clean the environment: %q", err)
+			}
+		}
+	}()
 
 	// Prepare session launchers (including Snap session if necessary) for aggressors.
 	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
