@@ -4,7 +4,7 @@
 TEST_OPT?=
 
 # for compatibility purposes.
-integration_test: show_env restart_snap deps build_plugins build_swan install test_integration
+integration_test: show_env restart_snap deps build dist install test_integration
 unit_test: deps test_unit
 
 build: build_swan build_plugins
@@ -43,11 +43,6 @@ build_swan:
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
 
-install:
-	cp -v build/plugins/* /opt/swan/bin
-	cp -v build/experiments/memcached/memcached-sensitivity-profile /opt/swan/bin/
-	cp -v build/experiments/specjbb/specjbb-sensitivity-profile /opt/swan/bin/
-	sudo ln -svf /opt/swan/bin/* /usr/bin/
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
@@ -97,3 +92,13 @@ show_env:
 	@ echo ""
 	@ env
 	@ echo ""
+
+dist:
+	tar -C ./build/experiments/memcached -cvf swan.tar memcached-sensitivity-profile 
+	tar -C ./build/experiments/specjbb -rvf swan.tar specjbb-sensitivity-profile
+	tar -C ./build/plugins -rvf swan.tar snap-plugin-collector-caffe-inference snap-plugin-collector-mutilate snap-plugin-collector-specjbb snap-plugin-publisher-session-test
+	gzip -f swan.tar
+
+install:
+	tar -C /opt/swan/bin -xzvf swan.tar.gz 
+	sudo ln -svf /opt/swan/bin/* /usr/bin/
