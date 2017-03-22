@@ -9,12 +9,12 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/misc/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
+	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-mutilate/mutilate/parse"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
