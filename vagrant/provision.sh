@@ -168,9 +168,11 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
     cat authorized_keys >> ${HOME_DIR}/.ssh/authorized_keys
     
     echo "Install glide cache"
-    s3cmd get s3://swan-artifacts/glide-cache-2017-03-10.tgz /tmp/glide-cache.tgz
-    tar --strip-components 2 -C ${HOME_DIR} -xzf /tmp/glide-cache.tgz
-    chown -R ${VAGRANT_USER}:${VAGRANT_USER} ${HOME_DIR}/.glide
+    if [ ! -d ${HOME_DIR}/.glide ]; then
+        s3cmd get s3://swan-artifacts/glide-cache-2017-03-10.tgz /tmp/glide-cache.tgz
+        tar --strip-components 2 -C ${HOME_DIR} -xzf /tmp/glide-cache.tgz
+        chown -R ${VAGRANT_USER}:${VAGRANT_USER} ${HOME_DIR}/.glide
+    fi
 
     echo "Synchronize /opt/swan"
     # For manuall installtion
