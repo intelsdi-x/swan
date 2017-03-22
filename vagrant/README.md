@@ -41,7 +41,7 @@ Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can overrid
 - `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
 
 ***Please be informed that every single glide operation inside VM might affect your host's ~/.glide.***
-By default your local ~/.glide cache will be used make sure that this directory exists as glide cache inside VM.
+By default your local `~/.glide` cache will be used as glide cache inside VM.
 
 ## Troubleshooting
 - The integration tests require cassandra to be running. In this
