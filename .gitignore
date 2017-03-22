@@ -56,3 +56,4 @@ swan-*.tar.gz
 *~
 *.o
 \#*
+/swan.tar.gz
