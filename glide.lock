@@ -1,5 +1,5 @@
-hash: 96d8457b993892cdfcb34a91c3ea3ca3f471153219de08cd20cbb20d4a909fd5
-updated: 2017-03-20T15:45:32.498395339+01:00
+hash: 47c98c2f4f0881664e35adfc33a31fdaac692270970b9ea757a1aef9e60871e7
+updated: 2017-03-27T09:05:08.779194999Z
 imports:
 - name: github.com/appc/spec
   version: db96f94ae6b227fe4d8288527ead8927181620f6
@@ -37,7 +37,7 @@ imports:
   - httputil
   - timeutil
 - name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
 - name: github.com/docker/distribution
@@ -46,7 +46,7 @@ imports:
   - digest
   - reference
 - name: github.com/emicklei/go-restful
-  version: 7c47e2558a0bbbaba9ecab06bc6681e73028a28a
+  version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
   - log
   - swagger
@@ -57,7 +57,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 36d33bfe519efae5632669801b180bf1a245da3b
 - name: github.com/go-openapi/spec
-  version: 593aa4cf7a6f59a451c8f0d8af08a57328e6da54
+  version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
   version: 96d7b9ebd181a1735a1c9ac87914f2b32fbf56c9
 - name: github.com/gocql/gocql
@@ -67,7 +67,7 @@ imports:
   - internal/murmur
   - internal/streams
 - name: github.com/gogo/protobuf
-  version: e18d7aa8f8c624c915db340349aad4c49b10d173
+  version: 82d16f734d6d871204a3feb1a73cb220cc92574c
   subpackages:
   - proto
   - sortkeys
@@ -129,14 +129,10 @@ imports:
   - pkg/stringutils
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-lib-go
-  version: 9473586790c31a499702d3820d36786975c1ff24
+  version: 8ae21e8f72cb1740171073d496a6b7f2cec5ca73
   subpackages:
   - v1/plugin
   - v1/plugin/rpc
-- name: github.com/intelsdi-x/snap-plugin-processor-tag
-  version: 2c6833e0eac8ed82c08178af43a16b3ab66fd093
-  subpackages:
-  - tag
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/jtolds/gls
@@ -183,7 +179,7 @@ imports:
   - convey/gotest
   - convey/reporting
 - name: github.com/spf13/pflag
-  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+  version: 94e98a55fb412fcbcfc302555cb990f5e1590627
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
