@@ -13,37 +13,39 @@ var (
 	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
 	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
 
-	// For manually provided isolation policy.
-	hpRangeFlag   = conf.NewIntSetFlag("hp_range", "HP cpuset range", "")
-	beRangeFlag   = conf.NewIntSetFlag("be_range", "BE cpuset range", "")
-	beL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range", "")
+	// HpRangeFlag allows to set high priority task cores.
+	HpRangeFlag = conf.NewIntSetFlag("hp_range", "HP cpuset range", "")
+	// BeRangeFlag allows to set best effort task cores with default isolation.
+	BeRangeFlag = conf.NewIntSetFlag("be_range", "BE cpuset range", "")
+	// BeL1RangeFlag allows to set best effort task cores with L1 cache isolation.
+	BeL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range", "")
 )
 
 type defaultTopology struct {
-	hpThreadIDs               isolation.IntSet
-	sharingLLCButNotL1Threads isolation.IntSet
-	siblingThreadsToHpThreads topo.ThreadSet
+	HpThreadIDs               isolation.IntSet
+	SharingLLCButNotL1Threads isolation.IntSet
+	SiblingThreadsToHpThreads topo.ThreadSet
 }
 
 // NewIsolations returns HP anb factory of aggressors with applied isolation for BE tasks.
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
-		llcIsolation = isolation.Taskset{CPUList: beRangeFlag.Value()}
-		l1Isolation = isolation.Taskset{CPUList: beL1RangeFlag.Value()}
-		hpIsolation = isolation.Taskset{CPUList: hpRangeFlag.Value()}
+		llcIsolation = isolation.Taskset{BeRangeFlag.Value()}
+		l1Isolation = isolation.Taskset{BeL1RangeFlag.Value()}
+		hpIsolation = isolation.Taskset{HpRangeFlag.Value()}
 	} else {
 		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value())
 		errutil.Check(err)
-		l1Isolation = isolation.Taskset{CPUList: defaultTopology.siblingThreadsToHpThreads.AvailableThreads()}
-		llcIsolation = isolation.Taskset{CPUList: defaultTopology.sharingLLCButNotL1Threads}
-		hpIsolation = isolation.Taskset{CPUList: defaultTopology.hpThreadIDs}
+		l1Isolation = isolation.Taskset{defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()}
+		llcIsolation = isolation.Taskset{defaultTopology.SharingLLCButNotL1Threads}
+		hpIsolation = isolation.Taskset{defaultTopology.HpThreadIDs}
 	}
 	return
 }
 
 func isManualPolicy() bool {
-	return hpRangeFlag.Value().AsRangeString() != "" && beRangeFlag.Value().AsRangeString() != ""
+	return HpRangeFlag.Value().AsRangeString() != "" && BeRangeFlag.Value().AsRangeString() != ""
 }
 
 func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
@@ -51,22 +53,22 @@ func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
 	var err error
 
 	threadSet := sharedCacheThreads()
-	topology.hpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
+	topology.HpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
 	if err != nil {
 		return topology, errors.Wrapf(err, "there is not enough cpus to run HP task (%d required)", hpCPUCount)
 	}
 
 	// Allocate sibling threads of HP workload to create L1 cache contention
-	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.hpThreadIDs)
+	threadSetOfHpThreads, err := topo.NewThreadSetFromIntSet(topology.HpThreadIDs)
 	if err != nil {
-		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.hpThreadIDs)
+		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.HpThreadIDs)
 	}
-	topology.siblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
+	topology.SiblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.
-	remaining := threadSet.AvailableThreads().Difference(topology.hpThreadIDs)
-	topology.sharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
+	remaining := threadSet.AvailableThreads().Difference(topology.HpThreadIDs)
+	topology.SharingLLCButNotL1Threads, err = remaining.Take(beCPUCount)
 	if err != nil {
 		return topology, errors.Wrapf(err, "cannot allocate remaining threads for BE task (%d required, %d left) - minimum 2 CPUs are required to run experiment", beCPUCount, len(remaining.AsSlice()))
 	}

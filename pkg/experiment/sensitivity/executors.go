@@ -10,22 +10,27 @@ import (
 )
 
 var (
-	hpKubernetesCPUResourceFlag    = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
-	hpKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
-	runOnKubernetesFlag            = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
-	runOnExistingKubernetesFlag    = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
+	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
+	HPKubernetesCPUResourceFlag = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
+	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
+	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
+
+	// RunOnKubernetesFlag indicates that experiment is to be run on K8s cluster.
+	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
+	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
 func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory ExecutorFactoryFunc, cleanup func() error, err error) {
-	if runOnKubernetesFlag.Value() {
+	if RunOnKubernetesFlag.Value() {
 		k8sConfig := kubernetes.DefaultConfig()
 		masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		if !runOnExistingKubernetesFlag.Value() {
+		if !RunOnExistingKubernetesFlag.Value() {
 			k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
 			k8sClusterTaskHandle, err := k8sLauncher.Launch()
 			if err != nil {
@@ -48,11 +53,12 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
 		hpExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
 
-		hpExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
-		hpExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
+		hpExecutorConfig.CPULimit = int64(HPKubernetesCPUResourceFlag.Value())
+		hpExecutorConfig.MemoryLimit = int64(HPKubernetesMemoryResourceFlag.Value())
 		// "Guranteed" class is when both resources and set for request and limit and equal.
 		hpExecutorConfig.CPURequest = hpExecutorConfig.CPULimit
 		hpExecutorConfig.MemoryRequest = hpExecutorConfig.MemoryLimit
+		hpExecutorConfig.Privileged = true
 		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
 		if err != nil {
 			return nil, nil, nil, err

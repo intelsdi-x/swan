@@ -20,6 +20,8 @@ var (
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase
 	// It omits tuning phase.
 	PeakLoadFlag = conf.NewIntFlag("peak_load", "Peakload max number of QPS without violating SLO (by default inducted from tuning phase).", 0) // "0" means include tuning phase
+	// LoadGeneratorWaitTimeoutFlag is a flag that indicates how log experiment should wait for load generator to stop
+	LoadGeneratorWaitTimeoutFlag = conf.NewDurationFlag("load_generator_wait_timeout", "amount of time to wait for load generator to stop before stopping it forcefully", 0)
 )
 
 const (
