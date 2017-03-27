@@ -13,5 +13,6 @@ type SessionHandle interface {
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.
 type SessionLauncher interface {
+	// LaunchSession starts Snap workflow. Takes task information and tags on input.
 	LaunchSession(executor.TaskInfo, string) (SessionHandle, error)
 }
