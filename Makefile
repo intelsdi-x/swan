@@ -26,9 +26,10 @@ glide:
 	
 deps: glide
 	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
-	go get github.com/golang/lint/golint
+	go get gopkg.in/alecthomas/gometalinter.v1
 	go get github.com/GeertJohan/fgt 
-	go get github.com/stretchr/testify 
+	go get github.com/stretchr/testify
+	gometalinter.v1 --install
 	glide -q install
 
 build_plugins:
@@ -47,10 +48,10 @@ build_swan:
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 test_lint:
-	fgt golint ./pkg/...
-	fgt golint ./experiments/...
-	fgt golint ./plugins/...
-	fgt golint ./integration_tests/...
+	fgt gometalinter.v1 ./pkg/... --vendor --disable-all --enable=errcheck --enable=vet --enable=vetshadow --deadline=5m
+	fgt gometalinter.v1 ./experiments/... --vendor --disable-all --enable=errcheck --enable=vet --enable=vetshadow --deadline=5m
+	fgt gometalinter.v1 ./plugins/... --vendor --disable-all --enable=errcheck --enable=vet --enable=vetshadow --deadline=5m
+	fgt gometalinter.v1 ./integration_tests/... --vendor --disable-all --enable=errcheck --enable=vet --enable=vetshadow --deadline=5m
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...
