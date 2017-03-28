@@ -8,8 +8,5 @@ type Launcher interface {
 	Launch() (TaskHandle, error)
 
 	// Name returns human readable name for job.
-	// TODO(bp): Do the same for LoadGenerator.
 	Name() string
-
-	// TODO(bp): Include a getter for parameters (part of SCE-376).
 }

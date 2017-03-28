@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultMemcachedHost          = "127.0.0.1"
-	defaultPercentile             = "99"             // TODO: it is not clear if custom values are handled correctly by tune - SCE-443
+	defaultPercentile             = "99"
 	defaultTuningTime             = 10 * time.Second // [s]
 	defaultRecords                = 10000
 	defaultWarmupTime             = 10 * time.Second // [s]

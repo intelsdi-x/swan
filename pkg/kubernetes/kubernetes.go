@@ -27,7 +27,7 @@ const (
 
 var (
 	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for kube-apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
+	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
 	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
 	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
 	allowPrivilegedFlag     = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelet).", true)
@@ -60,7 +60,7 @@ type Config struct {
 	// Address range to use for services.
 	ServiceAddresses string
 
-	// Custom args to kube-apiserver and kubelet.
+	// Custom args to apiserver and kubelet.
 	KubeAPIArgs        string
 	KubeControllerArgs string
 	KubeSchedulerArgs  string
@@ -134,8 +134,7 @@ type k8s struct {
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
 // In case of the same executor they will be on the same host (high risk of interferences).
-// NOTE: Currently we support only single-kubelet (single-minion) kubernetes. We also does not
-// support ip lookup for pods. To support that we need to setup flannel or calico as well. (SCE-551)
+// NOTE: Currently we support only single-kubelet (single-minion) kubernetes.
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
 	return k8s{
 		master:        master,
@@ -188,42 +187,42 @@ func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 }
 
 func (m k8s) launchCluster() (executor.TaskHandle, error) {
-	// Launch kube-apiserver using master executor.
+	// Launch apiserver using master executor.
 	kubeAPIServer := m.getKubeAPIServerCommand()
 	apiHandle, err := m.launchService(kubeAPIServer)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot launch kube-apiserver using master executor")
+		return nil, errors.Wrap(err, "cannot launch apiserver using master executor")
 	}
 	clusterTaskHandle := executor.NewClusterTaskHandle(apiHandle, []executor.TaskHandle{})
 
-	// Launch kube-controller-manager using master executor.
+	// Launch controller-manager using master executor.
 	kubeController := m.getKubeControllerCommand()
 	controllerHandle, err := m.launchService(kubeController)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-controller-manager using master executor")
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch controller-manager using master executor")
 	}
 	clusterTaskHandle.AddAgent(controllerHandle)
 
-	// Launch kube-scheduler using master executor.
+	// Launch scheduler using master executor.
 	kubeScheduler := m.getKubeSchedulerCommand()
 	schedulerHandle, err := m.launchService(kubeScheduler)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-scheduler using master executor")
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch scheduler using master executor")
 	}
 	clusterTaskHandle.AddAgent(schedulerHandle)
 
 	// Launch services on minion node.
-	// Launch kube-proxy using minion executor.
+	// Launch proxy using minion executor.
 	kubeProxyCommand := m.getKubeProxyCommand()
 	proxyHandle, err := m.launchService(kubeProxyCommand)
 	if err != nil {
 		errCol := executor.StopCleanAndErase(clusterTaskHandle)
 		errCol.Add(err)
-		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kube-proxy using minion executor")
+		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch proxy using minion executor")
 	}
 	clusterTaskHandle.AddAgent(proxyHandle)
 
@@ -260,7 +259,7 @@ func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 	return handle, nil
 }
 
-// getKubeAPIServerCommand returns command for kube-apiserver.
+// getKubeAPIServerCommand returns command for apiserver.
 func (m k8s) getKubeAPIServerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
@@ -277,7 +276,7 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 		), m.config.KubeAPIPort}
 }
 
-// getKubeControllerCommand returns command for kube-controller-manager.
+// getKubeControllerCommand returns command for controller-manager.
 func (m k8s) getKubeControllerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
@@ -289,7 +288,7 @@ func (m k8s) getKubeControllerCommand() kubeCommand {
 		), m.config.KubeControllerPort}
 }
 
-// getKubeSchedulerCommand returns command for kube-scheduler.
+// getKubeSchedulerCommand returns command for scheduler.
 func (m k8s) getKubeSchedulerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
@@ -315,7 +314,7 @@ func (m k8s) getKubeletCommand() kubeCommand {
 		), m.config.KubeletPort}
 }
 
-// getKubeProxyCommand returns command for kube-proxy.
+// getKubeProxyCommand returns command for proxy.
 func (m k8s) getKubeProxyCommand() kubeCommand {
 	return kubeCommand{m.minion,
 		fmt.Sprint(

@@ -36,7 +36,6 @@ var (
 )
 
 func getBackendCommand(conf BackendConfig) string {
-	// See: https://intelsdi.atlassian.net/wiki/display/SCE/SpecJBB+experiment+tuning
 	return fmt.Sprint("java",
 		conf.GetJVMOptions(),
 		controllerHostProperty, conf.ControllerAddress,
