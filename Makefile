@@ -4,15 +4,15 @@
 TEST_OPT?=
 
 # for compatibility purposes.
-integration_test: show_env restart_snap deps build dist install test_integration
+integration_test: show_env restart_snap deps build dist install test_lint test_integration
 unit_test: deps test_unit
 
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
 build_and_test_integration: build_all test_integration
-build_and_test_unit: build_all test_lint test_unit
+build_and_test_unit: build_all test_unit
 build_and_test_all: build_all test_all
-test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
+test_all: test_unit test_unit_jupyter test_integration e2e_test
 
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514

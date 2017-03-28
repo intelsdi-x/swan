@@ -3,6 +3,7 @@
   "deadline": "10m",
   "aggregate": true,
   "enable-gc": true,
+  "concurrency": 1,
   "DisableAll": true,
   "Enable": ["golint", "vet", "vetshadow", "staticcheck", "deadcode", "gosimple", "varcheck", "ineffassign"]
 }
