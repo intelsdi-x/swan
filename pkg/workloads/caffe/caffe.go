@@ -97,7 +97,7 @@ func (c Caffe) buildCommand() string {
 // Launch launches Caffe workload. It's implementation of workload.Launcher interface.
 func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	command := c.buildCommand()
-	return c.exec.Execute(command)
+	task, err =  c.exec.Execute(command)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot launch caffe with command %q", command)
 	}

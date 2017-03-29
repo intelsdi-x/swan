@@ -232,7 +232,7 @@ func (m mutilate) Populate() (err error) {
 	}
 
 	if exitCode != 0 {
-		return errors.Errorf("memcached population exited with code: %d", strconv.Itoa(exitCode))
+		return errors.Errorf("memcached population exited with code: %d", exitCode)
 	}
 
 	err = taskHandle.Clean()

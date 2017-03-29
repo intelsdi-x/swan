@@ -109,12 +109,12 @@ func main() {
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	if includeBaselinePhaseFlag.Value() {
-		beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
+		beLaunchers = append([]sensitivity.LauncherSessionPair{}, beLaunchers...)
 	}
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
-	hpLauncher := executor.ServiceLauncher{memcached.New(hpExecutor, memcachedConfig)}
+	hpLauncher := executor.ServiceLauncher{Launcher: memcached.New(hpExecutor, memcachedConfig)}
 
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)

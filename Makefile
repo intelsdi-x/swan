@@ -10,9 +10,9 @@ unit_test: deps test_unit
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
 build_and_test_integration: build_all test_integration
-build_and_test_unit: build_all test_unit
+build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
-test_all: test_unit test_unit_jupyter test_integration e2e_test
+test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
@@ -28,7 +28,6 @@ glide:
 deps: glide
 	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
 	go get github.com/alecthomas/gometalinter
-	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify
 	gometalinter --install
 
@@ -46,7 +45,6 @@ build_swan:
 
 
 # testing
-## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 test_lint: deps
 	gometalinter --config=.lint ./pkg/...
 	gometalinter --config=.lint ./experiments/...
