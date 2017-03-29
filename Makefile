@@ -4,7 +4,7 @@
 TEST_OPT?=
 
 # for compatibility purposes.
-integration_test: show_env restart_snap deps build dist install test_lint test_integration
+integration_test: show_env restart_snap deps build dist install test_integration
 unit_test: deps test_unit
 
 build: build_swan build_plugins
@@ -23,6 +23,7 @@ glide:
 	mkdir -p ${GOPATH}/bin
 	wget -q https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
 	curl -s https://glide.sh/get | sh
+	glide -q install
 	
 deps: glide
 	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
@@ -30,7 +31,6 @@ deps: glide
 	go get github.com/GeertJohan/fgt 
 	go get github.com/stretchr/testify
 	gometalinter --install
-	glide -q install
 
 build_plugins:
 	mkdir -p build/plugins
@@ -47,11 +47,11 @@ build_swan:
 
 # testing
 ## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
-test_lint:
-	fgt gometalinter --config=.lint ./pkg/...
-	fgt gometalinter --config=.lint ./experiments/...
-	fgt gometalinter --config=.lint ./plugins/...
-	fgt gometalinter --config=.lint ./integration_tests/...
+test_lint: deps
+	gometalinter --config=.lint ./pkg/...
+	gometalinter --config=.lint ./experiments/...
+	gometalinter --config=.lint ./plugins/...
+	gometalinter --config=.lint ./integration_tests/...
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...
