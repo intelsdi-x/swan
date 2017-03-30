@@ -21,7 +21,7 @@ func NewThreadSetFromIntSet(threads isolation.IntSet) (threadSet ThreadSet, err 
 	for threadID := range threads {
 		thread, err := NewThreadFromID(threadID)
 		if err != nil {
-			fmt.Errorf("Could not create thread with ID %d: %s", threadID, err)
+			return nil, fmt.Errorf("Could not create thread with ID %d: %s", threadID, err)
 		}
 		threadSet = append(threadSet, thread)
 	}

@@ -9,12 +9,13 @@ go:
 - 1.7
 before_install:
 - echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
+env:
+- TEST_SUITE=test_lint
+- TEST_SUITE=test_unit
+- TEST_SUITE=test_integration_build
 before_script:
 - make deps
-script:
-- make test_lint 
-- make unit_test
-- make test_integration_build
+script: "make $TEST_SUITE"
 notifications:
   slack:
     rooms:

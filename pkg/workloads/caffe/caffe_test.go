@@ -30,14 +30,14 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 		})
 
 		Convey("When I launch the workload with failure", func() {
-			expectedErr := errors.New(`cannot launch caffe with command "caffe.sh test -model examples/cifar10/cifar10_quick_train_test.prototxt -weights examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5 -iterations 1000000000 -sigint_effect stop": example error`)
+			expectedErr := errors.New(`"caffe.sh test -model examples/cifar10/cifar10_quick_train_test.prototxt -weights examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5 -iterations 1000000000 -sigint_effect stop"`)
 			mExecutor.On("Execute", mock.AnythingOfType("string")).Return(nil, expectedErr).Once()
 			handle, err := c.Launch()
 			Convey("Proper handle is returned", func() {
 				So(handle, ShouldBeNil)
 			})
-			Convey("Error is nil", func() {
-				So(err, ShouldEqual, expectedErr)
+			Convey("Error is not nil and root cause is passed", func() {
+				So(err.Error(), ShouldContainSubstring, expectedErr.Error())
 			})
 		})
 	})

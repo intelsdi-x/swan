@@ -84,7 +84,7 @@ In the pull request description, remember to:
 
 ### Continuous integration
 
-We use Jenkins as a pre check for our pull requests. By default, unit tests will be run.
+We use Jenkins as a pre check for our pull requests. By default, linters checks and unit tests will be run. For linters check we use [golint](https://github.com/golang/lint) and [go vet](https://golang.org/cmd/vet/) tools.
 Add comment `run integration test` in PR to run integration tests.
 All tests must pass to merge PR.
 

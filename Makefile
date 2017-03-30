@@ -23,13 +23,13 @@ glide:
 	mkdir -p ${GOPATH}/bin
 	wget -q https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
 	curl -s https://glide.sh/get | sh
+	glide -q install
 	
 deps: glide
 	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
-	go get github.com/golang/lint/golint
-	go get github.com/GeertJohan/fgt 
-	go get github.com/stretchr/testify 
-	glide -q install
+	go get github.com/alecthomas/gometalinter
+	go get github.com/stretchr/testify
+	gometalinter --install
 
 build_plugins:
 	mkdir -p build/plugins
@@ -45,12 +45,11 @@ build_swan:
 
 
 # testing
-## fgt: lint doesn't return exit code when finds something (https://github.com/golang/lint/issues/65)
 test_lint:
-	fgt golint ./pkg/...
-	fgt golint ./experiments/...
-	fgt golint ./plugins/...
-	fgt golint ./integration_tests/...
+	gometalinter --config=.lint ./pkg/...
+	gometalinter --config=.lint ./experiments/...
+	gometalinter --config=.lint ./plugins/...
+	gometalinter --config=.lint ./integration_tests/...
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...

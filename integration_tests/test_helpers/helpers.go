@@ -101,9 +101,7 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 			// Check if we have all published data
 			lines := strings.Split(string(data), "\n")
 			if len(lines) < len(expectedMetrics) {
-				convey.Printf("There should be at least ",
-					len(expectedMetrics),
-					" lines. Checking again.")
+				convey.Printf("There should be at least %d lines. Checking again.", len(expectedMetrics))
 				continue
 			}
 
@@ -118,7 +116,7 @@ func ReadAndTestPublisherData(dataFilePath string, expectedMetrics map[string]st
 			}
 
 			if !allLinesHaveAllColumns {
-				convey.Printf("There should be at least 3 columns for all lines. ",
+				convey.Print("There should be at least 3 columns for all lines. ",
 					"Checking again.")
 				continue
 			}
