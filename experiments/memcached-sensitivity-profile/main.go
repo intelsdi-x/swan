@@ -109,7 +109,7 @@ func main() {
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
 	if includeBaselinePhaseFlag.Value() {
-		beLaunchers = append([]sensitivity.LauncherSessionPair{}, beLaunchers...)
+		beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
 	}
 
 	// Create HP workload.
