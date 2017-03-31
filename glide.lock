@@ -1,8 +1,8 @@
-hash: 47c98c2f4f0881664e35adfc33a31fdaac692270970b9ea757a1aef9e60871e7
-updated: 2017-03-27T09:05:08.779194999Z
+hash: 01b00b9074c398783a5a37bec9fd8143eed271b02222df579c915147a03a5f34
+updated: 2017-03-30T11:39:11.785015495+02:00
 imports:
 - name: github.com/appc/spec
-  version: db96f94ae6b227fe4d8288527ead8927181620f6
+  version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
   subpackages:
   - aci
   - pkg/device
@@ -10,6 +10,7 @@ imports:
   - schema
   - schema/common
   - schema/types
+  - schema/types/resource
 - name: github.com/armon/go-metrics
   version: 06b60999766278efd6d2b5d8418a58c3d5b99e87
 - name: github.com/asaskevich/govalidator
@@ -25,14 +26,12 @@ imports:
   - oauth2
   - oidc
 - name: github.com/coreos/go-semver
-  version: 6fe83ccda8fb9b7549c9ab4ba47f47858bc950aa
+  version: 294930c1e79c64e7dbe360054274fdad492c8cf5
   subpackages:
   - semver
 - name: github.com/coreos/pkg
   version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
   subpackages:
-  - capnslog
-  - dlopen
   - health
   - httputil
   - timeutil
@@ -67,7 +66,7 @@ imports:
   - internal/murmur
   - internal/streams
 - name: github.com/gogo/protobuf
-  version: 82d16f734d6d871204a3feb1a73cb220cc92574c
+  version: 4168943e65a2802828518e95310aeeed6d84c4e5
   subpackages:
   - proto
   - sortkeys
@@ -100,7 +99,7 @@ imports:
 - name: github.com/intelsdi-x/gomit
   version: 4f098da2bbb51d787be003e4abfbc25d01837564
 - name: github.com/intelsdi-x/snap
-  version: 8905198aaab5bfb6d50a747477ca401e3a7a33ab
+  version: 0ac530ac5495a76c0d1e5c1656e76ba299d3f71c
   subpackages:
   - control
   - control/plugin
@@ -118,11 +117,12 @@ imports:
   - grpc/common
   - grpc/controlproxy/rpc
   - mgmt/rest/client
-  - mgmt/rest/rbody
+  - mgmt/rest/v1/rbody
   - mgmt/tribe/agreement
   - pkg/aci
   - pkg/chrono
   - pkg/ctree
+  - pkg/fileutils
   - pkg/psigning
   - pkg/rpcutil
   - pkg/schedule
@@ -195,6 +195,8 @@ imports:
   - codec
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: github.com/urfave/negroni
+  version: c7477ad8e330bef55bf1ebe300cf8aa67c492d1b
 - name: github.com/vrischmann/jsonutil
   version: 694784f9315ee9fc763c1d30f28753cba21307aa
 - name: go4.org
@@ -238,14 +240,7 @@ imports:
 - name: golang.org/x/text
   version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
-  - cases
-  - internal/tag
-  - language
-  - runes
-  - secure/bidirule
-  - secure/precis
   - transform
-  - unicode/bidi
   - unicode/norm
   - width
 - name: google.golang.org/appengine
@@ -395,9 +390,6 @@ imports:
   - 1.5/transport
 - name: k8s.io/kubernetes
   version: 82450d03cb057bab0950214ef122b67c83fb11df
-  subpackages:
-  - pkg/api/resource
-  - pkg/genericapiserver/openapi/common
 testImports:
 - name: github.com/pivotal-golang/bytefmt
   version: b12c1522f4cbb5f35861bd5dd2c39a4fa996441a

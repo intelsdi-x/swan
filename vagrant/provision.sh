@@ -3,7 +3,7 @@ echo "---------------------- Start provisioning (`date`)"
 
 GO_VERSION="1.7.5"
 K8S_VERSION="v1.5.1"
-SNAP_VERSION="1.1.0"
+SNAP_VERSION="master"
 ETCD_VERSION="3.1.0"
 DOCKER_VERSION="17.03.0.ce-1.el7.centos"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5

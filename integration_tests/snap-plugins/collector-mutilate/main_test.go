@@ -17,7 +17,7 @@ func TestMutilatePluginLoad(t *testing.T) {
 
 		pluginControl := control.New(control.GetDefaultConfig())
 		pluginControl.Start()
-		requestedPlugin, requestedPluginError := core.NewRequestedPlugin(pluginPath)
+		requestedPlugin, requestedPluginError := core.NewRequestedPlugin(pluginPath, "/tmp", nil)
 		So(requestedPluginError, ShouldBeNil)
 
 		_, loadError := pluginControl.Load(requestedPlugin)

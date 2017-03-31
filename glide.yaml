@@ -8,7 +8,7 @@ import:
   subpackages:
   - v1/plugin
 - package: github.com/intelsdi-x/snap
-  version: ~1.0.0
+  version: master
   subpackages:
   - mgmt/rest/client
   - scheduler/wmap

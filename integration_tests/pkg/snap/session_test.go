@@ -88,9 +88,11 @@ func TestSnap(t *testing.T) {
 
 							err = s.Wait()
 							So(err, ShouldBeNil)
+							Convey("Task is in ended state, and cannot be stopped", func() {
+								err = s.Stop()
+								So(err, ShouldNotBeNil)
+							})
 
-							err = s.Stop()
-							So(err, ShouldBeNil)
 							So(s.IsRunning(), ShouldBeFalse)
 						})
 					})

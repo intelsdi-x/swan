@@ -70,6 +70,7 @@ func NewSession(
 		Schedule: &client.Schedule{
 			Type:     "simple",
 			Interval: secondString,
+			Count: 1,
 		},
 		Metrics:                metrics,
 		pClient:                pClient,
@@ -162,7 +163,7 @@ func (s *Session) status() (string, error) {
 // This function blocks until task is stopped.
 func (s *Session) Stop() error {
 	if s.task == nil {
-		return errors.New("snap task not running or not found")
+		return nil
 	}
 
 	rs := s.pClient.StopTask(s.task.ID)
@@ -194,7 +195,7 @@ func (s *Session) Wait() error {
 			return errors.Wrapf(t.Err, "getting task %q failed", s.task.ID)
 		}
 
-		if t.State == "Stopped" || t.State == "Disabled" {
+		if t.State == "Disabled" {
 			return errors.Errorf("failed to wait for task: task %q is in state %q (last failure: %q)",
 				s.task.ID,
 				t.State,
@@ -202,7 +203,7 @@ func (s *Session) Wait() error {
 
 		}
 
-		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
+		if t.State == "Ended" || t.State == "Stopped" {
 			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
