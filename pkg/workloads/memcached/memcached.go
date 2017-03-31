@@ -18,7 +18,7 @@ const (
 	defaultPort            = 11211
 	defaultUser            = "root"
 	defaultNumThreads      = 4
-	defaultMaxMemoryMB     = 64
+	defaultMaxMemoryMB     = 4096
 	defaultNumConnections  = 1024
 	defaultListenIP        = "127.0.0.1"
 	defaultThreadsAffinity = false
