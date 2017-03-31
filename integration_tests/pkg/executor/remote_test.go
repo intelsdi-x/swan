@@ -82,7 +82,6 @@ func testRemoteProcessPidIsolation() {
 		task, err := launcher.Launch()
 		defer func() {
 			task.Stop()
-			task.Clean()
 			task.EraseOutput()
 		}()
 

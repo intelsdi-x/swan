@@ -63,10 +63,6 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 					if err != nil {
 						errors = append(errors, err.Error())
 					}
-					err = k8sHandle.Clean()
-					if err != nil {
-						errors = append(errors, err.Error())
-					}
 					err = k8sHandle.EraseOutput()
 					if err != nil {
 						errors = append(errors, err.Error())

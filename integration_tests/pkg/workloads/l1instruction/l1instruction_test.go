@@ -23,7 +23,6 @@ func TestL1InstructionWithExecutor(t *testing.T) {
 			taskHandle, err := l1InstructionLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
-				defer taskHandle.Clean()
 				defer taskHandle.EraseOutput()
 			}
 

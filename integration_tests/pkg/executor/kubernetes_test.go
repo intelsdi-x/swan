@@ -127,7 +127,6 @@ func TestKubernetesExecutor(t *testing.T) {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
 			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
-			taskHandle.Clean()
 		})
 
 		Convey("Logs should be available and non-empty", func() {

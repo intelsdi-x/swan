@@ -110,7 +110,6 @@ func testExecutor(t *testing.T, executor Executor) {
 			So(stdoutErr, ShouldBeNil)
 			So(stdoutFile, ShouldNotBeNil)
 
-			taskHandle.Clean()
 			Convey("Before eraseOutput file should exist", func() {
 				_, statErr := os.Stat(stdoutFile.Name())
 				So(statErr, ShouldBeNil)
@@ -149,8 +148,6 @@ func testExecutor(t *testing.T, executor Executor) {
 			So(taskHandle.Wait(0), ShouldBeTrue)
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
-
-			taskHandle.Clean()
 
 			stderrFile, err := taskHandle.StderrFile()
 			So(err, ShouldBeNil)
@@ -274,7 +271,6 @@ func testExecutor(t *testing.T, executor Executor) {
 		outputDir, _ := path.Split(stdoutFile.Name())
 
 		taskHandle.Stop()
-		taskHandle.Clean()
 		taskHandle.EraseOutput()
 
 		_, stdoutErr := os.Stat(stdoutFile.Name())
