@@ -45,8 +45,6 @@ type TaskControl interface {
 	// It returns true if task is terminated.
 	// In case of '0*time.Nanoseconds' timeout it waits infinitely for task completion.
 	Wait(timeout time.Duration) bool
-	// Deprecated: Does nothing.
-	Clean() error
 	// EraseOutput deletes the directory where output files resides.
 	EraseOutput() error
 }
