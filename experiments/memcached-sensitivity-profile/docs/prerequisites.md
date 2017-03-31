@@ -1,0 +1,68 @@
+# Prerequisites
+
+While the experiment can be run in a developer setting from within a virtual machine or on your own laptop, it is targeted for the data center environment with high bandwidth links and rich multi socket servers. Therefore further steps will assume that experiment will be run in the multi node environment.
+It can be a surprisingly tricky exercise to rule out unintended sources of interference in these experiments, so below is a guide to setting up the experiment and some guidance in how to debug a misbehaving setup. More information about mitigating interferences are in [Tuning](tuning.md) page.
+
+
+## Machine configuration
+
+When Swan is used in cluster environment, we recommend the following machine topology:
+
+| Type                  | Description                                                                                                                               | Machine                                                                                |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| System Under Test (SUT)        | Machine where Swan is run and thus where workloads are deployed.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
+| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 10Gb link for each agent, 20 or more hyper threads in total                                       |
+| Service machines      | Machines where Cassandra, Jupyter and Load Generator Master will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
+
+## Hardware
+
+Although Swan can be run on any machine, the more recent hardware might yield more detailed metrics about workload interference. For example Haswell CPU (Xeon v3) enables monitoring of cache occupancy (via CMT). Newer Broadwell CPU (Xeon v4) adds Memory Bandwidth Monitoring and enables user to separate cache for different workloads (via CAT). For more information, please see [Intel RDT page](http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html).
+ 
+## Software
+
+Swan is tested on CentOS 7.2. 
+
+Operating system defaults does not suits the Swan experiment needs. These knobs should be changed to accommodate larger loads and make latency variance lower.
+ 
+Experiment will log `Warning` messages if those knobs are not set properly, but will run nonetheless.
+
+### File descriptors
+
+As the both Mutilate and Memcached will create many connections, it is important that the number of available file descriptors is high enough. It should be in the high 10 000s.
+To check the current limit, run:
+
+```bash
+$ ulimit -n
+256
+```
+
+and set a new value with:
+
+```bash
+$ ulimit -n 65536
+```
+
+This should be set on SUT and load generator machines.
+
+### DDoS protection
+
+Sometimes, the Linux kernel applies anti-denial of service measures, like introducing [TCP SYN cookies](https://en.wikipedia.org/wiki/SYN_cookies). This will break the mutilate load generators and should be turned off on the target machine:
+
+```bash
+$ sudo sysctl net.ipv4.tcp_syncookies=0
+```
+
+This should be set on SUT machine.
+
+### Power control
+
+To avoid power saving policies to kick in while carrying out the experiments, set the power governor policy to 'performance':
+
+```bash
+$ sudo cpupower frequency-set -g performance
+```
+
+This should be set on SUT machine.
+
+## Next
+Please move to [Installation](installation.md) page.
