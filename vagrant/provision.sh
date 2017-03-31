@@ -3,7 +3,7 @@ echo "---------------------- Start provisioning (`date`)"
 
 GO_VERSION="1.7.5"
 K8S_VERSION="v1.5.1"
-SNAP_VERSION="master"
+SNAP_VERSION="1.1.0"
 ETCD_VERSION="3.1.0"
 DOCKER_VERSION="17.03.0.ce-1.el7.centos"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
@@ -99,6 +99,12 @@ echo "----------------------------- Install snap telemetry (`date`)"
 curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | bash
 yum list -q --show-duplicates snap-telemetry
 yum install -y -q snap-telemetry-${SNAP_VERSION}
+
+pushd vendor/github.com/intelsdi-x/snap
+make
+cp build/build/linux/x86_64/snapteld /opt/swan/bin/
+popd
+
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
 daemonStatus snap-telemetry
