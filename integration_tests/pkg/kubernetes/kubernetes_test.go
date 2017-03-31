@@ -36,7 +36,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
-			defer executor.StopCleanAndErase(k8sHandle)
+			defer executor.StopAndEraseOutput(k8sHandle)
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
@@ -86,7 +86,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 
 					podHandle, err := k8sExecutor.Execute("stress -c 1")
 					So(err, ShouldBeNil)
-					defer executor.StopCleanAndErase(podHandle)
+					defer executor.StopAndEraseOutput(podHandle)
 
 					output, err := exec.Command("sudo", "docker", "ps").Output()
 					So(err, ShouldBeNil)

@@ -268,7 +268,6 @@ func main() {
 				errColl.Add(err)
 				for _, th := range processes {
 					errColl.Add(th.Stop())
-					errColl.Add(th.Clean())
 				}
 
 				// If any error was found then we should log details and terminate the experiment if stopOnError is set.

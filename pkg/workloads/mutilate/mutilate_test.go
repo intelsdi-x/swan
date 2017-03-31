@@ -118,7 +118,6 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
-	s.mMasterHandle.On("Clean").Return(nil).Times(numberOfConveys)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
 		outputFile.Seek(0, 0)
@@ -164,21 +163,18 @@ func (s *MutilateTestSuite) TestClusterMutilateTuning() {
 	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
-	s.mMasterHandle.On("Clean").Return(nil).Times(numberOfConveys)
 
 	s.mExecutorForAgent1.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil)
 	s.mAgentHandle1.On("Address").Return("255.255.255.001").Times(numberOfConveys)
 	// Those function shouldn't be called in normal execution path
 	s.mAgentHandle1.On("Stop").Return(nil).Times(0)
 	s.mAgentHandle1.On("EraseOutput").Return(nil).Times(0)
-	s.mAgentHandle1.On("Clean").Return(nil).Times(0)
 
 	s.mExecutorForAgent2.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil)
 	s.mAgentHandle2.On("Address").Return("255.255.255.002").Times(numberOfConveys)
 	// Those function shouldn't be called in normal execution path
 	s.mAgentHandle2.On("Stop").Return(nil).Times(0)
 	s.mAgentHandle2.On("EraseOutput").Return(nil).Times(0)
-	s.mAgentHandle2.On("Clean").Return(nil).Times(0)
 
 	Convey("When Tuning Memcached.", s.T(), func() {
 		outputFile.Seek(0, 0)
@@ -241,14 +237,12 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 			s.mAgentHandle1.On("Address").Return("255.255.255.001").Once()
 			s.mAgentHandle1.On("Stop").Return(nil).Once()
 			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
-			s.mAgentHandle1.On("Clean").Return(nil).Once()
 
 			s.mExecutorForAgent2.On(
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil).Once()
 			s.mAgentHandle2.On("Address").Return("255.255.255.002").Once()
 			s.mAgentHandle2.On("Stop").Return(nil).Once()
 			s.mAgentHandle2.On("EraseOutput").Return(nil).Once()
-			s.mAgentHandle2.On("Clean").Return(nil).Once()
 
 			_, _, err := mutilate.Tune(s.defaultSlo)
 			So(err, ShouldNotBeNil)
@@ -263,7 +257,6 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
 			s.mAgentHandle1.On("Stop").Return(nil).Once()
 			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
-			s.mAgentHandle1.On("Clean").Return(nil).Once()
 
 			s.mExecutorForAgent2.On(
 				"Execute", mock.AnythingOfType("string")).Return(nil, errors.New(errorMsg)).Once()
@@ -274,7 +267,7 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 		})
 
 		Convey("Having failure with master's Wait, tune should return error and agents "+
-			"should be stopped and cleaned", func() {
+			"should be stopped and output erased", func() {
 			const errorMsg = "cannot terminate the Mutilate master. Leaving agents running."
 
 			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
@@ -363,7 +356,6 @@ func (s *MutilateTestSuite) TestPopulate() {
 	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mMasterHandle, nil)
 	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true)
 	s.mMasterHandle.On("ExitCode").Return(0, nil)
-	s.mMasterHandle.On("Clean").Return(nil)
 	s.mMasterHandle.On("EraseOutput").Return(nil)
 
 	Convey("When Populating Memcached.", s.T(), func() {

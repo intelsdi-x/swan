@@ -54,7 +54,6 @@ func (s *Snapteld) Start() error {
 
 	if !s.Connected() {
 		taskHandle.Stop()
-		taskHandle.Clean()
 		taskHandle.EraseOutput()
 		return errors.Errorf("could not connect to snapteld on %q", s.getSnapteldAddress())
 	}
@@ -78,7 +77,6 @@ func (s *Snapteld) CleanAndEraseOutput() error {
 		return errors.New("Snapteld not started: cannot find task")
 	}
 
-	s.task.Clean()
 	return s.task.EraseOutput()
 }
 

@@ -17,7 +17,6 @@ func GetPeakLoad(hpLauncher executor.Launcher, loadGenerator executor.LoadGenera
 		if err == nil {
 			err = errStop
 		}
-		prTask.Clean()
 	}()
 
 	err = loadGenerator.Populate()

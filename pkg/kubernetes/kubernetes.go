@@ -177,7 +177,7 @@ func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 	apiServerAddress := fmt.Sprintf("%s:%d", handle.Address(), m.config.KubeAPIPort)
 	err = m.waitForReadyNode(apiServerAddress)
 	if err != nil {
-		stopClusterErrors := executor.StopCleanAndErase(handle)
+		stopClusterErrors := executor.StopAndEraseOutput(handle)
 		if stopClusterErrors.GetErrIfAny() != nil {
 			log.Warningf("Errors while stopping k8s cluster: %v", stopClusterErrors.GetErrIfAny())
 		}
@@ -199,7 +199,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	kubeController := m.getKubeControllerCommand()
 	controllerHandle, err := m.launchService(kubeController)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := executor.StopAndEraseOutput(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch controller-manager using master executor")
 	}
@@ -209,7 +209,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	kubeScheduler := m.getKubeSchedulerCommand()
 	schedulerHandle, err := m.launchService(kubeScheduler)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := executor.StopAndEraseOutput(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch scheduler using master executor")
 	}
@@ -220,7 +220,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	kubeProxyCommand := m.getKubeProxyCommand()
 	proxyHandle, err := m.launchService(kubeProxyCommand)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := executor.StopAndEraseOutput(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch proxy using minion executor")
 	}
@@ -230,7 +230,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 	kubeletCommand := m.getKubeletCommand()
 	kubeletHandle, err := m.launchService(kubeletCommand)
 	if err != nil {
-		errCol := executor.StopCleanAndErase(clusterTaskHandle)
+		errCol := executor.StopAndEraseOutput(clusterTaskHandle)
 		errCol.Add(err)
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kubelet using minion executor")
 	}
@@ -248,7 +248,7 @@ func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), command.healthCheckPort)
 	if !m.isListening(address, serviceListenTimeout) {
-		defer executor.StopCleanAndErase(handle)
+		defer executor.StopAndEraseOutput(handle)
 		ec, _ := handle.ExitCode()
 
 		return nil, errors.Errorf(

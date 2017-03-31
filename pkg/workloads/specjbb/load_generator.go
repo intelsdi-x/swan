@@ -1,8 +1,8 @@
 package specjbb
 
 import (
-	"time"
 	"path"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"

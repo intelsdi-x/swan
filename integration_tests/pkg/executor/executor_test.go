@@ -18,7 +18,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		taskHandle, err := executor.Execute("sleep inf")
 		So(err, ShouldBeNil)
 
-		defer StopCleanAndErase(taskHandle)
+		defer StopAndEraseOutput(taskHandle)
 
 		Convey("Task should be still running and exitCode should return error", func() {
 			taskState := taskHandle.Status()
@@ -77,7 +77,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		taskHandle, err := executor.Execute("echo output")
 		So(err, ShouldBeNil)
 
-		defer StopCleanAndErase(taskHandle)
+		defer StopAndEraseOutput(taskHandle)
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
 			So(taskHandle.Wait(0), ShouldBeTrue)
@@ -130,7 +130,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		taskHandle, err := executor.Execute("/bin/sh -c commandThatDoesNotExists")
 		So(err, ShouldBeNil)
 
-		defer StopCleanAndErase(taskHandle)
+		defer StopAndEraseOutput(taskHandle)
 
 		Convey("When we wait for the task to terminate and the exit status should be 127", func() {
 			So(taskHandle.Wait(0), ShouldBeTrue)
@@ -175,8 +175,8 @@ func testExecutor(t *testing.T, executor Executor) {
 		taskHandle2, err2 := executor.Execute("echo output2")
 		So(err, ShouldBeNil)
 		So(err2, ShouldBeNil)
-		defer StopCleanAndErase(taskHandle)
-		defer StopCleanAndErase(taskHandle2)
+		defer StopAndEraseOutput(taskHandle)
+		defer StopAndEraseOutput(taskHandle2)
 
 		Convey("When we wait for the tasks to terminate", func() {
 			taskHandle.Wait(0)
@@ -227,7 +227,7 @@ func testExecutor(t *testing.T, executor Executor) {
 	Convey("When command `echo sleep 0` is executed", func() {
 		taskHandle, err := executor.Execute("echo sleep 0")
 		So(err, ShouldBeNil)
-		defer StopCleanAndErase(taskHandle)
+		defer StopAndEraseOutput(taskHandle)
 
 		// Wait for the command to execute.
 		// TODO(bplotka): Remove the Sleep/Wait, since this is prone to errors on different environments.
