@@ -16,7 +16,7 @@ SPECjbb2015 Java Business Benchmark
 
 Preparing to launch SPECjbb2015 reporter.
 
-Reading property file: /root/athena/specjbb/16-08-31_095108/./config/specjbb2015.props
+Reading property file: /root/wca/specjbb/16-08-31_095108/./config/specjbb2015.props
 Report directory is result/specjbb2015-C-20160831-00001/report-00001
    701s: Building report...
 

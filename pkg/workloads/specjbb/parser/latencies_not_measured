@@ -3,7 +3,7 @@ SPECjbb2015 Java Business Benchmark
 
 Preparing to launch All-in-one SPECjbb2015.
 
-Reading property file: /root/athena/specjbb/16-08-31_114144/./config/specjbb2015.props
+Reading property file: /root/wca/specjbb/16-08-31_114144/./config/specjbb2015.props
 
      0s: Enumerating plugins...
      0s:    Connectivity:

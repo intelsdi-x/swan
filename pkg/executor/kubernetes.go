@@ -278,9 +278,9 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	podsAPI := k8s.clientset.Core().Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
-	// This is a workaround for kubernetes #31446 & SCE-883.
+	// This is a workaround for kubernetes #31446
 	// Make sure that at least one line of text is outputed from pod, to unblock .GetLogs() on apiserver call
-	// with streamed response (when follow=true). Check SCE-883 for details or kubernetes #31446 issue.
+	// with streamed response (when follow=true). Check kubernetes #31446 issue for more details.
 	// https://github.com/kubernetes/kubernetes/pull/31446
 	wrappedCommand := "echo;" + command
 
