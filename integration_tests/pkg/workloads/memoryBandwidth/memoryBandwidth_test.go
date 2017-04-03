@@ -23,7 +23,6 @@ func TestMemBwDataWithExecutor(t *testing.T) {
 			taskHandle, err := memBwDataLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
-				defer taskHandle.Clean()
 				defer taskHandle.EraseOutput()
 			}
 

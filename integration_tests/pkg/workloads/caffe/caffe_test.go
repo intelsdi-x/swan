@@ -21,7 +21,6 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 		Convey("When I launch the workload", func() {
 			handle, err := c.Launch()
 			defer handle.Stop()
-			defer handle.Clean()
 			defer handle.EraseOutput()
 
 			Convey("Error is nil", func() {

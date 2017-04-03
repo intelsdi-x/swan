@@ -23,7 +23,6 @@ func TestL3dataWithExecutor(t *testing.T) {
 			taskHandle, err := l3dataLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
-				defer taskHandle.Clean()
 				defer taskHandle.EraseOutput()
 			}
 

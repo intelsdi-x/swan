@@ -22,7 +22,6 @@ func TestL1DataWithExecutor(t *testing.T) {
 			taskHandle, err := l1DataLauncher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
-				defer taskHandle.Clean()
 				defer taskHandle.EraseOutput()
 			}
 

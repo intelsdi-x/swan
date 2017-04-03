@@ -46,7 +46,7 @@ func TestKubernetesExecutor(t *testing.T) {
 
 	// Make sure cluster is shut down and cleaned up when test ends.
 	defer func() {
-		errs := executor.StopCleanAndErase(k8sHandle)
+		errs := executor.StopAndEraseOutput(k8sHandle)
 		if err := errs.GetErrIfAny(); err != nil {
 			t.Fatalf("Cannot stop cluster: %q", err)
 		}
@@ -74,7 +74,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
 			So(err, ShouldBeNil)
 
-			defer executor.StopCleanAndErase(taskHandle)
+			defer executor.StopAndEraseOutput(taskHandle)
 
 			Convey("And after few seconds waiting Wait() returns true", func() {
 				// Pod should end after three seconds, but propagation of
@@ -103,7 +103,7 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
-			defer executor.StopCleanAndErase(taskHandle)
+			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
 
 			Convey("And after few seconds", func() {
@@ -125,14 +125,13 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command and calling Clean() on task handle should not cause a data race", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
-			defer executor.StopCleanAndErase(taskHandle)
+			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
-			taskHandle.Clean()
 		})
 
 		Convey("Logs should be available and non-empty", func() {
 			taskHandle, err := k8sexecutor.Execute("echo \"This is Sparta\" && (echo \"This is England\" 1>&2) && exit 0")
-			defer executor.StopCleanAndErase(taskHandle)
+			defer executor.StopAndEraseOutput(taskHandle)
 
 			So(err, ShouldBeNil)
 			So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
@@ -171,7 +170,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 			th, err := k8sexecutor.Execute("sleep inf")
 			So(err, ShouldBeNil)
-			defer executor.StopCleanAndErase(th)
+			defer executor.StopAndEraseOutput(th)
 			// Externally delete the pod.
 			err = kubectl.DeletePod(executorConfig.PodName)
 			So(err, ShouldBeNil)
@@ -205,7 +204,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			k8sexecutor, err = executor.NewKubernetes(executorConfig)
 			So(err, ShouldBeNil)
 			taskHandle, err := k8sexecutor.Execute("sleep inf")
-			defer executor.StopCleanAndErase(taskHandle)
+			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
 
 			stopped := taskHandle.Wait(5 * time.Second)

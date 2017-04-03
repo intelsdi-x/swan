@@ -284,11 +284,6 @@ func (taskHandle *remoteTaskHandle) StderrFile() (*os.File, error) {
 	return openFile(taskHandle.stderrFilePath)
 }
 
-// Deprecated: Does nothing.
-func (taskHandle *remoteTaskHandle) Clean() error {
-	return nil
-}
-
 // EraseOutput deletes the directory where stdout file resides.
 func (taskHandle *remoteTaskHandle) EraseOutput() error {
 	outputDir := filepath.Dir(taskHandle.stdoutFilePath)

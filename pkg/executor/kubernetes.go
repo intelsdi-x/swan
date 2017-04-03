@@ -467,11 +467,6 @@ func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
 	}
 }
 
-// Clean. Deprecated: does nothing.
-func (th *k8sTaskHandle) Clean() error {
-	return nil
-}
-
 // EraseOutput deletes the directory where stdout file resides.
 func (th *k8sTaskHandle) EraseOutput() error {
 	outputDir := filepath.Dir(th.stdoutFilePath)

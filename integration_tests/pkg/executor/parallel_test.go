@@ -27,7 +27,6 @@ func TestParallel(t *testing.T) {
 			cmdStr := fmt.Sprintf("tailf %s", file.Name())
 			task, err := parallel.Execute(cmdStr)
 			defer task.EraseOutput()
-			defer task.Clean()
 			defer task.Stop()
 
 			So(err, ShouldBeNil)

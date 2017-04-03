@@ -57,8 +57,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 
 		ec, err := mcHandle.ExitCode()
 		errCollection.Add(err)
-		// Make sure that file desciptors are closed.
-		errCollection.Add(mcHandle.Clean())
 		// Make sure temp files removal was successful.
 		errCollection.Add(mcHandle.EraseOutput())
 
@@ -127,7 +125,6 @@ func TestMutilateWithExecutor(t *testing.T) {
 			Reset(func() {
 				var errCollection errcollection.ErrorCollection
 				errCollection.Add(mutilateHandle.Stop())
-				errCollection.Add(mutilateHandle.Clean())
 				errCollection.Add(mutilateHandle.EraseOutput())
 				So(errCollection.GetErrIfAny(), ShouldBeNil)
 			})

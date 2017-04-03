@@ -23,7 +23,6 @@ func TestStreamWithExecutor(t *testing.T) {
 				So(err, ShouldBeNil)
 				Reset(func() {
 					taskHandle.Stop()
-					taskHandle.Clean()
 					taskHandle.EraseOutput()
 				})
 				Convey("and stream should be running", func() {

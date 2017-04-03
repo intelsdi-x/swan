@@ -94,7 +94,6 @@ func getNOFILE(executor executor.Executor) int {
 	// Run ulimit and wait.
 	taskHandle, err := executor.Execute("ulimit -n")
 	errutil.Check(err)
-	defer taskHandle.Clean()
 	defer taskHandle.EraseOutput()
 	taskHandle.Wait(0)
 

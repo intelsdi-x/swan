@@ -87,20 +87,6 @@ func (m *ClusterTaskHandle) Wait(timeout time.Duration) bool {
 	return isMasterTerminated
 }
 
-// Clean Deprecated: Does nothing.
-func (m *ClusterTaskHandle) Clean() (err error) {
-	var errCollection errcollection.ErrorCollection
-
-	err = m.master.Clean()
-	errCollection.Add(err)
-	for _, handle := range m.agents {
-		err = handle.Clean()
-		errCollection.Add(err)
-	}
-
-	return errCollection.GetErrIfAny()
-}
-
 // EraseOutput removes master's and agents' stdout & stderr files.
 func (m *ClusterTaskHandle) EraseOutput() (err error) {
 	var errCollection errcollection.ErrorCollection

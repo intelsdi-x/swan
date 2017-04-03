@@ -33,7 +33,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			}
 
 			cleanup = func() error {
-				err := executor.StopCleanAndErase(k8sClusterTaskHandle)
+				err := executor.StopAndEraseOutput(k8sClusterTaskHandle)
 				return err.GetErrIfAny()
 			}
 		}

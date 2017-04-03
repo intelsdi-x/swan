@@ -34,7 +34,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(taskHandle, ShouldNotBeNil)
 			defer taskHandle.Stop()
-			defer taskHandle.Clean()
 			defer taskHandle.EraseOutput()
 
 			Convey("There should be no error", func() {
@@ -48,7 +47,6 @@ func TestMemcachedWithExecutor(t *testing.T) {
 				netstatTaskHandle, netstatErr := l.Execute(netstatCommand)
 				if netstatTaskHandle != nil {
 					defer netstatTaskHandle.Stop()
-					defer netstatTaskHandle.Clean()
 					defer netstatTaskHandle.EraseOutput()
 				}
 				Convey("There should be no error", func() {

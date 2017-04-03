@@ -45,7 +45,6 @@ func TestSnapDockerSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(kubernetesHandle, ShouldNotBeNil)
 		defer kubernetesHandle.EraseOutput()
-		defer kubernetesHandle.Clean()
 		defer kubernetesHandle.Stop()
 
 		// Waiting for Kubernetes Executor.
@@ -57,7 +56,6 @@ func TestSnapDockerSession(t *testing.T) {
 		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")
 		So(err, ShouldBeNil)
 		defer podHandle.EraseOutput()
-		defer podHandle.Clean()
 		defer podHandle.Stop()
 
 		Convey("Launching Docker Session", func() {

@@ -172,15 +172,6 @@ func stopAgents(agentHandles []executor.TaskHandle) {
 	}
 }
 
-func cleanAgents(agentHandles []executor.TaskHandle) {
-	for _, handle := range agentHandles {
-		err := handle.Clean()
-		if err != nil {
-			logrus.Error(err.Error())
-		}
-	}
-}
-
 func eraseAgentOutputs(agentHandles []executor.TaskHandle) {
 	for _, handle := range agentHandles {
 		err := handle.EraseOutput()
@@ -202,7 +193,6 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 				"Mutilate: one of agents has failed (cmd: %q). Stopping already started %d agents",
 				command, len(handles))
 			stopAgents(handles)
-			cleanAgents(handles)
 			if m.config.EraseTuneOutput {
 				eraseAgentOutputs(handles)
 			}
@@ -233,11 +223,6 @@ func (m mutilate) Populate() (err error) {
 
 	if exitCode != 0 {
 		return errors.Errorf("memcached population exited with code: %d", exitCode)
-	}
-
-	err = taskHandle.Clean()
-	if err != nil {
-		return err
 	}
 
 	if m.config.ErasePopulateOutput {
@@ -279,7 +264,6 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	masterHandle, err := m.master.Execute(tuneCmd)
 	if err != nil {
 		stopAgents(agentHandles)
-		cleanAgents(agentHandles)
 		if m.config.EraseTuneOutput {
 			eraseAgentOutputs(agentHandles)
 		}
@@ -315,11 +299,6 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 		return qps, achievedSLI, err
 	}
 
-	err = taskHandle.Clean()
-	if err != nil {
-		logrus.Error("mutilate.Tune(): Clean on master failed: ", err)
-		return 0, 0, err
-	}
 	if m.config.EraseTuneOutput {
 		if err = taskHandle.EraseOutput(); err != nil {
 			logrus.Error("mutilate.Tune(): EraseOutput on master failed: ", err)

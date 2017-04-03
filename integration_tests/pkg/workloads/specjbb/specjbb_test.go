@@ -46,7 +46,6 @@ func TestSPECjbb(t *testing.T) {
 
 				Reset(func() {
 					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
 					loadGeneratorTaskHandle.EraseOutput()
 				})
 
@@ -58,7 +57,6 @@ func TestSPECjbb(t *testing.T) {
 
 					Reset(func() {
 						backendTaskHandle.Stop()
-						loadGeneratorTaskHandle.Clean()
 						loadGeneratorTaskHandle.EraseOutput()
 					})
 
@@ -152,7 +150,6 @@ func TestSPECjbb(t *testing.T) {
 
 				Reset(func() {
 					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
 					loadGeneratorTaskHandle.EraseOutput()
 				})
 
@@ -164,7 +161,6 @@ func TestSPECjbb(t *testing.T) {
 
 					Reset(func() {
 						backendTaskHandle.Stop()
-						backendTaskHandle.Clean()
 						backendTaskHandle.EraseOutput()
 					})
 
@@ -207,7 +203,6 @@ func TestSPECjbb(t *testing.T) {
 
 				Reset(func() {
 					loadGeneratorTaskHandle.Stop()
-					loadGeneratorTaskHandle.Clean()
 					loadGeneratorTaskHandle.EraseOutput()
 				})
 
