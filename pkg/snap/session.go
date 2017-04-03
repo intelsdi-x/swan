@@ -59,6 +59,7 @@ func NewSession(
 	taskName string,
 	metrics []string,
 	interval time.Duration,
+	count uint,
 	pClient *client.Client,
 	publisher *wmap.PublishWorkflowMapNode) *Session {
 
@@ -70,7 +71,7 @@ func NewSession(
 		Schedule: &client.Schedule{
 			Type:     "simple",
 			Interval: secondString,
-			Count: 1,
+			Count: count,
 		},
 		Metrics:                metrics,
 		pClient:                pClient,

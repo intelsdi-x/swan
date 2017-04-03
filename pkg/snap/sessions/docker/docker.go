@@ -18,6 +18,7 @@ func DefaultConfig() Config {
 	return Config{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
+		Count:           0,
 		Publisher:       publisher,
 	}
 }
@@ -27,6 +28,7 @@ type Config struct {
 	SnapteldAddress string
 	Publisher       *wmap.PublishWorkflowMapNode
 	Interval        time.Duration
+	Count		uint
 }
 
 // SessionLauncher configures & launches snap workflow for gathering Kubernetes Docker containers metrics.
@@ -59,6 +61,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 			"swan-docker-session",
 			[]string{"/intel/docker/*/stats/cgroups/*"},
 			config.Interval,
+			config.Count,
 			snapClient,
 			config.Publisher,
 		),

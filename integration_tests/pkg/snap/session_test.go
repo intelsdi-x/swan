@@ -68,6 +68,7 @@ func TestSnap(t *testing.T) {
 							"swan-test-dummy",
 							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 							1*time.Second,
+							0,
 							c,
 							publisher,
 						)
