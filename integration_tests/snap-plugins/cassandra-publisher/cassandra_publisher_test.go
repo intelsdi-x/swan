@@ -91,7 +91,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		"swan-test-cassandra-publisher-session",
 		[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 		1*time.Second,
-		0,
+		1,
 		snapClient,
 		cassandraPublisher)
 
