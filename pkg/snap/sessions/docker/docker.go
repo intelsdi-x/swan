@@ -18,7 +18,7 @@ func DefaultConfig() Config {
 	return Config{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Count:           0,
+		Count:           1,
 		Publisher:       publisher,
 	}
 }

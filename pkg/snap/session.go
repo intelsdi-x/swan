@@ -218,7 +218,7 @@ func (s *Session) waitForStop() error {
 			return errors.Wrapf(t.Err, "could not get task %q", s.task.ID)
 		}
 
-		if t.State == "Stopped" || t.State == "Disabled" {
+		if t.State == "Ended" || t.State == "Stopped" || t.State == "Disabled" {
 			return nil
 		}
 
