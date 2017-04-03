@@ -164,6 +164,27 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		}
 	}()
 
+	// Best effort potential way to check if binary is started properly.
+	time.Sleep(100 * time.Millisecond)
+	if taskHandle.Status() == TERMINATED {
+		exitCode, err := taskHandle.ExitCode()
+		if err != nil {
+			// Something really wrong happened, print error message + logs
+			log.Errorf("task %q launched on local executor failed, cannot get exit code: %s", command, err.Error())
+			logOutput(taskHandle)
+			return nil, errors.Errorf("task %q launched on local executor failed, cannot get exit code: %s", command, err.Error())
+		}
+		if exitCode != 0 {
+			// Task failed, log.Error exit code & stdout/err
+			log.Errorf("task %q launched on local executor failed: exit code %d", command, exitCode)
+			logOutput(taskHandle)
+			return nil, errors.Errorf("task %q launched on local executor failed exit code %d", command, exitCode)
+		} else {
+			log.Debugf("task %q launched on local executor has ended successfully", command)
+			return taskHandle, nil
+		}
+	}
+
 	return taskHandle, nil
 }
 

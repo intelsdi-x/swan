@@ -354,12 +354,27 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 	select {
 	case <-taskWatcher.started:
-		// Pod succesfully started.
+		// Pod successfully started.
+		return taskHandle, nil
 	case <-taskWatcher.stopped:
 		// Pod stopped for some reason (might be failure or success depending on expected pod lifetime)
+		exitCode, err := taskHandle.ExitCode()
+		if err != nil {
+			// Something really wrong happened, print error message + logs
+			log.Errorf("task %q launched on kubernetes executor failed, cannot get exit code: %s", command, err.Error())
+			logOutput(taskHandle)
+			return nil, errors.Errorf("task %q launched on kubernetes executor failed, cannot get exit code: %s", command, err.Error())
+		}
+		if exitCode != 0 {
+			// Task failed, log.Error exit code & stdout/err
+			log.Errorf("task %q launched on kubernetes executor failed: exit code %d", command, exitCode)
+			logOutput(taskHandle)
+			return nil, errors.Errorf("task %q launched on kubernetes executor failed exit code %d", command, exitCode)
+		} else {
+			log.Debugf("task %q launched on kubernetes executor has ended successfully", command)
+			return taskHandle, nil
+		}
 	}
-
-	return taskHandle, nil
 }
 
 // k8sTaskHandle implements the TaskHandle interface
