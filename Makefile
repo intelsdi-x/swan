@@ -1,10 +1,11 @@
 .PHONY: build
+SHELL := /bin/bash
 
 # Place for custom options for test commands.
 TEST_OPT?=
 
 # for compatibility purposes.
-integration_test: show_env restart_snap deps build dist install test_integration
+integration_test: show_env restart_snap deps build dist install snap_master test_integration
 unit_test: deps test_unit
 
 build: build_swan build_plugins
@@ -30,6 +31,15 @@ deps: glide
 	go get github.com/alecthomas/gometalinter
 	go get github.com/stretchr/testify
 	gometalinter --install
+
+# TODO: (wborkows): remove this target after SCE-889 fix
+snap_master:
+	sudo systemctl stop snap-telemetry
+	cd ${GOPATH}/src/github.com/intelsdi-x/swan/vendor/github.com/intelsdi-x/snap && $(MAKE)
+	sudo cp ${GOPATH}/src/github.com/intelsdi-x/swan/vendor/github.com/intelsdi-x/snap/build/linux/x86_64/snapteld /opt/snap/sbin/
+	sudo systemctl start snap-telemetry
+	cd ${GOPATH}/src/github.com/intelsdi-x/swan/
+	#
 
 build_plugins:
 	mkdir -p build/plugins
