@@ -24,10 +24,12 @@ func checkIfProcessFailedToExecute(command string, executorName string, handle T
 			log.Errorf("task %q launched on %q failed: exit code %d", command, executorName, exitCode)
 			logOutput(handle)
 			return nil, errors.Errorf("task %q launched on %q failed exit code %d", command, executorName, exitCode)
-		} else {
-			log.Debugf("task %q launched on %q has ended successfully", command, executorName)
-			return handle, nil
 		}
+
+		// Exit code is zero, so task ended successfully.
+		log.Debugf("task %q launched on %q has ended successfully", command, executorName)
+		return handle, nil
 	}
+
 	return handle, nil
 }
