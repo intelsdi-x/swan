@@ -6,7 +6,7 @@ Sensitivity Profile Experiment could be run in two modes:
 1. Standalone - Swan runs all binaries as subprocesses.
 1. Kubernetes - Swan runs exercised workloads as Kubernetes Pods.
 
-The main difference between these two, is the fact that in Kubernetes mode user can see interferences invoked by Kubelet and Docker and compare them with Standalone mode. Also, standalone mode only requires workload binaries to be available in `$PATH` which makes it a little bit easier to start than Kubernetes one.
+The main difference between these two, is the fact that in Kubernetes mode user can see interferences invoked by Kubelet and Docker and compare them with Standalone mode. Also, standalone mode only requires workload binaries to be available in directories listed in `$PATH` which makes it a little bit easier to start than Kubernetes one.
 
 Flags required for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
  
@@ -86,7 +86,7 @@ Binaries should be installed on those machines as stated in [Installation](insta
 Key based ssh authorization for user `root` is required from the swan host to the mutilate hosts.
 
 
-In this example, target host has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description above, this leaves 4 threads and logical cores for memcached.
+In this example, target host has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showned in [Theory](theory.md) section, this leaves 4 threads and logical cores for memcached.
 Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (the calculations are provided in [Tuning Mutilate](tuning.md#Mutilate-Tuning) section). 
 
 ```bash
