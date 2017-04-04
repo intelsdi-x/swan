@@ -45,14 +45,14 @@ func logOutput(th TaskHandle) error {
 }
 
 // Service is a decorator and TaskHandle implementation that should be used with tasks that do not stop on their own.
-type service struct {
+type ServiceHandle struct {
 	TaskHandle
 }
 
 // Stop implements TaskHandle interface.
-func (s service) Stop() error {
+func (s ServiceHandle) Stop() error {
 	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Stop(): service terminated prematurely")
+		logrus.Errorf("Stop(): ServiceHandle terminated prematurely")
 		logOutput(s.TaskHandle)
 		return ErrServiceStopped
 	}
@@ -61,9 +61,9 @@ func (s service) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (s service) Wait(duration time.Duration) bool {
+func (s ServiceHandle) Wait(duration time.Duration) bool {
 	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Wait(): service terminated prematurely")
+		logrus.Errorf("Wait(): ServiceHandle terminated prematurely")
 		logOutput(s.TaskHandle)
 	}
 
@@ -93,7 +93,7 @@ func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 		return nil, err
 	}
 
-	return &service{th}, nil
+	return &ServiceHandle{th}, nil
 }
 
 // Name implements Launcher interface.
