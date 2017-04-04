@@ -44,7 +44,16 @@ func logOutput(th TaskHandle) error {
 
 }
 
-// Service is a decorator and TaskHandle implementation that should be used with tasks that do not stop on their own.
+/**
+ServiceLauncher and ServiceHandle are wrappers that could be used on Launcher and TaskHandle class.
+User should use them to state intent that these processes should not stop without
+explicit `Stop()` or `Wait()` invoked on TaskHandle.
+
+If process would stop on it's own, the Stop() and Wait() functions will return error
+and process logs will be available on experiment log stream.
+*/
+
+// ServiceHandle is a decorator and TaskHandle implementation that should be used with tasks that do not stop on their own.
 type ServiceHandle struct {
 	TaskHandle
 }
