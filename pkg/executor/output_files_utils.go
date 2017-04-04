@@ -1,8 +1,10 @@
 package executor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -107,4 +109,42 @@ func removeDirectory(directory string) error {
 		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
 	}
 	return nil
+}
+
+func logOutput(th TaskHandle) error {
+	lines := LogLinesCount.Value()
+	file, err := th.StdoutFile()
+	if err == nil {
+		stdout, err := tailFile(file.Name(), lines)
+		if err != nil {
+			log.Errorf("Tailing stdout file failed: %q", err.Error())
+		}
+		log.Errorf("Last %d lines of stdout: %s", lines, stdout)
+	} else {
+		log.Errorf("Impossible to retrieve stdout file: %q", err.Error())
+	}
+	file, err = th.StderrFile()
+	if err == nil {
+		stderr, err := tailFile(file.Name(), lines)
+		if err != nil {
+			log.Errorf("Tailing stderr file failed: %q", err.Error())
+		}
+
+		log.Errorf("Last %d lines of stderr: %s", lines, stderr)
+	} else {
+		log.Errorf("Impossible to retrieve stderr file: %q", err.Error())
+	}
+
+	return nil
+}
+
+func tailFile(filePath string, lineCount int) (tail string, err error) {
+	lineCountParam := fmt.Sprintf("-n %d", lineCount)
+	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
+
+	if err != nil {
+		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
+	}
+
+	return string(output), nil
 }
