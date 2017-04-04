@@ -198,7 +198,8 @@ func (m mutilate) runRemoteAgents() ([]executor.TaskHandle, error) {
 			}
 			return nil, err
 		}
-		handles = append(handles, handle)
+		serviceHandle := executor.ServiceHandle{TaskHandle: handle}
+		handles = append(handles, serviceHandle)
 	}
 
 	return handles, nil

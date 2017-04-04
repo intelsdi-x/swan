@@ -77,7 +77,7 @@ func TestServiceTaskHandle(t *testing.T) {
 			os.Remove(output.Name())
 		})
 
-		s := service{stoppedTaskHandle{output: output}}
+		s := ServiceHandle{stoppedTaskHandle{output: output}}
 
 		success := s.Wait(0)
 		So(success, ShouldBeFalse)
@@ -86,21 +86,21 @@ func TestServiceTaskHandle(t *testing.T) {
 	})
 
 	Convey("Calling Stop() on running task should succeed", t, func() {
-		s := service{runningTaskHandle{}}
+		s := ServiceHandle{runningTaskHandle{}}
 
 		err := s.Stop()
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Calling Wait() on running task should succeed", t, func() {
-		s := service{runningTaskHandle{}}
+		s := ServiceHandle{runningTaskHandle{}}
 
 		status := s.Wait(0)
 		So(status, ShouldBeTrue)
 	})
 
 	Convey("Calling Stop() on running task should fail if embedded TaskHandle.Stop() fails", t, func() {
-		s := service{erroneousTaskHandle{}}
+		s := ServiceHandle{erroneousTaskHandle{}}
 
 		err := s.Stop()
 		So(err, ShouldEqual, errStopFailed)
