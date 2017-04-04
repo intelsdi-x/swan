@@ -166,12 +166,14 @@ func (s *MutilateTestSuite) TestClusterMutilateTuning() {
 
 	s.mExecutorForAgent1.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil)
 	s.mAgentHandle1.On("Address").Return("255.255.255.001").Times(numberOfConveys)
+	s.mAgentHandle1.On("Status").Return(executor.RUNNING)
 	// Those function shouldn't be called in normal execution path
 	s.mAgentHandle1.On("Stop").Return(nil).Times(0)
 	s.mAgentHandle1.On("EraseOutput").Return(nil).Times(0)
 
 	s.mExecutorForAgent2.On("Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil)
 	s.mAgentHandle2.On("Address").Return("255.255.255.002").Times(numberOfConveys)
+	s.mAgentHandle2.On("Status").Return(executor.RUNNING)
 	// Those function shouldn't be called in normal execution path
 	s.mAgentHandle2.On("Stop").Return(nil).Times(0)
 	s.mAgentHandle2.On("EraseOutput").Return(nil).Times(0)
@@ -237,12 +239,14 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 			s.mAgentHandle1.On("Address").Return("255.255.255.001").Once()
 			s.mAgentHandle1.On("Stop").Return(nil).Once()
 			s.mAgentHandle1.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle1.On("Status").Return(executor.RUNNING)
 
 			s.mExecutorForAgent2.On(
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil).Once()
 			s.mAgentHandle2.On("Address").Return("255.255.255.002").Once()
 			s.mAgentHandle2.On("Stop").Return(nil).Once()
 			s.mAgentHandle2.On("EraseOutput").Return(nil).Once()
+			s.mAgentHandle2.On("Status").Return(executor.RUNNING)
 
 			_, _, err := mutilate.Tune(s.defaultSlo)
 			So(err, ShouldNotBeNil)
