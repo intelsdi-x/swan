@@ -196,7 +196,7 @@ func (s *Session) Wait() error {
 			return errors.Wrapf(t.Err, "getting task %q failed", s.task.ID)
 		}
 
-		if t.State == "Disabled" {
+		if t.State == "Disabled" || t.State == "Stopped" {
 			return errors.Errorf("failed to wait for task: task %q is in state %q (last failure: %q)",
 				s.task.ID,
 				t.State,
@@ -204,7 +204,7 @@ func (s *Session) Wait() error {
 
 		}
 
-		if t.State == "Ended" || t.State == "Stopped" {
+		if t.State == "Ended" {
 			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
