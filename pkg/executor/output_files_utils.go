@@ -9,9 +9,13 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
+
+// LogLinesCount is the number of lines printed from stderr & stdout in case of task failure.
+var LogLinesCount = conf.NewIntFlag("output_lines_count", "Number of lines printed from stderr & stdout in case of task unsucessful termination", 5)
 
 const outputFilePrivileges = os.FileMode(0644)
 

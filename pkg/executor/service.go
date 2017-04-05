@@ -5,16 +5,12 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
 )
 
 var (
 	// ErrServiceStopped indicates that task supposed to run endlessly stopped unexpectedly.
 	ErrServiceStopped = errors.New("Task is not running")
-
-	// LogLinesCount is the number of lines printed from stderr & stdout in case of task failure.
-	LogLinesCount = conf.NewIntFlag("output_lines_count", "Number of lines printed from stderr & stdout in case of task unsucessful termination", 5)
 )
 
 /**
