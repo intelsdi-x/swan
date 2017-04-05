@@ -14,7 +14,6 @@ import:
   - scheduler/wmap
 - package: github.com/montanaflynn/stats
   version: ~0.2.0
-- package: github.com/nu7hatch/gouuid
 - package: github.com/pkg/errors
   version: ~0.8.0
 - package: github.com/smartystreets/goconvey
