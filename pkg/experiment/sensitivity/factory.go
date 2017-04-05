@@ -26,6 +26,9 @@ var (
 	// Aggressors flag.
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
+
+	decorateAggressorsWithServiceLauncher = conf.NewBoolFlag(
+		"debug_aggressor_in_service_launcher", "Debug only: aggressors are wrapped in Service flags. Default should not be changed", true)
 )
 
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
@@ -120,6 +123,10 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = stream.New(exec, stream.DefaultConfig())
 	default:
 		return nil, errors.Errorf("aggressor %q not found", name)
+	}
+
+	if decorateAggressorsWithServiceLauncher.Value() {
+		aggressor = executor.ServiceLauncher{Launcher: aggressor}
 	}
 
 	return aggressor, nil
