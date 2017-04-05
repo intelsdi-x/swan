@@ -354,12 +354,14 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 	select {
 	case <-taskWatcher.started:
-		// Pod successfully started.
-		return taskHandle, nil
+		break
 	case <-taskWatcher.stopped:
-		// Pod stopped for some reason (might be failure or success depending on expected pod lifetime)
-		return checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
+		break
 	}
+
+	// Best effort potential way to check if binary is started properly.
+	taskHandle.Wait(100 * time.Millisecond)
+	return checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
 }
 
 // k8sTaskHandle implements the TaskHandle interface

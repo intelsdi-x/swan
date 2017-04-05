@@ -127,44 +127,8 @@ func testExecutor(t *testing.T, executor Executor) {
 
 	Convey("When command which does not exists is executed", func() {
 		taskHandle, err := executor.Execute("/bin/sh -c commandThatDoesNotExists")
-		So(err, ShouldBeNil)
-
-		defer StopAndEraseOutput(taskHandle)
-
-		Convey("When we wait for the task to terminate and the exit status should be 127", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
-
-			taskState := taskHandle.Status()
-
-			So(taskState, ShouldEqual, TERMINATED)
-
-			exitcode, err := taskHandle.ExitCode()
-
-			So(err, ShouldBeNil)
-			So(exitcode, ShouldEqual, 127)
-		})
-
-		Convey("And the eraseOutput should clean the stderr file", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
-			taskState := taskHandle.Status()
-			So(taskState, ShouldEqual, TERMINATED)
-
-			stderrFile, err := taskHandle.StderrFile()
-			So(err, ShouldBeNil)
-
-			Convey("Before eraseOutput file should exist", func() {
-				_, statErr := os.Stat(stderrFile.Name())
-				So(statErr, ShouldBeNil)
-			})
-
-			err = taskHandle.EraseOutput()
-			So(err, ShouldBeNil)
-
-			Convey("After eraseOutput file should not exist", func() {
-				_, statErr := os.Stat(stderrFile.Name())
-				So(statErr, ShouldNotBeNil)
-			})
-		})
+		So(err, ShouldNotBeNil)
+		So(taskHandle, ShouldBeNil)
 	})
 
 	Convey("When we execute two tasks in the same time", func() {
