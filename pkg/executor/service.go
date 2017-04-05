@@ -105,7 +105,7 @@ func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 	return &ServiceHandle{th}, nil
 }
 
-// Name implements Launcher interface.
+// Name returns name of underlying Launcher.
 func (sl ServiceLauncher) Name() string {
-	return fmt.Sprintf("Service: %q", sl.Launcher.Name())
+	return sl.Launcher.Name()
 }
