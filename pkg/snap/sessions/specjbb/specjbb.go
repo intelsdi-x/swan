@@ -19,6 +19,7 @@ func DefaultConfig() Config {
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
 		Publisher:       publisher,
+		Count:		 1,
 	}
 }
 
@@ -27,6 +28,7 @@ type Config struct {
 	SnapteldAddress string
 	Publisher       *wmap.PublishWorkflowMapNode
 	Interval        time.Duration
+	Count		uint
 }
 
 // SessionLauncher configures & launches snap workflow for gathering
@@ -75,6 +77,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 				"/intel/swan/specjbb/*/issued_requests",
 			},
 			config.Interval,
+			config.Count,
 			snapClient,
 			config.Publisher,
 		),

@@ -68,6 +68,7 @@ func TestSnap(t *testing.T) {
 							"swan-test-dummy",
 							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 							1*time.Second,
+							1,
 							c,
 							publisher,
 						)
@@ -88,9 +89,11 @@ func TestSnap(t *testing.T) {
 
 							err = s.Wait()
 							So(err, ShouldBeNil)
+							Convey("Task is ended, only running tasks can be stopped", func() {
+								err = s.Stop()
+								So(err, ShouldNotBeNil)
+							})
 
-							err = s.Stop()
-							So(err, ShouldBeNil)
 							So(s.IsRunning(), ShouldBeFalse)
 						})
 					})

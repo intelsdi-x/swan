@@ -91,6 +91,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		"swan-test-cassandra-publisher-session",
 		[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 		1*time.Second,
+		1,
 		snapClient,
 		cassandraPublisher)
 
@@ -99,16 +100,13 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		experiment.PhaseKey, "example-phase",
 		experiment.RepetitionKey, 42)
 
-	err = snapSession.Start(tags)
-	if err != nil {
+	if err = snapSession.Start(tags); err != nil {
 		return fmt.Errorf("snap session start failed: %s", err.Error())
 	}
 
-	snapSession.Wait()
-	err = snapSession.Stop()
-	if err != nil {
+	if err = snapSession.Wait(); err != nil {
 		return fmt.Errorf("snap session stop failed: %s", err.Error())
 	}
 
-	return err
+	return
 }

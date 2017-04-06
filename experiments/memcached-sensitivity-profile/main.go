@@ -243,11 +243,7 @@ func main() {
 					if err != nil {
 						return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
 					}
-					defer func() {
-						// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
-						time.Sleep(5 * time.Second)
-						snapHandle.Stop()
-					}()
+					defer snapHandle.Stop()
 
 					exitCode, err := loadGeneratorHandle.ExitCode()
 					if exitCode != 0 {
