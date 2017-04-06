@@ -8,7 +8,7 @@ You can specify two executors:
 ## Prerequisites
 
 - See installation instructions.
-e
+
 ## Note:
 
 It is recommended to use 2 machines. It is important for
