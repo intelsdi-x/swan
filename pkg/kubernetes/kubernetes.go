@@ -12,7 +12,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
 	"github.com/intelsdi-x/swan/pkg/utils/random"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -97,16 +97,11 @@ func (c *Config) GetKubeAPIAddress() string {
 }
 
 // UniqueConfig is a constructor for Config with default parameters and random ports and random etcd prefix.
-func UniqueConfig() (Config, error) {
+func UniqueConfig() Config {
 	config := DefaultConfig()
 	// Create unique etcd prefix to avoid interference with any parallel tests which use same
 	// etcd cluster.
-	etcdPrefix, err := uuid.NewV4()
-	if err != nil {
-		return Config{}, errors.Wrap(err, "cannot create random etcd prefix")
-	}
-	ETCDPrefix := path.Join("/swan/", etcdPrefix.String())
-	config.EtcdPrefix = ETCDPrefix
+	config.EtcdPrefix = path.Join("/swan/", uuid.New())
 
 	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 	// assign a collection of ports to the services. Eventhough previous kubernetes processes
@@ -118,7 +113,7 @@ func UniqueConfig() (Config, error) {
 	config.KubeSchedulerPort = ports[3]
 	config.KubeProxyPort = ports[4]
 
-	return config, nil
+	return config
 }
 
 // Type used for UT mocking purposes.

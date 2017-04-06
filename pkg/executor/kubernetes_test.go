@@ -65,16 +65,14 @@ func TestKubernetes(t *testing.T) {
 
 		Convey("have desired name", func() {
 			podExecutor := &k8s{KubernetesConfig{PodName: "foo"}, nil}
-			name, err := podExecutor.generatePodName()
-			So(err, ShouldBeNil)
+			name := podExecutor.generatePodName()
 			So(name, ShouldEqual, "foo")
 
 		})
 
 		Convey("have desired prefix", func() {
 			podExecutor := &k8s{KubernetesConfig{PodNamePrefix: "foo"}, nil}
-			name, err := podExecutor.generatePodName()
-			So(err, ShouldBeNil)
+			name := podExecutor.generatePodName()
 			So(name, ShouldStartWith, "foo-")
 
 		})
@@ -82,21 +80,21 @@ func TestKubernetes(t *testing.T) {
 		Convey("with default config", func() {
 
 			podExecutor := &k8s{DefaultKubernetesConfig(), nil}
-			names := make(map[string]struct{})
 
 			Convey("have default prefix", func() {
-				name, err := podExecutor.generatePodName()
-				So(err, ShouldBeNil)
+				name := podExecutor.generatePodName()
 				So(name, ShouldStartWith, "swan-")
 			})
 
 			Convey("are unique", func() {
+				names := make(map[string]struct{})
 				N := 1000
 				for i := 0; i < N; i++ {
-					name, err := podExecutor.generatePodName()
-					So(err, ShouldBeNil)
+					name := podExecutor.generatePodName()
 					names[name] = struct{}{}
 				}
+				// Print(len(names))
+				Print(names)
 				So(names, ShouldHaveLength, N)
 			})
 		})
