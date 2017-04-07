@@ -7,12 +7,12 @@ To get insight into some of these, please refer to [Kozyrakis, Jacob Leverich Ch
 
 Much of the configuration guidelines here are targeted eliminating as many of these (unintentional) sources of interference as possible.
 
-Swan has built in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
+Swan has built-in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
 However, Swan needs some input from the user about the environment to adjust these. The sections below will go over the recommended settings.
 
 ### CPU Cores Isolation
 
-To give idea why and how to isolate tasks please take a first at simplified graph showing CPU architecture. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In the Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
+To give idea why and how to isolate tasks, first please take a look at simplified graph showing CPU topology. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In the Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
 
 ![Cache topology](../../../docs/cpu_topo.png)
 

@@ -215,10 +215,6 @@ SWAN_CAFFE_PATH=caffe.sh
 # Default: examples/cifar10/cifar10_quick_train_test.prototxt
 SWAN_CAFFE_MODEL=examples/cifar10/cifar10_quick_train_test.prototxt
 
-# Path to trained model
-# Default: examples/cifar10/cifar10_quick_train_test.prototxt
-SWAN_CAFFE_MODEL=examples/cifar10/cifar10_quick_train_test.prototxt
-
 # Path to trained weight
 # Default: examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5
 SWAN_CAFFE_WEIGHTS=examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5

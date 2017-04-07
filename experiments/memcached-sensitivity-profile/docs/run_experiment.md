@@ -1,12 +1,12 @@
 
 # Running the Experiment
 
-Sensitivity Profile Experiment could be run in two modes:
+The Sensitivity Profile Experiment can be run in two modes:
 
 1. Standalone - Swan runs all binaries as subprocesses.
 1. Kubernetes - Swan runs exercised workloads as Kubernetes Pods.
 
-The main difference between these two, is the fact that in Kubernetes mode user can see interferences invoked by Kubelet and Docker and compare them with Standalone mode. Also, standalone mode only requires workload binaries to be available in directories listed in `$PATH` which makes it a little bit easier to start than Kubernetes one.
+The main difference between these two, is the fact that in Kubernetes mode user can see interferences from Kubelet and Docker and compare them with Standalone mode. Also, standalone mode only requires workload binaries to be available in directories listed in `$PATH` which makes it a little bit easier to start than Kubernetes one.
 
 Flags required for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
  
@@ -14,19 +14,19 @@ To run experiment, please use `isolate-pid.sh` script that would run the binary 
 
 ```
 ./isolate-pid.sh memcached-sensitivity-profile
-````
+```
  
 ## Swan Flags
 
-Swan exposes multitude of flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -help`. To facilitate experiment preparation, we have added a "config dump" option (`memcached-sensitivity-profile -config-dump`) that could be saved to file and be used to launch experiment. An example config dump is located in [Config Dump Example](config_dump_example.md).
+Swan exposes a multitude of flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -help`. To facilitate experiment preparation, we have added a "config dump" option (`memcached-sensitivity-profile -config-dump`) that could be saved to file and be used to launch experiment. An example config dump is located in [Config Dump Example](config_dump_example.md).
 
 To facilitate experiment instrumentation, the most important Swan are listed in [Swan Flags](swan_flags.md) page.
  
-Parameter flags are can be used interchangeably with environment variables, but parameter takes precedence before environment var.
+Parameter flags can be used interchangeably with environment variables. Parameter takes precedence before environment variable.
 
 ## Experiment Run
 
-First, make sure no memcached instances or aggressors are running on the host before starting any experiments:
+First, make sure no other memcached instances or aggressors are running on the host before starting any experiments:
 ```bash
 $ killall memcached
 $ killall mutilate
@@ -37,17 +37,17 @@ $ killall stream
 $ killall membw
 ```
 
-You can list the available command line flags by running the profile binary with `--help`:
+You can list the available command line flags by running the profile binary with `-help`:
 
 ```bash
 $ make build
-$ ./build/experiments/memcached/memcached-sensitivity-profile --help
+$ ./build/experiments/memcached/memcached-sensitivity-profile -help
 ```
 
 You can start an experiment by rerunning the binary with the flags appended. For example, to change the number of cores for memcached:
 
 ```bash
-$ ./build/experiments/memcached/memcached-sensitivity-profile --hp_cpus=4
+$ ./build/experiments/memcached/memcached-sensitivity-profile -hp_cpus=4
 ```
 
 Alternatively, you can set the option through environment variables. This tend to be useful when setting many options.
@@ -61,10 +61,10 @@ $ ./build/experiments/memcached/memcached-sensitivity-profile
 If you want to change the verbosity of the output, you can choose a more detailed log level:
 
 ```bash
-$ ./build/experiments/memcached/memcached-sensitivity-profile --log=debug
+$ ./build/experiments/memcached/memcached-sensitivity-profile -log=debug
 ```
 
-When the experiment has started, you should see a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` which will be the identifier for this experiment and be the way to get hold of the experiment data.
+When the experiment has started, you should see an [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` which will be the identifier for this experiment and be the way to get hold of the experiment data.
 
 ### Example configuration
 
@@ -72,21 +72,20 @@ Below is an example configuration using environment variables to set up the expe
 
 |   Machine     |                  Role                  |
 |---------------|----------------------------------------|
-| 192.168.10.9  | Target host running Snap and Swan      |
-| 192.168.10.1  | Mutilate master host                   |
-| 192.168.10.3  | Mutilate agent host #1                 |
-| 192.168.10.4  | Mutilate agent host #2                 |
-| 192.168.10.5  | Mutilate agent host #3                 |
-| 192.168.10.6  | Mutilate agent host #4                 |
-| 192.168.10.10 | Service host running Cassandra         |
+| 192.168.10.9  | SUT node for Swan Experiment           |
+| 192.168.10.3  | Load Generator agent node #1           |
+| 192.168.10.4  | Load Generator agent node #2           |
+| 192.168.10.5  | Load Generator agent node #3           |
+| 192.168.10.6  | Load Generator agent node #4           |
+| 192.168.10.10 | Services node                          |
 
 Binaries should be installed on those machines as stated in [Installation](installation.md) guide. 
 
-`memcached-sensitivity-profile` must be launched on the swan host by a privileged user.
-Key based ssh authorization for user `root` is required from the swan host to the mutilate hosts.
+`memcached-sensitivity-profile` must be launched on the SUT node by a privileged user.
+Key based ssh authorization for user `root` is required from the SUT node to the Load Generator nodes.
 
 
-In this example, target host has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showned in [Theory](theory.md) section, this leaves 4 threads and logical cores for memcached.
+In this example, SUT node has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showed in [Theory](theory.md) section, this leaves 4 threads and logical cores for memcached.
 Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (the calculations are provided in [Tuning Mutilate](tuning.md#Mutilate-Tuning) section). 
 
 ```bash
@@ -106,7 +105,7 @@ export SWAN_MEMCACHED_CONNECTIONS=16000
 ## --- mutilate configuration ---
 # master
 export SWAN_MUTILATE_PATH=/usr/local/bin/mutilate
-export SWAN_MUTILATE_MASTER=192.168.10.1
+export SWAN_MUTILATE_MASTER=192.168.10.10
 export SWAN_MUTILATE_MASTER_THREADS=4
 export SWAN_MUTILATE_MASTER_CONNECTIONS=4
 export SWAN_MUTILATE_MASTER_CONNECTIONS_DEPTH=4
@@ -141,9 +140,9 @@ export SWAN_SNAP_CASSANDRA_PLUGIN_PATH=$GOPATH/bin/snap-plugin-publisher-cassand
 
 Before running `memcached-sensitivity-profile` please ensure that
 * Cassandra is up and running on the cassandra host
-* Snapteld is running on swan host
+* Snapteld is running on SUT
 * Mutilate binary is copied to proper location on mutilate hosts
-* From swan host privileged user can ssh to mutilate hosts using keys authorization.
+* From SUT node, a privileged user can connect via ssh to Load Generator nodes using keys authorization.
 
 If everything is up and ready then simply launch
 ```
@@ -154,15 +153,14 @@ and explore the data.
 
 ## Explore Experiment Data (Sensitivity Profile)
 
-While the experiment is running, you can access the experiment data in Cassandra.
-Swan ships with a Jupyter setup which provides an environment for loading the samples and generating sensitivity profiles.
-For instructions on how to run Jupyter, please refer to the [Jupyter user guide](../../scripts/jupyter/README.md).
+When the experiment is complete, the experiment data can be retrieved from Cassandra.
+Swan ships with a Jupyter Notbook which provides an environment for loading the samples and generating sensitivity profiles.
+For instructions on how to run Jupyter Notebook, please refer to the [Jupyter user guide](../../../jupyter/README.md).
 
 A few pointers to validate the experiment data:
 
  - Baseline measurements should not violate SLO at any load point.
- - At low loads, don't worry - numbers may not differ for baseline and co-located scenarios. The differences should be in _when_ you see saturation. For the co-located scenarios, this should become evident at higher loads.
- - Verify the achieved load. If mutilate has been misconfigured or is overloading memcached, the target QPS may divert significantly from the actual QPS.
+ - At low loads - numbers may not differ for baseline and co-located scenarios. The differences should be in _when_ the saturation occurs. For the co-located scenarios, this should become evident at higher loads. If this does not occur, it might mean that Memcached has not been properly baselined.
 
 Below is an example of the sensitivity profile could be:
 

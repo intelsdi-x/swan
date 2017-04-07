@@ -14,8 +14,8 @@ SWAN_LOG=error
 
 These flags control running the experiment workloads on Kubernetes cluster. By default, Swan will run workloads in standalone mode (pure processes).
 
-1. `SWAN_KUBERNETES=true` flag enters "Kubernetes mode". Swan will launch Kubernetes cluster (kubelet+apiserver+proxy+controller+scheduler) and launch workloads as Kubernetes pods.
-1. `SWAN_KUBERNETES_RUN_ON_EXISTING=true` flag will run workloads on cluster provided by user and Swan won't launch it's own cluster. Requires `--kubernetes` flag 
+1. `SWAN_KUBERNETES=true`: Encodes "Kubernetes mode". Swan will launch Kubernetes cluster (kubelet+apiserver+proxy+controller+scheduler) and launch workloads as Kubernetes pods.
+1. `SWAN_KUBERNETES_RUN_ON_EXISTING=true': Runs workloads on cluster provided by user and Swan won't launch it's own cluster. Requires `--kubernetes` flag. Any additional configuration can be provided by `SWAN_KUBERNETES_KUBECONFIG` flag.
 1. `SWAN_KUBERNETES_KUBECONFIG`: If launching pods on user-provided cluster requires additional parameters not exposed via flags, user can provide Kubeconfig file. Kubeconfig documentation is provided [here](https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/).
 
 
@@ -24,22 +24,22 @@ These flags control running the experiment workloads on Kubernetes cluster. By d
 # Default: false
 SWAN_KUBERNETES=false
 
-# Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)
+# Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag).
 # Default: false
 SWAN_KUBERNETES_RUN_ON_EXISTING=false
 
-# absolute path to the kubeconfig file
+# Absolute path to the kubeconfig file.
 SWAN_KUBERNETES_KUBECONFIG=
 
-# run experiment pods in selected namespaces
+# Run experiment pods in selected namespaces.
 # Default: default
 SWAN_KUBERNETES_NAMESPACE=default
 
-# run experiment pods on selected node
+# Run experiment pods on selected node.
 # Default: localhost
 SWAN_KUBERNETES_NODENAME=localhost
 
-# Comma seperated list of etcd servers (full URI: http://ip:port)
+# Comma seperated list of etcd servers in http://ip:port format.
 # Default: http://127.0.0.1:2379
 SWAN_KUBE_ETCD_SERVERS=http://127.0.0.1:2379
 
@@ -48,7 +48,7 @@ SWAN_KUBE_ETCD_SERVERS=http://127.0.0.1:2379
 
 ### Memcached Flags
 
-1. `SWAN_MEMCACHED_IP`: When experiment is using external load generators, user needs to provide address of interface where Memcached will be listening to.
+1. `SWAN_MEMCACHED_IP`: When the experiment is using external load generators, the user needs to provide address of the interface where Memcached will be listening to.
 1. `SWAN_MEMCACHED_THREADS`: Number of Memcached threads. Should be equal to number of full cores provided to Memacached.
 
 ```bash
@@ -63,7 +63,7 @@ SWAN_MEMCACHED_THREADS=4
 
 ### Mutilate Flags
 
-1. `SWAN_MUTILATE_MASTER`: Host address where Mutilate master will be launched. Mutilate master is responsible for synchronising agents and measuring Memcached SLI.
+1. `SWAN_MUTILATE_MASTER`: Host address where Mutilate master will be launched. Mutilate master is responsible for synchronizing agents and measuring Memcached SLI.
 
 ```bash
 # Mutilate master host for remote executor. In case of 0 agents being specified it runs in agentless mode.Use `local` to run with local executor.
@@ -85,6 +85,7 @@ SWAN_MUTILATE_AGENT=
 ## Experiment Flags
 
 1. `SWAN_AGGR`: Comma separated list of "best effort" workloads that would be launched in colocation with Memcached.
+Aggressors available: l1d,l1i,l3d,membw,stream,caffe
 
 ```bash
 # Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)
@@ -131,10 +132,10 @@ SWAN_HP_CPUS=1
 # Default: 1
 SWAN_BE_CPUS=1
 ```
-This way, Swan will run each workload on specific core count. User can expect, that L1 cache aggressors will be run on Memacahed workload Hyperthreads, and LLC & Stream aggressors will be launch on different physical cores.
+This way, Swan will run each workload on specific core count. User can expect, that L1 cache aggressors will be run on Memacached workload Hyperthreads, and LLC & Stream aggressors will be launch on different physical cores.
 
 
-From the other hand, if user wants to handpick cores for workloads, it is possible through those flags:
+On the other hand, if user wants to handpick cores for workloads, it is possible through those flags:
 
 ```bash
 # HP cpuset policy with format 'cpuid1,cpuid2:numaid1,numaid2
@@ -152,7 +153,7 @@ The last flag is used to show workload interference when real workload is run wi
 
 ```bash
 
-# If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation
+# If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise Swan won't apply any performance isolation
 # Default: true
 SWAN_RUN_CAFFE_WITH_LLCISOLATION=true
 ```
