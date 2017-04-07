@@ -10,7 +10,6 @@ import (
 )
 
 // TestL3dataWithExecutor is an integration test with local executor
-// You should build low-level binaries from `github.com/intelsdi-x/swan/workloads/low-level-aggressors/` first
 func TestL3dataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 

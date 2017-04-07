@@ -42,7 +42,6 @@ Additionally every handler or action is protected by sync.Once to make sure that
 package executor
 
 import (
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -54,7 +53,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/k8sports"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/1.5/kubernetes"
 	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
@@ -218,19 +217,11 @@ func (k8s *k8s) Name() string {
 // this case pod spawning should fail).
 // It returns string as a Pod name which should be used or error if cannot
 // generate random suffix.
-func (k8s *k8s) generatePodName() (string, error) {
+func (k8s *k8s) generatePodName() string {
 	if k8s.config.PodName != "" {
-		return k8s.config.PodName, nil
+		return k8s.config.PodName
 	}
-
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		return "", errors.Wrapf(err, "cannot generate suffix UUID")
-	}
-	bytes := [16]byte(*uuid)
-	hex := hex.EncodeToString(bytes[:16])[:8]
-
-	return fmt.Sprintf("%s-%s", k8s.config.PodNamePrefix, hex), nil
+	return fmt.Sprintf("%s-%s", k8s.config.PodNamePrefix, uuid.New()[:8])
 }
 
 // newPod is a helper to build in-memory struture representing pod
@@ -239,10 +230,7 @@ func (k8s *k8s) generatePodName() (string, error) {
 func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 
 	resources := k8s.containerResources()
-	podName, err := k8s.generatePodName()
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot generate pod name")
-	}
+	podName := k8s.generatePodName()
 
 	var zero int64
 	return &v1.Pod{
