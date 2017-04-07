@@ -27,8 +27,8 @@ var (
 	aggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 
-	decorateAggressorsWithServiceLauncher = conf.NewBoolFlag(
-		"debug_aggressor_in_service_launcher", "Debug only: aggressors are wrapped in Service flags. Default should not be changed", true)
+	threatAggressorsAsService = conf.NewBoolFlag(
+		"deug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
 )
 
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
@@ -125,7 +125,7 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		return nil, errors.Errorf("aggressor %q not found", name)
 	}
 
-	if decorateAggressorsWithServiceLauncher.Value() {
+	if threatAggressorsAsService.Value() {
 		aggressor = executor.ServiceLauncher{Launcher: aggressor}
 	}
 
