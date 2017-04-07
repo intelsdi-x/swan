@@ -17,7 +17,7 @@ func TestStreamAggressor(t *testing.T) {
 	Convey("While using stream aggressor launcher", t, func() {
 
 		Convey("when using default configuration", func() {
-			const validCommand = "sh -c 'OMP_NUM_THREADS=0 test1'"
+			const validCommand = "env OMP_NUM_THREADS=0 test1"
 			config := DefaultConfig()
 			config.Path = "test1"
 			launcher := New(
@@ -50,7 +50,7 @@ func TestStreamAggressor(t *testing.T) {
 		})
 
 		Convey("when with configuration with threads explicitly", func() {
-			const validCommand = "sh -c 'OMP_NUM_THREADS=5 test2'"
+			const validCommand = "env OMP_NUM_THREADS=5 test2"
 			config := DefaultConfig()
 			config.Path = "test2"
 			config.NumThreads = 5
