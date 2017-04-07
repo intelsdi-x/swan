@@ -152,7 +152,7 @@ func main() {
 	}
 
 	// We need to calculate mask for all cache ways to be able to calculate non-overlapping cache partitions.
-	var wholeCacheMask uint64 = 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
+	var wholeCacheMask int = 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
 	for _, aggressorName := range aggressors {
 		logrus.Debugf("starting aggressor: %s", aggressorName)
 		for _, qps := range qpsList {
@@ -170,7 +170,7 @@ func main() {
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks
 					beCacheMask := 1<<beCacheWays - 1
-					hpCacheMask := int(wholeCacheMask &^ beCacheWays)
+					hpCacheMask := wholeCacheMask &^ beCacheMask
 
 					logrus.Debugf("Current L3 HP mask: %d, %b", hpCacheMask, hpCacheMask)
 					logrus.Debugf("Current L3 BE mask: %d, %b", beCacheMask, beCacheMask)
