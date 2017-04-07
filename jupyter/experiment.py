@@ -17,7 +17,7 @@ from cassandra.query import SimpleStatement
 from cassandra.query import named_tuple_factory, ordered_dict_factory
 
 
-pd.set_option('max_colwidth',400)
+pd.set_option('max_colwidth', 400)
 
 
 class Experiment(object):

@@ -51,9 +51,16 @@ test_lint:
 	gometalinter --config=.lint ./plugins/...
 	gometalinter --config=.lint ./integration_tests/...
 
+test_jupyter_lint:
+	sudo pip install --upgrade pep8
+	pep8 --max-line-length=120 jupyter/
+
 test_unit:
 	go test -i ./pkg/... ./plugins/...
 	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
+
+test_jupyter_unit: deps_jupyter
+	(cd jupyter; py.test)
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
 test_integration_build:
@@ -65,14 +72,10 @@ test_integration:
 
 deps_jupyter:
 	# Required for jupyter building.
-	sudo yum install -y gcc
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 e2e_test: deps_jupyter
-	(cd jupyter; py.test)
-	sudo service snapteld start
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
-	sudo service snapteld stop
 	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
 	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
