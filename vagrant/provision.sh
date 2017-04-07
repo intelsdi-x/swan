@@ -50,6 +50,7 @@ yum install -y -q \
 
 echo "developer tools & provisioning depedencies"
 yum install -y -q \
+    gcc \
     curl \
     wget \
     vim \

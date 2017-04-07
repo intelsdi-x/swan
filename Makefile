@@ -72,7 +72,6 @@ test_integration:
 
 deps_jupyter:
 	# Required for jupyter building.
-	sudo yum install -y gcc
 	(cd jupyter; sudo pip install -r requirements.txt)
 
 e2e_test: deps_jupyter
