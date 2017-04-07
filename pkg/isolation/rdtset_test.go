@@ -12,7 +12,7 @@ func TestRdtsetDecorator(t *testing.T) {
 			decorator := &Rdtset{Mask: 2047, CPURange: "0-3"}
 			command := decorator.Decorate("ls -l")
 
-			So(command, ShouldEqual, "rdtset.sh -v -c 0-3 -t 'l3=0x7ff;cpu=0-3' ls -l")
+			So(command, ShouldEqual, "rdtset -v -c 0-3 -t 'l3=0x7ff;cpu=0-3' ls -l")
 		})
 	})
 

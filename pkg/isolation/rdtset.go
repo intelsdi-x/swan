@@ -19,7 +19,7 @@ type Rdtset struct {
 
 // Decorate implements Decorator interface
 func (r Rdtset) Decorate(command string) (decorated string) {
-	decorated = fmt.Sprintf("rdtset.sh -v -c %s -t 'l3=%#x;cpu=%s' %s", r.CPURange, r.Mask, r.CPURange, command)
+	decorated = fmt.Sprintf("rdtset -v -c %s -t 'l3=%#x;cpu=%s' %s", r.CPURange, r.Mask, r.CPURange, command)
 	logrus.Debugf("Command decorated with rdtset: %s", decorated)
 
 	return
@@ -27,7 +27,7 @@ func (r Rdtset) Decorate(command string) (decorated string) {
 
 // CleanRDTAssingments cleans any existing RDT RMID's assignment.
 func CleanRDTAssingments() (string, error) {
-	cmd := exec.Command("pqos.sh", "-R")
+	cmd := exec.Command("pqos", "-R")
 	outputtedBytes, err := cmd.CombinedOutput()
 	buf := bytes.NewBuffer(outputtedBytes)
 	output := buf.String()
