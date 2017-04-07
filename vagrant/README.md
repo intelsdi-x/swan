@@ -10,7 +10,7 @@ $ vagrant box update
 $ vagrant up
 $ vagrant ssh
 > cd swan
-> make build_swan
+> make deps build dist install
 ```
 
 ## Setup
