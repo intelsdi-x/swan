@@ -31,15 +31,15 @@ type defaultTopology struct {
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {
-		llcIsolation = isolation.Taskset{BeRangeFlag.Value()}
-		l1Isolation = isolation.Taskset{BeL1RangeFlag.Value()}
-		hpIsolation = isolation.Taskset{HpRangeFlag.Value()}
+		llcIsolation = isolation.Taskset{CPUList: BeRangeFlag.Value()}
+		l1Isolation = isolation.Taskset{CPUList: BeL1RangeFlag.Value()}
+		hpIsolation = isolation.Taskset{CPUList: HpRangeFlag.Value()}
 	} else {
 		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value())
 		errutil.Check(err)
-		l1Isolation = isolation.Taskset{defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()}
-		llcIsolation = isolation.Taskset{defaultTopology.SharingLLCButNotL1Threads}
-		hpIsolation = isolation.Taskset{defaultTopology.HpThreadIDs}
+		l1Isolation = isolation.Taskset{CPUList: defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()}
+		llcIsolation = isolation.Taskset{CPUList: defaultTopology.SharingLLCButNotL1Threads}
+		hpIsolation = isolation.Taskset{CPUList: defaultTopology.HpThreadIDs}
 	}
 	return
 }

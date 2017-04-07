@@ -204,7 +204,7 @@ func main() {
 
 					// Create HP workload.
 					memcachedConfig := memcached.DefaultMemcachedConfig()
-					hpLauncher := executor.ServiceLauncher{memcached.New(hpExecutor, memcachedConfig)}
+					hpLauncher := executor.ServiceLauncher{Launcher: memcached.New(hpExecutor, memcachedConfig)}
 
 					// Create load generator.
 					loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
