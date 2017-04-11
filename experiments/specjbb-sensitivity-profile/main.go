@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/specjbb-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -18,20 +20,18 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
-	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
-
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
+	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/pkg/errors"
 )
 
 var (
-	// TxICountFlag is flag containing number of Transaction Injectors used.
-	TxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
-	specjbbIP    = conf.NewStringFlag(
-		"specjbb_loadgenerator_ip",
-		"IP of the SPECjbb Load Generator host",
-		"127.0.0.1")
+	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
+	specjbbTxICountFlag      = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
+	specjbbWorkerCountFlag   = conf.NewIntFlag(
+		"specjbb_worker_count",
+		"Number of fork join worker threads (defaults to number of logical threads)",
+		runtime.NumCPU())
 	appName = os.Args[0]
 )
 
@@ -42,41 +42,25 @@ func main() {
 	uuid := uuid.New()
 	// Create metadata associated with experiment
 	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
-	if err != nil {
-		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.Check(metadata.Connect())
 
 	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
 	fmt.Println(uuid)
 
 	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.Check(err)
+	errutil.Check(metadata.RecordFlags())
 
 	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
-	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
-
-	err = metadata.RecordPlatformMetrics()
-	if err != nil {
-		logrus.Errorf("Cannot save platform metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.Check(metadata.RecordEnv(conf.EnvironmentPrefix))
+	errutil.Check(metadata.RecordPlatformMetrics())
 
 	// Each experiment should have it's own directory to store logs and errors
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
-	if err != nil {
-		logrus.Errorf("IO error: %q", err.Error())
-		os.Exit(experiment.ExIOErr)
-	}
+	errutil.Check(err)
 
 	// Setup logging set to both output and logFile.
 	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.Debug("log level", logrus.GetLevel())
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
@@ -87,9 +71,8 @@ func main() {
 
 	// Create executor for high priority job and for aggressors. Apply isolation to high priority task.
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
-	if err != nil {
-		return
-	}
+	errutil.Check(err)
+
 	// On exit performa deferred cleanup.
 	defer func() {
 		if cleanup != nil {
@@ -102,33 +85,30 @@ func main() {
 
 	// Prepare session launchers (including Snap session if necessary) for aggressors.
 	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
-	if err != nil {
-		return
-	}
+	errutil.Check(err)
 
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
-	aggressorSessionLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, aggressorSessionLaunchers...)
+	if includeBaselinePhaseFlag.Value() {
+		aggressorSessionLaunchers = append([]sensitivity.LauncherSessionPair{{}}, aggressorSessionLaunchers...)
+	}
 
 	specjbbControllerAddress := specjbb.ControllerAddress.Value()
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
 	backendConfig := specjbb.DefaultSPECjbbBackendConfig()
 	backendConfig.JVMHeapMemoryGBs = 8
 	backendConfig.ParallelGCThreads = 4
-	backendConfig.WorkerCount = 4
+	backendConfig.WorkerCount = specjbbWorkerCountFlag.Value()
 	backendConfig.ControllerAddress = specjbbControllerAddress
 	specjbbBackendLauncher := specjbb.NewBackend(hpExecutor, backendConfig)
 
 	// Prepare load generator for hp task (in case of the specjbb it is a controller with transaction injectors).
-	specjbbLoadGenerator, err := common.PrepareSpecjbbLoadGenerator(specjbbControllerAddress, TxICountFlag.Value())
-	if err != nil {
-		return
-	}
+	specjbbLoadGenerator, err := common.PrepareSpecjbbLoadGenerator(specjbbControllerAddress, specjbbTxICountFlag.Value())
+	errutil.Check(err)
 
 	// Note: DefaultConfig shall set SnaptelAddress.
 	specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault()
-	if err != nil {
-		return
-	}
+	errutil.Check(err)
+
 	specjbbLoadGeneratorSessionPair := sensitivity.NewMonitoredLoadGenerator(specjbbLoadGenerator, specjbbSnapSession)
 
 	// Retrieve peak load from flags and overwrite it when required.
@@ -136,17 +116,11 @@ func main() {
 
 	if load == sensitivity.RunTuningPhase {
 		load, err = experiment.GetPeakLoad(specjbbBackendLauncher, specjbbLoadGeneratorSessionPair.LoadGenerator, sensitivity.SLOFlag.Value())
-		if err != nil {
-			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
-			os.Exit(experiment.ExSoftware)
-		}
+		errutil.Check(err)
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
 		logrus.Infof("Skipping tuning phase, using peakload %d", load)
 	}
-
-	// Read configuration.
-	stopOnError := sensitivity.StopOnErrorFlag.Value()
 
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	repetitions := sensitivity.RepetitionsFlag.Value()
@@ -162,11 +136,7 @@ func main() {
 		"load_duration":     loadDuration.String(),
 	}
 
-	err = metadata.RecordMap(records)
-	if err != nil {
-		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.Check(metadata.RecordMap(records))
 
 	// Iterate over aggressors
 	for _, beLauncher := range aggressorSessionLaunchers {
@@ -268,12 +238,7 @@ func main() {
 
 				// If any error was found then we should log details and terminate the experiment if stopOnError is set.
 				err = errColl.GetErrIfAny()
-				if err != nil {
-					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
-					if stopOnError {
-						os.Exit(experiment.ExSoftware)
-					}
-				}
+				errutil.Check(err)
 			} // repetition
 		} // loadpoints
 	} // aggressors
