@@ -76,7 +76,7 @@ Synthetic Aggressors are specialized programs for stressing different platform s
 | Memory bandwidth       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space" |
 | Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark. |
 
-To ensure a proper intensity of the aggressors, we recommend running same number of aggressors as memcached threads.
+To ensure a proper intensity of the aggressors, we recommend running same number of aggressors and memcached threads.
 For L1 aggressors, this means running on all logical sibling cores and one physical core per L3 aggressor.
 
 For more information, please refer to [Delimitrou, Christina, and Christos Kozyrakis. "ibench: Quantifying interference for datacenter applications." Workload Characterization (IISWC), 2013 IEEE International Symposium on. IEEE, 2013.](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf).
