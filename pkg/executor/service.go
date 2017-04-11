@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -35,11 +34,6 @@ func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 	}
 
 	return &ServiceHandle{th}, nil
-}
-
-// Name implements Launcher interface.
-func (sl ServiceLauncher) Name() string {
-	return fmt.Sprintf("Service: %q", sl.Launcher.Name())
 }
 
 // ServiceHandle is a decorator and TaskHandle implementation that should be used with tasks that do not stop on their own.
