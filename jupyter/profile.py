@@ -247,7 +247,7 @@ def compare_experiments(exps, slo=500, fill=True, to_max=True):
         print("Please install plot.ly first.")
         return
 
-    categories = ["Baseline",]
+    categories = ["Baseline", ]
     data = []
     for exp in exps:
         df = Profile(exp, slo).latency_qps_aggrs_frame

@@ -5,6 +5,7 @@ language: go
 sudo: required
 before_install:
 - sudo apt-get install bash
+- sudo apt-get install gcc
 go:
 - 1.7
 before_install:
@@ -12,6 +13,8 @@ before_install:
 env:
 - TEST_SUITE=test_lint
 - TEST_SUITE=test_unit
+- TEST_SUITE=test_jupyter_lint
+- TEST_SUITE=test_jupyter_unit
 - TEST_SUITE=test_integration_build
 before_script:
 - make deps
