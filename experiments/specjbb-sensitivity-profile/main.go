@@ -21,7 +21,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -39,21 +39,17 @@ func main() {
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	uuid := uuid.New()
 	// Create metadata associated with experiment
-	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
-	err = metadata.Connect()
+	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
+	err := metadata.Connect()
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
-	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid.String())
-	fmt.Println(uuid.String())
+	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
+	fmt.Println(uuid)
 
 	// Write configuration as metadata.
 	err = metadata.RecordFlags()
@@ -73,7 +69,7 @@ func main() {
 	}
 
 	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
@@ -205,7 +201,7 @@ func main() {
 					processes = append(processes, hpHandle)
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uuid.String(),
+						experiment.ExperimentKey, uuid,
 						experiment.PhaseKey, phaseName,
 						experiment.RepetitionKey, repetition,
 						experiment.LoadPointQPSKey, phaseQPS,

@@ -38,8 +38,7 @@ func TestSnapDockerSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		config, err := kubernetes.UniqueConfig()
-		So(err, ShouldBeNil)
+		config := kubernetes.UniqueConfig()
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)

@@ -1,15 +1,21 @@
 package executor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/pkg/errors"
 )
+
+// LogLinesCount is the number of lines printed from stderr & stdout in case of task failure.
+var LogLinesCount = conf.NewIntFlag("output_lines_count", "Number of lines printed from stderr & stdout in case of task unsucessful termination", 5)
 
 const outputFilePrivileges = os.FileMode(0644)
 
@@ -107,4 +113,42 @@ func removeDirectory(directory string) error {
 		return errors.Wrapf(err, "os.RemoveAll of directory %q failed", directory)
 	}
 	return nil
+}
+
+func logOutput(th TaskHandle) error {
+	lines := LogLinesCount.Value()
+	file, err := th.StdoutFile()
+	if err == nil {
+		stdout, err := tailFile(file.Name(), lines)
+		if err != nil {
+			log.Errorf("Tailing stdout file failed: %q", err.Error())
+		}
+		log.Errorf("Last %d lines of stdout: %s", lines, stdout)
+	} else {
+		log.Errorf("Impossible to retrieve stdout file: %q", err.Error())
+	}
+	file, err = th.StderrFile()
+	if err == nil {
+		stderr, err := tailFile(file.Name(), lines)
+		if err != nil {
+			log.Errorf("Tailing stderr file failed: %q", err.Error())
+		}
+
+		log.Errorf("Last %d lines of stderr: %s", lines, stderr)
+	} else {
+		log.Errorf("Impossible to retrieve stderr file: %q", err.Error())
+	}
+
+	return nil
+}
+
+func tailFile(filePath string, lineCount int) (tail string, err error) {
+	lineCountParam := fmt.Sprintf("-n %d", lineCount)
+	output, err := exec.Command("tail", lineCountParam, filePath).CombinedOutput()
+
+	if err != nil {
+		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
+	}
+
+	return string(output), nil
 }

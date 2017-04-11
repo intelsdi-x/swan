@@ -13,7 +13,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 )
 
 var (
@@ -47,19 +47,15 @@ func main() {
 	logrus.SetFormatter(formatter)
 
 	// Generate an experiment ID and start the metadata session.
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	uuid := uuid.New()
 
-	logrus.Info("Starting Experiment with uuid ", uuid.String())
+	logrus.Info("Starting Experiment with uuid ", uuid)
 
 	//By default print only UUID of the experiment and nothing more on the stdout
-	fmt.Println(uuid.String())
+	fmt.Println(uuid)
 
 	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
