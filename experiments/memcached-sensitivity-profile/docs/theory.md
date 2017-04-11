@@ -2,10 +2,10 @@
 
 ## Workload Interference
 
-As the experiments measures sub-millisecond response times, there are a myriad of sources of interference which silently can cause misleading measurements.
-To get insight into some of these, please refer to [Kozyrakis, Jacob Leverich Christos. "Reconciling High Server Utilization and Sub-millisecond Quality-of-Service"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.713.5120&rep=rep1&type=pdf).
+As the experiment measures sub-millisecond response times, there are a myriad of sources of interference which silently can cause misleading measurements.
+To get insight into some of these, please refer to [Christos Kozyrakis, Jacob Leverich "Reconciling High Server Utilization and Sub-millisecond Quality-of-Service"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.713.5120&rep=rep1&type=pdf).
 
-Much of the configuration guidelines here are targeted eliminating as many of these (unintentional) sources of interference as possible.
+Much of the configuration guidelines here are aimed at eliminating as many of these (unintentional) sources of interference as possible.
 
 Swan has built-in performance isolation patterns to focus aggressors on the sources of interference they are intended to stress.
 However, Swan needs some input from the user about the environment to adjust these. The sections below will go over the recommended settings.
@@ -30,7 +30,7 @@ CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE MAXMHZ    MINMHZ
 7   1    1      3    3:3:3:0       yes    4000,0000 800,0000
 
 ```
-In the exemplary output from the `lscpu -e` there is a dual socket platform with 2 physical CPUs each of which has 2 cores and *HyperThreading* enabled. Output shows that:
+In the example output from the `lscpu -e` there is a dual socket platform with 2 physical CPUs each of which has 2 cores and *HyperThreading* enabled. Output shows that:
 
 * Logical CPUs 0 and 4 are execution threads on core 0 on the socket 0
 * Logical CPUs 1 and 5 are execution threads on core 1 on the socket 0
@@ -76,7 +76,7 @@ Synthetic Aggressors are specialized programs for stressing different platform s
 | Memory bandwidth       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space" |
 | Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark. |
 
-To ensure a proper intensity of the aggressors, we recommend running as many threads of the aggressors as memcached.
+To ensure a proper intensity of the aggressors, we recommend running same number of aggressors as memcached threads.
 For L1 aggressors, this means running on all logical sibling cores and one physical core per L3 aggressor.
 
 For more information, please refer to [Delimitrou, Christina, and Christos Kozyrakis. "ibench: Quantifying interference for datacenter applications." Workload Characterization (IISWC), 2013 IEEE International Symposium on. IEEE, 2013.](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf).

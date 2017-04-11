@@ -1,8 +1,6 @@
 # Prerequisites
 
-While the experiment can be run in a developer setting from within a virtual machine or on a laptop, it is targeted for the data center environment with high bandwidth links and rich multi socket servers. Therefore further steps will assume that experiment will be run in the multi node environment.
-It can be a surprisingly tricky exercise to rule out unintended sources of interference in these experiments, so below is a guide to setting up the experiment and some guidance in how to debug a misbehaving set# Path to trained model
-
+While the experiment can be run on developer setup from within a virtual machine or on a laptop, it is targeted for the data center environment with high bandwidth links and rich multi socket servers. Therefore further steps will assume that experiment will be run in the multi node environment.
 
 ## Machine configuration
 

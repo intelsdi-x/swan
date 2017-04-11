@@ -1,10 +1,11 @@
 # Config Dump Example
 
 Sensitivity Profile Experiment has multitude of flags for fine grained experiment control. 
+To generate output like this, execute `./memcached-sensitivity-profile -config-dump` command.
 
 Most important flags with description are listed in [Run Experiment](run_experiment.md) page.
 
-```buildoutcfg
+```bash
 # Export are values.
 set -o allexport
 

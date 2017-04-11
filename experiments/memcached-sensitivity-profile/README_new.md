@@ -7,7 +7,7 @@ Swan does this by carefully controlling execution of memcached and its co-locati
 
 ![Swan diagram](../../docs/swan-arch.png)
 
-The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers _Quality of Service_ metrics like latency, so-called _Service Level Indicators_ or SLI for short, and the achieved load in terms of _Request per Second_ (RPS) or _Queries Per Second_ (QPS).
+The memcached sensitivity experiment carries out several measurements to inspect the performance of co-located workloads on a single node. The experiment exercises memcached under several conditions and gathers _Quality of Service_ metrics like latency, so-called _Service Level Indicators (SLI), and the achieved load in terms of _Request per Second_ (RPS) or _Queries Per Second_ (QPS).
 
 The conditions, currently, involve co-location of memcached with a list of specialized aggressors and one deep-learning workload.
 

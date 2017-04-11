@@ -15,7 +15,7 @@ SWAN_LOG=error
 These flags control running the experiment workloads on Kubernetes cluster. By default, Swan will run workloads in standalone mode (pure processes).
 
 1. `SWAN_KUBERNETES=true`: Encodes "Kubernetes mode". Swan will launch Kubernetes cluster (kubelet+apiserver+proxy+controller+scheduler) and launch workloads as Kubernetes pods.
-1. `SWAN_KUBERNETES_RUN_ON_EXISTING=true': Runs workloads on cluster provided by user and Swan won't launch it's own cluster. Requires `--kubernetes` flag. Any additional configuration can be provided by `SWAN_KUBERNETES_KUBECONFIG` flag.
+1. `SWAN_KUBERNETES_RUN_ON_EXISTING=true`: Runs workloads on cluster provided by user and Swan won't launch it's own cluster. Requires `--kubernetes` flag. Any additional configuration can be provided by `SWAN_KUBERNETES_KUBECONFIG` flag.
 1. `SWAN_KUBERNETES_KUBECONFIG`: If launching pods on user-provided cluster requires additional parameters not exposed via flags, user can provide Kubeconfig file. Kubeconfig documentation is provided [here](https://kubernetes.io/docs/concepts/cluster-administration/authenticate-across-clusters-kubeconfig/).
 
 
@@ -42,8 +42,8 @@ SWAN_KUBERNETES_NODENAME=localhost
 # Comma seperated list of etcd servers in http://ip:port format.
 # Default: http://127.0.0.1:2379
 SWAN_KUBE_ETCD_SERVERS=http://127.0.0.1:2379
-
 ```
+
 ## Workloads Flags
 
 ### Memcached Flags

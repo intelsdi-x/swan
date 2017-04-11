@@ -153,7 +153,7 @@ and explore the data.
 
 ## Explore Experiment Data (Sensitivity Profile)
 
-When the experiment is complete, the experiment data can be retrieved from Cassandra.
+When the experiment is complete, the results can be retrieved from Cassandra.
 Swan ships with a Jupyter Notbook which provides an environment for loading the samples and generating sensitivity profiles.
 For instructions on how to run Jupyter Notebook, please refer to the [Jupyter user guide](../../../jupyter/README.md).
 
