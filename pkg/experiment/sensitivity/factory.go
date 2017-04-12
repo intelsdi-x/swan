@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	// Aggressors flag.
-	aggressorsFlag = conf.NewSliceFlag(
+	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
+	AggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 
 	threatAggressorsAsService = conf.NewBoolFlag(
@@ -178,7 +178,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 
-	for _, aggressorName := range aggressorsFlag.Value() {
+	for _, aggressorName := range AggressorsFlag.Value() {
 		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
 		if err != nil {
 			return nil, err
