@@ -120,7 +120,7 @@ func (sl successfulLauncher) Launch() (TaskHandle, error) {
 
 // Name implements Launcher interface.
 func (sl successfulLauncher) Name() string {
-	return "My Name Is"
+	return "Underlying name"
 }
 
 type failedLauncher struct {
@@ -149,11 +149,10 @@ func TestServiceLauncher(t *testing.T) {
 		So(err, ShouldEqual, errLaunchFailed)
 	})
 
-	Convey("Launcher name should contain of embedded Launcher name and indicate that EndlessLauncher is used", t, func() {
+	Convey("Launcher name should contain of embedded Launcher name so that it is transparent", t, func() {
 		l := ServiceLauncher{successfulLauncher{}}
 
 		name := l.Name()
-		So(name, ShouldContainSubstring, "My Name Is")
-		So(name, ShouldContainSubstring, "Service")
+		So(name, ShouldEqual, "Underlying name")
 	})
 }

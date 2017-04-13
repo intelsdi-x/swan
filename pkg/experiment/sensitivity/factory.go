@@ -23,9 +23,12 @@ const (
 )
 
 var (
-	// Aggressors flag.
-	aggressorsFlag = conf.NewSliceFlag(
+	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
+	AggressorsFlag = conf.NewSliceFlag(
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
+
+	threatAggressorsAsService = conf.NewBoolFlag(
+		"deug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
 )
 
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
@@ -122,6 +125,10 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		return nil, errors.Errorf("aggressor %q not found", name)
 	}
 
+	if threatAggressorsAsService.Value() {
+		aggressor = executor.ServiceLauncher{Launcher: aggressor}
+	}
+
 	return aggressor, nil
 }
 
@@ -171,7 +178,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 	// Initialize aggressors with BE isolation wrapped as Snap session pairs.
 	aggressorFactory := NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
 
-	for _, aggressorName := range aggressorsFlag.Value() {
+	for _, aggressorName := range AggressorsFlag.Value() {
 		aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
 		if err != nil {
 			return nil, err

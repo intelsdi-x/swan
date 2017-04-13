@@ -1,20 +1,16 @@
 package: github.com/intelsdi-x/swan
 import:
 - package: github.com/Sirupsen/logrus
-  version: ~0.11.0
+  version: ~0.11.5
 - package: github.com/gocql/gocql
 - package: github.com/intelsdi-x/snap-plugin-lib-go
-  version: master
   subpackages:
   - v1/plugin
 - package: github.com/intelsdi-x/snap
-  version: ~1.0.0
+  version: ~1.2.0
   subpackages:
   - mgmt/rest/client
   - scheduler/wmap
-- package: github.com/montanaflynn/stats
-  version: ~0.2.0
-- package: github.com/nu7hatch/gouuid
 - package: github.com/pkg/errors
   version: ~0.8.0
 - package: github.com/smartystreets/goconvey
@@ -41,8 +37,7 @@ import:
   - 1.5/pkg/labels
   - 1.5/pkg/watch
   - 1.5/rest
-- package: k8s.io/kubernetes
-  version: 1.5.1
+  - 1.5/tools/clientcmd
 testImport:
 - package: github.com/pivotal-golang/bytefmt
 - package: github.com/vektra/errors

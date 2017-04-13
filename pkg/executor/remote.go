@@ -11,7 +11,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
@@ -98,13 +98,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
 	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
 
-	unshareUUIDStr := ""
-	unshareUUID, err := uuid.NewV4()
-	if err != nil {
-		unshareUUIDStr = string(time.Now().Unix())
-	} else {
-		unshareUUIDStr = unshareUUID.String()
-	}
+	unshareUUIDStr := uuid.New()
 
 	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
 	// On the server the example command will look the following:

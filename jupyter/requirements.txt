@@ -1,4 +1,5 @@
 pytest
+pep8
 cassandra-driver==3.8.1
 jupyter
 numpy==1.12.1

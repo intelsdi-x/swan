@@ -16,7 +16,6 @@ const (
 )
 
 // TestMemcachedWithExecutor is an integration test with local executor.
-// See README for setup items.
 func TestMemcachedWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 

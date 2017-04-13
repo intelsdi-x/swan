@@ -21,13 +21,12 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/nu7hatch/gouuid"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 )
 
 var (
 	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
-	mutilateWaitTimeoutFlag  = conf.NewDurationFlag("mutilate_wait_timeout", "amount of time to wait for mutilate cluster to stop", 0)
 	appName                  = os.Args[0]
 )
 
@@ -37,20 +36,17 @@ func main() {
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logrus.Errorf("Cannot generate experiment ID: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
-	metadata := experiment.NewMetadata(uuid.String(), experiment.MetadataConfigFromFlags())
-	err = metadata.Connect()
+	uuid := uuid.New()
+
+	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
+	err := metadata.Connect()
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
-	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid.String())
-	fmt.Println(uuid.String())
+	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
+	fmt.Println(uuid)
 
 	// Write configuration as metadata.
 	err = metadata.RecordFlags()
@@ -69,7 +65,7 @@ func main() {
 		os.Exit(experiment.ExSoftware)
 	}
 
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid.String(), appName)
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
 	if err != nil {
 		logrus.Errorf("IO error: %q", err.Error())
 		os.Exit(experiment.ExIOErr)
@@ -199,7 +195,7 @@ func main() {
 					}
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uuid.String(),
+						experiment.ExperimentKey, uuid,
 						experiment.PhaseKey, phaseName,
 						experiment.RepetitionKey, repetition,
 						experiment.LoadPointQPSKey, phaseQPS,
@@ -233,7 +229,7 @@ func main() {
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
-					if !loadGeneratorHandle.Wait(mutilateWaitTimeoutFlag.Value()) {
+					if !loadGeneratorHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value()) {
 						logrus.Warn("Mutilate cluster failed to stop on its own. Attempting to stop...")
 						err := loadGeneratorHandle.Stop()
 						if err != nil {
@@ -280,5 +276,5 @@ func main() {
 			}
 		}
 	}
-	logrus.Infof("Ended experiment %s with uuid %s in %s", appName, uuid.String(), time.Since(experimentStart).String())
+	logrus.Infof("Ended experiment %s with uuid %s in %s", appName, uuid, time.Since(experimentStart).String())
 }

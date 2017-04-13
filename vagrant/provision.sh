@@ -2,8 +2,8 @@ set -x -e -o pipefail
 echo "---------------------- Start provisioning (`date`)"
 
 GO_VERSION="1.7.5"
-K8S_VERSION="v1.5.1"
-SNAP_VERSION="1.1.0"
+K8S_VERSION="v1.5.6"
+SNAP_VERSION="1.2.0"
 ETCD_VERSION="3.1.0"
 DOCKER_VERSION="17.03.0.ce-1.el7.centos"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
@@ -50,6 +50,7 @@ yum install -y -q \
 
 echo "developer tools & provisioning depedencies"
 yum install -y -q \
+    gcc \
     curl \
     wget \
     vim \
