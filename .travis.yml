@@ -16,6 +16,7 @@ env:
 - TEST_SUITE=test_jupyter_lint
 - TEST_SUITE=test_jupyter_unit
 - TEST_SUITE=test_integration_build
+- TEST_SUITE=build
 before_script:
 - make deps
 script: "make $TEST_SUITE"

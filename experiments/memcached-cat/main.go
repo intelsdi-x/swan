@@ -22,6 +22,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
@@ -29,7 +30,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/nu7hatch/gouuid"
 	"github.com/pkg/errors"
 )
 
@@ -55,16 +55,15 @@ func main() {
 	}
 
 	// Generate an experiment ID and start the metadata session.
-	uid, err := uuid.NewV4()
-	errutil.CheckWithContext(err, "Cannot generate experiment ID")
+	uid := uuid.New()
 
 	// Connect to metadata database
-	metadata := experiment.NewMetadata(uid.String(), experiment.MetadataConfigFromFlags())
-	err = metadata.Connect()
+	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	err := metadata.Connect()
 	errutil.CheckWithContext(err, "Cannot connect to metadata database")
 
-	logrus.Info("Starting Experiment ", appName, " with uid ", uid.String())
-	fmt.Println(uid.String())
+	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
+	fmt.Println(uid)
 
 	// Write configuration as metadata.
 	err = metadata.RecordFlags()
@@ -81,7 +80,7 @@ func main() {
 	errutil.CheckWithContext(err, "Cannot save hostname and time to metadata database")
 
 	// Create experiment directory
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uid.String(), appName)
+	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uid, appName)
 	errutil.CheckWithContext(err, "Cannot create experiment logs directory")
 
 	// Setup logging set to both output and logFile.
@@ -152,7 +151,7 @@ func main() {
 	}
 
 	// We need to calculate mask for all cache ways to be able to calculate non-overlapping cache partitions.
-	var wholeCacheMask int = 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
+	wholeCacheMask := 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
 	for _, aggressorName := range aggressors {
 		logrus.Debugf("starting aggressor: %s", aggressorName)
 		for _, qps := range qpsList {
@@ -229,7 +228,7 @@ func main() {
 					executeRepetition := func() error {
 						// Building snap workload tags.
 						snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s,%s:%#x,%s:%#x,%s:%d,%s:%d",
-							experiment.ExperimentKey, uid.String(),
+							experiment.ExperimentKey, uid,
 							experiment.PhaseKey, phaseName,
 							experiment.RepetitionKey, 0,
 							experiment.LoadPointQPSKey, beCacheMask,
@@ -335,7 +334,7 @@ func main() {
 			beIteration++
 		}
 	}
-	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid.String(), time.Since(experimentStart).String())
+	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid, time.Since(experimentStart).String())
 }
 
 func launchKubernetesCluster() (func() error, error) {
