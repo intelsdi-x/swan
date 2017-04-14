@@ -157,7 +157,7 @@ func main() {
 				// Create memcached launcher and start memcached
 				memcachedConfiguration := memcached.DefaultMemcachedConfig()
 				memcachedConfiguration.NumThreads = numberOfCores
-				memcachedLauncher := executor.ServiceLauncher{memcached.New(memcachedExecutor, memcachedConfiguration)}
+				memcachedLauncher := executor.ServiceLauncher{Launcher: memcached.New(memcachedExecutor, memcachedConfiguration)}
 				memcachedTask, err := memcachedLauncher.Launch()
 				if err != nil {
 					return err
