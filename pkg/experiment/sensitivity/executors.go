@@ -1,6 +1,8 @@
 package sensitivity
 
 import (
+	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -10,6 +12,14 @@ import (
 )
 
 var (
+	hostname = func() string {
+		hostname, err := os.Hostname()
+		if err != nil {
+			panic(fmt.Sprintf("%s", err.Error()))
+		}
+		return hostname
+	}()
+
 	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
 	HPKubernetesCPUResourceFlag = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
 	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
@@ -19,6 +29,8 @@ var (
 	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
 	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
 	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
+
+	kubernetesNodeName = conf.NewStringFlag("kubernetes_nodename", "Experiment's Kubernetes pods will be run on this node.", hostname)
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
@@ -47,6 +59,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 
 		// HP executor.
 		hpExecutorConfig := executor.DefaultKubernetesConfig()
+		hpExecutorConfig.NodeName = kubernetesNodeName.Value()
 		hpExecutorConfig.ContainerImage = "centos_swan_image"
 		hpExecutorConfig.PodNamePrefix = "swan-hp"
 		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
@@ -69,6 +82,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 			config := executor.DefaultKubernetesConfig()
 			config.PodNamePrefix = "swan-be"
 			config.ContainerImage = "centos_swan_image"
+			config.NodeName = kubernetesNodeName.Value()
 			config.Decorators = decorators
 			config.Privileged = true // swan aggressor use unshare, which requires sudo.
 			config.Address = k8sConfig.GetKubeAPIAddress()

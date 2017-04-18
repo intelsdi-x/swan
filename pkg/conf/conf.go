@@ -19,7 +19,6 @@ var (
 		"Log level for Swan: debug, info, warn, error, fatal, panic",
 		"error", // Default Error log level.
 	)
-	isEnvParsed = false
 )
 
 // LogLevel returns configured logLevel from input option or env variable.
