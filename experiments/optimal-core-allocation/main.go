@@ -39,29 +39,6 @@ func main() {
 	// Generate an experiment ID and start the metadata session.
 	uid := uuid.New()
 
-	// Connect to metadata database
-	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
-	errutil.CheckWithContext(err, "Cannot connect to metadata database")
-
-	// Logging and outputting experiment ID.
-	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
-	fmt.Println(uid)
-
-	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.CheckWithContext(err, "Cannot save flags to metadata database")
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
-	errutil.CheckWithContext(err, "Cannot save environment metadata")
-
-	// Store host and time in metadata
-	hostname, err := os.Hostname()
-	errutil.CheckWithContext(err, "Cannot determine hostname")
-	err = metadata.RecordMap(map[string]string{"time": experimentStart.Format(time.RFC822Z), "host": hostname})
-	errutil.CheckWithContext(err, "Cannot save hostname and time to metadata database")
-
 	// Create experiment directory
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uid, appName)
 	errutil.CheckWithContext(err, "Cannot create experiment logs directory")
@@ -72,8 +49,18 @@ func main() {
 	logrus.Debugf("log level:", logrus.GetLevel())
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
-	// Validate preconditions.
-	validate.OS()
+	// Logging and outputting experiment ID.
+	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
+	fmt.Println(uid)
+
+	// Connect to metadata database
+	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	err = metadata.Connect()
+	errutil.CheckWithContext(err, "Cannot connect to metadata database")
+
+	// Write configuration as metadata.
+	err = metadata.RecordFlags()
+	errutil.CheckWithContext(err, "Cannot save flags to metadata database")
 
 	// Read configuration.
 	loadDuration := sensitivity.LoadDurationFlag.Value()
@@ -91,9 +78,21 @@ func main() {
 		"use_core_pinning":  strconv.FormatBool(useCorePinning),
 		"peak_load":         strconv.Itoa(peakLoad),
 	}
-
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata")
+
+	// Store SWAN_ environment configuration.
+	err = metadata.RecordEnv(conf.EnvironmentPrefix)
+	errutil.CheckWithContext(err, "Cannot save environment metadata")
+
+	// Store host and time in metadata
+	hostname, err := os.Hostname()
+	errutil.CheckWithContext(err, "Cannot determine hostname")
+	err = metadata.RecordMap(map[string]string{"time": experimentStart.Format(time.RFC822Z), "host": hostname})
+	errutil.CheckWithContext(err, "Cannot save hostname and time to metadata database")
+
+	// Validate preconditions.
+	validate.OS()
 
 	// Discover CPU topology.
 	topology, err := topo.Discover()
@@ -114,12 +113,16 @@ func main() {
 		errutil.CheckWithContext(err, "Cannot create snap session")
 	}
 
+	// Calculate value to increase QPS by on every iteration.
+	qpsDelta := int(peakLoad / loadPoints)
+	logrus.Debugf("Increasing QPS by %d every iteration up to peak load %d to achieve %d load points", qpsDelta, peakLoad, loadPoints)
+
 	// Iterate over all physical cores available.
 	for numberOfCores := 1; numberOfCores <= len(physicalCores); numberOfCores++ {
 		// Iterate over load points that user requested.
-		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
+		for qps := qpsDelta; qps <= peakLoad; qps += qpsDelta {
 			func() {
-				logrus.Infof("Running %d threads of memcached", numberOfCores)
+				logrus.Infof("Running %d threads of memcached with load of %d QPS", numberOfCores, qps)
 
 				// Check if core pinning should be enabled and set phase name.
 				var isolators isolation.Decorators
@@ -162,8 +165,7 @@ func main() {
 				err = loadGenerator.Populate()
 				errutil.PanicWithContext(err, "Memcached cannot be populated")
 
-				// Calculate QPS and start sending traffic from mutilate cluster to memcached.
-				qps := int(int(peakLoad) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
+				// Start sending traffic from mutilate cluster to memcached.
 				mutilateHandle, err := loadGenerator.Load(qps, loadDuration)
 				errutil.PanicWithContext(err, "Cannot start load generator")
 				mutilateClusterMaxExecution := sensitivity.LoadGeneratorWaitTimeoutFlag.Value()
@@ -174,29 +176,29 @@ func main() {
 					logrus.Panic(msg)
 				}
 
+				// Make sure that mutilate exited with 0 status.
+				exitCode, _ := mutilateHandle.ExitCode()
+				if exitCode != 0 {
+					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
+				}
+
 				// Create tags to be used on Snap metrics.
-				snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
+				snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s,%s:%d",
 					experiment.ExperimentKey, uid,
 					experiment.PhaseKey, strings.Replace(phaseName, ",", "'", -1),
 					experiment.RepetitionKey, 0,
 					experiment.LoadPointQPSKey, qps,
 					experiment.AggressorNameKey, "No aggressor "+strings.Replace(phaseName, ",", "'", -1),
+					"number_of_cores", numberOfCores,
 				)
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
 				errutil.PanicWithContext(err, "Snap mutilate session has not been started successfully")
-				defer func() {
-					// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
-					time.Sleep(5 * time.Second)
-					mutilateSnapSessionHandle.Stop()
-				}()
-
-				// Make sure that mutilate exited with 0 status.
-				exitCode, err := mutilateHandle.ExitCode()
-				if exitCode != 0 {
-					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
-				}
+				// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
+				time.Sleep(5 * time.Second)
+				err = mutilateSnapSessionHandle.Stop()
+				errutil.PanicWithContext(err, "Cannot stop Mutilate Snap session")
 			}()
 		}
 	}
