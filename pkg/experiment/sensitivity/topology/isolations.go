@@ -10,15 +10,15 @@ import (
 
 var (
 	// For CPU count based isolation policy flags.
-	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task", 1)
-	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task", 1)
+	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task. It should not be used together with `Hp/BeRangeFlag`", 1)
+	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task. It should not be used together with `Hp/BeRangeFlag`", 1)
 
 	// HpRangeFlag allows to set high priority task cores.
-	HpRangeFlag = conf.NewIntSetFlag("hp_range", "HP cpuset range", "")
+	HpRangeFlag = conf.NewIntSetFlag("hp_range", "HP cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
 	// BeRangeFlag allows to set best effort task cores with default isolation.
-	BeRangeFlag = conf.NewIntSetFlag("be_range", "BE cpuset range", "")
+	BeRangeFlag = conf.NewIntSetFlag("be_range", "BE cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
 	// BeL1RangeFlag allows to set best effort task cores with L1 cache isolation.
-	BeL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range", "")
+	BeL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
 )
 
 type defaultTopology struct {

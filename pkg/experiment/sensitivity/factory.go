@@ -30,13 +30,13 @@ var (
 	)
 
 	threatAggressorsAsService = conf.NewBoolFlag(
-		"deug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
+		"debug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
 )
 
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
 var RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
 	"run_caffe_with_llcisolation",
-	"If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation",
+	"If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
 	true,
 )
 
