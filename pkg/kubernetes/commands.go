@@ -17,7 +17,7 @@ func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
 
 	k8sClientset, err := kubernetes.NewForConfig(kubectlConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not create XXXX new Kubernetes client on %q", k8sAPIAddress)
+		return nil, errors.Wrapf(err, "could not create new Kubernetes client on %q", k8sAPIAddress)
 	}
 
 	nodes, err := k8sClientset.Core().Nodes().List(api.ListOptions{})
