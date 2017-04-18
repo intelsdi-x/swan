@@ -26,3 +26,6 @@ notifications:
       - 'intelsdi:k7XiVx2qAV7nCAMPXjRomNJ3'
     on_success: 'never'
     on_pull_requests: false
+cache:
+  directories:
+  - $HOME/.glide/cache
