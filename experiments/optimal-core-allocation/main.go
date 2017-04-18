@@ -78,7 +78,6 @@ func main() {
 		"use_core_pinning":  strconv.FormatBool(useCorePinning),
 		"peak_load":         strconv.Itoa(peakLoad),
 	}
-
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata")
 
