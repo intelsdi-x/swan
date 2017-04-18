@@ -21,18 +21,12 @@ const (
 
 	// waitForReadyNode configuration
 	waitForReadyNodeBackOffPeriod = 1 * time.Second
-	defaultReadyNodeRetryCount    = 20
+	nodeCheckRetryCount           = 20
 	expectedKubelelNodesCount     = 1
 )
 
 var (
-	// path flags contain paths to kubernetes services' binaries. See README.md for details.
-	kubeAPIArgsFlag         = conf.NewStringFlag("kube_apiserver_args", "Additional args for apiserver binary (eg. --admission-control=\"AlwaysAdmit,AddToleration\").", "")
-	kubeletArgsFlag         = conf.NewStringFlag("kubelet_args", "Additional args for kubelet binary.", "")
-	logLevelFlag            = conf.NewIntFlag("kube_loglevel", "Log level for kubernetes servers", 0)
-	allowPrivilegedFlag     = conf.NewBoolFlag("kube_allow_privileged", "Allow containers to request privileged mode on cluster and node level (api server and kubelet).", true)
-	kubeEtcdServersFlag     = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
-	readyNodeRetryCountFlag = conf.NewIntFlag("kube_node_ready_retry_count", "Number of checks that kubelet is ready, before trying setup cluster again (with 1s interval between checks).", defaultReadyNodeRetryCount)
+	kubeEtcdServersFlag = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 
 	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
@@ -76,8 +70,8 @@ func DefaultConfig() Config {
 	return Config{
 		EtcdServers:        kubeEtcdServersFlag.Value(),
 		EtcdPrefix:         "/registry",
-		LogLevel:           logLevelFlag.Value(),
-		AllowPrivileged:    allowPrivilegedFlag.Value(),
+		LogLevel:           0,
+		AllowPrivileged:    true,
 		KubeAPIAddr:        KubernetesMasterFlag.Value(),
 		KubeAPIPort:        8080,
 		KubeletPort:        10250,
@@ -85,8 +79,6 @@ func DefaultConfig() Config {
 		KubeSchedulerPort:  10251,
 		KubeProxyPort:      10249,
 		ServiceAddresses:   "10.2.0.0/16",
-		KubeletArgs:        kubeletArgsFlag.Value(),
-		KubeAPIArgs:        kubeAPIArgsFlag.Value(),
 		RetryCount:         2,
 	}
 }
@@ -322,7 +314,7 @@ func (m k8s) getKubeProxyCommand() kubeCommand {
 }
 
 func (m k8s) waitForReadyNode(apiServerAddress string) error {
-	for idx := 0; idx < readyNodeRetryCountFlag.Value(); idx++ {
+	for idx := 0; idx < nodeCheckRetryCount; idx++ {
 		nodes, err := m.getReadyNodes(apiServerAddress)
 		if err != nil {
 			return err
