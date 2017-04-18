@@ -25,7 +25,9 @@ const (
 var (
 	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
 	AggressorsFlag = conf.NewSliceFlag(
-		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
+		"aggr", "Aggressor to run experiment with",
+		[]string{"l1d", "l1i", "l3", "stream", "caffe"},
+	)
 
 	threatAggressorsAsService = conf.NewBoolFlag(
 		"deug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
