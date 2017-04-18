@@ -2,8 +2,8 @@ package specjbb
 
 import (
 	"fmt"
-	"time"
 	"path"
+	"time"
 )
 
 var (
@@ -50,7 +50,7 @@ func getBackendCommand(conf BackendConfig) string {
 
 // Load command performs load of given injection rate for given duration.
 func getControllerLoadCommand(config LoadGeneratorConfig, injectionRate int, duration time.Duration) string {
-	return fmt.Sprint("java ",
+	return fmt.Sprint("java",
 		config.GetJVMOptions(),
 		controllerTypeProperty, "PRESET", // PRESET: Takes IR set by specjbb.controller.preset.ir and runs on the IR for specjbb.controller.preset.duration milliseconds
 		injectionRateProperty, injectionRate,
@@ -98,7 +98,7 @@ func getReporterCommand(config LoadGeneratorConfig, rawFileName string, slo int)
 
 // TxI command starts transaction injector.
 func getTxICommand(config LoadGeneratorConfig, TxIJVMID int) string {
-	return fmt.Sprint("java -jar",
+	return fmt.Sprint("java",
 		config.GetJVMOptions(),
 		controllerHostProperty, config.ControllerAddress,
 		" -jar ", config.PathToBinary,
