@@ -25,7 +25,6 @@ const (
 )
 
 var (
-	pathFlag = conf.NewStringFlag("memcached_path", "Path to memcached binary", "memcached")
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for memcached to listen on. (-p)", defaultPort)
 	// IPFlag returns IP which will be specified for workload services as endpoints.
@@ -62,7 +61,7 @@ type Config struct {
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
 	return Config{
-		PathToBinary:    pathFlag.Value(),
+		PathToBinary:    "memcached",
 		Port:            PortFlag.Value(),
 		User:            userFlag.Value(),
 		NumThreads:      numThreadsFlag.Value(),

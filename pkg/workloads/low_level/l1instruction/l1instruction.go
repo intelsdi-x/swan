@@ -3,7 +3,6 @@ package l1instruction
 import (
 	"fmt"
 
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
 )
@@ -25,13 +24,6 @@ const (
 	defaultIterations  = infiniteIterations
 )
 
-// PathFlag represents l1i path flag.
-var PathFlag = conf.NewStringFlag(
-	"l1i_path",
-	"Path to L1 instruction binary",
-	"l1i",
-)
-
 // Config is a struct for l1i aggressor configuration.
 type Config struct {
 	Path string
@@ -44,7 +36,7 @@ type Config struct {
 // DefaultL1iConfig is a constructor for l1i aggressor Config with default parameters.
 func DefaultL1iConfig() Config {
 	return Config{
-		Path:       PathFlag.Value(),
+		Path:       "l1i",
 		Intensity:  defaultIntensity,
 		Iterations: defaultIterations,
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
 )
@@ -16,13 +15,6 @@ const (
 	defaultDuration = 86400 * time.Second
 )
 
-// PathFlag represents l3data path flag.
-var PathFlag = conf.NewStringFlag(
-	"membw_path",
-	"Path to Memory Bandwidth binary",
-	"memBw",
-)
-
 // Config is a struct for MemBw aggressor configuration.
 type Config struct {
 	Path     string
@@ -32,7 +24,7 @@ type Config struct {
 // DefaultMemBwConfig is a constructor for memBw aggressor Config with default parameters.
 func DefaultMemBwConfig() Config {
 	return Config{
-		Path:     PathFlag.Value(),
+		Path:     "memBw",
 		Duration: defaultDuration,
 	}
 }
