@@ -214,7 +214,8 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	err := killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGTERM")
 	if err != nil {
 		// Error here means that kill did not send signal.
-		return errors.Wrapf(err, "remoteTaskHandle.Stop() failed to kill remote task with uuid %d at %s with signal SIGTERM", taskHandle.Address(), taskHandle.uuid)
+		log.Errorf("Remote TaskHandle.Stop() of command %q has failed: %s", taskHandle.command, err.Error())
+		return errors.Wrapf(err, "Stop() of command %q has failed", taskHandle.command)
 	}
 
 	// Wait for the Execute's go routine to update status.
@@ -232,8 +233,9 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 		// Checking if kill was successful.
 		isTerminated = taskHandle.Wait(killTimeout)
 		if !isTerminated {
-			return errors.Wrapf(err, "remoteTaskHandle.Stop() probably failed to kill remote task at %s with signal SIGKILL. Verify by 'ps aux | grep %s' on that host.", taskHandle.Address(), taskHandle.uuid)
+			log.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
 
+			return errors.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
 		}
 	}
 	// No error, task terminated.

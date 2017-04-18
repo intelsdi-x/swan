@@ -155,15 +155,15 @@ func (taskHandle *localTaskHandle) Stop() error {
 	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -taskHandle.getPid())
 	err := syscall.Kill(-taskHandle.getPid(), syscall.SIGKILL)
 	if err != nil {
-		return errors.Wrapf(err, "kill of PID %d of application %q failed",
-			-taskHandle.getPid(), taskHandle.cmdHandler.Path)
+		log.Errorf("Stop() of command %q has failed: %s", taskHandle.command, err.Error())
+		return errors.Wrapf(err, "Stop() of command %q has failed", taskHandle.command)
 	}
 
 	// Checking if kill was successful.
 	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
-		return errors.Errorf("cannot terminate running %q application",
-			taskHandle.cmdHandler.Path)
+		log.Errorf("Stop() of command %q has failed: timeout", taskHandle.command)
+		return errors.Errorf("Stop() of command %q has failed: timeout", taskHandle.command)
 	}
 
 	// No error, task terminated.
@@ -182,7 +182,7 @@ func (taskHandle *localTaskHandle) Status() TaskState {
 // ExitCode returns a exitCode. If task is not terminated it returns error.
 func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 	if !taskHandle.isTerminated() {
-		return -1, errors.Errorf("task %q is not terminated", taskHandle.cmdHandler.Path)
+		return -1, errors.Errorf("task %q is not terminated", taskHandle.command)
 	}
 
 	return (taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
