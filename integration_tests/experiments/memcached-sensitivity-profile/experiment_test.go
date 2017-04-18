@@ -218,7 +218,7 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
-		Convey("With proper kubernetes and caffe", func() {
+		SkipConvey("With proper kubernetes and caffe", func() {
 			args := []string{"-kubernetes", "-aggr", "caffe", "-baseline=false", "-kube_allow_privileged"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)

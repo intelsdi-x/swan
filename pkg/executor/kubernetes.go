@@ -133,7 +133,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		NodeName:       nodeNameExperiment.Value(),
 		PodName:        "",
 		PodNamePrefix:  "swan",
-		Address:        "127.0.0.1:8080",
+		Address:        "http://127.0.0.1:8080",
 		CPURequest:     0,
 		CPULimit:       0,
 		MemoryRequest:  0,
