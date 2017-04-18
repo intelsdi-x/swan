@@ -20,11 +20,9 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
-	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -79,7 +77,6 @@ func main() {
 
 	// Read configuration.
 	loadDuration := sensitivity.LoadDurationFlag.Value()
-	stopOnError := sensitivity.StopOnErrorFlag.Value()
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	useCorePinning := useCorePinningFlag.Value()
 	peakLoad := sensitivity.PeakLoadFlag.Value()
@@ -91,7 +88,10 @@ func main() {
 		"repetitions":       "1",
 		"load_duration":     loadDuration.String(),
 		"load_points":       strconv.Itoa(loadPoints),
+		"use_core_pinning":  strconv.FormatBool(useCorePinning),
+		"peak_load":         strconv.Itoa(peakLoad),
 	}
+
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata")
 
@@ -111,17 +111,14 @@ func main() {
 	// Create mutilate snap session launcher.
 	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
 	if err != nil {
-		logrus.Errorf("Cannot create snap session: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
+		errutil.CheckWithContext(err, "Cannot create snap session")
 	}
 
 	// Iterate over all physical cores available.
 	for numberOfCores := 1; numberOfCores <= len(physicalCores); numberOfCores++ {
 		// Iterate over load points that user requested.
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
-			// We need slice of tasks that should be stoppped after finishing a repetition.
-			var tasksToBeStopped []executor.TaskControl
-			executeRepetition := func() error {
+			func() {
 				logrus.Infof("Running %d threads of memcached", numberOfCores)
 
 				// Check if core pinning should be enabled and set phase name.
@@ -129,9 +126,7 @@ func main() {
 				phaseName := fmt.Sprintf("memcached -t %d", numberOfCores)
 				if useCorePinning {
 					cores, err := physicalCores.Take(numberOfCores)
-					if err != nil {
-						return err
-					}
+					errutil.PanicWithContext(err, "Cannot take %d cores for memcached")
 					logrus.Infof("Core pinning enabled, using cores %q", cores.AsRangeString())
 					isolators = append(isolators, isolation.Taskset{CPUList: cores})
 					phaseName = isolators.Decorate(phaseName)
@@ -140,17 +135,13 @@ func main() {
 
 				// Create directory where output of all the tasks will be stored.
 				err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, 0)
-				if err != nil {
-					return err
-				}
+				errutil.PanicWithContext(err, "Cannot create repetition directory")
 
 				// Create memcached executor.
 				var memcachedExecutor executor.Executor
 				if sensitivity.RunOnKubernetesFlag.Value() {
 					memcachedExecutor, err = createKubernetesExecutor(isolators)
-					if err != nil {
-						return err
-					}
+					errutil.PanicWithContext(err, "Cannot create Kubernetes executor")
 				} else {
 					memcachedExecutor = executor.NewLocalIsolated(isolators)
 				}
@@ -160,40 +151,30 @@ func main() {
 				memcachedConfiguration.NumThreads = numberOfCores
 				memcachedLauncher := executor.ServiceLauncher{Launcher: memcached.New(memcachedExecutor, memcachedConfiguration)}
 				memcachedTask, err := memcachedLauncher.Launch()
-				if err != nil {
-					return err
-				}
-				tasksToBeStopped = append(tasksToBeStopped, memcachedTask)
+				errutil.PanicWithContext(err, "Memcached has not been launched successfully")
+				defer memcachedTask.Stop()
 
 				// Create mutilate load generator.
 				loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfiguration.IP, memcachedConfiguration.Port)
-				errutil.CheckWithContext(err, "Cannot create load generator")
+				errutil.PanicWithContext(err, "Cannot create mutilate load generator")
 
 				// Populate memcached.
 				err = loadGenerator.Populate()
-				if err != nil {
-					return err
-				}
+				errutil.PanicWithContext(err, "Memcached cannot be populated")
 
 				// Calculate QPS and start sending traffic from mutilate cluster to memcached.
 				qps := int(int(peakLoad) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 				mutilateHandle, err := loadGenerator.Load(qps, loadDuration)
-				if err != nil {
-					return err
-				}
+				errutil.PanicWithContext(err, "Cannot start load generator")
 				mutilateClusterMaxExecution := sensitivity.LoadGeneratorWaitTimeoutFlag.Value()
 				if !mutilateHandle.Wait(mutilateClusterMaxExecution) {
 					msg := fmt.Sprintf("Mutilate cluster failed to stop on its own in %s. Attempting to stop...", mutilateClusterMaxExecution)
-					logrus.Error(msg)
 					err := mutilateHandle.Stop()
-					if err != nil {
-						logrus.Errorf("Stopping mutilate cluster errored: %q", err)
-						return err
-					}
-					return errors.New(msg)
+					errutil.PanicWithContext(err, msg+" Stopping mutilate cluster errored")
+					logrus.Panic(msg)
 				}
 
-				// Craate tags to be used on Snap metrics.
+				// Create tags to be used on Snap metrics.
 				snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
 					experiment.ExperimentKey, uid,
 					experiment.PhaseKey, strings.Replace(phaseName, ",", "'", -1),
@@ -204,9 +185,7 @@ func main() {
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
-				if err != nil {
-					return err
-				}
+				errutil.PanicWithContext(err, "Snap mutilate session has not been started successfully")
 				defer func() {
 					// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
 					time.Sleep(5 * time.Second)
@@ -216,29 +195,9 @@ func main() {
 				// Make sure that mutilate exited with 0 status.
 				exitCode, err := mutilateHandle.ExitCode()
 				if exitCode != 0 {
-					logrus.Errorf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
-					return err
+					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
 				}
-
-				return nil
-			}
-
-			// Collect all the errors related to the repetition.
-			errors := &errcollection.ErrorCollection{}
-			errors.Add(executeRepetition())
-			for _, task := range tasksToBeStopped {
-				errors.Add(task.Stop())
-			}
-
-			// Handle errors (if any).
-			err := errors.GetErrIfAny()
-			if err != nil {
-				if stopOnError {
-					logrus.Fatalf("Experiment failed: %s", err)
-				} else {
-					logrus.Errorf("Repetition failed: %s", err)
-				}
-			}
+			}()
 		}
 	}
 }
