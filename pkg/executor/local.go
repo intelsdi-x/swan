@@ -155,15 +155,15 @@ func (taskHandle *localTaskHandle) Stop() error {
 	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -taskHandle.getPid())
 	err := syscall.Kill(-taskHandle.getPid(), syscall.SIGKILL)
 	if err != nil {
-		log.Errorf("Stop() of command %q has failed: %s", taskHandle.command, err.Error())
-		return errors.Wrapf(err, "Stop() of command %q has failed", taskHandle.command)
+		log.Errorf("Local Stop() of command %q has failed: %s", taskHandle.command, err.Error())
+		return errors.Wrapf(err, "Local Stop() of command %q has failed", taskHandle.command)
 	}
 
 	// Checking if kill was successful.
 	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
-		log.Errorf("Stop() of command %q has failed: timeout", taskHandle.command)
-		return errors.Errorf("Stop() of command %q has failed: timeout", taskHandle.command)
+		log.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
+		return errors.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
 	}
 
 	// No error, task terminated.
