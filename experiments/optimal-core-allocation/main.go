@@ -24,6 +24,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -180,14 +181,16 @@ func main() {
 				if err != nil {
 					return err
 				}
-				if !mutilateHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value()) {
-					logrus.Warn("Mutilate cluster failed to stop on its own. Attempting to stop...")
+				mutilateClusterMaxExecution := sensitivity.LoadGeneratorWaitTimeoutFlag.Value()
+				if !mutilateHandle.Wait(mutilateClusterMaxExecution) {
+					msg := fmt.Sprintf("Mutilate cluster failed to stop on its own in %s. Attempting to stop...", mutilateClusterMaxExecution)
+					logrus.Error(msg)
 					err := mutilateHandle.Stop()
 					if err != nil {
 						logrus.Errorf("Stopping mutilate cluster errored: %q", err)
 						return err
 					}
-
+					return errors.New(msg)
 				}
 
 				// Craate tags to be used on Snap metrics.
