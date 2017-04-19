@@ -26,10 +26,9 @@ const (
 )
 
 var (
-	kubeEtcdServersFlag = conf.NewStringFlag("kube_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	kubeEtcdServersFlag = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 
-	// KubernetesMasterFlag represents address of a host where Kubernetes master components are to be run
-	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_master", "Address of a host where Kubernetes master components are to be run", "127.0.0.1")
+	kubernetesMasterFlag = conf.NewStringFlag("kubernetes_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 )
 
 type kubeCommand struct {
@@ -72,7 +71,7 @@ func DefaultConfig() Config {
 		EtcdPrefix:         "/registry",
 		LogLevel:           0,
 		AllowPrivileged:    true,
-		KubeAPIAddr:        KubernetesMasterFlag.Value(),
+		KubeAPIAddr:        kubernetesMasterFlag.Value(),
 		KubeAPIPort:        8080,
 		KubeletPort:        10250,
 		KubeControllerPort: 10252,

@@ -10,15 +10,15 @@ import (
 
 var (
 	// For CPU count based isolation policy flags.
-	hpCPUCountFlag = conf.NewIntFlag("hp_cpus", "Number of CPUs assigned to high priority task. It should not be used together with `Hp/BeRangeFlag`", 1)
-	beCPUCountFlag = conf.NewIntFlag("be_cpus", "Number of CPUs assigned to best effort task. It should not be used together with `Hp/BeRangeFlag`", 1)
+	hpCPUCountFlag = conf.NewIntFlag("experiment_hp_cpu_number", "Number of CPUs assigned to high priority task. It's overriden by 'experiment_hp_cpu_range'", 1)
+	beCPUCountFlag = conf.NewIntFlag("experiment_be_cpu_number", "Number of CPUs assigned to best effort task. It's overriden by 'experiment_be_cpu_range' flag", 1)
 
 	// HpRangeFlag allows to set high priority task cores.
-	HpRangeFlag = conf.NewIntSetFlag("hp_range", "HP cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
+	HpRangeFlag = conf.NewIntSetFlag("experiment_hp_cpu_range", "HP cpuset range (e.g: 0-2). Overrides 'experiment_hp_cpu_number' flag. ", "")
 	// BeRangeFlag allows to set best effort task cores with default isolation.
-	BeRangeFlag = conf.NewIntSetFlag("be_range", "BE cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
+	BeRangeFlag = conf.NewIntSetFlag("experiment_be_cpu_range", "BE cpuset range (e.g: 0-2). Overrides 'experiment_be_cpu_number' flag. ", "")
 	// BeL1RangeFlag allows to set best effort task cores with L1 cache isolation.
-	BeL1RangeFlag = conf.NewIntSetFlag("be_l1_range", "BE for l1 aggressors cpuset range (e.g: 0-2). It should not be used together with 'hp/beCPUCountFlag'. ", "")
+	BeL1RangeFlag = conf.NewIntSetFlag("experiment_be_cpu_l1_range", "BE for l1 aggressors cpuset range (e.g: 0-2). Overrides 'experiment_be_cpu_number' flag.", "")
 )
 
 type defaultTopology struct {

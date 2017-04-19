@@ -10,18 +10,18 @@ import (
 
 var (
 	mutilatePercentileFlag = conf.NewStringFlag(
-		"percentile",
+		"experiment_tail_latency_percentile",
 		"Tail latency percentile for Memcached SLI",
 		"99")
 
 	mutilateMasterFlag = conf.NewStringFlag(
-		"mutilate_master",
-		"Mutilate Master address. Master coordinate agents and measures SLI.",
+		"experiment_mutilate_master_address",
+		"Address where Mutilate Master will be launched. Master coordinate agents and measures SLI.",
 		"127.0.0.1")
 
 	mutilateAgentsFlag = conf.NewSliceFlag(
-		"mutilate_agent",
-		"Mutilate agent hosts. Agents generate actual load on Memcached.",
+		"experiment_mutilate_agent_addresses",
+		"Addresses where Mutilate Agents will be launched. Agents generate actual load on Memcached.",
 		[]string{"127.0.0.1", "127.0.0.1"},
 	)
 )

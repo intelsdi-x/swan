@@ -15,9 +15,9 @@ import (
 var (
 	// Default flags and values.
 	logLevelFlag = NewStringFlag(
-		"log",
+		"log_level",
 		"Log level for Swan: debug, info, warn, error, fatal, panic",
-		"error", // Default Error log level.
+		"info",
 	)
 )
 

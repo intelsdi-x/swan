@@ -20,17 +20,17 @@ var (
 		return hostname
 	}()
 
-	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
-	HPKubernetesCPUResourceFlag = conf.NewIntFlag("hp_kubernetes_cpu_resource", "Sets CPU resource limit and request for HP workload on Kubernetes [CPU millis, default 1000 * number of CPU].", runtime.NumCPU()*1000)
-	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
-	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 1GB).", 1000000000)
-
 	// RunOnKubernetesFlag indicates that experiment is to be run on K8s cluster.
-	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch Kubernets cluster and workload on Kubernetes. This flag is required to use other kubernetes flags.", false)
 	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
-	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It can only be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
+	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It has to be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
 
-	kubernetesNodeName = conf.NewStringFlag("kubernetes_nodename", "Experiment's Kubernetes pods will be run on this node.", hostname)
+	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
+	HPKubernetesCPUResourceFlag = conf.NewIntFlag("kubernetes_hp_cpu_resource", "Sets CPU resource limit and request for HP workload on Kubernetes [CPU millis, default 1000 * number of CPU].", runtime.NumCPU()*1000)
+	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
+	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 1GB).", 1000000000)
+
+	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", "Experiment's Kubernetes pods will be run on this node.", hostname)
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
