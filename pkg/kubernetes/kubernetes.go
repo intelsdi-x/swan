@@ -22,7 +22,7 @@ const (
 	// waitForReadyNode configuration
 	waitForReadyNodeBackOffPeriod = 1 * time.Second
 	defaultReadyNodeRetryCount    = 20
-	expectedKubelelNodesCount     = 1
+	expectedKubeletNodesCount     = 1
 )
 
 var (
@@ -121,7 +121,7 @@ type getReadyNodesFunc func(k8sAPIAddress string) ([]v1.Node, error)
 
 type k8s struct {
 	master        executor.Executor
-	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubelelNodesCount const.
+	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
 	config        Config
 	isListening   netutil.IsListeningFunction // For mocking purposes.
 	getReadyNodes getReadyNodesFunc           // For mocking purposes.
@@ -328,7 +328,7 @@ func (m k8s) waitForReadyNode(apiServerAddress string) error {
 			return err
 		}
 
-		if len(nodes) == expectedKubelelNodesCount {
+		if len(nodes) == expectedKubeletNodesCount {
 			return nil
 		}
 

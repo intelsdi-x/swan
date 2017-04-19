@@ -111,7 +111,7 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
-		Convey("With caffe agrressor and baseline", func() {
+		Convey("With caffe aggressor and baseline", func() {
 			args := []string{"-aggr", "caffe"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
