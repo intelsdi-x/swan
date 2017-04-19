@@ -250,7 +250,7 @@ func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 func (m k8s) getKubeAPIServerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
-			fmt.Sprintf("apiserver"),
+			fmt.Sprintf("hyperkube apiserver"),
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
 			fmt.Sprintf(" --etcd-servers=%s", m.config.EtcdServers),
@@ -267,7 +267,7 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 func (m k8s) getKubeControllerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
-			fmt.Sprintf("controller-manager"),
+			fmt.Sprintf("hyperkube controller-manager"),
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
 			fmt.Sprintf(" --port=%d", m.config.KubeControllerPort),
@@ -279,7 +279,7 @@ func (m k8s) getKubeControllerCommand() kubeCommand {
 func (m k8s) getKubeSchedulerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
-			fmt.Sprintf("scheduler"),
+			fmt.Sprintf("hyperkube scheduler"),
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),
 			fmt.Sprintf(" --port=%d", m.config.KubeSchedulerPort),
@@ -291,7 +291,7 @@ func (m k8s) getKubeSchedulerCommand() kubeCommand {
 func (m k8s) getKubeletCommand() kubeCommand {
 	return kubeCommand{m.minion,
 		fmt.Sprint(
-			fmt.Sprintf("kubelet"),
+			fmt.Sprintf("hyperkube kubelet"),
 			fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --port=%d", m.config.KubeletPort),
@@ -305,7 +305,7 @@ func (m k8s) getKubeletCommand() kubeCommand {
 func (m k8s) getKubeProxyCommand() kubeCommand {
 	return kubeCommand{m.minion,
 		fmt.Sprint(
-			fmt.Sprintf("proxy"),
+			fmt.Sprintf("hyperkube proxy"),
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --healthz-port=%d", m.config.KubeProxyPort),
 			fmt.Sprintf(" --master=%s", m.config.GetKubeAPIAddress()),

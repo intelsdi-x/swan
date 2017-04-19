@@ -2,6 +2,7 @@ package l1instruction
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
@@ -9,19 +10,17 @@ import (
 
 const (
 	// ID is used for specifying which aggressors should be used via parameters.
-	ID               = "l1i"
-	name             = "L1 Instruction"
-	defaultIntensity = 19
+	ID   = "l1i"
+	name = "L1 Instruction"
 
 	// {min,max}Intensity are hardcoded values in l1i binary
-	// For further information look inside l1i.c which can be found in github.com/intelsdi-x/swan
-	// repository.
-	minIntensity = 0
-	maxIntensity = 20
+	minIntensity     = 0
+	maxIntensity     = 20
+	defaultIntensity = 0 // Most intensive.
 
-	// -1 (or absence of iteration argument) means infinite iterations in l1i.
-	infiniteIterations = -1
-	defaultIterations  = infiniteIterations
+	// max int
+	maxIterations     = math.MaxInt32
+	defaultIterations = maxIterations
 )
 
 // Config is a struct for l1i aggressor configuration.
@@ -57,7 +56,7 @@ func New(exec executor.Executor, config Config) executor.Launcher {
 }
 
 func (l l1i) buildCommand() string {
-	return fmt.Sprintf("%s %d %d", l.conf.Path, l.conf.Intensity, l.conf.Iterations)
+	return fmt.Sprintf("%s %d %d", l.conf.Path, l.conf.Iterations, l.conf.Intensity)
 }
 
 func (l l1i) verifyConfiguration() error {
@@ -67,7 +66,7 @@ func (l l1i) verifyConfiguration() error {
 			minIntensity,
 			maxIntensity)
 	}
-	if l.conf.Iterations <= 0 && l.conf.Iterations != infiniteIterations {
+	if l.conf.Iterations <= 0 || l.conf.Iterations > maxIterations {
 		return errors.Errorf("iterations value(%d) should be greater than 0", l.conf.Iterations)
 	}
 	return nil
