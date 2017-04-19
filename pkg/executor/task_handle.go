@@ -25,6 +25,8 @@ type TaskHandle interface {
 
 // TaskInfo represents task's address, status and output information.
 type TaskInfo interface {
+	// Name returns information about command and executor that lives under this TaskHandle.
+	Name() string
 	// Location returns address where task was located.
 	Address() string
 	// ExitCode returns a exitCode. If task is not terminated it returns error.

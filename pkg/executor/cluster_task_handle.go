@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 )
@@ -99,6 +100,11 @@ func (m *ClusterTaskHandle) EraseOutput() (err error) {
 	}
 
 	return errCollection.GetErrIfAny()
+}
+
+// Name returns name of underlying task.
+func (m *ClusterTaskHandle) Name() string {
+	return fmt.Sprintf("Cluster TaskHandle containg master: %s", m.master.Name())
 }
 
 // Address returns address of master task.

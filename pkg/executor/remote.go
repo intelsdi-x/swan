@@ -124,8 +124,17 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	var exitCode *int
 	exitCode = &exitCodeInt
 
-	taskHandle := newRemoteTaskHandle(session, connection, stdoutFile.Name(), stderrFile.Name(),
-		remote.sshConfig.Host, unshareUUIDStr, exitCode, hasProcessExited)
+	taskHandle := remoteTaskHandle{
+		session:          session,
+		connection:       connection,
+		command:          command,
+		stdoutFilePath:   stdoutFile.Name(),
+		stderrFilePath:   stderrFile.Name(),
+		host:             remote.sshConfig.Host,
+		uuid:             unshareUUIDStr,
+		exitCode:         exitCode,
+		hasProcessExited: hasProcessExited,
+	}
 
 	// Wait for remote task in go routine.
 	go func() {
@@ -160,7 +169,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	return checkIfProcessFailedToExecute(command, remote.Name(), taskHandle)
+	return checkIfProcessFailedToExecute(command, remote.Name(), &taskHandle)
 }
 
 // Final wait for the command to exit
@@ -179,31 +188,12 @@ type remoteTaskHandle struct {
 	uuid           string
 	exitCode       *int
 
+	// Command requested by user. This is how this TaskHandle presents.
+	command string
+
 	// This channel is closed immediately when process exits.
 	// It is used to signal task termination.
 	hasProcessExited chan struct{}
-}
-
-// newRemoteTaskHandle returns a remoteTaskHandle instance.
-func newRemoteTaskHandle(
-	session *ssh.Session,
-	connection *ssh.Client,
-	stdoutFilePath string,
-	stderrFilePath string,
-	host string,
-	uuid string,
-	exitCode *int,
-	processHasExited chan struct{}) *remoteTaskHandle {
-	return &remoteTaskHandle{
-		session:          session,
-		connection:       connection,
-		stdoutFilePath:   stdoutFilePath,
-		stderrFilePath:   stderrFilePath,
-		host:             host,
-		uuid:             uuid,
-		exitCode:         exitCode,
-		hasProcessExited: processHasExited,
-	}
 }
 
 // isTerminated checks if channel processHasExited is closed. If it is closed, it means
@@ -226,7 +216,8 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	err := killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGTERM")
 	if err != nil {
 		// Error here means that kill did not send signal.
-		return errors.Wrapf(err, "remoteTaskHandle.Stop() failed to kill remote task with uuid %d at %s with signal SIGTERM", taskHandle.Address(), taskHandle.uuid)
+		log.Errorf("Remote TaskHandle.Stop() of command %q has failed: %s", taskHandle.command, err.Error())
+		return errors.Wrapf(err, "Stop() of command %q has failed", taskHandle.command)
 	}
 
 	// Wait for the Execute's go routine to update status.
@@ -244,8 +235,9 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 		// Checking if kill was successful.
 		isTerminated = taskHandle.Wait(killTimeout)
 		if !isTerminated {
-			return errors.Wrapf(err, "remoteTaskHandle.Stop() probably failed to kill remote task at %s with signal SIGKILL. Verify by 'ps aux | grep %s' on that host.", taskHandle.Address(), taskHandle.uuid)
+			log.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
 
+			return errors.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
 		}
 	}
 	// No error, task terminated.
@@ -307,6 +299,10 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 		// If timeout time exceeded return then task did not terminate yet.
 		return false
 	}
+}
+
+func (taskHandle *remoteTaskHandle) Name() string {
+	return fmt.Sprintf("Remote %q on %q", taskHandle.command, taskHandle.Address())
 }
 
 func (taskHandle *remoteTaskHandle) Address() string {

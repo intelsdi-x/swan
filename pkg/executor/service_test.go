@@ -35,6 +35,10 @@ func (th stoppedTaskHandle) StdoutFile() (*os.File, error) {
 	return th.output, nil
 }
 
+func (th stoppedTaskHandle) Name() string {
+	return "command"
+}
+
 type runningTaskHandle struct {
 	TaskHandle
 }
@@ -54,6 +58,10 @@ func (th runningTaskHandle) Wait(duration time.Duration) bool {
 	return true
 }
 
+func (th runningTaskHandle) Name() string {
+	return "command"
+}
+
 type erroneousTaskHandle struct {
 	TaskHandle
 }
@@ -66,6 +74,10 @@ func (th erroneousTaskHandle) Stop() error {
 // Status implements TaskHandle interface,
 func (th erroneousTaskHandle) Status() TaskState {
 	return RUNNING
+}
+
+func (th erroneousTaskHandle) Name() string {
+	return "command"
 }
 
 func TestServiceTaskHandle(t *testing.T) {
@@ -82,7 +94,7 @@ func TestServiceTaskHandle(t *testing.T) {
 		success := s.Wait(0)
 		So(success, ShouldBeFalse)
 		err = s.Stop()
-		So(err, ShouldEqual, ErrServiceStopped)
+		So(err.Error(), ShouldContainSubstring, s.Name())
 	})
 
 	Convey("Calling Stop() on running task should succeed", t, func() {

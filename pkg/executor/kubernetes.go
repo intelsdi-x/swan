@@ -309,6 +309,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, k8sports.GetPodQOS(pod))
 	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
+		command:         command,
 		stdoutFilePath:  stdoutFileName,
 		stderrFilePath:  stderrFileName,
 		started:         make(chan struct{}),
@@ -368,6 +369,9 @@ type k8sTaskHandle struct {
 
 	podName   string
 	podHostIP string
+
+	// Command requested by user. This is how this TaskHandle presents.
+	command string
 }
 
 func (th *k8sTaskHandle) isTerminated() bool {
@@ -461,6 +465,10 @@ func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
 func (th *k8sTaskHandle) EraseOutput() error {
 	outputDir := filepath.Dir(th.stdoutFilePath)
 	return removeDirectory(outputDir)
+}
+
+func (th *k8sTaskHandle) Name() string {
+	return fmt.Sprintf("Kubernetes pod named %q with command %q on %q", th.podName, th.command, th.Address())
 }
 
 // Address returns the host IP where the pod was scheduled.

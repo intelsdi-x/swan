@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -71,7 +72,13 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
 
-	taskHandle := newLocalTaskHandle(cmd, stdoutFile.Name(), stderrFile.Name(), hasProcessExited)
+	taskHandle := localTaskHandle{
+		cmdHandler:       cmd,
+		command:          command,
+		stdoutFilePath:   stdoutFile.Name(),
+		stderrFilePath:   stderrFile.Name(),
+		hasProcessExited: hasProcessExited,
+	}
 
 	// Wait for local task in go routine.
 	go func() {
@@ -104,7 +111,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	return checkIfProcessFailedToExecute(command, l.Name(), taskHandle)
+	return checkIfProcessFailedToExecute(command, l.Name(), &taskHandle)
 }
 
 // localTaskHandle implements TaskHandle interface.
@@ -117,23 +124,8 @@ type localTaskHandle struct {
 	// It is used to signal task termination.
 	hasProcessExited chan struct{}
 
-	// internal flag controlling closing of hasStopOrWaitInvoked channel
-	stopOrWaitChannelClosed bool
-}
-
-// newLocalTaskHandle returns a localTaskHandle instance.
-func newLocalTaskHandle(
-	cmdHandler *exec.Cmd,
-	stdoutFile string,
-	stderrFile string,
-	hasProcessExited chan struct{}) *localTaskHandle {
-	t := &localTaskHandle{
-		cmdHandler:       cmdHandler,
-		stdoutFilePath:   stdoutFile,
-		stderrFilePath:   stderrFile,
-		hasProcessExited: hasProcessExited,
-	}
-	return t
+	// Command requested by user. This is how this TaskHandle presents.
+	command string
 }
 
 // isTerminated checks if channel processHasExited is closed. If it is closed, it means
@@ -165,15 +157,15 @@ func (taskHandle *localTaskHandle) Stop() error {
 	log.Debug("Sending ", syscall.SIGKILL, " to PID ", -taskHandle.getPid())
 	err := syscall.Kill(-taskHandle.getPid(), syscall.SIGKILL)
 	if err != nil {
-		return errors.Wrapf(err, "kill of PID %d of application %q failed",
-			-taskHandle.getPid(), taskHandle.cmdHandler.Path)
+		log.Errorf("Local Stop() of command %q has failed: %s", taskHandle.command, err.Error())
+		return errors.Wrapf(err, "Local Stop() of command %q has failed", taskHandle.command)
 	}
 
 	// Checking if kill was successful.
 	isTerminated := taskHandle.Wait(killTimeout)
 	if !isTerminated {
-		return errors.Errorf("cannot terminate running %q application",
-			taskHandle.cmdHandler.Path)
+		log.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
+		return errors.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
 	}
 
 	// No error, task terminated.
@@ -192,7 +184,7 @@ func (taskHandle *localTaskHandle) Status() TaskState {
 // ExitCode returns a exitCode. If task is not terminated it returns error.
 func (taskHandle *localTaskHandle) ExitCode() (int, error) {
 	if !taskHandle.isTerminated() {
-		return -1, errors.Errorf("task %q is not terminated", taskHandle.cmdHandler.Path)
+		return -1, errors.Errorf("task %q is not terminated", taskHandle.command)
 	}
 
 	return (taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus)).ExitStatus(), nil
@@ -235,6 +227,10 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 		// If timeout time exceeded return then task did not terminate yet.
 		return false
 	}
+}
+
+func (taskHandle *localTaskHandle) Name() string {
+	return fmt.Sprintf("Local %q", taskHandle.command)
 }
 
 func (taskHandle *localTaskHandle) Address() string {
