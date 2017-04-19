@@ -39,10 +39,12 @@ build_plugins:
 	(cd build/plugins; go build ../../plugins/snap-plugin-collector-caffe-inference)
 
 build_swan:
-	mkdir -p build/experiments/memcached build/experiments/specjbb
+	go build -i -v ./experiments/...
+	mkdir -p build/experiments/memcached build/experiments/specjbb build/experiments/optimal-core-allocation build/experiments/memcached-cat
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
-
+	(cd build/experiments/optimal-core-allocation; go build ../../../experiments/optimal-core-allocation)
+	(cd build/experiments/memcached-cat; go build ../../../experiments/memcached-cat)
 
 # testing
 test_lint:
@@ -98,6 +100,8 @@ show_env:
 dist:
 	tar -C ./build/experiments/memcached -cvf swan.tar memcached-sensitivity-profile 
 	tar -C ./build/experiments/specjbb -rvf swan.tar specjbb-sensitivity-profile
+	tar -C ./build/experiments/optimal-core-allocation -rvf swan.tar optimal-core-allocation
+	tar -C ./build/experiments/memcached-cat -rvf swan.tar memcached-cat
 	tar -C ./build/plugins -rvf swan.tar snap-plugin-collector-caffe-inference snap-plugin-collector-mutilate snap-plugin-collector-specjbb snap-plugin-publisher-session-test
 	gzip -f swan.tar
 
