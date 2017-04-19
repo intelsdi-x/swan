@@ -309,6 +309,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, k8sports.GetPodQOS(pod))
 	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
+		command:         command,
 		stdoutFilePath:  stdoutFileName,
 		stderrFilePath:  stderrFileName,
 		started:         make(chan struct{}),
