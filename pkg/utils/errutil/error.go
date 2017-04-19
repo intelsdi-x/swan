@@ -19,3 +19,11 @@ func CheckWithContext(err error, context string) {
 		logrus.Fatalf("%s: %v", context, err)
 	}
 }
+
+// PanicWithContext checks error provided and if it is not nil then logs some information and emits panic.
+func PanicWithContext(err error, context string) {
+	if err != nil {
+		logrus.Debugf("%s: %+v", context, err)
+		logrus.Panicf("%s: %q", context, err)
+	}
+}
