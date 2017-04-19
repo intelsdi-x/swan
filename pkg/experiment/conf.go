@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	// Both flags are defined using directly go native "flag" package to not be registered as experiment configuration.
+	// Flags are defined using directly go native "flag" package to not be registered as experiment configuration.
+	loadConfig             = flag.String("config", "", "Load configuration from file")
 	dumpConfig             = flag.Bool("config-dump", false, "Dump configuration as environment script.")
 	dumpConfigExperimentID = flag.String("config-dump-experiment-id", "", "Dump configuration based on experiment ID.")
 )
@@ -22,9 +23,18 @@ var (
 // Returns information about current log level.
 func Configure() bool {
 
+	// Load config from file if requested.
+	flag.Parse()
+	if *loadConfig != "" {
+		err := conf.LoadConfig(*loadConfig)
+		errutil.Check(err)
+	}
+
+	// Parse extended flags again using environment.
 	err := conf.ParseFlags()
 	errutil.Check(err)
 
+	// Setup log level accordingly.
 	level, err := conf.LogLevel()
 	errutil.Check(err)
 	logrus.SetLevel(level)
