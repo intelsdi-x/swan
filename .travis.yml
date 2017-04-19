@@ -28,4 +28,4 @@ notifications:
     on_pull_requests: false
 cache:
   directories:
-  - $HOME/.glide/cache
+  - $HOME/.glide
