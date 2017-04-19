@@ -25,16 +25,16 @@ var (
 func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory ExecutorFactoryFunc, cleanup func() error, err error) {
 	if RunOnKubernetesFlag.Value() {
 		if !RunOnExistingKubernetesFlag.Value() {
-			cleanup, err = launchKubernetesCluster()
+			cleanup, err = LaunchKubernetesCluster()
 			if err != nil {
 				return nil, nil, nil, err
 			}
 		}
-		hpExecutor, err = createKubernetesHpExecutor(hpIsolation)
+		hpExecutor, err = CreateKubernetesHpExecutor(hpIsolation)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		beExecutorFactory = defaultKubernetesBEExecutorFactory
+		beExecutorFactory = DefaultKubernetesBEExecutorFactory
 	} else {
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
 		beExecutorFactory = defaultLocalBEExecutorFactory
@@ -42,7 +42,8 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 	return
 }
 
-func launchKubernetesCluster() (cleanup func() error, err error) {
+//LaunchKubernetesCluster starts new Kubernetes cluster using configuration provided with flags.
+func LaunchKubernetesCluster() (cleanup func() error, err error) {
 	k8sConfig := kubernetes.DefaultConfig()
 	masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
 	if err != nil {
@@ -62,7 +63,8 @@ func launchKubernetesCluster() (cleanup func() error, err error) {
 	return
 }
 
-func createKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Executor, error) {
+//CreateKubernetesHpExecutor creates new instance of Kubernetes executor for HP task with isolation applied.
+func CreateKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Executor, error) {
 	k8sConfig := kubernetes.DefaultConfig()
 	k8sExecutorConfig := executor.DefaultKubernetesConfig()
 
@@ -81,7 +83,8 @@ func createKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Execu
 
 }
 
-func defaultKubernetesBEExecutorFactory(decorators isolation.Decorators) (executor.Executor, error) {
+//DefaultKubernetesBEExecutorFactory can be used to create Kubernetes executor for BE task with isolation applied.
+func DefaultKubernetesBEExecutorFactory(decorators isolation.Decorators) (executor.Executor, error) {
 	k8sConfig := kubernetes.DefaultConfig()
 	config := executor.DefaultKubernetesConfig()
 	config.PodNamePrefix = "swan-be"

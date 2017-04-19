@@ -18,7 +18,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
@@ -102,7 +101,7 @@ func main() {
 	// Launch Kubernetes cluster if necessary.
 	var cleanup func() error
 	if sensitivity.RunOnKubernetesFlag.Value() && !sensitivity.RunOnExistingKubernetesFlag.Value() {
-		cleanup, err = launchKubernetesCluster()
+		cleanup, err = sensitivity.LaunchKubernetesCluster()
 		errutil.CheckWithContext(err, "Cannot launch Kubernetes cluster")
 		defer cleanup()
 	}
@@ -143,7 +142,7 @@ func main() {
 				// Create memcached executor.
 				var memcachedExecutor executor.Executor
 				if sensitivity.RunOnKubernetesFlag.Value() {
-					memcachedExecutor, err = createKubernetesExecutor(isolators)
+					memcachedExecutor, err = sensitivity.CreateKubernetesHpExecutor(isolators)
 					errutil.PanicWithContext(err, "Cannot create Kubernetes executor")
 				} else {
 					memcachedExecutor = executor.NewLocalIsolated(isolators)
@@ -202,43 +201,4 @@ func main() {
 			}()
 		}
 	}
-}
-
-func launchKubernetesCluster() (cleanup func() error, err error) {
-	k8sConfig := kubernetes.DefaultConfig()
-	masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
-	k8sClusterTaskHandle, err := k8sLauncher.Launch()
-	if err != nil {
-		return nil, err
-	}
-
-	cleanup = func() error {
-		return k8sClusterTaskHandle.Stop()
-	}
-
-	return
-}
-
-func createKubernetesExecutor(hpIsolation isolation.Decorator) (executor.Executor, error) {
-	k8sConfig := kubernetes.DefaultConfig()
-	k8sExecutorConfig := executor.DefaultKubernetesConfig()
-
-	k8sExecutorConfig.ContainerImage = "centos_swan_image"
-	k8sExecutorConfig.PodNamePrefix = "swan-hp"
-	k8sExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
-	k8sExecutorConfig.HostNetwork = true
-	k8sExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
-	k8sExecutorConfig.CPULimit = int64(sensitivity.HPKubernetesCPUResourceFlag.Value())
-	k8sExecutorConfig.MemoryLimit = int64(sensitivity.HPKubernetesMemoryResourceFlag.Value())
-	k8sExecutorConfig.CPURequest = k8sExecutorConfig.CPULimit
-	k8sExecutorConfig.MemoryRequest = k8sExecutorConfig.MemoryLimit
-	k8sExecutorConfig.Privileged = true
-
-	return executor.NewKubernetes(k8sExecutorConfig)
-
 }
