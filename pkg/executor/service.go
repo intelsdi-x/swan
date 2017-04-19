@@ -7,11 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// ErrServiceStopped indicates that task supposed to run endlessly stopped unexpectedly.
-	ErrServiceStopped = errors.New("Task is not running")
-)
-
 /**
 ServiceLauncher and ServiceHandle are wrappers that could be used on Launcher and TaskHandle class.
 User should use them to state intent that these processes should not stop without
@@ -44,9 +39,9 @@ type ServiceHandle struct {
 // Stop implements TaskHandle interface.
 func (s ServiceHandle) Stop() error {
 	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Stop(): ServiceHandle terminated prematurely")
+		logrus.Errorf("Stop(): ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
 		logOutput(s.TaskHandle)
-		return ErrServiceStopped
+		return errors.Errorf("Service %q has ended prematurely", s.TaskHandle.Name())
 	}
 
 	return s.TaskHandle.Stop()
@@ -55,7 +50,7 @@ func (s ServiceHandle) Stop() error {
 // Wait implements TaskHandle interface.
 func (s ServiceHandle) Wait(duration time.Duration) bool {
 	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Wait(): ServiceHandle terminated prematurely")
+		logrus.Errorf("Wait(): ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
 		logOutput(s.TaskHandle)
 	}
 

@@ -12,6 +12,20 @@ type TaskInfo struct {
 	mock.Mock
 }
 
+// Name provides a mock function with given fields:
+func (_m *TaskInfo) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // Address provides a mock function with given fields:
 func (_m *TaskInfo) Address() string {
 	ret := _m.Called()

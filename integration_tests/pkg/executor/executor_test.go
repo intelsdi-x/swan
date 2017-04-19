@@ -74,10 +74,16 @@ func testExecutor(t *testing.T, executor Executor) {
 	})
 
 	Convey("When command `echo output` is executed", func() {
-		taskHandle, err := executor.Execute("echo output")
+		command := "echo output"
+		taskHandle, err := executor.Execute(command)
 		So(err, ShouldBeNil)
 
 		defer StopAndEraseOutput(taskHandle)
+
+		Convey("Name should return string with executed command", func() {
+			taskName := taskHandle.Name()
+			So(taskName, ShouldContainSubstring, command)
+		})
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
 			So(taskHandle.Wait(0), ShouldBeTrue)
