@@ -5,6 +5,8 @@ language: go
 sudo: required
 go:
 - 1.7
+install:
+- PATH=/usr/lib/ccache:$PATH
 before_install:
 - sudo apt-get install bash gcc
 - make glide linter 
