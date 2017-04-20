@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"flag"
 	"testing"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -9,46 +11,77 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TestStressng  is an integration test with local executor
-func TestStressng(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-
-	Convey("While using Local Shell in stress-ng launcher", t, func() {
-		l := executor.NewLocal()
-		stressngLauncher := stressng.New(l, "-c 1")
-
-		Convey("When binary is launched", func() {
-			taskHandle, err := stressngLauncher.Launch()
+func validateExecutor(launcher executor.Launcher) func() {
+	return func() {
+		Convey("workload should be running", func() {
+			taskHandle, err := launcher.Launch()
 			if taskHandle != nil {
 				defer taskHandle.Stop()
 				defer taskHandle.EraseOutput()
 			}
+			So(err, ShouldBeNil)
 
-			Convey("There should be no error", func() {
-				stopErr := taskHandle.Stop()
-
-				So(err, ShouldBeNil)
-				So(stopErr, ShouldBeNil)
-			})
-
-			Convey("workload should be running", func() {
-				So(taskHandle.Status(), ShouldEqual, executor.RUNNING)
-			})
+			stopped := taskHandle.Wait(1 * time.Second)
+			So(stopped, ShouldBeFalse)
+			So(taskHandle.Status(), ShouldEqual, executor.RUNNING)
 
 			Convey("When we stop the task", func() {
 				err := taskHandle.Stop()
 				Convey("There should be no error", func() {
 					So(err, ShouldBeNil)
-				})
-				Convey("The task should be terminated and the task status should be -1", func() {
-					taskState := taskHandle.Status()
-					So(taskState, ShouldEqual, executor.TERMINATED)
+					Convey("and task should be terminated and the task status should be -1", func() {
+						taskState := taskHandle.Status()
+						So(taskState, ShouldEqual, executor.TERMINATED)
 
-					exitCode, err := taskHandle.ExitCode()
+						exitCode, err := taskHandle.ExitCode()
 
-					So(err, ShouldBeNil)
-					So(exitCode, ShouldEqual, -1)
+						So(err, ShouldBeNil)
+						So(exitCode, ShouldEqual, -1)
+					})
 				})
+			})
+		})
+	}
+}
+
+// TestStressng  is an integration test with local executor
+func TestStressng(t *testing.T) {
+	log.SetLevel(log.ErrorLevel)
+
+	Convey("While using Local Shell in stress-ng launcher", t, func() {
+		l := executor.NewLocal()
+
+		Convey("manually created", func() {
+			custom := stressng.New(l, "foo", "-c 1")
+			Convey("When binary is launched", validateExecutor(custom))
+		})
+
+		Convey("new stream based", func() {
+			stream := stressng.NewStream(l)
+			Convey("When binary is launched", validateExecutor(stream))
+		})
+
+		Convey("new l1 based", func() {
+			cachel1 := stressng.NewCacheL1(l)
+			Convey("When binary is launched", validateExecutor(cachel1))
+		})
+
+		Convey("new l3 based", func() {
+			cachel3 := stressng.NewCacheL3(l)
+			Convey("When binary is launched", validateExecutor(cachel3))
+		})
+
+		Convey("new memcpy based", func() {
+			memcpy := stressng.NewMemCpy(l)
+			Convey("When binary is launched", validateExecutor(memcpy))
+		})
+
+		Convey("new custom based", func() {
+			flag.Set(stressng.StressngCustomArguments.Flag.Name, "-c 1")
+			custom := stressng.NewCustom(l)
+			Convey("When binary is launched", validateExecutor(custom))
+			Reset(func() {
+				flag.Set(stressng.StressngCustomArguments.Flag.Name, "")
 			})
 		})
 
