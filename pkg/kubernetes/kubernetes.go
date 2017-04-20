@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/1.5/pkg/api/v1"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
@@ -28,6 +27,9 @@ const (
 
 var (
 	kubeEtcdServersFlag = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+
+	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
+	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 )
 
 type kubeCommand struct {
@@ -70,7 +72,7 @@ func DefaultConfig() Config {
 		EtcdPrefix:         "/registry",
 		LogLevel:           0,
 		AllowPrivileged:    true,
-		KubeAPIAddr:        sensitivity.KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
+		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
 		KubeAPIPort:        8080,
 		KubeletPort:        10250,
 		KubeControllerPort: 10252,

@@ -24,8 +24,6 @@ var (
 	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch Kubernets cluster and workload on Kubernetes. This flag is required to use other kubernetes flags.", false)
 	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
 	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It has to be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
-	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
-	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
 	HPKubernetesCPUResourceFlag = conf.NewIntFlag("kubernetes_hp_cpu_resource", "Sets CPU resource limit and request for HP workload on Kubernetes [CPU millis, default 1000 * number of CPU].", runtime.NumCPU()*1000)
 	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
