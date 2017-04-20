@@ -52,7 +52,7 @@ func TestSnapDockerSession(t *testing.T) {
 		kubeExecutor, err := executor.NewKubernetes(kubernetesConfig)
 		So(err, ShouldBeNil)
 
-		podHandle, err := kubeExecutor.Execute("stress -c 1 -t 600")
+		podHandle, err := kubeExecutor.Execute("stress-ng -c 1")
 		So(err, ShouldBeNil)
 		defer podHandle.EraseOutput()
 		defer podHandle.Stop()
