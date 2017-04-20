@@ -18,6 +18,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 
 	"github.com/Sirupsen/logrus"
