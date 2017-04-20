@@ -13,6 +13,7 @@ import pandas as pd
 
 pd.set_option('max_colwidth', 400)
 
+
 class Experiment(object):
     """
     The Experiment class works as a container for swan experiment metrics.
