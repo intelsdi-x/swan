@@ -1,3 +1,4 @@
+sudo: required
 services:
 - docker
 language: go
@@ -8,14 +9,15 @@ before_install:
 - sudo apt-get install bash gcc
 - make glide linter deps_jupyter
 #- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
-env:
-- TEST_SUITE=test_lint
-- TEST_SUITE=test_unit
-- TEST_SUITE=test_integration_build
-- TEST_SUITE=build
-- TEST_SUITE=test_jupyter_lint
-- TEST_SUITE=test_jupyter_unit
-script: "make $TEST_SUITE"
+# env:
+# - TEST_SUITE=test_lint
+# - TEST_SUITE=test_unit
+# - TEST_SUITE=test_integration_build
+# - TEST_SUITE=build
+# - TEST_SUITE=test_jupyter_lint
+# - TEST_SUITE=test_jupyter_unit
+# script: "make $TEST_SUITE"
+script: "make travis"
 notifications:
   slack:
     rooms:

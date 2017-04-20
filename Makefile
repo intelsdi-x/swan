@@ -14,6 +14,8 @@ build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
 test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
 
+travis: test_lint test_unit test_integration_build build test_jupyter_lint test_jupyter_unit
+
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
 	sudo systemctl restart snap-telemetry
