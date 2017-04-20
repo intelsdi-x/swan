@@ -86,6 +86,7 @@ func TestExperiment(t *testing.T) {
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",
 		"SWAN_BE_RANGE":             "0",
+		"SWAN_BE_L1_RANGE":          "0",
 		"SWAN_HP_RANGE":             "0",
 		"SWAN_REPS":                 "1",
 		"SWAN_LOAD_POINTS":          "1",
@@ -153,7 +154,6 @@ func TestExperiment(t *testing.T) {
 				So(metadata["load_points"], ShouldEqual, "1")
 				So(metadata["load_duration"], ShouldEqual, "1s")
 				So(metadata[experiment.CPUModelNameKey], ShouldNotEqual, "")
-
 			})
 
 			Convey("While having two repetitions to phase", func() {
