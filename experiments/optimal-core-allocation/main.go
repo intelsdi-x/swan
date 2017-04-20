@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -38,23 +38,12 @@ func main() {
 	// Generate an experiment ID and start the metadata session.
 	uid := uuid.New()
 
-	// Create experiment directory
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uid, appName)
-	errutil.CheckWithContext(err, "Cannot create experiment logs directory")
-	logrus.Infof("Logging to %q", experimentDirectory)
-
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
-	logrus.Debugf("log level:", logrus.GetLevel())
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
-
-	// Logging and outputting experiment ID.
-	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
-	fmt.Println(uid)
+	// Initialize logger.
+	logger.Initialize(appName, uid)
 
 	// Connect to metadata database
 	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	err = metadata.Connect()
+	err := metadata.Connect()
 	errutil.CheckWithContext(err, "Cannot connect to metadata database")
 
 	// Write configuration as metadata.
@@ -136,7 +125,7 @@ func main() {
 				logrus.Debugf("Running phase: %q", phaseName)
 
 				// Create directory where output of all the tasks will be stored.
-				err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, 0)
+				err := experiment.CreateRepetitionDir(appName, uid, phaseName, 0)
 				errutil.PanicWithContext(err, "Cannot create repetition directory")
 
 				// Create memcached executor.

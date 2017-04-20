@@ -32,7 +32,7 @@ const (
 
 // CreateExperimentDir creates directory structure for the experiment.
 func CreateExperimentDir(uuid, appName string) (experimentDirectory string, logFile *os.File, err error) {
-	experimentDirectory = path.Join(os.TempDir(), appName, uuid)
+	experimentDirectory = createExperimentLogsDirectoryName(appName, uuid)
 	err = os.MkdirAll(experimentDirectory, 0777)
 	if err != nil {
 		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
@@ -51,8 +51,13 @@ func CreateExperimentDir(uuid, appName string) (experimentDirectory string, logF
 	return experimentDirectory, logFile, nil
 }
 
+func createExperimentLogsDirectoryName(appName, uuid string) string {
+	return path.Join(os.TempDir(), appName, uuid)
+}
+
 // CreateRepetitionDir creates folders that store repetition logs inside experiment's directory.
-func CreateRepetitionDir(experimentDirectory, phaseName string, repetition int) error {
+func CreateRepetitionDir(appName, uuid, phaseName string, repetition int) error {
+	experimentDirectory := createExperimentLogsDirectoryName(appName, uuid)
 	repetitionDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
 	err := os.MkdirAll(repetitionDir, 0777)
 	if err != nil {
