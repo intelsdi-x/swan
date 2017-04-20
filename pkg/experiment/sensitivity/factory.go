@@ -28,7 +28,7 @@ var (
 		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
 
 	threatAggressorsAsService = conf.NewBoolFlag(
-		"deug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
+		"debug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
 )
 
 // RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
