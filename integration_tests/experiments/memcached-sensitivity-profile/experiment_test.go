@@ -98,7 +98,7 @@ func TestExperimentConfiguration(t *testing.T) {
 
 			reloadedConfig, err := exec.Command(memcachedSensitivityProfileBin, "-config", confFilename, "-config-dump").CombinedOutput()
 			So(err, ShouldBeNil)
-			So(string(reloadedConfig), ShouldContainSubstring, "SWAN_KUBERNETES=true")
+			So(string(reloadedConfig), ShouldContainSubstring, "KUBERNETES=true")
 
 			Reset(func() { os.Remove(confFilename) })
 		})
