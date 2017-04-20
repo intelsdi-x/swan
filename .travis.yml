@@ -10,15 +10,14 @@ go:
 - 1.7
 before_install:
 - echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
+- make glide linter deps_jupyter
 env:
 - TEST_SUITE=test_lint
 - TEST_SUITE=test_unit
-- TEST_SUITE=test_jupyter_lint
-- TEST_SUITE=test_jupyter_unit
 - TEST_SUITE=test_integration_build
 - TEST_SUITE=build
-before_script:
-- make deps
+- TEST_SUITE=test_jupyter_lint
+- TEST_SUITE=test_jupyter_unit
 script: "make $TEST_SUITE"
 notifications:
   slack:
@@ -27,5 +26,7 @@ notifications:
     on_success: 'never'
     on_pull_requests: false
 cache:
+  pip:
+  ccache:
   directories:
   - $HOME/.glide
