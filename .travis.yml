@@ -10,7 +10,8 @@ install:
 before_install:
 - sudo apt-get install bash gcc
 - make glide linter 
-- sudo make deps_jupyter
+- pip install --upgrade pip
+- make deps_jupyter
 #- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
 # env:
 # - TEST_SUITE=test_lint
