@@ -54,7 +54,6 @@ test_lint:
 	gometalinter --config=.lint ./integration_tests/...
 
 test_jupyter_lint:
-	sudo pip install --upgrade pep8
 	pep8 --max-line-length=120 jupyter/
 
 test_unit:
@@ -73,10 +72,10 @@ test_integration:
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
 deps_jupyter:
-	# Required for jupyter building.
-	(cd jupyter; sudo pip install -r requirements.txt)
+	pip install --upgrade pep8
+	pip install -r jupyter/requirements.txt
 
-e2e_test: deps_jupyter
+e2e_test:
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
 	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
