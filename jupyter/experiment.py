@@ -11,10 +11,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-
-
 pd.set_option('max_colwidth', 400)
-
 
 class Experiment(object):
     """
@@ -27,7 +24,7 @@ class Experiment(object):
 
     @staticmethod
     def _create_or_get_session(cassandra_cluster, port, ssl_options):
-        from cassandra.cluster import Cluster, PlainTextAuthProvider # lazy import of cassandra dependency
+        from cassandra.cluster import Cluster, PlainTextAuthProvider  # lazy import of cassandra dependency
         if not Experiment.CASSANDRA_SESSION:
             auth_provider = None
             if ssl_options:
@@ -94,7 +91,7 @@ class Experiment(object):
         return rows, qps, throughputs
 
     def read_data_from_cassandra(self, cassandra_cluster, port, keyspaces, ssl_options, experiment_id):
-        from cassandra.query import named_tuple_factory, ordered_dict_factory # lazy import of cassandra depedency
+        from cassandra.query import named_tuple_factory, ordered_dict_factory  # lazy import of cassandra depedency
         session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options)
 
         query_for_data = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
@@ -110,7 +107,7 @@ class Experiment(object):
         return response_data, response_meta
 
     def __execute_query(self, query, session, row_factory):
-        from cassandra.query import SimpleStatement # lazy import of cassandra depedency
+        from cassandra.query import SimpleStatement  # lazy import of cassandra depedency
         session.row_factory = row_factory
         statement = SimpleStatement(query, fetch_size=100)
         response = session.execute(statement)
