@@ -24,61 +24,77 @@ var (
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
 func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory ExecutorFactoryFunc, cleanup func() error, err error) {
 	if RunOnKubernetesFlag.Value() {
-		k8sConfig := kubernetes.DefaultConfig()
-		masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
 		if !RunOnExistingKubernetesFlag.Value() {
-			k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
-			k8sClusterTaskHandle, err := k8sLauncher.Launch()
+			cleanup, err = LaunchKubernetesCluster()
 			if err != nil {
 				return nil, nil, nil, err
 			}
-
-			cleanup = func() error {
-				err := executor.StopAndEraseOutput(k8sClusterTaskHandle)
-				return err.GetErrIfAny()
-			}
 		}
-
-		// TODO: pass information from k8sConfig to hpExecutor and beExecutor configs.
-
-		// HP executor.
-		hpExecutorConfig := executor.DefaultKubernetesConfig()
-		hpExecutorConfig.ContainerImage = "centos_swan_image"
-		hpExecutorConfig.PodNamePrefix = "swan-hp"
-		hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
-		hpExecutorConfig.HostNetwork = true // requied to have access from mutilate agents run outside a k8s cluster.
-		hpExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
-
-		hpExecutorConfig.CPULimit = int64(HPKubernetesCPUResourceFlag.Value())
-		hpExecutorConfig.MemoryLimit = int64(HPKubernetesMemoryResourceFlag.Value())
-		// "Guranteed" class is when both resources and set for request and limit and equal.
-		hpExecutorConfig.CPURequest = hpExecutorConfig.CPULimit
-		hpExecutorConfig.MemoryRequest = hpExecutorConfig.MemoryLimit
-		hpExecutorConfig.Privileged = true
-		hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
+		hpExecutor, err = CreateKubernetesHpExecutor(hpIsolation)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-
-		// BE Executors.
-		beExecutorFactory = func(decorators isolation.Decorators) (executor.Executor, error) {
-			config := executor.DefaultKubernetesConfig()
-			config.PodNamePrefix = "swan-be"
-			config.ContainerImage = "centos_swan_image"
-			config.Decorators = decorators
-			config.Privileged = true // swan aggressor use unshare, which requires sudo.
-			config.Address = k8sConfig.GetKubeAPIAddress()
-			return executor.NewKubernetes(config)
-		}
+		beExecutorFactory = DefaultKubernetesBEExecutorFactory
 	} else {
 		hpExecutor = executor.NewLocalIsolated(hpIsolation)
-		beExecutorFactory = func(decorators isolation.Decorators) (executor.Executor, error) {
-			return executor.NewLocalIsolated(decorators), nil
-		}
+		beExecutorFactory = defaultLocalBEExecutorFactory
 	}
 	return
+}
+
+//LaunchKubernetesCluster starts new Kubernetes cluster using configuration provided with flags.
+func LaunchKubernetesCluster() (cleanup func() error, err error) {
+	k8sConfig := kubernetes.DefaultConfig()
+	masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
+	k8sClusterTaskHandle, err := k8sLauncher.Launch()
+	if err != nil {
+		return nil, err
+	}
+
+	cleanup = func() error {
+		return k8sClusterTaskHandle.Stop()
+	}
+
+	return
+}
+
+//CreateKubernetesHpExecutor creates new instance of Kubernetes executor for HP task with isolation applied.
+func CreateKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Executor, error) {
+	k8sConfig := kubernetes.DefaultConfig()
+	k8sExecutorConfig := executor.DefaultKubernetesConfig()
+
+	k8sExecutorConfig.ContainerImage = "centos_swan_image"
+	k8sExecutorConfig.PodNamePrefix = "swan-hp"
+	k8sExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
+	k8sExecutorConfig.HostNetwork = true
+	k8sExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
+	k8sExecutorConfig.CPULimit = int64(HPKubernetesCPUResourceFlag.Value())
+	k8sExecutorConfig.MemoryLimit = int64(HPKubernetesMemoryResourceFlag.Value())
+	k8sExecutorConfig.CPURequest = k8sExecutorConfig.CPULimit
+	k8sExecutorConfig.MemoryRequest = k8sExecutorConfig.MemoryLimit
+	k8sExecutorConfig.Privileged = true
+
+	return executor.NewKubernetes(k8sExecutorConfig)
+
+}
+
+//DefaultKubernetesBEExecutorFactory can be used to create Kubernetes executor for BE task with isolation applied.
+func DefaultKubernetesBEExecutorFactory(decorators isolation.Decorators) (executor.Executor, error) {
+	k8sConfig := kubernetes.DefaultConfig()
+	config := executor.DefaultKubernetesConfig()
+	config.PodNamePrefix = "swan-be"
+	config.ContainerImage = "centos_swan_image"
+	config.Decorators = decorators
+	config.Privileged = true // swan aggressor use unshare, which requires sudo.
+	config.Address = k8sConfig.GetKubeAPIAddress()
+	return executor.NewKubernetes(config)
+}
+
+func defaultLocalBEExecutorFactory(decorators isolation.Decorators) (executor.Executor, error) {
+	return executor.NewLocalIsolated(decorators), nil
 }

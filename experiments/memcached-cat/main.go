@@ -17,7 +17,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/caffe"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -133,8 +132,8 @@ func main() {
 	logrus.Debugf("IntSet with all BE cores: %v", beCores)
 
 	//We do not need to start Kubernetes on each repetition.
-	cleanup, err := launchKubernetesCluster()
-	errutil.CheckWithContext(err, "Cannot save metadata")
+	cleanup, err := sensitivity.LaunchKubernetesCluster()
+	errutil.CheckWithContext(err, "Cannot launch Kubernetes cluster")
 	defer func() {
 		if cleanup != nil {
 			err := cleanup()
@@ -179,16 +178,9 @@ func main() {
 					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, llcIsolation)
 
 					// Create executors with cleanup function.
-					hpExecutor, beExecutorFactory, err := prepareExecutors(hpIsolation)
+					hpExecutor, err := sensitivity.CreateKubernetesHpExecutor(hpIsolation)
 					errutil.CheckWithContext(err, "Cannot create executors")
-					defer func() {
-						if cleanup != nil {
-							err := cleanup()
-							if err != nil {
-								errutil.CheckWithContext(err, "cleanup failed")
-							}
-						}
-					}()
+					beExecutorFactory := sensitivity.DefaultKubernetesBEExecutorFactory
 
 					// Clean any RDT assignments from previoues phases.
 					pqosOutput, err := isolation.CleanRDTAssingments()
@@ -335,64 +327,6 @@ func main() {
 		}
 	}
 	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid, time.Since(experimentStart).String())
-}
-
-func launchKubernetesCluster() (func() error, error) {
-	k8sConfig := kubernetes.DefaultConfig()
-	masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	if !sensitivity.RunOnExistingKubernetesFlag.Value() {
-		k8sLauncher := kubernetes.New(masterExecutor, executor.NewLocal(), k8sConfig)
-		k8sClusterTaskHandle, err := k8sLauncher.Launch()
-		if err != nil {
-			return nil, err
-		}
-
-		cleanup := func() error {
-			err := executor.StopAndEraseOutput(k8sClusterTaskHandle)
-			return err.GetErrIfAny()
-		}
-
-		return cleanup, nil
-	}
-
-	return nil, nil
-}
-
-func prepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Executor, beExecutorFactory func(decorators isolation.Decorators) (executor.Executor, error), err error) {
-	k8sConfig := kubernetes.DefaultConfig()
-	hpExecutorConfig := executor.DefaultKubernetesConfig()
-	hpExecutorConfig.ContainerImage = "centos_swan_image"
-	hpExecutorConfig.PodNamePrefix = "swan-hp"
-	hpExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
-	hpExecutorConfig.HostNetwork = true // required to have access from mutilate agents run outside a k8s cluster.
-	hpExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
-
-	hpExecutorConfig.CPULimit = int64(sensitivity.HPKubernetesCPUResourceFlag.Value())
-	hpExecutorConfig.MemoryLimit = int64(sensitivity.HPKubernetesMemoryResourceFlag.Value())
-	// "Guaranteed" class is when both resources and set for request and limit and equal.
-	hpExecutorConfig.CPURequest = hpExecutorConfig.CPULimit
-	hpExecutorConfig.MemoryRequest = hpExecutorConfig.MemoryLimit
-	hpExecutorConfig.Privileged = true
-	hpExecutor, err = executor.NewKubernetes(hpExecutorConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	beExecutorFactory = func(decorators isolation.Decorators) (executor.Executor, error) {
-		beExecutorConfig := executor.DefaultKubernetesConfig()
-		beExecutorConfig.PodNamePrefix = "swan-be"
-		beExecutorConfig.ContainerImage = "centos_swan_image"
-		beExecutorConfig.Decorators = isolation.Decorators{decorators}
-		beExecutorConfig.Privileged = true // swan aggressor use unshare, which requires sudo.
-		beExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
-		return executor.NewKubernetes(beExecutorConfig)
-	}
-
-	return
 }
 
 func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (beLauncher sensitivity.LauncherSessionPair) {
