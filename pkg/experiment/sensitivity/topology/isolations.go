@@ -65,7 +65,9 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 }
 
 func isManualPolicy() bool {
-	return HpRangeFlag.Value().AsRangeString() != "" && BeRangeFlag.Value().AsRangeString() != "" && BeL1RangeFlag.Value().AsRangeString() == ""
+	return HpRangeFlag.Value().AsRangeString() != "" &&
+		BeRangeFlag.Value().AsRangeString() != "" &&
+		BeL1RangeFlag.Value().AsRangeString() != ""
 }
 
 func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
