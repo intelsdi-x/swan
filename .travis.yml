@@ -1,16 +1,13 @@
-sudo: required
 services:
 - docker
 language: go
 sudo: required
-before_install:
-- sudo apt-get install bash
-- sudo apt-get install gcc
 go:
 - 1.7
 before_install:
-- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
+- sudo apt-get install bash gcc
 - make glide linter deps_jupyter
+#- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
 env:
 - TEST_SUITE=test_lint
 - TEST_SUITE=test_unit
@@ -26,7 +23,9 @@ notifications:
     on_success: 'never'
     on_pull_requests: false
 cache:
-  pip:
-  ccache:
+  pip: true
+  ccache: true
   directories:
   - $HOME/.glide
+  - $HOME/.cache/pip
+  - $HOME/.ccache
