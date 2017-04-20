@@ -84,14 +84,14 @@ type SliceFlag struct {
 }
 
 // NewSliceFlag is a constructor of SliceFlag struct.
-func NewSliceFlag(name string, usage string) SliceFlag {
+func NewSliceFlag(name string, usage string, value []string) SliceFlag {
 	registerName(name)
 	return SliceFlag{
 		Flag: Flag{
 			Name:  name,
 			usage: usage,
 		},
-		value: flag.String(name, "", usage),
+		value: flag.String(name, strings.Join(value, ","), usage),
 	}
 }
 

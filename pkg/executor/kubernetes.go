@@ -72,20 +72,9 @@ const (
 )
 
 var (
-	kubeconfigFlag                = conf.NewStringFlag("kubernetes_kubeconfig", "absolute path to the kubeconfig file", "")
-	kubernetesPrivilegedPodsFlag  = conf.NewBoolFlag("kubernetes_privileged_pods", "configures all the containers as privileged when required.", false)
-	namespaceExperiment           = conf.NewStringFlag("kubernetes_namespace", "run experiment pods in selected namespaces", v1.NamespaceDefault)
-	kubernetesPodLunchTimeoutFlag = conf.NewDurationFlag("kubernetes_pod_launch_timeout", "pod launch timeout", 30*time.Second)
-
-	hostname = func() string {
-		hostname, err := os.Hostname()
-		if err != nil {
-			panic(fmt.Sprintf("%s", err.Error()))
-		}
-		return hostname
-	}()
-
-	nodeNameExperiment = conf.NewStringFlag("kubernetes_nodename", "run experiment pods on selected node", hostname)
+	kubeconfigFlag                = conf.NewStringFlag("kubernetes_kubeconfig", "(optional) Absolute path to the kubeconfig file. Overrides pod configuration passed through flags. ", "")
+	kubernetesPrivilegedPodsFlag  = conf.NewBoolFlag("kubernetes_privileged_pods", "Kubernetes containers will be run as privileged.", false)
+	kubernetesPodLunchTimeoutFlag = conf.NewDurationFlag("kubernetes_pod_launch_timeout", "Kubernetes Pod launch timeout.", 30*time.Second)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -99,8 +88,8 @@ type KubernetesConfig struct {
 	// configured, this field is used as a prefix for random generated Pod
 	// name.
 	PodName        string
-	NodeName       string
 	PodNamePrefix  string
+	NodeName       string
 	Address        string
 	CPURequest     int64
 	CPULimit       int64
@@ -130,7 +119,7 @@ func (err *LaunchTimedOutError) Error() string {
 // DefaultKubernetesConfig returns a KubernetesConfig object with safe defaults.
 func DefaultKubernetesConfig() KubernetesConfig {
 	return KubernetesConfig{
-		NodeName:       nodeNameExperiment.Value(),
+		NodeName:       "",
 		PodName:        "",
 		PodNamePrefix:  "swan",
 		Address:        "127.0.0.1:8080",
@@ -141,7 +130,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
 		ContainerImage: defaultContainerImage,
-		Namespace:      namespaceExperiment.Value(),
+		Namespace:      v1.NamespaceDefault,
 		Privileged:     kubernetesPrivilegedPodsFlag.Value(),
 		HostNetwork:    false,
 		LaunchTimeout:  kubernetesPodLunchTimeoutFlag.Value(),
