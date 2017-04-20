@@ -134,6 +134,7 @@ func testExecutor(t *testing.T, executor Executor) {
 	Convey("When command which does not exists is executed", func() {
 		taskHandle, err := executor.Execute("/bin/sh -c commandThatDoesNotExists")
 		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "exit code 127")
 		So(taskHandle, ShouldBeNil)
 	})
 

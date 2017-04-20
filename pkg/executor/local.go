@@ -111,7 +111,11 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	return checkIfProcessFailedToExecute(command, l.Name(), &taskHandle)
+	err = checkIfProcessFailedToExecute(command, l.Name(), &taskHandle)
+	if err != nil {
+		return nil, err
+	}
+	return &taskHandle, nil
 }
 
 // localTaskHandle implements TaskHandle interface.

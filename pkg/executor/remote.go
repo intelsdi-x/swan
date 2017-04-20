@@ -169,7 +169,11 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	return checkIfProcessFailedToExecute(command, remote.Name(), &taskHandle)
+	err = checkIfProcessFailedToExecute(command, remote.Name(), &taskHandle)
+	if err != nil {
+		return nil, err
+	}
+	return &taskHandle, nil
 }
 
 // Final wait for the command to exit
