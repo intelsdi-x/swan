@@ -5,7 +5,8 @@ TEST_OPT?=
 
 # High level targets called from travis with depedencies.
 integration_test: show_env restart_snap deps build dist install test_integration
-unit_test: test_integration_build build test_unit 
+unit_test: deps test_integration_build build test_unit 
+lint: linter test_lint
 
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
@@ -13,8 +14,6 @@ build_and_test_integration: build_all test_integration
 build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
 test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
-
-travis: test_lint test_unit test_integration_build build test_jupyter_lint test_jupyter_unit
 
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
