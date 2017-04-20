@@ -10,7 +10,7 @@ install:
 - sudo apt-get install bash gcc
 - make glide linter 
 - pip install --upgrade pip
-- make deps_jupyter
+- make deps_test_jupyter
 script: 
 - make test_lint
 - make test_unit 

@@ -72,8 +72,10 @@ test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
+deps_test_jupyter:
+	pip install -r jupyter/test-requirements.txt
+
 deps_jupyter:
-	pip install --upgrade pep8
 	pip install -r jupyter/requirements.txt
 
 e2e_test:
