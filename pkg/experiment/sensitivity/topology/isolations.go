@@ -1,6 +1,7 @@
 package topology
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
@@ -34,18 +35,39 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 		llcIsolation = isolation.Taskset{CPUList: BeRangeFlag.Value()}
 		l1Isolation = isolation.Taskset{CPUList: BeL1RangeFlag.Value()}
 		hpIsolation = isolation.Taskset{CPUList: HpRangeFlag.Value()}
+
+		log.Info("Using Manual Core Placement for workload isolation")
+		log.Debugf("HP CPU Threads from flag %q: %s", HpRangeFlag.Name, HpRangeFlag.Value().AsRangeString())
+		log.Debugf("BE-LLC CPU Threads from flag %q: %s", BeRangeFlag.Name, BeRangeFlag.Value().AsRangeString())
+		log.Debugf("BE-L1  CPU Threads from flag %q: %s", BeL1RangeFlag.Name, BeL1RangeFlag.Value().AsRangeString())
 	} else {
 		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value())
 		errutil.Check(err)
-		l1Isolation = isolation.Taskset{CPUList: defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()}
-		llcIsolation = isolation.Taskset{CPUList: defaultTopology.SharingLLCButNotL1Threads}
-		hpIsolation = isolation.Taskset{CPUList: defaultTopology.HpThreadIDs}
+		hpThreads := defaultTopology.HpThreadIDs
+		bellcThreads := defaultTopology.SharingLLCButNotL1Threads
+		bel1Threads := defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()
+		if bel1Threads.Empty() {
+			log.Warn("Machine does not support HyperThreads. L1-Cache Best Effort workloads will use LLC threads")
+			bel1Threads = bellcThreads
+		}
+
+		l1Isolation = isolation.Taskset{CPUList: bel1Threads}
+		llcIsolation = isolation.Taskset{CPUList: bellcThreads}
+		hpIsolation = isolation.Taskset{CPUList: hpThreads}
+
+		log.Info("Using Automatic Core Placement for workload isolation")
+		log.Debugf("HP CPU Threads from flag %q: %v", hpCPUCountFlag.Name, hpThreads)
+		log.Debugf("BE-LLC CPU Threads from flag %q: %v", beCPUCountFlag.Name, bellcThreads)
+		log.Debugf("BE-L1  CPU Threads from flag %q: %v", beCPUCountFlag.Name, bel1Threads)
 	}
+
 	return
 }
 
 func isManualPolicy() bool {
-	return HpRangeFlag.Value().AsRangeString() != "" && BeRangeFlag.Value().AsRangeString() != ""
+	return HpRangeFlag.Value().AsRangeString() != "" &&
+		BeRangeFlag.Value().AsRangeString() != "" &&
+		BeL1RangeFlag.Value().AsRangeString() != ""
 }
 
 func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {

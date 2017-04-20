@@ -120,16 +120,20 @@ func TestCgroupDestroy(t *testing.T) {
 	Convey("After creating a new cgroup", t, func() {
 		path := uuidgen(t)
 		controller := "cpu,cpuset"
-		cg, _ := NewCgroup([]string{controller}, path)
-		cg.Create()
+		cg, err := NewCgroup([]string{controller}, path)
+		So(err, ShouldBeNil)
+		err = cg.Create()
+		So(err, ShouldBeNil)
 		defer cg.Destroy(true)
 
 		Convey("The cgroup should exist until it is destroyed", func() {
-			ok, _ := cg.Exists()
+			ok, err := cg.Exists()
+			So(err, ShouldBeNil)
 			So(ok, ShouldBeTrue)
 
 			cg.Destroy(true)
-			ok, _ = cg.Exists()
+			ok, err = cg.Exists()
+			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 			for _, ctrl := range cg.Controllers() {
 				abs := cg.AbsPath(ctrl)
@@ -144,12 +148,15 @@ func TestCgroupDestroy(t *testing.T) {
 		uuid2 := uuidgen(t)
 		path := pth.Join(uuid1, uuid2)
 		controller := "cpu"
-		cg, _ := NewCgroup([]string{controller}, path)
-		cg.Create()
+		cg, err := NewCgroup([]string{controller}, path)
+		So(err, ShouldBeNil)
+		err = cg.Create()
+		So(err, ShouldBeNil)
 		defer cg.Parent().Destroy(true)
 
 		Convey("The nested cgroup should exist", func() {
-			ok, _ := cg.Exists()
+			ok, err := cg.Exists()
+			So(err, ShouldBeNil)
 			So(ok, ShouldBeTrue)
 
 			Convey("And destroying the parent non-recursively should fail", func() {
