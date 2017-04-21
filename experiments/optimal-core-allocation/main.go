@@ -69,6 +69,9 @@ func main() {
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	useCorePinning := useCorePinningFlag.Value()
 	peakLoad := sensitivity.PeakLoadFlag.Value()
+	if peakLoad == 0 {
+		logrus.Fatalf("peak load have to be != 0!")
+	}
 
 	// Record metadata.
 	records := map[string]string{
