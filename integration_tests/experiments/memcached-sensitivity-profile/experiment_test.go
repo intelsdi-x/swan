@@ -113,7 +113,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With caffe aggressor and baseline", func() {
-			args := []string{"-aggr", "caffe"}
+			args := []string{"-experiment_be_workloads", "caffe"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -125,7 +125,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper configuration and with l1d aggressors", func() {
-			args := []string{"-aggr", "l1d"}
+			args := []string{"-experiment_be_workloads", "l1d"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -157,7 +157,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("While having two repetitions to phase", func() {
-				os.Setenv("SWAN_REPS", "2")
+				os.Setenv("SWAN_EXPERIMENT_REPETITIONS", "2")
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
@@ -176,7 +176,7 @@ func TestExperiment(t *testing.T) {
 			})
 
 			Convey("Experiment should succeed also with 2 load points", func() {
-				os.Setenv("SWAN_LOAD_POINTS", "2")
+				os.Setenv("SWAN_EXPERIMENT_LOAD_POINTS", "2")
 				fmt.Println(args)
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -198,7 +198,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and without phases", func() {
-			args := []string{"-kubernetes", "-kube_allow_privileged"}
+			args := []string{"-kubernetes"}
 			_, err := runExp(memcachedSensitivityProfileBin, true, args...)
 			Convey("Experiment should return with no errors", func() {
 				So(err, ShouldBeNil)
@@ -206,7 +206,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-			args := []string{"-kubernetes", "-aggr", "l1d", "-baseline=false", "-kube_allow_privileged"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "l1d", "-experiment_baseline=false"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -219,7 +219,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes and caffe", func() {
-			args := []string{"-kubernetes", "-aggr", "caffe", "-baseline=false", "-kube_allow_privileged"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-experiment_baseline=false"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -231,15 +231,15 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With invalid configuration stop experiment if error", func() {
-			os.Setenv("SWAN_LOAD_POINTS", "abc")
+			os.Setenv("SWAN_EXPERIMENT_LOAD_POINTS", "abc")
 			_, err := runExp(memcachedSensitivityProfileBin, false)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("While setting zero repetitions to phase", func() {
 			args := []string{"-aggr", "l1d"}
-			os.Setenv("SWAN_LOAD_POINTS", "1")
-			os.Setenv("SWAN_REPS", "0")
+			os.Setenv("SWAN_EXPERIMENT_LOAD_POINTS", "1")
+			os.Setenv("SWAN_EXPERIMENT_REPETITIONS", "0")
 			Convey("Experiment should pass with no errors", func() {
 				_, err := runExp(memcachedSensitivityProfileBin, false, args...)
 				So(err, ShouldBeNil)
@@ -247,7 +247,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With wrong aggresor name", func() {
-			args := []string{"-aggr", "not-existing-aggressor"}
+			args := []string{"-experiment_be_workloads", "not-existing-aggressor"}
 			_, err := runExp(memcachedSensitivityProfileBin, false, args...)
 			So(err, ShouldNotBeNil)
 		})

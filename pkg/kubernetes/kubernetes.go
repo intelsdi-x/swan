@@ -50,7 +50,7 @@ type Config struct {
 	KubeSchedulerPort  int
 	KubeProxyPort      int
 	KubeletPort        int
-	AllowPrivileged    bool // Defaults to false.
+	AllowPrivileged    bool
 	// Address range to use for services.
 	ServiceAddresses string
 
