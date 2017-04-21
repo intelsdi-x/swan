@@ -50,24 +50,18 @@ var (
 )
 
 func main() {
+	experimentStart := time.Now()
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uid := uuid.New()
-
-	// Initialize logger.
+	uid := uuid.New()// Initialize logger.
 	logger.Initialize(appName, uid)
-
 	// Create metadata associated with experiment
-	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	errutil.Check(metadata.Connect())
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	errutil.Check(err)
 
-	// Write configuration as metadata.
-	errutil.Check(metadata.RecordFlags())
-
-	// Store SWAN_ environment configuration.
-	errutil.Check(metadata.RecordEnv(conf.EnvironmentPrefix))
-	errutil.Check(metadata.RecordPlatformMetrics())
+	err = metadata.RecordRuntimeEnv(experimentStart)
+	errutil.CheckWithContext(err, "Cannot save runtime environment details to metadata database.")
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
 	validate.CheckCPUPowerGovernor()
