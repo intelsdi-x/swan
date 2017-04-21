@@ -227,18 +227,17 @@ func TestConfiguration(t *testing.T) {
 			requriredParts := []string{
 				"# stringDesc",
 				"# Default: http://foo-bar",
-				"SWAN_STRINGTEST=bar-foo",
+				"STRINGTEST=bar-foo",
 				"# intDesc",
 				"# Default: 628",
-				"SWAN_INTTEST=13",
+				"INTTEST=13",
 				"# durDesc",
 				"# Default: 2m3s",
-				"SWAN_DURATIONTEST=2h0m0s",
+				"DURATIONTEST=2h0m0s",
 				"# sliceDesc",
-				"SWAN_SLICETEST=foo1,foo2",
+				"SLICETEST=foo1,foo2",
 				"# intSetDesc",
-				"SWAN_INTSETTEST=1,3,4,5",
-				"set +o allexport",
+				"INTSETTEST=1,3,4,5",
 			}
 
 			for _, part := range requriredParts {
@@ -254,11 +253,11 @@ func TestConfiguration(t *testing.T) {
 					"intSetTest":   "1,3,4,5",
 				})
 				expectedParts := []string{
-					"SWAN_STRINGTEST=newString",
-					"SWAN_INTTEST=17",
-					"SWAN_DURATIONTEST=3h",
-					"SWAN_SLICETEST=bar1,bar2",
-					"SWAN_INTSETTEST=1,3,4,5",
+					"STRINGTEST=newString",
+					"INTTEST=17",
+					"DURATIONTEST=3h",
+					"SLICETEST=bar1,bar2",
+					"INTSETTEST=1,3,4,5",
 				}
 
 				for _, part := range expectedParts {

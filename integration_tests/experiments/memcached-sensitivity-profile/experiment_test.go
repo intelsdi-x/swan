@@ -3,6 +3,7 @@ package experiment
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -76,12 +77,39 @@ func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags ma
 	return
 }
 
+// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install).
+var memcachedSensitivityProfileBin = path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
+
+func TestExperimentConfiguration(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	const confFilename = "temp_new_config"
+
+	Convey("generated config should contain some flags", t, func() {
+		config, err := exec.Command(memcachedSensitivityProfileBin, "-config-dump").Output()
+		So(err, ShouldBeNil)
+
+		So(string(config), ShouldContainSubstring, "KUBERNETES=false")
+
+		Convey("and after replace new value is dumped", func() {
+			newConfig := strings.Replace(string(config), "KUBERNETES=false", "KUBERNETES=true", -1)
+
+			err = ioutil.WriteFile(confFilename, []byte(newConfig), os.ModePerm)
+			So(err, ShouldBeNil)
+
+			reloadedConfig, err := exec.Command(memcachedSensitivityProfileBin, "-config", confFilename, "-config-dump").CombinedOutput()
+			So(err, ShouldBeNil)
+			So(string(reloadedConfig), ShouldContainSubstring, "KUBERNETES=true")
+
+			Reset(func() { os.Remove(confFilename) })
+		})
+
+	})
+
+}
+
 func TestExperiment(t *testing.T) {
 
 	log.SetLevel(log.ErrorLevel)
-
-	// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install).
-	memcachedSensitivityProfileBin := path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
 
 	envs := map[string]string{
 		"SWAN_LOG":                  "debug",

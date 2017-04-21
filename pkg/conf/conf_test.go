@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -41,6 +42,18 @@ func TestConf(t *testing.T) {
 			os.Setenv(envName(CassandraConnectionTimeout.Name), "foo-is-not-duration")
 			err := ParseFlags()
 			So(err, ShouldNotBeNil)
+		})
+
+		Convey("Validation for flags loaded from file", func() {
+			const testfile = "testfile"
+			err := ioutil.WriteFile(testfile, []byte("# comment\nfoo=baz"), os.ModePerm)
+			So(err, ShouldBeNil)
+			Reset(func() {
+				os.Remove(testfile)
+			})
+			err = LoadConfig(testfile)
+			So(err, ShouldBeNil)
+			So(os.Getenv("SWAN_foo"), ShouldEqual, "baz")
 		})
 	})
 }
