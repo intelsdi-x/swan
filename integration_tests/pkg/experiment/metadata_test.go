@@ -5,12 +5,13 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	. "github.com/smartystreets/goconvey/convey"
+	"os"
+	"time"
 )
 
 func TestMetadata(t *testing.T) {
-	metadata := experiment.NewMetadata("foobar-experiment", experiment.DefaultMetadataConfig())
 	Convey("Connecting to the Cassandra database", t, func() {
-		err := metadata.Connect()
+		metadata, err := experiment.NewMetadata("foobar-experiment", experiment.DefaultMetadataConfig())
 		So(err, ShouldBeNil)
 
 		// If a test failed midway, there may be metadata associated with the 'foobar-experiment' above.
@@ -19,6 +20,24 @@ func TestMetadata(t *testing.T) {
 		// Make sure that metadata is cleared when test ends.
 		Reset(func() {
 			metadata.Clear()
+			os.Unsetenv("SWAN_LOG")
+		})
+
+		Convey("Recording runtime environment", func() {
+			os.Setenv("SWAN_LOG", "error")
+			err := metadata.RecordRuntimeEnv(time.Now())
+			So(err, ShouldBeNil)
+
+			Convey("It should be possible to retrive environment variables, hostname, start time, flags and platform data", func() {
+				metadataCollection, err := metadata.Get()
+				So(err, ShouldBeNil)
+				So(metadataCollection, ShouldHaveLength, 4)
+				So(metadataCollection[0]["cpu_model"], ShouldNotBeNil)
+				So(metadataCollection[1]["host"], ShouldNotBeNil)
+				So(metadataCollection[1]["time"], ShouldNotBeNil)
+				So(metadataCollection[2]["SWAN_LOG"], ShouldNotBeNil)
+				So(metadataCollection[3]["cassandra_password"], ShouldNotBeNil)
+			})
 		})
 
 		Convey("Recoding a metadata pair", func() {

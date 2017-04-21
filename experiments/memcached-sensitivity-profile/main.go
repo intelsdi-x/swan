@@ -42,32 +42,18 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
-	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-
-	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
-	fmt.Println(uid)
-
-	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.Check(err)
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
+	// Save experiment runtime environment (configuration, environmental variables, etc).
+	err = metadata.RecordRuntimeEnv(experimentStart)
 	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		logrus.Errorf("Cannot save runtime environment %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-
-	err = metadata.RecordPlatformMetrics()
-	if err != nil {
-		logrus.Errorf("Cannot save platform metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "Cannot save runtime environment")
 
 	// Validate preconditions.
 	validate.OS()

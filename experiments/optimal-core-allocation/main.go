@@ -41,14 +41,13 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
-	// Connect to metadata database
-	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
+	// connect to metadata database
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	errutil.CheckWithContext(err, "Cannot connect to metadata database")
 
-	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.CheckWithContext(err, "Cannot save flags to metadata database")
+	// Save experiment runtime environment (configuration, environmental variables, etc).
+	err = metadata.RecordRuntimeEnv(experimentStart)
+	errutil.CheckWithContext(err, "Cannot save runtime environment")
 
 	// Read configuration.
 	loadDuration := sensitivity.LoadDurationFlag.Value()
@@ -68,16 +67,6 @@ func main() {
 	}
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata")
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
-	errutil.CheckWithContext(err, "Cannot save environment metadata")
-
-	// Store host and time in metadata
-	hostname, err := os.Hostname()
-	errutil.CheckWithContext(err, "Cannot determine hostname")
-	err = metadata.RecordMap(map[string]string{"time": experimentStart.Format(time.RFC822Z), "host": hostname})
-	errutil.CheckWithContext(err, "Cannot save hostname and time to metadata database")
 
 	// Validate preconditions.
 	validate.OS()
