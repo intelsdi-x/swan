@@ -34,6 +34,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 )
