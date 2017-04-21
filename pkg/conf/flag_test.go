@@ -56,7 +56,7 @@ func TestFlags(t *testing.T) {
 
 		Convey("When some custom Slice Flag is defined", func() {
 			// Register custom flag.
-			customFlag := NewSliceFlag("custom_slice_arg", "help", []string{"example1,example2"})
+			customFlag := NewStringSliceFlag("custom_slice_arg", "help", []string{"example1,example2"})
 
 			So(customFlag.Value(), ShouldResemble, []string{"example1", "example2"})
 
@@ -143,7 +143,7 @@ func TestConfiguration(t *testing.T) {
 		durTestFlag := NewDurationFlag("durationTest", "durDesc", defaultDuration)
 		providedDuration := "2h0m0s"
 
-		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc", []string{"example1,example2"})
+		sliceTestFlag := NewStringSliceFlag("sliceTest", "sliceDesc", []string{"example1,example2"})
 		providedSlice := "foo1,foo2"
 
 		intSetTestFlag := NewIntSetFlag("intSetTest", "intSetDesc", "")

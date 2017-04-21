@@ -24,7 +24,7 @@ const (
 
 var (
 	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
-	AggressorsFlag = conf.NewSliceFlag(
+	AggressorsFlag = conf.NewStringSliceFlag(
 		"experiment_aggressor_workloads", "Best Effort workloads that will be run sequentially in co-location with High Priority workload.",
 		[]string{"l1d", "l1i", "l3", "stream", "caffe"},
 	)
