@@ -62,7 +62,6 @@ func LoadConfig(filename string) error {
 		if !strings.HasPrefix(line, "#") && strings.Contains(line, "=") {
 			fields := strings.Split(line, "=")
 			os.Setenv(envPrefix+fields[0], fields[1])
-			fmt.Println(fields)
 		}
 	}
 	return nil

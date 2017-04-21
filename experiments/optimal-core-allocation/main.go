@@ -34,6 +34,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 )
@@ -68,6 +69,9 @@ func main() {
 	loadPoints := sensitivity.LoadPointsCountFlag.Value()
 	useCorePinning := useCorePinningFlag.Value()
 	peakLoad := sensitivity.PeakLoadFlag.Value()
+	if peakLoad == 0 {
+		logrus.Fatalf("peak load have to be != 0!")
+	}
 
 	// Record metadata.
 	records := map[string]string{
