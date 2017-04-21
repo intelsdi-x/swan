@@ -17,9 +17,9 @@ var (
 	// HpRangeFlag allows to set high priority task cores.
 	HpRangeFlag = conf.NewIntSetFlag("experiment_hp_workload_cpu_range", "HP cpuset range (e.g: 0-2). All three 'range' flags must be set to use this policy.", "")
 	// BeRangeFlag allows to set best effort task cores with default isolation.
-	BeRangeFlag = conf.NewIntSetFlag("experiment_be_llc_workload_cpu_range", "BE cpuset range (e.g: 0-2) for workloads that are targeted as LLC-interfering workloads. All three 'range' flags must be set to use this policy. ", "")
+	BeRangeFlag = conf.NewIntSetFlag("experiment_be_workload_l3_cpu_range", "BE cpuset range (e.g: 0-2) for workloads that are targeted as LLC-interfering workloads. All three 'range' flags must be set to use this policy. ", "")
 	// BeL1RangeFlag allows to set best effort task cores with L1 cache isolation.
-	BeL1RangeFlag = conf.NewIntSetFlag("experiment_be_l1_workload_cpu_range", "BE cpuset range (e.g: 0-2) for workloads that are targeted as L1-interfering workloads. All three 'range' flags must be set to use this policy.", "")
+	BeL1RangeFlag = conf.NewIntSetFlag("experiment_be_workload_l1_cpu_range", "BE cpuset range (e.g: 0-2) for workloads that are targeted as L1-interfering workloads. All three 'range' flags must be set to use this policy.", "")
 )
 
 type defaultTopology struct {

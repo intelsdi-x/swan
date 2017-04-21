@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	includeBaselinePhaseFlag = conf.NewBoolFlag("experiment_baseline", "Run Baseline (a phase without an aggressor)", true)
+	includeBaselinePhaseFlag = conf.NewBoolFlag("experiment_baseline", "Run Baseline (a phase without a Best Effort workload)", true)
 	appName                  = os.Args[0]
 )
 

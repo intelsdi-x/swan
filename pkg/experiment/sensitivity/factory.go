@@ -29,42 +29,42 @@ var (
 		[]string{"l1d", "l1i", "l3", "stream", "caffe"},
 	)
 
-	threatAggressorsAsService = conf.NewBoolFlag(
-		"debug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.",
+	theatAggressorsAsService = conf.NewBoolFlag(
+		"debug_treat_be_as_service", "Debug only: Best Effort workloads are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.",
 		true)
 
 	// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
 	L1dProcessNumber = conf.NewIntFlag(
 		"experiment_be_l1d_processes_number",
-		"Number of L1 data cache aggressor processes to be run",
+		"Number of L1 data cache best effort processes to be run",
 		l1dDefaultProcessNumber,
 	)
 
 	// L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
 	L1iProcessNumber = conf.NewIntFlag(
 		"experiment_be_l1i_processes_number",
-		"Number of L1 instruction cache aggressors processes to be run",
+		"Number of L1 instruction cache best effort processes to be run",
 		l1iDefaultProcessNumber,
 	)
 
 	// L3ProcessNumber represents number of L3 data cache aggressor processes to be run
 	L3ProcessNumber = conf.NewIntFlag(
 		"experiment_be_l3_processes_number",
-		"Number of L3 data cache aggressors processes to be run",
+		"Number of L3 data cache best effort processes to be run",
 		l3DefaultProcessNumber,
 	)
 
 	// MembwProcessNumber represents number of membw aggressor processes to be run
 	MembwProcessNumber = conf.NewIntFlag(
 		"experiment_be_membw_processes_number",
-		"Number of membw aggressors processes to be run",
+		"Number of membw best effort processes to be run",
 		membwDefaultProcessNumber,
 	)
 
 	// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
 	RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
-		"experiment_run_caffe_with_llc_isolation",
-		"If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
+		"experiment_run_caffe_with_l3_cache_isolation",
+		"If set, the Caffe Best Effort workload will use the same isolation settings as for L3 Best Efforts, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
 		true,
 	)
 )
@@ -128,7 +128,7 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		return nil, errors.Errorf("aggressor %q not found", name)
 	}
 
-	if threatAggressorsAsService.Value() {
+	if theatAggressorsAsService.Value() {
 		aggressor = executor.ServiceLauncher{Launcher: aggressor}
 	}
 
