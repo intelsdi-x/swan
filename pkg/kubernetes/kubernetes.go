@@ -22,13 +22,14 @@ const (
 	// waitForReadyNode configuration
 	waitForReadyNodeBackOffPeriod = 1 * time.Second
 	nodeCheckRetryCount           = 20
-	expectedKubelelNodesCount     = 1
+	expectedKubeletNodesCount     = 1
 )
 
 var (
 	kubeEtcdServersFlag = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 
-	kubernetesMasterFlag = conf.NewStringFlag("kubernetes_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
+	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
+	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 )
 
 type kubeCommand struct {
@@ -71,7 +72,7 @@ func DefaultConfig() Config {
 		EtcdPrefix:         "/registry",
 		LogLevel:           0,
 		AllowPrivileged:    true,
-		KubeAPIAddr:        kubernetesMasterFlag.Value(),
+		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
 		KubeAPIPort:        8080,
 		KubeletPort:        10250,
 		KubeControllerPort: 10252,
@@ -112,7 +113,7 @@ type getReadyNodesFunc func(k8sAPIAddress string) ([]v1.Node, error)
 
 type k8s struct {
 	master        executor.Executor
-	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubelelNodesCount const.
+	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
 	config        Config
 	isListening   netutil.IsListeningFunction // For mocking purposes.
 	getReadyNodes getReadyNodesFunc           // For mocking purposes.
@@ -319,7 +320,7 @@ func (m k8s) waitForReadyNode(apiServerAddress string) error {
 			return err
 		}
 
-		if len(nodes) == expectedKubelelNodesCount {
+		if len(nodes) == expectedKubeletNodesCount {
 			return nil
 		}
 
