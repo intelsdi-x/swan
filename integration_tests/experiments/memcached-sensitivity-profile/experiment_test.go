@@ -1,8 +1,23 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package experiment
 
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -76,12 +91,39 @@ func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags ma
 	return
 }
 
+// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install).
+var memcachedSensitivityProfileBin = path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
+
+func TestExperimentConfiguration(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	const confFilename = "temp_new_config"
+
+	Convey("generated config should contain some flags", t, func() {
+		config, err := exec.Command(memcachedSensitivityProfileBin, "-config-dump").Output()
+		So(err, ShouldBeNil)
+
+		So(string(config), ShouldContainSubstring, "KUBERNETES=false")
+
+		Convey("and after replace new value is dumped", func() {
+			newConfig := strings.Replace(string(config), "KUBERNETES=false", "KUBERNETES=true", -1)
+
+			err = ioutil.WriteFile(confFilename, []byte(newConfig), os.ModePerm)
+			So(err, ShouldBeNil)
+
+			reloadedConfig, err := exec.Command(memcachedSensitivityProfileBin, "-config", confFilename, "-config-dump").CombinedOutput()
+			So(err, ShouldBeNil)
+			So(string(reloadedConfig), ShouldContainSubstring, "KUBERNETES=true")
+
+			Reset(func() { os.Remove(confFilename) })
+		})
+
+	})
+
+}
+
 func TestExperiment(t *testing.T) {
 
 	log.SetLevel(log.ErrorLevel)
-
-	// Use experiment binaries from build directory to simplify development flow (doesn't required make bist install).
-	memcachedSensitivityProfileBin := path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
 
 	envs := map[string]string{
 		"SWAN_LOG_LEVEL":                      "debug",
@@ -214,6 +256,19 @@ func TestExperiment(t *testing.T) {
 				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 				So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+				So("None", ShouldNotBeIn, swanAggressorsNames)
+			})
+		})
+
+		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
+			args := []string{"-kubernetes", "-aggr", "stress-ng-stream", "-baseline=false", "-kube_allow_privileged"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
+				So(tags["swan_aggressor_name"], ShouldEqual, "stress-ng-stream")
 				So("None", ShouldNotBeIn, swanAggressorsNames)
 			})
 		})

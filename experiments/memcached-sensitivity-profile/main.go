@@ -1,8 +1,21 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +25,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -37,45 +51,23 @@ func main() {
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uuid := uuid.New()
+	uid := uuid.New()
 
-	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
+	// Initialize logger.
+	logger.Initialize(appName, uid)
+
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	if err != nil {
 		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-
-	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
-	fmt.Println(uuid)
-
-	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.Check(err)
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
+	// Save experiment runtime environment (configuration, environmental variables, etc).
+	err = metadata.RecordRuntimeEnv(experimentStart)
 	if err != nil {
-		logrus.Errorf("Cannot save environment metadata: %q", err.Error())
+		logrus.Errorf("Cannot save runtime environment %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-
-	err = metadata.RecordPlatformMetrics()
-	if err != nil {
-		logrus.Errorf("Cannot save platform metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
-
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
-	if err != nil {
-		logrus.Errorf("IO error: %q", err.Error())
-		os.Exit(experiment.ExIOErr)
-	}
-
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
-	logrus.Debugf("log level:", logrus.GetLevel())
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
+	errutil.CheckWithContext(err, "Cannot save runtime environment")
 
 	// Validate preconditions.
 	validate.OS()
@@ -179,7 +171,7 @@ func main() {
 				executeRepetition := func() error {
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -196,7 +188,7 @@ func main() {
 					}
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uuid,
+						experiment.ExperimentKey, uid,
 						experiment.PhaseKey, phaseName,
 						experiment.RepetitionKey, repetition,
 						experiment.LoadPointQPSKey, phaseQPS,
@@ -277,5 +269,5 @@ func main() {
 			}
 		}
 	}
-	logrus.Infof("Ended experiment %s with uuid %s in %s", appName, uuid, time.Since(experimentStart).String())
+	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid, time.Since(experimentStart).String())
 }

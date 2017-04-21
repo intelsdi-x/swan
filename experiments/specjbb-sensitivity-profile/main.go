@@ -1,8 +1,21 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"strconv"
@@ -14,6 +27,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -36,32 +50,18 @@ var (
 )
 
 func main() {
+	experimentStart := time.Now()
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uuid := uuid.New()
+	uid := uuid.New()// Initialize logger.
+	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
-	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
-	errutil.Check(metadata.Connect())
-
-	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
-	fmt.Println(uuid)
-
-	// Write configuration as metadata.
-	errutil.Check(metadata.RecordFlags())
-
-	// Store SWAN_ environment configuration.
-	errutil.Check(metadata.RecordEnv(conf.EnvironmentPrefix))
-	errutil.Check(metadata.RecordPlatformMetrics())
-
-	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	errutil.Check(err)
 
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.Debug("log level", logrus.GetLevel())
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
+	err = metadata.RecordRuntimeEnv(experimentStart)
+	errutil.CheckWithContext(err, "Cannot save runtime environment details to metadata database.")
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
 	validate.CheckCPUPowerGovernor()
@@ -158,7 +158,7 @@ func main() {
 				executeRepetition := func() error {
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -171,7 +171,7 @@ func main() {
 					processes = append(processes, hpHandle)
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uuid,
+						experiment.ExperimentKey, uid,
 						experiment.PhaseKey, phaseName,
 						experiment.RepetitionKey, repetition,
 						experiment.LoadPointQPSKey, phaseQPS,

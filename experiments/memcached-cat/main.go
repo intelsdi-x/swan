@@ -1,8 +1,21 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -13,6 +26,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -56,36 +70,16 @@ func main() {
 	// Generate an experiment ID and start the metadata session.
 	uid := uuid.New()
 
+	// Initialize logger.
+	logger.Initialize(appName, uid)
+
 	// Connect to metadata database
-	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	err := metadata.Connect()
+	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	errutil.CheckWithContext(err, "Cannot connect to metadata database")
 
-	logrus.Info("Starting Experiment ", appName, " with uid ", uid)
-	fmt.Println(uid)
-
-	// Write configuration as metadata.
-	err = metadata.RecordFlags()
-	errutil.CheckWithContext(err, "Cannot save flags to metadata database")
-
-	// Store SWAN_ environment configuration.
-	err = metadata.RecordEnv(conf.EnvironmentPrefix)
-	errutil.CheckWithContext(err, "Cannot save environment metadata")
-
-	// Store host and time in metadata
-	hostname, err := os.Hostname()
-	errutil.CheckWithContext(err, "Cannot determine hostname")
-	err = metadata.RecordMap(map[string]string{"time": time.Now().Format(time.RFC822Z), "host": hostname})
-	errutil.CheckWithContext(err, "Cannot save hostname and time to metadata database")
-
-	// Create experiment directory
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uid, appName)
-	errutil.CheckWithContext(err, "Cannot create experiment logs directory")
-
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
-	logrus.Debugf("log level:", logrus.GetLevel())
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
+	// Save experiment runtime environment (configuration, environmental variables, etc).
+	err = metadata.RecordRuntimeEnv(experimentStart)
+	errutil.CheckWithContext(err, "Cannot save runtime environment")
 
 	// Validate preconditions.
 	validate.OS()
@@ -233,7 +227,7 @@ func main() {
 
 						logrus.Infof("Starting %s", phaseName)
 
-						err = experiment.CreateRepetitionDir(experimentDirectory, phaseName, 0)
+						err = experiment.CreateRepetitionDir(appName, uid, phaseName, 0)
 						if err != nil {
 							return errors.Wrapf(err, "cannot create repetition log directory in %s", phaseName)
 						}

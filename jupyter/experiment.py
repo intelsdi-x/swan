@@ -1,21 +1,29 @@
 # encoding: utf-8
 
 """
+ Copyright (c) 2017 Intel Corporation
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+
 This module contains the convience class to read experiment data and generate sensitivity
 profiles. See profile.py for more information.
 """
 import os.path
-
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-
-from cassandra.auth import PlainTextAuthProvider
-from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
-from cassandra.query import named_tuple_factory, ordered_dict_factory
-
 
 pd.set_option('max_colwidth', 400)
 
@@ -31,6 +39,7 @@ class Experiment(object):
 
     @staticmethod
     def _create_or_get_session(cassandra_cluster, port, ssl_options):
+        from cassandra.cluster import Cluster, PlainTextAuthProvider  # lazy import of cassandra dependency
         if not Experiment.CASSANDRA_SESSION:
             auth_provider = None
             if ssl_options:
@@ -97,6 +106,7 @@ class Experiment(object):
         return rows, qps, throughputs
 
     def read_data_from_cassandra(self, cassandra_cluster, port, keyspaces, ssl_options, experiment_id):
+        from cassandra.query import named_tuple_factory, ordered_dict_factory  # lazy import of cassandra depedency
         session = Experiment._create_or_get_session(cassandra_cluster, port, ssl_options)
 
         query_for_data = """SELECT ns, ver, host, time, boolval, doubleval, strval, tags, valtype
@@ -112,6 +122,7 @@ class Experiment(object):
         return response_data, response_meta
 
     def __execute_query(self, query, session, row_factory):
+        from cassandra.query import SimpleStatement  # lazy import of cassandra depedency
         session.row_factory = row_factory
         statement = SimpleStatement(query, fetch_size=100)
         response = session.execute(statement)

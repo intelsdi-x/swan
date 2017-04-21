@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package experiment
 
 import (
@@ -32,7 +46,7 @@ const (
 
 // CreateExperimentDir creates directory structure for the experiment.
 func CreateExperimentDir(uuid, appName string) (experimentDirectory string, logFile *os.File, err error) {
-	experimentDirectory = path.Join(os.TempDir(), appName, uuid)
+	experimentDirectory = createExperimentLogsDirectoryName(appName, uuid)
 	err = os.MkdirAll(experimentDirectory, 0777)
 	if err != nil {
 		return "", &os.File{}, errors.Wrapf(err, "cannot create experiment directory: ", experimentDirectory)
@@ -51,8 +65,13 @@ func CreateExperimentDir(uuid, appName string) (experimentDirectory string, logF
 	return experimentDirectory, logFile, nil
 }
 
+func createExperimentLogsDirectoryName(appName, uuid string) string {
+	return path.Join(os.TempDir(), appName, uuid)
+}
+
 // CreateRepetitionDir creates folders that store repetition logs inside experiment's directory.
-func CreateRepetitionDir(experimentDirectory, phaseName string, repetition int) error {
+func CreateRepetitionDir(appName, uuid, phaseName string, repetition int) error {
+	experimentDirectory := createExperimentLogsDirectoryName(appName, uuid)
 	repetitionDir := path.Join(experimentDirectory, phaseName, strconv.Itoa(repetition))
 	err := os.MkdirAll(repetitionDir, 0777)
 	if err != nil {

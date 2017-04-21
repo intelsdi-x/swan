@@ -1,5 +1,7 @@
-cassandra-driver==3.8.1
+pytest
+pep8
 jupyter
 numpy==1.12.1
+pylint
 Cython==0.25.2
 pandas==0.19.2

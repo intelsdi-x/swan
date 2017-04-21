@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package experiment
 
 import (
@@ -76,12 +90,17 @@ type Metadata struct {
 }
 
 // NewMetadata returns the Metadata helper from an experiment id and configuration.
-// Connect() still needs to be called to get an active Cassandra session.
-func NewMetadata(experimentID string, config MetadataConfig) *Metadata {
-	return &Metadata{
+func NewMetadata(experimentID string, config MetadataConfig) (*Metadata, error) {
+	metadata := &Metadata{
 		experimentID: experimentID,
 		config:       config,
 	}
+	err := metadata.connect()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }
 
 func sslOptions(config MetadataConfig) *gocql.SslOptions {
@@ -104,8 +123,8 @@ func sslOptions(config MetadataConfig) *gocql.SslOptions {
 	return sslOptions
 }
 
-// Connect creates a session to the Cassandra cluster. This function should only be called once.
-func (m *Metadata) Connect() error {
+// connect creates a session to the Cassandra cluster. This function should only be called once.
+func (m *Metadata) connect() error {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
 
 	// TODO(niklas): make consistency configurable.
@@ -174,20 +193,49 @@ func (m *Metadata) RecordMap(metadata MetadataMap) error {
 	return m.storeMap(metadata, metadataKindEmpty)
 }
 
-// // RecordKindMap stores a key and value map and associates with the experiment id grouped by "kind".
-// func (m *Metadata) RecordKindMap(kind string, metadata MetadataMap) error {
-// 	return m.storeMap(metadata, kind)
-// }
+//RecordRuntimeEnv store experiment environment information in Cassandra.
+func (m *Metadata) RecordRuntimeEnv(experimentStart time.Time) error {
+	// Store configuration.
+	err := m.recordFlags()
+	if err != nil {
+		return err
+	}
 
-// RecordFlags saves whole flags based configuration in the metadata information.
-func (m *Metadata) RecordFlags() error {
+	// Store SWAN_ environment configuration.
+	err = m.recordEnv(conf.EnvironmentPrefix)
+	if err != nil {
+		return err
+	}
+
+	// Store host and time in metadata.
+	hostname, err := os.Hostname()
+	if err != nil {
+		return errors.Wrap(err, "cannot retrieve hostname")
+	}
+	// Store hostname and start time.
+	err = m.RecordMap(map[string]string{"time": experimentStart.Format(time.RFC822Z), "host": hostname})
+	if err != nil {
+		return err
+	}
+
+	// Store hardware & OS details.
+	err = m.recordPlatformMetrics()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// recordFlags saves whole flags based configuration in the metadata information.
+func (m *Metadata) recordFlags() error {
 	metadata := conf.GetFlags()
 	return m.storeMap(metadata, metadataKindFlags)
 }
 
-// RecordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
+// recordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
 // in the metadata information
-func (m *Metadata) RecordEnv(prefix string) error {
+func (m *Metadata) recordEnv(prefix string) error {
 	metadata := MetadataMap{}
 	// Store environment configuration.
 	for _, env := range os.Environ() {
@@ -199,9 +247,9 @@ func (m *Metadata) RecordEnv(prefix string) error {
 	return m.storeMap(metadata, metadataKindEnviron)
 }
 
-// RecordPlatformMetrics stores platform specific metadata.
+// recordPlatformMetrics stores platform specific metadata.
 // Platform metrics are metadataKindPlatform type.
-func (m *Metadata) RecordPlatformMetrics() error {
+func (m *Metadata) recordPlatformMetrics() error {
 	platformMetrics := GetPlatformMetrics()
 	return m.storeMap(platformMetrics, metadataKindPlatform)
 }
