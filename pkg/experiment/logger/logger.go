@@ -15,11 +15,10 @@ func Initialize(appName, uuid string) {
 	// Create experiment directory
 	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
 	errutil.CheckWithContext(err, "Cannot create experiment logs directory")
-	logrus.Infof("Logging to %q", experimentDirectory)
 
 	// Setup logging set to both output and logFile.
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05.100"})
-	logrus.Debugf("log level:", logrus.GetLevel())
+	logrus.Infof("Working directory %q", experimentDirectory)
 	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Logging and outputting experiment ID.
