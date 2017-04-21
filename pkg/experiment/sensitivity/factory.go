@@ -23,7 +23,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stressng"
@@ -135,8 +135,8 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
 		aggressor = caffe.New(exec, caffe.DefaultConfig())
-	case l3data.ID:
-		aggressor = l3data.New(exec, l3data.DefaultL3Config())
+	case l3.ID:
+		aggressor = l3.New(exec, l3.DefaultL3Config())
 	case stream.ID:
 		aggressor = stream.New(exec, stream.DefaultConfig())
 	case stressng.IDStream:
@@ -176,7 +176,7 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
 		}
 		return decorators
-	case l3data.ID:
+	case l3.ID:
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
@@ -222,7 +222,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 				return nil, err
 			}
 			launcherSessionPair = NewMonitoredLauncher(aggressorPair, caffeSession)
-		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID, stressng.IDStream, stressng.IDCacheL1, stressng.IDCacheL3, stressng.IDMemCpy:
+		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3.ID, stream.ID, stressng.IDStream, stressng.IDCacheL1, stressng.IDCacheL3, stressng.IDMemCpy:
 			launcherSessionPair = NewLauncherWithoutSession(aggressorPair)
 		default:
 			return nil, errors.Errorf("aggressor %q not found", aggressorName)
