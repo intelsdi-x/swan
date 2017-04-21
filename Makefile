@@ -3,9 +3,10 @@
 # Place for custom options for test commands.
 TEST_OPT?=
 
-# for compatibility purposes.
+# High level targets called from travis with depedencies.
 integration_test: show_env restart_snap deps build dist install test_integration
-unit_test: deps test_unit
+unit_test: deps test_integration_build build test_unit 
+lint: linter test_lint
 
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
@@ -22,14 +23,14 @@ glide:
 	# Workaround for https://github.com/Masterminds/glide/issues/784
 	mkdir -p ${GOPATH}/bin
 	wget -q https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
-	curl -s https://glide.sh/get | sh
 	glide -q install
-	
-deps: glide
-	# Warning: do not try to update (-u) because it fails (upstream changed in no updateable manner).
+
+linter:
 	go get github.com/alecthomas/gometalinter
-	go get github.com/stretchr/testify
 	gometalinter --install
+	
+deps: glide linter
+	go get github.com/stretchr/testify
 
 build_plugins:
 	mkdir -p build/plugins
@@ -54,14 +55,13 @@ test_lint:
 	gometalinter --config=.lint ./integration_tests/...
 
 test_jupyter_lint:
-	sudo pip install --upgrade pep8
 	pep8 --max-line-length=120 jupyter/
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...
 	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
 
-test_jupyter_unit: deps_jupyter
+test_jupyter_unit:
 	(cd jupyter; py.test)
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
@@ -72,11 +72,13 @@ test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
-deps_jupyter:
-	# Required for jupyter building.
-	(cd jupyter; sudo pip install -r requirements.txt)
+deps_test_jupyter:
+	pip install -r jupyter/test-requirements.txt
 
-e2e_test: deps_jupyter
+deps_jupyter:
+	pip install -r jupyter/requirements.txt
+
+e2e_test:
 	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
 	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
 	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout

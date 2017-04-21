@@ -3,23 +3,21 @@ services:
 - docker
 language: go
 sudo: required
-before_install:
-- sudo apt-get install bash
-- sudo apt-get install gcc
 go:
 - 1.7
-before_install:
-- echo -e "machine github.com\n login $GIT_TOKEN" >> ~/.netrc
-env:
-- TEST_SUITE=test_lint
-- TEST_SUITE=test_unit
-- TEST_SUITE=test_jupyter_lint
-- TEST_SUITE=test_jupyter_unit
-- TEST_SUITE=test_integration_build
-- TEST_SUITE=build
-before_script:
-- make deps
-script: "make $TEST_SUITE"
+install:
+- PATH=/usr/lib/ccache:$PATH
+- sudo apt-get install bash gcc
+- make glide linter 
+- pip install --upgrade pip
+- make deps_test_jupyter
+script: 
+- make test_lint
+- make test_unit 
+- make test_integration_build 
+- make build 
+- make test_jupyter_lint 
+- make test_jupyter_unit
 notifications:
   slack:
     rooms:
@@ -27,5 +25,9 @@ notifications:
     on_success: 'never'
     on_pull_requests: false
 cache:
+  pip: true
+  ccache: true
   directories:
-  - $HOME/.glide/cache
+  - $HOME/.glide
+  - $HOME/.cache/pip
+  - $HOME/.ccache
