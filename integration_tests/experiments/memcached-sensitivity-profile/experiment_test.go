@@ -261,7 +261,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
-			args := []string{"-kubernetes", "-aggr", "stress-ng-stream", "-baseline=false", "-kube_allow_privileged"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-experiment_baseline=false"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -292,7 +292,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("While setting zero repetitions to phase", func() {
-			args := []string{"-aggr", "l1d"}
+			args := []string{"-experiment_be_workloads", "l1d"}
 			os.Setenv("SWAN_EXPERIMENT_LOAD_POINTS", "1")
 			os.Setenv("SWAN_EXPERIMENT_REPETITIONS", "0")
 			Convey("Experiment should pass with no errors", func() {
