@@ -12,6 +12,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stressng"
 	"github.com/pkg/errors"
 )
 
@@ -121,6 +122,14 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = l3data.New(exec, l3data.DefaultL3Config())
 	case stream.ID:
 		aggressor = stream.New(exec, stream.DefaultConfig())
+	case stressng.IDStream:
+		aggressor = stressng.NewStream(exec)
+	case stressng.IDCacheL1:
+		aggressor = stressng.NewCacheL1(exec)
+	case stressng.IDCacheL3:
+		aggressor = stressng.NewCacheL3(exec)
+	case stressng.IDMemCpy:
+		aggressor = stressng.NewMemCpy(exec)
 	default:
 		return nil, errors.Errorf("aggressor %q not found", name)
 	}
@@ -162,6 +171,9 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 			decorators = append(decorators, executor.NewParallel(MembwProcessNumber.Value()))
 		}
 		return decorators
+	case stressng.IDCacheL1:
+		decorators := isolation.Decorators{f.l1AggressorIsolation}
+		return decorators
 	case caffe.ID:
 		if RunCaffeWithLLCIsolationFlag.Value() {
 			return isolation.Decorators{f.otherAggressorIsolation}
@@ -193,7 +205,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 				return nil, err
 			}
 			launcherSessionPair = NewMonitoredLauncher(aggressorPair, caffeSession)
-		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID:
+		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID, stressng.IDStream, stressng.IDCacheL1, stressng.IDCacheL3, stressng.IDMemCpy:
 			launcherSessionPair = NewLauncherWithoutSession(aggressorPair)
 		default:
 			return nil, errors.Errorf("aggressor %q not found", aggressorName)

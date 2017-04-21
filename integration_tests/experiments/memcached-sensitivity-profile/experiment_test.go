@@ -218,6 +218,19 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
+		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
+			args := []string{"-kubernetes", "-aggr", "stress-ng-stream", "-baseline=false", "-kube_allow_privileged"}
+			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
+				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+				So(err, ShouldBeNil)
+
+				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldBeGreaterThan, 0)
+				So(tags["swan_aggressor_name"], ShouldEqual, "stress-ng-stream")
+				So("None", ShouldNotBeIn, swanAggressorsNames)
+			})
+		})
+
 		Convey("With proper kubernetes and caffe", func() {
 			args := []string{"-kubernetes", "-aggr", "caffe", "-baseline=false", "-kube_allow_privileged"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
