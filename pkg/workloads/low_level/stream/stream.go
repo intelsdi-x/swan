@@ -15,7 +15,7 @@ const (
 
 // StreamThreadNumberFlag is a flag that allows to control number of stream aggressor's threads. 0 (default) means use all available threads.
 // (https://gcc.gnu.org/onlinedocs/libgomp/OMP_005fNUM_005fTHREADS.html#OMP_005fNUM_005fTHREADS).
-var StreamThreadNumberFlag = conf.NewIntFlag("stream_thread_number", "Number of threads that stream aggressor is going to launch. Default value (0) will launch one thread per cpu.", 0)
+var StreamThreadNumberFlag = conf.NewIntFlag("experiment_be_stream_thread_number", "Number of threads that stream aggressor is going to launch. Default value (0) will launch one thread per cpu.", 0)
 
 // Config is a struct for stream aggressor configuration.
 type Config struct {

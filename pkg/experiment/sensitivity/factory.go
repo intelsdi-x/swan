@@ -25,7 +25,7 @@ const (
 var (
 	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
 	AggressorsFlag = conf.NewStringSliceFlag(
-		"experiment_aggressor_workloads", "Best Effort workloads that will be run sequentially in co-location with High Priority workload.",
+		"experiment_be_workloads", "Best Effort workloads that will be run sequentially in co-location with High Priority workload.",
 		[]string{"l1d", "l1i", "l3", "stream", "caffe"},
 	)
 
@@ -35,28 +35,28 @@ var (
 
 	// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
 	L1dProcessNumber = conf.NewIntFlag(
-		"experiment_aggressor_l1d_process_number",
+		"experiment_be_l1d_processes_number",
 		"Number of L1 data cache aggressor processes to be run",
 		l1dDefaultProcessNumber,
 	)
 
 	// L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
 	L1iProcessNumber = conf.NewIntFlag(
-		"experiment_aggressor_l1i_process_number",
+		"experiment_be_l1i_processes_number",
 		"Number of L1 instruction cache aggressors processes to be run",
 		l1iDefaultProcessNumber,
 	)
 
 	// L3ProcessNumber represents number of L3 data cache aggressor processes to be run
 	L3ProcessNumber = conf.NewIntFlag(
-		"experiment_aggressor_l3_process_number",
+		"experiment_be_l3_processes_number",
 		"Number of L3 data cache aggressors processes to be run",
 		l3DefaultProcessNumber,
 	)
 
 	// MembwProcessNumber represents number of membw aggressor processes to be run
 	MembwProcessNumber = conf.NewIntFlag(
-		"experiment_aggressor_membw_process_number",
+		"experiment_be_membw_processes_number",
 		"Number of membw aggressors processes to be run",
 		membwDefaultProcessNumber,
 	)

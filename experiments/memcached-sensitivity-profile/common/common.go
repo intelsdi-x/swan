@@ -19,10 +19,10 @@ var (
 		"Address where Mutilate Master will be launched. Master coordinate agents and measures SLI.",
 		"127.0.0.1")
 
-	mutilateAgentsFlag = conf.NewSliceFlag(
+	mutilateAgentsFlag = conf.NewStringSliceFlag(
 		"experiment_mutilate_agent_addresses",
-		"Addresses where Mutilate Agents will be launched. Agents generate actual load on Memcached.",
-		[]string{"127.0.0.1", "127.0.0.1"},
+		"Addresses where Mutilate Agents will be launched, separated by commas (e.g: \"192.168.1.1,192.168.1.2\" Agents generate actual load on Memcached.",
+		[]string{"127.0.0.1"},
 	)
 )
 

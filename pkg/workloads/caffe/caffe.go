@@ -21,7 +21,7 @@ const (
 
 var (
 	caffeModel   = conf.NewStringFlag("caffe_model", "Path to trained model", defaultModel)
-	caffeWeights = conf.NewStringFlag("caffe_weights", "Path to trained weight", defaultWeights)
+	caffeWeights = conf.NewStringFlag("caffe_weights", "Path to trained weights", defaultWeights)
 )
 
 // Config is a config for the Caffe.
