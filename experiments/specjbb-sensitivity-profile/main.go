@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"strconv"
@@ -14,6 +13,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
@@ -39,13 +39,14 @@ func main() {
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uuid := uuid.New()
-	// Create metadata associated with experiment
-	metadata := experiment.NewMetadata(uuid, experiment.MetadataConfigFromFlags())
-	errutil.Check(metadata.Connect())
+	uid := uuid.New()
 
-	logrus.Info("Starting Experiment ", appName, " with uuid ", uuid)
-	fmt.Println(uuid)
+	// Initialize logger.
+	logger.Initialize(appName, uid)
+
+	// Create metadata associated with experiment
+	metadata := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	errutil.Check(metadata.Connect())
 
 	// Write configuration as metadata.
 	errutil.Check(metadata.RecordFlags())
@@ -53,15 +54,6 @@ func main() {
 	// Store SWAN_ environment configuration.
 	errutil.Check(metadata.RecordEnv(conf.EnvironmentPrefix))
 	errutil.Check(metadata.RecordPlatformMetrics())
-
-	// Each experiment should have it's own directory to store logs and errors
-	experimentDirectory, logFile, err := experiment.CreateExperimentDir(uuid, appName)
-	errutil.Check(err)
-
-	// Setup logging set to both output and logFile.
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.Debug("log level", logrus.GetLevel())
-	logrus.SetOutput(io.MultiWriter(logFile, os.Stderr))
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
 	validate.CheckCPUPowerGovernor()
@@ -158,7 +150,7 @@ func main() {
 				executeRepetition := func() error {
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
-					err := experiment.CreateRepetitionDir(experimentDirectory, phaseName, repetition)
+					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
@@ -171,7 +163,7 @@ func main() {
 					processes = append(processes, hpHandle)
 
 					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uuid,
+						experiment.ExperimentKey, uid,
 						experiment.PhaseKey, phaseName,
 						experiment.RepetitionKey, repetition,
 						experiment.LoadPointQPSKey, phaseQPS,
