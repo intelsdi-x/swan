@@ -103,8 +103,8 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
-			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
+			defer executor.StopAndEraseOutput(taskHandle)
 
 			Convey("And after few seconds", func() {
 				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
@@ -125,8 +125,8 @@ func TestKubernetesExecutor(t *testing.T) {
 
 		Convey("Running a command and calling Clean() on task handle should not cause a data race", func() {
 			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 0")
-			defer executor.StopAndEraseOutput(taskHandle)
 			So(err, ShouldBeNil)
+			defer executor.StopAndEraseOutput(taskHandle)
 		})
 
 		Convey("Logs should be available and non-empty", func() {
@@ -192,8 +192,8 @@ func TestKubernetesExecutor(t *testing.T) {
 			k8sexecutor, err := executor.NewKubernetes(executorConfig)
 			So(err, ShouldBeNil)
 			handle, err := k8sexecutor.Execute("wrong command")
-			So(err, ShouldBeNil)
-			defer handle.EraseOutput()
+			So(err, ShouldNotBeNil)
+			So(handle, ShouldBeNil)
 		})
 
 		Convey("Timeout should not block execution because of files being unavailable", func() {
@@ -204,11 +204,8 @@ func TestKubernetesExecutor(t *testing.T) {
 			k8sexecutor, err = executor.NewKubernetes(executorConfig)
 			So(err, ShouldBeNil)
 			taskHandle, err := k8sexecutor.Execute("sleep inf")
-			defer executor.StopAndEraseOutput(taskHandle)
-			So(err, ShouldBeNil)
-
-			stopped := taskHandle.Wait(5 * time.Second)
-			So(stopped, ShouldBeTrue)
+			So(err, ShouldNotBeNil)
+			So(taskHandle, ShouldBeNil)
 		})
 	})
 }

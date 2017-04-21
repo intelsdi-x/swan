@@ -324,10 +324,10 @@ func (cg *cgroup) Isolate(PID int) error {
 func cmdOutput(executor executor.Executor, cmdTimeout time.Duration, argv ...string) (string, error) {
 	cmd := strings.Join(argv, " ")
 	task, err := executor.Execute(cmd)
-	defer task.EraseOutput()
 	if err != nil {
 		return "", err
 	}
+	defer task.EraseOutput()
 	if ok := task.Wait(cmdTimeout); !ok {
 		return "", errors.Errorf("Timed out waiting for command: %q", cmd)
 	}
