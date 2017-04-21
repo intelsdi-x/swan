@@ -73,7 +73,7 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 }
 
 func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string, metricsCount int) {
-
+	time.Sleep(5 * time.Second)
 	var ns string
 	iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
 	for iter.Scan(&ns, &tags) {
@@ -134,7 +134,10 @@ func TestExperiment(t *testing.T) {
 		"SWAN_EXPERIMENT_LOAD_POINTS":              "1",
 		"SWAN_EXPERIMENT_PEAK_LOAD":                "5000",
 		"SWAN_EXPERIMENT_LOAD_DURATION":            "1s",
-		"SWAN_MUTILATE_WARMUP_TIME":                "1s",
+		"SWAN_MUTILATE_RECORDS":                    "10000",
+		"SWAN_MUTILATE_AGENT_CONNECTIONS":          "1",
+		"SWAN_MUTILATE_AGENT_AFFINITY":             "false",
+		"SWAN_MUTILATE_MASTER_AFFINITY":            "false",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {

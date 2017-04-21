@@ -31,18 +31,18 @@ import (
 const (
 	defaultPercentile             = "99"
 	defaultTuningTime             = 10 * time.Second // [s]
-	defaultRecords                = 10000
-	defaultWarmupTime             = 10 * time.Second // [s]
+	defaultRecords                = 5000000
+	defaultWarmupTime             = 1 * time.Second // [s]
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
-	defaultAgentConnections       = 1
+	defaultAgentConnections       = 16
 	defaultAgentConnectionsDepth  = 1
-	defaultAgentAffinity          = false
+	defaultAgentAffinity          = true
 	defaultAgentBlocking          = true
 	defaultMasterThreads          = 8
 	defaultMasterConnections      = 4
-	defaultMasterConnectionsDepth = 4
-	defaultMasterAffinity         = false
+	defaultMasterConnectionsDepth = 1
+	defaultMasterAffinity         = true
 	defaultMasterBlocking         = true
 	defaultMasterKeySize          = "30"          // [bytes]
 	defaultMasterValueSize        = "200"         // [bytes]
