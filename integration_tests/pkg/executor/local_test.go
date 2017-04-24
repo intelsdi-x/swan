@@ -23,7 +23,6 @@ import (
 	. "github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
-	"github.com/pivotal-golang/bytefmt"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -84,7 +83,7 @@ func TestLocal(t *testing.T) {
 			shares.Create()
 			defer shares.Clean()
 
-			memory := isolation.NewMemorySize("/A", 64*bytefmt.MEGABYTE)
+			memory := isolation.NewMemorySize("/A", 64*1024*1024)
 			memory.Create()
 			defer memory.Clean()
 

@@ -15,15 +15,15 @@
 package isolation
 
 import (
-	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/pivotal-golang/bytefmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"os/exec"
 	"os/user"
 	"path"
 	"strconv"
 	"testing"
+
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMemorySize(t *testing.T) {
@@ -37,7 +37,7 @@ func TestMemorySize(t *testing.T) {
 	}
 
 	memoryName := "M"
-	memorysizeInBytes := int(64 * bytefmt.MEGABYTE)
+	memorysizeInBytes := int(64 * 1024 * 1024)
 	memorysize := isolation.NewMemorySize(memoryName, memorysizeInBytes)
 
 	cmd := exec.Command("sh", "-c", "sleep 1h")

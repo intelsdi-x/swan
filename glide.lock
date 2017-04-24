@@ -1,5 +1,5 @@
-hash: eead09e52efdd0934f2c78c618ad032358190480598d2add8a8a0f6fa7468888
-updated: 2017-04-06T17:44:28.542305605+02:00
+hash: 54382de2ab6e9c54a825f5b48fa5af6148779bc85a22822e89d04cd82a903004
+updated: 2017-04-21T17:54:52.648623903+02:00
 imports:
 - name: github.com/appc/spec
   version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
@@ -384,8 +384,4 @@ imports:
   - 1.5/tools/clientcmd/api/v1
   - 1.5/tools/metrics
   - 1.5/transport
-testImports:
-- name: github.com/pivotal-golang/bytefmt
-  version: b12c1522f4cbb5f35861bd5dd2c39a4fa996441a
-- name: github.com/vektra/errors
-  version: c64d83aba85aa4392895aadeefabbd24e89f3580
+testImports: []

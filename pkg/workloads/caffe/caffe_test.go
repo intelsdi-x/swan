@@ -19,9 +19,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
-	"github.com/vektra/errors"
 )
 
 func TestCaffeWithMockedExecutor(t *testing.T) {
