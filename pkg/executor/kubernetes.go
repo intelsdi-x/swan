@@ -358,6 +358,9 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	register(taskHandle)
+
 	return taskHandle, nil
 }
 
@@ -634,6 +637,7 @@ func (kw *k8sWatcher) whenPodReady() {
 // Additionally call whenPodReady handler to setupLogs and mark pod as running.
 func (kw *k8sWatcher) whenPodFinished(pod *v1.Pod) {
 	kw.oncePodFinished.Do(func() {
+		unregister(kw.taskHandle)
 		kw.whenPodReady()
 		kw.setExitCode(pod)
 		log.Debug("K8s task watcher: pod finished")
