@@ -132,24 +132,44 @@ func removeDirectory(directory string) error {
 func logOutput(th TaskHandle) error {
 	file, err := th.StdoutFile()
 	if err == nil {
-		stdout, err := tailFile(file.Name(), logLinesCount)
+		stat, err := file.Stat()
 		if err != nil {
-			log.Errorf("Tailing stdout file failed: %q", err.Error())
-		}
-		log.Errorf("Last %d lines of stdout: %s", logLinesCount, stdout)
-	} else {
-		log.Errorf("Impossible to retrieve stdout file: %q", err.Error())
-	}
-	file, err = th.StderrFile()
-	if err == nil {
-		stderr, err := tailFile(file.Name(), logLinesCount)
-		if err != nil {
-			log.Errorf("Tailing stderr file failed: %q", err.Error())
+			log.Errorf("Could not stat stdout file: %q", err.Error())
 		}
 
-		log.Errorf("Last %d lines of stderr: %s", logLinesCount, stderr)
+		if stat.Size() == 0 {
+			log.Errorf("Stdout file is empty")
+		} else {
+			stdout, err := tailFile(file.Name(), logLinesCount)
+			if err != nil {
+				log.Errorf("Tailing stdout file failed: %q", err.Error())
+			}
+
+			log.Errorf("Last %d lines of stdout: %s", logLinesCount, stdout)
+		}
 	} else {
-		log.Errorf("Impossible to retrieve stderr file: %q", err.Error())
+		log.Errorf("Cannot retrieve stdout file: %q", err.Error())
+	}
+
+	file, err = th.StderrFile()
+	if err == nil {
+		stat, err := file.Stat()
+		if err != nil {
+			log.Errorf("Could not stat stdout file: %q", err.Error())
+		}
+
+		if stat.Size() == 0 {
+			log.Errorf("Stderr file is empty")
+		} else {
+			stderr, err := tailFile(file.Name(), logLinesCount)
+			if err != nil {
+				log.Errorf("Tailing stderr file failed: %q", err.Error())
+			}
+
+			log.Errorf("Last %d lines of stderr: %s", logLinesCount, stderr)
+		}
+	} else {
+		log.Errorf("Cannot retrieve stderr file: %q", err.Error())
 	}
 
 	return nil
@@ -163,5 +183,5 @@ func tailFile(filePath string, lineCount int) (tail string, err error) {
 		return "", errors.Wrapf(err, "could not read tail of %q", filePath)
 	}
 
-	return string(output), nil
+	return "\n" + string(output), nil
 }

@@ -38,6 +38,3 @@ import:
   - 1.5/pkg/watch
   - 1.5/rest
   - 1.5/tools/clientcmd
-testImport:
-- package: github.com/pivotal-golang/bytefmt
-- package: github.com/vektra/errors
