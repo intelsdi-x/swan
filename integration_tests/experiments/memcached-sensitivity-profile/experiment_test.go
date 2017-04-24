@@ -126,15 +126,15 @@ func TestExperiment(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	envs := map[string]string{
-		"SWAN_LOG_LEVEL":                      "debug",
-		"EXPERIMENT_HP_WORKLOAD_CPU_RANGE":    "0",
-		"EXPERIMENT_BE_WORKLOAD_L1_CPU_RANGE": "0",
-		"EXPERIMENT_BE_WORKLOAD_L3_CPU_RANGE": "0",
-		"SWAN_EXPERIMENT_REPETITIONS":         "1",
-		"SWAN_EXPERIMENT_LOAD_POINTS":         "1",
-		"SWAN_EXPERIMENT_PEAK_LOAD":           "5000",
-		"SWAN_EXPERIMENT_LOAD_DURATION":       "1s",
-		"SWAN_MUTILATE_WARMUP_TIME":           "1s",
+		"SWAN_LOG_LEVEL":                           "debug",
+		"SWAN_EXPERIMENT_HP_WORKLOAD_CPU_RANGE":    "0",
+		"SWAN_EXPERIMENT_BE_WORKLOAD_L1_CPU_RANGE": "0",
+		"SWAN_EXPERIMENT_BE_WORKLOAD_L3_CPU_RANGE": "0",
+		"SWAN_EXPERIMENT_REPETITIONS":              "1",
+		"SWAN_EXPERIMENT_LOAD_POINTS":              "1",
+		"SWAN_EXPERIMENT_PEAK_LOAD":                "5000",
+		"SWAN_EXPERIMENT_LOAD_DURATION":            "1s",
+		"SWAN_MUTILATE_WARMUP_TIME":                "1s",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {
