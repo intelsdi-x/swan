@@ -39,7 +39,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
@@ -332,7 +332,7 @@ func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation i
 		caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 		errutil.CheckWithContext(err, "Cannot create Caffee session launcher")
 		beLauncher = sensitivity.NewMonitoredLauncher(aggressorPair, caffeSession)
-	case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID:
+	case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3.ID, stream.ID:
 		beLauncher = sensitivity.NewLauncherWithoutSession(aggressorPair)
 	default:
 		logrus.Fatalf("Unknown aggressor: %q", aggressorName)

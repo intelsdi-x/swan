@@ -91,26 +91,26 @@ func (i IntFlag) Value() int {
 	return *i.value
 }
 
-// SliceFlag represents flag with slice string values.
-type SliceFlag struct {
+// StringSliceFlag represents flag with slice string values.
+type StringSliceFlag struct {
 	Flag
 	value *string // stored as csv.
 }
 
-// NewSliceFlag is a constructor of SliceFlag struct.
-func NewSliceFlag(name string, usage string) SliceFlag {
+// NewStringSliceFlag is a constructor of StringSliceFlag struct.
+func NewStringSliceFlag(name string, usage string, value []string) StringSliceFlag {
 	registerName(name)
-	return SliceFlag{
+	return StringSliceFlag{
 		Flag: Flag{
 			Name:  name,
 			usage: usage,
 		},
-		value: flag.String(name, "", usage),
+		value: flag.String(name, strings.Join(value, ","), usage),
 	}
 }
 
 // Value returns value of defined flag after parse.
-func (s SliceFlag) Value() []string {
+func (s StringSliceFlag) Value() []string {
 	if *s.value == "" {
 		return []string{}
 	}

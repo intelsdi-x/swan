@@ -26,40 +26,16 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID = "caffe"
 
-	defaultBinaryRelativePath = "caffe.sh"
-	defaultModel              = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
-	defaultWeights            = "examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
-	defaultIterations         = 1000000000
-	defaultSigintEffect       = "stop"
+	defaultCaffeWrapper = "caffe.sh"
+	defaultModel        = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
+	defaultWeights      = "examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
+	defaultIterations   = 1000000000
+	defaultSigintEffect = "stop"
 )
 
-var caffePath = conf.NewStringFlag(
-	"caffe_path",
-	"Path to script launching caffe as an aggressor", defaultBinaryRelativePath,
-)
-
-var caffeModel = conf.NewStringFlag(
-	"caffe_model",
-	"Path to trained model",
-	defaultModel,
-)
-
-var caffeWeights = conf.NewStringFlag(
-	"caffe_weights",
-	"Path to trained weight",
-	defaultWeights,
-)
-
-var caffeIterations = conf.NewIntFlag(
-	"caffe_iterations",
-	"Number of iterations",
-	defaultIterations,
-)
-
-var caffeSigintEffect = conf.NewStringFlag(
-	"caffe_sigint",
-	"Sigint effect for caffe",
-	defaultSigintEffect,
+var (
+	caffeModel   = conf.NewStringFlag("caffe_model", "Path to trained model", defaultModel)
+	caffeWeights = conf.NewStringFlag("caffe_weights", "Path to trained weights", defaultWeights)
 )
 
 // Config is a config for the Caffe.
@@ -75,11 +51,11 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		BinaryPath:       caffePath.Value(),
+		BinaryPath:       defaultCaffeWrapper,
 		ModelPath:        caffeModel.Value(),
 		WeightsPath:      caffeWeights.Value(),
-		IterationsNumber: caffeIterations.Value(),
-		SigintEffect:     caffeSigintEffect.Value(),
+		IterationsNumber: defaultIterations,
+		SigintEffect:     defaultSigintEffect,
 	}
 }
 

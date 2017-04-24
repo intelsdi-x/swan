@@ -19,7 +19,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -29,8 +29,8 @@ func TestL3dataWithExecutor(t *testing.T) {
 
 	Convey("While using Local Shell in L3Data launcher", t, func() {
 		l := executor.NewLocal()
-		l3dataLauncher := l3data.New(
-			l, l3data.DefaultL3Config())
+		l3dataLauncher := l3.New(
+			l, l3.DefaultL3Config())
 
 		Convey("When l3d binary is launched", func() {
 			taskHandle, err := l3dataLauncher.Launch()

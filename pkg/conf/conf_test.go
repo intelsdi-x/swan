@@ -34,13 +34,13 @@ func TestConf(t *testing.T) {
 		Convey("Log level can be fetched", func() {
 			level, err := LogLevel()
 			So(err, ShouldBeNil)
-			So(level, ShouldEqual, logrus.ErrorLevel)
+			So(level, ShouldEqual, logrus.InfoLevel)
 		})
 
 		Convey("Log level can be fetched from env", func() {
 			level, err := LogLevel()
 			So(err, ShouldBeNil)
-			So(level, ShouldEqual, logrus.ErrorLevel)
+			So(level, ShouldEqual, logrus.InfoLevel)
 
 			os.Setenv(envName(logLevelFlag.Name), "debug")
 

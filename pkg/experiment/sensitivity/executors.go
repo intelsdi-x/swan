@@ -15,6 +15,8 @@
 package sensitivity
 
 import (
+	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -24,15 +26,24 @@ import (
 )
 
 var (
-	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
-	HPKubernetesCPUResourceFlag = conf.NewIntFlag("hp_kubernetes_cpu_resource", "set limits and request for HP workloads pods run on kubernetes in CPU millis (default 1000 * number of CPU).", runtime.NumCPU()*1000)
-	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
-	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("hp_kubernetes_memory_resource", "set memory limits and request for HP pods workloads run on kubernetes in bytes (default 1GB).", 1000000000)
+	hostname = func() string {
+		hostname, err := os.Hostname()
+		if err != nil {
+			panic(fmt.Sprintf("%s", err.Error()))
+		}
+		return hostname
+	}()
 
 	// RunOnKubernetesFlag indicates that experiment is to be run on K8s cluster.
-	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch HP and BE tasks on Kubernetes.", false)
+	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch Kubernetes cluster and run workloads on Kubernetes. This flag is required to use other kubernetes flags. (caveat: cluster won't be started if `-kubernetes_run_on_existing` flag is set).  ", false)
 	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
-	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (can be use only with --kubernetes flag)", false)
+	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It has to be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
+	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
+	HPKubernetesCPUResourceFlag = conf.NewIntFlag("kubernetes_hp_cpu_resource", "Sets CPU resource limit and request for HP workload on Kubernetes [CPU millis, default 1000 * number of CPU].", runtime.NumCPU()*1000)
+	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
+	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 1GB).", 1000000000)
+
+	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", "Experiment's Kubernetes pods will be run on this node.", hostname)
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
@@ -44,6 +55,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 				return nil, nil, nil, err
 			}
 		}
+
 		hpExecutor, err = CreateKubernetesHpExecutor(hpIsolation)
 		if err != nil {
 			return nil, nil, nil, err
@@ -84,6 +96,7 @@ func CreateKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Execu
 
 	k8sExecutorConfig.ContainerImage = "centos_swan_image"
 	k8sExecutorConfig.PodNamePrefix = "swan-hp"
+	k8sExecutorConfig.NodeName = kubernetesNodeName.Value()
 	k8sExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 	k8sExecutorConfig.HostNetwork = true
 	k8sExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
@@ -102,6 +115,7 @@ func DefaultKubernetesBEExecutorFactory(decorators isolation.Decorators) (execut
 	k8sConfig := kubernetes.DefaultConfig()
 	config := executor.DefaultKubernetesConfig()
 	config.PodNamePrefix = "swan-be"
+	config.NodeName = kubernetesNodeName.Value()
 	config.ContainerImage = "centos_swan_image"
 	config.Decorators = decorators
 	config.Privileged = true // swan aggressor use unshare, which requires sudo.
