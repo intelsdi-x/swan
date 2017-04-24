@@ -29,19 +29,19 @@ func checkIfProcessFailedToExecute(command string, executorName string, handle T
 		exitCode, err := handle.ExitCode()
 		if err != nil {
 			// Something really wrong happened, print error message + logs
-			log.Errorf("task %q launched on %q failed, cannot get exit code: %s", command, executorName, err.Error())
+			log.Errorf("Task %q launched on %q on address %q has failed, cannot get exit code: %s", command, executorName, handle.Address(), err.Error())
 			logOutput(handle)
-			return errors.Errorf("task %q launched on %q has failed, cannot get exit code: %s", command, executorName, err.Error())
+			return errors.Errorf("task %q launched using %q on address %q has failed, cannot get exit code: %s", command, executorName, handle.Address(), err.Error())
 		}
 		if exitCode != 0 {
 			// Task failed, log.Error exit code & stdout/err
-			log.Errorf("task %q launched on %q failed: exit code %d", command, executorName, exitCode)
+			log.Errorf("Task %q launched using %q on address %q has failed: exit code %d", command, executorName, handle.Address(), exitCode)
 			logOutput(handle)
-			return errors.Errorf("task %q launched on %q has failed with exit code %d", command, executorName, exitCode)
+			return errors.Errorf("task %q launched on %q has failed with exit code %d", command, executorName, handle.Address(), exitCode)
 		}
 
 		// Exit code is zero, so task ended successfully.
-		log.Debugf("task %q launched on %q has ended successfully (exit code: 0)", command, executorName)
+		log.Debugf("task %q launched using %q on address %q has ended successfully (exit code: 0)", command, executorName, handle.Address())
 		return nil
 	}
 
