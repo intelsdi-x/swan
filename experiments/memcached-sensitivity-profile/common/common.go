@@ -49,14 +49,14 @@ func PrepareMutilateGenerator(memcachedIP string, memcachedPort int) (executor.L
 
 	agentsLoadGeneratorExecutors := []executor.Executor{}
 
-	masterLoadGeneratorExecutor, err := executor.NewRemoteFromIP(mutilateMasterFlag.Value())
+	masterLoadGeneratorExecutor, err := executor.NewShell(mutilateMasterFlag.Value())
 	if err != nil {
 		return nil, err
 	}
 
 	// Pack agents.
 	for _, agent := range mutilateAgentsFlag.Value() {
-		remoteExecutor, err := executor.NewRemoteFromIP(agent)
+		remoteExecutor, err := executor.NewShell(agent)
 		if err != nil {
 			return nil, err
 		}
