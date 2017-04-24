@@ -181,7 +181,7 @@ func main() {
 				snapTags := make(map[string]string)
 				snapTags[experiment.ExperimentKey] = uid
 				snapTags[experiment.PhaseKey] = strings.Replace(phaseName, ",", "'", -1)
-				snapTags[experiment.RepetitionKey] = 0
+				snapTags[experiment.RepetitionKey] = string(0)
 				snapTags[experiment.LoadPointQPSKey] = string(qps)
 				snapTags[experiment.AggressorNameKey] = "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
 				snapTags["number_of_cores"] = string(numberOfCores)
