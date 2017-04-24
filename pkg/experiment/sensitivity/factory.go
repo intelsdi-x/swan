@@ -23,7 +23,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3data"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l3"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stream"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stressng"
@@ -39,46 +39,49 @@ const (
 
 var (
 	// AggressorsFlag is a comma separated list of aggressors to be run during the experiment.
-	AggressorsFlag = conf.NewSliceFlag(
-		"aggr", "Aggressor to run experiment with. You can state as many as you want (--aggr=l1d --aggr=membw)")
+	AggressorsFlag = conf.NewStringSliceFlag(
+		"experiment_be_workloads", "Best Effort workloads that will be run sequentially in co-location with High Priority workload.",
+		[]string{"l1d", "l1i", "l3", "stream", "caffe"},
+	)
 
-	threatAggressorsAsService = conf.NewBoolFlag(
-		"debug_threat_aggressors_as_service", "Debug only: aggressors are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.", true)
-)
+	theatAggressorsAsService = conf.NewBoolFlag(
+		"debug_treat_be_as_service", "Debug only: Best Effort workloads are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.",
+		true)
 
-// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
-var RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
-	"run_caffe_with_llcisolation",
-	"If set, the Caffe workload will use the same isolation settings as for LLC aggressors, otherwise swan won't apply any performance isolation",
-	true,
-)
+	// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
+	L1dProcessNumber = conf.NewIntFlag(
+		"experiment_be_l1d_processes_number",
+		"Number of L1 data cache best effort processes to be run",
+		l1dDefaultProcessNumber,
+	)
 
-// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
-var L1dProcessNumber = conf.NewIntFlag(
-	"l1d_process_number",
-	"Number of L1 data cache aggressors to be run",
-	l1dDefaultProcessNumber,
-)
+	// L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
+	L1iProcessNumber = conf.NewIntFlag(
+		"experiment_be_l1i_processes_number",
+		"Number of L1 instruction cache best effort processes to be run",
+		l1iDefaultProcessNumber,
+	)
 
-// L1iProcessNumber represents number of L1 instruction cache aggressor processes to be run
-var L1iProcessNumber = conf.NewIntFlag(
-	"l1i_process_number",
-	"Number of L1 instruction cache aggressors to be run",
-	l1iDefaultProcessNumber,
-)
+	// L3ProcessNumber represents number of L3 data cache aggressor processes to be run
+	L3ProcessNumber = conf.NewIntFlag(
+		"experiment_be_l3_processes_number",
+		"Number of L3 data cache best effort processes to be run",
+		l3DefaultProcessNumber,
+	)
 
-// L3ProcessNumber represents number of L3 data cache aggressor processes to be run
-var L3ProcessNumber = conf.NewIntFlag(
-	"l3_process_number",
-	"Number of L3 data cache aggressors to be run",
-	l3DefaultProcessNumber,
-)
+	// MembwProcessNumber represents number of membw aggressor processes to be run
+	MembwProcessNumber = conf.NewIntFlag(
+		"experiment_be_membw_processes_number",
+		"Number of membw best effort processes to be run",
+		membwDefaultProcessNumber,
+	)
 
-// MembwProcessNumber represents number of membw aggressor processes to be run
-var MembwProcessNumber = conf.NewIntFlag(
-	"membw_process_number",
-	"Number of membw aggressors to be run",
-	membwDefaultProcessNumber,
+	// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
+	RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
+		"experiment_run_caffe_with_l3_cache_isolation",
+		"If set, the Caffe Best Effort workload will use the same isolation settings as for L3 Best Efforts, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
+		true,
+	)
 )
 
 // AggressorFactory is factory for creating aggressor launchers with local executor
@@ -132,8 +135,8 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
 		aggressor = caffe.New(exec, caffe.DefaultConfig())
-	case l3data.ID:
-		aggressor = l3data.New(exec, l3data.DefaultL3Config())
+	case l3.ID:
+		aggressor = l3.New(exec, l3.DefaultL3Config())
 	case stream.ID:
 		aggressor = stream.New(exec, stream.DefaultConfig())
 	case stressng.IDStream:
@@ -148,7 +151,7 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		return nil, errors.Errorf("aggressor %q not found", name)
 	}
 
-	if threatAggressorsAsService.Value() {
+	if theatAggressorsAsService.Value() {
 		aggressor = executor.ServiceLauncher{Launcher: aggressor}
 	}
 
@@ -173,7 +176,7 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 			decorators = append(decorators, executor.NewParallel(L1iProcessNumber.Value()))
 		}
 		return decorators
-	case l3data.ID:
+	case l3.ID:
 		decorators := isolation.Decorators{f.otherAggressorIsolation}
 		if L3ProcessNumber.Value() != 1 {
 			decorators = append(decorators, executor.NewParallel(L3ProcessNumber.Value()))
@@ -219,7 +222,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 				return nil, err
 			}
 			launcherSessionPair = NewMonitoredLauncher(aggressorPair, caffeSession)
-		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3data.ID, stream.ID, stressng.IDStream, stressng.IDCacheL1, stressng.IDCacheL3, stressng.IDMemCpy:
+		case l1data.ID, l1instruction.ID, memoryBandwidth.ID, l3.ID, stream.ID, stressng.IDStream, stressng.IDCacheL1, stressng.IDCacheL3, stressng.IDMemCpy:
 			launcherSessionPair = NewLauncherWithoutSession(aggressorPair)
 		default:
 			return nil, errors.Errorf("aggressor %q not found", aggressorName)

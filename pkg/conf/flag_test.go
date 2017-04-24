@@ -70,12 +70,12 @@ func TestFlags(t *testing.T) {
 
 		Convey("When some custom Slice Flag is defined", func() {
 			// Register custom flag.
-			customFlag := NewSliceFlag("custom_slice_arg", "help")
+			customFlag := NewStringSliceFlag("custom_slice_arg", "help", []string{"example1,example2"})
 
-			So(customFlag.Value(), ShouldResemble, []string{})
+			So(customFlag.Value(), ShouldResemble, []string{"example1", "example2"})
 
 			ParseFlags()
-			So(customFlag.Value(), ShouldResemble, []string{})
+			So(customFlag.Value(), ShouldResemble, []string{"example1", "example2"})
 
 			Convey("When we define custom environment variable we should have custom value after parse", func() {
 				customValue := "A,B,C"
@@ -157,7 +157,7 @@ func TestConfiguration(t *testing.T) {
 		durTestFlag := NewDurationFlag("durationTest", "durDesc", defaultDuration)
 		providedDuration := "2h0m0s"
 
-		sliceTestFlag := NewSliceFlag("sliceTest", "sliceDesc")
+		sliceTestFlag := NewStringSliceFlag("sliceTest", "sliceDesc", []string{"example1,example2"})
 		providedSlice := "foo1,foo2"
 
 		intSetTestFlag := NewIntSetFlag("intSetTest", "intSetDesc", "")

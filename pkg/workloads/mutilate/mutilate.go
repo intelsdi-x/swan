@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	defaultMemcachedHost          = "127.0.0.1"
 	defaultPercentile             = "99"
 	defaultTuningTime             = 10 * time.Second // [s]
 	defaultRecords                = 10000
@@ -52,10 +51,8 @@ const (
 )
 
 var (
-	// pathFlag represents mutilate path flag.
-	pathFlag                   = conf.NewStringFlag("mutilate_path", "Path to mutilate binary", "mutilate")
+	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s].", defaultTuningTime)
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
-	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s]", defaultTuningTime)
 	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
 	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
 	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
@@ -71,7 +68,7 @@ var (
 	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)
 	masterKeySizeFlag          = conf.NewStringFlag("mutilate_master_keysize", "Length of memcached keys (-K).", defaultMasterKeySize)
 	masterValueSizeFlag        = conf.NewStringFlag("mutilate_master_valuesize", "Length of memcached values (-V).", defaultMasterValueSize)
-	masterInterArrivalDistFlag = conf.NewStringFlag("mutilate_master_interarrivaldist", "Inter-arrival distribution (-i).", defaultMasterInterArrivalDist)
+	masterInterArrivalDistFlag = conf.NewStringFlag("mutilate_master_interarrival_dist", "Inter-arrival distribution (-i).", defaultMasterInterArrivalDist)
 )
 
 // Config contains all data for running mutilate.
@@ -120,7 +117,7 @@ type Config struct {
 // DefaultMutilateConfig is a constructor for MutilateConfig with default parameters.
 func DefaultMutilateConfig() Config {
 	return Config{
-		PathToBinary:  pathFlag.Value(),
+		PathToBinary:  "mutilate",
 		MemcachedHost: memcached.IPFlag.Value(),
 		MemcachedPort: memcached.PortFlag.Value(),
 

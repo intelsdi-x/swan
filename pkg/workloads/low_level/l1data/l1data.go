@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
@@ -27,13 +26,6 @@ const (
 	ID              = "l1d"
 	name            = "L1 Data"
 	defaultDuration = 86400 * time.Second
-)
-
-// PathFlag represents l1 data path flag.
-var PathFlag = conf.NewStringFlag(
-	"l1d_path",
-	"Path to L1 Data binary",
-	"l1d",
 )
 
 // Config is a struct for l1d aggressor configuration.
@@ -45,7 +37,7 @@ type Config struct {
 // DefaultL1dConfig is a constructor for l1d aggressor Config with default parameters.
 func DefaultL1dConfig() Config {
 	return Config{
-		Path:     PathFlag.Value(),
+		Path:     "l1d",
 		Duration: defaultDuration,
 	}
 }
