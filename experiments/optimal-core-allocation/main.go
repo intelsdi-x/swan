@@ -57,6 +57,9 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
+	cleanupExecutors := executor.RegisterInterruptHandle()
+	defer cleanupExecutors()
+
 	// connect to metadata database
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	errutil.CheckWithContext(err, "Cannot connect to metadata database")
