@@ -358,6 +358,9 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	register(taskHandle)
+
 	return taskHandle, nil
 }
 
