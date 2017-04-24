@@ -37,7 +37,7 @@ func checkIfProcessFailedToExecute(command string, executorName string, handle T
 			// Task failed, log.Error exit code & stdout/err
 			log.Errorf("Task %q launched using %q on address %q has failed: exit code %d", command, executorName, handle.Address(), exitCode)
 			logOutput(handle)
-			return errors.Errorf("task %q launched on %q has failed with exit code %d", command, executorName, handle.Address(), exitCode)
+			return errors.Errorf("task %q launched using %q on address %q has failed with exit code %d", command, executorName, handle.Address(), exitCode)
 		}
 
 		// Exit code is zero, so task ended successfully.
