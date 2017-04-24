@@ -49,7 +49,9 @@ func TestSnapSpecJbbSession(t *testing.T) {
 						testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
-					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, "foo:bar")
+					tags := make(map[string]string)
+					tags["foo"] = "bar"
+					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, tags)
 					So(err, ShouldBeNil)
 
 					snapSession, ok := handle.(*snap.Session)

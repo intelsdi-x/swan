@@ -77,9 +77,12 @@ func TestSnapDockerSession(t *testing.T) {
 			dockerConfig.Publisher = publisher
 			dockerLauncher, err := docker.NewSessionLauncher(dockerConfig)
 			So(err, ShouldBeNil)
+
+			tags := make(map[string]string)
+			tags["foo"] = "bar"
 			dockerHandle, err := dockerLauncher.LaunchSession(
 				nil,
-				"foo:bar",
+				tags,
 			)
 			So(err, ShouldBeNil)
 			So(dockerHandle.IsRunning(), ShouldBeTrue)

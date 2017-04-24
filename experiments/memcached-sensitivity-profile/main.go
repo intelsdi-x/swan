@@ -187,13 +187,12 @@ func main() {
 						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
 					}
 
-					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uid,
-						experiment.PhaseKey, phaseName,
-						experiment.RepetitionKey, repetition,
-						experiment.LoadPointQPSKey, phaseQPS,
-						experiment.AggressorNameKey, aggressorName,
-					)
+					snapTags := make(map[string]string)
+					snapTags[experiment.ExperimentKey] = uid
+					snapTags[experiment.PhaseKey] = phaseName
+					snapTags[experiment.RepetitionKey] = string(repetition)
+					snapTags[experiment.LoadPointQPSKey] = string(phaseQPS)
+					snapTags[experiment.AggressorNameKey] = aggressorName
 
 					// Launch BE tasks when we are not in baseline.
 					if beLauncher.Launcher != nil {

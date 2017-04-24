@@ -61,7 +61,9 @@ func TestSnapRDTSession(t *testing.T) {
 					session, err := rdt.NewSessionLauncher(sessionConfig)
 					So(err, ShouldBeNil)
 
-					handle, err := session.LaunchSession(nil, "foo:bar")
+					tags := make(map[string]string)
+					tags["foo"] = "bar"
+					handle, err := session.LaunchSession(nil, tags)
 					So(err, ShouldBeNil)
 
 					defer func() {
