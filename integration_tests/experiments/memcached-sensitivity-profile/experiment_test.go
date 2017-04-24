@@ -192,7 +192,7 @@ func TestExperiment(t *testing.T) {
 				}
 				So(err, ShouldBeNil)
 				So(metadata, ShouldNotBeEmpty)
-				So(metadata["SWAN_PEAK_LOAD"], ShouldEqual, "5000")
+				So(metadata["SWAN_EXPERIMENT_PEAK_LOAD"], ShouldEqual, "5000")
 				So(metadata["load_points"], ShouldEqual, "1")
 				So(metadata["load_duration"], ShouldEqual, "1s")
 				So(metadata[experiment.CPUModelNameKey], ShouldNotEqual, "")
