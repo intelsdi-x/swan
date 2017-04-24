@@ -108,11 +108,10 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		snapClient,
 		cassandraPublisher)
 
-	tags := fmt.Sprintf("%s:%s,%s:%s,%s:%d",
-		experiment.ExperimentKey, "example-experiment",
-		experiment.PhaseKey, "example-phase",
-		experiment.RepetitionKey, 42)
-
+	tags := make(map[string]string)
+	tags[experiment.ExperimentKey] = "example-experiment"
+	tags[experiment.PhaseKey] = "example-phase"
+	tags[experiment.RepetitionKey] = string(42)
 	err = snapSession.Start(tags)
 	if err != nil {
 		return fmt.Errorf("snap session start failed: %s", err.Error())
