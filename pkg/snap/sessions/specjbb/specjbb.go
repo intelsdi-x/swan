@@ -99,7 +99,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 // LaunchSession starts Snap Collection session and returns handle to that session.
 func (s *SessionLauncher) LaunchSession(
 	task executor.TaskInfo,
-	tags string) (snap.SessionHandle, error) {
+	tags map[string]interface{}) (snap.SessionHandle, error) {
 
 	// Obtain SPECjbb output file.
 	stdoutFile, err := task.StdoutFile()

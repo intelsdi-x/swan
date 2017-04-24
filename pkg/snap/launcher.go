@@ -27,5 +27,5 @@ type SessionHandle interface {
 
 // SessionLauncher starts Snap Collection session and returns handle to that session.
 type SessionLauncher interface {
-	LaunchSession(monitoredTask executor.TaskInfo, tags string) (SessionHandle, error)
+	LaunchSession(monitoredTask executor.TaskInfo, tags map[string]interface{}) (SessionHandle, error)
 }

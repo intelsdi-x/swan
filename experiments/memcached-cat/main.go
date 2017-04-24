@@ -213,17 +213,16 @@ func main() {
 					// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 					executeRepetition := func() error {
 						// Building snap workload tags.
-						snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s,%s:%#x,%s:%#x,%s:%d,%s:%d",
-							experiment.ExperimentKey, uid,
-							experiment.PhaseKey, phaseName,
-							experiment.RepetitionKey, 0,
-							experiment.LoadPointQPSKey, beCacheMask,
-							experiment.AggressorNameKey, aggressorName,
-							"be_l3_cache_size", beCacheMask,
-							"hp_l3_cache_size", hpCacheMask,
-							"qps", qps,
-							"number_of_cores", BECPUsCount,
-						)
+						snapTags := make(map[string]interface{})
+						snapTags[experiment.ExperimentKey] = uid
+						snapTags[experiment.PhaseKey] = phaseName
+						snapTags[experiment.RepetitionKey] = 0
+						snapTags[experiment.LoadPointQPSKey] = beCacheMask
+						snapTags[experiment.AggressorNameKey] = aggressorName
+						snapTags["be_l3_cache_size"] = beCacheMask
+						snapTags["hp_l3_cache_size"] = hpCacheMask
+						snapTags["qps"] = qps
+						snapTags["number_of_cores"] = BECPUsCount
 
 						logrus.Infof("Starting %s", phaseName)
 

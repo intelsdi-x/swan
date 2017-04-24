@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	"strings"
-
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/pkg/errors"
@@ -93,7 +91,7 @@ func NewSession(
 }
 
 // Start an experiment session.
-func (s *Session) Start(rawTags string) error {
+func (s *Session) Start(tags map[string]interface{}) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -106,13 +104,11 @@ func (s *Session) Start(rawTags string) error {
 
 	wf := wmap.NewWorkflowMap()
 
-	tags := make(map[string]string)
-	for _, pair := range strings.Split(rawTags, ",") {
-		kv := strings.Split(pair, ":")
-		tags[kv[0]] = kv[1]
+	snapTags := make(map[string]string)
+	for key, value := range tags {
+		snapTags[key] = fmt.Sprintf("%v", value)
 	}
-
-	wf.CollectNode.Tags = map[string]map[string]string{"": tags}
+	wf.CollectNode.Tags = map[string]map[string]string{"": snapTags}
 
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)

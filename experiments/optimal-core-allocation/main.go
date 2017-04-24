@@ -178,14 +178,16 @@ func main() {
 				}
 
 				// Create tags to be used on Snap metrics.
-				snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s,%s:%d",
-					experiment.ExperimentKey, uid,
-					experiment.PhaseKey, strings.Replace(phaseName, ",", "'", -1),
-					experiment.RepetitionKey, 0,
-					experiment.LoadPointQPSKey, qps,
-					experiment.AggressorNameKey, "No aggressor "+strings.Replace(phaseName, ",", "'", -1),
-					"number_of_cores", numberOfCores,
-				)
+				phase := strings.Replace(phaseName, ",", "'", -1)
+				aggressor := "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
+
+				snapTags := make(map[string]interface{})
+				snapTags[experiment.ExperimentKey] = uid
+				snapTags[experiment.PhaseKey] = phase
+				snapTags[experiment.RepetitionKey] = 0
+				snapTags[experiment.LoadPointQPSKey] = qps
+				snapTags[experiment.AggressorNameKey] = aggressor
+				snapTags["number_of_cores"] = numberOfCores
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)

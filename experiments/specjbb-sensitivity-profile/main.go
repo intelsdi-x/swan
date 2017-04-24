@@ -54,7 +54,7 @@ func main() {
 	experiment.Configure()
 
 	// Generate an experiment ID and start the metadata session.
-	uid := uuid.New()// Initialize logger.
+	uid := uuid.New() // Initialize logger.
 	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
@@ -170,13 +170,12 @@ func main() {
 					}
 					processes = append(processes, hpHandle)
 
-					snapTags := fmt.Sprintf("%s:%s,%s:%s,%s:%d,%s:%d,%s:%s",
-						experiment.ExperimentKey, uid,
-						experiment.PhaseKey, phaseName,
-						experiment.RepetitionKey, repetition,
-						experiment.LoadPointQPSKey, phaseQPS,
-						experiment.AggressorNameKey, aggressorName,
-					)
+					snapTags := make(map[string]interface{})
+					snapTags[experiment.ExperimentKey] = uid
+					snapTags[experiment.PhaseKey] = phaseName
+					snapTags[experiment.RepetitionKey] = repetition
+					snapTags[experiment.LoadPointQPSKey] = phaseQPS
+					snapTags[experiment.AggressorNameKey] = aggressorName
 
 					// Launch aggressor task(s) when we are not in baseline.
 					if beLauncher.Launcher != nil {

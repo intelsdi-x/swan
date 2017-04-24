@@ -79,10 +79,9 @@ func (p *Plugins) Unload(t string, name string, version int) error {
 }
 
 var (
-	// TODO: remove optional (-plugin) group, after all plugins follow new naming scheme.
-	pluginNameRegex      = regexp.MustCompile(".*?snap(-plugin)?.([a-z]+)-(.+)")
-	pluginTypeGroupIndex = 2 // 0 is whole match, 1 is optional (-plugin) group.
-	nameGroupIndex       = 3
+	pluginNameRegex      = regexp.MustCompile(".*?snap-plugin.([a-z]+)-(.+)")
+	pluginTypeGroupIndex = 1 // 0 is whole match
+	nameGroupIndex       = 2
 )
 
 // GetPluginNameAndType takes plugin binary name like "snap-plugin-collector-mutilate"
@@ -91,7 +90,7 @@ var (
 func GetPluginNameAndType(filename string) (name string, pluginType string, err error) {
 	matches := pluginNameRegex.FindStringSubmatch(filename)
 
-	if len(matches) != 4 {
+	if len(matches) != 3 {
 		return "", "", errors.Errorf("GetPluginNameAndType regex failed on %q", filename)
 	}
 

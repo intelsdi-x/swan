@@ -49,7 +49,9 @@ func TestSnapMutilateSession(t *testing.T) {
 						testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
 					defer cleanupMockedFile()
 
-					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, "foo:bar")
+					tags := make(map[string]interface{})
+					tags["foo"] = "bar"
+					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, tags)
 					So(err, ShouldBeNil)
 
 					snapSession, ok := handle.(*snap.Session)
