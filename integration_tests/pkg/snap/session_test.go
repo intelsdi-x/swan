@@ -87,7 +87,7 @@ func TestSnap(t *testing.T) {
 						)
 						So(s, ShouldNotBeNil)
 
-						tags := make(map[string]string)
+						tags := make(map[string]interface{})
 						tags["foo"] = "bar"
 						err := s.Start(tags)
 

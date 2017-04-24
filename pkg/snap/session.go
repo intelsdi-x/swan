@@ -91,7 +91,7 @@ func NewSession(
 }
 
 // Start an experiment session.
-func (s *Session) Start(tags map[string]string) error {
+func (s *Session) Start(tags map[string]interface{}) error {
 	if s.task != nil {
 		return errors.New("task already running")
 	}
@@ -103,7 +103,12 @@ func (s *Session) Start(tags map[string]string) error {
 	}
 
 	wf := wmap.NewWorkflowMap()
-	wf.CollectNode.Tags = map[string]map[string]string{"": tags}
+
+	snapTags := make(map[string]string)
+	for key, value := range tags {
+		snapTags[key] = fmt.Sprintf("%v", value)
+	}
+	wf.CollectNode.Tags = map[string]map[string]string{"": snapTags}
 
 	for _, metric := range s.Metrics {
 		wf.CollectNode.AddMetric(metric, -1)

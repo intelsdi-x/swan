@@ -170,11 +170,11 @@ func main() {
 					}
 					processes = append(processes, hpHandle)
 
-					snapTags := make(map[string]string)
+					snapTags := make(map[string]interface{})
 					snapTags[experiment.ExperimentKey] = uid
 					snapTags[experiment.PhaseKey] = phaseName
-					snapTags[experiment.RepetitionKey] = string(repetition)
-					snapTags[experiment.LoadPointQPSKey] = string(phaseQPS)
+					snapTags[experiment.RepetitionKey] = repetition
+					snapTags[experiment.LoadPointQPSKey] = phaseQPS
 					snapTags[experiment.AggressorNameKey] = aggressorName
 
 					// Launch aggressor task(s) when we are not in baseline.

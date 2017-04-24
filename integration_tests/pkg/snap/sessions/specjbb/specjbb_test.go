@@ -49,7 +49,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 						testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
 					defer cleanupMockedFile()
 
-					tags := make(map[string]string)
+					tags := make(map[string]interface{})
 					tags["foo"] = "bar"
 					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, tags)
 					So(err, ShouldBeNil)

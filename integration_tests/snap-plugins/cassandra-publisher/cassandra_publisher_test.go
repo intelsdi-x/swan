@@ -58,6 +58,7 @@ func TestCassandraPublisher(t *testing.T) {
 				So(tags["swan_experiment"], ShouldEqual, "example-experiment")
 				So(tags["swan_phase"], ShouldEqual, "example-phase")
 				So(tags["swan_repetition"], ShouldEqual, "42")
+				So(tags["FloatTag"], ShouldEqual, "42.123123")
 			})
 		})
 	})
@@ -108,10 +109,11 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		snapClient,
 		cassandraPublisher)
 
-	tags := make(map[string]string)
+	tags := make(map[string]interface{})
 	tags[experiment.ExperimentKey] = "example-experiment"
 	tags[experiment.PhaseKey] = "example-phase"
-	tags[experiment.RepetitionKey] = string(42)
+	tags[experiment.RepetitionKey] = 42
+	tags["FloatTag"] = 42.123123
 	err = snapSession.Start(tags)
 	if err != nil {
 		return fmt.Errorf("snap session start failed: %s", err.Error())

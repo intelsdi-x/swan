@@ -178,13 +178,16 @@ func main() {
 				}
 
 				// Create tags to be used on Snap metrics.
-				snapTags := make(map[string]string)
+				phase := strings.Replace(phaseName, ",", "'", -1)
+				aggressor := "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
+
+				snapTags := make(map[string]interface{})
 				snapTags[experiment.ExperimentKey] = uid
-				snapTags[experiment.PhaseKey] = strings.Replace(phaseName, ",", "'", -1)
-				snapTags[experiment.RepetitionKey] = string(0)
-				snapTags[experiment.LoadPointQPSKey] = string(qps)
-				snapTags[experiment.AggressorNameKey] = "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
-				snapTags["number_of_cores"] = string(numberOfCores)
+				snapTags[experiment.PhaseKey] = phase
+				snapTags[experiment.RepetitionKey] = 0
+				snapTags[experiment.LoadPointQPSKey] = qps
+				snapTags[experiment.AggressorNameKey] = aggressor
+				snapTags["number_of_cores"] = numberOfCores
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
