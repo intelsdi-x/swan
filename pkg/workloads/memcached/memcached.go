@@ -29,12 +29,13 @@ import (
 const (
 	name = "Memcached"
 	// DefaultPort represents default memcached port.
-	defaultPort           = 11211
-	defaultUser           = "root"
-	defaultNumThreads     = 4
-	defaultMaxMemoryMB    = 4096
-	defaultNumConnections = 1024
-	defaultListenIP       = "127.0.0.1"
+	defaultPort            = 11211
+	defaultUser            = "root"
+	defaultNumThreads      = 4
+	defaultMaxMemoryMB     = 4096
+	defaultNumConnections  = 2048
+	defaultListenIP        = "127.0.0.1"
+	defaultThreadsAffinity = false
 )
 
 var (
