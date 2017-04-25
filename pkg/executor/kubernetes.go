@@ -82,7 +82,7 @@ import (
 )
 
 const (
-	defaultContainerImage = "centos_swan_image"
+	defaultContainerImage = "intelsdi/swan"
 )
 
 var (
