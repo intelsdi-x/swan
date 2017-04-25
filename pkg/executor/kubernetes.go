@@ -661,7 +661,12 @@ func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 		exitCode = int(status.State.Terminated.ExitCode)
 	}
 	if pod.Status.Phase == v1.PodFailed {
-		log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
+		if exitCode == 137 {
+			log.Debugf("K8s task watcher: pod %q exited with code %d (killed with SIG_KILL)", pod.Name, exitCode)
+		} else {
+			log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
+		}
+
 	} else {
 		log.Debugf("K8s task watcher: exit code retrieved: %d", exitCode)
 	}
