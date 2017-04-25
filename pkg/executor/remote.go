@@ -21,6 +21,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -82,7 +83,6 @@ func NewRemote(address string, config RemoteConfig) (Executor, error) {
 
 // NewRemoteIsolated returns a remote executor instance.
 func NewRemoteIsolated(address string, config RemoteConfig, decorators isolation.Decorators) (Executor, error) {
-
 	authMethod, err := getAuthMethod(sshUserKeyPathFlag.Value())
 	if err != nil {
 		return nil, err
@@ -118,35 +118,45 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(key), nil
 }
 
-// validateSSHConfig checks if we are able to do remote connection using given host and User.
+// validateHostAuthorization checks if we are able to do remote connection using given host and User.
+// Checks only hostname, IP addresses are not validated (except 127.0.0.1)
 // Return error if there is blocker (e.g host is not authorized).
-func (remote Remote) validateSSHConfig() error {
+func (remote Remote) validateHostAuthorization() (err error) {
+	const ipAddressRegex = `^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
+
 	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
 	if remote.targetHost == "127.0.0.1" || remote.targetHost == "localhost" {
-		host, err := os.Hostname()
+		targetHost, err := os.Hostname()
 		if err != nil {
-			return errors.Wrap(err, "cannot figure out if localhost is self-authorized")
+			return errors.Wrap(err, "cannot obtain hostname to make sure that local host is authorized for SSH access")
 		}
 
-		remote.targetHost = host
+		return isHostAuthorized(targetHost, remote.config.AuthorizedKeysPath)
 	}
 
-	return remote.isHostAuthorized()
+	re := regexp.MustCompile(ipAddressRegex)
+	isIpAddress := re.MatchString(remote.targetHost)
+	if isIpAddress {
+		log.Debugf("Cannot validate if address %q is authorized for SSH access", remote.targetHost)
+		return nil
+	}
+
+	return isHostAuthorized(remote.targetHost, remote.config.AuthorizedKeysPath)
 }
 
-func (remote Remote) isHostAuthorized() error {
-	authorizedHostsFile, err := os.Open(remote.config.AuthorizedKeysPath)
+func isHostAuthorized(targetHost string, keyPath string) error {
+	authorizedHostsFile, err := os.Open(keyPath)
 	if err != nil {
-		return errors.Wrapf(err, "cannot open authorized keys from %q", remote.config.AuthorizedKeysPath)
+		return errors.Wrapf(err, "cannot open authorized keys from %q", keyPath)
 	}
 	authorizedHostsContent, err := ioutil.ReadAll(authorizedHostsFile)
 	if err != nil {
-		return errors.Wrapf(err, "cannot read authorized keys from %q", remote.config.AuthorizedKeysPath)
+		return errors.Wrapf(err, "cannot read authorized keys from %q", keyPath)
 	}
 
-	authorized := strings.Contains(string(authorizedHostsContent), remote.targetHost)
+	authorized := strings.Contains(string(authorizedHostsContent), targetHost)
 	if !authorized {
-		return errors.Errorf("host %q is not authorized", remote.targetHost)
+		return errors.Errorf("host %q is not authorized", targetHost)
 	}
 
 	return nil

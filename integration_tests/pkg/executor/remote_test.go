@@ -30,65 +30,47 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const (
-	EnvHost          = "SWAN_REMOTE_EXECUTOR_TEST_HOST"
-	EnvUser          = "SWAN_REMOTE_EXECUTOR_USER"
-	EnvMemcachedPath = "SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
-	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
-)
+//const (
+//	EnvHost          = "SWAN_REMOTE_EXECUTOR_TEST_HOST"
+//	EnvUser          = "SWAN_REMOTE_EXECUTOR_USER"
+//	EnvMemcachedPath = "SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
+//	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
+//)
 
 // This tests required following setup:
 // - id_rsa ssh keys in user home directory. [command ssh-keygen]
 // - no password ssh session. [command ssh-copy-id localhost]
 func TestRemote(t *testing.T) {
-	Convey("While getting the information abut the test user", t, func() {
-		user, err := user.Current()
+	Convey("Preparing Remote Executor to be tested on localhost", t, func() {
 
-		Convey("There should be no error", func() {
-			So(err, ShouldBeNil)
-		})
+		remote, err := NewRemoteFromIP("127.0.0.1")
+		if err != nil {
+			t.Skip("Skipping remote executor test: " + err.Error())
+		}
 
-		Convey("When creating ssh configuration with proper data", func() {
-			err = ValidateSSHConfig("127.0.0.1", user)
-			if err != nil {
-				// Skip test if setup is not wel configured.
-				t.Skip("Skipping test: " + err.Error())
-			}
-
-			sshConfig, err := NewSSHConfig("127.0.0.1", DefaultSSHPort, user)
-			if err != nil {
-				// Skip test if setup is not wel configured.
-				t.Skip("Skipping test: " + err.Error())
-			}
-
-			Convey("There should be no error", func() {
-				So(err, ShouldBeNil)
-			})
-
-			Convey("And while using Remote Shell, the generic Executor test should pass", func() {
-				testExecutor(t, NewRemote(sshConfig))
-			})
+		Convey("And while using Remote Shell, the generic Executor test should pass", func() {
+			testExecutor(t, remote)
 		})
 	})
 }
 
+//func TestRemoteProcessPidIsolation(t *testing.T) {
+//	if isEnvironmentReady() {
+//		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+//	} else {
+//		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
+//	}
+//}
+
 func TestRemoteProcessPidIsolation(t *testing.T) {
-	if isEnvironmentReady() {
-		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
-	} else {
-		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
-	}
-}
+	//user, err := user.Lookup(os.Getenv(EnvUser))
+	//So(err, ShouldBeNil)
 
-func testRemoteProcessPidIsolation() {
-	user, err := user.Lookup(os.Getenv(EnvUser))
-	So(err, ShouldBeNil)
+	//err = executor.ValidateSSHConfig(os.Getenv(EnvHost), user)
+	//So(err, ShouldBeNil)
 
-	err = executor.ValidateSSHConfig(os.Getenv(EnvHost), user)
-	So(err, ShouldBeNil)
-
-	sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
-	So(err, ShouldBeNil)
+	//sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
+	//So(err, ShouldBeNil)
 
 	launcher := newMultipleMemcached(*sshConfig)
 
@@ -116,23 +98,23 @@ func testRemoteProcessPidIsolation() {
 	})
 }
 
-func isEnvironmentReady() bool {
-	if value := os.Getenv(EnvHost); value == "" {
-		return false
-	}
-	if value := os.Getenv(EnvUser); value == "" {
-		return false
-	}
-
-	if value := os.Getenv(EnvMemcachedPath); value == "" {
-		return false
-	}
-	if value := os.Getenv(EnvMemcachedUser); value == "" {
-		return false
-	}
-
-	return true
-}
+//func isEnvironmentReady() bool {
+//	if value := os.Getenv(EnvHost); value == "" {
+//		return false
+//	}
+//	if value := os.Getenv(EnvUser); value == "" {
+//		return false
+//	}
+//
+//	if value := os.Getenv(EnvMemcachedPath); value == "" {
+//		return false
+//	}
+//	if value := os.Getenv(EnvMemcachedUser); value == "" {
+//		return false
+//	}
+//
+//	return true
+//}
 
 var terminal ssh.TerminalModes
 
