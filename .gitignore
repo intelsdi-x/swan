@@ -41,5 +41,6 @@ swan-*.tar.gz
 /workloads/memcached/output/
 /workloads/intel-cmt-cat/output/
 /workloads/stress-ng/output/
+/workloads/caffe/output/
 /workloads/opt/
 
