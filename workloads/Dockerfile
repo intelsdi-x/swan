@@ -3,23 +3,10 @@ FROM centos:7 AS caffe
 
 RUN yum makecache fast && yum groupinstall -y "Development tools"  && yum install -y git
 RUN yum install -y epel-release
-RUN yum install -y \
-    boost-devel \
-    gflags-devel \
-    glog-devel \
-    hdf5-devel \
-    leveldb-devel \
-    lmdb-devel \
-    opencv-devel \
-    protobuf-devel \
-    snappy-devel \
-    wget
+RUN yum install -y boost-devel gflags-devel glog-devel hdf5-devel leveldb-devel lmdb-devel opencv-devel protobuf-devel snappy-devel wget
 RUN yum clean all
 
 # Please don't install openblas-devel from linux distro - it will not work as multithreaded.
-
-RUN yum install -y wget
-
 WORKDIR /root
 RUN git clone --depth=1 https://github.com/BVLC/caffe
 RUN git clone --depth=1 https://github.com/xianyi/OpenBLAS
