@@ -36,11 +36,3 @@ swan-*.tar.gz
 *.o
 \#*
 /swan.tar.gz
-/workloads/memcached/latest
-/workloads/memcached/memcached.tgz
-/workloads/memcached/output/
-/workloads/intel-cmt-cat/output/
-/workloads/stress-ng/output/
-/workloads/caffe/output/
-/workloads/opt/
-
