@@ -89,6 +89,7 @@ var (
 	kubeconfigFlag                = conf.NewStringFlag("kubernetes_kubeconfig", "(optional) Absolute path to the kubeconfig file. Overrides pod configuration passed through flags. ", "")
 	kubernetesPrivilegedPodsFlag  = conf.NewBoolFlag("kubernetes_privileged_pods", "Kubernetes containers will be run as privileged.", false)
 	kubernetesPodLunchTimeoutFlag = conf.NewDurationFlag("kubernetes_pod_launch_timeout", "Kubernetes Pod launch timeout.", 30*time.Second)
+	kubernetesContainerImageFlag  = conf.NewStringFlag("kubernetes_container_image", "Name of the container image to be used. It needs to be available locally or downloadable.", defaultContainerImage)
 )
 
 // KubernetesConfig describes the necessary information to connect to a Kubernetes cluster.
@@ -143,7 +144,7 @@ func DefaultKubernetesConfig() KubernetesConfig {
 		MemoryLimit:    0,
 		Decorators:     isolation.Decorators{},
 		ContainerName:  "swan",
-		ContainerImage: defaultContainerImage,
+		ContainerImage: kubernetesContainerImageFlag.Value(),
 		Namespace:      v1.NamespaceDefault,
 		Privileged:     kubernetesPrivilegedPodsFlag.Value(),
 		HostNetwork:    false,
