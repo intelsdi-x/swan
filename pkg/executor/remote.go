@@ -16,59 +16,143 @@ package executor
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
+	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
-	"path/filepath"
-
 	log "github.com/Sirupsen/logrus"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 
+var (
+	currentUser, _ = user.Current()
+
+	sshUserFlag               = conf.NewStringFlag("remote_ssh_login", "Login used for connecting to remote nodes. ", currentUser.Name)
+	sshUserKeyPathFlag        = conf.NewStringFlag("remote_ssh_key_path", fmt.Sprintf("Key for %q used for connecting to remote nodes.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/id_rsa"))
+	sshAuthorizedKeysPathFlag = conf.NewStringFlag("remote_ssh_authorized_keys_path", fmt.Sprintf("Path to Authorized Keys for user %q. Used for validation that SSH conncetion can be established.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/authorized_keys"))
+
+	sshPortFlag = conf.NewIntFlag("remote_ssh_port", "Port used for SSH connection to remote nodes. ", 22)
+)
+
+type RemoteConfig struct {
+	User               string
+	KeyPath            string
+	AuthorizedKeysPath string
+
+	Port int
+}
+
+func DefaultRemoteConfig() RemoteConfig {
+	return RemoteConfig{
+		User:               sshUserFlag.Value(),
+		KeyPath:            sshUserKeyPathFlag.Value(),
+		AuthorizedKeysPath: sshAuthorizedKeysPathFlag.Value(),
+		Port:               sshPortFlag.Value(),
+	}
+}
+
 // Remote provisioning is responsible for providing the execution environment
 // on remote machine via ssh.
 type Remote struct {
-	sshConfig *SSHConfig
+	clientConfig *ssh.ClientConfig
+	config       RemoteConfig
+	targetHost   string
+
 	// Note that by default on Decorate PID isolation is added at the end.
 	commandDecorators isolation.Decorators
 }
 
-// NewRemoteFromIP retrurns a Remote instance.
-// It takes IP to the destination host as parameter.
-func NewRemoteFromIP(ip string) (Executor, error) {
-	user, err := user.Current()
+// NewRemoteFromIP returns a remote executo instance.
+func NewRemoteFromIP(address string) (Executor, error) {
+	return NewRemote(address, DefaultRemoteConfig())
+}
+
+// NewRemote returns a remote executor instance.
+func NewRemote(address string, config RemoteConfig) (Executor, error) {
+	return NewRemoteIsolated(address, config, isolation.Decorators{})
+}
+
+// NewRemoteIsolated returns a remote executor instance.
+func NewRemoteIsolated(address string, config RemoteConfig, decorators isolation.Decorators) (Executor, error) {
+
+	authMethod, err := getAuthMethod(sshUserKeyPathFlag.Value())
 	if err != nil {
 		return nil, err
 	}
-	sshConfig, err := NewSSHConfig(ip, DefaultSSHPort, user)
-	if err != nil {
-		return nil, err
-	}
-	return NewRemote(sshConfig), nil
-}
 
-// NewRemote returns a Remote instance.
-func NewRemote(sshConfig *SSHConfig) Remote {
-	return Remote{
-		sshConfig:         sshConfig,
-		commandDecorators: []isolation.Decorator{},
+	clientConfig := &ssh.ClientConfig{
+		User: config.User,
+		Auth: []ssh.AuthMethod{
+			authMethod,
+		},
 	}
-}
 
-// NewRemoteIsolated returns a Remote instance.
-func NewRemoteIsolated(sshConfig *SSHConfig, decorators isolation.Decorators) Remote {
 	return Remote{
-		sshConfig:         sshConfig,
+		targetHost:        address,
+		config:            config,
+		clientConfig:      clientConfig,
 		commandDecorators: decorators,
-	}
+	}, nil
 }
 
-// Name returns user-friendly name of executor.
+// getAuthMethod which uses given key.
+func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
+	buffer, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading key %q failed", keyPath)
+	}
+
+	key, err := ssh.ParsePrivateKey(buffer)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing private key %q failed", keyPath)
+	}
+
+	return ssh.PublicKeys(key), nil
+}
+
+// validateSSHConfig checks if we are able to do remote connection using given host and User.
+// Return error if there is blocker (e.g host is not authorized).
+func (remote Remote) validateSSHConfig() error {
+	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
+	if remote.targetHost == "127.0.0.1" || remote.targetHost == "localhost" {
+		host, err := os.Hostname()
+		if err != nil {
+			return errors.Wrap(err, "cannot figure out if localhost is self-authorized")
+		}
+
+		remote.targetHost = host
+	}
+
+	return remote.isHostAuthorized()
+}
+
+func (remote Remote) isHostAuthorized() error {
+	authorizedHostsFile, err := os.Open(remote.config.AuthorizedKeysPath)
+	if err != nil {
+		return errors.Wrapf(err, "cannot open authorized keys from %q", remote.config.AuthorizedKeysPath)
+	}
+	authorizedHostsContent, err := ioutil.ReadAll(authorizedHostsFile)
+	if err != nil {
+		return errors.Wrapf(err, "cannot read authorized keys from %q", remote.config.AuthorizedKeysPath)
+	}
+
+	authorized := strings.Contains(string(authorizedHostsContent), remote.targetHost)
+	if !authorized {
+		return errors.Errorf("host %q is not authorized", remote.targetHost)
+	}
+
+	return nil
+}
+
+// Name returns User-friendly name of executor.
 func (remote Remote) Name() string {
 	return "Remote Executor"
 }
@@ -76,14 +160,14 @@ func (remote Remote) Name() string {
 // Execute runs the command given as input.
 // Returned Task Handle is able to stop & monitor the provisioned process.
 func (remote Remote) Execute(command string) (TaskHandle, error) {
-	connectionCommand := fmt.Sprintf("%s:%d", remote.sshConfig.Host, remote.sshConfig.Port)
+	connectionCommand := fmt.Sprintf("%s:%d", remote.targetHost, remote.config.Port)
 	connection, err := ssh.Dial(
 		"tcp",
 		connectionCommand,
-		remote.sshConfig.ClientConfig)
+		remote.clientConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "ssh.Dial to '%s@%s' for command %q failed",
-			remote.sshConfig.ClientConfig.User, connectionCommand, command)
+			remote.clientConfig.User, connectionCommand, command)
 	}
 
 	session, err := newSessionWithPty(connection)
@@ -144,7 +228,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		command:          command,
 		stdoutFilePath:   stdoutFile.Name(),
 		stderrFilePath:   stderrFile.Name(),
-		host:             remote.sshConfig.Host,
+		host:             remote.targetHost,
 		uuid:             unshareUUIDStr,
 		exitCode:         exitCode,
 		hasProcessExited: hasProcessExited,
@@ -206,7 +290,7 @@ type remoteTaskHandle struct {
 	uuid           string
 	exitCode       *int
 
-	// Command requested by user. This is how this TaskHandle presents.
+	// Command requested by User. This is how this TaskHandle presents.
 	command string
 
 	// This channel is closed immediately when process exits.
