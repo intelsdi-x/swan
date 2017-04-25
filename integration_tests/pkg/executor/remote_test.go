@@ -72,19 +72,30 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 	//sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
 	//So(err, ShouldBeNil)
 
-	launcher := newMultipleMemcached(*sshConfig)
+	//launcher := newMultipleMemcached(*sshConfig)
 
 	Convey("I should be able to execute remote command and see the processes running", func() {
-		task, err := launcher.Launch()
-		defer func() {
-			task.Stop()
-			task.EraseOutput()
-		}()
+		//task, err := launcher.Launch()
+		//defer func() {
+		//	task.Stop()
+		//	task.EraseOutput()
+		//}()
 
-		client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
+		//client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
+		//So(err, ShouldBeNil)
+		//defer client.Close()
+
+		config := DefaultRemoteConfig()
+		remote, err := NewRemote("127.0.0.1", config)
+		if err != nil {
+			t.Skip("Skipping remote executor test: " + err.Error())
+		}
+
+		user := config.User
+		handle, err := remote.Execute(fmt.Sprintf("memcached -u %s -d && memcached -u %s -d", user, user))
 		So(err, ShouldBeNil)
-		defer client.Close()
-		pids := soProcessesAreRunning(client, "memcached", 2)
+
+		pids := getPids(remote, "memcached", 2)
 
 		Convey("I should be able to stop remote task and all the processes should be terminated",
 			func() {
@@ -116,22 +127,30 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 //	return true
 //}
 
-var terminal ssh.TerminalModes
+//var terminal ssh.TerminalModes
+//
+//func init() {
+//	terminal = ssh.TerminalModes{
+//		ssh.ECHO:          1,
+//		ssh.TTY_OP_ISPEED: 14400,
+//		ssh.TTY_OP_OSPEED: 14400,
+//	}
+//}
 
-func init() {
-	terminal = ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
-}
+func getPids(remote Executor, processName string, noOfPids int) (pids []string) {
+	//session, err := client.NewSession()
+	//So(err, ShouldBeNil)
+	//defer session.Close()
+	//err = session.RequestPty("xterm", 80, 40, terminal)
+	//So(err, ShouldBeNil)
 
-func soProcessesAreRunning(client *ssh.Client, processName string, noOfPids int) (pids []string) {
-	session, err := client.NewSession()
+	handle, err := remote.Execute("pgrep " + processName)
 	So(err, ShouldBeNil)
-	defer session.Close()
-	err = session.RequestPty("xterm", 80, 40, terminal)
+	handle.Wait(0)
+
+	exitCode, err := handle.ExitCode()
 	So(err, ShouldBeNil)
+	So(exitCode, ShouldEqual, 0)
 
 	output, err := session.Output("pgrep " + processName)
 	So(err, ShouldBeNil)
@@ -161,26 +180,27 @@ func soProcessIsNotRunning(client *ssh.Client, pid string) {
 
 }
 
-func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
-	decors := isolation.Decorators{}
-	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-	decors = append(decors, unshare)
-	exec := executor.NewRemoteIsolated(&sshConfig, decors)
-
-	return multipleMemcached{exec}
-}
-
-type multipleMemcached struct {
-	executor executor.Executor
-}
-
-func (m multipleMemcached) Name() string {
-	return "remote memcached"
-}
-
-func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
-	bin := os.Getenv(EnvMemcachedPath)
-	username := os.Getenv(EnvMemcachedUser)
-	return m.executor.Execute(
-		fmt.Sprintf("/bin/bash -c \"%s -u %s -d && %s -u %s -p 54321\"", bin, username, bin, username))
-}
+//func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
+//	decors := isolation.Decorators{}
+//	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
+//	decors = append(decors, unshare)
+//	exec := executor.NewRemoteIsolated(&sshConfig, decors)
+//
+//	return multipleMemcached{exec}
+//}
+//
+//type multipleMemcached struct {
+//	executor executor.Executor
+//}
+//
+//func (m multipleMemcached) Name() string {
+//	return "remote memcached"
+//}
+//
+//func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
+//	bin := os.Getenv(EnvMemcachedPath)
+//	username := os.Getenv(EnvMemcachedUser)
+//	return m.executor.Execute(
+//		fmt.Sprintf("/bin/bash -c \"%s -u %s -d && %s -u %s -p 54321\"", bin, username, bin, username))
+//}
+//
