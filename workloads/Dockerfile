@@ -88,8 +88,6 @@ ADD memcached/thread-affinity.patch thread-affinity.patch
 RUN cat thread-affinity.patch | patch -p 1 
 RUN ./configure --prefix=/usr/local/memcached
 RUN make 
-RUN make install
-CMD cat memcached
 
 # Building stress-ng.
 FROM centos:7 AS stress-ng
@@ -110,7 +108,8 @@ RUN yum install -y glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl 
 RUN yum clean all
 
 COPY --from=caffe /opt /opt
-COPY --from=intel-cmt-cat /opt /opt
-COPY --from=memcached /opt /opt
-COPY --from=stress-ng /opt /opt
+COPY --from=intel-cmt-cat /intel-cmt-cat/pqos/pqos /opt/swan/bin/
+COPY --from=intel-cmt-cat /intel-cmt-cat/rdtset/rdtset /opt/swan/bin/
+COPY --from=memcached /memcached-1.4.35/memcached /opt/swan/bin/
+COPY --from=stress-ng /stress-ng-0.07.28/stress-ng /opt/swan/bin/
 RUN ln -sv /opt/swan/bin/* /usr/bin/

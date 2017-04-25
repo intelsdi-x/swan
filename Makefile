@@ -126,6 +126,4 @@ install:
 	sudo ln -svf /opt/swan/bin/* /usr/bin/
 
 docker:
-	(cd workloads && ./0_build_workloads.sh)
-	(cd workloads && ./1_build_opt_swan.sh)
-	(cd workloads && ./2_build_centos_swan_image.sh)
+	docker build -t swan:latest workloads
