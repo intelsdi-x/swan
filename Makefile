@@ -126,4 +126,4 @@ install:
 	sudo ln -svf /opt/swan/bin/* /usr/bin/
 
 docker:
-	docker build -t swan:latest workloads
+	docker build -t intelsdi/swan:latest workloads
