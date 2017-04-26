@@ -42,6 +42,7 @@ import (
 var (
 	appName            = os.Args[0]
 	useCorePinningFlag = conf.NewBoolFlag("use_core_pinning", "Enables core pinning of memcached threads", false)
+	maxThreadsFlag     = conf.NewIntFlag("max_threads", "Scale memcached up to cores (default to number of physical cores).", 0)
 )
 
 func main() {
@@ -93,6 +94,12 @@ func main() {
 	topology, err := topo.Discover()
 	errutil.CheckWithContext(err, "Cannot discover CPU topology")
 	physicalCores := topology.AvailableCores()
+	allSoftwareThreds := topology.AvailableThreads()
+
+	maxThreads := maxThreadsFlag.Value()
+	if maxThreads == 0 {
+		maxThreads = len(physicalCores)
+	}
 
 	// Launch Kubernetes cluster if necessary.
 	var cleanup func() error
@@ -113,20 +120,27 @@ func main() {
 	logrus.Debugf("Increasing QPS by %d every iteration up to peak load %d to achieve %d load points", qpsDelta, peakLoad, loadPoints)
 
 	// Iterate over all physical cores available.
-	for numberOfCores := 1; numberOfCores <= len(physicalCores); numberOfCores++ {
+	for numberOfThreads := 1; numberOfThreads <= maxThreads; numberOfThreads++ {
 		// Iterate over load points that user requested.
 		for qps := qpsDelta; qps <= peakLoad; qps += qpsDelta {
 			func() {
-				logrus.Infof("Running %d threads of memcached with load of %d QPS", numberOfCores, qps)
+				logrus.Infof("Running %d threads of memcached with load of %d QPS", numberOfThreads, qps)
 
 				// Check if core pinning should be enabled and set phase name.
 				var isolators isolation.Decorators
-				phaseName := fmt.Sprintf("memcached -t %d", numberOfCores)
+				phaseName := fmt.Sprintf("memcached -t %d", numberOfThreads)
 				if useCorePinning {
-					cores, err := physicalCores.Take(numberOfCores)
-					errutil.PanicWithContext(err, "Cannot take %d cores for memcached")
-					logrus.Infof("Core pinning enabled, using cores %q", cores.AsRangeString())
-					isolators = append(isolators, isolation.Taskset{CPUList: cores})
+					var threads isolation.IntSet
+					if numberOfThreads > len(physicalCores) {
+						threads, err = allSoftwareThreds.Take(numberOfThreads)
+						errutil.PanicWithContext(err, "Cannot take %d software threads for memcached")
+					} else {
+						// We have enough physcial threads - take them.
+						threads, err = physicalCores.Take(numberOfThreads)
+						errutil.PanicWithContext(err, "Cannot take %d hardware threads (cores) for memcached")
+					}
+					logrus.Infof("Threads pinning enabled, using threads %q", threads.AsRangeString())
+					isolators = append(isolators, isolation.Taskset{CPUList: threads})
 					phaseName = isolators.Decorate(phaseName)
 				}
 				logrus.Debugf("Running phase: %q", phaseName)
@@ -146,7 +160,7 @@ func main() {
 
 				// Create memcached launcher and start memcached
 				memcachedConfiguration := memcached.DefaultMemcachedConfig()
-				memcachedConfiguration.NumThreads = numberOfCores
+				memcachedConfiguration.NumThreads = numberOfThreads
 				memcachedLauncher := executor.ServiceLauncher{Launcher: memcached.New(memcachedExecutor, memcachedConfiguration)}
 				memcachedTask, err := memcachedLauncher.Launch()
 				errutil.PanicWithContext(err, "Memcached has not been launched successfully")
@@ -187,7 +201,8 @@ func main() {
 				snapTags[experiment.RepetitionKey] = 0
 				snapTags[experiment.LoadPointQPSKey] = qps
 				snapTags[experiment.AggressorNameKey] = aggressor
-				snapTags["number_of_cores"] = numberOfCores
+				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
+				snapTags["number_of_threads"] = numberOfThreads
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
