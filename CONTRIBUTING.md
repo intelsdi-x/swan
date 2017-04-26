@@ -1,6 +1,6 @@
 # Contributing to Swan
 
-Contributing to Swan is an easy task.
+We want contributing to Swan to be easy. If you can think of ways of making that easier, we welcome PRs.
 
 Swan is Apache 2.0 licensed and accepts contributions via GitHub. This document will cover how to contribute to the project and report issues. Testing is covered in [testing.md](docs/testing.md).
 
@@ -21,7 +21,7 @@ Swan is Apache 2.0 licensed and accepts contributions via GitHub. This document 
 ## Reporting Security Issues
 
 The Swan team take security very seriously. If you have any issue regarding security,
-please notify us by sending an email to swan-security@intel.com. **Do not create a GitHub issue.** We will follow up with you promptly with more information and a plan for remediation. While we are not offering a security bounty, we would love to send some Swan swag your way along with our deepest gratitude for your assistance in making Swan a more secure product.
+please notify us by sending an email to swan-security@intel.com. **Do not create a GitHub issue.** We will follow up with you promptly with more information and a plan for remediation. While we are not offering a security bounty, we would love to send a thank you your way along with our deepest gratitude for your assistance in making Swan a more secure project.
 
 ## Reporting Issues or Feature Requests
 
@@ -39,7 +39,7 @@ When **requesting a feature**, context is key. Some of the questions we want to 
 - What does this allow a user to do that they cannot do now?
 - What environment is this meant for (containerized, virtualized, bare metal)?
 - How urgent is the need (nice to have feature or need to have)?
-- Does this align with the goals of Swan?
+- Does this align with the goals of Swan? (see [vision](docs/vision.md))
 
 When **proposing a RFC**, understanding the use case is key. This type of issue includes:
 - A start and end date for comments
@@ -48,7 +48,7 @@ When **proposing a RFC**, understanding the use case is key. This type of issue 
 
 ### What is an RFC?
 
-The Swan maintainers use RFCs, loosely based off the [EITF practice](https://www.ietf.org/rfc.html), to discuss proposed architectural and organizational improvements to the project. While most RFCs will originate from the maintainers, we welcome all users suggesting improvements through the RFC process. If you're not sure if you need to open one, you can always [discuss your idea on Slack](http://example.com) beforehand.
+The Swan maintainers use RFCs, loosely based off the [EITF practice](https://www.ietf.org/rfc.html), to discuss proposed architectural and organizational improvements to the project. While most RFCs will originate from the maintainers, we welcome all users suggesting improvements through the RFC process. If you're not sure if you need to open one, you can always open a GitHub issue to discuss it.
 
 ## Contributing Code
 
