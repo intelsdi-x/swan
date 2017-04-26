@@ -16,26 +16,14 @@ package executor
 
 import (
 	"fmt"
-	"os"
-	"os/user"
-	"strconv"
+	"os/exec"
 	"strings"
-	"syscall"
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/utils/random"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/crypto/ssh"
 )
-
-//const (
-//	EnvHost          = "SWAN_REMOTE_EXECUTOR_TEST_HOST"
-//	EnvUser          = "SWAN_REMOTE_EXECUTOR_USER"
-//	EnvMemcachedPath = "SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH"
-//	EnvMemcachedUser = "SWAN_REMOTE_EXECUTOR_MEMCACHED_USER"
-//)
 
 // This tests required following setup:
 // - id_rsa ssh keys in user home directory. [command ssh-keygen]
@@ -54,37 +42,22 @@ func TestRemote(t *testing.T) {
 	})
 }
 
-//func TestRemoteProcessPidIsolation(t *testing.T) {
-//	if isEnvironmentReady() {
-//		Convey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
-//	} else {
-//		SkipConvey("When I create remote executor for memcached", t, testRemoteProcessPidIsolation)
-//	}
-//}
-
 func TestRemoteProcessPidIsolation(t *testing.T) {
-	//user, err := user.Lookup(os.Getenv(EnvUser))
-	//So(err, ShouldBeNil)
+	const memcachedBinary = "memcached"
+	const mutilateBinary = "mutilate"
 
-	//err = executor.ValidateSSHConfig(os.Getenv(EnvHost), user)
-	//So(err, ShouldBeNil)
+	// Skip test when binaries are not available.
+	_, err := exec.LookPath(memcachedBinary)
+	if err != nil {
+		t.Skip("Skipping remote executor test: " + err.Error())
+	}
 
-	//sshConfig, err := executor.NewSSHConfig(os.Getenv(EnvHost), 22, user)
-	//So(err, ShouldBeNil)
+	_, err = exec.LookPath(mutilateBinary)
+	if err != nil {
+		t.Skip("Skipping remote executor test: " + err.Error())
+	}
 
-	//launcher := newMultipleMemcached(*sshConfig)
-
-	Convey("I should be able to execute remote command and see the processes running", func() {
-		//task, err := launcher.Launch()
-		//defer func() {
-		//	task.Stop()
-		//	task.EraseOutput()
-		//}()
-
-		//client, err := ssh.Dial("tcp", os.Getenv(EnvHost)+":22", sshConfig.ClientConfig)
-		//So(err, ShouldBeNil)
-		//defer client.Close()
-
+	Convey("I should be able to execute remote command and see the processes running", t, func() {
 		config := DefaultRemoteConfig()
 		remote, err := NewRemote("127.0.0.1", config)
 		if err != nil {
@@ -92,115 +65,38 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 		}
 
 		user := config.User
-		handle, err := remote.Execute(fmt.Sprintf("memcached -u %s -d && memcached -u %s -d", user, user))
+		ports := random.Ports(1)
+		handle, err := remote.Execute(fmt.Sprintf("%s -u %s -p %d -d && %s -A",
+			memcachedBinary, user, ports[0], mutilateBinary))
 		So(err, ShouldBeNil)
 
-		pids := getPids(remote, "memcached", 2)
+		mcProcCount := findProcessCount(memcachedBinary)
+		So(mcProcCount, ShouldEqual, 1)
+		mutProcCount := findProcessCount(mutilateBinary)
+		So(mutProcCount, ShouldEqual, 1)
 
-		Convey("I should be able to stop remote task and all the processes should be terminated",
-			func() {
-				err := task.Stop()
-				So(err, ShouldBeNil)
-				_, err = task.ExitCode()
-				So(err, ShouldBeNil)
-				soProcessIsNotRunning(client, pids[0])
-				soProcessIsNotRunning(client, pids[1])
-			})
+		Convey("I should be able to stop remote task and all the processes should be terminated", func() {
+			err = handle.Stop()
+			So(err, ShouldBeNil)
+
+			mcProcCountAfterStop := findProcessCount(memcachedBinary)
+			So(mcProcCountAfterStop, ShouldEqual, 0)
+			mutProcCountAfterStop := findProcessCount(mutilateBinary)
+			So(mutProcCountAfterStop, ShouldEqual, 0)
+		})
 	})
 }
 
-//func isEnvironmentReady() bool {
-//	if value := os.Getenv(EnvHost); value == "" {
-//		return false
-//	}
-//	if value := os.Getenv(EnvUser); value == "" {
-//		return false
-//	}
-//
-//	if value := os.Getenv(EnvMemcachedPath); value == "" {
-//		return false
-//	}
-//	if value := os.Getenv(EnvMemcachedUser); value == "" {
-//		return false
-//	}
-//
-//	return true
-//}
+func findProcessCount(processName string) int {
+	const separator = ","
 
-//var terminal ssh.TerminalModes
-//
-//func init() {
-//	terminal = ssh.TerminalModes{
-//		ssh.ECHO:          1,
-//		ssh.TTY_OP_ISPEED: 14400,
-//		ssh.TTY_OP_OSPEED: 14400,
-//	}
-//}
+	cmd := exec.Command("pgrep", processName, "-d "+separator)
+	output, _ := cmd.Output()
 
-func getPids(remote Executor, processName string, noOfPids int) (pids []string) {
-	//session, err := client.NewSession()
-	//So(err, ShouldBeNil)
-	//defer session.Close()
-	//err = session.RequestPty("xterm", 80, 40, terminal)
-	//So(err, ShouldBeNil)
-
-	handle, err := remote.Execute("pgrep " + processName)
-	So(err, ShouldBeNil)
-	handle.Wait(0)
-
-	exitCode, err := handle.ExitCode()
-	So(err, ShouldBeNil)
-	So(exitCode, ShouldEqual, 0)
-
-	output, err := session.Output("pgrep " + processName)
-	So(err, ShouldBeNil)
-	pids = strings.Split(strings.Trim(string(output), "\n\r"), "\n")
-	So(pids, ShouldHaveLength, noOfPids)
-
-	for k, pid := range pids {
-		pid = strings.Trim(pid, "\n\r")
-		_, err = strconv.Atoi(pid)
-		So(err, ShouldBeNil)
-		pids[k] = pid
-
+	if len(output) == 0 {
+		return 0
 	}
 
-	return pids
+	pids := strings.Split(string(output), ",")
+	return len(pids)
 }
-
-func soProcessIsNotRunning(client *ssh.Client, pid string) {
-	session, err := client.NewSession()
-	So(err, ShouldBeNil)
-	defer session.Close()
-	err = session.RequestPty("xterm", 80, 40, terminal)
-	So(err, ShouldBeNil)
-	_, err = session.Output("sudo cat /proc/" + pid + "/cmdline")
-	So(err, ShouldNotBeNil)
-	So(err.Error(), ShouldStartWith, "Process exited with: 1")
-
-}
-
-//func newMultipleMemcached(sshConfig executor.SSHConfig) executor.Launcher {
-//	decors := isolation.Decorators{}
-//	unshare, _ := isolation.NewNamespace(syscall.CLONE_NEWPID)
-//	decors = append(decors, unshare)
-//	exec := executor.NewRemoteIsolated(&sshConfig, decors)
-//
-//	return multipleMemcached{exec}
-//}
-//
-//type multipleMemcached struct {
-//	executor executor.Executor
-//}
-//
-//func (m multipleMemcached) Name() string {
-//	return "remote memcached"
-//}
-//
-//func (m multipleMemcached) Launch() (executor.TaskHandle, error) {
-//	bin := os.Getenv(EnvMemcachedPath)
-//	username := os.Getenv(EnvMemcachedUser)
-//	return m.executor.Execute(
-//		fmt.Sprintf("/bin/bash -c \"%s -u %s -d && %s -u %s -p 54321\"", bin, username, bin, username))
-//}
-//

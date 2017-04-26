@@ -21,8 +21,8 @@ import (
 
 var source int64
 
-// Ports returns count random ports between start and end.
-func Ports(start int, end int, count int) []int {
+// PortsFromRange returns 'count' random ports between 'start' and 'end'.
+func PortsFromRange(start int, end int, count int) []int {
 	if source == 0 {
 		source = time.Now().UnixNano()
 	} else {
@@ -41,4 +41,11 @@ func Ports(start int, end int, count int) []int {
 	}
 
 	return out
+}
+
+// Ports return 'count' random ports in range between 22768 to 32768.
+func Ports(count int) []int {
+	const lowEnd = 22768
+	const highEnd = 32768
+	return PortsFromRange(lowEnd, highEnd, count)
 }

@@ -43,6 +43,7 @@ var (
 	sshPortFlag = conf.NewIntFlag("remote_ssh_port", "Port used for SSH connection to remote nodes. ", 22)
 )
 
+// RemoteConfig is configuration for Remote Executor.
 type RemoteConfig struct {
 	User               string
 	KeyPath            string
@@ -51,6 +52,7 @@ type RemoteConfig struct {
 	Port int
 }
 
+// DefaultRemoteConfig returns default Remote Executor configuration from flags.
 func DefaultRemoteConfig() RemoteConfig {
 	return RemoteConfig{
 		User:               sshUserFlag.Value(),
@@ -135,8 +137,8 @@ func (remote Remote) validateHostAuthorization() (err error) {
 	}
 
 	re := regexp.MustCompile(ipAddressRegex)
-	isIpAddress := re.MatchString(remote.targetHost)
-	if isIpAddress {
+	isIPAddress := re.MatchString(remote.targetHost)
+	if isIPAddress {
 		log.Debugf("Cannot validate if address %q is authorized for SSH access", remote.targetHost)
 		return nil
 	}

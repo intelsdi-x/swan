@@ -112,7 +112,7 @@ func UniqueConfig() Config {
 	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
 	// assign a collection of ports to the services. Eventhough previous kubernetes processes
 	// have been shut down, ports may be in CLOSE_WAIT state.
-	ports := random.Ports(22768, 32768, 5)
+	ports := random.Ports(5)
 	config.KubeAPIPort = ports[0]
 	config.KubeletPort = ports[1]
 	config.KubeControllerPort = ports[2]
