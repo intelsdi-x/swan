@@ -21,7 +21,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -36,18 +35,16 @@ import (
 var (
 	currentUser, _ = user.Current()
 
-	sshUserFlag               = conf.NewStringFlag("remote_ssh_login", "Login used for connecting to remote nodes. ", currentUser.Name)
-	sshUserKeyPathFlag        = conf.NewStringFlag("remote_ssh_key_path", fmt.Sprintf("Key for %q used for connecting to remote nodes.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/id_rsa"))
-	sshAuthorizedKeysPathFlag = conf.NewStringFlag("remote_ssh_authorized_keys_path", fmt.Sprintf("Path to Authorized Keys for user %q. Used for validation that SSH conncetion can be established.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/authorized_keys"))
+	sshUserFlag        = conf.NewStringFlag("remote_ssh_login", "Login used for connecting to remote nodes. ", currentUser.Name)
+	sshUserKeyPathFlag = conf.NewStringFlag("remote_ssh_key_path", fmt.Sprintf("Key for %q used for connecting to remote nodes.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/id_rsa"))
 
 	sshPortFlag = conf.NewIntFlag("remote_ssh_port", "Port used for SSH connection to remote nodes. ", 22)
 )
 
 // RemoteConfig is configuration for Remote Executor.
 type RemoteConfig struct {
-	User               string
-	KeyPath            string
-	AuthorizedKeysPath string
+	User    string
+	KeyPath string
 
 	Port int
 }
@@ -55,10 +52,9 @@ type RemoteConfig struct {
 // DefaultRemoteConfig returns default Remote Executor configuration from flags.
 func DefaultRemoteConfig() RemoteConfig {
 	return RemoteConfig{
-		User:               sshUserFlag.Value(),
-		KeyPath:            sshUserKeyPathFlag.Value(),
-		AuthorizedKeysPath: sshAuthorizedKeysPathFlag.Value(),
-		Port:               sshPortFlag.Value(),
+		User:    sshUserFlag.Value(),
+		KeyPath: sshUserKeyPathFlag.Value(),
+		Port:    sshPortFlag.Value(),
 	}
 }
 
@@ -118,50 +114,6 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 	}
 
 	return ssh.PublicKeys(key), nil
-}
-
-// validateHostAuthorization checks if we are able to do remote connection using given host and User.
-// Checks only hostname, IP addresses are not validated (except 127.0.0.1)
-// Return error if there is blocker (e.g host is not authorized).
-func (remote Remote) validateHostAuthorization() (err error) {
-	const ipAddressRegex = `^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
-
-	// Check if host is self-authorized. If it's localhost we need to grab real hostname.
-	if remote.targetHost == "127.0.0.1" || remote.targetHost == "localhost" {
-		targetHost, err := os.Hostname()
-		if err != nil {
-			return errors.Wrap(err, "cannot obtain hostname to make sure that local host is authorized for SSH access")
-		}
-
-		return isHostAuthorized(targetHost, remote.config.AuthorizedKeysPath)
-	}
-
-	re := regexp.MustCompile(ipAddressRegex)
-	isIPAddress := re.MatchString(remote.targetHost)
-	if isIPAddress {
-		log.Debugf("Cannot validate if address %q is authorized for SSH access", remote.targetHost)
-		return nil
-	}
-
-	return isHostAuthorized(remote.targetHost, remote.config.AuthorizedKeysPath)
-}
-
-func isHostAuthorized(targetHost string, keyPath string) error {
-	authorizedHostsFile, err := os.Open(keyPath)
-	if err != nil {
-		return errors.Wrapf(err, "cannot open authorized keys from %q", keyPath)
-	}
-	authorizedHostsContent, err := ioutil.ReadAll(authorizedHostsFile)
-	if err != nil {
-		return errors.Wrapf(err, "cannot read authorized keys from %q", keyPath)
-	}
-
-	authorized := strings.Contains(string(authorizedHostsContent), targetHost)
-	if !authorized {
-		return errors.Errorf("host %q is not authorized", targetHost)
-	}
-
-	return nil
 }
 
 // Name returns User-friendly name of executor.

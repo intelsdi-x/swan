@@ -15,13 +15,11 @@
 package executor
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
 
 	. "github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/utils/random"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,21 +40,7 @@ func TestRemote(t *testing.T) {
 	})
 }
 
-func TestRemoteProcessPidIsolation(t *testing.T) {
-	const memcachedBinary = "memcached"
-	const mutilateBinary = "mutilate"
-
-	// Skip test when binaries are not available.
-	_, err := exec.LookPath(memcachedBinary)
-	if err != nil {
-		t.Skip("Skipping remote executor test: " + err.Error())
-	}
-
-	_, err = exec.LookPath(mutilateBinary)
-	if err != nil {
-		t.Skip("Skipping remote executor test: " + err.Error())
-	}
-
+func got(t *testing.T) {
 	Convey("I should be able to execute remote command and see the processes running", t, func() {
 		config := DefaultRemoteConfig()
 		remote, err := NewRemote("127.0.0.1", config)
@@ -64,25 +48,18 @@ func TestRemoteProcessPidIsolation(t *testing.T) {
 			t.Skip("Skipping remote executor test: " + err.Error())
 		}
 
-		user := config.User
-		ports := random.Ports(1)
-		handle, err := remote.Execute(fmt.Sprintf("%s -u %s -p %d -d && %s -A",
-			memcachedBinary, user, ports[0], mutilateBinary))
+		handle, err := remote.Execute("sleep inf & sleep inf")
 		So(err, ShouldBeNil)
 
-		mcProcCount := findProcessCount(memcachedBinary)
-		So(mcProcCount, ShouldEqual, 1)
-		mutProcCount := findProcessCount(mutilateBinary)
-		So(mutProcCount, ShouldEqual, 1)
+		sleepProcCount := findProcessCount("sleep")
+		So(sleepProcCount, ShouldEqual, 2)
 
 		Convey("I should be able to stop remote task and all the processes should be terminated", func() {
 			err = handle.Stop()
 			So(err, ShouldBeNil)
 
-			mcProcCountAfterStop := findProcessCount(memcachedBinary)
-			So(mcProcCountAfterStop, ShouldEqual, 0)
-			mutProcCountAfterStop := findProcessCount(mutilateBinary)
-			So(mutProcCountAfterStop, ShouldEqual, 0)
+			sleepProcCountAfterStop := findProcessCount("sleep")
+			So(sleepProcCountAfterStop, ShouldEqual, 0)
 		})
 	})
 }
