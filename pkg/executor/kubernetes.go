@@ -661,7 +661,17 @@ func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 		exitCode = int(status.State.Terminated.ExitCode)
 	}
 	if pod.Status.Phase == v1.PodFailed {
-		log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
+
+		// Depedning on how pod was stopped change log level and explanation.
+		switch exitCode {
+		case 128 + 9:
+			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGKILL)", pod.Name, exitCode)
+		case 128 + 2:
+			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGTERM)", pod.Name, exitCode)
+		default:
+			log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
+		}
+
 	} else {
 		log.Debugf("K8s task watcher: exit code retrieved: %d", exitCode)
 	}
@@ -686,8 +696,8 @@ func (kw *k8sWatcher) deletePod() {
 	kw.onceDeletePod.Do(func() {
 
 		// Setting gracePeriodSeconds to zero will erase pod from API server and won't wait for it to exit.
-		// Setting it to 1 second leaves responsibility of deleting the pod to kubelet.
-		gracePeriodSeconds := int64(1)
+		// Setting it to 5 second leaves responsibility of deleting the pod to kubelet.
+		gracePeriodSeconds := int64(5)
 		log.Debugf("deleting pod %q", kw.pod.Name)
 		err := kw.podsAPI.Delete(kw.pod.Name, &api.DeleteOptions{
 			GracePeriodSeconds: &gracePeriodSeconds,
