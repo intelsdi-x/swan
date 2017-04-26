@@ -79,10 +79,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(taskState, ShouldEqual, TERMINATED)
 				exitcode, err := taskHandle.ExitCode()
 				So(err, ShouldBeNil)
-				// -1 for Local executor.
-				// 137 for Remote executor (process killed).
-				// TODO: Unify exit code constants in next PR.
-				So(exitcode, ShouldBeIn, -1, 137)
+				So(exitcode, ShouldBeIn, -1, 143)
 			})
 		})
 	})
