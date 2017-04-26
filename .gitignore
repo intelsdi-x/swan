@@ -37,3 +37,4 @@ swan-*.tar.gz
 \#*
 /swan.tar.gz
 /opt
+/jupyter/pivottablejs.html
