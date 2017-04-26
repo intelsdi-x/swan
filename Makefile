@@ -127,3 +127,6 @@ install:
 
 docker:
 	docker build -t intelsdi/swan:latest workloads
+
+extract_binaries:
+	docker run -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output

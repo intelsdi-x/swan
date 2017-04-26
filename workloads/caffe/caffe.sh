@@ -9,5 +9,5 @@ if [ ! -x ${CAFFE_DIR}/bin/caffe ] ; then
 fi
 
 cd $CAFFE_DIR
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CAFFE_DIR/lib
+export LD_LIBRARY_PATH=/opt/swan/lib:$CAFFE_DIR/lib:$LD_LIBRARY_PATH
 ./bin/caffe "$@"

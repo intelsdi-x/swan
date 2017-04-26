@@ -17,13 +17,12 @@ ENV USE_OPENMP=1
 RUN make -j --quiet libs
 RUN make -j --quiet netlib
 RUN make -j --quiet shared
-RUN make -j install
-ENV LD_LIBRARY_PATH=/opt/OpenBLAS/lib
+RUN make -j install PREFIX=/opt/swan
 
 ### build 
 WORKDIR /root/caffe
 ADD caffe/Makefile.config Makefile.config
-RUN make -j
+RUN LD_LIBRARY_PATH=/opt/swan/lib make -j
 
 ### install globaly
 RUN cp .build_release/lib/libcaffe.so.1.0.0 /usr/lib/
@@ -33,7 +32,7 @@ RUN ldconfig
 # Data set preparation
 WORKDIR /root/caffe
 RUN ./data/cifar10/get_cifar10.sh
-RUN ./examples/cifar10/create_cifar10.sh
+RUN  LD_LIBRARY_PATH=/opt/swan/lib ./examples/cifar10/create_cifar10.sh
 WORKDIR /root/caffe/examples/cifar10/
 RUN sed -i 's/GPU/CPU/' *.prototxt
 ADD caffe/cifar10_quick_iter_5000.caffemodel.h5 cifar10_quick_iter_5000.caffemodel.h5
@@ -49,7 +48,7 @@ RUN cp -r ./examples/cifar10/cifar10_test_lmdb /opt/swan/share/caffe/examples/ci
 RUN cp ./examples/cifar10/cifar10_quick_train_test.prototxt /opt/swan/share/caffe/examples/cifar10
 RUN cp ./examples/cifar10/mean.binaryproto /opt/swan/share/caffe/examples/cifar10
 RUN cp ./examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5 /opt/swan/share/caffe/examples/cifar10
-RUN cp /opt/OpenBLAS/lib/libopenblas_haswellp-r0.2.20.dev.so /opt/swan/share/caffe/lib/libopenblas.so.0
+RUN cp /opt/swan/lib/libopenblas_haswellp-r0.2.20.dev.so /opt/swan/share/caffe/lib/libopenblas.so.0
 ADD caffe/caffe.sh /opt/swan/bin/caffe.sh
 ADD caffe/caffe-test.sh /opt/swan/bin/caffe-test.sh
 
