@@ -176,7 +176,7 @@ For instructions on how to run Jupyter Notebook, please refer to the [Jupyter us
 A few pointers to validate the experiment data:
 
  - Baseline measurements should not violate SLO at any load point.
- - At low loads - numbers may not differ for baseline and co-located scenarios. The differences should be in _when_ the saturation occurs. For the co-located scenarios, this should become evident at higher loads. If this does not occur, it might mean that Memcached has not been properly baselined.
+ - At low loads - numbers may not differ for baseline and colocated scenarios. The differences should be in _when_ the saturation occurs. For the colocated scenarios, this should become evident at higher loads. If this does not occur, it might mean that Memcached has not been properly baselined.
 
 Below is an example of the sensitivity profile could be:
 
