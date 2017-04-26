@@ -124,3 +124,9 @@ dist:
 install:
 	tar -C /opt/swan/bin -xzvf swan.tar.gz 
 	sudo ln -svf /opt/swan/bin/* /usr/bin/
+
+docker:
+	docker build -t intelsdi/swan:latest workloads
+
+extract_binaries:
+	docker run -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output
