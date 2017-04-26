@@ -62,6 +62,7 @@ func TestSnapDockerSession(t *testing.T) {
 
 		// Waiting for Kubernetes Executor.
 		kubernetesConfig := executor.DefaultKubernetesConfig()
+		kubernetesConfig.ContainerImage = "centos_swan_image"
 		kubernetesConfig.Address = fmt.Sprintf("127.0.0.1:%d", config.KubeAPIPort)
 		kubeExecutor, err := executor.NewKubernetes(kubernetesConfig)
 		So(err, ShouldBeNil)
