@@ -71,7 +71,7 @@ func PrepareExecutors(hpIsolation isolation.Decorator) (hpExecutor executor.Exec
 //LaunchKubernetesCluster starts new Kubernetes cluster using configuration provided with flags.
 func LaunchKubernetesCluster() (cleanup func() error, err error) {
 	k8sConfig := kubernetes.DefaultConfig()
-	masterExecutor, err := executor.NewRemoteFromIP(k8sConfig.KubeAPIAddr)
+	masterExecutor, err := executor.NewShell(k8sConfig.KubeAPIAddr)
 	if err != nil {
 		return nil, err
 	}
