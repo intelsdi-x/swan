@@ -15,6 +15,7 @@
 package integration
 
 import (
+	"os/exec"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -26,6 +27,10 @@ import (
 // TestMemBwDataWithExecutor is an integration test with local executor
 func TestMemBwDataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+
+	if _, err := exec.LookPath("memBw"); err != nil {
+		t.Skip("memBw binary not found")
+	}
 
 	Convey("While using Local Shell in Memory Bandwidth launcher", t, func() {
 		l := executor.NewLocal()
