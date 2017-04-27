@@ -30,11 +30,7 @@ func TestExecutables(t *testing.T) {
 
 		// aggressors
 		"caffe.sh",
-		"l1d",
-		"l1i",
-		"l3",
-		"memBw",
-		"stream.100M",
+		"stress-ng",
 
 		// experiments
 		"memcached-sensitivity-profile",
