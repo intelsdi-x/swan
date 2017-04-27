@@ -79,7 +79,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(taskState, ShouldEqual, TERMINATED)
 				exitcode, err := taskHandle.ExitCode()
 				So(err, ShouldBeNil)
-				So(exitcode, ShouldBeIn, -1, 143)
+				So(exitcode, ShouldBeIn, -1, 137, 143)
 			})
 		})
 	})
