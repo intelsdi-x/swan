@@ -25,19 +25,19 @@ The Sensitivity Profile Experiment can be run in two modes:
 The main difference between these two, is the fact that in Kubernetes mode user can see interferences from Kubelet and Docker and compare them with Standalone mode. Also, standalone mode only requires workload binaries to be available in directories listed in `$PATH` which makes it a little bit easier to start than Kubernetes one.
 
 Flags required for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
- 
+
 To run experiment, please use `isolate-pid.sh` script that would run the binary in PID namesapce, so that all spawned processes will be cleaned in case of failure. Script and experiment binary is available inside release package.
 
 ```
 ./isolate-pid.sh memcached-sensitivity-profile
 ```
- 
+
 ## Swan Flags
 
 Swan exposes a multitude of flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -help`. To facilitate experiment preparation, we have added a "config dump" option (`memcached-sensitivity-profile -config-dump`) that could be saved to file and be used to launch experiment. An example config dump is located in [Config Dump Example](config_dump_example.md).
 
 To facilitate experiment instrumentation, the most important Swan are listed in [Swan Flags](swan_flags.md) page.
- 
+
 Parameter flags can be used interchangeably with environment variables. Parameter takes precedence before environment variable.
 
 ## Experiment Run
@@ -86,23 +86,23 @@ When the experiment has started, you should see an [UUID](https://en.wikipedia.o
 
 Below is an example configuration using environment variables to set up the experiment where the machines are configured in the following topology:
 
-|   Machine     |                  Role                  |
-|---------------|----------------------------------------|
-| 192.168.10.9  | SUT node for Swan Experiment           |
-| 192.168.10.3  | Load Generator agent node #1           |
-| 192.168.10.4  | Load Generator agent node #2           |
-| 192.168.10.5  | Load Generator agent node #3           |
-| 192.168.10.6  | Load Generator agent node #4           |
-| 192.168.10.10 | Services node                          |
+| Machine       | Role                         |
+|:--------------|:-----------------------------|
+| 192.168.10.9  | SUT node for Swan Experiment |
+| 192.168.10.3  | Load Generator agent node #1 |
+| 192.168.10.4  | Load Generator agent node #2 |
+| 192.168.10.5  | Load Generator agent node #3 |
+| 192.168.10.6  | Load Generator agent node #4 |
+| 192.168.10.10 | Services node                |
 
-Binaries should be installed on those machines as stated in [Installation](installation.md) guide. 
+Binaries should be installed on those machines as stated in [Installation](installation.md) guide.
 
 `memcached-sensitivity-profile` must be launched on the SUT node by a privileged user.
 Key based ssh authorization for user `root` is required from the SUT node to the Load Generator nodes.
 
 
 In this example, SUT node has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showed in [Theory](theory.md) section, this leaves 4 threads and logical cores for memcached.
-Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (the calculations are provided in [Tuning Mutilate](tuning.md#Mutilate-Tuning) section). 
+Following the 4 threads, the configuration below is configured to reach 800 concurrent connections to memcached (the calculations are provided in [Tuning Mutilate](tuning.md#Mutilate-Tuning) section).
 
 ```bash
 ## --- aggressors ---
@@ -180,7 +180,7 @@ A few pointers to validate the experiment data:
 
 Below is an example of the sensitivity profile could be:
 
-![Sensitivity profile](../../../docs/sensitivity-profile.png)
+![Sensitivity profile](/images/sensitivity-profile.png)
 
 
 The _Load_ row is a percentage of the peak load which was found during _[Red lining](https://www.wikiwand.com/en/Redline)_.

@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-# ![Swan logo](swan-logo-48.png) Swan
+# ![Swan logo](/images/swan-logo-48.png) Swan
 
 # Developer's guide
 

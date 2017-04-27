@@ -16,7 +16,7 @@
 
 # Project Swan
 
-![Swan diagram](docs/swan-logo.png)
+![Swan diagram](/images/swan-logo.png)
 
 [![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan)
 
@@ -33,13 +33,13 @@ Swan is a distributed experimentation framework for automated experiments target
 
 Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment data in [Cassandra](http://cassandra.apache.org/). From here, we provide a [Jupyter](http://jupyter.org/) environment to explore and visualize experiment data. Read the [architecture document](docs/architecture.md) to learn more.
 
-![Swan architecture](docs/swan.png)
+![Swan architecture](/images/swan.png)
 
 ## Terminology
 
 The first experiment which bundles with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment allows experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference. An example of the _sensitivity profile_ can be seen below.
 
-![Sensitivity profile](docs/sensitivity-profile.png)
+![Sensitivity profile](/images/sensitivity-profile.png)
 
 During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter.
 

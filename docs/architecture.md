@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-# ![Swan logo](swan-logo-48.png) Swan
+# ![Swan logo](/images/swan-logo-48.png) Swan
 
 # Architecture overview
 Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment's data in [Cassandra](http://cassandra.apache.org/) database.
@@ -24,11 +24,11 @@ The first experiment bundled with Swan is a [sensitivity experiment](../experime
 data cache, [memcached](https://memcached.org/). The experiment allows to generate
 a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference. An example of the _sensitivity profile_ can be seen below.
 
-![Sensitivity profile](sensitivity-profile.png)
+![Sensitivity profile](/images/sensitivity-profile.png)
 
 Following figure illustrates _Memcached sensitivity experiment_ architecture.
 
-![Swan architecture](swan-arch.png)
+![Swan architecture](/images/swan-arch.png)
 
 The main components here are:
 

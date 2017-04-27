@@ -55,7 +55,7 @@ Jupyter will start locally. Point a web browser to http://127.0.0.1:8888 to acce
 
 From within the Jupyter web interface, open a template notebook by clicking on `example.ipynb`:
 
-![experiment](docs/new_notebook.png)
+![experiment](/images/new_notebook.png)
 
 This is very simple notebook that will generate only sensitivity profile for the experiment.
 The first step is to set the following variables:
@@ -71,7 +71,7 @@ exp1 = Experiment(cassandra_cluster=[IP],
 ```
 It may take a while since it will retrieve data from Cassandra and store it in the variable `exp1` which represents itself as a table:
 
-![sample list](docs/sample_list.png)
+![sample list](/images/sample_list.png)
 
 The last two steps are to render the sensitivity profile from the loaded samples and draw sensitivity chart. The former will be generated after evaluating:
 
@@ -82,7 +82,7 @@ p.sensitivity_table()
 
 Where `slo` is the target latency in microseconds. The rendered table, which is the *Sensitivity Profile*, will look similar to the one below:
 
-![sensitivity profile](docs/sensitivity_profile.png)
+![sensitivity profile](/images/sensitivity_profile.png)
 
 To learn more about *Sensitivity Profile* read the [Sensitivity Experiment](experiments/memcached-sensitivity-profile/README.md) README.
 
@@ -98,7 +98,7 @@ p1.sensitivity_chart(fill=True, to_max=False)
 
 A *Sensitivity Chart* will show how aggressors interference with the High Priority job.
 
-![sensitivity_chart](docs/sensitivity_chart.png)
+![sensitivity_chart](/images/sensitivity_chart.png)
 
 The chart shows *Sensitivity Profile* in the form of a graph. The red horizontal line is the SLO which cannot be violated. Below the SLO line there is a Baseline and for all load points it should stay there. For Baseline there must not be any SLO violation. High Priority (HP) in some cases will start below the SLO may rapidly exceed the SLO at some load point.
 
@@ -114,7 +114,7 @@ compare_experiments(exps, fill=True, to_max=False)
 
 Here `fill` parameter acts the same as in the previous example, and `to_max` compares baseline for two experiments.
 
-![compare_two_experiments](docs/compare_two_experiments.png)
+![compare_two_experiments](/images/compare_two_experiments.png)
 
 At this chart the "green area" shows improvement in terms of higher load and lower latency, between `Baselines` on two different setups.
 

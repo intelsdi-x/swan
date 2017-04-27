@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-# ![Swan diagram](../../docs/swan-logo-48.png) Swan
+# ![Swan diagram](/images/swan-logo-48.png) Swan
 
 ## Memcached CAT
 
