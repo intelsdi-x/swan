@@ -42,11 +42,12 @@ var (
 	// PortFlag returns port which will be specified for workload services as endpoints.
 	PortFlag = conf.NewIntFlag("memcached_port", "Port for Memcached to listen on. (-p)", defaultPort)
 	// IPFlag returns IP which will be specified for workload services as endpoints.
-	IPFlag             = conf.NewStringFlag("memcached_listening_address", "IP address of interface that Memcached will be listening on. It must be actual device address, not '0.0.0.0'.", defaultListenIP)
-	userFlag           = conf.NewStringFlag("memcached_user", "Username for Memcached process. (-u)", defaultUser)
-	numThreadsFlag     = conf.NewIntFlag("memcached_threads", "Number of threads to use. (-t)", defaultNumThreads)
-	maxConnectionsFlag = conf.NewIntFlag("memcached_connections", "Max simultaneous connections. (-c)", defaultNumConnections)
-	maxMemoryMBFlag    = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items in megabytes. (-m)", defaultMaxMemoryMB)
+	IPFlag              = conf.NewStringFlag("memcached_listening_address", "IP address of interface that Memcached will be listening on. It must be actual device address, not '0.0.0.0'.", defaultListenIP)
+	userFlag            = conf.NewStringFlag("memcached_user", "Username for Memcached process. (-u)", defaultUser)
+	numThreadsFlag      = conf.NewIntFlag("memcached_threads", "Number of threads to use. (-t)", defaultNumThreads)
+	threadsAffinityFlag = conf.NewBoolFlag("memcached_threads_affinity", "Threads affinity (-T) (requires memcached patch)", defaultThreadsAffinity)
+	maxConnectionsFlag  = conf.NewIntFlag("memcached_connections", "Max simultaneous connections. (-c)", defaultNumConnections)
+	maxMemoryMBFlag     = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items in megabytes. (-m)", defaultMaxMemoryMB)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -74,13 +75,14 @@ type Config struct {
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
 func DefaultMemcachedConfig() Config {
 	return Config{
-		PathToBinary:   "memcached",
-		Port:           PortFlag.Value(),
-		User:           userFlag.Value(),
-		NumThreads:     numThreadsFlag.Value(),
-		MaxMemoryMB:    maxMemoryMBFlag.Value(),
-		NumConnections: maxConnectionsFlag.Value(),
-		IP:             IPFlag.Value(),
+		PathToBinary:    "memcached",
+		Port:            PortFlag.Value(),
+		User:            userFlag.Value(),
+		NumThreads:      numThreadsFlag.Value(),
+		ThreadsAffinity: threadsAffinityFlag.Value(),
+		MaxMemoryMB:     maxMemoryMBFlag.Value(),
+		NumConnections:  maxConnectionsFlag.Value(),
+		IP:              IPFlag.Value(),
 	}
 }
 
@@ -111,6 +113,9 @@ func (m Memcached) buildCommand() string {
 		" -t ", m.conf.NumThreads,
 		" -m ", m.conf.MaxMemoryMB,
 		" -c ", m.conf.NumConnections)
+	if m.conf.ThreadsAffinity {
+		cmd += " -T"
+	}
 	return cmd
 }
 
