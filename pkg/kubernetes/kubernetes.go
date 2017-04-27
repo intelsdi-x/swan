@@ -45,6 +45,8 @@ var (
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
+
+	kubeCleanDanglingPods = conf.NewBoolFlag("kubernetes_cluster_clean_dangling_pods", "Dangling pods existing on Kubelet will be deleted on cluster startup.", false)
 )
 
 type kubeCommand struct {
@@ -69,6 +71,9 @@ type Config struct {
 	// Address range to use for services.
 	ServiceAddresses string
 
+	// Optional configuration option for cleaning
+	KubeletHost string
+
 	// Custom args to apiserver and kubelet.
 	KubeAPIArgs        string
 	KubeControllerArgs string
@@ -84,7 +89,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		EtcdServers:        kubeEtcdServersFlag.Value(),
-		EtcdPrefix:         "/registry",
+		EtcdPrefix:         "/swan",
 		LogLevel:           0,
 		AllowPrivileged:    true,
 		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
@@ -127,21 +132,35 @@ func UniqueConfig() Config {
 type getReadyNodesFunc func(k8sAPIAddress string) ([]v1.Node, error)
 
 type k8s struct {
-	master        executor.Executor
-	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
-	config        Config
+	master executor.Executor
+	minion executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
+	config Config
+	client *kubernetes.Clientset
+
 	isListening   netutil.IsListeningFunction // For mocking purposes.
 	getReadyNodes getReadyNodesFunc           // For mocking purposes.
+
+	kubeletHost string // Filled by Kubelet TaskHandle
 }
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
 // In case of the same executor they will be on the same host (high risk of interferences).
 // NOTE: Currently we support only single-kubelet (single-minion) kubernetes.
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
+	client, err := kubernetes.NewForConfig(
+		&rest.Config{
+			Host: config.KubeAPIAddr,
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return k8s{
 		master:        master,
 		minion:        minion,
 		config:        config,
+		client:        client,
 		isListening:   netutil.IsListening,
 		getReadyNodes: getReadyNodes,
 	}
@@ -164,6 +183,23 @@ func (m k8s) Launch() (handle executor.TaskHandle, err error) {
 		}
 
 		return handle, nil
+	}
+
+	pods, err := m.getPodsFromNode(m.kubeletHost)
+	if err != nil {
+		log.Warnf("Could not check if there are dangling nodes on Kubelet: %s", err)
+	} else {
+		if len(pods) != 0 && kubeCleanDanglingPods.Value() == false {
+			log.Warnf("Kubelet on node %q has %d dangling nodes. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanDanglingPods.Name)
+		} else if len(pods) != 0 && kubeCleanDanglingPods.Value() == true {
+			log.Infof("Kubelet on node %q has %d dangling nodes. Attempt to clean them", m.kubeletHost, len(pods))
+			err = m.cleanNode(m.kubeletHost, pods)
+			if err != nil {
+				log.Errorf("Could not clean dangling pods: %s", err)
+			} else {
+				log.Infof("Dangling pods on node %q has been deleted", m.kubeletHost)
+			}
+		}
 	}
 
 	log.Errorf("Could not launch Kubernetes cluster: %q", err.Error())
@@ -241,6 +277,7 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kubelet using minion executor")
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
+	m.kubeletHost = kubeletHandle.Address()
 
 	return clusterTaskHandle, err
 }
