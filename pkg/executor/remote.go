@@ -27,7 +27,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
@@ -81,7 +80,7 @@ func NewRemote(address string, config RemoteConfig) (Executor, error) {
 
 // NewRemoteIsolated returns a remote executor instance.
 func NewRemoteIsolated(address string, config RemoteConfig, decorators isolation.Decorators) (Executor, error) {
-	authMethod, err := getAuthMethod(sshUserKeyPathFlag.Value())
+	authMethod, err := getAuthMethod(config.KeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +159,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	stringForSh = strings.Replace(stringForSh, "'", "\\'", -1)
 	stringForSh = strings.Replace(stringForSh, "\"", "\\\"", -1)
 
-	unshareUUIDStr := uuid.New()
-
-	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
-	// On the server the example command will look the following:
-	// unshare --fork --pid --mount-proc sh -c /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
-	// 'tryue && ' prefix prevents bash over execing into given command and guarantees unshare work as expected.
-	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c 'true && %s #%s'`, stringForSh, unshareUUIDStr)
+	stringForSh = fmt.Sprintf("%s", stringForSh)
 
 	log.Debug("Starting '", stringForSh, "' remotely")
 	err = session.Start(stringForSh)
@@ -194,7 +187,6 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		stdoutFilePath:   stdoutFile.Name(),
 		stderrFilePath:   stderrFile.Name(),
 		host:             remote.targetHost,
-		uuid:             unshareUUIDStr,
 		exitCode:         exitCode,
 		hasProcessExited: hasProcessExited,
 	}
@@ -254,7 +246,6 @@ type remoteTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string
 	host           string
-	uuid           string
 	exitCode       *int
 
 	// Command requested by User. This is how this TaskHandle presents.
@@ -282,32 +273,14 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	if taskHandle.isTerminated() {
 		return nil
 	}
-	err := killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGTERM")
-	if err != nil {
-		// Error here means that kill did not send signal.
-		log.Errorf("Remote TaskHandle.Stop() of command %q has failed: %s", taskHandle.command, err.Error())
-		return errors.Wrapf(err, "Stop() of command %q has failed", taskHandle.command)
-	}
 
-	// Wait for the Execute's go routine to update status.
-	// If Wait exits with terminated status then there is no problem.
-	// If Wait exits with not-terminated status then:
-	//    a) task ignored SIGTERM
-	//    b) task is killed but status has not changed yet - race here.
+	err := taskHandle.session.Close()
+	if err != nil {
+		return errors.Wrapf(err, "could not close ssh session")
+	}
 	isTerminated := taskHandle.Wait(killWaitTimeout)
 	if !isTerminated {
-		// Task is not terminated. Try kill it with SIGKILL.
-		// Note that race can occur here so ignore errors.
-		// Go routine may close session any time (defers).
-		_ = killRemoteTaskWithID(taskHandle.connection, taskHandle.uuid, "SIGKILL")
-
-		// Checking if kill was successful.
-		isTerminated = taskHandle.Wait(killTimeout)
-		if !isTerminated {
-			log.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
-
-			return errors.Errorf("Remote TaskHandle.Stop() of command %q has *probably* failed. Verify by 'ps aux | grep %s' on host %q", taskHandle.command, taskHandle.uuid, taskHandle.Address())
-		}
+		return errors.New("cannot stop ssh session")
 	}
 	// No error, task terminated.
 	return nil
@@ -397,92 +370,4 @@ func newSessionWithPty(connection *ssh.Client) (*ssh.Session, error) {
 		return nil, errors.Wrapf(err, "newSessionWithPty: session.RequestPty failed")
 	}
 	return session, nil
-}
-
-func getRemoteCmdOutput(connection *ssh.Client, cmd string) (string, error) {
-	session, err := newSessionWithPty(connection)
-	if err != nil {
-		return "", errors.Wrapf(err, "getRemoteCmdOutput: newSessionWithPty failed")
-	}
-	defer session.Close()
-
-	output, err := session.Output(cmd)
-	if err != nil {
-		return "", errors.Wrapf(err, "getRemoteCmdOutput: session.Output failed for '%s'", cmd)
-	}
-	return strings.TrimSpace(string(output)), nil
-}
-
-func getUnshareProcessID(connection *ssh.Client, uuid string) (string, error) {
-	// Get unshare process that in command line has also given uuid.
-	// 1. ps -o pid -o cmd ax
-	//    - prints only PID and CMD collumns. 'a' - all process,
-	//      'x' - even if they are not attached to terminal.
-	// Example:
-	// [root@localhost]$ ps -o pid -o cmd ax
-	//   PID CMD
-	//     1 /usr/lib/systemd/systemd --switched-root --system --deserialize 21
-	//     2 [kthreadd]
-	//     3 [ksoftirqd/0]
-	//   ...
-	// 23403 sshd: root@notty
-	// 23406 unshare --fork --pid --mount-proc sh -c /home/vagrant/.../mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
-	// 23411 /home/vagrant/.../mutilate -A
-	//
-	// 2. Grep for 'unshare'. '[e]' prevents grep to find itself in proceess list.
-	//
-	// 3. Second grep searches for given uuid in all found 'unshare' process.
-	// Note that there could be more that one 'unshare' that's why uuid is
-	// added as a comment to command.
-	cmd := fmt.Sprintf(`ps -o pid -o cmd ax | grep unshar[e] | grep -e %q`, uuid)
-	// Grep returns 0 - success, 1 - pattern not found, 2 - error.
-	output, err := getRemoteCmdOutput(connection, cmd)
-	if err != nil {
-		return "", errors.Wrapf(err, "getUnshareProcessID getRemoteCmdOutput failed for command '%s'", cmd)
-	}
-	// Output from search is '<pid> <full command>'.
-	unsharePid := strings.Split(output, " ")[0]
-	return unsharePid, nil
-}
-
-func getPidNamespaceInit(connection *ssh.Client, unsharePid string) (string, error) {
-	// Find process to which 'unsharePid' is a parent. Print only found pit.
-	cmd := "ps -opid= --ppid " + unsharePid
-	output, err := getRemoteCmdOutput(connection, cmd)
-	if err != nil {
-		return "", errors.Wrapf(err, "getPidNamespaceInit getRemoteCmdOutput failed for command '%s'", cmd)
-	}
-	childPid := strings.TrimSpace(output)
-	return childPid, nil
-}
-
-func killRemotePid(connection *ssh.Client, sig string, pid string) error {
-	session, err := newSessionWithPty(connection)
-	if err != nil {
-		return errors.Wrapf(err, "killRemotePid newSessionWithPty failed.")
-	}
-	defer session.Close()
-	err = session.Run(fmt.Sprintf("kill -%s %s", sig, pid))
-	// Kill return 'success' if signal was sent
-	return err
-}
-
-func killRemoteTaskWithID(connection *ssh.Client, uuid string, signal string) error {
-	// 1. Find 'unshare' process which has 'uuid' in command line attached. Return pid of that 'unshare'.
-	unsharePid, err := getUnshareProcessID(connection, uuid)
-	if err != nil {
-		return errors.Wrapf(err, "killRemoteTaskWithID: getUnshareProcessID failed for uuid '%s'", uuid)
-	}
-	// 2. Find 'unshare' child - this will be init process in the PID namespace and killing it
-	//    will result in killing all processes in that namespace.
-	initPid, err := getPidNamespaceInit(connection, unsharePid)
-	if err != nil {
-		return errors.Wrapf(err, "killRemoteTaskWithID: getPidNamespaceInit failed for unsharePid '%s'", unsharePid)
-	}
-	// 3. Send kill signal to unshare's child - namespace init process.
-	err = killRemotePid(connection, signal, initPid)
-	if err != nil {
-		return errors.Wrapf(err, "killRemoteTaskWithID: failed to send signal %s to process '%s'", signal, initPid)
-	}
-	return err
 }
