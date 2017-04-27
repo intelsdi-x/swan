@@ -164,9 +164,9 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	// Obligatory Pid namespace and a hint as comment. It will be carried to remote system.
 	// On the server the example command will look the following:
-	// unshare --fork --pid --mount-proc sh -c /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5
+	// sudo unshare --fork --pid --mount-proc sh -c 'true && /opt/mutilate -A #d2857955-942c-4436-4d75-635640d2bbe5'
 	// 'tryue && ' prefix prevents bash over execing into given command and guarantees unshare work as expected.
-	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c 'true && %s #%s'`, stringForSh, unshareUUIDStr)
+	stringForSh = fmt.Sprintf(`sudo unshare --fork --pid --mount-proc sh -c 'true && %s #%s'`, stringForSh, unshareUUIDStr)
 
 	log.Debug("Starting '", stringForSh, "' remotely")
 	err = session.Start(stringForSh)
