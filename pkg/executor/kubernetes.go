@@ -666,7 +666,7 @@ func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 		switch exitCode {
 		case 128 + 9:
 			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGKILL)", pod.Name, exitCode)
-		case 128 + 2:
+		case 128 + 15:
 			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGTERM)", pod.Name, exitCode)
 		default:
 			log.Errorf("K8s task watcher: pod %q failed with exit code %d", pod.Name, exitCode)
