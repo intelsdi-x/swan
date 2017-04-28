@@ -24,109 +24,129 @@ As written in [Prerequisites](prerequisites.md) section, we have three classes o
  
 Single node can have multiple classes, but this separation is recommended to obtain correct results from experiment.
 
-### Required Sofware
+### Required Software
 
 **System Under Test Node:**
 
-SUT Node requires following application installed:
+SUT Node requires following application installed.
 
-* Memcached
-* Best Effort Workloads
-* Snap
-* Hyperkube
-* Docker
+* Experiment Binaries - *Swan Experiments*
+* Memcached & Best Effort Workloads - *Worklods that will be tested in colocation*
+* Snap - *Intel Telemetry Framework*
+* Hyperkube - *Kubernetes in single binary*
+* Docker - *Container Runtime*
+* Snap Plugins - *Plugins for gathering telemetry & experiment results*
 
 **Load Generator Agent:**
 
-* Mutilate
+* Mutilate - *Memcached Load Generator*
 
 **Services Node:**
 
-* Cassandra 
-* Hyperkube
-* Mutilate
-* Etcd
+* Mutilate - *Master for agent synchronisation*
+* Cassandra - *Database for storing experiment results* 
+* Hyperkube - *Kubernetes Control Plane*
+* Etcd - *Backend for Kubernetes*
 
-## Software Installation
+### The Installation details are as follow:
 
-### Memcached
+`wget` must be installed on node.
 
-### Cassandra Service
-Please install Cassandra on the Service node.
+**Experiment Binaries**
 
-Swan is compatible with Cassandra version 3.x and requires keyspaces `swan` and `snap` to be available.
+Please download Swan binaries from [https://github.com/intelsdi-x/swan/releases](https://github.com/intelsdi-x/swan/releases).
 
-If Cassandra is not already available please follow instructions on [Datastax's installation guide](http://docs.datastax.com/en/cassandra/3.x/cassandra/cassandraAbout.html) or run it on Docker using official image: https://hub.docker.com/_/cassandra/
+**Memcached & Best Effort Workloads**
 
-**NOTE** Running Cassandra in docker containers is not advised for production environments.
-Additionally, be careful if not used with docker volume mounts as you may experience data loss.
-
-In order to reduce any unintended interference, it is not recommended that any of the machines involved in the experiment (executing memcached or load generators) should also be host for Cassandra. 
-
-### Snap Service
-Please Install Snap on System Under Test (SUT) machine.
-
-Swan uses Snap to collect and store metrics in Cassandra Database. See the [Snap installation guide](https://github.com/intelsdi-x/snap#installation) for guidance of how to configure and install Snap. 
-
-## Binaries Installation
-All of binaries listed here should be available in directory listed in `$PATH` for user `root`. They should be deployed on SUT, except Mutilate which should be deployed on all Load Generator and Services machines.
-
-### Kubernetes (optional)
-When Experiment is not planned to be run on Kubernetes, or when user provides it's own cluster this step can be skipped. Instruction containing connection to user provided Kubernetes cluster are described in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
-
-The Experiment requires Kubernetes in version 1.5.x. 
-Please download binaries from https://github.com/kubernetes/kubernetes/releases, copy hyperkube to directory listed in`$PATH` and run `./hyperkube --make-symlinks` to make it usable by Swan. Hyperkube binary should have executable bit set. Swan expects that Docker will be the default container runtime for Kubernetes. Please make sure that all dependencies for Kubernetes (e.g. Docker, Etcd) are running and in proper versions.
-
-Binaries should be placed in the directory listed in `$PATH` for `root` user on System Under Test (SUT) and Service machines.
- 
-#### Docker Image (only when experiments are going to be run on Kubernetes)
-User should create the Docker Image with all applications listed below available in `$PATH`. Image should be named `centos-swan-image` and should be based on Centos7 image. It should be available in local Docker images on SUT machine.
-
-### Memcached
-Please follow instructions on http://memcached.org/downloads to install Memcached.
-
-It should be available for user `root` in directory listed in `$PATH` on SUT node. 
-
-### iBench
-Please download all files from https://github.com/stanford-mast/iBench and run `make` to build the binaries. Make sure binaries will be available in directory listed in `$PATH`.
-
-It should be available for user `root` in directory listed in `$PATH` on SUT node.
-
-### Caffe
-Please follow instructions on http://caffe.berkeleyvision.org/installation.html to install Caffe. Plase install it in `/opt/swan/share/caffe` directory.
-Make sure that:
-1. Caffe is compiled on CPU_ONLY mode
-1. Caffe is compiled with OpenBLAS
-
-After installation, please prepare CIFAR10 dataset as instructed here: http://caffe.berkeleyvision.org/gathered/examples/cifar10.html.
-Please set `solver_mode` to CPU as instructed in http://caffe.berkeleyvision.org/gathered/examples/cifar10.html.
-
-To finish installation, please add `caffe.sh` script in directory listed in `$PATH` on SUT machine:
+Workloads are deployed from Swan docker image and installed in /opt/swan.
+Deployed binaries must be available in `$PATH`.
 
 ```bash
-#!/bin/bash
-set -e
-
-CAFFE_DIR=/opt/swan/share/caffe
-
-if [ ! -x ${CAFFE_DIR}/bin/caffe ] ; then
-    echo "error: caffe has to be installed $CAFFE_DIR first!"
-    exit 1
-fi
-
-cd $CAFFE_DIR
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CAFFE_DIR/lib
-./bin/caffe "$@"
+sudo docker run -v `pwd`/opt:/output intelsdi/swan cp -R /opt/swan /output
 ```
 
-### Mutilate
-Please follow instructions on https://github.com/leverich/mutilate to install Mutilate.
+Following workloads are installed this way:
+* Memcached 1.4.35 with *thread affinity* patch
+* Stress-ng - *Synthethic stresser that can stress system in various selectable ways*
+* Caffe - *Deep Learning framework to simulate real workload*
 
-It should be available for user `root` in directory listed in `$PATH` on Load Generator machines.
+Swan also supports [iBench](https://github.com/stanford-mast/iBench) and [Stream Benchmark](https://www.cs.virginia.edu/stream/) workloads that are not deployed by preceding script. Stress-ng can stress system in similar way. 
 
-## Experiment Binaries
+**Snap**
 
-Please download binaries from [Releases](https://github.com/intelsdi-x/swan/releases) page on Github. Snap plugins from package should be added to directory listed in `$PATH`.
+Snap installation instruction are available [here](https://github.com/intelsdi-x/snap#installation).
+
+
+```bash
+curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | sudo bash
+sudo yum install -y snap-telemetry
+sudo systemctl enable snap-telemetry.service
+sudo systemctl start snap-telemetry.service
+```
+
+**Hyperkube**
+
+Please download Hyperkube binary and put it in `$PATH` on SUT and Service nodes.
+
+```bash
+curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.6/bin/linux/amd64/hyperkube
+chmod +x hyperkube
+```
+
+**Docker**
+
+Please install Docker in version 17.03.
+
+```bash
+# https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum makecache fast -y -q
+sudo yum install -y -q docker-ce-17.03.0.ce-1.el7.centos
+sudo echo "Restart docker"
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+**Snap Plugins**
+
+All plugins must be available in `$PATH`.
+
+```bash
+wget https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/5/snap-plugin-collector-docker_linux_x86_64 -O snap-plugin-collector-docker
+wget https://github.com/intelsdi-x/snap-plugin-collector-use/releases/download/1/snap-plugin-collector-use_linux_x86_64 -O snap-plugin-collector-use
+wget https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/5/snap-plugin-publisher-cassandra_linux_x86_64 -O snap-plugin-publisher-cassandra
+wget https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/3/snap-plugin-processor-tag_linux_x86_64 -O snap-plugin-processor-tag
+wget https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/2/snap-plugin-publisher-file_linux_x86_64 -O snap-plugin-publisher-file
+
+chmod +x snap-plugin-collector-docker
+chmod +x snap-plugin-publisher-cassandra
+chmod +x snap-plugin-processor-tag
+chmod +x snap-plugin-publisher-file
+```
+
+**Mutilate**
+
+Mutilate must be compiled from source by user and `mutilate` binary must be available in `$PATH` on Services and Load Generator nodes. Please refer to [Mutilate Readme](https://github.com/leverich/mutilate) for build instructions.
+
+Full list of CentOS dependencies are below. Library cppzmq-devel is required for proper Mutilate agent synchronisation.
+
+```bash
+sudo yum install cppzmq-devel gengetopt libevent-devel scons gcc-c++
+# Plese clone the https://github.com/leverich/mutilate repository and build it by using `scons`
+```
+
+**Cassandra**
+
+For example experiments, simple Dockerized Cassandra should be enough. Please see [Simple Cassandra Installation](simple_cassandra_installation.md.go) for details.
+
+For production deployments, please refer to [Datastax Documentation](http://docs.datastax.com/en/landing_page/doc/landing_page/current.html) for details.
+
+
+**Etcd**
+
+```bash
+sudo yum install etcd-3.1.0
+```
 
 ## Next
 Please move to [Run the Experiment](run_experiment.md) page.
