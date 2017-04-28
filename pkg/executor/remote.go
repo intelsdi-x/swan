@@ -200,6 +200,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		*exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
+		unregister(&taskHandle)
 		if err != nil {
 			if exitError, ok := err.(*ssh.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
@@ -228,6 +229,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+	register(&taskHandle)
 	return &taskHandle, nil
 }
 
