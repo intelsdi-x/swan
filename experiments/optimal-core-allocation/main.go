@@ -207,10 +207,17 @@ func main() {
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
 				errutil.PanicWithContext(err, "Snap mutilate session has not been started successfully")
+				defer func() {
+					err = mutilateSnapSessionHandle.Stop()
+					if err != nil {
+						logrus.Errorf("Cannot stop mutilate session: %v", err)
+					}
+				}()
+				err = mutilateSnapSessionHandle.Wait()
+				errutil.PanicWithContext(err, "Snap mutilate session has not collected metrics!")
+
 				// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
-				time.Sleep(5 * time.Second)
-				err = mutilateSnapSessionHandle.Stop()
-				errutil.PanicWithContext(err, "Cannot stop Mutilate Snap session")
+				time.Sleep(10 * time.Second)
 			}()
 		}
 	}
