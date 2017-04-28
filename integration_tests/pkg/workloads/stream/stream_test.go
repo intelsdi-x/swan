@@ -15,6 +15,7 @@
 package integration
 
 import (
+	"os/exec"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -26,6 +27,10 @@ import (
 // TestStreamWithExecutor is an integration test with local executor.
 func TestStreamWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+
+	if _, err := exec.LookPath("stream.100M"); err != nil {
+		t.Skip("stream.100M binary not found")
+	}
 
 	Convey("While using Local Shell in stream launcher", t, func() {
 		l := executor.NewLocal()

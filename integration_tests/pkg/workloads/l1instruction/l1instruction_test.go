@@ -15,6 +15,7 @@
 package integration
 
 import (
+	"os/exec"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -26,6 +27,10 @@ import (
 // TestL1InstructionWithExecutor is an integration test with local executor
 func TestL1InstructionWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+
+	if _, err := exec.LookPath("l1i"); err != nil {
+		t.Skip("l1i binary not found")
+	}
 
 	Convey("While using Local Shell in l1instruction launcher", t, func() {
 		l := executor.NewLocal()

@@ -18,53 +18,63 @@
 
 ## Quick start
 
+First - install: [Vagrant](https://www.vagrantup.com/docs/installation/), [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git). Then you just need to execute the following commands (they should work on any flavour of Linux):
+
 ```sh
-$ git clone git@github.com:intelsdi-x/swan.git
-$ cd swan/vagrant
-$ vagrant plugin install vagrant-vbguest  # automatic guest additions
-$ vagrant box update
-$ vagrant up
-$ vagrant ssh
-> cd swan
-> make deps build dist install
+git clone git@github.com:intelsdi-x/swan.git
+cd swan/vagrant
+vagrant plugin install vagrant-vbguest  # automatic guest additions
+vagrant box update
+vagrant up
+vagrant ssh
 ```
 
-## Setup
-For details how to create a Linux virtual machine pre-configured for running the Swan experiment, please refer to [Installation guide for Swan](../../../../docs/install.md)
+When you ssh to your virtual machine execute:
 
-## Updating AMI image
-1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
-  - Example parameters:
-    - `repo_organization: intelsdi-x`
-    - `repo_branch: master`
-    - `rebase_on_master: true`
-    - `CLEANUP: true`
-    - `BUILD_CACHED_IMAGE: true` ***(required)***
-    - `SWAN_AMI: ami-6d1c2007`
-2. When job has been finished copy AMI ID (it looks like: `ami-xxxxxxxx`).
-3. Paste AMI ID in `Vagrantfile` (`aws.ami` parameter).
-4. Commit & Push your change.
+```sh
+cd swan
+make deps build dist install
+```
 
-## Changing VM parameters
-### Building additional artifacts
-Depending on provider Vagrant may build a docker image and multithreaded caffe:
-- For `aws` provider, vagrant won't build them by default - it's not necessary due to AMI caching
-- For `virtualbox` provider, vagrant will build all of artifacts by default .
+You will need to build [mutilate](https://github.com/leverich/mutilate) by hand and the result binary need to be available in `$PATH`. Consider copying binary to `/opt/swan/bin` and run:
+```sh
+sudo ln -svf /opt/swan/bin/* /usr/bin/
+```
 
-### VirtualBox CPUs and RAM values
-Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can override these values with following environmental variables:
-- `VBOX_CPUS` - ***Note: integration tests fail with less than 2***
-- `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
+Now you should be able to run an experiment on the Kubernetes cluster that was automatically provisioned. If you want to be able to run without Kuberenetes, then you will need to take a few more steps.
 
-***Please be informed that every single glide operation inside VM might affect your host's ~/.glide.***
-By default your local `~/.glide` cache will be used as glide cache inside VM.
+Some of the project dependencies are distributed as [Docker image](https://hub.docker.com/r/intelsdi/swan/). They need to be extracted from the container in order to be used for non-Kubernetes experiments. To do this you need to execute the following commands:
 
-## Troubleshooting
-- The integration tests require cassandra to be running. In this
-  environment, systemd is responsible for keeping it alive. You can see
-  how it's doing by running `systemctl status cassandra` and
-  `journalctl -fu cassandra`
-- To re-run the VM provisioning shell script manually, do:
-  `vagrant destroy -f && vagrant up --no-provision && vagrant ssh`
-  `sudo /vagrant/provision.sh`
+```sh
+make extract_binaries
+sudo chown -R $USER:$USER opt 
+sudo cp -fa opt/swan /opt
+sudo ln -svf /opt/swan/bin/* /usr/bin/
+```
 
+If you want to be able to use [iBench](https://github.com/stanford-mast/iBench) they you will need to compile binaries and make then available in `$PATH` (see mutilate description above). Keep in mind that compiling iBench binaries may require a lot of RAM and can't be done on default Vagrant VM configuration.
+
+## Tuning VM parameters
+
+Vagrant will allocate 2 CPUs and 4096 MB RAM for the VM by default. You can consider changing these values but:
+* You need to provide at least 2 CPUs.
+* You need to provide at least 4096 MB of RAM.
+
+## Deeper dive
+
+If you want to learn more about VM configuration and installed packages refer to [provisioning script](provision.sh).
+
+Note that the `~/.glide` directory from your host will be mounted on the VM to speed up Go dependency management.
+
+The script is responsible for:
+* Installing all the necessary CentOS packages that are needed to build Swan, run experiments and analyse their results.
+* Installing [Snap](http://snap-telemetry.io/) and its plugins that are responsible for gathering experiment results.
+* Installing [Docker](https://www.docker.com/) that allows running experiment on [Kubernetes](https://kubernetes.io) cluster.
+* Enabling [Cassandra](http://cassandra.apache.org/) and [Etcd](https://coreos.com/etcd) systemd services.
+* Installing [hyperkube](https://github.com/kubernetes/kubernetes/tree/master/cluster/images/hyperkube) that is used to set up Kubernetes cluster for experimantation purposes.
+* Setting up SSH for root.
+* Installing [Go](https://golang.org/).
+
+### Privisioners
+
+There are two provisioners defined in the [Vagrantfile](Vagrantfile): `aws` and `virtualbox`. Our CI infracture uses the first of them while the second should be used for development. If you try to use `aws` provider on your own it will fail as AMI is not publicly available.

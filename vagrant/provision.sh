@@ -56,11 +56,28 @@ yum install -y -q \
     moreutils-parallel \
     nmap-ncat
 
-echo "workload depedencies"
+echo "workload runtime depedencies"
 yum install -y -q \
-    glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl-libs \
-    libevent zeromq java-1.8.0-openjdk-devel \
-    java-1.8.0-openjdk-devel
+    glog \
+    protobuf \
+    boost \
+    hdf5 \
+    leveldb \
+    lmdb \
+    opencv \
+    libgomp \
+    numactl-libs \
+    libevent \
+    zeromq \
+    java-1.8.0-openjdk
+
+echo "workload build dependecies"
+yum install -y -q \
+    cppzmq-devel \
+    gengetopt \
+    libevent-devel \
+    scons \
+    gcc-c++
 
 echo "developer tools & provisioning depedencies"
 yum install -y -q \
