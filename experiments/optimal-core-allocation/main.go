@@ -199,7 +199,7 @@ func main() {
 				var useSessionHandle snap.SessionHandle
 				// Start USE Collection.
 				if useUSECollector {
-					useSessionHandle, err := useSession.LaunchSession(nil, snapTags)
+					useSessionHandle, err = useSession.LaunchSession(nil, snapTags)
 					errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
 					defer useSessionHandle.Stop()
 				}
