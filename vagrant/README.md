@@ -75,6 +75,6 @@ The script is responsible for:
 * Setting up SSH for root.
 * Installing [Go](https://golang.org/).
 
-### Privisioners
+### Provisioners
 
 There are two provisioners defined in the [Vagrantfile](Vagrantfile): `aws` and `virtualbox`. Our CI infracture uses the first of them while the second should be used for development. If you try to use `aws` provider on your own it will fail as AMI is not publicly available.
