@@ -112,11 +112,11 @@ func main() {
 
 	// Create mutilate snap session launcher.
 	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
-	errutil.CheckWithContext(err, "Cannot create snap session")
+	errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
 	// Create USE Collector session launcher.
 	useSession, err := use.NewSessionLauncherDefault()
-	errutil.CheckWithContext(err, "Cannot create snap session")
+	errutil.CheckWithContext(err, "Cannot create USE snap session")
 
 	// Calculate value to increase QPS by on every iteration.
 	qpsDelta := int(peakLoad / loadPoints)

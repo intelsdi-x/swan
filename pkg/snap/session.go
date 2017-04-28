@@ -215,7 +215,9 @@ func (s *Session) Wait() error {
 		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
 			return nil
 		}
-		time.Sleep(100 * time.Millisecond)
+
+		// Make sure that data is published.
+		time.Sleep(5 * time.Second)
 	}
 }
 
