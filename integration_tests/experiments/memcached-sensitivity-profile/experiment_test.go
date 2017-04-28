@@ -138,7 +138,7 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_AGENT_CONNECTIONS":          "1",
 		"SWAN_MUTILATE_AGENT_AFFINITY":             "false",
 		"SWAN_MUTILATE_MASTER_AFFINITY":            "false",
-		"SWAN_KUBERNETES_CONTAINER_IMAGEW":         "centos_swan_image",
+		"SWAN_KUBERNETES_CONTAINER_IMAGE":          "centos_swan_image",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {
