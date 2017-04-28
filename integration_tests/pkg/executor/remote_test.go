@@ -28,8 +28,11 @@ import (
 // - no password ssh session. [command ssh-copy-id localhost]
 func TestRemote(t *testing.T) {
 	Convey("Preparing Remote Executor to be tested on localhost", t, func() {
+		config := DefaultRemoteConfig()
+		//config.User = "vagrant"
+		//config.KeyPath = "/home/vagrant/.ssh/id_rsa"
 
-		remote, err := NewRemoteFromIP("127.0.0.1")
+		remote, err := NewRemote("127.0.0.1", config)
 		if err != nil {
 			t.Skip("Skipping remote executor test: " + err.Error())
 		}
@@ -40,9 +43,12 @@ func TestRemote(t *testing.T) {
 	})
 }
 
-func got(t *testing.T) {
+func TestRemoteProcessPidIsolation(t *testing.T) {
 	Convey("I should be able to execute remote command and see the processes running", t, func() {
 		config := DefaultRemoteConfig()
+		config.User = "vagrant"
+		config.KeyPath = "/home/vagrant/.ssh/id_rsa"
+
 		remote, err := NewRemote("127.0.0.1", config)
 		if err != nil {
 			t.Skip("Skipping remote executor test: " + err.Error())

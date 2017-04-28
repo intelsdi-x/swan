@@ -33,6 +33,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	"github.com/intelsdi-x/swan/pkg/snap/sessions/use"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
@@ -111,9 +112,11 @@ func main() {
 
 	// Create mutilate snap session launcher.
 	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
-	if err != nil {
-		errutil.CheckWithContext(err, "Cannot create snap session")
-	}
+	errutil.CheckWithContext(err, "Cannot create snap session")
+
+	// Create USE Collector session launcher.
+	useSession, err := use.NewSessionLauncherDefault()
+	errutil.CheckWithContext(err, "Cannot create snap session")
 
 	// Calculate value to increase QPS by on every iteration.
 	qpsDelta := int(peakLoad / loadPoints)
@@ -174,6 +177,24 @@ func main() {
 				err = loadGenerator.Populate()
 				errutil.PanicWithContext(err, "Memcached cannot be populated")
 
+				// Create tags to be used on Snap metrics.
+				phase := strings.Replace(phaseName, ",", "'", -1)
+				aggressor := "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
+
+				snapTags := make(map[string]interface{})
+				snapTags[experiment.ExperimentKey] = uid
+				snapTags[experiment.PhaseKey] = phase
+				snapTags[experiment.RepetitionKey] = 0
+				snapTags[experiment.LoadPointQPSKey] = qps
+				snapTags[experiment.AggressorNameKey] = aggressor
+				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
+				snapTags["number_of_threads"] = numberOfThreads
+
+				// Start USE Collection.
+				useSessionHandle, err := useSession.LaunchSession(nil, snapTags)
+				errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
+				defer useSessionHandle.Stop()
+
 				// Start sending traffic from mutilate cluster to memcached.
 				mutilateHandle, err := loadGenerator.Load(qps, loadDuration)
 				errutil.PanicWithContext(err, "Cannot start load generator")
@@ -191,26 +212,23 @@ func main() {
 					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
 				}
 
-				// Create tags to be used on Snap metrics.
-				phase := strings.Replace(phaseName, ",", "'", -1)
-				aggressor := "No aggressor " + strings.Replace(phaseName, ",", "'", -1)
-
-				snapTags := make(map[string]interface{})
-				snapTags[experiment.ExperimentKey] = uid
-				snapTags[experiment.PhaseKey] = phase
-				snapTags[experiment.RepetitionKey] = 0
-				snapTags[experiment.LoadPointQPSKey] = qps
-				snapTags[experiment.AggressorNameKey] = aggressor
-				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
-				snapTags["number_of_threads"] = numberOfThreads
+				err = useSessionHandle.Stop()
+				errutil.PanicWithContext(err, "Cannot stop Snap USE Collector session")
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
 				errutil.PanicWithContext(err, "Snap mutilate session has not been started successfully")
+				defer func() {
+					err = mutilateSnapSessionHandle.Stop()
+					if err != nil {
+						logrus.Errorf("Cannot stop mutilate session: %v", err)
+					}
+				}()
+				err = mutilateSnapSessionHandle.Wait()
+				errutil.PanicWithContext(err, "Snap mutilate session has not collected metrics!")
+
 				// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
-				time.Sleep(5 * time.Second)
-				err = mutilateSnapSessionHandle.Stop()
-				errutil.PanicWithContext(err, "Cannot stop Mutilate Snap session")
+				time.Sleep(10 * time.Second)
 			}()
 		}
 	}
