@@ -32,6 +32,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/use"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -41,9 +42,10 @@ import (
 )
 
 var (
-	appName            = os.Args[0]
-	useCorePinningFlag = conf.NewBoolFlag("use_core_pinning", "Enables core pinning of memcached threads", false)
-	maxThreadsFlag     = conf.NewIntFlag("max_threads", "Scale memcached up to cores (default to number of physical cores).", 0)
+	appName             = os.Args[0]
+	useCorePinningFlag  = conf.NewBoolFlag("use_core_pinning", "Enables core pinning of memcached threads", false)
+	maxThreadsFlag      = conf.NewIntFlag("max_threads", "Scale memcached up to cores (default to number of physical cores).", 0)
+	useUSECollectorFlag = conf.NewBoolFlag("use_USE_collector", "Collects USE (Utilization, Saturation, Errors) metrics.", false)
 )
 
 func main() {
@@ -115,8 +117,12 @@ func main() {
 	errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
 	// Create USE Collector session launcher.
-	useSession, err := use.NewSessionLauncherDefault()
-	errutil.CheckWithContext(err, "Cannot create USE snap session")
+	useUSECollector := useUSECollectorFlag.Value()
+	var useSession snap.SessionLauncher
+	if useUSECollector {
+		useSession, err = use.NewSessionLauncherDefault()
+		errutil.CheckWithContext(err, "Cannot create USE snap session")
+	}
 
 	// Calculate value to increase QPS by on every iteration.
 	qpsDelta := int(peakLoad / loadPoints)
@@ -190,10 +196,13 @@ func main() {
 				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
 				snapTags["number_of_threads"] = numberOfThreads
 
+				var useSessionHandle snap.SessionHandle
 				// Start USE Collection.
-				useSessionHandle, err := useSession.LaunchSession(nil, snapTags)
-				errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
-				defer useSessionHandle.Stop()
+				if useUSECollector {
+					useSessionHandle, err := useSession.LaunchSession(nil, snapTags)
+					errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
+					defer useSessionHandle.Stop()
+				}
 
 				// Start sending traffic from mutilate cluster to memcached.
 				mutilateHandle, err := loadGenerator.Load(qps, loadDuration)
@@ -212,8 +221,10 @@ func main() {
 					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
 				}
 
-				err = useSessionHandle.Stop()
-				errutil.PanicWithContext(err, "Cannot stop Snap USE Collector session")
+				if useUSECollector {
+					err = useSessionHandle.Stop()
+					errutil.PanicWithContext(err, "Cannot stop Snap USE Collector session")
+				}
 
 				// Launch and stop Snap task to collect mutilate metrics.
 				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)

@@ -217,7 +217,7 @@ func (s *Session) Wait() error {
 		}
 
 		// Make sure that data is published.
-		time.Sleep(5 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
