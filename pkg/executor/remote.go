@@ -161,7 +161,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	stringForSh = fmt.Sprintf("%s", stringForSh)
 
-	log.Debug("Starting '", stringForSh, "' remotely")
+	log.Debug("Starting '", stringForSh, "' remotely on '", remote.targetHost, "'")
 	err = session.Start(stringForSh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "session.Start for command %q failed", command)
