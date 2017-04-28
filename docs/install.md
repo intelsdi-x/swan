@@ -18,7 +18,8 @@
 
 # Installation guide
 
-Swan is built to be run on Linux and has been tested on Linux Centos 7. Instead of building Swan in your own environment, we recommend you to build and run it in a development VM. See [vagrant documentation](../vagrant/README.md) for details.
+
+Swan is built to be run on Linux and has been tested on Linux Centos 7. While we recommend to run experiments on bare metal you can use Vagrant VM for development and building purposes. See [vagrant documentation](../vagrant/README.md) for details.
 
 ## Virtual machine configuration details
 Swan provides a Vagrantfile, which describes the pre-configured CentOS 7 virtual machine and how to provision it. This machine can be used for running the Swan experiment. The configuration include:

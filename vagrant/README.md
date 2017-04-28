@@ -67,7 +67,7 @@ If you want to learn more about VM configuration and installed packages refer to
 Note that the `~/.glide` directory from your host will be mounted on the VM to speed up Go dependency management.
 
 The script is responsible for:
-* Installing all the necessary packages that are needed to build Swan, run experiments and analyse their results.
+* Installing all the necessary CentOS packages that are needed to build Swan, run experiments and analyse their results.
 * Installing [Snap](http://snap-telemetry.io/) and its plugins that are responsible for gathering experiment results.
 * Installing [Docker](https://www.docker.com/) that allows running experiment on [Kubernetes](https://kubernetes.io) cluster.
 * Enabling [Cassandra](http://cassandra.apache.org/) and [Etcd](https://coreos.com/etcd) systemd services.
