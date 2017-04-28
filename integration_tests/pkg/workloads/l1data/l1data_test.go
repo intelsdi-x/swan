@@ -15,6 +15,7 @@
 package integration
 
 import (
+	"os/exec"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
@@ -26,6 +27,10 @@ import (
 // TestL1DataWithExecutor is an integration test with local executor
 func TestL1DataWithExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+
+	if _, err := exec.LookPath("l1d"); err != nil {
+		t.Skip("l1d binary not found")
+	}
 
 	Convey("While using Local Shell in L1Data launcher", t, func() {
 		l := executor.NewLocal()

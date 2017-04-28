@@ -94,7 +94,6 @@ func CreateKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Execu
 	k8sConfig := kubernetes.DefaultConfig()
 	k8sExecutorConfig := executor.DefaultKubernetesConfig()
 
-	k8sExecutorConfig.ContainerImage = "centos_swan_image"
 	k8sExecutorConfig.PodNamePrefix = "swan-hp"
 	k8sExecutorConfig.NodeName = kubernetesNodeName.Value()
 	k8sExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
@@ -116,7 +115,6 @@ func DefaultKubernetesBEExecutorFactory(decorators isolation.Decorators) (execut
 	config := executor.DefaultKubernetesConfig()
 	config.PodNamePrefix = "swan-be"
 	config.NodeName = kubernetesNodeName.Value()
-	config.ContainerImage = "centos_swan_image"
 	config.Decorators = decorators
 	config.Privileged = true // swan aggressor use unshare, which requires sudo.
 	config.Address = k8sConfig.GetKubeAPIAddress()

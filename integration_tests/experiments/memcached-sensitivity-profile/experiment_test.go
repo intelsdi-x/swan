@@ -138,6 +138,7 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_AGENT_CONNECTIONS":          "1",
 		"SWAN_MUTILATE_AGENT_AFFINITY":             "false",
 		"SWAN_MUTILATE_MASTER_AFFINITY":            "false",
+		"SWAN_KUBERNETES_CONTAINER_IMAGE":          "centos_swan_image",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {
@@ -170,7 +171,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper configuration and with l1d aggressors", func() {
-			args := []string{"-experiment_be_workloads", "l1d"}
+			args := []string{"-experiment_be_workloads", "stress-ng-cache-l1"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -178,7 +179,7 @@ func TestExperiment(t *testing.T) {
 				_, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 				So("None", ShouldBeIn, swanAggressorsNames)
-				So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 
 				// Check metadata was saved.
 				var (
@@ -209,7 +210,7 @@ func TestExperiment(t *testing.T) {
 				_, swanRepetitions, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 
-				So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 				So("None", ShouldBeIn, swanAggressorsNames)
 
 				So("0", ShouldBeIn, swanRepetitions)
@@ -234,7 +235,7 @@ func TestExperiment(t *testing.T) {
 				So(swanAggressorsNames, ShouldHaveLength, 36)
 				So(swanPhases, ShouldHaveLength, 36)
 
-				So("L1 Data", ShouldBeIn, swanAggressorsNames)
+				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 				So("None", ShouldBeIn, swanAggressorsNames)
 
 				So("Aggressor None; load point 0;", ShouldBeIn, swanPhases)
@@ -251,14 +252,14 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "l1d", "-experiment_baseline=false"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-experiment_baseline=false"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
 				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
-				So(tags["swan_aggressor_name"], ShouldEqual, "L1 Data")
+				So(tags["swan_aggressor_name"], ShouldEqual, "stress-ng-cache-l1")
 				So("None", ShouldNotBeIn, swanAggressorsNames)
 			})
 		})
@@ -295,7 +296,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("While setting zero repetitions to phase", func() {
-			args := []string{"-experiment_be_workloads", "l1d"}
+			args := []string{"-experiment_be_workloads", "stress-ng-cache-l1"}
 			os.Setenv("SWAN_EXPERIMENT_LOAD_POINTS", "1")
 			os.Setenv("SWAN_EXPERIMENT_REPETITIONS", "0")
 			Convey("Experiment should pass with no errors", func() {

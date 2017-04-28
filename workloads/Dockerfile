@@ -91,6 +91,7 @@ FROM centos:7
 
 RUN yum install -y epel-release
 RUN yum install -y glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl libevent
+RUN yum update -y
 RUN yum clean all
 
 COPY --from=caffe /opt /opt
