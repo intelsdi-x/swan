@@ -82,7 +82,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				// -1 for Local executor.
 				// 137 for Remote executor (process killed).
 				// TODO: Unify exit code constants in next PR.
-				So(exitcode, ShouldBeIn, -1, 137)
+				So(exitcode, ShouldBeIn, -1, 137, 129)
 			})
 		})
 	})
