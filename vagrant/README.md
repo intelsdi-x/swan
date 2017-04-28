@@ -30,7 +30,7 @@ $ vagrant ssh
 ```
 
 ## Setup
-For details how to create a Linux virtual machine pre-configured for running the Swan experiment, please refer to [Installation guide for Swan](../../../../docs/install.md)
+For details on how to create a Linux virtual machine pre-configured for running the Swan experiment, please refer to [Installation guide for Swan](docs/install.md)
 
 ## Updating AMI image
 1. Run [`swan-integration`](https://private.ci.snap-telemetry.io/job/swan-integration/build) job with parameters.
@@ -52,19 +52,18 @@ Depending on provider Vagrant may build a docker image and multithreaded caffe:
 - For `virtualbox` provider, vagrant will build all of artifacts by default .
 
 ### VirtualBox CPUs and RAM values
-Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can override these values with following environmental variables:
+Vagrant will set 2 CPUs and 4096 MB RAM for VM by default. Developer can override these values with the following environmental variables:
 - `VBOX_CPUS` - ***Note: integration tests fail with less than 2***
 - `VBOX_MEM` - ***Note: integration tests tend to crash with less (gcc)***
 
-***Please be informed that every single glide operation inside VM might affect your host's ~/.glide.***
-By default your local `~/.glide` cache will be used as glide cache inside VM.
+***WARNING: Please be informed that every single glide operation inside the VM might affect your host's ~/.glide.***
+By default your local `~/.glide` cache will be used as your glide cache inside VM.
 
 ## Troubleshooting
-- The integration tests require cassandra to be running. In this
+- The integration tests require Cassandra to be running. In this
   environment, systemd is responsible for keeping it alive. You can see
   how it's doing by running `systemctl status cassandra` and
   `journalctl -fu cassandra`
 - To re-run the VM provisioning shell script manually, do:
   `vagrant destroy -f && vagrant up --no-provision && vagrant ssh`
   `sudo /vagrant/provision.sh`
-

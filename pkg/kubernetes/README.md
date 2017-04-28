@@ -14,18 +14,17 @@
  limitations under the License.
 -->
 
-# Kubernetes cluster launcher
+# Kubernetes Cluster Launcher
 
-This launcher starts the kubernetes cluster. It returns a cluster represented as a Task Handle instance.
+This launcher starts the Kubernetes cluster. It returns a cluster represented as a Task Handle instance.
 You can specify two executors:
 - One executor specify how to execute master services (and on what host as well) like `apiserver`, `controller-manager` and `scheduler`.
-- Second are for minion services  like `kubelet` and `proxy`
+- Second are for minion services like `kubelet` and `proxy`
 
 ## Prerequisites
 
-- See installation instructions.
+Assumption is that you follow the [installation instructions](docs/install.md) to properly configure this package.
 
 ## Note:
 
-It is recommended to use 2 machines. It is important for
-swan experiment to have k8s minion not being interfered by master services.
+It is recommended to use 2 machines. It is important for the accuracy of the Swan experiment to have Kubernetes minion running separated from the master services to avoid interference.

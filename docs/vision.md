@@ -14,17 +14,16 @@
  limitations under the License.
 -->
 
-# ![Swan](swan-logo-48.png) Swan
+# ![Swan](/images/swan-logo-48.png) Swan
 
 # Vision and motivation
 
-Swan is an experiment and evaluation methodology for optimizing cloud schedulers.
-Through coordination of distributed testing, Swan provides a framework to capture real cloud workloads and ability for developers and operators to gain deep insight into their workload behavior in a controlled environment.
+Swan is a distributed experimentation framework for automated experiments targeting performance isolation studies for schedulers. Through coordination of distributed testing, Swan provides a framework to capture real cloud workloads and ability for developers and operators to gain deep insight into their workload behavior in a controlled environment.
 Swan emphasizes the need for _co-located_ workloads experiments.
 Modern infrastructures run tens to hundreds of tasks per server and the different combinations of how those get placed on a server turns out to be a huge problem space to uncover.
 We treat this exploration as a workload in itself.
 
-![Swan experiment](swan-experiment.png)
+![Swan experiment](/images/swan-experiment.png)
 
 ## History
 

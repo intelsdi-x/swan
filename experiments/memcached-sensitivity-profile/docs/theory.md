@@ -30,7 +30,7 @@ However, Swan needs some input from the user about the environment to adjust the
 
 To give idea why and how to isolate tasks, first please take a look at simplified graph showing CPU topology. In this example there is a *n* core physical CPU with *HyperThreading* enabled. Each core has two execution threads. In the Linux system each execution thread is reported as logical CPU and without knowing the CPU topology user cannot easily guess which logical CPUs are execution threads in the same core.
 
-![Cache topology](../../../docs/cpu_topo.png)
+![Cache topology](/images/cpu_topo.png)
 
 `lstopo` and `lscpu` can help to understand the CPU topology in a given system. `lstopo` will show CPU topology graphically while `lscpu -e` will show CPU topology in text mode giving much more details:
 ```bash
@@ -62,20 +62,20 @@ The Linux scheduler detects 8 CPUs and in spite of the fact that it's taking int
 
 To give insight into the placement of aggressor workloads, and motivate the thread count selection in memcached, let us start with an example topology:
 
-![Empty topology](../../../docs/topology-1.png)
+![Empty topology](/images/topology-1.png)
 
 Using half the number of physical cores on one socket leaves us with 1 memcached thread:
 
-![Memcached topology](../../../docs/topology-2.png)
+![Memcached topology](/images/topology-2.png)
 
 We do this, partly so we can introduce isolated aggressors on the L1 caches:
-![Memcached + L1 topology](../../../docs/topology-3.png)
+![Memcached + L1 topology](/images/topology-3.png)
 
 _and_ introduce L3 aggressors with the same setup of memcached, in order to compare latency measurements between both aggressor types:
 
-![Memcached + L3 topology](../../../docs/topology-4.png)
+![Memcached + L3 topology](/images/topology-4.png)
 
-Swan will by default try to aim for the core configuration above via instrumenting Linux scheduler to run each workload on specific cores. 
+Swan will by default try to aim for the core configuration above via instrumenting Linux scheduler to run each workload on specific cores.
 
 Using exclusive CPU sets can be challenging if other systems on the host are using CPU sets. Exclusive CPU sets cannot share cores with any other cgroup and setting the desired cores will cause an error from the kernel.
 An example of such conflicting and potential overlapping CPU sets could be systems with [docker](https://www.docker.com/) installed. Docker creates a cpuset cgroup which contain all logical cores and thus will conflict with Swan, if Swan attempts to create exclusive CPU sets.
@@ -84,13 +84,13 @@ An example of such conflicting and potential overlapping CPU sets could be syste
 
 Synthetic Aggressors are specialized programs for stressing different platform subsystems.
 
-| Source of interference | Aggressor description (from [ibench paper](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf)) |
-|------------------------|-----------------------|
+| Source of interference | Aggressor description (from [ibench paper](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf))                                                         |
+|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | L1 instruction         | "A simple kernel that sweeps through increasing fractions of the i-cache, until it populates its full capacity. Accesses in this case are again random." |
-| L1 data                | "A copy of the previous SoI (Source of Interference), tuned to the specific structure and size of the d-cache (typically the same as the i-cache)." |
-| L3 data                | "The kernel issues random accesses that cover an increasing size of the LLC capacity" |
-| Memory bandwidth       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space" |
-| Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark. |
+| L1 data                | "A copy of the previous SoI (Source of Interference), tuned to the specific structure and size of the d-cache (typically the same as the i-cache)."      |
+| L3 data                | "The kernel issues random accesses that cover an increasing size of the LLC capacity"                                                                    |
+| Memory bandwidth       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space"                |
+| Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark.                                                                    |
 
 To ensure a proper intensity of the aggressors, we recommend running same number of aggressors and memcached threads.
 For L1 aggressors, this means running on all logical sibling cores and one physical core per L3 aggressor.

@@ -16,13 +16,16 @@
 
 # snap-plugin-collector-specjbb
 
-This is a collector plugin for snap which parses a
+Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment's data. The following documentation will make sense if you are familiar Snap. You can read more about its plugin model [here](https://github.com/intelsdi-x/snap#load-plugins).
+
+## Usage
+
+This is a collector plugin for Snap which parses a
 [SPECjbb](https://www.spec.org/jbb2015/) standard output file and
 collects available latency metrics.
 
 The SPECjbb standard output file is a SPECjbb controller's run with its output
-piped to a file. 
-When submitting the task manifest, the SPECjbb collector needs a path to this
+piped to a file. When creating a task from the Task Manifest, the SPECjbb collector needs a path to this
 file in the `stdout_file` configuration field. For example:
 
 ```
@@ -59,7 +62,7 @@ file in the `stdout_file` configuration field. For example:
 }
 ```
 
-To submit the manifest above, run:
+To create a task from the Task Manifest above, run:
 ```
 snaptel plugin load snap-plugin-collector-specjbb
 snaptel plugin load snap-plugin-publisher-file
@@ -68,11 +71,11 @@ snaptel task create -t task.json
 
 Following metrics are currently available:
 
-| Name  | Type  | Description | Example value |
-| :---- | :---- | :---------- | :--- |
-|`/intel/swan/specjbb/*/min` | float64 | Minimum read latency (in microseconds) | 300 |
-|`/intel/swan/specjbb/*/max` | float64 | Maximum read latency (in microseconds) | 640000 |
-|`/intel/swan/specjbb/*/percentile/50th`| float64 | The 50th percentile read latency (in microseconds) | 3100 |
-|`/intel/swan/specjbb/*/percentile/90th`| float64 | The 90th percentile read latency (in microseconds) | 21000 |
-|`/intel/swan/specjbb/*/percentile/95th`| float64 | The 95th percentile read latency (in microseconds) | 89000 |
-|`/intel/swan/specjbb/*/percentile/99th`| float64 | The 99th percentile read latency (in microseconds) | 517000 |
+| Name                                    | Type    | Description                                        | Example value |
+|:----------------------------------------|:--------|:---------------------------------------------------|:--------------|
+| `/intel/swan/specjbb/*/min`             | float64 | Minimum read latency (in microseconds)             | 300           |
+| `/intel/swan/specjbb/*/max`             | float64 | Maximum read latency (in microseconds)             | 640000        |
+| `/intel/swan/specjbb/*/percentile/50th` | float64 | The 50th percentile read latency (in microseconds) | 3100          |
+| `/intel/swan/specjbb/*/percentile/90th` | float64 | The 90th percentile read latency (in microseconds) | 21000         |
+| `/intel/swan/specjbb/*/percentile/95th` | float64 | The 95th percentile read latency (in microseconds) | 89000         |
+| `/intel/swan/specjbb/*/percentile/99th` | float64 | The 99th percentile read latency (in microseconds) | 517000        |
