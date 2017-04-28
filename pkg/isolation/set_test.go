@@ -16,7 +16,6 @@ package isolation
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -214,14 +213,13 @@ func TestIntSet(t *testing.T) {
 			So(r.Subset(s), ShouldBeTrue)
 		})
 
-		Convey("IntSet correctly converts to a slice of integers", func() {
+		Convey("IntSet correctly converts to a sorted slice of integers", func() {
 			s1 := NewIntSet()
-			s2 := NewIntSet(1, 3, 5, 7)
+			s2 := NewIntSet(7, 1, 3, 5)
 
 			So(s1.AsSlice(), ShouldResemble, []int{})
 
 			s2slice := s2.AsSlice()
-			sort.Ints(s2slice)
 			So(len(s2slice), ShouldEqual, len(s2))
 			So(s2slice, ShouldResemble, []int{1, 3, 5, 7})
 			for _, elem := range s2slice {

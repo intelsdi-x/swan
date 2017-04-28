@@ -124,9 +124,12 @@ func (s IntSet) Take(n int) (IntSet, error) {
 // this set.
 func (s IntSet) AsSlice() []int {
 	result := []int{}
+
 	for elem := range s {
 		result = append(result, elem)
 	}
+
+	sort.Ints(result)
 	return result
 }
 
