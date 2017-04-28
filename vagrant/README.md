@@ -18,7 +18,7 @@
 
 ## Quick start
 
-First - install: [Vagrant](https://www.vagrantup.com/docs/installation/), [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git). Then you just need to execute following commands (they should work on any flavour of Linux):
+First - install: [Vagrant](https://www.vagrantup.com/docs/installation/), [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git). Then you just need to execute the following commands (they should work on any flavour of Linux):
 
 ```sh
 git clone git@github.com:intelsdi-x/swan.git
@@ -36,9 +36,14 @@ cd swan
 make deps build dist install
 ```
 
-Now you should be able to run experiment on automatically provisioned Kubernetes cluster. If you want to be able to run experiments without Kubernetes then you should proceed with further steps.
+You will need to build [mutilate](https://github.com/leverich/mutilate) by hand and the result binary need to be available in `$PATH`. Consider copying binary to `/opt/swan/bin` and run:
+```sh
+sudo ln -svf /opt/swan/bin/* /usr/bin/
+```
 
-Some of the project dependencies are distributed as [Dcoker image](https://hub.docker.com/r/intelsdi/swan/). They need to be extracted from the container in order to be used for non-Kubernetes experiment. To do this you need to execute following commands:
+Now you should be able to run an experiment on the Kubernetes cluster that was automatically provisioned. If you want to be able to run without Kuberenetes, then you will need to take a few more steps.
+
+Some of the project dependencies are distributed as [Docker image](https://hub.docker.com/r/intelsdi/swan/). They need to be extracted from the container in order to be used for non-Kubernetes experiments. To do this you need to execute the following commands:
 
 ```sh
 make extract_binaries
@@ -47,13 +52,7 @@ sudo cp -fa opt/swan /opt
 sudo ln -svf /opt/swan/bin/* /usr/bin/
 ```
 
-## Troubleshooting
-
-You may encounter follwing error:
-```
-Unable to export dependencies to vendor directory: remove /home/vagrant/swan/vendor/golang.org/x/sys/unix: directory not empty
-```
-You should remove `vendor` catalog completely in this case.
+If you want to be able to use [iBench](https://github.com/stanford-mast/iBench) they you will need to compile binaries and make then available in `$PATH` (see mutilate description above). Keep in mind that compiling iBench binaries may require a lot of RAM and can't be done on default Vagrant VM configuration.
 
 ## Tuning VM parameters
 
@@ -65,7 +64,7 @@ Vagrant will allocate 2 CPUs and 4096 MB RAM for the VM by default. You can cons
 
 If you want to learn more about VM configuration and installed packages refer to [provisioning script](provision.sh).
 
-`~/.glide` directory from your host will be mounted on the VM to speed up Go dependency management.
+Note that the `~/.glide` directory from your host will be mounted on the VM to speed up Go dependency management.
 
 The script is responsible for:
 * Installing all the necessary packages that are needed to build Swan, run experiments and analyse their results.
@@ -78,4 +77,4 @@ The script is responsible for:
 
 ### Privisioners
 
-There are two provisioners defined in [Vagrantfile](Vagrantfile): `aws` and `virtualbox`. CI infracture uses first of them while the second should be used for development. If you try to use `aws` provider on your own it will fail as AMI is not publicly available.
+There are two provisioners defined in the [Vagrantfile](Vagrantfile): `aws` and `virtualbox`. Our CI infracture uses the first of them while the second should be used for development. If you try to use `aws` provider on your own it will fail as AMI is not publicly available.
