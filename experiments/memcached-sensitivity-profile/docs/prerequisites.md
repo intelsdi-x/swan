@@ -25,8 +25,10 @@ When Swan is used in a cluster environment, we recommend the following machine t
 | Type                  | Description                                                                                                                               | Machine                                                                                |
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | System Under Test (SUT)        | Machine where Swan is run and thus where workloads are deployed.                             | 1 x 10Gb link, hyper threaded with 16 or more hyper threads, preferably with 2 sockets |
-| Load generator agents | Machines to generate stress on the target machine.                                                                                        | 10Gb link for each agent, 20 or more hyper threads in total                                       |
+| Load generator agents | Machines to generate stress on the target machine. Our application of choice for this task is [Mutilate](https://github.com/leverich/mutilate).                                                                                       | 10Gb link for each agent, 20 or more hyper threads in total                                       |
 | Services node         | Machine where Cassandra, Jupyter and Load Generator Master will run. The 'cleaniness' of this machine is less important than target and load generator machines. | 1 x 1-10Gb link, higher memory capacity to accommodate for Cassandra heap usage.       |
+
+When Memcached is run on large multi-core machine, then it will require multiple load generator agents be fully saturated.
 
 ## Hardware
 
@@ -34,13 +36,13 @@ Although Swan can be run on any machine, the more recent hardware might yield mo
  
 ## Software
 
-Swan is tested on CentOS 7. 
+Swan was tested on CentOS 7, and installation instructions covers only this distribution, although other distribution should be able to run Swan just fine.
 
-Operating system defaults does not suit the Swan experiment needs. These settings should be changed to accommodate larger loads and make latency variance lower.
- 
-Experiment will log `Warning` messages if those knobs are not set properly, but will run nonetheless.
+In the next section there is a list of default options of CentOS 7 kernel that should be changed to accommodate larger loads and make latency variance lower.
+Experiment when run will log `Warning` messages if those setting are not set properly, but will run nonetheless.
 
 ### File descriptors
+This should be set on SUT and load generator machines.
 
 As the both Mutilate and Memcached will create many connections, it is important that the number of available file descriptors is high enough. It should be in the high tens of thousands.
 To check the current limit, run:
@@ -56,27 +58,23 @@ and set a new value with:
 $ ulimit -n 65536
 ```
 
-This should be set on SUT and load generator machines.
-
 ### DDoS protection
+This should be set on SUT machine.
 
-Sometimes, the Linux kernel applies anti-denial of service measures, like introducing [TCP SYN cookies](https://en.wikipedia.org/wiki/SYN_cookies). This will break the mutilate load generators and should be turned off on the target machine:
+Sometimes, the Linux kernel applies anti-denial of service measures, like introducing [TCP SYN cookies](https://en.wikipedia.org/wiki/SYN_cookies). This will break the mutilate load generators and should be turned off on the SUT machine:
 
 ```bash
 $ sudo sysctl net.ipv4.tcp_syncookies=0
 ```
 
-This should be set on SUT machine.
-
-### Power control
+### Power control (Bare Metal only)
+This should be set on SUT machine. Does not affect virtual machines.
 
 To avoid power saving policies to kick in while carrying out the experiments, set the power governor policy to 'performance':
 
 ```bash
 $ sudo cpupower frequency-set -g performance
 ```
-
-This should be set on SUT machine.
 
 ## Next
 Please move to [Installation](installation.md) page.

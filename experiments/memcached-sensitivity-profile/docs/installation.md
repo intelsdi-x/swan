@@ -17,8 +17,39 @@
 # Swan Experiment Installation
 This guide will walk you through installation of required binaries and services to successfully run Sensitivity Profile Experiment.
 
-## Service Installation
-These services are required for Experiment operation. 
+As written in [Prerequisites](prerequisites.md) section, we have three classes of nodes:
+ * System Under Test (SUT)
+ * Load Generator Agents
+ * Services Node
+ 
+Single node can have multiple classes, but this separation is recommended to obtain correct results from experiment.
+
+### Required Sofware
+
+**System Under Test Node:**
+
+SUT Node requires following application installed:
+
+* Memcached
+* Best Effort Workloads
+* Snap
+* Hyperkube
+* Docker
+
+**Load Generator Agent:**
+
+* Mutilate
+
+**Services Node:**
+
+* Cassandra 
+* Hyperkube
+* Mutilate
+* Etcd
+
+## Software Installation
+
+### Memcached
 
 ### Cassandra Service
 Please install Cassandra on the Service node.
