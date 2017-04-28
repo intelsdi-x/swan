@@ -3,6 +3,7 @@ import re
 from functools import partial
 
 import pandas as pd
+import numpy as np
 from IPython.display import display, HTML
 
 CASSANDRA_SESSION = None  # one instance for all existing notebook experiments
@@ -32,7 +33,7 @@ def _create_or_get_session(cassandra_cluster, port, ssl_options):
     return CASSANDRA_SESSION
 
 
-pattern = re.compile(r'(/intel/swan/(\w+)/(\w+)/).*?')
+pattern = re.compile(r'(/intel/swan/(\w+)/([\w-]+)/).*?')
 
 
 def drop_prefix(value):
@@ -58,14 +59,11 @@ def load_from_cassandra(experiment_id, session, keyspace='snap'):
     return rows
 
 
-def convert_rows_to_dataframe(rows):
+def convert_rows_to_dataframe(rows, tags_keys):
     """ Convert rows (dicts) representing snap.metrics to pandas.DataFrame."""
-    tags_keys = None
 
     # flatMap tags into new columns.
     for row in rows:
-        if tags_keys is None:
-            tags_keys = row.get('tags').keys()
         row.update(row.pop('tags'))
 
     # onvert simple Row objects (composite OrderedDicts) into dataframe.
@@ -82,9 +80,8 @@ def convert_rows_to_dataframe(rows):
             continue
 
     # Reshape - to have have all tags + "ns" column as index.
-
     # First tags and ns column is converted to index with group by.
-    grouper = df.groupby(tags_keys+['ns'])
+    grouper = df.groupby(list(tags_keys)+['ns'])
     # and take just an value of metric.
     grouper = grouper['doubleval']
     # Second - assuming count = 1, one can get a mx
@@ -127,14 +124,15 @@ def qps_colors(qps):
     else:
         return CRIT
 
+
 achieved_qps_label = 'achieved QPS'
 both_label = 'both'
 
 
-def _load_data_and_rename(experiment_id, cassandra_options):
+def _load_data_and_rename(experiment_id, cassandra_options, tag_keys):
     session = _create_or_get_session(**(cassandra_options or DEFAULT_CASSANDRA_OPTIONS))
     rows = load_from_cassandra(experiment_id, session)
-    df = convert_rows_to_dataframe(rows)
+    df = convert_rows_to_dataframe(rows, tag_keys)
 
     # Extra columns.
     # Calculate achieved QPS as percentage (normalized to 1).
@@ -158,8 +156,23 @@ def _load_data_and_rename(experiment_id, cassandra_options):
     return df, _renamed
 
 
+# ------------------------------------------------------
+# optimal experiment helpers
+# ------------------------------------------------------
+
+OPTIMAL_EXPERIMENT_TAGS_KEYS = (
+    'number_of_cores',
+    'number_of_threads',
+    'swan_aggressor_name',
+    'swan_experiment',
+    'swan_loadpoint_qps',
+    'swan_phase',
+    'swan_repetition',
+)
+
+
 def optimal_core_allocation_latency(experiment_id, slo, cassandra_options=None):
-    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options)
+    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options, OPTIMAL_EXPERIMENT_TAGS_KEYS)
     # latency table
     return df.pivot_table(
             values=_renamed('percentile/99th'),
@@ -171,9 +184,9 @@ def optimal_core_allocation_latency(experiment_id, slo, cassandra_options=None):
         ).format('{:.0f}')
 
 
-def optimal_core_allocation_qps(experiment_id, slo, cassandra_options=None):
+def optimal_core_allocation_qps(experiment_id, cassandra_options=None):
     """ Generate QPS tables """
-    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options)
+    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options, OPTIMAL_EXPERIMENT_TAGS_KEYS)
 
     return df.pivot_table(
             values=achieved_qps_label,
@@ -184,9 +197,29 @@ def optimal_core_allocation_qps(experiment_id, slo, cassandra_options=None):
         ).format('{:.0%}')
 
 
+def optimal_core_allocation_cpu(experiment_id, cassandra_options=None):
+    """ Generate QPS tables """
+    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options, OPTIMAL_EXPERIMENT_TAGS_KEYS)
+
+    def cpu_colors(cpu):
+        """ Style function for cpu colors. """
+        if pd.isnull(cpu):
+            return NAN
+        return "background: rgb(%d, %d, 0); color: white;" % (cpu * 255, 255 - cpu * 255)
+
+    return df.pivot_table(
+            values=_renamed('/intel/use/compute/saturation'),
+            index=_renamed('number_of_cores'),
+            columns=_renamed('swan_loadpoint_qps'),
+            aggfunc=np.mean,
+        ).style.applymap(
+            cpu_colors
+        ).format('{:.0%}')
+
+
 def optimal_core_allocation(experiment_id, slo, cassandra_options=None):
     """ Generate raport """
-    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options)
+    df, _renamed = _load_data_and_rename(experiment_id, cassandra_options, OPTIMAL_EXPERIMENT_TAGS_KEYS)
 
     def formatter(d):
         if d is None:
