@@ -4,6 +4,21 @@ After=docker.service
 Requires=docker.service
 
 [Service]
+Environment="CREATE_KEYSPACE=CREATE KEYSPACE IF NOT EXISTS snap WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; \
+DESCRIBE KEYSPACES;"
+Environment="CREATE_TABLE=CREATE TABLE IF NOT EXISTS snap.metrics (\
+    ns  text, \
+    ver int, \
+    host text, \
+    time timestamp, \
+    valtype text, \
+    doubleVal double, \
+    boolVal boolean, \
+    strVal text, \
+    tags map<text,text>, \
+    PRIMARY KEY ((ns, ver, host), time) \
+) WITH CLUSTERING ORDER BY (time DESC); \
+DESCRIBE snap.metrics;"
 TimeoutStartSec=0
 Restart=always
 ExecStartPre=-/usr/bin/docker rm -f cassandra-swan
@@ -23,14 +38,12 @@ ExecStartPost=/usr/bin/docker run \
 ExecStartPost=/usr/bin/docker run \
   --rm \
   --net host \
-  -v /vagrant/cassandra/keyspace.cql:/keyspace.cql \
   cassandra:3.9 \
-  cqlsh localhost --file /keyspace.cql
+  cqlsh -e "${CREATE_KEYSPACE}" localhost
 ExecStartPost=/usr/bin/docker run \
   --rm \
   --net host \
-  -v /vagrant/cassandra/table.cql:/table.cql \
   cassandra:3.9 \
-  cqlsh localhost --file /table.cql
+  cqlsh -e "${CREATE_TABLE}" localhost
 [Install]
 WantedBy=multi-user.target
