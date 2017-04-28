@@ -52,11 +52,6 @@ func getIsListeningFunc(result bool) func(address string, timeout time.Duration)
 	}
 }
 
-func TestDzik(t *testing.T) {
-	kube := New(nil, nil, DefaultConfig())
-	_ = kube
-}
-
 func TestKubernetesLauncher(t *testing.T) {
 	Convey("When testing Kubernetes Launcher", t, func() {
 		// Prepare mocked output file for TaskHandles
