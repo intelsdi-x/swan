@@ -34,6 +34,8 @@ const (
 	RDTCollector = "snap-plugin-collector-rdt"
 	// SPECjbbCollector is name of snap plugin binary used to collect metrics from SPECjbb output file.
 	SPECjbbCollector string = "snap-plugin-collector-specjbb"
+	// USECollector is name of snap plugin binary for the Utilization Saturation and Errors (USE) Method.
+	USECollector string = "snap-plugin-collector-use"
 
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
