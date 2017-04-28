@@ -273,6 +273,8 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 			fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
 			fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
 			fmt.Sprintf(" --service-cluster-ip-range=%s", m.config.ServiceAddresses),
+			fmt.Sprintf(" --advertise-address=%s", m.config.KubeAPIAddr),
+			fmt.Sprintf(" --cert-dir=/tmp/kubernetes"),
 			fmt.Sprintf(" %s", m.config.KubeAPIArgs),
 		), m.config.KubeAPIPort}
 }

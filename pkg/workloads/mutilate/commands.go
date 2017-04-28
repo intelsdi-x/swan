@@ -23,7 +23,7 @@ import (
 
 // getAgentCommand returns command for agent.
 func getAgentCommand(config Config) string {
-	cmd := fmt.Sprintf("%s -T %d -A -p %d",
+	cmd := fmt.Sprintf("%s -v -T %d -A -p %d",
 		config.PathToBinary,
 		config.AgentThreads,
 		config.AgentPort,
@@ -60,7 +60,7 @@ func getPopulateCommand(config Config) string {
 func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) string {
 	baseCommand := fmt.Sprint(
 		fmt.Sprintf("%s", config.PathToBinary),
-		fmt.Sprintf(" -s %s:%d", config.MemcachedHost, config.MemcachedPort),
+		fmt.Sprintf(" -v -s %s:%d", config.MemcachedHost, config.MemcachedPort),
 		fmt.Sprintf(" --warmup %d --noload", int(config.WarmupTime.Seconds())),
 		fmt.Sprintf(" -K %s -V %s -i %s", config.KeySize, config.ValueSize, config.InterArrivalDist),
 		fmt.Sprintf(" -T %d", config.MasterThreads),

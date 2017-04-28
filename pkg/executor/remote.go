@@ -168,7 +168,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	// 'tryue && ' prefix prevents bash over execing into given command and guarantees unshare work as expected.
 	stringForSh = fmt.Sprintf(`unshare --fork --pid --mount-proc sh -c 'true && %s #%s'`, stringForSh, unshareUUIDStr)
 
-	log.Debug("Starting '", stringForSh, "' remotely")
+	log.Debug("Starting '", stringForSh, "' remotely on '", remote.targetHost, "'")
 	err = session.Start(stringForSh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "session.Start for command %q failed", command)
