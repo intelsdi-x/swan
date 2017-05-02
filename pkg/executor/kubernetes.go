@@ -329,6 +329,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		command:    wrappedCommand,
 
 		stdoutFilePath: stdoutFileName,
+		stderrFilePath: stderrFileName,
 
 		logsCopyFinished: make(chan struct{}, 1),
 
@@ -492,6 +493,7 @@ func (th *k8sTaskHandle) StdoutFile() (*os.File, error) {
 
 // StderrFile returns a file handle to the stderr file for the pod.
 // NOTE: StderrFile will block until stderr file is available.
+// For kubernetes there is not stderr stream - return stdout stream.
 func (th *k8sTaskHandle) StderrFile() (*os.File, error) {
 	return openFile(th.stderrFilePath)
 }
@@ -501,6 +503,7 @@ type k8sWatcher struct {
 	pod     *v1.Pod
 
 	stdoutFilePath string
+	stderrFilePath string
 
 	started          chan struct{}
 	stopped          chan struct{}
@@ -731,9 +734,15 @@ func (kw *k8sWatcher) setupLogs() {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
 			}
+			stderrFile, err := os.OpenFile(kw.stderrFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
+			if err != nil {
+				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
+				return
+			}
 			defer syncAndClose(stdoutFile)
+			defer syncAndClose(stderrFile)
 
-			_, err = io.Copy(stdoutFile, logStream)
+			_, err = io.Copy(io.MultiWriter(stdoutFile, stderrFile), logStream)
 			if err != nil {
 				log.Errorf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
 				return
