@@ -39,5 +39,5 @@ var (
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.
 	PeakLoadFlag = conf.NewIntFlag("experiment_peak_load", "Maximum load that will be generated on HP workload. If value is `0`, then maximum possible load will be found by Swan.", RunTuningPhase)
 	// LoadGeneratorWaitTimeoutFlag is a flag that indicates how log experiment should wait for load generator to stop
-	LoadGeneratorWaitTimeoutFlag = conf.NewDurationFlag("experiment_load_generator_wait_timeout", "Amount of time to wait for load generator to stop before stopping it forcefully. In succesuful case, it should stop on it's own.", 0)
+	LoadGeneratorWaitTimeoutFlag = conf.NewDurationFlag("experiment_load_generator_wait_timeout", "Amount of time to wait for load generator to stop before stopping it forcefully. In succesful case, it should stop on it's own.", 0)
 )

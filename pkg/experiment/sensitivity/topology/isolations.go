@@ -25,8 +25,8 @@ import (
 
 var (
 	// For CPU count based isolation policy flags.
-	hpCPUCountFlag = conf.NewIntFlag("experiment_hp_workload_cpu_number", "Number of CPUs assigned to high priority task. CPUs will be assigned autmatically to workloads.", 1)
-	beCPUCountFlag = conf.NewIntFlag("experiment_be_workload_cpu_number", "Number of CPUs assigned to best effort task. CPUs will be assigned autmatically to workloads.", 1)
+	hpCPUCountFlag = conf.NewIntFlag("experiment_hp_workload_cpu_count", "Number of CPUs assigned to high priority task. CPUs will be assigned automatically to workloads.", 1)
+	beCPUCountFlag = conf.NewIntFlag("experiment_be_workload_cpu_count", "Number of CPUs assigned to best effort task. CPUs will be assigned automatically to workloads.", 1)
 
 	// HpRangeFlag allows to set high priority task cores.
 	HpRangeFlag = conf.NewIntSetFlag("experiment_hp_workload_cpu_range", "HP cpuset range (e.g: 0-2). All three 'range' flags must be set to use this policy.", "")

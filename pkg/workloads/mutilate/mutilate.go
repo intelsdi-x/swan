@@ -62,7 +62,7 @@ var (
 	agentBlockingFlag          = conf.NewBoolFlag("mutilate_agent_blocking", "Mutilate agent blocking (--blocking -B).", defaultAgentBlocking)
 	masterThreadsFlag          = conf.NewIntFlag("mutilate_master_threads", "Mutilate master threads (-T).", defaultMasterThreads)
 	masterConnectionsFlag      = conf.NewIntFlag("mutilate_master_connections", "Mutilate master connections (-C).", defaultMasterConnections)
-	masterConnectionsDepthFlag = conf.NewIntFlag("mutilate_master_connections_depth", "Mutilate master connections depth (-C).", defaultMasterConnectionsDepth)
+	masterConnectionsDepthFlag = conf.NewIntFlag("mutilate_master_connections_depth", "Mutilate master connections depth (-D).", defaultMasterConnectionsDepth)
 	masterAffinityFlag         = conf.NewBoolFlag("mutilate_master_affinity", "Mutilate master affinity (--affinity).", defaultMasterAffinity)
 	masterBlockingFlag         = conf.NewBoolFlag("mutilate_master_blocking", "Mutilate master blocking (--blocking -B).", defaultMasterBlocking)
 	masterQPSFlag              = conf.NewIntFlag("mutilate_master_qps", "Mutilate master QPS value (-Q).", defaultMasterQPS)

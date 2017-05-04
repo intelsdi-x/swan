@@ -34,8 +34,10 @@ import (
 var (
 	currentUser, _ = user.Current()
 
-	sshUserFlag        = conf.NewStringFlag("remote_ssh_login", "Login used for connecting to remote nodes. ", currentUser.Name)
-	sshUserKeyPathFlag = conf.NewStringFlag("remote_ssh_key_path", fmt.Sprintf("Key for %q used for connecting to remote nodes.", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/id_rsa"))
+	sshUserFlag = conf.NewStringFlag("remote_ssh_user", "Login used for connecting to remote nodes.\n"+
+		"# Default value is current user.", currentUser.Name)
+	sshUserKeyPathFlag = conf.NewStringFlag("remote_ssh_key_path", fmt.Sprintf("Key for user in from flag %q used for connecting to remote nodes.\n"+
+		"# Default value is '$HOME/.ssh/id_rsa'", sshUserFlag.Name), path.Join(currentUser.HomeDir, ".ssh/id_rsa"))
 
 	sshPortFlag = conf.NewIntFlag("remote_ssh_port", "Port used for SSH connection to remote nodes. ", 22)
 )
