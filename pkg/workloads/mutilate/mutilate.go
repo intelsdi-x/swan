@@ -54,7 +54,7 @@ var (
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s].", defaultTuningTime)
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
-	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T).", defaultAgentThreads)
+	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T). Should not exceed number of physical cores on machine.", defaultAgentThreads)
 	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
 	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
 	agentConnectionsDepthFlag  = conf.NewIntFlag("mutilate_agent_connections_depth", "Mutilate agent connections (-d).", defaultAgentConnectionsDepth)

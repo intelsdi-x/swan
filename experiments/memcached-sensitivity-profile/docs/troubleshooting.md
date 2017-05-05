@@ -25,4 +25,4 @@ memcached and mutilate are sensitive to processes which use any network bandwidt
 
 There may be issues with synchronization between the master and agents. If any of master or agents reports `out of sync`, all processes and the measurement have to be restarted.
 
-If you see `connection closed by peer` on the agents, this is most likely related to the SYN cookies mentioned above.
+If you see `connection closed by peer` on the agents, this is most likely related to the SYN cookies mentioned in [Prerequisites](prerequisites.md#ddos-protection).

@@ -83,7 +83,7 @@ All snap plugins from release package must be in included in `$PATH`.
 Workloads are deployed from Swan docker image and installed in /opt/swan.
 
 ```bash
-yum install -y -q glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl-libs libevent zeromq 
+sudo yum install -y -q glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl-libs libevent zeromq 
 sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
 ```
 
@@ -145,8 +145,9 @@ Mutilate must be compiled from source by user and `mutilate` binary must be avai
 Full list of CentOS dependencies are below. Library cppzmq-devel is required for proper Mutilate agent synchronisation.
 
 ```bash
-sudo yum install cppzmq-devel gengetopt libevent-devel scons gcc-c++
-# Plese clone the https://github.com/leverich/mutilate repository and build it by using `scons`
+sudo yum install zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++
+# Please clone the https://github.com/leverich/mutilate repository and build it by using `scons`.
+# Make sure that cppzmq-devel is installed on all load generator hosts.
 ```
 
 **Cassandra**

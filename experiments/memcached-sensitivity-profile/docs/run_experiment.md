@@ -28,22 +28,18 @@ The main difference between these two, is the fact that in Kubernetes mode user 
 Experiment must be run by privileged user, so that it can set isolation to workloads.
 When the experiment is run, an [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` is shown. It will be the identifier for this experiment and the key to retrieve the experiment data.
 
-## Swan Flags
+## Sensitivity Profile Experiment Configuration
 
-Swan exposes a multitude of flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -config-dump`. Dumped config can be later used to run experiment.
+Swan exposes a multitude of configuration flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -config-dump`. Dumped config can be later used to run experiment.
 
 ```bash
 sudo ./memcached-sensitivity-profile -config-dump > config.ini 
 sudo ./memcached-sensitivity-profile -config config.ini # Config supplied to experiment.
 ```
 
-Quick Start configuration is in the next section.
-
-An example config dump is located in [Config Dump Example](config_dump_example.md).
-To facilitate experiment instrumentation, the most important Swan are listed in [Swan Flags](swan_flags.md) page.
-Flags required for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
-
 ## Quick Start Configuration
+
+In this section 
 
 Below is an example configuration using environment variables to set up the experiment where the machines are configured in the following topology:
 
@@ -152,21 +148,28 @@ Note the UUID that is printed on stdout and wait for experiment to finish.
 
 When the experiment is complete, the results can be retrieved from Cassandra.
 Swan ships with a Jupyter Notbook which provides an environment for loading the samples and generating sensitivity profiles.
+
 For instructions on how to run Jupyter Notebook, please refer to the [Jupyter user guide](../../../jupyter/README.md).
 
 A few pointers to validate the experiment data:
 
- - Baseline measurements should not violate SLO at any load point.
- - At low loads - numbers may not differ for baseline and colocated scenarios. The differences should be in _when_ the saturation occurs. For the colocated scenarios, this should become evident at higher loads. If this does not occur, it might mean that Memcached has not been properly baselined.
+* Baseline measurements should not violate SLO at any load point.
+* At low loads - numbers may not differ for baseline and colocated scenarios. The differences should be in _when_ the saturation occurs. For the colocated scenarios, this should become evident at higher loads. If this does not occur, it might mean that Memcached has not been properly baselined.
+* Grey boxes show that Memcached or Mutilate could not achieve requsted number of requests per second.  
 
 Below is an example of what the sensitivity profile could be:
 
 ![Sensitivity profile](/images/sensitivity-profile.png)
 
 
-The _Load_ row is a percentage of the peak load which was found during _[Red lining](https://www.wikiwand.com/en/Redline)_.
-A cell in a table express _SLI_ which is a 99th [percentile](https://www.wikiwand.com/en/Percentile) response time for that _Load_ in relation to _SLO_. For instance _Baseline_ for _Load_ 5% for _SLO_ 500ms tells that 99 percent of requests responded in time not greater than 160ms which is 32% of SLO time. Thus if we observe _SLI_ above 100% that means violation of _SLO_.
+The _Load_ row is a percentage of the peak load. A cell in a table express percentage of _SLI_ which is a 99th [percentile](https://www.wikiwand.com/en/Percentile) response time for that _Load_ in relation to _SLO_. For instance _Baseline_ for 5% _Load_ for _SLO_ 500ms tells that 99 percent of requests responded in time not greater than 160ms which is 32% of SLO time. Thus if we observe _SLI_ above 100% that means violation of _SLO_.
 In the presented table Caffe and memBW are relatively weak aggressors and they lead to _SLO_ violation only on higher loads while Stream 100M is very aggressive and leads to _SLO_ violation even on low loads of memcached.
+
+## More Configuration Flags
+
+An example config dump is located in [Config Dump Example](config_dump_example.md).
+To facilitate experiment instrumentation, the most important Swan are listed in [Swan Flags](swan_flags.md) page.
+Additional flags for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
 
 ## Next
 Please move to [Tuning](tuning.md) page.

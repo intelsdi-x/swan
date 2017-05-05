@@ -18,7 +18,7 @@
 
 ## [Red lining](https://www.wikiwand.com/en/Redline)
 
-In order to produce a sensitivity profile, Swan needs to know the peak load for memcached.
+In order to produce a sensitivity profile, Swan needs to know the peak load for Memcached on SUT machine.
 From the peak load, Swan computes load points from 5% to 100% of node capacity.
 
 If `SWAN_PEAK_LOAD` flag is set to `0`, Swan will try to find maximum capacity by it's own, but it might not always be able to return stable results.
@@ -33,57 +33,37 @@ When running mutilate in a distributed setup, the master process (or coordinator
 
 ![Mutilate architecture](/images/mutilate.png)
 
-In this way, the mutilate master continuously communicates the target per-agent load, gets achieved load back and performs latency readings on samples connections it establish to the memcached instance directly.
+In this way, the mutilate master continuously communicates the target per-agent load, gets achieved load back and performs latency readings on samples connections it establish to the Memcached instance directly.
 
-When configuring the mutilate cluster, one central aspect is the _number of concurrent connections_ to memcached.
-It is recommended to aim for 100-200 connections per memcached server thread.
+To obtain reasonable results, Mutilate author [suggests](https://github.com/leverich/mutilate/#suggested-usage) following configuration for Mutilate Agents:
+1. Establish on the order of 100 connections per memcached server thread.
+1. Don't exceed more than about 16 connections per mutilate thread. (`MUTILATE_AGENT_CONNECTIONS` flag)
+1. Use multiple mutilate agents in order to achieve (1) and (2). (`EXPERIMENT_MUTILATE_AGENT_ADDRESSES` flag)
+1. Do not use more mutilate threads than hardware cores/threads. (`MUTILATE_AGENT_THREADS` flag)
+1. Use -Q to configure the "master" agent to take latency samples at slow, a constant rate. (`EXPERIMENT_MUTILATE_MASTER_ADDRESS` flag)
 
-For mutilate, agents should establish significantly less than 100 connections per mutilate thread. Aiming for somewhere between 5-15 should be doable.
-Also, the mutilate agent thread count should not exceed the number of physical cores on the machine.
+In brackets, there are listed Swan Configuration Flags that are responsible for each setting.
 
-The math is then as follows:
+The math for establishing first point is as follows:
 
 ```
-Total connections = number of agents x number of agent threads x agent connection count
-```
+Mutilate Connections = number of agents x number of agent threads x agent connection count
+Memcached Connections Requirement = 100 * `MEMCACHED_THREADS`
 
-For a memcached instance with 4 threads, we can aim for 800 concurrent connection:
-```
-4 agents x 20 threads x 10 connections = 800 concurrent connections
-```
-
-The above is configured with the following flags:
-```
---mutilate_agent_threads=8    Mutilate agent threads (-T).
---mutilate_agent_port=5556    Mutilate agent port (-P).
---mutilate_agent_connections=1  
-                              Mutilate agent connections (-c).
---mutilate_agent_connections_depth=1  
-                              Mutilate agent connections (-d).
---mutilate_agent_affinity     Mutilate agent affinity (--affinity).
---mutilate_agent_blocking     Mutilate agent blocking (--blocking -B).
---mutilate_master_threads=8   Mutilate master threads (-T).
---mutilate_master_connections=4  
-                              Mutilate master connections (-C).
---mutilate_master_connections_depth=4  
-                              Mutilate master connections depth (-C).
---mutilate_master_affinity    Mutilate master affinity (--affinity).
---mutilate_master_blocking    Mutilate master blocking (--blocking -B).
---mutilate_master_qps=1000    Mutilate master QPS value (-Q).
+'Mutilate Connections' should be more or equal 'Memcached Connections Requirement'
 ```
 
 In essence, it is unfortunately very easy to see high latency measurements due to unintended interference and client side queuing in mutilate.
 On top of the recommendations, we have found that reducing the number agent threads and connections and increasing the measurement time to around 30 seconds with the `--load_duration` flag helps.
-To accommodate for the fewer connections per agent, you can safely add more agents.
-
-Another option to increase precision of the latency measurements, mutilate gives the option to use blocking vs non-blocking IO. Enabling this increases the precision but also increases the CPU load on the mutilate agents.
+To accommodate for the fewer connections per agent, you should add more agents.
 
 ## Memcached Tuning
 
-One of the most important configuration options for memcached is the thread count. We recommend _half physical core count per socket_. In a machine with 32 hyper threads over 16 cores and 2 sockets, this equals 4 memcached threads.
-This is set with the `--memcached_threads` flag or through the `SWAN_MEMCACHED_THREADS` environment variable.
+One of the most important configuration option for Memcached is the thread count. For experiment with co-location, we recommend _half physical core count per socket_. In a machine with 32 hyper threads over 16 cores and 2 sockets, this equals 4 memcached threads.
+This can be set through the `MEMCACHED_THREADS` flag.
+
 The rationale for this number is explained in the [Core Isolation](theory.md#CPU-Cores-Isolation) section.
-Lastly, the maximum number of connections to memcached can be set with the `--memcached_connections` flag or through the `SWAN_MEMCACHED_CONNECTIONS` environment variable.
+Lastly, the maximum number of connections to memcached can be set with the `SWAN_MEMCACHED_CONNECTIONS` flag.
 
 ## Next
 You are ready to go!
