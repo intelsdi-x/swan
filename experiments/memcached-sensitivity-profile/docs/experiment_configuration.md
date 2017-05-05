@@ -122,6 +122,45 @@ EXPERIMENT_MUTILATE_AGENT_ADDRESSES=192.168.1.1,192.168.1.2
 
 ```
 
+### Best Effort Workloads Flags
+
+User can provide his own models for Caffe via `CAFFE_MODEL` and `CAFFE_WEIGHTS` flags.
+Also, to pro
+
+```bash
+# Path to trained model
+# Default: examples/cifar10/cifar10_quick_train_test.prototxt
+CAFFE_MODEL=examples/cifar10/cifar10_quick_train_test.prototxt
+
+# Path to trained weights
+# Default: examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5
+CAFFE_WEIGHTS=examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5
+
+# Number of threads that stream aggressor is going to launch. Default value (0) will launch one thread per cpu.
+# Default: 0
+EXPERIMENT_BE_STREAM_THREAD_NUMBER=0
+
+# Number of aggressors to be run
+# Default: 1
+STRESSNG_STREAM_PROCESS_NUMBER=1
+
+# Number of aggressors to be run
+# Default: 1
+STRESSNG_CACHE_L1_PROCESS_NUMBER=1
+
+# Number of aggressors to be run
+# Default: 1
+STRESSNG_CACHE_L3_PROCESS_NUMBER=1
+
+# Number of aggressors to be run
+# Default: 1
+STRESSNG_MEMCPY_PROCESS_NUMBER=1
+
+# Custom arguments to stress-ng
+STRESSNG_CUSTOM_ARGUMENTS=
+
+```
+
 ## Experiment Flags
 
 1. `EXPERIMENT_BE_WORKLOADS`: Comma separated list of "best effort" workloads that would be launched in colocation with Memcached.

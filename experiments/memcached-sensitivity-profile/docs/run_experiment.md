@@ -22,9 +22,6 @@ The Sensitivity Profile Experiment can be run in two modes:
 1. Standalone - Swan runs workloads as standalone processes.
 1. Kubernetes - Swan runs workloads as Kubernetes Pods.
 
-The main difference between these two, is the fact that in Kubernetes mode user can see interferences from Kubernetes and compare them with Standalone mode.
-
-
 Experiment must be run by privileged user, so that it can set isolation to workloads.
 When the experiment is run, an [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) like `5df7fa72-add4-44a2-67fa-31668bcafe81` is shown. It will be the identifier for this experiment and the key to retrieve the experiment data.
 
@@ -57,10 +54,10 @@ Binaries should be installed on those machines as stated in [Installation](insta
 
 
 
-In this example, SUT node has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showed in [Theory](theory.md) section, this leaves 4 threads and logical cores for memcached.
+In this example, SUT node has 32 hyper threads over 16 physical cores on 2 sockets. Per the topology description showed in [Theory](theory.md) section, this leaves 4 cpu-threads and for memcached.
  
 Please paste following snippet into `config.ini` file.
-Some variables should be changed before running the experiment.
+Some variables needs to be changed before running the experiment.
 
 1. `REMOTE_SSH_LOGIN` and `REMOTE_SSH_KEY_PATH` should point to user and key that is authorized to SSH on every machine in the experiment cluster.
 1. `MEMCACHED_USER` should be the same as `REMOTE_SSH_LOGIN`
@@ -133,7 +130,7 @@ CASSANDRA_ADDRESS=192.168.10.10
 Before running `memcached-sensitivity-profile` please ensure that
 * Cassandra is up and running on the Services node.
 * Snapteld is running on SUT.
-* Mutilate binary and `cppzmq-devel` library are installed on Service and Load Generator hosts.
+* Mutilate binary and `zeromq` library are installed on Service and Load Generator hosts.
 * From SUT node, an user passed in `REMOTE_SSH_USER` flag can connect via ssh to other nodes using keys authorization.
 
 If everything is ready then simply launch:

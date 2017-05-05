@@ -17,7 +17,7 @@
 # Swan Experiment Installation
 This guide will walk you through installation of required binaries and services to successfully run Sensitivity Profile Experiment.
 
-As written in [Prerequisites](prerequisites.md) section, we have three classes of nodes:
+As described in [Prerequisites](prerequisites.md) section, we have three classes of nodes:
  * System Under Test (SUT)
  * Load Generator Agents
  * Services Node
@@ -46,7 +46,7 @@ SUT Node requires following application installed.
 * Mutilate - *Master for agent synchronisation*
 * Cassandra - *Database for storing experiment results* 
 * Hyperkube - *Kubernetes Control Plane*
-* Etcd - *Backend for Kubernetes*
+* Etcd - *Key-Value Store for Kubernetes*
 
 ### The Installation details are as follow:
 
@@ -59,6 +59,7 @@ Please install Docker in version 17.03.
 ```bash
 # Installs Docker from docker repository.
 # https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
+sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo yum makecache fast -y -q
 sudo yum install -y -q docker-ce-17.03.0.ce-1.el7.centos
@@ -72,6 +73,8 @@ After installation, please pull Swan image.
 ```bash
 sudo docker pull intelsdi/swan
 ```
+
+Please note, that if user would like to build image from source, then Docker 17.05 is required.
 
 **Experiment Binaries**
 
@@ -95,7 +98,7 @@ Following workloads are installed this way:
 * Stress-ng - *Synthethic stresser that can stress system in various selectable ways*
 * Caffe - *Deep Learning framework to simulate real workload*
 
-Swan also supports [iBench](https://github.com/stanford-mast/iBench) and [Stream Benchmark](https://www.cs.virginia.edu/stream/) workloads that are not deployed by preceding script. Stress-ng can stress system in similar way. 
+Swan also supports [iBench](https://github.com/stanford-mast/iBench) and [Stream Benchmark](https://www.cs.virginia.edu/stream/) workloads that are not deployed by preceding script. [Stress-ng](http://kernel.ubuntu.com/~cking/stress-ng/) supplied with Swan can stress system in similar way. 
 
 **Snap**
 
