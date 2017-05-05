@@ -167,11 +167,9 @@ In the presented table Caffe and memBW are relatively weak aggressors and they l
 
 ## More Configuration Flags
 
-An example config dump is located in [Config Dump Example](config_dump_example.md).
-To facilitate experiment instrumentation, the most important Swan are listed in [Swan Flags](swan_flags.md) page.
-Additional flags for running Experiment in Kubernetes mode are in [Kubernetes Flags](swan_flags.md#Kubernetes-Flags) section.
+The most important configuration flags are listed in [Experiment Configuration](experiment_configuration.md) page.
+Other experiment flags can be found in [All Experiment Flags](experiment_config_dump_example.md) page.
 
 ## Next
 Please move to [Tuning](tuning.md) page.
 
-To see all available flags, please look at [Config Dump Example](config_dump_example.md).
