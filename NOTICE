@@ -1,0 +1,6 @@
+Swan
+Copyright 2016-2017 Intel Corporation
+
+This software contains portions of kubernetes/kubernetes from https://github.com/kubernetes/kubernetes,
+licensed under an Apache License 2.0 in file pkg/k8sports/kubernetes_helpers.go.
+
