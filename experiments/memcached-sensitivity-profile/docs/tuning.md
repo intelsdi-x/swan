@@ -16,14 +16,39 @@
 
 # Tune Workloads & Environment
 
-## [Red lining](https://www.wikiwand.com/en/Redline)
+## Memcached Peak Load Tuning ([Red lining](https://www.wikiwand.com/en/Redline))
 
 In order to produce a sensitivity profile, Swan needs to know the peak load for Memcached on SUT machine.
 From the peak load, Swan computes load points from 5% to 100% of node capacity.
 
-If `SWAN_PEAK_LOAD` flag is set to `0`, Swan will try to find maximum capacity by it's own, but it might not always be able to return stable results.
-
 Memcached should be able to serve roughly 100k-200k QPS per thread.
+
+**Automatic Peak Load Tuning**
+
+Set `SWAN_PEAK_LOAD` to `0`. Swan will try to find maximum capacity by it's own and then run experiment.
+The results from automatic tuning are not always stable and correct.
+
+**Manual Tuning**
+
+Pick any peak load and run baseline with multiple load points with no aggressors and explore the results in Jupyter.
+Please run the experiment few times to see if the results are stable.
+
+```bash
+# Best Effort workloads should be left empty.
+EXPERIMENT_BE_WORKLOADS=
+
+# Pick high number.
+EXPERIMENT_PEAK_LOAD=1000000
+
+# With peak load equal to 1M, each load point will be equal to 50k RPS
+# Load Points would be: 50k, 100k, 150k, ..., 1M
+EXPERIMENT_LOAD_POINTS=20
+
+# Longer load might return more stable results.
+EXPERIMENT_LOAD_DURATION=60s
+
+EXPERIMENT_SLO=500
+```
 
 ## Mutilate Tuning
 
@@ -56,14 +81,6 @@ Memcached Connections Requirement = 100 * `MEMCACHED_THREADS`
 In essence, it is unfortunately very easy to see high latency measurements due to unintended interference and client side queuing in mutilate.
 On top of the recommendations, we have found that reducing the number agent threads and connections and increasing the measurement time to around 30 seconds with the `--load_duration` flag helps.
 To accommodate for the fewer connections per agent, you should add more agents.
-
-## Memcached Tuning
-
-One of the most important configuration option for Memcached is the thread count. For experiment with co-location, we recommend _half physical core count per socket_. In a machine with 32 hyper threads over 16 cores and 2 sockets, this equals 4 memcached threads.
-This can be set through the `MEMCACHED_THREADS` flag.
-
-The rationale for this number is explained in the [Core Isolation](theory.md#CPU-Cores-Isolation) section.
-Lastly, the maximum number of connections to memcached can be set with the `SWAN_MEMCACHED_CONNECTIONS` flag.
 
 ## Next
 You are ready to go!

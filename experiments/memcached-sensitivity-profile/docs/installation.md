@@ -143,9 +143,9 @@ sudo chmod +x /opt/swan/bin/snap-plugin-publisher-file
 
 **Mutilate**
 
-Mutilate must be compiled from source by user and `mutilate` binary must be available in `$PATH` on Services and Load Generator nodes. Please refer to [Mutilate Readme](https://github.com/leverich/mutilate) for build instructions.
+Mutilate must be compiled from source on every node and `mutilate` binary must be available in `$PATH` on Services and Load Generator nodes. Please refer to [Mutilate Readme](https://github.com/leverich/mutilate) for build instructions.
 
-Full list of CentOS dependencies are below. Library cppzmq-devel is required for proper Mutilate agent synchronisation.
+Full list of CentOS dependencies are below. Library `cppzmq-devel` is required for proper Mutilate agent synchronisation.
 
 ```bash
 sudo yum install zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++

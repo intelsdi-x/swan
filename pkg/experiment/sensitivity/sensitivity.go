@@ -33,7 +33,7 @@ var (
 	// LoadDurationFlag allows us to set repetition duration from command line argument or environmental variable
 	LoadDurationFlag = conf.NewDurationFlag("experiment_load_duration", "Load duration on HP task.", 15*time.Second)
 	// RepetitionsFlag indicates number of repetitions per each load point
-	RepetitionsFlag = conf.NewIntFlag("experiment_repetitions", "Number of repetitions for each measurement", 3)
+	RepetitionsFlag = conf.NewIntFlag("experiment_repetitions", "Number of repetitions for each measurement", 1)
 	// StopOnErrorFlag forces experiment to terminate on error
 	StopOnErrorFlag = conf.NewBoolFlag("experiment_stop_on_error", "Stop experiment in a case of error", false)
 	// PeakLoadFlag represents special case when peak load is provided instead of calculated from Tuning phase.

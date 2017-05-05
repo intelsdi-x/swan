@@ -130,7 +130,7 @@ CASSANDRA_ADDRESS=192.168.10.10
 Before running `memcached-sensitivity-profile` please ensure that
 * Cassandra is up and running on the Services node.
 * Snapteld is running on SUT.
-* Mutilate binary and `zeromq` library are installed on Service and Load Generator hosts.
+* Mutilate binary should be compiled on every host.
 * From SUT node, an user passed in `REMOTE_SSH_USER` flag can connect via ssh to other nodes using keys authorization.
 
 If everything is ready then simply launch:
