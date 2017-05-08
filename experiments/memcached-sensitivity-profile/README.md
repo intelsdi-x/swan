@@ -33,10 +33,10 @@ The conditions, currently, involve Colocation of memcached with a list of specia
 1. [Prerequisites](docs/prerequisites.md)
 1. [Installation](docs/installation.md)
 1. [Run the Experiment ](docs/run_experiment.md)
-1. [Tune Workloads](docs/tuning.md)
+1. [Tune Mutilate & Memcached](docs/tuning.md)
 1. [Troubleshooting](docs/troubleshooting.md)
 
 ## Appendix
 
-1. [Important Experiment Flags](docs/swan_flags.md)
-1. [All Swan Flags](docs/config_dump_example.md)
+1. [Important Experiment Flags](docs/experiment_configuration.md)
+1. [All Experiment Flags](docs/experiment_config_dump_example.md)

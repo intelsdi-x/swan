@@ -84,18 +84,22 @@ An example of such conflicting and potential overlapping CPU sets could be syste
 
 Synthetic Aggressors are specialized programs for stressing different platform subsystems.
 
-| Source of interference | Aggressor description (from [ibench paper](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf))                                                         |
-|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| L1 instruction         | "A simple kernel that sweeps through increasing fractions of the i-cache, until it populates its full capacity. Accesses in this case are again random." |
-| L1 data                | "A copy of the previous SoI (Source of Interference), tuned to the specific structure and size of the d-cache (typically the same as the i-cache)."      |
-| L3 data                | "The kernel issues random accesses that cover an increasing size of the LLC capacity"                                                                    |
-| Memory bandwidth       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space"                |
-| Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark.                                                                    |
+| Source of interference | Aggressor description |
+|------------------------|-----------------------|
+| L1 instruction*         | "A simple kernel that sweeps through increasing fractions of the i-cache, until it populates its full capacity. Accesses in this case are again random." |
+| L1 data*                | "A copy of the previous SoI (Source of Interference), tuned to the specific structure and size of the d-cache (typically the same as the i-cache)." |
+| L3 data*                | "The kernel issues random accesses that cover an increasing size of the L3 capacity" |
+| Memory bandwidth*       | "The benchmark in this case performs streaming (serial) memory accesses of increasing intensity to a small fraction of the address space" |
+| Stream                 | Another [well-known](https://www.cs.virginia.edu/stream/) memory bandwidth benchmark. |
+| Stress-ng                 | A stress test for computer system in various selectable ways. Can excercise L1 cache stress, L3 cache stress and Memory Bandwidth stress. Availble at [kernel.ubuntu.com](http://kernel.ubuntu.com/~cking/stress-ng/).|
+
+For more information about starred(*) aggressors, please refer to [Delimitrou, Christina, and Christos Kozyrakis. "ibench: Quantifying interference for datacenter applications." Workload Characterization (IISWC), 2013 IEEE International Symposium on. IEEE, 2013.](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf).
 
 To ensure a proper intensity of the aggressors, we recommend running same number of aggressors and memcached threads.
 For L1 aggressors, this means running on all logical sibling cores and one physical core per L3 aggressor.
 
-For more information, please refer to [Delimitrou, Christina, and Christos Kozyrakis. "ibench: Quantifying interference for datacenter applications." Workload Characterization (IISWC), 2013 IEEE International Symposium on. IEEE, 2013.](http://web.stanford.edu/~cdel/2013.iiswc.ibench.pdf).
+
+
 
 ## Next
 Please move to [Prerequisites](prerequisites.md) page.

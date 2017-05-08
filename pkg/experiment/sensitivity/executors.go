@@ -43,7 +43,7 @@ var (
 	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
 	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 1GB).", 1000000000)
 
-	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", "Experiment's Kubernetes pods will be run on this node.", hostname)
+	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", RunOnExistingKubernetesFlag.Name), hostname)
 )
 
 // PrepareExecutors gives an executor to deploy your workloads with applied isolation on HP.
