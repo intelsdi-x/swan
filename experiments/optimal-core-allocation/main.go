@@ -62,11 +62,11 @@ func main() {
 
 	// connect to metadata database
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	errutil.CheckWithContext(err, "Cannot connect to metadata database")
+	errutil.CheckWithContext(err, "Cannot connect to in Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
 	err = metadata.RecordRuntimeEnv(experimentStart)
-	errutil.CheckWithContext(err, "Cannot save runtime environment")
+	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Read configuration.
 	loadDuration := sensitivity.LoadDurationFlag.Value()
@@ -88,7 +88,7 @@ func main() {
 		"peak_load":         strconv.Itoa(peakLoad),
 	}
 	err = metadata.RecordMap(records)
-	errutil.CheckWithContext(err, "Cannot save metadata")
+	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
 	// Validate preconditions.
 	validate.OS()

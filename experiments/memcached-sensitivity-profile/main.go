@@ -58,7 +58,7 @@ func main() {
 
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	if err != nil {
-		logrus.Errorf("Cannot connect to metadata database %q", err.Error())
+		logrus.Errorf("Cannot connect to in Cassandra Metadata Database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 	// Save experiment runtime environment (configuration, environmental variables, etc).
@@ -67,7 +67,7 @@ func main() {
 		logrus.Errorf("Cannot save runtime environment %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
-	errutil.CheckWithContext(err, "Cannot save runtime environment")
+	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Validate preconditions.
 	validate.OS()
@@ -93,7 +93,7 @@ func main() {
 	// Create BE workloads.
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	if err != nil {
-		logrus.Errorf("Cannot create BE tasks: %q", err.Error())
+		logrus.Errorf("Cannot create Best Effort tasks: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 	// Zero-value sensitivity.LauncherSessionPair represents baselining.
@@ -108,13 +108,13 @@ func main() {
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
 	if err != nil {
-		logrus.Errorf("Cannot create load generator: %q", err.Error())
+		logrus.Errorf("Cannot create Load Generator: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
 	snapSession, err := mutilatesession.NewSessionLauncherDefault()
 	if err != nil {
-		logrus.Errorf("Cannot create snap session: %q", err.Error())
+		logrus.Errorf("Cannot create Snap session: %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 
@@ -195,6 +195,7 @@ func main() {
 					snapTags[experiment.AggressorNameKey] = aggressorName
 
 					// Launch BE tasks when we are not in baseline.
+					var beHandle executor.TaskHandle
 					if beLauncher.Launcher != nil {
 						beHandle, err := beLauncher.Launcher.Launch()
 						if err != nil {
@@ -228,6 +229,11 @@ func main() {
 							logrus.Errorf("Stopping mutilate cluster errored: %q", err)
 							return errors.Wrap(err, "stopping mutilate cluster errored")
 						}
+					}
+
+					err = beHandle.Stop()
+					if err != nil {
+						return errors.Wrapf(err, "best effort task has failed in phase %s, repetition %d", phaseName, repetition)
 					}
 
 					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
