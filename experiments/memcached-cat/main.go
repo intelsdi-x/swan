@@ -75,7 +75,7 @@ func main() {
 
 	// Connect to metadata database
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	errutil.CheckWithContext(err, "Cannot connect to in Cassandra Metadata Database")
+	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
 	err = metadata.RecordRuntimeEnv(experimentStart)

@@ -58,7 +58,7 @@ func main() {
 
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	if err != nil {
-		logrus.Errorf("Cannot connect to in Cassandra Metadata Database %q", err.Error())
+		logrus.Errorf("Cannot connect to Cassandra Metadata Database %q", err.Error())
 		os.Exit(experiment.ExSoftware)
 	}
 	// Save experiment runtime environment (configuration, environmental variables, etc).
