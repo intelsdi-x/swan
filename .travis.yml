@@ -9,15 +9,12 @@ install:
 - PATH=/usr/lib/ccache:$PATH
 - sudo apt-get install bash gcc
 - make glide linter 
-- pip install --upgrade pip
-- make deps_test_jupyter
 script: 
 - make test_lint
 - make test_unit 
 - make test_integration_build 
 - make build 
-- make test_jupyter_lint 
-- make test_jupyter_unit
+- make jupyter_image test_jupyter_lint test_jupyter_unit
 notifications:
   slack:
     rooms:
@@ -25,9 +22,5 @@ notifications:
     on_success: 'never'
     on_pull_requests: false
 cache:
-  pip: true
-  ccache: true
   directories:
   - $HOME/.glide
-  - $HOME/.cache/pip
-  - $HOME/.ccache
