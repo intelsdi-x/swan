@@ -278,9 +278,11 @@ func main() {
 							}
 						}
 
-						err = beHandle.Stop()
-						if err != nil {
-							return errors.Wrapf(err, "best effort task has failed in phase %s", phaseName)
+						if beHandle != nil {
+							err = beHandle.Stop()
+							if err != nil {
+								return errors.Wrapf(err, "best effort task has failed in phase %s", phaseName)
+							}
 						}
 
 						snapHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorHandle, snapTags)
