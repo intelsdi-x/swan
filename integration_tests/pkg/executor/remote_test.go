@@ -48,10 +48,13 @@ func TestRemoteStopDetachedProcess(t *testing.T) {
 			t.Skip("Skipping remote executor test: " + err.Error())
 		}
 
-		handle, err := remote.Execute("sleep inf & sleep inf")
+		sleepProcCount := findProcessCount("sleep")
+		So(sleepProcCount, ShouldEqual, 0)
+
+		handle, err := remote.Execute("sleep 1d & sleep 1d")
 		So(err, ShouldBeNil)
 
-		sleepProcCount := findProcessCount("sleep")
+		sleepProcCount = findProcessCount("sleep")
 		So(sleepProcCount, ShouldEqual, 2)
 
 		Convey("I should be able to stop remote task and all the processes should be terminated", func() {
