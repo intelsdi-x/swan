@@ -37,8 +37,8 @@ func (th stoppedTaskHandle) Status() TaskState {
 }
 
 // Wait implements TaskHandle interface.
-func (th stoppedTaskHandle) Wait(duration time.Duration) bool {
-	return false
+func (th stoppedTaskHandle) Wait(duration time.Duration) (bool, error) {
+	return false, nil
 }
 
 func (th stoppedTaskHandle) StderrFile() (*os.File, error) {
@@ -68,8 +68,8 @@ func (th runningTaskHandle) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (th runningTaskHandle) Wait(duration time.Duration) bool {
-	return true
+func (th runningTaskHandle) Wait(duration time.Duration) (bool, error) {
+	return true, nil
 }
 
 func (th runningTaskHandle) Name() string {
@@ -105,7 +105,7 @@ func TestServiceTaskHandle(t *testing.T) {
 
 		s := ServiceHandle{stoppedTaskHandle{output: output}}
 
-		success := s.Wait(0)
+		success, _ := s.Wait(0)
 		So(success, ShouldBeFalse)
 		err = s.Stop()
 		So(err.Error(), ShouldContainSubstring, s.Name())
@@ -121,7 +121,7 @@ func TestServiceTaskHandle(t *testing.T) {
 	Convey("Calling Wait() on running task should succeed", t, func() {
 		s := ServiceHandle{runningTaskHandle{}}
 
-		status := s.Wait(0)
+		status, _ := s.Wait(0)
 		So(status, ShouldBeTrue)
 	})
 

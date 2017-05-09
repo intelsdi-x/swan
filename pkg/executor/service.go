@@ -62,7 +62,7 @@ func (s ServiceHandle) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (s ServiceHandle) Wait(duration time.Duration) bool {
+func (s ServiceHandle) Wait(duration time.Duration) (bool, error) {
 	if s.TaskHandle.Status() != RUNNING {
 		logrus.Errorf("Wait(): ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
 		logOutput(s.TaskHandle)

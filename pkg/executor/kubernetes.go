@@ -450,9 +450,9 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 
 // Wait blocks until the pod terminates _or_ if timeout is provided, will exit ealier with
 // false if the pod didn't terminate before the provided timeout.
-func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
+func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if th.isTerminated() {
-		return true
+		return true, nil
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -463,9 +463,9 @@ func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
 
 	select {
 	case <-th.stopped:
-		return true
+		return true, nil
 	case <-timeoutChannel:
-		return false
+		return false, nil
 	}
 }
 

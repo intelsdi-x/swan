@@ -17,7 +17,10 @@ package executor
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"time"
 )
+
+const killWaitTimeout = 1 * time.Second
 
 // checkIfProcessFailedToExecute should be checked in the end of Execute(cmd) method.
 // It checks if command execution failed and returns nil handle and error.

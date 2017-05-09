@@ -86,20 +86,33 @@ func (m *ClusterTaskHandle) ExitCode() (int, error) {
 // Wait does the blocking wait for the master completion in case of 0 timeout time.
 // Wait is a helper for waiting with a given timeout time.
 // It returns true if all tasks are terminated.
-func (m *ClusterTaskHandle) Wait(timeout time.Duration) bool {
+func (m *ClusterTaskHandle) Wait(timeout time.Duration) (isMasterTerminated bool, err error) {
 	// Wait for master first.
-	isMasterTerminated := m.master.Wait(timeout)
+	isMasterTerminated, err = m.master.Wait(timeout)
+	if err != nil {
+		logrus.Errorf("Waiting for %q failed: %s", m.master.Name(), err)
+		_ = m.stopAgents()
+		return isMasterTerminated, err
+	}
+
 	if isMasterTerminated {
-		// Stop the agents when master is terminated.
-		for _, handle := range m.agents {
-			err := handle.Stop()
-			if err != nil {
-				// Just log the error if agent cannot be stopped.
-				logrus.Error(err.Error())
-			}
+		err = m.stopAgents()
+	}
+
+	return isMasterTerminated, err
+}
+
+func (m *ClusterTaskHandle) stopAgents() error {
+	var errCol errcollection.ErrorCollection
+	// Stop the agents when master is terminated.
+	for _, handle := range m.agents {
+		err := handle.Stop()
+		if err != nil {
+			logrus.Errorf("Error while stopping %q: %s", handle.Name(), err)
+			errCol.Add(err)
 		}
 	}
-	return isMasterTerminated
+	return errCol.GetErrIfAny()
 }
 
 // EraseOutput removes master's and agents' stdout & stderr files.
