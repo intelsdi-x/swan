@@ -48,9 +48,9 @@ func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 
 type serviceHandle struct {
 	TaskHandle
-	taskCanBeTerminated bool
-	err                 error
-	mutex               *sync.Mutex
+	taskHasBeenTerminatedByUser bool
+	err                         error
+	mutex                       *sync.Mutex
 }
 
 // NewServiceHandle wraps TaskHandle with serviceHandle.
@@ -62,7 +62,7 @@ func NewServiceHandle(handle TaskHandle) TaskHandle {
 
 // Stop implements TaskHandle interface.
 func (s *serviceHandle) Stop() error {
-	err := s.checkError()
+	err := s.checkErrorCondition()
 	if err != nil {
 		return err
 	}
@@ -72,32 +72,26 @@ func (s *serviceHandle) Stop() error {
 
 // Wait implements TaskHandle interface.
 func (s *serviceHandle) Wait(duration time.Duration) bool {
-	err := s.checkError()
-	if err != nil {
-		// TODO(skonefal): Return error here when wait will return errors.
-		return s.TaskHandle.Wait(duration)
-	}
-
 	return s.TaskHandle.Wait(duration)
 }
 
-func (s *serviceHandle) checkError() error {
+func (s *serviceHandle) checkErrorCondition() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// When ServiceHandle encountered error, same error will be returned every time.
 	if s.err != nil {
 		return s.err
 	}
 
-	if !s.taskCanBeTerminated {
-		s.taskCanBeTerminated = true
+	// When task has been Stopped by user, then no error is returned when task is terminated.
+	if !s.taskHasBeenTerminatedByUser {
+		s.taskHasBeenTerminatedByUser = true
 		if s.TaskHandle.Status() == TERMINATED {
-			err := errors.Errorf("ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
-			s.err = err
-
+			s.err = errors.Errorf("ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
+			logrus.Errorf(s.err.Error())
 			logOutput(s.TaskHandle)
-			logrus.Errorf(err.Error())
-			return err
+			return s.err
 		}
 	}
 	return nil
