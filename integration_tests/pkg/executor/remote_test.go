@@ -40,7 +40,7 @@ func TestRemote(t *testing.T) {
 	})
 }
 
-func got(t *testing.T) {
+func TestRemoteStopDetachedProcess(t *testing.T) {
 	Convey("I should be able to execute remote command and see the processes running", t, func() {
 		config := DefaultRemoteConfig()
 		remote, err := NewRemote("127.0.0.1", config)
