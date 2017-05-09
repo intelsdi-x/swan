@@ -75,11 +75,11 @@ func main() {
 
 	// Connect to metadata database
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	errutil.CheckWithContext(err, "Cannot connect to metadata database")
+	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
 	err = metadata.RecordRuntimeEnv(experimentStart)
-	errutil.CheckWithContext(err, "Cannot save runtime environment")
+	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Validate preconditions.
 	validate.OS()
@@ -122,7 +122,7 @@ func main() {
 		"min_be_cpu_count":             strconv.Itoa(minBECPUsCount),
 	}
 	err = metadata.RecordMap(records)
-	errutil.CheckWithContext(err, "Cannot save metadata")
+	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 	logrus.Debugf("IntSet with all BE cores: %v", beCores)
 
 	//We do not need to start Kubernetes on each repetition.
@@ -193,11 +193,11 @@ func main() {
 
 					// Create load generator.
 					loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
-					errutil.CheckWithContext(err, "Cannot create load generator")
+					errutil.CheckWithContext(err, "Cannot create Mutilate load generator")
 
 					// Create snap session launcher
-					snapSession, err := mutilatesession.NewSessionLauncherDefault()
-					errutil.CheckWithContext(err, "Cannot create snap session")
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
+					errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
 					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 					aggressorName := fmt.Sprintf("None - %d QpS", qps)
@@ -278,7 +278,14 @@ func main() {
 							}
 						}
 
-						snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
+						if beHandle != nil {
+							err = beHandle.Stop()
+							if err != nil {
+								return errors.Wrapf(err, "best effort task has failed in phase %s", phaseName)
+							}
+						}
+
+						snapHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorHandle, snapTags)
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch mutilate Snap session in %s", phaseName)
 						}
