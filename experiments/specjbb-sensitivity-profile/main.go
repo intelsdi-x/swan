@@ -61,7 +61,7 @@ func main() {
 	errutil.Check(err)
 
 	err = metadata.RecordRuntimeEnv(experimentStart)
-	errutil.CheckWithContext(err, "Cannot save runtime environment details to metadata database.")
+	errutil.CheckWithContext(err, "Cannot save runtime environment details to Cassandra metadata database.")
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
 	validate.CheckCPUPowerGovernor()
@@ -177,9 +177,10 @@ func main() {
 					snapTags[experiment.LoadPointQPSKey] = phaseQPS
 					snapTags[experiment.AggressorNameKey] = aggressorName
 
+					var beHandle executor.TaskHandle
 					// Launch aggressor task(s) when we are not in baseline.
 					if beLauncher.Launcher != nil {
-						beHandle, err := beLauncher.Launcher.Launch()
+						beHandle, err = beLauncher.Launcher.Launch()
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
 						}
@@ -206,6 +207,13 @@ func main() {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
 					loadGeneratorHandle.Wait(0)
+
+					if beHandle != nil {
+						err = beHandle.Stop()
+						if err != nil {
+							return errors.Wrapf(err, "best effort task has failed in phase %s", phaseName)
+						}
+					}
 
 					// Grap results from Load Generator
 					snapHandle, err := specjbbLoadGeneratorSessionPair.SnapSessionLauncher.LaunchSession(loadGeneratorHandle, snapTags)
