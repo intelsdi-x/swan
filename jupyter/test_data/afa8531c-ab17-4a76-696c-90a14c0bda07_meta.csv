@@ -1,2 +1,0 @@
-,SWAN_BE_SETS,SWAN_DIR,SWAN_HP_SETS,SWAN_LOAD_DURATION,SWAN_LOG,SWAN_MUTILATE_WARMUP_TIME,SWAN_PEAK_LOAD,SWAN_REMOTE_EXECUTOR_MEMCACHED_BIN_PATH,SWAN_REPS,command_arguments,experiment_name,load_duration,load_points,peak_load,repetitions
-metadata,0:0,/home/vagrant/go/src/github.com/intelsdi-x/swan,0:0,1s,debug,1s,5000,workloads/data_caching/memcached/memcached-1.4.25/build/memcached,1,"memcached-sensitivity-profile,--aggr,caffe",memcached-sensitivity-profile,1s,10,5000,1
