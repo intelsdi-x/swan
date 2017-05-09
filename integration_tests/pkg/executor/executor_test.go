@@ -142,7 +142,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(statErr, ShouldBeNil)
 			})
 
-			err := taskHandle.EraseOutput()
+			err = taskHandle.EraseOutput()
 			So(err, ShouldBeNil)
 
 			Convey("After eraseOutput file should not exist", func() {
