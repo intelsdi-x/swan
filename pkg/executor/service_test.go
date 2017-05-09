@@ -36,9 +36,13 @@ func (th stoppedTaskHandle) Status() TaskState {
 	return TERMINATED
 }
 
+func (th stoppedTaskHandle) Stop() error {
+	return nil
+}
+
 // Wait implements TaskHandle interface.
 func (th stoppedTaskHandle) Wait(duration time.Duration) bool {
-	return false
+	return true
 }
 
 func (th stoppedTaskHandle) StderrFile() (*os.File, error) {
@@ -96,37 +100,69 @@ func (th erroneousTaskHandle) Name() string {
 
 func TestServiceTaskHandle(t *testing.T) {
 
-	Convey("Calling Stop() or Wait() on terminated task should fail", t, func() {
+	Convey("Calling Stop() on terminated task should fail", t, func() {
 		output, err := ioutil.TempFile(os.TempDir(), "serviceTests")
 		So(err, ShouldBeNil)
 		Reset(func() {
 			os.Remove(output.Name())
 		})
 
-		s := ServiceHandle{stoppedTaskHandle{output: output}}
+		s := NewServiceHandle(stoppedTaskHandle{output: output})
 
-		success := s.Wait(0)
-		So(success, ShouldBeFalse)
 		err = s.Stop()
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, s.Name())
+
+		Convey("Another Stop() should return the same error", func() {
+			err = s.Stop()
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, s.Name())
+		})
+	})
+
+	Convey("Calling Stop() after Wait() should return error", t, func() {
+		output, err := ioutil.TempFile(os.TempDir(), "serviceTests")
+		So(err, ShouldBeNil)
+		Reset(func() {
+			os.Remove(output.Name())
+		})
+
+		s := NewServiceHandle(stoppedTaskHandle{output: output})
+
+		terminated := s.Wait(0)
+		So(terminated, ShouldBeTrue)
+
+		err = s.Stop()
+		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, s.Name())
 	})
 
 	Convey("Calling Stop() on running task should succeed", t, func() {
-		s := ServiceHandle{runningTaskHandle{}}
+		s := NewServiceHandle(runningTaskHandle{})
 
 		err := s.Stop()
 		So(err, ShouldBeNil)
+
+		Convey("Calling Stop() on one more time should succeed", func() {
+			err := s.Stop()
+			So(err, ShouldBeNil)
+		})
 	})
 
 	Convey("Calling Wait() on running task should succeed", t, func() {
-		s := ServiceHandle{runningTaskHandle{}}
+		s := NewServiceHandle(runningTaskHandle{})
 
 		status := s.Wait(0)
 		So(status, ShouldBeTrue)
+
+		Convey("Calling Wait() on one more time should succeed", func() {
+			err := s.Stop()
+			So(err, ShouldBeNil)
+		})
 	})
 
 	Convey("Calling Stop() on running task should fail if embedded TaskHandle.Stop() fails", t, func() {
-		s := ServiceHandle{erroneousTaskHandle{}}
+		s := NewServiceHandle(erroneousTaskHandle{})
 
 		err := s.Stop()
 		So(err, ShouldEqual, errStopFailed)

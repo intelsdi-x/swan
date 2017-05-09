@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -27,7 +28,7 @@ User should use them to state intent that these processes should not stop withou
 explicit `Stop()` or `Wait()` invoked on TaskHandle.
 
 If process would stop on it's own, the Stop() and Wait() functions will return error
-and process logs will be available on experiment log stream.
+and process logs will be available on experiment log stream. In this case, each subsequent invocation of Stop() and Wait() will return error.
 */
 
 // ServiceLauncher is a decorator and Launcher implementation that should be used for tasks that do not stop on their own.
@@ -42,31 +43,56 @@ func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 		return nil, err
 	}
 
-	return &ServiceHandle{th}, nil
+	return NewServiceHandle(th), nil
 }
 
-// ServiceHandle is a decorator and TaskHandle implementation that should be used with tasks that do not stop on their own.
-type ServiceHandle struct {
+type serviceHandle struct {
 	TaskHandle
+	taskHasBeenTerminatedByUser bool
+	err                         error
+	mutex                       *sync.Mutex
+}
+
+// NewServiceHandle wraps TaskHandle with serviceHandle.
+func NewServiceHandle(handle TaskHandle) TaskHandle {
+	return &serviceHandle{
+		TaskHandle: handle,
+		mutex:      &sync.Mutex{}}
 }
 
 // Stop implements TaskHandle interface.
-func (s ServiceHandle) Stop() error {
-	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Stop(): ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
-		logOutput(s.TaskHandle)
-		return errors.Errorf("Service %q has ended prematurely", s.TaskHandle.Name())
+func (s *serviceHandle) Stop() error {
+	err := s.checkErrorCondition()
+	if err != nil {
+		return err
 	}
 
 	return s.TaskHandle.Stop()
 }
 
 // Wait implements TaskHandle interface.
-func (s ServiceHandle) Wait(duration time.Duration) bool {
-	if s.TaskHandle.Status() != RUNNING {
-		logrus.Errorf("Wait(): ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
-		logOutput(s.TaskHandle)
+func (s *serviceHandle) Wait(duration time.Duration) bool {
+	return s.TaskHandle.Wait(duration)
+}
+
+func (s *serviceHandle) checkErrorCondition() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	// When ServiceHandle encountered error, same error will be returned every time.
+	if s.err != nil {
+		return s.err
 	}
 
-	return s.TaskHandle.Wait(duration)
+	// When task has been Stopped by user, then no error is returned when task is terminated.
+	if !s.taskHasBeenTerminatedByUser {
+		s.taskHasBeenTerminatedByUser = true
+		if s.TaskHandle.Status() == TERMINATED {
+			s.err = errors.Errorf("ServiceHandle with command %q has terminated prematurely", s.TaskHandle.Name())
+			logrus.Errorf(s.err.Error())
+			logOutput(s.TaskHandle)
+			return s.err
+		}
+	}
+	return nil
 }
