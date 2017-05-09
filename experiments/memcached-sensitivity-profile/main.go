@@ -221,7 +221,13 @@ func main() {
 					if err != nil {
 						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
 					}
-					if !loadGeneratorHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value()) {
+
+					mutilateTerminated, err := loadGeneratorHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value())
+					if err != nil {
+						logrus.Errorf("Mutilate cluster failed: %q", err)
+						return errors.Wrap(err, "mutilate cluster failed")
+					}
+					if !mutilateTerminated {
 						logrus.Warn("Mutilate cluster failed to stop on its own. Attempting to stop...")
 						err := loadGeneratorHandle.Stop()
 						if err != nil {

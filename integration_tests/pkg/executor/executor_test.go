@@ -46,7 +46,8 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for task termination with the 1ms timeout", func() {
-			isTaskTerminated := taskHandle.Wait(1 * time.Microsecond)
+			isTaskTerminated, err := taskHandle.Wait(1 * time.Microsecond)
+			So(err, ShouldBeNil)
 
 			Convey("The timeout appeach and the task should not be terminated", func() {
 				So(isTaskTerminated, ShouldBeFalse)
@@ -100,7 +101,10 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(0)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
+
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
 
@@ -122,7 +126,10 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("And the eraseOutput should clean the stdout file", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(0)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
+
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
 

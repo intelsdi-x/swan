@@ -79,9 +79,11 @@ func TestSPECjbb(t *testing.T) {
 						So(backendTaskHandle, ShouldNotBeNil)
 
 						Convey("And should work for at least as long as given load duration", func() {
-							loadIsTerminated := loadGeneratorTaskHandle.Wait(loadDuration)
+							loadIsTerminated, err := loadGeneratorTaskHandle.Wait(loadDuration)
+							So(err, ShouldBeNil)
 							So(loadIsTerminated, ShouldBeFalse)
-							backendIsTerminated := backendTaskHandle.Wait(loadDuration)
+							backendIsTerminated, err := backendTaskHandle.Wait(loadDuration)
+							So(err, ShouldBeNil)
 							So(backendIsTerminated, ShouldBeFalse)
 
 							// Now wait for backend and transaction injectors to finish.

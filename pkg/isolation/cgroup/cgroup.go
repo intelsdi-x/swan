@@ -342,7 +342,11 @@ func cmdOutput(executor executor.Executor, cmdTimeout time.Duration, argv ...str
 		return "", err
 	}
 	defer task.EraseOutput()
-	if ok := task.Wait(cmdTimeout); !ok {
+	ok, err := task.Wait(cmdTimeout)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
 		return "", errors.Errorf("Timed out waiting for command: %q", cmd)
 	}
 	code, err := task.ExitCode()
