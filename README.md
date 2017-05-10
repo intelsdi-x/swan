@@ -68,7 +68,7 @@ sudo memcached-sensitivity-profile -experiment_be_workloads=caffe -experiment_lo
 
 When experiment is running, please see how to [explore experiment data](/jupyter/README.md) to see results. Note that Experiment UUID that is necessary for obtaining experiment results will be available in `uuid.txt` file.
 
-While the experiment can be run on developer setup from within a virtual machine or on a laptop, this particular experiment is targeted for  distributed cluster environment. For more details, please see [Memcached Sensitivity Profile Documentation](/experiments/memcached-sensitivity-profile/docs/README.md).
+While the experiment can be run on developer setup from within a virtual machine or on a laptop, this particular experiment is targeted for  distributed cluster environment. For more details, please see [Memcached Sensitivity Profile Documentation](/experiments/memcached-sensitivity-profile/README.md).
 
 ### Memcached Sensitivity Profile Experiment
 
