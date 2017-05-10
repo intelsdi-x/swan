@@ -82,7 +82,7 @@ var (
 	RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
 		"experiment_run_caffe_with_l3_cache_isolation",
 		"If set, the Caffe Best Effort workload will use the same isolation settings as for L3 Best Efforts, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
-		true,
+		false,
 	)
 )
 
