@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +30,7 @@ fi
 
 
 SWAN_BIN=/opt/swan/bin
+SWAN_VERSION="v0.12"
 
 K8S_VERSION="v1.5.6"
 SNAP_VERSION="1.2.0"
@@ -40,36 +42,33 @@ SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 SNAP_PLUGIN_COLLECTOR_USE_VERSION=1
 
-echo "------------------------ Install packages (`date`)"
+echo "------------------------ Install OS Packages (`date`)"
 yum makecache fast -y -q
 yum update -y -q
 yum install -y -q epel-release  # Enables EPEL repo
 
-echo "swan dependecies"
 yum install -y -q \
+    wget \
+    etcd-${ETCD_VERSION} \
     python-pip \
     python-devel \
-    etcd-${ETCD_VERSION} \
     libcgroup-tools \
-    numactl \
-    moreutils-parallel \
-    nmap-ncat \
-    wget
-
-echo "workload runtime depedencies"
-yum install -y -q \
     glog \
     protobuf \
-    boost \
+    opencv \
     hdf5 \
     leveldb \
     lmdb \
     opencv \
     libgomp \
-    numactl-libs \
     libevent \
+    git \
     zeromq \
-    java-1.8.0-openjdk
+    cppzmq-devel \
+    gengetopt \
+    libevent-devel \
+    scons \
+    gcc-c++
 
 echo "------------------------ Prepare services (`date`)"
 function daemonStatus() {
@@ -91,10 +90,29 @@ docker run hello-world
 gpasswd -a $SWAN_USER docker
 daemonStatus docker
 
+echo "----------------------------- Create Swan Installation Directory (`date`)"
+mkdir -p ${SWAN_BIN}
+
+
+echo "----------------------------- Install Swan Release Package(`date`)"
+wget --no-verbose https://github.com/intelsdi-x/swan/releases/download/${SWAN_VERSION}/swan.tar.gz -O /tmp/swan.tar.gz
+tar -xzf /tmp/swan.tar.gz -C ${SWAN_BIN}
+
+
+echo "----------------------------- Install Swan Workloads(`date`)"
+sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
+
+
+echo "----------------------------- Install Kubernetes (`date`)"
+wget --no-verbose https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
+chmod +x ${SWAN_BIN}/hyperkube
+
+
 echo "----------------------------- Install etcd (`date`)"
 systemctl enable etcd
 systemctl restart etcd
 daemonStatus etcd
+
 
 echo "----------------------------- Install Cassandra (`date`)"
 cp /vagrant/cassandra/cassandra.service /etc/systemd/system
@@ -105,6 +123,7 @@ echo "Restart Cassandra"
 systemctl restart cassandra
 daemonStatus cassandra
 
+
 echo "----------------------------- Install Snap telemetry (`date`)"
 curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | bash
 yum list -q --show-duplicates snap-telemetry
@@ -113,31 +132,19 @@ systemctl enable snap-telemetry
 systemctl start snap-telemetry
 daemonStatus snap-telemetry
 
+
 echo "----------------------------- Install external Snap plugins (`date`)"
-# Install into /opt/swan/bin.
-mkdir -p ${SWAN_BIN}
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-use/releases/download/${SNAP_PLUGIN_COLLECTOR_USE_VERSION}/snap-plugin-collector-use_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-use
 
-chmod +x ${SWAN_BIN}/snap-plugin-collector-docker
-chmod +x ${SWAN_BIN}/snap-plugin-publisher-cassandra
-chmod +x ${SWAN_BIN}/snap-plugin-processor-tag
-chmod +x ${SWAN_BIN}/snap-plugin-publisher-file
-chmod +x ${SWAN_BIN}/snap-plugin-collector-use
-
-
-echo "----------------------------- Install Kubernetes (`date`)"
-wget --no-verbose https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
-chmod +x ${SWAN_BIN}/hyperkube
-pushd ${SWAN_BIN}
-    ./hyperkube --make-symlinks 
-popd
 
 echo "---------------------------- Post install (`date`)"
+chmod +x -R /opt/swan/bin
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
+ln -svf ${SWAN_BIN}/* /bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"
