@@ -23,10 +23,7 @@
 Table of Contents:
 * [Overview](#overview)
 * [Quick Start](#quick-start)
-* [Terminology](#terminology)
-* [System Requirements](#system-requirements)
-* [Installation](#installation)
-* [Getting Started](#getting-started)
+* [Next Steps](#next-steps)
 * [Contributing](#contributing)
 
 ## Overview
@@ -42,7 +39,7 @@ Swan's Sensitivity Profile Experiment can be quickly run using Vagrant.
 
 Swan requires [VirtualBox](https://www.virtualbox.org/) & [Vagrant](https://www.vagrantup.com/). It is recommended to have [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin installed (`$ vagrant plugin install vagrant-vbguest`).
 
-### Sensitivity Profile Experiment
+### Run the Sensitivity Profile Experiment using Vagrant
 
 Run Vagrant image supplied by Swan:
 
@@ -72,33 +69,26 @@ When experiment is running, please see how to [explore experiment data](TBA) to 
 
 While the experiment can be run on developer setup from within a virtual machine or on a laptop, this particular experiment is targeted for  distributed cluster environment. For more details, please see [Memcached Sensitivity Profile Documentation](/experiments/memcached-sensitivity-profile/docs/README.md).
 
-## Terminology
+### Memcached Sensitivity Profile Experiment
 
-The first experiment which bundles with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment allows experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference. An example of the _sensitivity profile_ can be seen below.
+The experiment allows experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference. An example of the _sensitivity profile_ can be seen below.
 
 ![Sensitivity profile](/images/sensitivity-profile.png)
 
-During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter.
+During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority (best effort) jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter.
 
-Memcached sensitivity experiment is described in detail in [memcached sensitivity profile document](experiments/memcached-sensitivity-profile/README.md). To read more about design of an experiment, please refer to the [architecture](docs/architecture.md) document.
-
-
-## System Requirements
-
-Please see [installation guide](docs/install.md#prerequisites) for details.
+Memcached sensitivity experiment is described in detail in [memcached sensitivity profile document](experiments/memcached-sensitivity-profile/README.md).
 
 
-## Installation
 
-For installation instruction please refer to the [installation guide](docs/install.md).
+## Next Steps
 
-
-## Getting Started
-
-Start to familiarize yourself with Swan by running it locally using the [installation guide](docs/install.md). Once Swan is running, you can begin to experiment. The best place to start is with the [memcached sensitivity experiment](experiments/memcached-sensitivity-profile/README.md).
-
-From there, you can [explore your results with Jupyter](jupyter/README.md).
-
+1. Read [Swan Vision](/docs/vision.md) to understand what is Swan and *what is not*.
+1. Try other experiments:
+   1. [Memcached Sensitivity Profile](/experiments/memcached-sensitivity-profile/README.md)
+   1. [Memcached Optimal Core Allocation](/experiments/optimal-core-allocation/README.md)
+   1. [Memcached & Cache Allocation Technology](/experiments/memcached-cat/README.md)
+1. Read [Architecture Guide](/docs/architecture.md) and [Developement Guide](/docs/development.md) and start to build your own experiments!
 
 ## Contributing
 

@@ -18,6 +18,28 @@
 
 # Developer's guide
 
+To run Vagrant development environment, the `$SWAN_DEVELOPEMENT_ENVIRONMENT` variable must be set.
+
+```bash
+export SWAN_DEVELOPEMENT_ENVIRONMENT=true
+cd vagrant
+vagrant up
+```
+
+If Vagrant machine is already provisioned through [Quick Start](/README.md#quick-start) procedure, it should be re-provisioned.
+
+```bash
+export SWAN_DEVELOPEMENT_ENVIRONMENT=true
+cd vagrant
+vagrant provision
+vagrant ssh
+```
+
+Also, thou [Quick Start](/README.md#quick-start) procedure proposes `git clone` of repository, for development purposes it is recommended that repository should be put in `$GOPATH/github.com/intelsdi-x/swan`.
+
+[Golang](https://golang.org/dl/) 1.7.5+ is required for Swan development.
+
+
 ## Development using Makefile
 
 Before sending or updating pull requests, make sure to run:
@@ -26,7 +48,6 @@ test & build & run
 ```bash
 $ make build_and_test_all
 ```
-
 
 ### Vagrant (Virtualbox) development environment
 

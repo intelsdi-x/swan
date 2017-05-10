@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +82,7 @@ mkdir -p ${SWAN_BIN}
 
 
 echo "----------------------------- Install Swan Release Package(`date`)"
-wget https://github.com/intelsdi-x/swan/releases/download/${SWAN_VERSION}/swan.tar.gz -O /tmp/swan.tar.gz
+wget --no-verbose https://github.com/intelsdi-x/swan/releases/download/${SWAN_VERSION}/swan.tar.gz -O /tmp/swan.tar.gz
 tar -xzf /tmp/swan.tar.gz -C ${SWAN_BIN}
 
 
