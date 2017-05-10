@@ -35,7 +35,7 @@ vagrant provision
 vagrant ssh
 ```
 
-Also, thou [Quick Start](/README.md#quick-start) procedure proposes `git clone` of repository, for development purposes it is recommended that repository should be put in `$GOPATH/github.com/intelsdi-x/swan`.
+Although [Quick Start](/README.md#quick-start) procedure proposes `git clone` of repository, for development purposes it is recommended that repository should be put in `$GOPATH/github.com/intelsdi-x/swan`.
 
 [Golang](https://golang.org/dl/) 1.7.5+ is required for Swan development.
 
