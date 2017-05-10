@@ -20,9 +20,8 @@ This example experiment uses memcached as the latency sensitive workload and tri
 
 #### 'Peak load' option
 
-This parameter specifies what is expected as the 100% load for memcached expressed in Queries Per Second unit i.e. which load point which is exactly under the desired latency.
-This is the only required parameter to run the experiment.
-It should be based on the resources of the target server where the experiment is run. Our guideance is to select the peak load according this formular:
+This parameter specifies desired maximum capacity for memcached. The unit is are queries per second unit. Peak load is the only required parameter.
+Its value depends on resources available. Consider following formula as a rule of thumb:
 
 ```
 peak_load = number of maximum threads dedicated to memcached * 100k 
