@@ -32,7 +32,7 @@ const (
 	defaultPercentile             = "99"
 	defaultTuningTime             = 10 * time.Second // [s]
 	defaultRecords                = 5000000
-	defaultWarmupTime             = 1 * time.Second // [s]
+	defaultWarmupTime             = 0 * time.Second // [s] Note: with high load in distribute mode can warmup phase can deadlock.
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
 	defaultAgentConnections       = 16
