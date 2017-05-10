@@ -52,17 +52,22 @@ vagrant up
 vagrant ssh
 ```
 
-After establishing SSH connection to Vagrant, the Mutilate load generator needs to be compiled.
+After establishing SSH connection to Vagrant, the Mutilate load generator needs to be build. To do so, please clone the https://github.com/leverich/mutilate repository and build it by using `scons`. After successful build, please copy `mutilate` binary to `/bin`.
 
-To do so, please clone the https://github.com/leverich/mutilate repository and build it by using `scons`. After successful build, please copy `mutilate` binary to `/bin`. 
+```bash
+git clone https://github.com/leverich/mutilate
+cd mutilate
+scons
+sudo ln -sf `pwd`/mutilate /bin/
+```
 
 To run experiment, invoke:
 
 ```
-memcached-sensitivity-profile
+sudo memcached-sensitivity-profile
 ```
 
-When experiment is running, please see how to [explore experiment data](TBA) to see results.
+When experiment is running, please see how to [explore experiment data](/jupyter/README.md) to see results.
 
 While the experiment can be run on developer setup from within a virtual machine or on a laptop, this particular experiment is targeted for  distributed cluster environment. For more details, please see [Memcached Sensitivity Profile Documentation](/experiments/memcached-sensitivity-profile/docs/README.md).
 

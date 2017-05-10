@@ -55,7 +55,7 @@ yum install -y -q \
     libcgroup-tools \
     glog protobuf opencv hdf5 leveldb lmdb opencv libgomp \
     libevent \
-    zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++ \
+    git zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++ \
 
 echo "------------------------ Prepare services (`date`)"
 function daemonStatus() {
