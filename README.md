@@ -35,6 +35,38 @@ Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag
 
 ![Swan architecture](/images/swan.png)
 
+## Quick Start
+
+Swan's Sensitivity Profile Experiment can be quickly run using Vagrant.
+
+Swan requires [VirtualBox](https://www.virtualbox.org/) & [Vagrant](https://www.vagrantup.com/). It is recommended to have [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin installed (`$ vagrant plugin install vagrant-vbguest`).
+
+```bash
+git clone https://github.com/intelsdi-x/swan
+cd swan/vagrant
+vagrant plugin install vagrant-vbguest
+vagrant box update
+vagrant up
+vagrant ssh
+```
+
+Inside Vagrant, user needs to install Mutilate Load Generator:
+
+```bash
+# Please clone the https://github.com/leverich/mutilate repository,
+# build it by using `scons` and copy `mutilate` binary to `/bin`.
+```
+
+To run experiment, invoke:
+
+```
+memcached-sensitivity-profile
+```
+
+When experiment is running, please see how to [explore experiment data](TBA) to see results.
+
+While the experiment can be run on developer setup from within a virtual machine or on a laptop, this particular experiment is targeted for  distributed cluster environment. For more details, please see [Memcached Sensitivity Profile Documentation](/experiments/memcached-sensitivity-profile/docs/README.md).
+
 ## Terminology
 
 The first experiment which bundles with Swan is a sensitivity experiment for the distributed data cache, [memcached](https://memcached.org/). The experiment allows experimenters to generate a so-called _sensitivity profile_, which describes the violation of _Quality of Service_ under certain conditions, such as CPU cache or network bandwidth interference. An example of the _sensitivity profile_ can be seen below.
