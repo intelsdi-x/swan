@@ -52,7 +52,7 @@ vagrant up
 vagrant ssh
 ```
 
-After establishing SSH connection to Vagrant, the Mutilate load generator needs to be build. To do so, please clone the https://github.com/leverich/mutilate repository and build it by using `scons`. After successful build, please copy `mutilate` binary to `/bin`.
+Inside guest OS, the Mutilate load generator needs to be build. To do so, please clone the https://github.com/leverich/mutilate repository and build it by using `scons`. After successful build, please copy `mutilate` binary to `/bin`.
 
 ```bash
 git clone https://github.com/leverich/mutilate
@@ -77,7 +77,7 @@ The experiment allows experimenters to generate a so-called _sensitivity profile
 
 ![Sensitivity profile](/images/sensitivity-profile.png)
 
-During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority (best effort) jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. _Sensitivity profile_ answers that. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter.
+During the experiment *memcached* is colocated with several types of _aggressors_, which are low priority (best effort) jobs. Memcached response time is critical and needs to stay below a given value which is called _Service Level Objective_ (SLO). SLO is memcached _Quality of Service_ that needs to be maintained. The goal of the experiment is to learn which aggressors interferes the least and which the most with Memcached so that some of them can be safely colocated with it without violating memcached _Quality of Service_. Colocation of tasks increases machine utilization which in datacenter [can be low as 12%](https://www.nrdc.org/sites/default/files/data-center-efficiency-assessment-IP.pdf) decreasing _TCO_ of the datacenter.
 
 Memcached sensitivity experiment is described in detail in [memcached sensitivity profile document](experiments/memcached-sensitivity-profile/README.md).
 

@@ -53,9 +53,22 @@ yum install -y -q \
     python-pip \
     python-devel \
     libcgroup-tools \
-    glog protobuf opencv hdf5 leveldb lmdb opencv libgomp \
+    glog \
+    protobuf \
+    opencv \
+    hdf5 \
+    leveldb \
+    lmdb \
+    opencv \
+    libgomp \
     libevent \
-    git zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++ \
+    git \
+    zeromq \
+    cppzmq-devel \
+    gengetopt \
+    libevent-devel \
+    scons \
+    gcc-c++
 
 echo "------------------------ Prepare services (`date`)"
 function daemonStatus() {
@@ -132,6 +145,6 @@ echo "---------------------------- Post install (`date`)"
 chmod +x -R /opt/swan/bin
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
-ln -sv ${SWAN_BIN}/* /bin/
+ln -svf ${SWAN_BIN}/* /bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"

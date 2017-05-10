@@ -20,9 +20,12 @@
 
 First - install: [Vagrant](https://www.vagrantup.com/docs/installation/), [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git). Then you just need to execute the following commands (they should work on any flavour of Linux):
 
+To run Vagrant development environment, the `$SWAN_DEVELOPEMENT_ENVIRONMENT` variable must be set.
+
 ```sh
 git clone git@github.com:intelsdi-x/swan.git
 cd swan/vagrant
+export SWAN_DEVELOPEMENT_ENVIRONMENT=true
 vagrant plugin install vagrant-vbguest  # automatic guest additions
 vagrant box update
 vagrant up
