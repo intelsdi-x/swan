@@ -90,7 +90,7 @@ sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
 
 
 echo "----------------------------- Install Kubernetes (`date`)"
-wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
+wget --no-verbose https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
 chmod +x ${SWAN_BIN}/hyperkube
 
 

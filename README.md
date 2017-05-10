@@ -22,6 +22,7 @@
 
 Table of Contents:
 * [Overview](#overview)
+* [Quick Start](#quick-start)
 * [Terminology](#terminology)
 * [System Requirements](#system-requirements)
 * [Installation](#installation)
@@ -40,6 +41,10 @@ Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag
 Swan's Sensitivity Profile Experiment can be quickly run using Vagrant.
 
 Swan requires [VirtualBox](https://www.virtualbox.org/) & [Vagrant](https://www.vagrantup.com/). It is recommended to have [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin installed (`$ vagrant plugin install vagrant-vbguest`).
+
+### Sensitivity Profile Experiment
+
+Run Vagrant image supplied by Swan:
 
 ```bash
 git clone https://github.com/intelsdi-x/swan
