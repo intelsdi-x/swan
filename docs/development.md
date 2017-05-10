@@ -18,29 +18,17 @@
 
 # Developer's guide
 
-To run Vagrant development environment, the `$SWAN_DEVELOPEMENT_ENVIRONMENT` variable must be set.
-
-```bash
-export SWAN_DEVELOPEMENT_ENVIRONMENT=true
-cd vagrant
-vagrant up
-```
-
-If Vagrant machine is already provisioned through [Quick Start](/README.md#quick-start) procedure, it should be re-provisioned.
-
-```bash
-export SWAN_DEVELOPEMENT_ENVIRONMENT=true
-cd vagrant
-vagrant provision
-vagrant ssh
-```
-
 Although [Quick Start](/README.md#quick-start) procedure suggests `git clone` of repository, for development purposes it is recommended that repository should be put in `$GOPATH/github.com/intelsdi-x/swan`.
 
 [Golang](https://golang.org/dl/) 1.7.5+ is required for Swan development.
 
 
-## Development using Makefile
+## Vagrant (VirtualBox) development environment
+
+Instead of building Swan in your own environment, you can build and run it in a development VM.
+Follow the [Vagrant instructions](/vagrant/README.md) to create a Linux virtual machine pre-configured for developing Swan.
+
+### Development using Makefile
 
 Before sending or updating pull requests, make sure to run:
 
@@ -48,12 +36,6 @@ test & build & run
 ```bash
 $ make build_and_test_all
 ```
-
-### Vagrant (Virtualbox) development environment
-
-Instead of building Swan in your own environment, you can build and run it in a development VM.
-Follow the [Vagrant instructions](../misc/dev/vagrant/singlenode/README.md) to
-create a Linux virtual machine pre-configured for developing Swan.
 
 ### Detailed options for tests
 ```bash
@@ -80,10 +62,6 @@ Dependency management in Swan is handled by [glide](https://github.com/Mastermin
 Pull requests should ship with tests which exercise the proposed code.
 Swan use [goconvey](https://github.com/smartystreets/goconvey) as a framework for behavioral tests.
 
-### Integration tests
-
-For Swan integration tests see [here](testing.md) file for instructions.
-
 ### Mock generation
 
 Mock generation is done by Mockery tool.
@@ -99,18 +77,6 @@ In some cases `go install` won't help (eg. you do not want to install the projec
 
 ## Submitting Pull Requests
 
-### Naming
-
-For consistency, we aim to name the pull request by prepending the JIRA issue to the title. For example:
-
-`SCE-236: Fixed race condition for the local executor`
-
-Don't include details about the PR state in the title, but use some of the existing labels. For example, avoid naming a PR:
-
-`[RDY FOR REVIEW] ...`
-
-But mark the PR as `ready for review` instead. If we are missing any labels, please reach out to the repository administrators.
-
 ### Description
 
 In the pull request description, remember to:
@@ -122,8 +88,8 @@ In the pull request description, remember to:
 ### Continuous integration
 
 We use Jenkins as a pre check for our pull requests. By default, linters checks and unit tests will be run. For linters check we use [golint](https://github.com/golang/lint) and [go vet](https://golang.org/cmd/vet/) tools.
-Add comment `run integration test` in PR to run integration tests.
-All tests must pass to merge PR.
+Swan Maintainers can write `run integration test` in PR to run integration tests.
+All tests must pass to merge pull request.
 
 ### Reviewing
 
