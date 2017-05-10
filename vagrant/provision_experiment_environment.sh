@@ -41,8 +41,6 @@ SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=5
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 SNAP_PLUGIN_COLLECTOR_USE_VERSION=1
 
-WGET_OPTS="--no-verbose --show-progress"
-
 echo "------------------------ Install OS Packages (`date`)"
 yum makecache fast -y -q
 yum update -y -q
@@ -78,13 +76,13 @@ docker run hello-world
 gpasswd -a $SWAN_USER docker
 daemonStatus docker
 
-
 echo "----------------------------- Create Swan Installation Directory (`date`)"
 mkdir -p ${SWAN_BIN}
 
 
 echo "----------------------------- Install Swan Release Package(`date`)"
-wget ${WGET_OPTS} https://github.com/intelsdi-x/swan/releases/download/${SWAN_VERSION}/swan.tar.gz -O ${SWAN_BIN}/swan.tar.gz
+wget https://github.com/intelsdi-x/swan/releases/download/${SWAN_VERSION}/swan.tar.gz -O /tmp/swan.tar.gz
+tar -xzf /tmp/swan.tar.gz -C ${SWAN_BIN}
 
 
 echo "----------------------------- Install Swan Workloads(`date`)"
@@ -92,7 +90,7 @@ sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
 
 
 echo "----------------------------- Install Kubernetes (`date`)"
-wget ${WGET_OPTS} https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
+wget https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/hyperkube -O ${SWAN_BIN}/hyperkube
 chmod +x ${SWAN_BIN}/hyperkube
 
 
@@ -122,11 +120,11 @@ daemonStatus snap-telemetry
 
 
 echo "----------------------------- Install external Snap plugins (`date`)"
-wget ${WGET_OPTS} https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
-wget ${WGET_OPTS} https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
-wget ${WGET_OPTS} https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
-wget ${WGET_OPTS} https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
-wget ${WGET_OPTS} https://github.com/intelsdi-x/snap-plugin-collector-use/releases/download/${SNAP_PLUGIN_COLLECTOR_USE_VERSION}/snap-plugin-collector-use_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-use
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-use/releases/download/${SNAP_PLUGIN_COLLECTOR_USE_VERSION}/snap-plugin-collector-use_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-use
 
 
 echo "---------------------------- Post install (`date`)"
