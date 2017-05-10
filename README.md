@@ -52,12 +52,9 @@ vagrant up
 vagrant ssh
 ```
 
-Inside Vagrant, user needs to install Mutilate Load Generator:
+After establishing SSH connection to Vagrant, the Mutilate load generator needs to be compiled.
 
-```bash
-# Please clone the https://github.com/leverich/mutilate repository,
-# build it by using `scons` and copy `mutilate` binary to `/bin`.
-```
+To do so, please clone the https://github.com/leverich/mutilate repository and build it by using `scons`. After successful build, please copy `mutilate` binary to `/bin`. 
 
 To run experiment, invoke:
 
