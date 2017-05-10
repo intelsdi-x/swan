@@ -99,8 +99,12 @@ wget --no-verbose https://github.com/intelsdi-x/swan/releases/download/${SWAN_VE
 tar -xzf /tmp/swan.tar.gz -C ${SWAN_BIN}
 
 
-echo "----------------------------- Install Swan Workloads(`date`)"
-sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
+echo "----------------------------- Pulling docker image (`date`)"
+docker pull intelsdi/swan
+
+
+echo "----------------------------- Retrieve binares from Docker container (`date`)"
+docker run --rm -v /opt:/output intelsdi/swan cp -R /opt/swan /output
 
 
 echo "----------------------------- Install Kubernetes (`date`)"
