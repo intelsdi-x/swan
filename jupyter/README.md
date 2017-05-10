@@ -65,9 +65,9 @@ After filling the variables, navigate to the green box using the keyboard arrows
 
 ```python
 # An experiment can now be loaded from the database by its ID.
-from swan import Experiment, Profile
+from swan import Experiment, SensitivityProfile
 exp1 = Experiment(EXPERIMENT_ID)
-profile1 = Profile(exp1, slo=500)
+profile1 = SensitivityProfile(exp1, slo=500)
 ```
 It may take a while since it will retrieve data from Cassandra and store it in the variable `exp1` which represents itself as a table:
 

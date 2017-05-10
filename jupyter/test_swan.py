@@ -42,7 +42,7 @@ class TestExperiments(unittest.TestCase):
 
     def test_sensitivity_profile(self):
         exp = swan.Experiment('6ed71a63-14c0-8e3e-3a65-4da9a11eecf6')
-        profile = swan.Profile(exp, slo=500)
+        profile = swan.SensitivityProfile(exp, slo=500)
         self.assertRenders(profile.latency())
         self.assertRenders(profile.latency(normalized=False))
         self.assertRenders(profile.qps())

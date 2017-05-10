@@ -474,10 +474,11 @@ class Experiment:
         self.df.columns.name = 'Experiment %s' % self.experiment_id
 
     def _repr_html_(self):
+        """ When presented in jupyter just return representation of dataframe. """
         return self.df._repr_html_()
 
 
-class Profile:
+class SensitivityProfile:
     """ Visualization for "sensitivity profile" experiments that presents
         latency/QPS and caffe aggressor throughput in "aggressor" and
         "load" dimensions.
@@ -503,6 +504,7 @@ class Profile:
         self.df.columns.name = 'Profile %s' % self.experiment.experiment_id
 
     def _repr_html_(self):
+        """ When presented in jupyter just return representation of dataframe. """
         return self.df._repr_html_()
 
     def _composite_pivot_table(self):
