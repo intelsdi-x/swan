@@ -20,12 +20,6 @@
 
 [![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan)
 
-Table of Contents:
-* [Overview](#overview)
-* [Quick Start](#quick-start)
-* [Next Steps](#next-steps)
-* [Contributing](#contributing)
-
 ## Overview
 Swan is a distributed experimentation framework for automated experiments targeting performance isolation studies for schedulers. You can read more about the vision behind Swan [here](docs/vision.md).
 
