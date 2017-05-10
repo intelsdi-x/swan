@@ -30,7 +30,7 @@ fi
 
 
 SWAN_BIN=/opt/swan/bin
-SWAN_VERSION="v0.11"
+SWAN_VERSION="v0.12"
 
 K8S_VERSION="v1.5.6"
 SNAP_VERSION="1.2.0"
