@@ -29,7 +29,7 @@ Table of Contents:
 ## Overview
 Swan is a distributed experimentation framework for automated experiments targeting performance isolation studies for schedulers. You can read more about the vision behind Swan [here](docs/vision.md).
 
-Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment data in [Cassandra](http://cassandra.apache.org/). From here, we provide a [Jupyter](http://jupyter.org/) environment to explore and visualize experiment data. Read the [architecture document](docs/architecture.md) to learn more.
+Swan uses [Snap](https://github.com/intelsdi-x/snap) to collect, process and tag metrics and stores all experiment data in [Cassandra](http://cassandra.apache.org/). From here, we provide a [Jupyter](http://jupyter.org/) environment to explore and visualize experiment data.
 
 ![Swan architecture](/images/swan.png)
 
