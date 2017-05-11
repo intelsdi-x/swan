@@ -20,9 +20,8 @@ This example experiment uses memcached as the latency sensitive workload and tri
 
 #### 'Peak load' option
 
-This parameter specifies what is expected as the 100% load for memcached expressed in Queries Per Second unit i.e. which load point which is exactly under the desired latency.
-This is the only required parameter to run the experiment.
-It should be based on the resources of the target server where the experiment is run. Our guideance is to select the peak load according this formular:
+This parameter specifies desired maximum capacity for memcached. The unit is are queries per second unit. Peak load is the only required parameter.
+Its value depends on resources available. Consider following formula as a rule of thumb:
 
 ```
 peak_load = number of maximum threads dedicated to memcached * 100k 
@@ -51,10 +50,12 @@ Note that you need to specify your latency SLO in micro seconds to mark a config
 3. (Optional) If you want see more detailed results regarding latency/throughput.
 
 ```python
-from generic import optimal_core_allocation_qps, optimal_core_allocation_latency, optimal_core_allocation_cpu, 
-optimal_core_allocation_qps("ca24aa5d-4a88-7258-6f00-5f651b0d6515", slo=500)
-optimal_core_allocation_latency("ca24aa5d-4a88-7258-6f00-5f651b0d6515")
-optimal_core_allocation_cpu("ca24aa5d-4a88-7258-6f00-5f651b0d6515") # only available when run with -use_USE_collector flag
+from swan import Experiment, OptimalCoreAllocation
+exp = Experiment("ca24aa5d-4a88-7258-6f00-5f651b0d6515")
+core = OptimalCoreAllocation(exp, slo=500)
+core.latency()
+core.qps()
+core.cpu() # if run with USE snap collector
 ```
 
 #### How to run in distributed mode with custom configuration file
@@ -129,24 +130,25 @@ Results below were run with 10 load points with peak load set to 1.5 million of 
 
 #### Table 1. normal run default latency SLO = 500us
 
-![table 1](result-local.PNG)
+![table 1](images/result-local.PNG)
 
 ##### Interpreting results
 
-You can observe, each additional memcached worker up to 10 in 16 processor machine, adds capacity in terms of throughput,
-but with strict requirements about latency, you also need to consider latency SLO violation and remove red and yellow cells from acceptable configuration.
-So the optimal configuration to can handle **960k QPS** still guarding response times (tail latency < 500us) and which uses as little resources as possible is **12 threads**.
+You can observe, that each additional memcached worker, up to 10 on 16 processor machine, adds service capacity in terms of throughput.
+With strict requirements about latency, you need to take into consider latency SLO violation and remove red and yellow cells from acceptable configurations.
+So the optimal configuration to can handle **900k QPS** still guaranteeing response times (tail latency < 500us) and which uses as little resources as possible is **11 threads**.
+Increasing number of logical threads above **11 threads**, doesn't improve performance and surprisingly (because of hyper threading) can cause service level degradation.
 
 #### Table 2. normal run with SLO = 3000 us
 
-![table 1](result-local-slo3000.PNG)
+![table 2](images/result-local-slo3000.PNG)
 
 ##### Interpreting results
 
 After increasing the accepted tail latency, i.e. SLO, to 3ms there are additional acceptable configurations we can choose from.
 We can assign less threads which are capable to handle even more load, while still guaranteeing that our new relaxed SLO is met.
 
-In this case optimal configuration will use **7 threads** which should be capable of handling about 1.2m QPS and with response below 3ms.
+In this case optimal configuration can use **6, 7 or 8 threads**, depending of desired machine utilization, which should be capable of handling more than 1m QPS and with response below 3ms.
 
 ##### Discussion
 
@@ -154,34 +156,38 @@ The interpretation above showed us that there is an trade of between throughput 
 Having those results you can easily decided how many resources you need to dedicated to your memcached instance to met both requirements (capacity and response time).
 
 In our case:
-- with strict latency requirements (SLO latency 500us) you should dedicate only 12 threads to memcached, which can guarantee 960k QPS
-- having very relaxed latency requirements (SLO latency 3ms), it is enough to dedicate just 7 threads to achieve 1.2m QPS 
+- with strict latency requirements (SLO latency 500us) you should dedicate only 11 threads to memcached, which can guarantee 900k QPS
+- having very relaxed latency requirements (SLO latency 3ms), it is enough to dedicate just 6 threads to achieve 1.05m QPS 
 
 ### Other variants of experiment results.
 
 Running experiment in other variants like:
 
-- limiting worker threads of memcached workers can run to prevent balancing problems,
+- limiting worker threads of memcached can prevent Linux scheduling balancing problems,
 - pinning manually each memcached worker thread - to make sure, that workers are never moved moved away,
-- or running the same service in kubernetes,
+- or running the same service in kubernetes, with kubernetes provided isolation mechanisms,
 
-allow you to validate if such options are desirable in you environment.
+allow you to validate if such configuration is desirable in you environment.
 
 Results from those experiments can answer following questions: 
 - is running service in containers using kubernetes as scheduler can cause degradation performance,
-- is overhead and complexity of manually assigning threads  worth of performance improvement and to what extent, 
+- is overhead and complexity of manually assigning threads worth of performance improvement and to what extent, 
 
 If you care about your infrastructure utilization you should generate additional table to see compute power utilization (CPU)
 and decide how good you current setup fit your workloads needs.
 
 #### Table 3. with core pinning (SLO=500us)
 
-![table 2](result-local-core-pinning.PNG)
+![table 3](images/result-local-core-pinning.PNG)
 
 #### Table 4. with memcached threads affinity (SLO=500us)
 
-![table 3](result-local-memcached-thread-affinity.PNG)
+![table 4](images/result-local-memcached-thread-affinity.PNG)
 
 #### Table 5. normal run but using kubernetes (SLO=500us)
 
-![table 4](result-kubernetes.PNG)
+![table 5](images/result-kubernetes.PNG)
+
+#### Table 6. with core pinning and using kubernetes (SLO=500us)
+
+![table 6](images/result-kubernetes-core-pinning.PNG)
