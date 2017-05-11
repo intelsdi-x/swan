@@ -53,6 +53,7 @@ yum install -y -q \
     python-pip \
     python-devel \
     libcgroup-tools \
+    boost \
     glog \
     protobuf \
     opencv \
