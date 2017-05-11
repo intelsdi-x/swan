@@ -15,8 +15,6 @@
 package executor
 
 import (
-	"os/exec"
-	"strings"
 	"testing"
 
 	. "github.com/intelsdi-x/swan/pkg/executor"
