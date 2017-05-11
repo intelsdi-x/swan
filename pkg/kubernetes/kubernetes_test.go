@@ -34,7 +34,6 @@ func getMockedTaskHandle(outputFile *os.File) *mocks.TaskHandle {
 	handle.On("StdoutFile").Return(outputFile, nil)
 	handle.On("Address").Return("127.0.0.1")
 	handle.On("Stop").Return(nil)
-	handle.On("EraseOutput").Return(nil)
 	handle.On("ExitCode").Return(0, nil)
 
 	return handle
@@ -171,9 +170,8 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 
-			Convey("Assert that task hadle is properly stopped with output erased, before returning", func() {
+			Convey("Assert that task hadle is properly stopped, before returning", func() {
 				handle.AssertCalled(t, "Stop")
-				handle.AssertCalled(t, "EraseOutput")
 			})
 		})
 
@@ -189,9 +187,8 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(resultHandle, ShouldBeNil)
 			So(err.Error(), ShouldContainSubstring, err.Error())
 
-			Convey("Assert that task hadle is properly stopped with output erased before returning", func() {
+			Convey("Assert that task hadle is properly stopped", func() {
 				handle.AssertCalled(t, "Stop")
-				handle.AssertCalled(t, "EraseOutput")
 			})
 		})
 	})
