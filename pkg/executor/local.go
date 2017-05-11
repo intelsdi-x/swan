@@ -102,7 +102,9 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		// NOTE: Wait() returns an error. We grab the process state in any case
 		// (success or failure) below, so the error object matters less in the
 		// status handling for now.
-		if err := cmd.Wait(); err != nil {
+		err := cmd.Wait()
+		unregister(&taskHandle)
+		if err != nil {
 			if _, ok := err.(*exec.ExitError); !ok {
 				// In case of NON Exit Errors we are not sure if task does
 				// terminate so panic.
@@ -129,6 +131,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+	register(&taskHandle)
 	return &taskHandle, nil
 }
 
