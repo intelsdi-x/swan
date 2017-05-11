@@ -162,8 +162,9 @@ func main() {
 				// Chose CPUs to be used
 				cores, err := beCores.Take(BECPUsCount)
 				errutil.CheckWithContext(err, fmt.Sprintf("unable to substract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
-				coresRange := cores.AsRangeString()
-				logrus.Debugf("Substracted %d cores and got: %v", BECPUsCount, coresRange)
+				beCoresRange := cores.AsRangeString()
+				hpCoresRange := topology.HpRangeFlag.Value().AsRangeString()
+				logrus.Debugf("Substracted %d cores and got: %v", BECPUsCount, beCoresRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks
@@ -172,10 +173,9 @@ func main() {
 
 					logrus.Debugf("Current L3 HP mask: %d, %b", hpCacheMask, hpCacheMask)
 					logrus.Debugf("Current L3 BE mask: %d, %b", beCacheMask, beCacheMask)
-					l1Isolation := isolation.Rdtset{Mask: beCacheMask, CPURange: topology.BeL1RangeFlag.Value().AsRangeString()}
-					llcIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: coresRange}
-					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: topology.HpRangeFlag.Value().AsRangeString()}
-					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, llcIsolation)
+					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
+					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: hpCoresRange}
+					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, beIsolation)
 
 					// Create executors with cleanup function.
 					hpExecutor, err := sensitivity.CreateKubernetesHpExecutor(hpIsolation)
@@ -190,7 +190,7 @@ func main() {
 					// Create BE workloads.
 					var beLauncher sensitivity.LauncherSessionPair
 					if aggressorName != "" {
-						beLauncher = createLauncherSessionPair(aggressorName, l1Isolation, llcIsolation, beExecutorFactory)
+						beLauncher = createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
 					}
 
 					// Create HP workload.
@@ -206,12 +206,12 @@ func main() {
 					errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
 					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-					aggressorName := fmt.Sprintf("None - %d QpS", qps)
+					aggressorName := fmt.Sprintf("Baseline")
 					if beLauncher.Launcher != nil {
-						aggressorName = fmt.Sprintf("%s - %d QpS - %d cores", beLauncher.Launcher.Name(), qps, BECPUsCount)
+						aggressorName = fmt.Sprintf("%s", beLauncher.Launcher.Name())
 					}
 
-					phaseName := fmt.Sprintf("Aggressor %s - BE LLC %b", aggressorName, beCacheMask)
+					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
 					// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 					var processes []executor.TaskHandle
 
@@ -222,13 +222,12 @@ func main() {
 						snapTags := make(map[string]interface{})
 						snapTags[experiment.ExperimentKey] = uid
 						snapTags[experiment.PhaseKey] = phaseName
-						snapTags[experiment.RepetitionKey] = 0
-						snapTags[experiment.LoadPointQPSKey] = beCacheMask
 						snapTags[experiment.AggressorNameKey] = aggressorName
-						snapTags["be_l3_cache_size"] = beCacheMask
-						snapTags["hp_l3_cache_size"] = hpCacheMask
-						snapTags["qps"] = qps
-						snapTags["number_of_cores"] = BECPUsCount
+						snapTags[experiment.LoadPointQPSKey] = qps
+						snapTags["be_l3_cache_ways"] = beCacheWays
+						snapTags["be_number_of_cores"] = BECPUsCount
+						snapTags["be_cores_range"] = beCoresRange
+						snapTags["hp_cores_range"] = hpCoresRange
 
 						logrus.Infof("Starting %s", phaseName)
 
