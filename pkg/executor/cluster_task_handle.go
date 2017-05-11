@@ -90,8 +90,14 @@ func (m *ClusterTaskHandle) Wait(timeout time.Duration) (isMasterTerminated bool
 	// Wait for master first.
 	isMasterTerminated, err = m.master.Wait(timeout)
 	if err != nil {
-		logrus.Errorf("Waiting for %q failed: %s", m.master.Name(), err)
-		_ = m.stopAgents()
+		agentErrors := m.stopAgents()
+		// We don't want to lose master error stack trace for no reason.
+		if agentErrors != nil {
+			var errCol errcollection.ErrorCollection
+			errCol.Add(err)
+			errCol.Add(agentErrors)
+			err = errCol.GetErrIfAny()
+		}
 		return isMasterTerminated, err
 	}
 
@@ -108,7 +114,6 @@ func (m *ClusterTaskHandle) stopAgents() error {
 	for _, handle := range m.agents {
 		err := handle.Stop()
 		if err != nil {
-			logrus.Errorf("Error while stopping %q: %s", handle.Name(), err)
 			errCol.Add(err)
 		}
 	}

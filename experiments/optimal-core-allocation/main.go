@@ -209,7 +209,7 @@ func main() {
 				errutil.PanicWithContext(err, "Cannot start load generator")
 				mutilateClusterMaxExecution := sensitivity.LoadGeneratorWaitTimeoutFlag.Value()
 
-				mutilateTerminated, err := mutilateHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value())
+				mutilateTerminated, err := mutilateHandle.Wait(mutilateClusterMaxExecution)
 				if err != nil {
 					logrus.Errorf("Mutilate cluster failed: %q", err)
 					logrus.Panic("mutilate cluster failed " + err.Error())
