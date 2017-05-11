@@ -77,7 +77,7 @@ test_unit:
 	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
 
 test_jupyter_unit:
-	(cd jupyter; py.test)
+	(cd jupyter; python test_swan.py)
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
 test_integration_build:
@@ -92,11 +92,6 @@ deps_test_jupyter:
 
 deps_jupyter:
 	pip install -r jupyter/requirements.txt
-
-e2e_test:
-	SWAN_LOG=debug SWAN_BE_SETS=0:0 SWAN_HP_SETS=0:0 sudo -E memcached-sensitivity-profile --aggr caffe > jupyter/integration_tests/experiment_id.stdout
-	jupyter nbconvert --execute --to notebook --inplace jupyter/integration_tests/integration_tests.ipynb
-	rm jupyter/integration_tests/integration_tests.py jupyter/integration_tests/*.stdout
 
 cleanup:
 	rm -fr plugins/**/*log

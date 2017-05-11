@@ -38,3 +38,4 @@ swan-*.tar.gz
 /swan.tar.gz
 /opt
 /jupyter/pivottablejs.html
+/jupyter/.experiments_csv_cache/
