@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api"
 	v1 "k8s.io/client-go/1.5/pkg/api/v1"
@@ -38,7 +39,7 @@ type KubeClient struct {
 // structure. It returns error if given configuration is invalid.
 func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, error) {
 	kubectlConfig := &rest.Config{
-		Host:     kubernetesConfig.Address,
+		Host: kubernetesConfig.Address,
 	}
 
 	cli, err := kubernetes.NewForConfig(kubectlConfig)
@@ -153,16 +154,16 @@ func (k *KubeClient) node() *v1.Node {
 }
 
 // UpdateNode updates nodes metadata e.g. taints (Note: can panic).
-func (k *KubeClient) UpdateNode(node *v1.Node) {
+func (k *KubeClient) UpdateNode(node *v1.Node) error {
 	_, err := k.Clientset.Core().Nodes().Update(node)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "updating kubernetos node failed")
 	}
+	return nil
 }
 
 // TaintNode with NoSchedule taint (can panic).
 func (k *KubeClient) TaintNode() {
-	node := k.node()
 	newTaint := api.Taint{
 		Key: "hponly", Value: "true", Effect: api.TaintEffectNoSchedule,
 	}
@@ -171,11 +172,23 @@ func (k *KubeClient) TaintNode() {
 		panic(err)
 	}
 
+	node := k.node()
 	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
 	if err != nil {
 		panic(err)
 	}
-	k.UpdateNode(node)
+	err = k.UpdateNode(node)
+	if err != nil {
+		node = k.node()
+		node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+		if err != nil {
+			panic(err)
+		}
+		err = k.UpdateNode(node)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 // UntaintNode removes all tains for given node (can panic on failure).
@@ -186,8 +199,17 @@ func (k *KubeClient) UntaintNode() {
 	}
 	node := k.node()
 	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-	_, err = k.Clientset.Core().Nodes().Update(node)
+	err = k.UpdateNode(node)
 	if err != nil {
-		panic(err)
+		node = k.node()
+		node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+		if err != nil {
+			panic(err)
+		}
+		err = k.UpdateNode(node)
+		if err != nil {
+			panic(err)
+		}
 	}
+
 }
