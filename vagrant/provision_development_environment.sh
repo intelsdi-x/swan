@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +60,8 @@ yum install -y -q \
     tmux \
     htop \
     sudo \
-    git
+    git \
+    nmap-ncat
 
 echo "----------------------------- Preparing SSH access for root (`date`)"
 # root user
