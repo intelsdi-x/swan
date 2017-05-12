@@ -56,13 +56,14 @@ class DataFrameToCSVCache:
             raise KeyError()
 
     def __call__(self, fun):
-        """ Can be use as decorator for function that have experiment_id as first parameter and returns dataframe."""
+        """ Can be use as decorator for function that have experiment_id as first parameter and returns dataframe.
+        Cache can be disabled by adding cache=False to kwargs in decorated function.
+        """
         def _dec(experiment_id, *args, **kw):
-            if experiment_id in self:
+            if kw.pop('cache', True) and experiment_id in self:
                 return self[experiment_id]
 
             df = fun(experiment_id, *args, **kw)
-
             self[experiment_id] = df
             return df
         return _dec
@@ -273,7 +274,6 @@ def load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=np.m
 
     rows = _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace=keyspace)
     df, tag_keys = _convert_rows_to_dataframe(rows)
-
     return _transform_ns_to_columns(df, tag_keys, aggfunc=aggfunc)
 
 
@@ -468,14 +468,23 @@ class Experiment:
     function that allows to refere to new names using original names (_renamed).
     """
 
-    def __init__(self, experiment_id, cassandra_options=None, aggfunc=np.mean):
-        self.df = load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=aggfunc)
+    def __init__(self, experiment_id, cassandra_options=None, aggfunc=np.mean, cache=True):
+        self.df = load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=aggfunc, cache=cache)
         self.experiment_id = experiment_id
         self.df.columns.name = 'Experiment %s' % self.experiment_id
 
     def _repr_html_(self):
         """ When presented in jupyter just return representation of dataframe. """
         return self.df._repr_html_()
+
+    def pivot_ui(self):
+        """ Interactive pivot table for data analysis. """
+        try:
+            from pivottablejs import pivot_ui
+        except ImportError:
+            print("Error: cannot import pivottablejs, please install 'pip install pivottablejs'!")
+            return
+        return pivot_ui(self.df)
 
 
 class SensitivityProfile:
