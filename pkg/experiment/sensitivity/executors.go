@@ -41,7 +41,7 @@ var (
 	// HPKubernetesCPUResourceFlag indicates CPU shares that HP task should be allowed to use.
 	HPKubernetesCPUResourceFlag = conf.NewIntFlag("kubernetes_hp_cpu_resource", "Sets CPU resource limit and request for HP workload on Kubernetes [CPU millis, default 1000 * number of CPU].", runtime.NumCPU()*1000)
 	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
-	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 1GB).", 1000000000)
+	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 4GB).", 4000000000)
 
 	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", RunOnExistingKubernetesFlag.Name), hostname)
 )
