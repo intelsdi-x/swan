@@ -46,7 +46,7 @@ var (
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 
-	kubeCleanDanglingPods = conf.NewBoolFlag("kubernetes_cluster_clean_dangling_pods", "Dangling pods existing on Kubelet will be deleted on cluster startup.", false)
+	kubeCleanLeftPods = conf.NewBoolFlag("kubernetes_cluster_clean_left_pods_on_startup", "Delete all pods which are detected during cluster startup. Usefull after dirty shutdown when some pods may not be properly deleted.", false)
 )
 
 type kubeCommand struct {
@@ -189,9 +189,9 @@ func (m k8s) Launch() (handle executor.TaskHandle, err error) {
 	if err != nil {
 		log.Warnf("Could not check if there are dangling nodes on Kubelet: %s", err)
 	} else {
-		if len(pods) != 0 && kubeCleanDanglingPods.Value() == false {
-			log.Warnf("Kubelet on node %q has %d dangling nodes. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanDanglingPods.Name)
-		} else if len(pods) != 0 && kubeCleanDanglingPods.Value() == true {
+		if len(pods) != 0 && kubeCleanLeftPods.Value() == false {
+			log.Warnf("Kubelet on node %q has %d dangling nodes. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
+		} else if len(pods) != 0 && kubeCleanLeftPods.Value() == true {
 			log.Infof("Kubelet on node %q has %d dangling nodes. Attempt to clean them", m.kubeletHost, len(pods))
 			err = m.cleanNode(m.kubeletHost, pods)
 			if err != nil {
