@@ -55,18 +55,17 @@ class DataFrameToCSVCache:
         else:
             raise KeyError()
 
-    def __call__(self, fun):
+    def __call__(self, func):
         """ Can be use as decorator for function that have experiment_id as first parameter and returns dataframe.
         Cache can be disabled by adding cache=False to kwargs in decorated function.
         """
-        def _dec(experiment_id, *args, **kw):
+        def decorator(experiment_id, *args, **kw):
             if kw.pop('cache', True) and experiment_id in self:
                 return self[experiment_id]
-
-            df = fun(experiment_id, *args, **kw)
+            df = func(experiment_id, *args, **kw)
             self[experiment_id] = df
             return df
-        return _dec
+        return decorator
 
 
 # -------------------------------
@@ -256,24 +255,29 @@ def _transform_ns_to_columns(df, tag_keys, aggfunc=np.mean):
     return df
 
 
+def _load_raw_data(experiment_id, cassandra_options, aggfunc=np.mean, keyspace='snap'):
+    """ Helper extacted function to load & flat data from cassandra - check load_dataframe_from_cassandra for description.
+
+    :returns: unprocessed data as dataframe and found common tag keys,
+    """
+    cassandra_session = _get_or_create_cassandra_session(**(cassandra_options or DEFAULT_CASSANDRA_OPTIONS))
+    rows = _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace=keyspace)
+    df, tag_keys = _convert_rows_to_dataframe(rows)
+    return df, tag_keys
+
+
 @DataFrameToCSVCache()
 def load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=np.mean, keyspace='snap'):
     """ Basic generic function to load experiment data from cassandra with rows grouped by given tags.
 
-    Return dateframe is cached by DataFrameToCSVCache
+    Return dateframe is cached by DataFrameToCSVCache decorator (can be disabled by providing cache=False).
 
-    :param experiment_id: identifier of experiment to load data for,
-    :param cassandra_options: identifier of experiment to load data for,
     :param aggfunc: what function used to aggregate values with the same tags,
     :param keyspace: keyspace to load snap metrics from (defaults to "snap").
     :returns: pandas.Dataframe with all tags and ns categorical values as columns (check convert_rows_to_dataframe
               for details).
-
     """
-    cassandra_session = _get_or_create_cassandra_session(**(cassandra_options or DEFAULT_CASSANDRA_OPTIONS))
-
-    rows = _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace=keyspace)
-    df, tag_keys = _convert_rows_to_dataframe(rows)
+    df, tag_keys = _load_raw_data(experiment_id, cassandra_options, aggfunc, keyspace)
     return _transform_ns_to_columns(df, tag_keys, aggfunc=aggfunc)
 
 
@@ -459,6 +463,16 @@ def add_extra_and_composite_columns(df, slo):
     return df
 
 
+def _pivot_ui(df):
+    """ Interactive pivot table for data analysis. """
+    try:
+        from pivottablejs import pivot_ui
+    except ImportError:
+        print("Error: cannot import pivottablejs, please install 'pip install pivottablejs'!")
+        return
+    return pivot_ui(df)
+
+
 class Experiment:
     """ Base class for loading & storing data for swan experiments.
 
@@ -479,12 +493,7 @@ class Experiment:
 
     def pivot_ui(self):
         """ Interactive pivot table for data analysis. """
-        try:
-            from pivottablejs import pivot_ui
-        except ImportError:
-            print("Error: cannot import pivottablejs, please install 'pip install pivottablejs'!")
-            return
-        return pivot_ui(self.df)
+        return _pivot_ui(self.df)
 
 
 class SensitivityProfile:
@@ -647,3 +656,134 @@ class OptimalCoreAllocation:
             ).set_caption(
                 self._get_caption('cpu utilization', False)
             )
+
+
+# --------------------------------------------------------------
+# memcached-cat experiment
+# --------------------------------------------------------------
+def new_aggregated_index_based_column(df, source_indexes_column, template, aggfunc=sum):
+    """ Create new pd.Series as aggregation of values from other columns.
+
+    It uses template to find values from other columns, using indexes in one of the columns.
+    E.g. with template='column-{}' and input dataframe like this:
+
+    | example_indexes | column-1 | column-2 | column-3 |
+    | 1,2             | 1        | 11       | 111      |
+    | 1               | 2        | 22       | 222      |
+    | 1,2,3           | 3        | 33       | 333      |
+
+    when called like this
+    >>> new_aggregate_cores_range_column('examples_indexes', template='column-{}', aggfunc=sum)
+
+    results with series like this:
+
+    | 12 (1+11)      |
+    | 2              |
+    | 369 (3+33+333) |
+
+    """
+
+    array = np.empty(len(df))
+    for row_index, column_indexes in enumerate(df[source_indexes_column]):
+        indexes = column_indexes.split(',')
+        values = [df.iloc[row_index][template.format(index)] for index in indexes]
+        aggvalue = aggfunc(values)
+        array[row_index] = aggvalue
+    return pd.Series(array)
+
+
+class CAT:
+    """ Visualization for "optimal core allocation" experiments that
+        presents latency/QPS and cpu utilization in "number of cores" and "load" dimensions.
+    """
+
+    def __init__(self, experiment, slo):
+        self.experiment = experiment
+        self.slo = slo
+
+        df = self.experiment.df.copy()
+        df = add_extra_and_composite_columns(df, slo)
+
+        # aggregate BE columns
+        df['llc_occupancy/be/bytes'] = new_aggregated_index_based_column(
+            df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)
+        df['memory_bandwidth/local/be/bytes'] = new_aggregated_index_based_column(
+            df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)
+
+        df['llc_occupancy/hp/bytes'] = new_aggregated_index_based_column(
+            df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)
+        df['memory_bandwidth/local/hp/bytes'] = new_aggregated_index_based_column(
+            df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)
+
+        df['llc_occupancy/be/perecentage'] = new_aggregated_index_based_column(
+            df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+        df['llc_occupancy/hp/perecentage'] = new_aggregated_index_based_column(
+            df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+
+        self.df = df
+
+    def simple_df(self):
+        df = self.df[[
+             # 'swan_repetition',
+             'swan_loadpoint_qps',
+             'swan_aggressor_name',
+             'be_number_of_cores',
+             'be_l3_cache_ways',
+             # 'swan_phase',
+             # 'swan_experiment',
+             # 'hp_cores_range',
+             # 'be_cores_range',
+
+             # 'plugin_running_on',
+             # 'avg',
+             # 'std',
+             # 'min',
+             # 'percentile/10th',
+             # 'percentile/5th',
+             # 'percentile/90th',
+             # 'percentile/95th',
+             'percentile/99th',
+             ACHIEVED_LATENCY_LABEL,
+             'qps',
+             ACHIEVED_QPS_LABEL,
+
+             'llc_occupancy/hp/bytes',
+             'llc_occupancy/hp/perecentage',
+
+             'llc_occupancy/be/bytes',
+             'llc_occupancy/be/perecentage',
+
+             'memory_bandwidth/local/hp/bytes',
+             'memory_bandwidth/local/be/bytes',
+        ]]
+        df.columns.name = ''
+        return df
+
+    def simple_df_table(self):
+
+        def fmtbytes(b):
+            for u in ' KMGTPEZ':
+                if abs(b) < 1024.0:
+                    return "%3.1f%s" % (b, u)
+                b /= 1024.0
+            return "%.1f%s" % (b, 'Y')
+
+        return self.simple_df(
+        ).style.format(fmtbytes, [
+                'llc_occupancy/be/bytes',
+                'llc_occupancy/hp/bytes',
+                'memory_bandwidth/local/be/bytes',
+                'memory_bandwidth/local/hp/bytes'
+             ]
+        ).format('{:.0%}', [
+                'llc_occupancy/be/perecentage',
+                'llc_occupancy/hp/perecentage'
+             ]
+        ).format('{:.0%}', [
+                ACHIEVED_QPS_LABEL,
+                ACHIEVED_LATENCY_LABEL,
+             ]
+        )
+
+    def pivot_ui(self):
+        return _pivot_ui(self.simple_df())
