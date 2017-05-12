@@ -41,8 +41,8 @@ func (th stoppedTaskHandle) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (th stoppedTaskHandle) Wait(duration time.Duration) bool {
-	return true
+func (th stoppedTaskHandle) Wait(duration time.Duration) (bool, error) {
+	return true, nil
 }
 
 func (th stoppedTaskHandle) StderrFile() (*os.File, error) {
@@ -72,8 +72,8 @@ func (th runningTaskHandle) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (th runningTaskHandle) Wait(duration time.Duration) bool {
-	return true
+func (th runningTaskHandle) Wait(duration time.Duration) (bool, error) {
+	return true, nil
 }
 
 func (th runningTaskHandle) Name() string {
@@ -120,7 +120,7 @@ func TestServiceTaskHandle(t *testing.T) {
 		})
 	})
 
-	Convey("Calling Stop() after Wait() should return error", t, func() {
+	Convey("Calling Stop() after Wait() should return same error", t, func() {
 		output, err := ioutil.TempFile(os.TempDir(), "serviceTests")
 		So(err, ShouldBeNil)
 		Reset(func() {
@@ -129,8 +129,10 @@ func TestServiceTaskHandle(t *testing.T) {
 
 		s := NewServiceHandle(stoppedTaskHandle{output: output})
 
-		terminated := s.Wait(0)
+		terminated, err := s.Wait(0)
 		So(terminated, ShouldBeTrue)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, s.Name())
 
 		err = s.Stop()
 		So(err, ShouldNotBeNil)
@@ -152,7 +154,7 @@ func TestServiceTaskHandle(t *testing.T) {
 	Convey("Calling Wait() on running task should succeed", t, func() {
 		s := NewServiceHandle(runningTaskHandle{})
 
-		status := s.Wait(0)
+		status, _ := s.Wait(0)
 		So(status, ShouldBeTrue)
 
 		Convey("Calling Wait() on one more time should succeed", func() {

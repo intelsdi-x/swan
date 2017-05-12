@@ -95,7 +95,9 @@ func TestKubernetesExecutor(t *testing.T) {
 				// status information can take longer time. To reduce number
 				// of false-positive assertion fails, Wait() timeout is much
 				// longer then time withing pod should shutdown.
-				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+				terminated, err := taskHandle.Wait(podFinishedTimeout)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeTrue)
 
 				Convey("The exit status should be zero", func() {
 					// ExitCode should appears in TaskHandle object after pod
@@ -121,7 +123,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			defer executor.StopAndEraseOutput(taskHandle)
 
 			Convey("And after few seconds", func() {
-				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+				terminated, err := taskHandle.Wait(podFinishedTimeout)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeTrue)
 
 				Convey("The exit status should be 5", func() {
 					exitCode, err := taskHandle.ExitCode()
@@ -148,7 +152,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			defer executor.StopAndEraseOutput(taskHandle)
 
 			So(err, ShouldBeNil)
-			So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(podFinishedTimeout)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
 
 			exitCode, err := taskHandle.ExitCode()
 			So(exitCode, ShouldEqual, 0)
@@ -190,8 +196,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Wait...
-			stopped := th.Wait(0)
-			So(stopped, ShouldBeTrue)
+			terminated, err := th.Wait(podFinishedTimeout)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
 
 			// Exit code expected about killed.
 			exitCode, err := th.ExitCode()

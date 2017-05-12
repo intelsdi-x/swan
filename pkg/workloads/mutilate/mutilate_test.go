@@ -128,7 +128,7 @@ func (s *MutilateTestSuite) TestMutilateTuning() {
 	// This is needed to know how many times the mock should expect function execution.
 	numberOfConveys := 4
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil)
-	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true).Times(numberOfConveys)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
@@ -173,7 +173,7 @@ func (s *MutilateTestSuite) TestClusterMutilateTuning() {
 	// This is needed to know how many times the mock should expect function execution.
 	numberOfConveys := 4
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil)
-	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true).Times(numberOfConveys)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("ExitCode").Return(0, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("StdoutFile").Return(outputFile, nil).Times(numberOfConveys)
 	s.mMasterHandle.On("EraseOutput").Return(nil).Times(numberOfConveys)
@@ -286,19 +286,21 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 
 		Convey("Having failure with master's Wait, tune should return error and agents "+
 			"should be stopped and output erased", func() {
-			const errorMsg = "cannot terminate the Mutilate master. Leaving agents running."
+			const errorMsg = "Mutilate Cluster Failed"
 
 			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
-			// IsTerminated will false.
-			s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(false).Once()
+			// IsTerminated will be false.
+			s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(false, errors.New(errorMsg)).Once()
 
 			s.mExecutorForAgent1.On(
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
 			s.mAgentHandle1.On("Address").Return("255.255.255.001").Once()
+			s.mAgentHandle1.On("Stop").Return(nil)
 
 			s.mExecutorForAgent2.On(
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle2, nil).Once()
 			s.mAgentHandle2.On("Address").Return("255.255.255.002").Once()
+			s.mAgentHandle2.On("Stop").Return(nil)
 
 			_, _, err := mutilate.Tune(s.defaultSlo)
 			So(err, ShouldNotBeNil)
@@ -372,7 +374,7 @@ func (s *MutilateTestSuite) TestPopulate() {
 	mutilate := New(s.mExecutor, s.config)
 
 	s.mExecutor.On("Execute", mutilatePopulateCommand).Return(s.mMasterHandle, nil)
-	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true)
+	s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(true, nil)
 	s.mMasterHandle.On("ExitCode").Return(0, nil)
 	s.mMasterHandle.On("EraseOutput").Return(nil)
 

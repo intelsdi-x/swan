@@ -53,7 +53,9 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			defer executor.StopAndEraseOutput(k8sHandle)
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
-				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
+				terminated, err := k8sHandle.Wait(100 * time.Millisecond)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeFalse)
 
 				output, err := exec.Command(kubectlBinPath, "-s", kubernetesAddress, "get", "nodes").Output()
 				So(err, ShouldBeNil)

@@ -208,7 +208,13 @@ func main() {
 				mutilateHandle, err := loadGenerator.Load(qps, loadDuration)
 				errutil.PanicWithContext(err, "Cannot start load generator")
 				mutilateClusterMaxExecution := sensitivity.LoadGeneratorWaitTimeoutFlag.Value()
-				if !mutilateHandle.Wait(mutilateClusterMaxExecution) {
+
+				mutilateTerminated, err := mutilateHandle.Wait(mutilateClusterMaxExecution)
+				if err != nil {
+					logrus.Errorf("Mutilate cluster failed: %q", err)
+					logrus.Panic("mutilate cluster failed " + err.Error())
+				}
+				if !mutilateTerminated {
 					msg := fmt.Sprintf("Mutilate cluster failed to stop on its own in %s. Attempting to stop...", mutilateClusterMaxExecution)
 					err := mutilateHandle.Stop()
 					errutil.PanicWithContext(err, msg+" Stopping mutilate cluster errored")

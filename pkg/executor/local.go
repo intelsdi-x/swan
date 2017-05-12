@@ -180,7 +180,7 @@ func (taskHandle *localTaskHandle) Stop() error {
 	}
 
 	// Checking if kill was successful.
-	isTerminated := taskHandle.Wait(killTimeout)
+	isTerminated, _ := taskHandle.Wait(killWaitTimeout)
 	if !isTerminated {
 		log.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
 		return errors.Errorf("Local Stop() of command %q has failed: timeout", taskHandle.command)
@@ -226,9 +226,9 @@ func (taskHandle *localTaskHandle) EraseOutput() error {
 
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
-func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
+func (taskHandle *localTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if taskHandle.isTerminated() {
-		return true
+		return true, nil
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -240,10 +240,10 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) bool {
 	select {
 	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
-		return true
+		return true, nil
 	case <-timeoutChannel:
 		// If timeout time exceeded return then task did not terminate yet.
-		return false
+		return false, nil
 	}
 }
 
