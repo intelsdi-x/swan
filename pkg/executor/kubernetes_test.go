@@ -34,7 +34,6 @@ func TestKubernetes(t *testing.T) {
 
 	Convey("After create new pod object", t, func() {
 		config := DefaultKubernetesConfig()
-		config.ContainerImage = "centos_swan_image"
 
 		Convey("with default unspecified resources, expect BestEffort", func() {
 			podExecutor := &k8s{config, nil}

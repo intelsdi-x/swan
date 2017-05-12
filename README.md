@@ -18,7 +18,7 @@
 
 ![Swan diagram](/images/swan-logo.png)
 
-[![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan)
+[![Build Status](https://travis-ci.com/intelsdi-x/swan.svg?token=EuvqyXrzZzZgasmsv6hn&branch=master)](https://travis-ci.com/intelsdi-x/swan) [![Go Report Card](https://goreportcard.com/badge/github.com/intelsdi-x/swan)](https://goreportcard.com/report/github.com/intelsdi-x/swan)
 
 ## Overview
 Swan is a distributed experimentation framework for automated experiments targeting performance isolation studies for schedulers. You can read more about the vision behind Swan [here](docs/vision.md).

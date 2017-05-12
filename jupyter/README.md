@@ -22,34 +22,11 @@
 
 Swan uses *Jupyter Notebook* to filter, process and visualize results from experiments.
 
-## Installation
-
-In order to install Jupyter, you need `python` and `pip` installed. On Centos 7, installation of those packages can be achieved by:
+You need to have Docker installed to run Jupyter notebooks easily. We have provided a Docker image that will make running notebooks as easy as possible. You just need to run:
 
 ```sh
-sudo yum install python-pip python-devel
+docker run -p 127.0.0.1:8888:8888 intelsdi/swan-jupyter
 ```
-
-or following the instructions at the [official `pip` site](https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py).
-
-After `python` and `pip` are installed Jupyter can be installed by typing:
-
-```sh
-make deps_jupyter
-```
-in the Swan root directory.
-
-## Launching Jupyter
-
-In order to start Jupyter go to the Jupyter directory in Swan repository then run `notebook`:
-
-```sh
-cd jupyter/
-jupyter notebook
-```
-
-Jupyter will start locally. Point a web browser to http://127.0.0.1:8888 to access Jupyter notebooks.
-
 
 ## Explore the Example Jupyter Notebook
 

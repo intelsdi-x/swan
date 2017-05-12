@@ -24,10 +24,10 @@ lint: linter test_lint
 
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
-build_and_test_integration: build_all test_integration
+build_and_test_integration: build_all test_integration test_jupyter_unit
 build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
-test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
+test_all: test_lint test_unit test_integration test_jupyter_unit
 
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
@@ -70,14 +70,14 @@ test_lint:
 	gometalinter --config=.lint ./integration_tests/...
 
 test_jupyter_lint:
-	pep8 --max-line-length=120 jupyter/
+	docker run --rm intelsdi/swan-jupyter pep8 --max-line-length=120 .
+
+test_jupyter_unit:
+	docker run --rm intelsdi/swan-jupyter python test_swan.py
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...
 	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
-
-test_jupyter_unit:
-	(cd jupyter; python test_swan.py)
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
 test_integration_build:
@@ -87,18 +87,11 @@ test_integration:
 	go test -i ./integration_tests/... 
 	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
 
-deps_test_jupyter:
-	pip install -r jupyter/test-requirements.txt
-
-deps_jupyter:
-	pip install -r jupyter/requirements.txt
-
 cleanup:
 	rm -fr plugins/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapteld_*
-	rm -fr jupyter/integration_tests/*.stdout
 
 remove_vendor:
 	rm -fr vendor/
@@ -125,4 +118,7 @@ docker:
 	docker build -t intelsdi/swan:latest workloads
 
 extract_binaries:
-	docker run -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output
+	docker run --rm -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output
+
+jupyter_image:
+	docker build -t intelsdi/swan-jupyter jupyter

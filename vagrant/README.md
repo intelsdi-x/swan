@@ -44,16 +44,7 @@ You will need to build [mutilate](https://github.com/leverich/mutilate) by hand 
 sudo ln -svf /opt/swan/bin/* /usr/bin/
 ```
 
-Now you should be able to run an experiment on the Kubernetes cluster that was automatically provisioned. If you want to be able to run without Kuberenetes, then you will need to take a few more steps.
-
-Some of the project dependencies are distributed as [Docker image](https://hub.docker.com/r/intelsdi/swan/). They need to be extracted from the container in order to be used for non-Kubernetes experiments. To do this you need to execute the following commands:
-
-```sh
-make extract_binaries
-sudo chown -R $USER:$USER opt 
-sudo cp -fa opt/swan /opt
-sudo ln -svf /opt/swan/bin/* /usr/bin/
-```
+Now you should be able to run an experiment on the Kubernetes cluster or your virtual machine.
 
 If you want to be able to use [iBench](https://github.com/stanford-mast/iBench) they you will need to compile binaries and make then available in `$PATH` (see mutilate description above). Keep in mind that compiling iBench binaries may require a lot of RAM and can't be done on default Vagrant VM configuration.
 
@@ -65,11 +56,11 @@ Vagrant will allocate 2 CPUs and 4096 MB RAM for the VM by default. You can cons
 
 ## Deeper dive
 
-If you want to learn more about VM configuration and installed packages refer to [provisioning script](provision.sh).
+If you want to learn more about VM configuration and installed packages refer to [provisioning script](provision.sh). It calls three other scripts and their names should be self explanatory.
 
 Note that the `~/.glide` directory from your host will be mounted on the VM to speed up Go dependency management.
 
-The script is responsible for:
+The scripts are responsible for:
 * Installing all the necessary CentOS packages that are needed to build Swan, run experiments and analyse their results.
 * Installing [Snap](http://snap-telemetry.io/) and its plugins that are responsible for gathering experiment results.
 * Installing [Docker](https://www.docker.com/) that allows running experiment on [Kubernetes](https://kubernetes.io) cluster.
@@ -77,6 +68,12 @@ The script is responsible for:
 * Installing [hyperkube](https://github.com/kubernetes/kubernetes/tree/master/cluster/images/hyperkube) that is used to set up Kubernetes cluster for experimantation purposes.
 * Setting up SSH for root.
 * Installing [Go](https://golang.org/).
+
+If you wish to setup experiment environment on another host then you should be able to run [provision_experiment_environment.sh](provision_experiment_environment.sh) on the host. You will need to provide following environmental variables when calling the script:
+* `SWAN_USER` - name of the user that will run experiments.
+* `HOME_DIR` - home directory of `SWAN_USER`
+
+Example call can be found in [the provisioning script](provision.sh).
 
 ### Provisioners
 

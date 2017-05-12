@@ -15,8 +15,6 @@
 package executor
 
 import (
-	"os/exec"
-	"strings"
 	"testing"
 
 	. "github.com/intelsdi-x/swan/pkg/executor"
@@ -38,42 +36,4 @@ func TestRemote(t *testing.T) {
 			testExecutor(t, remote)
 		})
 	})
-}
-
-func got(t *testing.T) {
-	Convey("I should be able to execute remote command and see the processes running", t, func() {
-		config := DefaultRemoteConfig()
-		remote, err := NewRemote("127.0.0.1", config)
-		if err != nil {
-			t.Skip("Skipping remote executor test: " + err.Error())
-		}
-
-		handle, err := remote.Execute("sleep inf & sleep inf")
-		So(err, ShouldBeNil)
-
-		sleepProcCount := findProcessCount("sleep")
-		So(sleepProcCount, ShouldEqual, 2)
-
-		Convey("I should be able to stop remote task and all the processes should be terminated", func() {
-			err = handle.Stop()
-			So(err, ShouldBeNil)
-
-			sleepProcCountAfterStop := findProcessCount("sleep")
-			So(sleepProcCountAfterStop, ShouldEqual, 0)
-		})
-	})
-}
-
-func findProcessCount(processName string) int {
-	const separator = ","
-
-	cmd := exec.Command("pgrep", processName, "-d "+separator)
-	output, _ := cmd.Output()
-
-	if len(output) == 0 {
-		return 0
-	}
-
-	pids := strings.Split(string(output), ",")
-	return len(pids)
 }

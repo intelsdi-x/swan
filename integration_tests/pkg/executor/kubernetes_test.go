@@ -43,7 +43,6 @@ func TestKubernetesExecutor(t *testing.T) {
 	// Pod executuor config.
 	executorConfig := executor.DefaultKubernetesConfig()
 	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
-	executorConfig.ContainerImage = "centos_swan_image"
 
 	// Create kubectl helper for communicate with Kubernetes cluster.
 	kubectl, err := testhelpers.NewKubeClient(executorConfig)
