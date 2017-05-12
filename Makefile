@@ -108,6 +108,8 @@ dist:
 	tar -C ./build/experiments/optimal-core-allocation -rvf swan.tar optimal-core-allocation
 	tar -C ./build/experiments/memcached-cat -rvf swan.tar memcached-cat
 	tar -C ./build/plugins -rvf swan.tar snap-plugin-collector-caffe-inference snap-plugin-collector-mutilate snap-plugin-collector-specjbb snap-plugin-publisher-session-test
+	tar --transform 's/-binary//' -rvf swan.tar NOTICE-binary
+	tar -rvf swan.tar LICENSE
 	gzip -f swan.tar
 
 install:
