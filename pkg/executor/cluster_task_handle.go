@@ -15,11 +15,10 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"time"
 
-	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 )
 

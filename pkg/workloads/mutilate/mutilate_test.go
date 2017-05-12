@@ -289,9 +289,8 @@ func (s *MutilateTestSuite) TestClusterMutilateTuningErrors() {
 			const errorMsg = "Mutilate Cluster Failed"
 
 			s.mExecutor.On("Execute", mock.AnythingOfType("string")).Return(s.mMasterHandle, nil).Once()
-			// IsTerminated will false.
+			// IsTerminated will be false.
 			s.mMasterHandle.On("Wait", 0*time.Nanosecond).Return(false, errors.New(errorMsg)).Once()
-			s.mMasterHandle.On("Name").Return("master")
 
 			s.mExecutorForAgent1.On(
 				"Execute", mock.AnythingOfType("string")).Return(s.mAgentHandle1, nil).Once()
