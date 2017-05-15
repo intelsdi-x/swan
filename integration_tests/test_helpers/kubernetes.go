@@ -38,7 +38,7 @@ type KubeClient struct {
 // structure. It returns error if given configuration is invalid.
 func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, error) {
 	kubectlConfig := &rest.Config{
-		Host:     kubernetesConfig.Address,
+		Host: kubernetesConfig.Address,
 	}
 
 	cli, err := kubernetes.NewForConfig(kubectlConfig)
@@ -152,17 +152,8 @@ func (k *KubeClient) node() *v1.Node {
 	return &nodes.Items[0]
 }
 
-// UpdateNode updates nodes metadata e.g. taints (Note: can panic).
-func (k *KubeClient) UpdateNode(node *v1.Node) {
-	_, err := k.Clientset.Core().Nodes().Update(node)
-	if err != nil {
-		panic(err)
-	}
-}
-
 // TaintNode with NoSchedule taint (can panic).
 func (k *KubeClient) TaintNode() {
-	node := k.node()
 	newTaint := api.Taint{
 		Key: "hponly", Value: "true", Effect: api.TaintEffectNoSchedule,
 	}
@@ -171,11 +162,21 @@ func (k *KubeClient) TaintNode() {
 		panic(err)
 	}
 
-	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+	node := k.node()
+	k.updateTaints(node, taintsInJSON)
+}
+
+func (k *KubeClient) updateTaints(node *v1.Node, taints []byte) {
+	patchSet := v1.Node{}
+	patchSet.Annotations = map[string]string{api.TaintsAnnotationKey: string(taints)}
+	patchSetInJSON, err := json.Marshal(patchSet)
 	if err != nil {
 		panic(err)
 	}
-	k.UpdateNode(node)
+	_, err = k.Clientset.Core().Nodes().Patch(node.Name, api.MergePatchType, patchSetInJSON)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // UntaintNode removes all tains for given node (can panic on failure).
@@ -185,9 +186,5 @@ func (k *KubeClient) UntaintNode() {
 		panic(err)
 	}
 	node := k.node()
-	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-	_, err = k.Clientset.Core().Nodes().Update(node)
-	if err != nil {
-		panic(err)
-	}
+	k.updateTaints(node, taintsInJSON)
 }
