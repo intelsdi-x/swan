@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/pkg/errors"
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api"
 	v1 "k8s.io/client-go/1.5/pkg/api/v1"
@@ -153,15 +152,6 @@ func (k *KubeClient) node() *v1.Node {
 	return &nodes.Items[0]
 }
 
-// UpdateNode updates nodes metadata e.g. taints (Note: can panic).
-func (k *KubeClient) UpdateNode(node *v1.Node) error {
-	_, err := k.Clientset.Core().Nodes().Update(node)
-	if err != nil {
-		return errors.Wrap(err, "updating kubernetos node failed")
-	}
-	return nil
-}
-
 // TaintNode with NoSchedule taint (can panic).
 func (k *KubeClient) TaintNode() {
 	newTaint := api.Taint{
@@ -177,19 +167,16 @@ func (k *KubeClient) TaintNode() {
 }
 
 func (k *KubeClient) updateTaints(node *v1.Node, taints []byte) {
-	err := k.UpdateNode(node)
+	patchSet := v1.Node{}
+	patchSet.Annotations = map[string]string{api.TaintsAnnotationKey: string(taints)}
+	patchSetInJSON, err := json.Marshal(patchSet)
 	if err != nil {
-		node = k.node()
-		node.Annotations[api.TaintsAnnotationKey] = string(taints)
-		if err != nil {
-			panic(err)
-		}
-		err = k.UpdateNode(node)
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
-
+	_, err = k.Clientset.Core().Nodes().Patch(node.Name, api.MergePatchType, patchSetInJSON)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // UntaintNode removes all tains for given node (can panic on failure).
