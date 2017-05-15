@@ -5,14 +5,14 @@
 This experiment allows you to find the optimal core and worker threads configuration that delivers the best performance 
 in terms of throughput and guaranteeing response time for latency sensitive workloads.
 
-The experiment uses memcached as the latency sensitive workload and tries to find optimal number of memcached worker threads (typically set with  the `-t` flag for `memcached`).
+The experiment helps user to find optimal number of memcached worker threads (typically set with  the `-t` flag for `memcached`) by running memcached as the latency sensitive workload with various worker threads configuration.
 
 ### Environment prerequisites
 
 1. `optimal-core-allocation` experiment binary available in `$PATH`. The binary can be downloaded from [releases page](https://github.com/intelsdi-x/swan/releases) (available inside `swan.tar.gz`) along with all required [Snap](https://github.com/intelsdi-x/snap) plugins.
 1. [mutilate](https://github.com/leverich/mutilate) load generator installed on load generator nodes (flags: `-experiment_mutilate_master_address`, `-experiment_mutilate_agent_addresses`).
 1. Running Cassandra database with a keyspace dedicated to swan to store the experiment results (flag: `-cassandra_address`).
-1. Jupyter notebook with `jupyter/generic.py` module installed (with dependencies installed from `jupyter/requirements.txt`).
+1. Runnin Jupyter notebook server (use [`intelsdi/swan-jupyter`](https://hub.docker.com/r/intelsdi/swan-jupyter/) Docker image.
 1. SSH passwordless access to load generator nodes (optional; flags: `-remote_ssh_key_path`, `-remote_ssh_login`).
 1. [Snap telemetry](snap-telemetry.io) daemon running on experiment node. 
 1. `hyperkube` "all in one kubernetes components binary" available in `$PATH` (if you want to run the experiment on automatically provisioned Kubernetes cluster)
@@ -34,10 +34,10 @@ peak_load = number of maximum threads dedicated to memcached * 100k
 1. Run the experiment:
 
 ```bash
-sudo optimal-core-allocation -experiment_peak_load=800000
+sudo optimal-core-allocation -experiment_peak_load=800000 > uuid.txt
 ```
 
-2. To display results of the experiment, you need to copy `experiment id` (eg `ca24aa5d-4a88-7258-6f00-5f651b0d6515`) and pass it as a parameter to python functions on Jupyter notebook:
+2. To display results of the experiment, you need to copy `experiment id` (just run `cat uuid.txt`) and pass it as a parameter to python functions on Jupyter notebook:
 
 ```python
 from generic import optimal_core_allocation
@@ -65,25 +65,25 @@ All experiment flags can be provided using a configuration file. Command line fl
 1. Generate default configuration: 
 
 ```bash
-sudo optimal-core-allocation -config-dump >example-configuration.txt
+sudo optimal-core-allocation -config-dump >example-configuration.ini
 ```
 
 2. Modify configuration to meet your requirements:
 
 ```bash
-$EDITOR example-configuration.txt
+$EDITOR example-configuration.ini
 ```
 
 3. Run experiment with your configuration:
 
 ```bash
-sudo optimal-core-allocation -config example-configuration.txt
+sudo optimal-core-allocation -config example-configuration.ini
 ```
 
-4. Run the experiment overriding configuration file values using flags:
+4. Run the experiment overriding configuration file values using flags (it's much easier to modify few settings using command line flags instead of modifying configuration file):
 
 ```bash
-sudo optimal-core-allocation -config example-configuration.txt -experiment_peak_load=800000 \
+sudo optimal-core-allocation -config example-configuration.ini -experiment_peak_load=800000 \
     -cassandra_address=cassandra1 \
     -experiment_mutilate_master_address=lg1 -experiment_mutilate_agent_addresses=lg2,lg3 \
     -remote_ssh_login=username -remote_ssh_key_path=/home/username/.ssh/id_rsa
@@ -99,7 +99,7 @@ where:
 
 1. You can run the experiment with memcached threads pinned to specified number of hardware threads (`-use-core-pinning` flag).
 1. You can run the experiment with memcached patch that allows to pin worker threads to single CPU (flag: `-memcached_threads_affinity` flag).
-1. You can run the experiment on Kubernetes cluster (`-kubertenes*` flags). 
+1. You can run the experiment on automatically provisioned Kubernetes cluster (`-kubertenes*` flags). 
 
 ## Example results
 
@@ -113,7 +113,7 @@ where:
 
 The tables below show how memcached capacity changes when amount of worker threads grows.
 
-Each cell displays 99% percentile latency, i.e. tail latency. Colors indicates violation (or lack of thereof) of SLO:
+Each cell displays Memacached tail latency (99 percentile latency). Colors indicates violation (or lack of thereof) of SLO:
 
 - green - no violation,
 - yellow - tail latency between 101% and 150% of SLO, 
@@ -124,7 +124,7 @@ There are two dimensions:
 - load (x axis) - fraction of peak load expressed in QPS (Queries Per Second)
 - worker threads (y axis) - number of memcached worker threads (check memcached -t option for details).
 
-The experiment has been run with 10 load points and peak load set to 1.5 million QPS, and SLO set to 500 us.
+The experiment has been run with 10 load points, peak load set to 1.5 million QPS, and SLO set to 500 us.
 
 ### Table 1. normal run default latency SLO = 500us
 
