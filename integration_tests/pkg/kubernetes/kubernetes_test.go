@@ -32,7 +32,7 @@ import (
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
 
-	kubectlBinPath := testhelpers.AssertFileExists("kubectl")
+	hyperkubeBinPath := testhelpers.AssertFileExists("hyperkube")
 
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While having local executor", t, func() {
@@ -57,7 +57,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(terminated, ShouldBeFalse)
 
-				output, err := exec.Command(kubectlBinPath, "-s", kubernetesAddress, "get", "nodes").Output()
+				output, err := exec.Command(hyperkubeBinPath, "kubectl", "-s", kubernetesAddress, "get", "nodes").Output()
 				So(err, ShouldBeNil)
 
 				host, err := os.Hostname()
