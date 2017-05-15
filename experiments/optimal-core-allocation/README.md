@@ -9,14 +9,8 @@ The experiment helps user to find optimal number of memcached worker threads (ty
 
 ### Environment prerequisites
 
-1. `optimal-core-allocation` experiment binary available in `$PATH`. The binary can be downloaded from [releases page](https://github.com/intelsdi-x/swan/releases) (available inside `swan.tar.gz`) along with all required [Snap](https://github.com/intelsdi-x/snap) plugins.
-1. [mutilate](https://github.com/leverich/mutilate) load generator installed on load generator nodes (flags: `-experiment_mutilate_master_address`, `-experiment_mutilate_agent_addresses`).
-1. Running Cassandra database with a keyspace dedicated to swan to store the experiment results (flag: `-cassandra_address`).
-1. Runnin Jupyter notebook server (use [`intelsdi/swan-jupyter`](https://hub.docker.com/r/intelsdi/swan-jupyter/) Docker image.
-1. SSH passwordless access to load generator nodes (optional; flags: `-remote_ssh_key_path`, `-remote_ssh_login`).
-1. [Snap telemetry](snap-telemetry.io) daemon running on experiment node. 
-1. `hyperkube` "all in one kubernetes components binary" available in `$PATH` (if you want to run the experiment on automatically provisioned Kubernetes cluster)
-
+Download and execute script located at [`vagrant/provision_experiment_environment.sh`](/vagrant/provision_experiment_environment.sh). 
+The script will download all the necessary binaries, install Snap, Kubernetes, etcd, Docker and best effort workloads.
 
 ### Peak load
 
