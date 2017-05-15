@@ -79,13 +79,6 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 		session: snap.NewSession(
 			"swan-mutilate-session",
 			[]string{
-				"/intel/swan/mutilate/*/avg",
-				"/intel/swan/mutilate/*/std",
-				"/intel/swan/mutilate/*/min",
-				"/intel/swan/mutilate/*/percentile/5th",
-				"/intel/swan/mutilate/*/percentile/10th",
-				"/intel/swan/mutilate/*/percentile/90th",
-				"/intel/swan/mutilate/*/percentile/95th",
 				"/intel/swan/mutilate/*/percentile/99th",
 				"/intel/swan/mutilate/*/qps",
 			},
