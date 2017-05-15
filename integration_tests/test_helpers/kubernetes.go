@@ -173,14 +173,14 @@ func (k *KubeClient) TaintNode() {
 	}
 
 	node := k.node()
-	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-	if err != nil {
-		panic(err)
-	}
-	err = k.UpdateNode(node)
+	k.updateTaints(node, taintsInJSON)
+}
+
+func (k *KubeClient) updateTaints(node *v1.Node, taints []byte) {
+	err := k.UpdateNode(node)
 	if err != nil {
 		node = k.node()
-		node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
+		node.Annotations[api.TaintsAnnotationKey] = string(taints)
 		if err != nil {
 			panic(err)
 		}
@@ -189,6 +189,7 @@ func (k *KubeClient) TaintNode() {
 			panic(err)
 		}
 	}
+
 }
 
 // UntaintNode removes all tains for given node (can panic on failure).
@@ -198,18 +199,5 @@ func (k *KubeClient) UntaintNode() {
 		panic(err)
 	}
 	node := k.node()
-	node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-	err = k.UpdateNode(node)
-	if err != nil {
-		node = k.node()
-		node.Annotations[api.TaintsAnnotationKey] = string(taintsInJSON)
-		if err != nil {
-			panic(err)
-		}
-		err = k.UpdateNode(node)
-		if err != nil {
-			panic(err)
-		}
-	}
-
+	k.updateTaints(node, taintsInJSON)
 }
