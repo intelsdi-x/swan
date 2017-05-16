@@ -283,6 +283,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
 	scheme := runtime.NewScheme()
+	v1.RegisterConversions(scheme)
 	apiPod := &api.Pod{}
 	scheme.Convert(podManifest, apiPod, nil)
 
@@ -571,8 +572,6 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 						continue
 
 					case v1.PodRunning:
-						// After client-go supports it change to
-						// v1.IsPodReady(pod)
 						apiPod := &api.Pod{}
 						scheme.Convert(pod, apiPod, nil)
 						if api.IsPodReady(apiPod) {

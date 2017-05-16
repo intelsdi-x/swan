@@ -41,7 +41,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("be")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.BestEffort)
+			So(qos.GetPodQOS(v1ToAPI(pod)), ShouldEqual, qos.BestEffort)
 		})
 
 		Convey("with CPU/Memory limit and requests euqal, expect Guaranteed", func() {
@@ -52,7 +52,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("hp")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Guaranteed)
+			So(qos.GetPodQOS(v1ToAPI(pod)), ShouldEqual, qos.Guaranteed)
 		})
 
 		Convey("with CPU/Memory limit and requests but not equal, expect Burstable", func() {
@@ -63,7 +63,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burstable")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Burstable)
+			So(qos.GetPodQOS(v1ToAPI(pod)), ShouldEqual, qos.Burstable)
 		})
 
 		Convey("with no CPU limit and request, expect Burstable", func() {
@@ -72,7 +72,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burst")
 			So(err, ShouldBeNil)
-			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Burstable)
+			So(qos.GetPodQOS(v1ToAPI(pod)), ShouldEqual, qos.Burstable)
 		})
 
 	})
@@ -118,8 +118,13 @@ func TestKubernetes(t *testing.T) {
 
 }
 
-func v1ToApi(v1Pod *v1.Pod) (apiPod *api.Pod) {
+func v1ToAPI(v1Pod *v1.Pod) *api.Pod {
+	apiPod := &api.Pod{}
 	scheme := runtime.NewScheme()
-	scheme.Convert(v1Pod, apiPod, nil)
+	v1.RegisterConversions(scheme)
+	err := scheme.Convert(v1Pod, apiPod, nil)
+	if err != nil {
+		panic(err)
+	}
 	return apiPod
 }
