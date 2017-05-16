@@ -40,7 +40,7 @@ func TestKubernetesExecutor(t *testing.T) {
 	config := kubernetes.DefaultConfig()
 	config.RetryCount = 0
 
-	// Pod executuor config.
+	// Pod executor config.
 	executorConfig := executor.DefaultKubernetesConfig()
 	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
@@ -207,7 +207,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		})
 
 		Convey("Timeout occurs when image is not found", func() {
-			// Launch timout is needed because pod is left in Pending/Waiting/ImagePullBackOff state.
+			// Launch timeout is needed because pod is left in Pending/Waiting/ImagePullBackOff state.
 			executorConfig.ContainerImage = "notexistingone"
 			executorConfig.LaunchTimeout = 1 * time.Second
 			k8sexecutor, err := executor.NewKubernetes(executorConfig)

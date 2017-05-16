@@ -79,12 +79,12 @@ Memcached sensitivity experiment is described in detail in [memcached sensitivit
 ## Next Steps
 
 1. Read [Swan Vision](/docs/vision.md) to understand what is Swan and *what is not*.
-1. Read about [Workload Interference Theory](/experiments/memcached-sensitivity-profile/docs/theory.md) and see why Noisy Neighbour situations appears in cloud envronment.
+1. Read about [Workload Interference Theory](/experiments/memcached-sensitivity-profile/docs/theory.md) and see why Noisy Neighbour situations appears in cloud environment.
 1. Try other experiments:
    1. [Memcached Sensitivity Profile](/experiments/memcached-sensitivity-profile/README.md)
    1. [Memcached Optimal Core Allocation](/experiments/optimal-core-allocation/README.md)
    1. [Memcached & Cache Allocation Technology](/experiments/memcached-cat/README.md)
-1. Read [Architecture Guide](/docs/architecture.md) and [Developement Guide](/docs/development.md) and start to build your own experiments!
+1. Read [Architecture Guide](/docs/architecture.md) and [Development Guide](/docs/development.md) and start to build your own experiments!
 
 ## Contributing
 

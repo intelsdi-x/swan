@@ -36,7 +36,7 @@ const (
 
 	// See /usr/include/sysexits.h for refference regarding constants below
 
-	// ExUsage reperense command line user error exit code
+	// ExUsage represents command line user error exit code
 	ExUsage = 64
 	// ExSoftware represents internal software error exit code
 	ExSoftware = 70

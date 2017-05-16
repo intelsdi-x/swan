@@ -47,7 +47,7 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 		}
 	}
 	fullCommand := "sudo -E env PATH=$PATH " + env + " " + command + " " + strings.Join(args, " ")
-	// Extra logs vs asked explictly.
+	// Extra logs vs asked explicitly.
 	log.Debugf("[FullCommand]==> %q", fullCommand)
 
 	c := exec.Command(command, args...)

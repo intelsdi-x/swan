@@ -238,7 +238,7 @@ func TestConfiguration(t *testing.T) {
 		Convey("Configuration file is also generated correctly", func() {
 
 			body := DumpConfig()
-			requriredParts := []string{
+			requiredParts := []string{
 				"# stringDesc",
 				"# Default: http://foo-bar",
 				"STRINGTEST=bar-foo",
@@ -254,7 +254,7 @@ func TestConfiguration(t *testing.T) {
 				"INTSETTEST=1,3,4,5",
 			}
 
-			for _, part := range requriredParts {
+			for _, part := range requiredParts {
 				So(body, ShouldContainSubstring, part)
 			}
 

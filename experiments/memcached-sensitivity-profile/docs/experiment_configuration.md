@@ -67,7 +67,7 @@ KUBERNETES_KUBECONFIG=
 # Default: $HOSTNAME
 KUBERNETES_TARGET_NODE_NAME=
 
-# Comma seperated list of etcd servers (full URI: http://ip:port)
+# Comma separated list of etcd servers (full URI: http://ip:port)
 # Default: http://127.0.0.1:2379
 KUBERNETES_CLUSTER_ETCD_SERVERS=http://127.0.0.1:2379
 

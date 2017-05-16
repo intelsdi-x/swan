@@ -17,7 +17,7 @@
 # Place for custom options for test commands.
 TEST_OPT?=
 
-# High level targets called from travis with depedencies.
+# High level targets called from travis with dependencies.
 integration_test: show_env restart_snap deps build dist install test_integration
 unit_test: deps test_integration_build build test_unit 
 lint: linter test_lint

@@ -140,7 +140,7 @@ func (k *KubeClient) DeletePod(podName string) error {
 	return k.Clientset.Core().Pods(k.namespace).Delete(podName, &api.DeleteOptions{GracePeriodSeconds: &oneSecond})
 }
 
-// Node assume just one node a return it. Note panics if unavaiable (this is just test helper!).
+// Node assume just one node a return it. Note panics if unavailable (this is just test helper!).
 func (k *KubeClient) node() *v1.Node {
 	nodes, err := k.Clientset.Core().Nodes().List(api.ListOptions{})
 	if err != nil {

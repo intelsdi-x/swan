@@ -233,7 +233,7 @@ func (m *Metadata) recordFlags() error {
 	return m.storeMap(metadata, metadataKindFlags)
 }
 
-// recordEnv adds all OS Envrionment variables that starts with prefix 'prefix'
+// recordEnv adds all OS Environment variables that starts with prefix 'prefix'
 // in the metadata information
 func (m *Metadata) recordEnv(prefix string) error {
 	metadata := MetadataMap{}

@@ -144,7 +144,7 @@ func main() {
 						threads, err = allSoftwareThreds.Take(numberOfThreads)
 						errutil.PanicWithContext(err, "Cannot take %d software threads for memcached")
 					} else {
-						// We have enough physcial threads - take them.
+						// We have enough physical threads - take them.
 						threads, err = physicalCores.Take(numberOfThreads)
 						errutil.PanicWithContext(err, "Cannot take %d hardware threads (cores) for memcached")
 					}
