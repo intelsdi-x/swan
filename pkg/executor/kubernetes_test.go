@@ -19,7 +19,6 @@ import (
 
 	"k8s.io/client-go/pkg/kubelet/qos"
 
-	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 	. "github.com/smartystreets/goconvey/convey"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
