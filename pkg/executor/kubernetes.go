@@ -267,7 +267,7 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *k8s) Execute(command string) (TaskHandle, error) {
-	podsAPI := k8s.clientset.Core().Pods(k8s.config.Namespace)
+	podsAPI := k8s.clientset.Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
 	// This is a workaround for kubernetes #31446
