@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"k8s.io/client-go/1.5/pkg/api/resource"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/kubelet/qos"
+	"k8s.io/client-go/pkg/api/resource"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/kubelet/qos"
 )
 
 func newRes(cpu, mem string) v1.ResourceList {

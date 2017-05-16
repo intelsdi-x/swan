@@ -25,16 +25,15 @@ import:
   subpackages:
   - ssh
 - package: k8s.io/client-go
-  version: 1.5.0
+  version: ~2.0.0
   subpackages:
-  - 1.5/kubernetes
-  - 1.5/kubernetes/typed/core/v1
-  - 1.5/pkg/api
-  - 1.5/pkg/api/resource
-  - 1.5/pkg/api/unversioned
-  - 1.5/pkg/api/v1
-  - 1.5/pkg/kubelet/qos
-  - 1.5/pkg/labels
-  - 1.5/pkg/watch
-  - 1.5/rest
-  - 1.5/tools/clientcmd
+  - kubernetes
+  - kubernetes/typed/core/v1
+  - pkg/api
+  - pkg/api/resource
+  - pkg/api/unversioned
+  - pkg/api/v1
+  - pkg/kubelet/qos
+  - pkg/watch
+  - rest
+  - tools/clientcmd

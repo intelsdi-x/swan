@@ -69,16 +69,14 @@ import (
 	"github.com/intelsdi-x/swan/pkg/k8sports"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/1.5/kubernetes"
-	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
-	"k8s.io/client-go/1.5/pkg/api"
-	"k8s.io/client-go/1.5/pkg/api/resource"
-	"k8s.io/client-go/1.5/pkg/api/unversioned"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/labels"
-	"k8s.io/client-go/1.5/pkg/watch"
-	"k8s.io/client-go/1.5/rest"
-	"k8s.io/client-go/1.5/tools/clientcmd"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api/resource"
+	"k8s.io/client-go/pkg/api/unversioned"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -522,15 +520,11 @@ type k8sWatcher struct {
 // watch creates instance of TaskHandle and is responsible for keeping it in-sync with k8s cluster
 func (kw *k8sWatcher) watch(timeout time.Duration) error {
 	selectorRaw := fmt.Sprintf("name=%s", kw.pod.Name)
-	selector, err := labels.Parse(selectorRaw)
-	if err != nil {
-		return errors.Wrapf(err, "cannot create selector %q", selector)
-	}
 
 	// Prepare events watcher.
-	watcher, err := kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+	watcher, err := kw.podsAPI.Watch(v1.ListOptions{LabelSelector: selectorRaw})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create watcher over selector %q", selector)
+		return errors.Wrapf(err, "cannot create watcher over selector %q", selectorRaw)
 	}
 
 	go func() {
@@ -546,7 +540,7 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 					log.Warnf("Pod %s: watcher event channel was unexpectly closed!", kw.pod.Name)
 					var err error
 					log.Debugf("Pod %s: recreating watcher stream", kw.pod.Name)
-					watcher, err = kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+					watcher, err = kw.podsAPI.Watch(v1.ListOptions{LabelSelector: selectorRaw})
 					if err != nil {
 						// We do not know what to do when error occurs.
 						log.Panicf("Pod %s: cannot recreate watcher stream - %q", kw.pod.Name, err)
@@ -699,7 +693,7 @@ func (kw *k8sWatcher) deletePod() {
 		// Setting it to 5 second leaves responsibility of deleting the pod to kubelet.
 		gracePeriodSeconds := int64(5)
 		log.Debugf("deleting pod %q", kw.pod.Name)
-		err := kw.podsAPI.Delete(kw.pod.Name, &api.DeleteOptions{
+		err := kw.podsAPI.Delete(kw.pod.Name, &v1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriodSeconds,
 		})
 		if err != nil {

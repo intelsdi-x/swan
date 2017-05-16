@@ -16,9 +16,9 @@
 package k8sports
 
 import (
-	"k8s.io/client-go/1.5/pkg/api/resource"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/kubelet/qos"
+	"k8s.io/client-go/pkg/api/resource"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/kubelet/qos"
 )
 
 // NOTE: functions defined here are extends client-go 1.5 functionality by
