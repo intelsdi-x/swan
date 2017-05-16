@@ -66,14 +66,16 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/k8sports"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/resource"
 	"k8s.io/client-go/pkg/api/unversioned"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/kubelet/qos"
+	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -280,7 +282,11 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		log.Errorf("K8s executor: cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
-	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, k8sports.GetPodQOS(podManifest))
+	scheme := runtime.NewScheme()
+	apiPod := &api.Pod{}
+	scheme.Convert(podManifest, apiPod, nil)
+
+	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, qos.GetPodQOS(apiPod))
 
 	pod, err := podsAPI.Create(podManifest)
 	if err != nil {
@@ -308,7 +314,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	stderrFile.Close()
 
 	// After client-go supports GetPodQOS change to qos.GetPodQOS(pod)
-	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, k8sports.GetPodQOS(pod))
+	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(apiPod))
 	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
 		command:         command,
@@ -555,6 +561,8 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 				}
 				log.Debugf("K8s task watcher: event type=%v phase=%v", event.Type, pod.Status.Phase)
 
+				scheme := runtime.NewScheme()
+
 				switch event.Type {
 				case watch.Added, watch.Modified:
 					switch pod.Status.Phase {
@@ -565,7 +573,9 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 					case v1.PodRunning:
 						// After client-go supports it change to
 						// v1.IsPodReady(pod)
-						if k8sports.IsPodReady(pod) {
+						apiPod := &api.Pod{}
+						scheme.Convert(pod, apiPod, nil)
+						if api.IsPodReady(apiPod) {
 							kw.whenPodReady()
 						} else {
 							log.Debug("K8s task watcher: Running but not ready")

@@ -21,6 +21,9 @@ import (
 
 	k8sports "github.com/intelsdi-x/swan/pkg/k8sports"
 	. "github.com/smartystreets/goconvey/convey"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/runtime"
 )
 
 func TestKubernetes(t *testing.T) {
@@ -39,7 +42,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("be")
 			So(err, ShouldBeNil)
-			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.BestEffort)
+			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.BestEffort)
 		})
 
 		Convey("with CPU/Memory limit and requests euqal, expect Guaranteed", func() {
@@ -50,7 +53,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("hp")
 			So(err, ShouldBeNil)
-			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Guaranteed)
+			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Guaranteed)
 		})
 
 		Convey("with CPU/Memory limit and requests but not equal, expect Burstable", func() {
@@ -61,7 +64,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burstable")
 			So(err, ShouldBeNil)
-			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Burstable)
+			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Burstable)
 		})
 
 		Convey("with no CPU limit and request, expect Burstable", func() {
@@ -70,7 +73,7 @@ func TestKubernetes(t *testing.T) {
 			podExecutor := &k8s{config, nil}
 			pod, err := podExecutor.newPod("burst")
 			So(err, ShouldBeNil)
-			So(k8sports.GetPodQOS(pod), ShouldEqual, qos.Burstable)
+			So(qos.GetPodQOS(v1ToApi(pod)), ShouldEqual, qos.Burstable)
 		})
 
 	})
@@ -114,4 +117,10 @@ func TestKubernetes(t *testing.T) {
 		})
 	})
 
+}
+
+func v1ToApi(v1Pod *v1.Pod) (apiPod *api.Pod) {
+	scheme := runtime.NewScheme()
+	scheme.Convert(v1Pod, apiPod, nil)
+	return apiPod
 }
