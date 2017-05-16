@@ -1,4 +1,4 @@
-# Builing Caffe binary with Cifar and OpenBLAS.
+# Building Caffe binary with Cifar and OpenBLAS.
 FROM centos:7 AS caffe
 
 RUN yum makecache fast && yum groupinstall -y "Development tools"  && yum install -y git

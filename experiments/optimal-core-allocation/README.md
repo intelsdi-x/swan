@@ -152,7 +152,7 @@ In tha cases described above:
 
 ### Other variants of experiment results.
 
-Examples of other expriment configurations that may allow to validate various environments:
+Examples of other experiment configurations that may allow to validate various environments:
 - Limiting worker threads of memcached can prevent Linux scheduling balancing problems.
 - Pinning each memcached worker thread to another CPU - to make sure, that workers are never moved moved away.
 - Running experiment on Kubernetes cluster using Kubernetes isolation mechanisms.

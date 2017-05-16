@@ -182,7 +182,7 @@ func main() {
 					errutil.CheckWithContext(err, "Cannot create executors")
 					beExecutorFactory := sensitivity.DefaultKubernetesBEExecutorFactory
 
-					// Clean any RDT assignments from previoues phases.
+					// Clean any RDT assignments from previous phases.
 					pqosOutput, err := isolation.CleanRDTAssingments()
 					logrus.Debugf("pqos -R has been run and produced following output: %q", pqosOutput)
 					errutil.CheckWithContext(err, "pqos -R failed")

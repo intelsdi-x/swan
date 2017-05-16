@@ -153,8 +153,8 @@ func parseOutputFile(path string) (uint64, error) {
 	defer file.Close()
 
 	// In correctly finished log buffer roughly 269 characters is enough
-	// to get last Batch XXXX occurence.
-	// If caffe was killed the last occurence will be even closer to the
+	// to get last Batch XXXX occurrence.
+	// If caffe was killed the last occurrence will be even closer to the
 	// EOF. See example output files.
 	buf := make([]byte, 4096)
 

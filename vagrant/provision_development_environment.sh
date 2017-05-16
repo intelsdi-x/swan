@@ -38,13 +38,13 @@ function addEnv() {
     grep "$1" $HOME_DIR/.bash_profile || echo "$1" >> $HOME_DIR/.bash_profile
 }
 addEnv "export GOPATH=\"$HOME_DIR/go\""
-# jupyter intergration tests from notebooks
+# jupyter integration tests from notebooks
 addEnv 'export PYTHONPATH=$GOPATH/src/github.com/intelsdi-x/swan'
 addEnv 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin'
 
 
 echo "------------------------ Install packages (`date`)"
-echo "workload build dependecies"
+echo "workload build dependencies"
 yum install -y -q \
     cppzmq-devel \
     gengetopt \
@@ -52,7 +52,7 @@ yum install -y -q \
     scons \
     gcc-c++
 
-echo "developer tools & provisioning depedencies"
+echo "developer tools & provisioning dependencies"
 yum install -y -q \
     gcc \
     curl \
@@ -71,7 +71,7 @@ touch /root/.ssh/known_hosts
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 ssh-keyscan localhost >> /root/.ssh/known_hosts
 ssh-keyscan 127.0.0.1 >> /root/.ssh/known_hosts
-# Generte ssh keys for root - needed to run an experiment with remote ssh executor.
+# Generate ssh keys for root - needed to run an experiment with remote ssh executor.
 rm -rf /root/.ssh/id_rsa
 ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys

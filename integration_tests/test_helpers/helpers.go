@@ -33,7 +33,7 @@ import (
 // SwanPath is an absolute path of project.
 var SwanPath = path.Join(os.Getenv("GOPATH"), "src", "github.com/intelsdi-x/swan")
 
-// AssertFileExists makes sure that executable is available in $PATH or panics returning location of exectuable.
+// AssertFileExists makes sure that executable is available in $PATH or panics returning location of executable.
 func AssertFileExists(executable string) string {
 	path, err := exec.LookPath(executable)
 	if err != nil {
@@ -42,7 +42,7 @@ func AssertFileExists(executable string) string {
 	return path
 }
 
-// RunAndTestSnaptel checks snapteld on returning clenaup function, plugin loader and string
+// RunAndTestSnaptel checks snapteld on returning cleanup function, plugin loader and string
 // with snapteld address
 // Note: It is facade function that assumes snapteld is running all the time.
 // But can be easily replaced with self-provided snapteld.

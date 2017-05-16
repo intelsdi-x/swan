@@ -183,7 +183,7 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	return k8s, nil
 }
 
-// containerResources helper to create ResourceRequirments for the container.
+// containerResources helper to create ResourceRequirements for the container.
 func (k8s *k8s) containerResources() v1.ResourceRequirements {
 
 	// requests
@@ -228,7 +228,7 @@ func (k8s *k8s) generatePodName() string {
 	return fmt.Sprintf("%s-%s", k8s.config.PodNamePrefix, uuid.New()[:8])
 }
 
-// newPod is a helper to build in-memory struture representing pod
+// newPod is a helper to build in-memory structure representing pod
 // before sending it as request to API server. It can returns also
 // error if cannot generate Pod name.
 func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
@@ -371,7 +371,7 @@ type k8sTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string // Kubernetes does not support separation of stderr & stdout, so this file will be empty
 
-	// Use pointer with nil to indicate exitCode wasn't recevied.
+	// Use pointer with nil to indicate exitCode wasn't received.
 	exitCode        *int
 	exitCodeChannel chan int
 
@@ -439,7 +439,7 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 		log.Debug("K8s task handle: no exit code received (channel no closed yet)")
 	}
 
-	// Examine just or previously recevied exitCode.
+	// Examine just or previously received exitCode.
 	if th.exitCode == nil {
 		log.Error("K8s task handle: exit code is unknown")
 		return 0, errors.New("exit code unknown")
@@ -662,7 +662,7 @@ func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 	}
 	if pod.Status.Phase == v1.PodFailed {
 
-		// Depedning on how pod was stopped change log level and explanation.
+		// Depending on how pod was stopped change log level and explanation.
 		switch exitCode {
 		case 128 + 9:
 			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGKILL)", pod.Name, exitCode)

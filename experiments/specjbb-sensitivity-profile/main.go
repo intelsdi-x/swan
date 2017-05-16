@@ -149,7 +149,7 @@ func main() {
 				aggressorName = beLauncher.Launcher.Name()
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
-			// Repeat measurement to check if it is cosistent
+			// Repeat measurement to check if it is consistent
 			for repetition := 0; repetition < repetitions; repetition++ {
 				// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 				var processes []executor.TaskHandle

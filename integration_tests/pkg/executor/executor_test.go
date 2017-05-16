@@ -121,7 +121,7 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			data, readErr := ioutil.ReadAll(stdoutFile)
 			So(readErr, ShouldBeNil)
-			// ShouldContain is required because kubernetes pod exectuors adds empty line upfront.
+			// ShouldContain is required because kubernetes pod executors adds empty line upfront.
 			So(string(data[:]), ShouldContainSubstring, "output")
 		})
 

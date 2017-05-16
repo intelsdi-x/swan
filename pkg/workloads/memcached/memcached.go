@@ -58,7 +58,7 @@ var (
 // -m <num>      max memory to use for items in megabytes (default: 64 MB)
 // -c <num>      max simultaneous connections (default: 1024)
 //-v            verbose (print errors/warnings while in event loop)
-//-vv           very verbose (also print client commands/reponses)
+//-vv           very verbose (also print client commands/responses)
 //-vvv          extremely verbose (also print internal state transitions)
 //-t <num>      number of threads to use (default: 4)
 type Config struct {

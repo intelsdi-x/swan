@@ -53,7 +53,7 @@ golint ./pkg/...
 
 ## Dependency management
 
-Dependency management in Swan is handled by [glide](https://github.com/Masterminds/glide). Please refer to the glide documentation for further dependency managenement.
+Dependency management in Swan is handled by [glide](https://github.com/Masterminds/glide). Please refer to the glide documentation for further dependency management.
 
 *Please note* that the <swan>/vendor directory shall not be commited to the repository.
 
