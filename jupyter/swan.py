@@ -291,11 +291,12 @@ COMPOSITE_VALUES_LABEL = 'composite values'
 
 # Existing column names (from metrics provided by plugins).
 PERCENTILE99TH_LABEL = 'percentile/99th'
-NUMBER_OF_CORES = 'number_of_cores'
+
 QPS_LABEL = 'qps'  # Absolute achieved QPS.
 SWAN_LOAD_POINT_QPS_LABEL = 'swan_loadpoint_qps'  # Target QPS.
 SWAN_AGGRESSOR_NAME_LABEL = 'swan_aggressor_name'
-SNAP_USE_COMPUTER_SATURATION_LABEL = '/intel/use/compute/saturation'
+
+
 
 # ----------------------------------------------------
 # Style functions & constants for table cells styling
@@ -463,15 +464,19 @@ def add_extra_and_composite_columns(df, slo):
     return df
 
 
-def _pivot_ui(df):
+def _pivot_ui(df, totals=True, **options):
     """ Interactive pivot table for data analysis. """
     try:
         from pivottablejs import pivot_ui
     except ImportError:
         print("Error: cannot import pivottablejs, please install 'pip install pivottablejs'!")
         return
-    return pivot_ui(df)
-
+    iframe = pivot_ui(df, **options)      
+    with open(iframe.src) as f:
+        replacedHtml = f.read().replace('</style>', '.pvtTotal, .pvtTotalLabel, .pvtGrandTotal {display: none}</style>')
+    with open(iframe.src, "w") as f:
+        f.write(replacedHtml)            
+    return iframe
 
 class Experiment:
     """ Base class for loading & storing data for swan experiments.
@@ -495,6 +500,9 @@ class Experiment:
         """ Interactive pivot table for data analysis. """
         return _pivot_ui(self.df)
 
+# --------------------------------------------------------------
+# "sensitivity profile" experiment
+# --------------------------------------------------------------
 
 class SensitivityProfile:
     """ Visualization for "sensitivity profile" experiments that presents
@@ -579,7 +587,13 @@ class SensitivityProfile:
                 self._get_caption('caffe image batches')
             )
 
+# --------------------------------------------------------------
+# "optimal core allocation" experiment
+# --------------------------------------------------------------
 
+NUMBER_OF_CORES_LABEL = 'number_of_cores' # 
+SNAP_USE_COMPUTER_SATURATION_LABEL = '/intel/use/compute/saturation'
+    
 class OptimalCoreAllocation:
     """ Visualization for "optimal core allocation" experiments that
         presents latency/QPS and cpu utilization in "number of cores" and "load" dimensions.
@@ -595,7 +609,7 @@ class OptimalCoreAllocation:
 
         # Rename columns.
         self.renamer = Renamer({
-            NUMBER_OF_CORES: 'Number of cores',
+            NUMBER_OF_CORES_LABEL: 'Number of cores',
             SWAN_LOAD_POINT_QPS_LABEL: 'Target QPS',
         })
         self.df = self.renamer.rename(df)
@@ -607,7 +621,7 @@ class OptimalCoreAllocation:
     def _composite_pivot_table(self):
         return self.df.pivot_table(
                 values=COMPOSITE_VALUES_LABEL,
-                index=self.renamer(NUMBER_OF_CORES),
+                index=self.renamer(NUMBER_OF_CORES_LABEL),
                 columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
                 aggfunc='first',
             )
@@ -647,7 +661,7 @@ class OptimalCoreAllocation:
             return "background: rgb(%d, %d, 0); color: white;" % (cpu * 255, 255 - cpu * 255)
         return self.df.pivot_table(
                 values=SNAP_USE_COMPUTER_SATURATION_LABEL,
-                index=self.renamer(NUMBER_OF_CORES),
+                index=self.renamer(NUMBER_OF_CORES_LABEL),
                 columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
             ).style.applymap(
                 cpu_colors
@@ -692,6 +706,19 @@ def new_aggregated_index_based_column(df, source_indexes_column, template, aggfu
     return pd.Series(array)
 
 
+# Derived metrics from Intel RDT collector.
+LLC_BE_LABEL='llc/be/megabytes'
+LLC_BE_PERC_LABEL='llc/be/perecentage'
+MEMBW_BE_LABEL='membw/be/gigabytes'
+
+LLC_HP_LABEL='llc/hp/megabytes'
+LLC_HP_PERC_LABEL='llc/hp/perecentage'
+MEMBW_HP_LABEL='membw/hp/gigabytes'
+
+# BE configuration lables
+BE_NUMBER_OF_CORES_LABEL='be_number_of_cores'
+BE_L3_CACHE_WAYS_LABEL='be_l3_cache_ways'
+
 class CAT:
     """ Visualization for "optimal core allocation" experiments that
         presents latency/QPS and cpu utilization in "number of cores" and "load" dimensions.
@@ -704,31 +731,55 @@ class CAT:
         df = self.experiment.df.copy()
         df = add_extra_and_composite_columns(df, slo)
 
-        # aggregate BE columns
-        df['llc_occupancy/be/bytes'] = new_aggregated_index_based_column(
-            df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)
-        df['memory_bandwidth/local/be/bytes'] = new_aggregated_index_based_column(
-            df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)
+        if '/intel/rdt/llc_occupancy/0/bytes' in df.columns:
+            
+            # aggregate BE columns
+            df[LLC_BE_LABEL] = new_aggregated_index_based_column(
+                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
+            df[MEMBW_BE_LABEL] = new_aggregated_index_based_column(
+                df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
 
-        df['llc_occupancy/hp/bytes'] = new_aggregated_index_based_column(
-            df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)
-        df['memory_bandwidth/local/hp/bytes'] = new_aggregated_index_based_column(
-            df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)
+            df[LLC_HP_LABEL] = new_aggregated_index_based_column(
+                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
+            df[MEMBW_HP_LABEL] = new_aggregated_index_based_column(
+                df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)     
 
-        df['llc_occupancy/be/perecentage'] = new_aggregated_index_based_column(
-            df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
-        df['llc_occupancy/hp/perecentage'] = new_aggregated_index_based_column(
-            df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+            df[LLC_BE_PERC_LABEL] = new_aggregated_index_based_column(
+                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+            df[LLC_HP_PERC_LABEL] = new_aggregated_index_based_column(
+                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
 
+        
         self.df = df
 
+    def _get_caption(self, cell, normalized):
+        return '%s%s of "memcached-cat" experiment %s' % (
+            'normalized ' if normalized else '',
+            cell,
+            self.experiment.experiment_id
+        )        
+        
     def simple_df(self):
-        df = self.df[[
+ 
+        
+        extra_columns = [
+             LLC_HP_LABEL,
+             LLC_HP_PERC_LABEL,
+
+             LLC_BE_LABEL,
+             LLC_BE_PERC_LABEL,
+
+             MEMBW_HP_LABEL,
+             MEMBW_BE_LABEL,
+        ]
+                
+        columns = [
              # 'swan_repetition',
-             'swan_loadpoint_qps',
-             'swan_aggressor_name',
-             'be_number_of_cores',
-             'be_l3_cache_ways',
+             SWAN_LOAD_POINT_QPS_LABEL,
+             SWAN_AGGRESSOR_NAME_LABEL,
+             BE_NUMBER_OF_CORES_LABEL,
+             BE_L3_CACHE_WAYS_LABEL,
+             
              # 'swan_phase',
              # 'swan_experiment',
              # 'hp_cores_range',
@@ -742,20 +793,17 @@ class CAT:
              # 'percentile/5th',
              # 'percentile/90th',
              # 'percentile/95th',
-             'percentile/99th',
+             PERCENTILE99TH_LABEL,
              ACHIEVED_LATENCY_LABEL,
-             'qps',
+             QPS_LABEL,
              ACHIEVED_QPS_LABEL,
 
-             'llc_occupancy/hp/bytes',
-             'llc_occupancy/hp/perecentage',
 
-             'llc_occupancy/be/bytes',
-             'llc_occupancy/be/perecentage',
-
-             'memory_bandwidth/local/hp/bytes',
-             'memory_bandwidth/local/be/bytes',
-        ]]
+        ]
+        if LLC_HP_LABEL in self.df:
+            columns += extra_columns
+            
+        df = self.df[columns]
         df.columns.name = ''
         return df
 
@@ -770,14 +818,14 @@ class CAT:
 
         return self.simple_df(
         ).style.format(fmtbytes, [
-                'llc_occupancy/be/bytes',
-                'llc_occupancy/hp/bytes',
-                'memory_bandwidth/local/be/bytes',
-                'memory_bandwidth/local/hp/bytes'
+                LLC_BE_LABEL,
+                LLC_HP_LABEL,
+                MEMBW_BE_LABEL,
+                MEMBW_HP_LABEL,
              ]
         ).format('{:.0%}', [
-                'llc_occupancy/be/perecentage',
-                'llc_occupancy/hp/perecentage'
+                LLC_BE_PERC_LABEL,
+                LLC_HP_PERC_LABEL
              ]
         ).format('{:.0%}', [
                 ACHIEVED_QPS_LABEL,
@@ -785,5 +833,40 @@ class CAT:
              ]
         )
 
-    def pivot_ui(self):
-        return _pivot_ui(self.simple_df())
+    def pivot_ui(self, **options):
+        return _pivot_ui(self.simple_df(), **options)
+    
+    
+    def latency(self, normalized=True, aggressor=None, qps=None):
+        
+        df = self.df
+        
+        if aggressor is not None:
+            df = df[df[SWAN_AGGRESSOR_NAME_LABEL]==aggressor]
+
+        if qps is not None:
+            df = df[df[SWAN_LOAD_POINT_QPS_LABEL]==qps]
+        
+        # Rename columns.
+        renamer = Renamer({
+            NUMBER_OF_CORES_LABEL: 'Number of cores',
+            SWAN_LOAD_POINT_QPS_LABEL: 'Target QPS',
+            BE_L3_CACHE_WAYS_LABEL: 'BE cache ways',
+            BE_NUMBER_OF_CORES_LABEL: 'BE number of cores',             
+        })
+        
+        df = renamer.rename(df)        
+        
+        return df.pivot_table(
+                values=COMPOSITE_VALUES_LABEL, aggfunc='first',
+                index=[renamer(SWAN_AGGRESSOR_NAME_LABEL), renamer(BE_L3_CACHE_WAYS_LABEL)],
+                columns=[renamer(SWAN_LOAD_POINT_QPS_LABEL), renamer(BE_NUMBER_OF_CORES_LABEL)],
+            ).style.applymap(
+                partial(composite_latency_colors, slo=self.slo),
+            ).format(
+                partial(composite_latency_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('latency[us]', normalized)
+            )
+
+    
