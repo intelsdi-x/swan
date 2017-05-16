@@ -15,8 +15,12 @@
 
 set -x -e -o pipefail
 
-HOME_DIR="${HOME_DIR:-/home/vagrant}"
-VAGRANT_USER="${VAGRANT_USER:-vagrant}"
+if [ -z "$HOME_DIR" ]; then
+    HOME_DIR="/home/vagrant"
+fi
+if [ -z "$VAGRANT_USER" ]; then
+    VAGRANT_USER="vagrant"
+fi
 
 HOME_DIR=$HOME_DIR SWAN_USER=$VAGRANT_USER $HOME_DIR/go/src/github.com/intelsdi-x/swan/vagrant/provision_experiment_environment.sh
 
