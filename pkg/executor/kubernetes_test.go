@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/runtime"
+	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 func TestKubernetes(t *testing.T) {
@@ -120,8 +121,7 @@ func TestKubernetes(t *testing.T) {
 
 func v1ToAPI(v1Pod *v1.Pod) *api.Pod {
 	apiPod := &api.Pod{}
-	scheme := runtime.NewScheme()
-	v1.RegisterConversions(scheme)
+	scheme := NewRuntimeScheme()
 	err := scheme.Convert(v1Pod, apiPod, nil)
 	if err != nil {
 		panic(err)

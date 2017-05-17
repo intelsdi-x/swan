@@ -282,8 +282,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		log.Errorf("K8s executor: cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
-	scheme := runtime.NewScheme()
-	v1.RegisterConversions(scheme)
+	scheme := NewRuntimeScheme()
 	apiPod := &api.Pod{}
 	scheme.Convert(podManifest, apiPod, nil)
 
@@ -562,7 +561,7 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 				}
 				log.Debugf("K8s task watcher: event type=%v phase=%v", event.Type, pod.Status.Phase)
 
-				scheme := runtime.NewScheme()
+				scheme := NewRuntimeScheme()
 
 				switch event.Type {
 				case watch.Added, watch.Modified:
@@ -745,4 +744,12 @@ func (kw *k8sWatcher) setupLogs() {
 			log.Debugf("K8s copier: log copy and sync done for pod %q", kw.pod.Name)
 		}()
 	})
+}
+
+//NewRuntimeScheme creates instance of runtime.Scheme and registers default conversions.
+func NewRuntimeScheme() *runtime.Scheme {
+	scheme := runtime.NewScheme()
+	v1.RegisterConversions(scheme)
+
+	return scheme
 }
