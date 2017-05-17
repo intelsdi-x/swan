@@ -139,7 +139,7 @@ func main() {
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
 	if includeBaselinePhaseFlag.Value() {
-		aggressors = append(aggressors, "")
+		aggressors = append([]string{""}, aggressors...)
 	}
 
 	useRDTCollector := useRDTCollectorFlag.Value()
