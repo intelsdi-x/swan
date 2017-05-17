@@ -16,7 +16,6 @@ package executor
 
 import (
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -159,6 +158,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			exitCode, err := taskHandle.ExitCode()
 			So(exitCode, ShouldEqual, 0)
 
+			// Stdout
 			stdout, err := taskHandle.StdoutFile()
 			So(err, ShouldBeNil)
 			defer stdout.Close()
@@ -172,16 +172,19 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(output, ShouldContain, "This is Sparta")
 			So(output, ShouldContain, "This is England")
 
+			// Stderr
 			stderr, err := taskHandle.StderrFile()
 			So(err, ShouldBeNil)
 			defer stderr.Close()
-			buffer = make([]byte, 10)
+			buffer = make([]byte, 31)
 			n, err = stderr.Read(buffer)
 
-			// stderr will always be empty as we are not able to fetch it from K8s.
-			// stdout includes both stderr and stdout of the application run in the pod.
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 31)
+			output = strings.Split(string(buffer), "\n")
+			So(output, ShouldHaveLength, 3)
+			So(output, ShouldContain, "This is Sparta")
+			So(output, ShouldContain, "This is England")
 		})
 
 		Convey("Long running pod is not deadlocked when deleted externally", func() {
