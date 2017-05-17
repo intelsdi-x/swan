@@ -251,7 +251,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-experiment_baseline=false"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -264,7 +264,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-experiment_baseline=false"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -277,7 +277,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes and caffe", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-experiment_baseline=false"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
