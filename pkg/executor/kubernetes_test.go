@@ -22,8 +22,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/runtime"
-	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
 
 func TestKubernetes(t *testing.T) {
