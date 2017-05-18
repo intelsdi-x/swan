@@ -30,7 +30,10 @@ class TestExperiments(unittest.TestCase):
             # ignore dir exits
             pass
 
-        for fn in ['6ed71a63-14c0-8e3e-3a65-4da9a11eecf6.csv.bz2', '80ad81ec-e6d7-cfc2-de6c-6c60cb300d7f.csv.bz2', 'bc1ee530-4e02-b9fd-e845-752eb7545773.csv.bz2']:
+        for fn in ['6ed71a63-14c0-8e3e-3a65-4da9a11eecf6.csv.bz2',  # sensitivity profile
+                   '80ad81ec-e6d7-cfc2-de6c-6c60cb300d7f.csv.bz2',  # optimal core allocation
+                   'bc1ee530-4e02-b9fd-e845-752eb7545773.csv.bz2'   # memcached CAT
+                   ]:
             src = os.path.join('test_data', fn)
             dst = os.path.join(swan.DataFrameToCSVCache.CACHE_DIR, fn)
             shutil.copyfile(src, dst)
