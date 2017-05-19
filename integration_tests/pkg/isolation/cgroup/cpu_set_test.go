@@ -15,10 +15,12 @@
 package integration
 
 import (
-	"github.com/intelsdi-x/swan/pkg/isolation"
 	"os/exec"
 	pth "path"
 	"testing"
+
+	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 
 	"github.com/intelsdi-x/swan/pkg/isolation/cgroup"
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,6 +29,12 @@ import (
 func TestCPUSet(t *testing.T) {
 
 	Convey("When constructing a new CPUSet", t, func() {
+		topology, err := topo.Discover()
+		So(err, ShouldBeNil)
+		if len(topology.AvailableThreads()) < 2 {
+			t.Skip("this tests requires at least 2 logical threads (cpus) to run")
+		}
+
 		uuid1 := uuidgen(t)
 		uuid2 := uuidgen(t)
 		uuid3 := uuidgen(t)

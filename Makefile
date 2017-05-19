@@ -85,7 +85,15 @@ test_integration_build:
 
 test_integration:
 	go test -i ./integration_tests/... 
-	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
+	@# Validate that there is enough cpus to run integration tests.
+	@if [[ `nproc` -lt 2 ]]; then \
+		echo 'warning: not enough cpus `nproc` to run integrations tests (two cores are required)'; \
+		exit 1;\
+	fi
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/pkg/...
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/snap-plugins/...
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/experiments/...
 
 cleanup:
 	rm -fr plugins/**/*log
