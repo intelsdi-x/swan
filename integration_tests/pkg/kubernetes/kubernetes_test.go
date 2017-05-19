@@ -91,12 +91,11 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 					const containerName = "kubernetes-test-go-stress"
 					config := executor.DefaultKubernetesConfig()
 					config.Address = kubernetesAddress
-					config.ContainerImage = "jess/stress"
 					config.ContainerName = containerName
 					k8sExecutor, err := executor.NewKubernetes(config)
 					So(err, ShouldBeNil)
 
-					podHandle, err := k8sExecutor.Execute("stress -c 1")
+					podHandle, err := k8sExecutor.Execute("stress-ng -c 1")
 					So(err, ShouldBeNil)
 					defer executor.StopAndEraseOutput(podHandle)
 
