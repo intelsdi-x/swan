@@ -129,6 +129,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+	register(&taskHandle)
 	return &taskHandle, nil
 }
 

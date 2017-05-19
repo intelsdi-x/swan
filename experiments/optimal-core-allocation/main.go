@@ -60,6 +60,9 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
+	executorsCleanup := executor.RegisterInterruptHandle()
+	defer executorsCleanup()
+
 	// connect to metadata database
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
