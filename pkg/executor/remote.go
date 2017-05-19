@@ -119,7 +119,7 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 
 // Name returns User-friendly name of executor.
 func (remote Remote) Name() string {
-	return "Remote Executor"
+	return fmt.Sprintf("Remote executor on (%s:%s)", remote.config.User, remote.targetHost)
 }
 
 // Execute runs the command given as input.
