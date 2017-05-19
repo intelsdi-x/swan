@@ -357,6 +357,15 @@ def composite_qps_colors(composite_values):
         return CRIT_STYLE
 
 
+def bytes_formatter(b):
+    """ Formatter that formats bytes into kb/mb/gb etc... """
+    for u in ' KMGTPEZ':
+        if abs(b) < 1024.0:
+            return "%3.1f%s" % (b, u)
+        b /= 1024.0
+    return "%.1f%s" % (b, 'Y')
+
+
 def composite_latency_formatter(composite_values, normalized=False):
     """ Formatter responsible for showing either absolute or normalized value of latency depending of normalized argument.
     Additionally if achieved normalized QPS was below 90% marks column as "FAIL".
@@ -594,7 +603,7 @@ class SensitivityProfile:
 
 
 NUMBER_OF_CORES_LABEL = 'number_of_cores'  # HP cores.
-SNAP_USE_COMPUTER_SATURATION_LABEL = '/intel/use/compute/saturation'
+SNAP_USE_COMPUTE_SATURATION_LABEL = '/intel/use/compute/saturation'
 
 
 class OptimalCoreAllocation:
@@ -663,7 +672,7 @@ class OptimalCoreAllocation:
                 return NAN_STYLE
             return "background: rgb(%d, %d, 0); color: white;" % (cpu * 255, 255 - cpu * 255)
         return self.df.pivot_table(
-                values=SNAP_USE_COMPUTER_SATURATION_LABEL,
+                values=SNAP_USE_COMPUTE_SATURATION_LABEL,
                 index=self.renamer(NUMBER_OF_CORES_LABEL),
                 columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
             ).style.applymap(
@@ -762,9 +771,11 @@ class CAT:
             self.experiment.experiment_id
         )
 
-    def simple_df(self):
+    def filtered_df(self):
+        """ Returns dataframe that exposes only meaningful columns."""
 
-        extra_columns = [
+        # RDT collected data.
+        rdt_columns = [
              LLC_HP_LABEL,
              LLC_HP_PERC_LABEL,
 
@@ -776,25 +787,10 @@ class CAT:
         ]
 
         columns = [
-             # 'swan_repetition',
              SWAN_LOAD_POINT_QPS_LABEL,
              SWAN_AGGRESSOR_NAME_LABEL,
              BE_NUMBER_OF_CORES_LABEL,
              BE_L3_CACHE_WAYS_LABEL,
-
-             # 'swan_phase',
-             # 'swan_experiment',
-             # 'hp_cores_range',
-             # 'be_cores_range',
-
-             # 'plugin_running_on',
-             # 'avg',
-             # 'std',
-             # 'min',
-             # 'percentile/10th',
-             # 'percentile/5th',
-             # 'percentile/90th',
-             # 'percentile/95th',
              PERCENTILE99TH_LABEL,
              ACHIEVED_LATENCY_LABEL,
              QPS_LABEL,
@@ -802,30 +798,22 @@ class CAT:
 
 
         ]
+
+        # Check if RDT collector data is available.
         if LLC_HP_LABEL in self.df:
-            columns += extra_columns
+            columns += rdt_columns
 
         df = self.df[columns]
+
+        # Drop title of dataframe.
         df.columns.name = ''
         return df
 
-    def simple_df_table(self):
+    def filtered_df_table(self):
+        """ Returns an simple formated dataframe """
 
-        def fmtbytes(b):
-            for u in ' KMGTPEZ':
-                if abs(b) < 1024.0:
-                    return "%3.1f%s" % (b, u)
-                b /= 1024.0
-            return "%.1f%s" % (b, 'Y')
-
-        return self.simple_df(
-        ).style.format(fmtbytes, [
-                LLC_BE_LABEL,
-                LLC_HP_LABEL,
-                MEMBW_BE_LABEL,
-                MEMBW_HP_LABEL,
-             ]
-        ).format('{:.0%}', [
+        return self.filtered_df(
+        ).style.format('{:.0%}', [
                 LLC_BE_PERC_LABEL,
                 LLC_HP_PERC_LABEL
              ]
@@ -840,6 +828,7 @@ class CAT:
 
     def latency(self, normalized=True, aggressor=None, qps=None):
 
+        # Create local reference of data and modify it according provided paramters.
         df = self.df
 
         if aggressor is not None:

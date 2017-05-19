@@ -68,5 +68,8 @@ class TestExperiments(unittest.TestCase):
         self.assertRenders(core.latency(normalized=False))
         self.assertRenders(core.latency(aggressor='Caffe', qps=500000))
 
+        core.filtered_df()
+        core.filtered_df_table()
+
 if __name__ == '__main__':
     unittest.main()
