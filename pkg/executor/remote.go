@@ -119,7 +119,7 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 
 // Name returns User-friendly name of executor.
 func (remote Remote) Name() string {
-	return fmt.Sprintf("Remote executor on (%s:%s)", remote.config.User, remote.targetHost)
+	return fmt.Sprintf("Remote executor pointing at %s@%s", remote.config.User, remote.targetHost)
 }
 
 // Execute runs the command given as input.
@@ -338,7 +338,7 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) (bool, error) {
 }
 
 func (taskHandle *remoteTaskHandle) Name() string {
-	return fmt.Sprintf("Remote %q on %q", taskHandle.command, taskHandle.Address())
+	return fmt.Sprintf("Remote command %q running on %s@%s", taskHandle.command, taskHandle.connection.User(), taskHandle.Address())
 }
 
 func (taskHandle *remoteTaskHandle) Address() string {
