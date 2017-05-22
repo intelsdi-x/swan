@@ -48,6 +48,7 @@ var (
 	qpsFlag                  = conf.NewStringFlag("cat_qps", "Comma-separated list of QpS to iterate over", "375000")
 	maxCacheWaysToAssignFlag = conf.NewIntFlag("cat_max_cache_ways", "Mask representing maximum number of cache ways to assign to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 11)
 	minCacheWaysToAssignFlag = conf.NewIntFlag("cat_min_cache_ways", "Mask representing minumim number of cache ways to assing to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 1)
+	cacheParitioningFlag     = conf.NewBoolFlag("cat_cache_paritioning", "Enable separate cache parition for HP workload (otherwise HP has access to whole cache, not just rest of not used by BE workload)", false)
 	minNumberOfBECPUsFlag    = conf.NewIntFlag("cat_min_be_cpus", "Minimum number of CPUs available to BE job.", 1)
 	maxNumberOfBECPUsFlag    = conf.NewIntFlag("cat_max_be_cpus", "Maximum number of CPUs available to BE job. If set to zero then all availabe cores will be used (taking isolation defined into consideration).", 0)
 	useRDTCollectorFlag      = conf.NewBoolFlag("use_rdt_collector", "Collects Intel RDT metrics.", false)
@@ -106,8 +107,8 @@ func main() {
 		logrus.Errorf("HP & BE workloads ranges required! (please specify -%s and -%s)", topology.HpRangeFlag.Name, topology.BeRangeFlag.Name)
 		os.Exit(experiment.ExUsage)
 	}
-	logrus.Debugf("HP CPU range: %+v", hpCores)
-	logrus.Debugf("BE CPU range: %+v", beCores)
+	logrus.Debugf("HP CPU range: %s", hpCores.AsRangeString())
+	logrus.Debugf("BE CPU range: %s", beCores.AsRangeString())
 
 	// If maximum number of cores is not provided - use all.
 	if maxBECPUsCount == 0 {
@@ -154,7 +155,9 @@ func main() {
 	}
 
 	// We need to calculate mask for all cache ways to be able to calculate non-overlapping cache partitions.
-	wholeCacheMask := 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
+	numberOfAvailableCacheWays := uint64(maxCacheWaysToAssign + minCacheWaysToAssign)
+	wholeCacheMask := 1<<numberOfAvailableCacheWays - 1
+
 	for _, aggressorName := range aggressors {
 		logrus.Debugf("starting aggressor: %s", aggressorName)
 		for _, qps := range qpsList {
@@ -173,12 +176,24 @@ func main() {
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks
 					beCacheMask := 1<<beCacheWays - 1
-					hpCacheMask := wholeCacheMask &^ beCacheMask
+					var (
+						hpCacheMask int
+						hpCacheWays uint64
+					)
+					if cacheParitioningFlag.Value() {
+						hpCacheWays = numberOfAvailableCacheWays - beCacheWays
+						hpCacheMask = int(wholeCacheMask &^ beCacheMask)
+					} else {
+						hpCacheWays = numberOfAvailableCacheWays
+						hpCacheMask = int(wholeCacheMask)
 
-					logrus.Debugf("Current L3 HP mask: %d, %b", hpCacheMask, hpCacheMask)
-					logrus.Debugf("Current L3 BE mask: %d, %b", beCacheMask, beCacheMask)
-					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
+					}
+
+					logrus.Debugf("Current L3 HP mask: %d, %b (%d)", hpCacheMask, hpCacheMask, hpCacheWays)
+					logrus.Debugf("Current L3 BE mask: %d, %b (%d)", beCacheMask, beCacheMask, beCacheWays)
+
 					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: hpCoresRange}
+					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
 					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, beIsolation)
 
 					// Create executors with cleanup function.
