@@ -31,6 +31,10 @@ import (
 )
 
 const (
+
+	// NoneAggressorID is constant to represent "pseudo" aggressor for baselining experiment (running HP workload without aggressor at all).
+	NoneAggressorID = "None"
+
 	l1dDefaultProcessNumber   = 1
 	l1iDefaultProcessNumber   = 1
 	l3DefaultProcessNumber    = 1
@@ -43,7 +47,7 @@ var (
 		"experiment_be_workloads", "Best Effort workloads that will be run sequentially in colocation with High Priority workload. \n"+
 			"# When experiment is run on machine with HyperThreads, user can also add 'stress-ng-cache-l1' to this list. \n"+
 			"# When iBench and Stream is available, user can also add 'l1d,l1i,l3,stream' to this list.",
-		[]string{"stress-ng-cache-l3", "stress-ng-memcpy", "stress-ng-stream", "caffe"},
+		[]string{NoneAggressorID, "stress-ng-cache-l3", "stress-ng-memcpy", "stress-ng-stream", "caffe"},
 	)
 
 	theatAggressorsAsService = conf.NewBoolFlag(
@@ -121,6 +125,12 @@ type ExecutorFactoryFunc func(isolation.Decorators) (executor.Executor, error)
 
 // Create returns aggressor of chosen type using provided executorFactor to create executor.
 func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFunc) (executor.Launcher, error) {
+
+	// Zero-value sensitivity.LauncherSessionPair represents baselining.
+	if name == NoneAggressorID {
+		return nil, nil
+	}
+
 	var aggressor executor.Launcher
 
 	decorators := f.getDecorators(name)
@@ -218,6 +228,10 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 		var launcherSessionPair LauncherSessionPair
 
 		switch aggressorName {
+
+		case NoneAggressorID:
+			launcherSessionPair = LauncherSessionPair{}
+
 		case caffe.ID:
 			caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 			if err != nil {

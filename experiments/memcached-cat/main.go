@@ -50,7 +50,6 @@ var (
 	minCacheWaysToAssignFlag = conf.NewIntFlag("cat_min_cache_ways", "Mask representing minumim number of cache ways to assing to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 1)
 	minNumberOfBECPUsFlag    = conf.NewIntFlag("cat_min_be_cpus", "Minimum number of CPUs available to BE job.", 1)
 	maxNumberOfBECPUsFlag    = conf.NewIntFlag("cat_max_be_cpus", "Maximum number of CPUs available to BE job. If set to zero then all availabe cores will be used (taking isolation defined into consideration).", 0)
-	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
 	useRDTCollectorFlag      = conf.NewBoolFlag("use_rdt_collector", "Collects Intel RDT metrics.", false)
 	appName                  = os.Args[0]
 )
@@ -100,8 +99,16 @@ func main() {
 	}
 
 	// Discover local CPU topology.
+	hpCores := topology.HpRangeFlag.Value()
 	beCores := topology.BeRangeFlag.Value()
+
+	if len(beCores) == 0 || len(hpCores) == 0 {
+		logrus.Errorf("HP & BE workloads ranges required! (please specify -experiment_hp_workload_cpu_range and -experiment_be_workload_l3_cpu_range)")
+		os.Exit(experiment.ExUsage)
+	}
+	logrus.Debugf("HP CPU range: %+v", hpCores)
 	logrus.Debugf("BE CPU range: %+v", beCores)
+
 	// If maximum number of cores is not provided - use all.
 	if maxBECPUsCount == 0 {
 		maxBECPUsCount = len(beCores)
@@ -138,9 +145,6 @@ func main() {
 
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
-	if includeBaselinePhaseFlag.Value() {
-		aggressors = append([]string{""}, aggressors...)
-	}
 
 	useRDTCollector := useRDTCollectorFlag.Value()
 	var rdtSession snap.SessionLauncher
@@ -158,12 +162,12 @@ func main() {
 			// Initialize counters.
 			var beIteration, totalIteration int
 			for BECPUsCount := maxBECPUsCount; BECPUsCount >= minBECPUsCount; BECPUsCount-- {
-				logrus.Debugf("staring cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
+				logrus.Debugf("starting cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
 				// Chose CPUs to be used
 				cores, err := beCores.Take(BECPUsCount)
 				errutil.CheckWithContext(err, fmt.Sprintf("unable to substract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
 				beCoresRange := cores.AsRangeString()
-				hpCoresRange := topology.HpRangeFlag.Value().AsRangeString()
+				hpCoresRange := hpCores.AsRangeString()
 				logrus.Debugf("Substracted %d cores and got: %v", BECPUsCount, beCoresRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
@@ -188,10 +192,7 @@ func main() {
 					errutil.CheckWithContext(err, "pqos -R failed")
 
 					// Create BE workloads.
-					var beLauncher sensitivity.LauncherSessionPair
-					if aggressorName != "" {
-						beLauncher = createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
-					}
+					beLauncher := createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
 
 					// Create HP workload.
 					memcachedConfig := memcached.DefaultMemcachedConfig()
@@ -208,7 +209,7 @@ func main() {
 					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 					aggressorName := fmt.Sprintf("Baseline")
 					if beLauncher.Launcher != nil {
-						aggressorName = fmt.Sprintf("%s", beLauncher.Launcher.Name())
+						aggressorName = beLauncher.Launcher.Name()
 					}
 
 					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
@@ -356,6 +357,8 @@ func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation i
 	errutil.CheckWithContext(err, "Cannot create aggressor pair")
 
 	switch aggressorName {
+	case sensitivity.NoneAggressorID:
+		beLauncher = sensitivity.LauncherSessionPair{}
 	case caffe.ID:
 		caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 		errutil.CheckWithContext(err, "Cannot create Caffee session launcher")
