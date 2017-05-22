@@ -812,16 +812,21 @@ class CAT:
     def filtered_df_table(self):
         """ Returns an simple formated dataframe """
 
-        return self.filtered_df(
-        ).style.format('{:.0%}', [
-                LLC_BE_PERC_LABEL,
-                LLC_HP_PERC_LABEL
-             ]
-        ).format('{:.0%}', [
+        df = self.filtered_df()
+
+        styler = df.style.format('{:.0%}', [
                 ACHIEVED_QPS_LABEL,
                 ACHIEVED_LATENCY_LABEL,
              ]
         )
+
+        # format optionall values optionally.
+        if LLC_HP_LABEL in self.df:
+            styler = styler.format('{:.0%}', [
+                LLC_BE_PERC_LABEL,
+                LLC_HP_PERC_LABEL
+             ])
+        return styler
 
     def pivot_ui(self, **options):
         return _pivot_ui(self.simple_df(), **options)
