@@ -136,7 +136,7 @@ def _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace='snap')
 
     rows = list(cassandra_session.execute(statement, [experiment_id]))
     if len(rows) == 0:
-        print >>sys.stderr, "no metrics found!"
+        print("no metrics found!")
         return []
     print("loaded %d rows in %0.fs" % (len(rows), (datetime.datetime.now() - started).seconds))
 
