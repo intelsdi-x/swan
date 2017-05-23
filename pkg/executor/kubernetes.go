@@ -66,19 +66,19 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/k8sports"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/1.5/kubernetes"
-	corev1 "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
-	"k8s.io/client-go/1.5/pkg/api"
-	"k8s.io/client-go/1.5/pkg/api/resource"
-	"k8s.io/client-go/1.5/pkg/api/unversioned"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/labels"
-	"k8s.io/client-go/1.5/pkg/watch"
-	"k8s.io/client-go/1.5/rest"
-	"k8s.io/client-go/1.5/tools/clientcmd"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/resource"
+	"k8s.io/client-go/pkg/api/unversioned"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/kubelet/qos"
+	"k8s.io/client-go/pkg/runtime"
+	"k8s.io/client-go/pkg/watch"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -183,7 +183,7 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	return k8s, nil
 }
 
-// containerResources helper to create ResourceRequirments for the container.
+// containerResources helper to create ResourceRequirements for the container.
 func (k8s *k8s) containerResources() v1.ResourceRequirements {
 
 	// requests
@@ -228,7 +228,7 @@ func (k8s *k8s) generatePodName() string {
 	return fmt.Sprintf("%s-%s", k8s.config.PodNamePrefix, uuid.New()[:8])
 }
 
-// newPod is a helper to build in-memory struture representing pod
+// newPod is a helper to build in-memory structure representing pod
 // before sending it as request to API server. It can returns also
 // error if cannot generate Pod name.
 func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
@@ -267,7 +267,7 @@ func (k8s *k8s) newPod(command string) (*v1.Pod, error) {
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *k8s) Execute(command string) (TaskHandle, error) {
-	podsAPI := k8s.clientset.Core().Pods(k8s.config.Namespace)
+	podsAPI := k8s.clientset.Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
 	// This is a workaround for kubernetes #31446
@@ -282,7 +282,11 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		log.Errorf("K8s executor: cannot create pod manifest")
 		return nil, errors.Wrapf(err, "cannot create pod manifest")
 	}
-	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, k8sports.GetPodQOS(podManifest))
+	scheme := NewRuntimeScheme()
+	apiPod := &api.Pod{}
+	scheme.Convert(podManifest, apiPod, nil)
+
+	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, qos.GetPodQOS(apiPod))
 
 	pod, err := podsAPI.Create(podManifest)
 	if err != nil {
@@ -310,7 +314,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	stderrFile.Close()
 
 	// After client-go supports GetPodQOS change to qos.GetPodQOS(pod)
-	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, k8sports.GetPodQOS(pod))
+	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, qos.GetPodQOS(apiPod))
 	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
 		command:         command,
@@ -329,6 +333,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		command:    wrappedCommand,
 
 		stdoutFilePath: stdoutFileName,
+		stderrFilePath: stderrFileName,
 
 		logsCopyFinished: make(chan struct{}, 1),
 
@@ -371,7 +376,7 @@ type k8sTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string // Kubernetes does not support separation of stderr & stdout, so this file will be empty
 
-	// Use pointer with nil to indicate exitCode wasn't recevied.
+	// Use pointer with nil to indicate exitCode wasn't received.
 	exitCode        *int
 	exitCodeChannel chan int
 
@@ -439,7 +444,7 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 		log.Debug("K8s task handle: no exit code received (channel no closed yet)")
 	}
 
-	// Examine just or previously recevied exitCode.
+	// Examine just or previously received exitCode.
 	if th.exitCode == nil {
 		log.Error("K8s task handle: exit code is unknown")
 		return 0, errors.New("exit code unknown")
@@ -450,9 +455,9 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 
 // Wait blocks until the pod terminates _or_ if timeout is provided, will exit ealier with
 // false if the pod didn't terminate before the provided timeout.
-func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
+func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if th.isTerminated() {
-		return true
+		return true, nil
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -463,9 +468,9 @@ func (th *k8sTaskHandle) Wait(timeout time.Duration) bool {
 
 	select {
 	case <-th.stopped:
-		return true
+		return true, nil
 	case <-timeoutChannel:
-		return false
+		return false, nil
 	}
 }
 
@@ -492,6 +497,7 @@ func (th *k8sTaskHandle) StdoutFile() (*os.File, error) {
 
 // StderrFile returns a file handle to the stderr file for the pod.
 // NOTE: StderrFile will block until stderr file is available.
+// For kubernetes there is not stderr stream - return stdout stream.
 func (th *k8sTaskHandle) StderrFile() (*os.File, error) {
 	return openFile(th.stderrFilePath)
 }
@@ -501,6 +507,7 @@ type k8sWatcher struct {
 	pod     *v1.Pod
 
 	stdoutFilePath string
+	stderrFilePath string
 
 	started          chan struct{}
 	stopped          chan struct{}
@@ -522,15 +529,11 @@ type k8sWatcher struct {
 // watch creates instance of TaskHandle and is responsible for keeping it in-sync with k8s cluster
 func (kw *k8sWatcher) watch(timeout time.Duration) error {
 	selectorRaw := fmt.Sprintf("name=%s", kw.pod.Name)
-	selector, err := labels.Parse(selectorRaw)
-	if err != nil {
-		return errors.Wrapf(err, "cannot create selector %q", selector)
-	}
 
 	// Prepare events watcher.
-	watcher, err := kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+	watcher, err := kw.podsAPI.Watch(v1.ListOptions{LabelSelector: selectorRaw})
 	if err != nil {
-		return errors.Wrapf(err, "cannot create watcher over selector %q", selector)
+		return errors.Wrapf(err, "cannot create watcher over selector %q", selectorRaw)
 	}
 
 	go func() {
@@ -546,7 +549,7 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 					log.Warnf("Pod %s: watcher event channel was unexpectly closed!", kw.pod.Name)
 					var err error
 					log.Debugf("Pod %s: recreating watcher stream", kw.pod.Name)
-					watcher, err = kw.podsAPI.Watch(api.ListOptions{LabelSelector: selector})
+					watcher, err = kw.podsAPI.Watch(v1.ListOptions{LabelSelector: selectorRaw})
 					if err != nil {
 						// We do not know what to do when error occurs.
 						log.Panicf("Pod %s: cannot recreate watcher stream - %q", kw.pod.Name, err)
@@ -561,6 +564,8 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 				}
 				log.Debugf("K8s task watcher: event type=%v phase=%v", event.Type, pod.Status.Phase)
 
+				scheme := NewRuntimeScheme()
+
 				switch event.Type {
 				case watch.Added, watch.Modified:
 					switch pod.Status.Phase {
@@ -569,9 +574,9 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 						continue
 
 					case v1.PodRunning:
-						// After client-go supports it change to
-						// v1.IsPodReady(pod)
-						if k8sports.IsPodReady(pod) {
+						apiPod := &api.Pod{}
+						scheme.Convert(pod, apiPod, nil)
+						if api.IsPodReady(apiPod) {
 							kw.whenPodReady()
 						} else {
 							log.Debug("K8s task watcher: Running but not ready")
@@ -662,7 +667,7 @@ func (kw *k8sWatcher) setExitCode(pod *v1.Pod) {
 	}
 	if pod.Status.Phase == v1.PodFailed {
 
-		// Depedning on how pod was stopped change log level and explanation.
+		// Depending on how pod was stopped change log level and explanation.
 		switch exitCode {
 		case 128 + 9:
 			log.Warnf("K8s task watcher: pod %q exited with code %d (forced to stop with SIGKILL)", pod.Name, exitCode)
@@ -699,7 +704,7 @@ func (kw *k8sWatcher) deletePod() {
 		// Setting it to 5 second leaves responsibility of deleting the pod to kubelet.
 		gracePeriodSeconds := int64(5)
 		log.Debugf("deleting pod %q", kw.pod.Name)
-		err := kw.podsAPI.Delete(kw.pod.Name, &api.DeleteOptions{
+		err := kw.podsAPI.Delete(kw.pod.Name, &v1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriodSeconds,
 		})
 		if err != nil {
@@ -731,9 +736,15 @@ func (kw *k8sWatcher) setupLogs() {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
 			}
+			stderrFile, err := os.OpenFile(kw.stderrFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
+			if err != nil {
+				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
+				return
+			}
 			defer syncAndClose(stdoutFile)
+			defer syncAndClose(stderrFile)
 
-			_, err = io.Copy(stdoutFile, logStream)
+			_, err = io.Copy(io.MultiWriter(stdoutFile, stderrFile), logStream)
 			if err != nil {
 				log.Errorf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
 				return
@@ -742,4 +753,12 @@ func (kw *k8sWatcher) setupLogs() {
 			log.Debugf("K8s copier: log copy and sync done for pod %q", kw.pod.Name)
 		}()
 	})
+}
+
+//NewRuntimeScheme creates instance of runtime.Scheme and registers default conversions.
+func NewRuntimeScheme() *runtime.Scheme {
+	scheme := runtime.NewScheme()
+	v1.RegisterConversions(scheme)
+
+	return scheme
 }

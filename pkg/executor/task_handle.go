@@ -43,7 +43,8 @@ type TaskInfo interface {
 	Name() string
 	// Location returns address where task was located.
 	Address() string
-	// ExitCode returns a exitCode. If task is not terminated it returns error.
+	// ExitCode returns an exit code of finished task.
+	// Returns error if If task is not terminated.
 	ExitCode() (int, error)
 	// Status returns a state of the task.
 	Status() TaskState
@@ -56,11 +57,13 @@ type TaskInfo interface {
 // TaskControl controls task's lifecycle and garbage collection.
 type TaskControl interface {
 	// Stops a task.
+	// Returns error if something wrong has happen during task execution.
 	Stop() error
-	// Wait does the blocking wait. It is a helper for waiting with a given timeout time.
-	// It returns true if task is terminated.
-	// In case of '0*time.Nanoseconds' timeout it waits infinitely for task completion.
-	Wait(timeout time.Duration) bool
+	// Wait blocks and waits for task to terminate.
+	// Parameter `timeout` is waiting timeout. For `0` it wil wait until task termination.
+	// Returns `terminated` true when task terminates.
+	// Returns error if something wrong has happen during task execution.
+	Wait(timeout time.Duration) (terminated bool, err error)
 	// EraseOutput deletes the directory where output files resides.
 	EraseOutput() error
 }

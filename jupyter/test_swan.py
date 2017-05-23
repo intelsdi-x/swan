@@ -30,7 +30,10 @@ class TestExperiments(unittest.TestCase):
             # ignore dir exits
             pass
 
-        for fn in ['6ed71a63-14c0-8e3e-3a65-4da9a11eecf6.csv.bz2', '80ad81ec-e6d7-cfc2-de6c-6c60cb300d7f.csv.bz2']:
+        for fn in ['6ed71a63-14c0-8e3e-3a65-4da9a11eecf6.csv.bz2',  # sensitivity profile
+                   '80ad81ec-e6d7-cfc2-de6c-6c60cb300d7f.csv.bz2',  # optimal core allocation
+                   'bc1ee530-4e02-b9fd-e845-752eb7545773.csv.bz2'   # memcached CAT
+                   ]:
             src = os.path.join('test_data', fn)
             dst = os.path.join(swan.DataFrameToCSVCache.CACHE_DIR, fn)
             shutil.copyfile(src, dst)
@@ -58,6 +61,15 @@ class TestExperiments(unittest.TestCase):
         self.assertRenders(core.qps(normalized=False))
         self.assertRenders(core.cpu())
 
+    def test_cat(self):
+        exp = swan.Experiment('bc1ee530-4e02-b9fd-e845-752eb7545773')
+        core = swan.CAT(exp, slo=500)
+        self.assertRenders(core.latency())
+        self.assertRenders(core.latency(normalized=False))
+        self.assertRenders(core.latency(aggressor='Caffe', qps=500000))
+
+        core.filtered_df()
+        core.filtered_df_table()
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# compile depedencies and compile all tests
+# compile dependencies and compile all tests
 set -e 
-echo "install dependecies..."
+echo "install dependencies..."
 go test -i ./integration_tests/...
 echo "build tests..."
 mkdir -p build/tests

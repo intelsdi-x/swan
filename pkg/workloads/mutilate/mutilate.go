@@ -226,7 +226,10 @@ func (m mutilate) Populate() (err error) {
 		return err
 	}
 
-	taskHandle.Wait(0)
+	_, err = taskHandle.Wait(0)
+	if err != nil {
+		return err
+	}
 
 	exitCode, err := taskHandle.ExitCode()
 	if err != nil {
@@ -286,8 +289,9 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 	taskHandle := executor.NewClusterTaskHandle(masterHandle, agentHandles)
 
 	// Blocking wait for master (agents will be killed then).
-	if !taskHandle.Wait(0) {
-		return qps, achievedSLI, errors.Errorf("cannot terminate the Mutilate master. Leaving agents running.")
+	_, err = taskHandle.Wait(0)
+	if err != nil {
+		return qps, achievedSLI, errors.Wrap(err, "Mutilate cluster failed")
 	}
 
 	exitCode, err := taskHandle.ExitCode()

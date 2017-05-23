@@ -119,7 +119,7 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 
 // Name returns User-friendly name of executor.
 func (remote Remote) Name() string {
-	return "Remote Executor"
+	return fmt.Sprintf("Remote executor pointing at %s@%s", remote.config.User, remote.targetHost)
 }
 
 // Execute runs the command given as input.
@@ -233,12 +233,6 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	return &taskHandle, nil
 }
 
-// Final wait for the command to exit
-const killTimeout = 5 * time.Second
-
-// Period between sending SIGTERM  and SIGKILL
-const killWaitTimeout = 100 * time.Millisecond
-
 // remoteTaskHandle implements TaskHandle interface.
 type remoteTaskHandle struct {
 	session        *ssh.Session
@@ -278,7 +272,7 @@ func (taskHandle *remoteTaskHandle) Stop() error {
 	if err != nil {
 		return errors.Wrapf(err, "could not close ssh session")
 	}
-	isTerminated := taskHandle.Wait(killWaitTimeout)
+	isTerminated, _ := taskHandle.Wait(killWaitTimeout)
 	if !isTerminated {
 		return errors.New("cannot stop ssh session")
 	}
@@ -322,9 +316,9 @@ func (taskHandle *remoteTaskHandle) EraseOutput() error {
 
 // Wait waits for the command to finish with the given timeout time.
 // It returns true if task is terminated.
-func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
+func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if taskHandle.isTerminated() {
-		return true
+		return true, nil
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -336,15 +330,15 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) bool {
 	select {
 	case <-taskHandle.hasProcessExited:
 		// If waitEndChannel is closed then task is terminated.
-		return true
+		return true, nil
 	case <-timeoutChannel:
 		// If timeout time exceeded return then task did not terminate yet.
-		return false
+		return false, nil
 	}
 }
 
 func (taskHandle *remoteTaskHandle) Name() string {
-	return fmt.Sprintf("Remote %q on %q", taskHandle.command, taskHandle.Address())
+	return fmt.Sprintf("Remote command %q running on %s@%s", taskHandle.command, taskHandle.connection.User(), taskHandle.Address())
 }
 
 func (taskHandle *remoteTaskHandle) Address() string {

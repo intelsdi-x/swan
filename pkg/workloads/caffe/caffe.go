@@ -27,7 +27,7 @@ const (
 	ID = "caffe"
 
 	defaultCaffeWrapper = "caffe.sh"
-	defaultModel        = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binnary
+	defaultModel        = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binary
 	defaultWeights      = "examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
 	defaultIterations   = 1000000000
 	defaultSigintEffect = "stop"

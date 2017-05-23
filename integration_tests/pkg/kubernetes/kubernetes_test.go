@@ -32,7 +32,7 @@ import (
 // Please see `pkg/kubernetes/README.md` for prerequisites for this test.
 func TestLocalKubernetesPodExecution(t *testing.T) {
 
-	kubectlBinPath := testhelpers.AssertFileExists("kubectl")
+	hyperkubeBinPath := testhelpers.AssertFileExists("hyperkube")
 
 	logrus.SetLevel(logrus.ErrorLevel)
 	Convey("While having local executor", t, func() {
@@ -53,9 +53,11 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			defer executor.StopAndEraseOutput(k8sHandle)
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
-				So(k8sHandle.Wait(100*time.Millisecond), ShouldBeFalse)
+				terminated, err := k8sHandle.Wait(100 * time.Millisecond)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeFalse)
 
-				output, err := exec.Command(kubectlBinPath, "-s", kubernetesAddress, "get", "nodes").Output()
+				output, err := exec.Command(hyperkubeBinPath, "kubectl", "-s", kubernetesAddress, "get", "nodes").Output()
 				So(err, ShouldBeNil)
 
 				host, err := os.Hostname()
@@ -89,12 +91,11 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 					const containerName = "kubernetes-test-go-stress"
 					config := executor.DefaultKubernetesConfig()
 					config.Address = kubernetesAddress
-					config.ContainerImage = "jess/stress"
 					config.ContainerName = containerName
 					k8sExecutor, err := executor.NewKubernetes(config)
 					So(err, ShouldBeNil)
 
-					podHandle, err := k8sExecutor.Execute("stress -c 1")
+					podHandle, err := k8sExecutor.Execute("stress-ng -c 1")
 					So(err, ShouldBeNil)
 					defer executor.StopAndEraseOutput(podHandle)
 

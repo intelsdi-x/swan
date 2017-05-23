@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,14 +49,15 @@ if [ -e "$HOME_DIR/swan_s3_creds/.s3cfg" ]; then
 
 
     echo "Downloading private dependencies"
-    s3cmd cp --recursive s3://swan-artifacts/workloads/swan-private/  s3://swan-artifacts/workloads/swan/
+    s3cmd get --recursive s3://swan-artifacts/workloads/swan-private/  /opt/swan/
 fi
 echo "--------------------------- Provisioning CI environment done (`date`)"
 
 echo "--------------------------- Post install (`date`)"
 ln -svf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
-ln -svf /opt/swan/bin/* /bin/
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
+chmod -R +x /opt/swan/bin/*
+ln -svf /opt/swan/bin/* /bin/
 
 echo "--------------------------- Provisioning development environment done (`date`)"

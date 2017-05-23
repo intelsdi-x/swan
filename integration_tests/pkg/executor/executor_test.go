@@ -46,7 +46,8 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for task termination with the 1ms timeout", func() {
-			isTaskTerminated := taskHandle.Wait(1 * time.Microsecond)
+			isTaskTerminated, err := taskHandle.Wait(1 * time.Microsecond)
+			So(err, ShouldBeNil)
 
 			Convey("The timeout appeach and the task should not be terminated", func() {
 				So(isTaskTerminated, ShouldBeFalse)
@@ -100,7 +101,10 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(0)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
+
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
 
@@ -117,12 +121,15 @@ func testExecutor(t *testing.T, executor Executor) {
 
 			data, readErr := ioutil.ReadAll(stdoutFile)
 			So(readErr, ShouldBeNil)
-			// ShouldContain is required because kubernetes pod exectuors adds empty line upfront.
+			// ShouldContain is required because kubernetes pod executors adds empty line upfront.
 			So(string(data[:]), ShouldContainSubstring, "output")
 		})
 
 		Convey("And the eraseOutput should clean the stdout file", func() {
-			So(taskHandle.Wait(0), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(0)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
+
 			taskState := taskHandle.Status()
 			So(taskState, ShouldEqual, TERMINATED)
 
@@ -135,7 +142,7 @@ func testExecutor(t *testing.T, executor Executor) {
 				So(statErr, ShouldBeNil)
 			})
 
-			err := taskHandle.EraseOutput()
+			err = taskHandle.EraseOutput()
 			So(err, ShouldBeNil)
 
 			Convey("After eraseOutput file should not exist", func() {

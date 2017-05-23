@@ -44,7 +44,8 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 					So(handle, ShouldNotBeNil)
 
 					Convey("Should work for at least one sec", func() {
-						isTerminated := handle.Wait(1 * time.Second)
+						isTerminated, err := handle.Wait(1 * time.Second)
+						So(err, ShouldBeNil)
 						So(isTerminated, ShouldBeFalse)
 
 						Convey("Should be able to stop with no problem and be terminated", func() {

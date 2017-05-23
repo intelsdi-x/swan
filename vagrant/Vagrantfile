@@ -25,7 +25,8 @@ Vagrant.configure(2) do |config|
   aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
   vagrant_user = ENV['VAGRANT_USER'] || 'vagrant'
   build_cached_image = ENV["BUILD_CACHED_IMAGE"] == 'true' ? true : false
-  
+  provision_development_environment = ENV["SWAN_DEVELOPMENT_ENVIRONMENT"] == 'true' ? true : false
+
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
   config.ssh.keys_only = false
@@ -57,7 +58,10 @@ Vagrant.configure(2) do |config|
 
     override.ssh.insert_key = true
     override.ssh.keys_only = true
-    override.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+    override.vm.provision "shell", path: "provision.sh", env: {
+        'VAGRANT_USER' => vagrant_user,
+        'HOME_DIR' => home_dir,
+        'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment}
     override.vm.synced_folder "#{ENV['HOME']}/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
   end
 
@@ -72,8 +76,9 @@ Vagrant.configure(2) do |config|
       data = {}
     end
     override.nfs.functional = false
-    aws.access_key_id = data['access_key_id']
-    aws.secret_access_key = data['secret_access_key']
+    aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+    aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+    aws.region = ENV['AWS_DEFAULT_REGION']
     aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
                                  'Ebs.Iops' => 1000,
                                  'Ebs.VolumeSize' => 40,
@@ -94,9 +99,12 @@ Vagrant.configure(2) do |config|
     # non-cached ami: ami-6d1c2007
     ### USE BASE/CACHED IMAGE
     #aws.ami = "ami-6d1c2007" # base image
-    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-c9d3b4df") # Thu Apr  6 16:45:16 UTC 2017
+    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-b284fba4") # Thu Apr  6 16:45:16 UTC 2017
     if build_cached_image
-      override.vm.provision "shell", path: "provision.sh", env: {'VAGRANT_USER' => vagrant_user, 'HOME_DIR' => home_dir}
+      override.vm.provision "shell", path: "provision.sh", env: {
+        'VAGRANT_USER' => vagrant_user,
+        'HOME_DIR' => home_dir,
+        'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment}
     end
 
   end

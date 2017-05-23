@@ -56,15 +56,7 @@ func TestExecutables(t *testing.T) {
 		"mutilate",
 
 		// kubernetes
-		"apiserver",
-		"controller-manager",
-		"federation-apiserver",
-		"federation-controller-manager",
 		"hyperkube",
-		"kubectl",
-		"kubelet",
-		"proxy",
-		"scheduler",
 	}
 
 	Convey("Make sure all depedencies are there", t, func() {

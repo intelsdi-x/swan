@@ -30,7 +30,7 @@ fi
 
 
 SWAN_BIN=/opt/swan/bin
-SWAN_VERSION="v0.12"
+SWAN_VERSION="v0.13"
 
 K8S_VERSION="v1.5.6"
 SNAP_VERSION="1.2.0"
@@ -150,6 +150,7 @@ echo "---------------------------- Post install (`date`)"
 chmod +x -R /opt/swan/bin
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
+chmod -R +x /opt/swan/bin/*
 ln -svf ${SWAN_BIN}/* /bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"

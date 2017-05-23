@@ -87,7 +87,7 @@ func (s *SessionLauncher) LaunchSession(
 	tags map[string]interface{}) (snap.SessionHandle, error) {
 
 	// Obtain Caffe Inference output file.
-	stdoutFile, err := task.StdoutFile()
+	stdoutFile, err := task.StderrFile()
 	if err != nil {
 		return nil, err
 	}

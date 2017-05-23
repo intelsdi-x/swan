@@ -71,7 +71,12 @@ func (s *serviceHandle) Stop() error {
 }
 
 // Wait implements TaskHandle interface.
-func (s *serviceHandle) Wait(duration time.Duration) bool {
+func (s *serviceHandle) Wait(duration time.Duration) (bool, error) {
+	err := s.checkErrorCondition()
+	if err != nil {
+		return true, err
+	}
+
 	return s.TaskHandle.Wait(duration)
 }
 

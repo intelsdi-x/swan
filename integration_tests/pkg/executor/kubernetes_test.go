@@ -16,7 +16,6 @@ package executor
 
 import (
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -40,7 +39,7 @@ func TestKubernetesExecutor(t *testing.T) {
 	config := kubernetes.DefaultConfig()
 	config.RetryCount = 0
 
-	// Pod executuor config.
+	// Pod executor config.
 	executorConfig := executor.DefaultKubernetesConfig()
 	executorConfig.Address = fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
@@ -95,7 +94,9 @@ func TestKubernetesExecutor(t *testing.T) {
 				// status information can take longer time. To reduce number
 				// of false-positive assertion fails, Wait() timeout is much
 				// longer then time withing pod should shutdown.
-				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+				terminated, err := taskHandle.Wait(podFinishedTimeout)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeTrue)
 
 				Convey("The exit status should be zero", func() {
 					// ExitCode should appears in TaskHandle object after pod
@@ -121,7 +122,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			defer executor.StopAndEraseOutput(taskHandle)
 
 			Convey("And after few seconds", func() {
-				So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+				terminated, err := taskHandle.Wait(podFinishedTimeout)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeTrue)
 
 				Convey("The exit status should be 5", func() {
 					exitCode, err := taskHandle.ExitCode()
@@ -148,11 +151,14 @@ func TestKubernetesExecutor(t *testing.T) {
 			defer executor.StopAndEraseOutput(taskHandle)
 
 			So(err, ShouldBeNil)
-			So(taskHandle.Wait(podFinishedTimeout), ShouldBeTrue)
+			terminated, err := taskHandle.Wait(podFinishedTimeout)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
 
 			exitCode, err := taskHandle.ExitCode()
 			So(exitCode, ShouldEqual, 0)
 
+			// Stdout
 			stdout, err := taskHandle.StdoutFile()
 			So(err, ShouldBeNil)
 			defer stdout.Close()
@@ -166,16 +172,19 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(output, ShouldContain, "This is Sparta")
 			So(output, ShouldContain, "This is England")
 
+			// Stderr
 			stderr, err := taskHandle.StderrFile()
 			So(err, ShouldBeNil)
 			defer stderr.Close()
-			buffer = make([]byte, 10)
+			buffer = make([]byte, 31)
 			n, err = stderr.Read(buffer)
 
-			// stderr will always be empty as we are not able to fetch it from K8s.
-			// stdout includes both stderr and stdout of the application run in the pod.
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 31)
+			output = strings.Split(string(buffer), "\n")
+			So(output, ShouldHaveLength, 3)
+			So(output, ShouldContain, "This is Sparta")
+			So(output, ShouldContain, "This is England")
 		})
 
 		Convey("Long running pod is not deadlocked when deleted externally", func() {
@@ -190,8 +199,9 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Wait...
-			stopped := th.Wait(0)
-			So(stopped, ShouldBeTrue)
+			terminated, err := th.Wait(podFinishedTimeout)
+			So(err, ShouldBeNil)
+			So(terminated, ShouldBeTrue)
 
 			// Exit code expected about killed.
 			exitCode, err := th.ExitCode()
@@ -200,7 +210,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		})
 
 		Convey("Timeout occurs when image is not found", func() {
-			// Launch timout is needed because pod is left in Pending/Waiting/ImagePullBackOff state.
+			// Launch timeout is needed because pod is left in Pending/Waiting/ImagePullBackOff state.
 			executorConfig.ContainerImage = "notexistingone"
 			executorConfig.LaunchTimeout = 1 * time.Second
 			k8sexecutor, err := executor.NewKubernetes(executorConfig)

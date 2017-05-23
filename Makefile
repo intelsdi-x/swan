@@ -17,17 +17,17 @@
 # Place for custom options for test commands.
 TEST_OPT?=
 
-# High level targets called from travis with depedencies.
+# High level targets called from travis with dependencies.
 integration_test: show_env restart_snap deps build dist install test_integration
 unit_test: deps test_integration_build build test_unit 
 lint: linter test_lint
 
 build: build_swan build_plugins
 build_all: deps build_plugins build_swan
-build_and_test_integration: build_all test_integration
+build_and_test_integration: build_all test_integration test_jupyter_unit
 build_and_test_unit: build_all test_lint test_unit
 build_and_test_all: build_all test_all
-test_all: test_lint test_unit test_unit_jupyter test_integration e2e_test
+test_all: test_lint test_unit test_integration test_jupyter_unit
 
 restart_snap:
 	# Workaround for "Snap does not refresh hostname" https://github.com/intelsdi-x/snap/issues/1514
@@ -56,11 +56,12 @@ build_plugins:
 
 build_swan:
 	go build -i -v ./experiments/...
-	mkdir -p build/experiments/memcached build/experiments/specjbb build/experiments/optimal-core-allocation build/experiments/memcached-cat
+	mkdir -p build/experiments/memcached build/experiments/specjbb build/experiments/optimal-core-allocation build/experiments/memcached-cat build/experiments/example
 	(cd build/experiments/memcached; go build ../../../experiments/memcached-sensitivity-profile)
 	(cd build/experiments/specjbb; go build ../../../experiments/specjbb-sensitivity-profile)
 	(cd build/experiments/optimal-core-allocation; go build ../../../experiments/optimal-core-allocation)
 	(cd build/experiments/memcached-cat; go build ../../../experiments/memcached-cat)
+	(cd build/experiments/example; go build ../../../experiments/example)
 
 # testing
 test_lint:
@@ -69,15 +70,15 @@ test_lint:
 	gometalinter --config=.lint ./plugins/...
 	gometalinter --config=.lint ./integration_tests/...
 
-test_jupyter_lint:
-	pep8 --max-line-length=120 jupyter/
+test_jupyter_lint: jupyter_image
+	docker run --rm intelsdi/swan-jupyter pep8 --max-line-length=120 .
+
+test_jupyter_unit: jupyter_image
+	docker run --rm intelsdi/swan-jupyter python test_swan.py
 
 test_unit:
 	go test -i ./pkg/... ./plugins/...
 	go test -p 1 $(TEST_OPT) ./pkg/... ./plugins/...
-
-test_jupyter_unit:
-	(cd jupyter; python test_swan.py)
 
 # make sure that all integration tests are building without problem - not required directly for test_integration (only used by .travis)
 test_integration_build:
@@ -85,20 +86,21 @@ test_integration_build:
 
 test_integration:
 	go test -i ./integration_tests/... 
-	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/... 
-
-deps_test_jupyter:
-	pip install -r jupyter/test-requirements.txt
-
-deps_jupyter:
-	pip install -r jupyter/requirements.txt
+	@# Validate that there is enough cpus to run integration tests.
+	@if [[ `nproc` -lt 2 ]]; then \
+		echo 'warning: not enough cpus `nproc` to run integrations tests (two cores are required)'; \
+		exit 1;\
+	fi
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/pkg/...
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/snap-plugins/...
+	./scripts/isolate-pid.sh go test -p 1 $(TEST_OPT) ./integration_tests/experiments/...
 
 cleanup:
 	rm -fr plugins/**/*log
 	rm -fr integration_tests/**/*log
 	rm -fr integration_tests/**/remote_memcached_*
 	rm -fr integration_tests/**/local_snapteld_*
-	rm -fr jupyter/integration_tests/*.stdout
 
 remove_vendor:
 	rm -fr vendor/
@@ -114,7 +116,10 @@ dist:
 	tar -C ./build/experiments/specjbb -rvf swan.tar specjbb-sensitivity-profile
 	tar -C ./build/experiments/optimal-core-allocation -rvf swan.tar optimal-core-allocation
 	tar -C ./build/experiments/memcached-cat -rvf swan.tar memcached-cat
+	tar -C ./build/experiments/example -rvf swan.tar example
 	tar -C ./build/plugins -rvf swan.tar snap-plugin-collector-caffe-inference snap-plugin-collector-mutilate snap-plugin-collector-specjbb snap-plugin-publisher-session-test
+	tar --transform 's/-binary//' -rvf swan.tar NOTICE-binary
+	tar -rvf swan.tar LICENSE
 	gzip -f swan.tar
 
 install:
@@ -125,4 +130,7 @@ docker:
 	docker build -t intelsdi/swan:latest workloads
 
 extract_binaries:
-	docker run -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output
+	docker run --rm -v $(PWD)/opt:/output intelsdi/swan cp -R /opt/swan /output
+
+jupyter_image:
+	docker build -t intelsdi/swan-jupyter jupyter

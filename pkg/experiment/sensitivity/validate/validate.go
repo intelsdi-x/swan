@@ -73,9 +73,9 @@ func CheckCPUPowerGovernor() {
 // checkNOFILE checks if the number of maximum file descriptors
 // opened by a process is more than minimum requested.
 // The name NOFILE is based on "limits.conf" and definition from setrlimit.
-func checkNOFILE(nofile, minimum int) {
+func checkNOFILE(executor executor.Executor, nofile, minimum int) {
 	if nofile <= minimum {
-		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d). You can change this value eg. ulimit -n 10000 or modifying /etc/security/limits.conf.", nofile, minimum)
+		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d) on (%s). You can change this value eg. ulimit -n 10000 or modifying /etc/security/limits.conf.", nofile, minimum, executor.Name())
 	}
 
 }
@@ -83,10 +83,13 @@ func checkNOFILE(nofile, minimum int) {
 // OS checks experiment local OS environment to help identify potential issues.
 // Note: in case of some requirements not met, only warns user.
 func OS() {
+
 	checkTCPSyncookies()
 	CheckCPUPowerGovernor()
+	executor := executor.NewLocal()
 	checkNOFILE(
-		getNOFILE(executor.NewLocal()),
+		executor,
+		getNOFILE(executor),
 		minimalNOFILERequirement,
 	)
 }
@@ -96,6 +99,7 @@ func OS() {
 func ExecutorsNOFILELimit(executors []executor.Executor) {
 	for _, executor := range executors {
 		checkNOFILE(
+			executor,
 			getNOFILE(executor),
 			minimalNOFILERequirement,
 		)

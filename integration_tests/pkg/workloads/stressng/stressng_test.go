@@ -35,7 +35,8 @@ func validateExecutor(launcher executor.Launcher) func() {
 			}
 			So(err, ShouldBeNil)
 
-			stopped := taskHandle.Wait(1 * time.Second)
+			stopped, err := taskHandle.Wait(1 * time.Second)
+			So(err, ShouldBeNil)
 			So(stopped, ShouldBeFalse)
 			So(taskHandle.Status(), ShouldEqual, executor.RUNNING)
 

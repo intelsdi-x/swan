@@ -23,7 +23,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 )
 
-// EnvironmentPrefix is prefix that is used for evironment based configuration.
+// EnvironmentPrefix is prefix that is used for environment based configuration.
 const EnvironmentPrefix = "SWAN_"
 
 // Registry of flag names (required for proper ordering and semantic grouping instead of lexicographical order).
