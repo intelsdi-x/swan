@@ -35,6 +35,9 @@ const (
 	// NoneAggressorID is constant to represent "pseudo" aggressor for baselining experiment (running HP workload without aggressor at all).
 	NoneAggressorID = "None"
 
+	// CaffeAggressorWithIsolation to run caffe with them same isolation as LLC intesive workloads.
+	CaffeAggressorWithIsolation = "caffe-isolated"
+
 	l1dDefaultProcessNumber   = 1
 	l1iDefaultProcessNumber   = 1
 	l3DefaultProcessNumber    = 1
@@ -80,13 +83,6 @@ var (
 		"experiment_be_membw_processes_number",
 		"Number of membw best effort processes to be run",
 		membwDefaultProcessNumber,
-	)
-
-	// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
-	RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
-		"experiment_run_caffe_with_l3_cache_isolation",
-		"If set, the Caffe Best Effort workload will use the same isolation settings as for L3 Best Efforts, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
-		false,
 	)
 )
 
@@ -147,6 +143,10 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
 		aggressor = caffe.New(exec, caffe.DefaultConfig())
+	case CaffeAggressorWithIsolation:
+		config := caffe.DefaultConfig()
+		config.Name = "Caffe isolated"
+		aggressor = caffe.New(exec, config)
 	case l3.ID:
 		aggressor = l3.New(exec, l3.DefaultL3Config())
 	case stream.ID:
@@ -204,10 +204,9 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		return decorators
 	case caffe.ID:
-		if RunCaffeWithLLCIsolationFlag.Value() {
-			return isolation.Decorators{f.otherAggressorIsolation}
-		}
 		return isolation.Decorators{}
+	case CaffeAggressorWithIsolation:
+		return isolation.Decorators{f.otherAggressorIsolation}
 	default:
 		return isolation.Decorators{f.otherAggressorIsolation}
 	}
@@ -232,7 +231,7 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 		case NoneAggressorID:
 			launcherSessionPair = LauncherSessionPair{}
 
-		case caffe.ID:
+		case caffe.ID, CaffeAggressorWithIsolation:
 			caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 			if err != nil {
 				return nil, err

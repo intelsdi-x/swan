@@ -44,7 +44,7 @@ var (
 	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 4GB).", 4000000000)
 
 	// HPKubernetesGuaranteedClassFlag indicates tha HP workload will run as guarateed class.
-	HPKubernetesGuaranteedClassFlag = conf.NewBoolFlag("kubernetes_hp_guaranteed_class", "Sets resources limit equal requests effectivlly running this PoD as \"Guranteed class\" (by default runs as \"Burstable\" ", false)
+	HPKubernetesGuaranteedClassFlag = conf.NewBoolFlag("kubernetes_hp_guaranteed_class", "Run HP workload on Kubernetes as Pod with \"QoS Guranteed resources class\" (by default runs as \"Burstable class\").", false)
 
 	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", RunOnExistingKubernetesFlag.Name), hostname)
 )
