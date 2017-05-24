@@ -278,7 +278,7 @@ func (m *Metadata) GetGroup(kind string) (MetadataMap, error) {
 
 	maps := []MetadataMap{}
 
-	iter := m.session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? AND group = ? ALLOW FILTERING`, m.experimentID, kind).Iter()
+	iter := m.session.Query(`SELECT metadata FROM swan.metadata WHERE experiment_id = ? AND kind = ? ALLOW FILTERING`, m.experimentID, kind).Iter()
 	for iter.Scan(&metadata) {
 		maps = append(maps, metadata)
 	}
