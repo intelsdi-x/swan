@@ -117,7 +117,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		})
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
+			taskHandle, err := k8sexecutor.Execute("sleep 13 && exit 5")
 			So(err, ShouldBeNil)
 			defer executor.StopAndEraseOutput(taskHandle)
 

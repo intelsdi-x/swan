@@ -16,12 +16,13 @@ package kubernetes
 
 import (
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
-func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
+func getReadyNodes(k8sAPIAddress string) ([]clientv1.Node, error) {
 	kubectlConfig := &rest.Config{
 		Host:     k8sAPIAddress,
 		Username: "",
@@ -38,10 +39,10 @@ func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
 		return nil, errors.Wrapf(err, "could not obtain Kubernetes node list on %q", k8sAPIAddress)
 	}
 
-	var readyNodes []v1.Node
+	var readyNodes []clientv1.Node
 	for _, node := range nodes.Items {
 		for _, condition := range node.Status.Conditions {
-			if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
+			if condition.Type == clientv1.NodeReady && condition.Status == clientv1.ConditionTrue {
 				readyNodes = append(readyNodes, node)
 			}
 		}
