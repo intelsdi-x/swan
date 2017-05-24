@@ -41,7 +41,8 @@ const (
 )
 
 var (
-	kubeEtcdServersFlag = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	kubeEtcdServersFlag    = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	kubeEtcdDataFormatFlag = conf.NewStringFlag("kubernetes_cluster_etcd_data_format", "Data format for etcd cluster (etvd3 or etcd3)", "etcd2")
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
@@ -60,6 +61,7 @@ type Config struct {
 	// Comma separated list of nodes in the etcd cluster
 	EtcdServers        string
 	EtcdPrefix         string
+	EtcdDataFormat     string
 	LogLevel           int // 0 is info, 4 - debug (https://github.com/kubernetes/kubernetes/blob/master/docs/devel/logging.md).
 	KubeAPIAddr        string
 	KubeAPIPort        int
@@ -90,6 +92,7 @@ func DefaultConfig() Config {
 	return Config{
 		EtcdServers:        kubeEtcdServersFlag.Value(),
 		EtcdPrefix:         "/swan",
+		EtcdDataFormat:     kubeEtcdDataFormatFlag.Value(),
 		LogLevel:           0,
 		AllowPrivileged:    true,
 		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
@@ -309,6 +312,7 @@ func (m *k8s) getKubeAPIServerCommand() kubeCommand {
 			fmt.Sprintf(" --allow-privileged=%v", m.config.AllowPrivileged),
 			fmt.Sprintf(" --etcd-servers=%s", m.config.EtcdServers),
 			fmt.Sprintf(" --etcd-prefix=%s", m.config.EtcdPrefix),
+			fmt.Sprintf(" --storage-backend=%s", m.config.EtcdDataFormat),
 			fmt.Sprintf(" --insecure-bind-address=%s", m.config.KubeAPIAddr),
 			fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
 			fmt.Sprintf(" --secure-port 0"),
