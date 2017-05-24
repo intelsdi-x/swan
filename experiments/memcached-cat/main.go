@@ -103,7 +103,7 @@ func main() {
 	beCores := topology.BeRangeFlag.Value()
 
 	if len(beCores) == 0 || len(hpCores) == 0 {
-		logrus.Errorf("HP & BE workloads ranges required! (please specify -experiment_hp_workload_cpu_range and -experiment_be_workload_l3_cpu_range)")
+		logrus.Errorf("HP & BE workloads ranges required! (please specify -%s and -%s)", topology.HpRangeFlag.Name, topology.BeRangeFlag.Name)
 		os.Exit(experiment.ExUsage)
 	}
 	logrus.Debugf("HP CPU range: %+v", hpCores)
@@ -353,18 +353,16 @@ func main() {
 
 func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (beLauncher sensitivity.LauncherSessionPair) {
 	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
+	aggressor, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
 	errutil.CheckWithContext(err, "Cannot create aggressor pair")
 
 	switch aggressorName {
-	case sensitivity.NoneAggressorID:
-		beLauncher = sensitivity.LauncherSessionPair{}
 	case caffe.ID:
 		caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 		errutil.CheckWithContext(err, "Cannot create Caffee session launcher")
-		beLauncher = sensitivity.NewMonitoredLauncher(aggressorPair, caffeSession)
+		beLauncher = sensitivity.NewMonitoredLauncher(aggressor, caffeSession)
 	default:
-		beLauncher = sensitivity.NewLauncherWithoutSession(aggressorPair)
+		beLauncher = sensitivity.NewLauncherWithoutSession(aggressor)
 	}
 
 	return

@@ -29,6 +29,8 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
+	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stressng"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -150,7 +152,7 @@ func TestExperiment(t *testing.T) {
 		defer session.Close()
 
 		Convey("With proper configuration and without aggressor phases", func() {
-			_, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", "None")
+			_, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", sensitivity.NoneAggressorID)
 
 			Convey("Experiment should return with no errors", func() {
 				So(err, ShouldBeNil)
@@ -164,7 +166,7 @@ func TestExperiment(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, _, swanAggressorsNames, _, _ := loadDataFromCassandra(session, experimentID)
-				So("None", ShouldNotBeIn, swanAggressorsNames)
+				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 				So("Caffe", ShouldBeIn, swanAggressorsNames)
 			})
 		})
@@ -177,7 +179,7 @@ func TestExperiment(t *testing.T) {
 
 				_, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
-				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
+				So(stressng.IDCacheL1, ShouldBeIn, swanAggressorsNames)
 
 				// Check metadata was saved.
 				var (
@@ -208,8 +210,8 @@ func TestExperiment(t *testing.T) {
 				_, swanRepetitions, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 
-				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
-				So("None", ShouldNotBeIn, swanAggressorsNames)
+				So(stressng.IDCacheL1, ShouldBeIn, swanAggressorsNames)
+				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 
 				So("0", ShouldBeIn, swanRepetitions)
 				So("1", ShouldBeIn, swanRepetitions)
@@ -234,7 +236,7 @@ func TestExperiment(t *testing.T) {
 				So(swanPhases, ShouldHaveLength, 18)
 
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
-				So("None", ShouldNotBeIn, swanAggressorsNames)
+				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 
 				So("Aggressor stress-ng-cache-l1; load point 0;", ShouldBeIn, swanPhases)
 
@@ -258,7 +260,7 @@ func TestExperiment(t *testing.T) {
 				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 				So(tags["swan_aggressor_name"], ShouldEqual, "stress-ng-cache-l1")
-				So("None", ShouldNotBeIn, swanAggressorsNames)
+				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 			})
 		})
 
@@ -271,7 +273,7 @@ func TestExperiment(t *testing.T) {
 				tags, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 				So(tags["swan_aggressor_name"], ShouldEqual, "stress-ng-stream")
-				So("None", ShouldNotBeIn, swanAggressorsNames)
+				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 			})
 		})
 

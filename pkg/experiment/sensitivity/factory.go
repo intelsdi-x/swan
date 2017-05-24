@@ -47,7 +47,7 @@ var (
 		"experiment_be_workloads", "Best Effort workloads that will be run sequentially in colocation with High Priority workload. \n"+
 			"# When experiment is run on machine with HyperThreads, user can also add 'stress-ng-cache-l1' to this list. \n"+
 			"# When iBench and Stream is available, user can also add 'l1d,l1i,l3,stream' to this list.",
-		[]string{NoneAggressorID, "stress-ng-cache-l3", "stress-ng-memcpy", "stress-ng-stream", "caffe"},
+		[]string{NoneAggressorID, stressng.IDCacheL3, stressng.IDMemCpy, stressng.IDStream, caffe.ID},
 	)
 
 	theatAggressorsAsService = conf.NewBoolFlag(
