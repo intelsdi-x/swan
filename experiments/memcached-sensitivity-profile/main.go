@@ -129,7 +129,7 @@ func main() {
 			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-			aggressorName := "None"
+			aggressorName := sensitivity.NoneAggressorID
 			if beLauncher.Launcher != nil {
 				aggressorName = beLauncher.Launcher.Name()
 			}
