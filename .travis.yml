@@ -4,7 +4,7 @@ services:
 language: go
 sudo: required
 go:
-- 1.7
+- 1.7.x
 install:
 - PATH=/usr/lib/ccache:$PATH
 - sudo apt-get install bash gcc
