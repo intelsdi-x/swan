@@ -150,21 +150,21 @@ func TestExperiment(t *testing.T) {
 		defer session.Close()
 
 		Convey("With proper configuration and without aggressor phases", func() {
-			_, err := runExp(memcachedSensitivityProfileBin, true)
+			_, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", "None")
 
 			Convey("Experiment should return with no errors", func() {
 				So(err, ShouldBeNil)
 			})
 		})
 
-		Convey("With caffe aggressor and baseline", func() {
+		Convey("With just caffe aggressor", func() {
 			args := []string{"-experiment_be_workloads", "caffe"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
 
 				_, _, swanAggressorsNames, _, _ := loadDataFromCassandra(session, experimentID)
-				So("None", ShouldBeIn, swanAggressorsNames)
+				So("None", ShouldNotBeIn, swanAggressorsNames)
 				So("Caffe", ShouldBeIn, swanAggressorsNames)
 			})
 		})
@@ -177,7 +177,6 @@ func TestExperiment(t *testing.T) {
 
 				_, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
-				So("None", ShouldBeIn, swanAggressorsNames)
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 
 				// Check metadata was saved.
@@ -210,13 +209,13 @@ func TestExperiment(t *testing.T) {
 				So(metricsCount, ShouldBeGreaterThan, 0)
 
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
-				So("None", ShouldBeIn, swanAggressorsNames)
+				So("None", ShouldNotBeIn, swanAggressorsNames)
 
 				So("0", ShouldBeIn, swanRepetitions)
 				So("1", ShouldBeIn, swanRepetitions)
 
-				So(swanAggressorsNames, ShouldHaveLength, 36)
-				So(swanRepetitions, ShouldHaveLength, 36)
+				So(swanAggressorsNames, ShouldHaveLength, 18)
+				So(swanRepetitions, ShouldHaveLength, 18)
 
 			})
 
@@ -231,19 +230,19 @@ func TestExperiment(t *testing.T) {
 
 				So(tags["swan_repetition"], ShouldEqual, "0")
 
-				So(swanAggressorsNames, ShouldHaveLength, 36)
-				So(swanPhases, ShouldHaveLength, 36)
+				So(swanAggressorsNames, ShouldHaveLength, 18)
+				So(swanPhases, ShouldHaveLength, 18)
 
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
-				So("None", ShouldBeIn, swanAggressorsNames)
+				So("None", ShouldNotBeIn, swanAggressorsNames)
 
-				So("Aggressor None; load point 0;", ShouldBeIn, swanPhases)
+				So("Aggressor stress-ng-cache-l1; load point 0;", ShouldBeIn, swanPhases)
 
 			})
 		})
 
 		Convey("With proper kubernetes configuration and without phases", func() {
-			args := []string{"-kubernetes"}
+			args := []string{"-kubernetes", "-experiment_be_workloads=None", "-kubernetes_hp_memory_resource=1000000000"}
 			_, err := runExp(memcachedSensitivityProfileBin, true, args...)
 			Convey("Experiment should return with no errors", func() {
 				So(err, ShouldBeNil)
@@ -251,7 +250,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -264,7 +263,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -277,7 +276,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes and caffe", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-experiment_baseline=false", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-kubernetes_hp_memory_resource", "1000000000"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
