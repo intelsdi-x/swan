@@ -357,7 +357,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	}
 
 	// Best effort potential way to check if binary is started properly.
-	taskHandle.Wait(10 * time.Second)
+	taskHandle.Wait(100 * time.Millisecond)
 	err = checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
 	if err != nil {
 		return nil, err

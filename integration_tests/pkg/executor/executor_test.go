@@ -101,7 +101,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
-			terminated, err := taskHandle.Wait(0)
+			terminated, err := taskHandle.Wait(1 * time.Second)
 			So(err, ShouldBeNil)
 			So(terminated, ShouldBeTrue)
 
