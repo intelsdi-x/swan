@@ -37,7 +37,7 @@ func TestKubernetesExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	config := kubernetes.DefaultConfig()
-	config.RetryCount = 0
+	config.RetryCount = 10
 
 	// Pod executor config.
 	executorConfig := executor.DefaultKubernetesConfig()
