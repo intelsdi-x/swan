@@ -278,7 +278,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	// Make sure that at least one line of text is outputed from pod, to unblock .GetLogs() on apiserver call
 	// with streamed response (when follow=true). Check kubernetes #31446 issue for more details.
 	// https://github.com/kubernetes/kubernetes/pull/31446
-	wrappedCommand := "echo;" + command
+	wrappedCommand := "echo \"This is Kubernetes!\";" + command
 
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
 	podManifest, err := k8s.newPod(wrappedCommand)
@@ -730,6 +730,7 @@ func (kw *k8sWatcher) setupLogs() {
 			close(kw.logsCopyFinished)
 			return
 		}
+		log.Debugf("K8s task watcher: logs for pod %q set up", kw.pod.Name)
 
 		// Start "copier" goroutine for copying logs api to local files.
 		go func() {
