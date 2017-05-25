@@ -77,7 +77,7 @@ func runExp(command string, dumpOutputOnError bool, args ...string) (string, err
 func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags map[string]string, swanRepetitions, swanAggressorsNames, swanPhases []string, metricsCount int) {
 	time.Sleep(5 * time.Second)
 	var ns string
-	iter := session.Query(`SELECT ns, tags FROM snap.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
+	iter := session.Query(`SELECT ns, tags FROM swan.metrics WHERE tags['swan_experiment'] = ? ALLOW FILTERING`, experimentID).Iter()
 	for iter.Scan(&ns, &tags) {
 		metricsCount++
 		swanAggressorsNames = append(swanAggressorsNames, tags["swan_aggressor_name"])
@@ -315,7 +315,7 @@ func TestExperiment(t *testing.T) {
 
 func getCassandraSession() (*gocql.Session, error) {
 	cluster := gocql.NewCluster("127.0.0.1")
-	cluster.Keyspace = "snap"
+	cluster.Keyspace = "swan"
 	cluster.ProtoVersion = 4
 	cluster.Timeout = 100 * time.Second
 	session, err := cluster.CreateSession()

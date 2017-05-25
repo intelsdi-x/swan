@@ -68,7 +68,7 @@ func TestCassandraPublisher(t *testing.T) {
 func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 4
-	cluster.Keyspace = "snap"
+	cluster.Keyspace = "swan"
 	cluster.Consistency = gocql.All
 	session, err := cluster.CreateSession()
 	if err != nil {
@@ -84,7 +84,7 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 
 	// Try 5 times before giving up.
 	for i := 0; i < 5; i++ {
-		err = session.Query(`SELECT doubleval, tags FROM snap.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`).Consistency(gocql.One).Scan(&value, &tags)
+		err = session.Query(`SELECT doubleval, tags FROM swan.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`).Consistency(gocql.One).Scan(&value, &tags)
 		if err == nil || err != gocql.ErrNotFound {
 			break
 		}
@@ -100,7 +100,8 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		return err
 	}
 	cassandraPublisher := wmap.NewPublishNode(cassandraName, snap.PluginAnyVersion)
-	cassandraPublisher.AddConfigItem("server", "localhost")
+	cassandraPublisher.AddConfigItem("server", "127.0.0.1")
+	cassandraPublisher.AddConfigItem("keyspaceName", "swan")
 
 	snapSession := snap.NewSession(
 		"swan-test-cassandra-publisher-session",

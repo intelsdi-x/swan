@@ -3,6 +3,7 @@ import:
 - package: github.com/Sirupsen/logrus
   version: ~0.11.5
 - package: github.com/gocql/gocql
+  version: master
 - package: github.com/intelsdi-x/snap-plugin-lib-go
   subpackages:
   - v1/plugin
