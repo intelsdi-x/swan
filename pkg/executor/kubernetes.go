@@ -58,8 +58,6 @@ package executor
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -268,9 +266,6 @@ func (k8s *k8s) newPod(command string) (*clientv1.Pod, error) {
 // Execute creates a pod and runs the provided command in it. When the command completes, the pod
 // is stopped i.e. the container is not restarted automatically.
 func (k8s *k8s) Execute(command string) (TaskHandle, error) {
-	resp, _ := http.Get("http://localhost:8080/api/v1/componentstatuses")
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Printf("=======================================================\n%s\n=======================================================\n", string(body))
 	podsAPI := k8s.clientset.Pods(k8s.config.Namespace)
 	command = k8s.config.Decorators.Decorate(command)
 
