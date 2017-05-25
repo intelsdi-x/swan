@@ -4,9 +4,9 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-Environment="CREATE_KEYSPACE=CREATE KEYSPACE IF NOT EXISTS snap WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; \
+Environment="CREATE_KEYSPACE=CREATE KEYSPACE IF NOT EXISTS swan WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; \
 DESCRIBE KEYSPACES;"
-Environment="CREATE_TABLE=CREATE TABLE IF NOT EXISTS snap.metrics (\
+Environment="CREATE_TABLE=CREATE TABLE IF NOT EXISTS swan.metrics (\
     ns  text, \
     ver int, \
     host text, \
@@ -18,7 +18,7 @@ Environment="CREATE_TABLE=CREATE TABLE IF NOT EXISTS snap.metrics (\
     tags map<text,text>, \
     PRIMARY KEY ((ns, ver, host), time) \
 ) WITH CLUSTERING ORDER BY (time DESC); \
-DESCRIBE snap.metrics;"
+DESCRIBE swan.metrics;"
 TimeoutStartSec=0
 Restart=always
 ExecStartPre=-/usr/bin/docker rm -f cassandra-swan

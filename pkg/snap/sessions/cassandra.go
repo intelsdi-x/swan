@@ -27,6 +27,13 @@ func ApplyCassandraConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 	publisher.AddConfigItem("username", conf.CassandraUsername.Value())
 	publisher.AddConfigItem("password", conf.CassandraPassword.Value())
 	publisher.AddConfigItem("ssl", conf.CassandraSslEnabled.Value())
+	publisher.AddConfigItem("timeout", conf.CassandraTimeout.Value())
+	publisher.AddConfigItem("connectionTimeout", conf.CassandraConnectionTimeout.Value())
+	publisher.AddConfigItem("port", conf.CassandraPort.Value())
+	publisher.AddConfigItem("initialHostLookup", conf.CassandraInitialHostLookup.Value())
+	publisher.AddConfigItem("ignorePeerAddrRuleKey", conf.CassandraIgnorePeerAddr.Value())
+	publisher.AddConfigItem("createKeyspace", conf.CassandraCreateKeyspace.Value())
+	publisher.AddConfigItem("keyspaceName", conf.CassandraKeyspaceName.Value())
 
 	if conf.CassandraSslEnabled.Value() {
 		publisher.AddConfigItem("serverCertVerification", conf.CassandraSslHostValidation.Value())
