@@ -360,7 +360,7 @@ func (m *k8s) getKubeletCommand() kubeCommand {
 			fmt.Sprintf(" --read-only-port=0"),
 			fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
 			" --loglevel=0",
-			" --cgroup-driver=systemd",
+			//" --cgroup-driver=systemd",
 			fmt.Sprintf(" %s", m.config.KubeletArgs),
 		), m.config.KubeletPort}
 }

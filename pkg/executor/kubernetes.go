@@ -287,6 +287,9 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, apiPod.Status.QOSClass)
 
+	var zero int64 = 0
+	podManifest.Spec.TerminationGracePeriodSeconds = &zero
+	podManifest.DeletionGracePeriodSeconds = &zero
 	pod, err := podsAPI.Create(podManifest)
 	if err != nil {
 		log.Errorf("K8s executor: cannot schedule pod %q with namespace %q", k8s.config.PodName, k8s.config.Namespace)
@@ -338,6 +341,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 		started:         taskHandle.started,
 		stopped:         taskHandle.stopped,
+		failed:          make(chan struct{}),
 		requestDelete:   taskHandle.requestDelete,
 		exitCodeChannel: taskHandle.exitCodeChannel,
 	}
@@ -357,7 +361,20 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	}
 
 	// Best effort potential way to check if binary is started properly.
-	taskHandle.Wait(100 * time.Millisecond)
+	select {
+	case <-taskWatcher.failed:
+		log.Error("Task %q failed", taskHandle.command)
+		break
+	case <-time.After(100 * time.Millisecond):
+		return taskHandle, nil
+		break
+
+	}
+	/*taskHandle.Wait(5 * time.Second)
+	podFromAPI, _ := podsAPI.Get(pod.Name, v1.GetOptions{ResourceVersion: "1"})
+	fmt.Printf("\n===============================\n%#v\n===============================\n", podFromAPI.Status.Phase)*/
+
+	taskHandle.Wait(0)
 	err = checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
 	if err != nil {
 		return nil, err
@@ -370,6 +387,7 @@ type k8sTaskHandle struct {
 	podsAPI       corev1.PodInterface
 	stopped       chan struct{}
 	started       chan struct{}
+	failed        chan struct{}
 	requestDelete chan struct{}
 
 	stdoutFilePath string
@@ -510,6 +528,7 @@ type k8sWatcher struct {
 
 	started          chan struct{}
 	stopped          chan struct{}
+	failed           chan struct{}
 	logsCopyFinished chan struct{}
 	requestDelete    chan struct{}
 	exitCodeChannel  chan int
@@ -638,6 +657,7 @@ func (kw *k8sWatcher) whenPodReady() {
 // Additionally call whenPodReady handler to setupLogs and mark pod as running.
 func (kw *k8sWatcher) whenPodFinished(pod *clientv1.Pod) {
 	kw.oncePodFinished.Do(func() {
+		close(kw.failed)
 		kw.whenPodReady()
 		kw.setExitCode(pod)
 		log.Debug("K8s task watcher: pod finished")
@@ -691,7 +711,7 @@ func (kw *k8sWatcher) whenPodDeleted() {
 		// wait for logs to finish copying before announcing pod termination.
 		<-kw.logsCopyFinished
 		close(kw.stopped)
-
+		log.Debug("K8s task watcher: stopped channel closed")
 	})
 }
 
@@ -732,11 +752,13 @@ func (kw *k8sWatcher) setupLogs() {
 			defer close(kw.logsCopyFinished)
 
 			stdoutFile, err := os.OpenFile(kw.stdoutFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
+			log.Debug("stdout openened")
 			if err != nil {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
 			}
 			stderrFile, err := os.OpenFile(kw.stderrFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
+			log.Debug("stderr openened")
 			if err != nil {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
@@ -744,7 +766,9 @@ func (kw *k8sWatcher) setupLogs() {
 			defer syncAndClose(stdoutFile)
 			defer syncAndClose(stderrFile)
 
+			log.Debug("copying started")
 			_, err = io.Copy(io.MultiWriter(stdoutFile, stderrFile), logStream)
+			log.Debug("copying finished")
 			if err != nil {
 				log.Errorf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
 				return

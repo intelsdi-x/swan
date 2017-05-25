@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -101,7 +102,8 @@ func testExecutor(t *testing.T, executor Executor) {
 		})
 
 		Convey("When we wait for the task to terminate. The exit status should be 0 and output needs to be 'output'", func() {
-			terminated, err := taskHandle.Wait(1 * time.Second)
+			terminated, err := taskHandle.Wait(10 * time.Second)
+			fmt.Printf("============================================\n%#v\n", taskHandle.Status())
 			So(err, ShouldBeNil)
 			So(terminated, ShouldBeTrue)
 
