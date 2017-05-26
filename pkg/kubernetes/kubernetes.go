@@ -361,7 +361,7 @@ func (m *k8s) getKubeletCommand() kubeCommand {
 			fmt.Sprintf(" --v=%d", m.config.LogLevel),
 			fmt.Sprintf(" --port=%d", m.config.KubeletPort),
 			fmt.Sprintf(" --read-only-port=0"),
-			fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" --cgroups-per-qos=false --enforce-node-allocatable= --api-servers=%s", m.config.GetKubeAPIAddress()),
 			fmt.Sprintf(" %s", m.config.KubeletArgs),
 		), m.config.KubeletPort}
 }
