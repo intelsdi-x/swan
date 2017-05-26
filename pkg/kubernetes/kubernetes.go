@@ -42,7 +42,7 @@ const (
 
 var (
 	kubeEtcdServersFlag    = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
-	kubeEtcdDataFormatFlag = conf.NewStringFlag("kubernetes_cluster_etcd_data_format", "Data format for etcd cluster (etvd3 or etcd3)", "etcd3")
+	kubeEtcdDataFormatFlag = conf.NewStringFlag("kubernetes_cluster_etcd_data_format", "Data format for etcd cluster (etvd3 or etcd2)", "etcd3")
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")

@@ -287,9 +287,6 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, apiPod.Status.QOSClass)
 
-	var zero int64
-	podManifest.Spec.TerminationGracePeriodSeconds = &zero
-	podManifest.DeletionGracePeriodSeconds = &zero
 	pod, err := podsAPI.Create(podManifest)
 	if err != nil {
 		log.Errorf("K8s executor: cannot schedule pod %q with namespace %q", k8s.config.PodName, k8s.config.Namespace)
@@ -315,8 +312,6 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	stdoutFile.Close()
 	stderrFile.Close()
 
-	// After client-go supports GetPodQOS change to qos.GetPodQOS(pod)
-	log.Debugf("K8s executor: pod %q QoS class %q", pod.Name, apiPod.Status.QOSClass)
 	taskHandle := &k8sTaskHandle{
 		podName:         pod.Name,
 		command:         command,
@@ -354,8 +349,10 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "cannot create task on pod %q", pod.Name)
 	}
 
+	var started bool
 	select {
 	case <-taskWatcher.started:
+		started = true
 		break
 	case <-taskWatcher.stopped:
 		break
@@ -364,10 +361,14 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	// Best effort potential way to check if binary is started properly.
 	select {
 	case <-taskWatcher.failed:
+		// Pod was started but shell failed to launch requested process.
 		log.Errorf("K8s executor: task %q on pod %s failed", taskHandle.command, taskHandle.podName)
 		break
 	case <-taskWatcher.deleted:
-		log.Errorf("K8s executor: pod %s deleted deleted immediately after being started", taskHandle.podName)
+		// Pod was deleted before it even failed. It may happen when image is not available or communication with Docker fails.
+		if !started {
+			log.Errorf("K8s executor: pod %s was deleted unexpectedly", taskHandle.podName)
+		}
 		break
 	case <-time.After(100 * time.Millisecond):
 		return taskHandle, nil
@@ -455,7 +456,7 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 			log.Debugf("K8s task handle: received exit code: %#v", exitCode)
 			th.exitCode = &exitCode
 		}
-		log.Debug("K8s task handle: exitCode channel is already closed")
+		log.Debug("K8s task handle: 'exitCode' channel is already closed")
 	default:
 		log.Debug("K8s task handle: no exit code received (channel no closed yet)")
 	}
@@ -473,12 +474,7 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 // false if the pod didn't terminate before the provided timeout.
 func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if th.isTerminated() {
-		select {
-		case <-th.started:
-			return true, nil
-		case <-time.After(100 * time.Millisecond):
-			return true, errors.Errorf("K8s task handle: pod %s has not been started", th.podName)
-		}
+		return true, nil
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -662,8 +658,10 @@ func (kw *k8sWatcher) whenPodReady() {
 // Additionally call whenPodReady handler to setupLogs and mark pod as running.
 func (kw *k8sWatcher) whenPodFinished(pod *v1.Pod) {
 	kw.oncePodFinished.Do(func() {
-		close(kw.failed)
-		log.Debug("K8s task watcher: failed channel closed")
+		if pod.Status.Phase == v1.PodFailed {
+			close(kw.failed)
+			log.Debug("K8s task watcher: 'failed' channel closed")
+		}
 		kw.whenPodReady()
 		kw.setExitCode(pod)
 		log.Debug("K8s task watcher: pod finished")
@@ -718,7 +716,7 @@ func (kw *k8sWatcher) whenPodDeleted() {
 		// wait for logs to finish copying before announcing pod termination.
 		<-kw.logsCopyFinished
 		close(kw.stopped)
-		log.Debug("K8s task watcher: stopped channel closed")
+		log.Debug("K8s task watcher: 'stopped' channel closed")
 	})
 }
 

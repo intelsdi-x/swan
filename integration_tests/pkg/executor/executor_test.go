@@ -219,7 +219,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer StopAndEraseOutput(taskHandle)
 
 		// Wait for the command to execute.
-		terminated, err := taskHandle.Wait(0)
+		terminated, err := taskHandle.Wait(60 * time.Second)
 		So(terminated, ShouldBeTrue)
 		So(err, ShouldBeNil)
 
