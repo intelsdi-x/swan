@@ -31,49 +31,6 @@ func TestKubernetes(t *testing.T) {
 		So(config.ContainerImage, ShouldEqual, defaultContainerImage)
 	})
 
-	SkipConvey("After create new pod object", t, func() {
-		config := DefaultKubernetesConfig()
-
-		Convey("with default unspecified resources, expect BestEffort", func() {
-			podExecutor := &k8s{config, nil}
-			pod, err := podExecutor.newPod("be")
-			So(err, ShouldBeNil)
-			So(v1ToAPI(pod).Status.QOSClass, ShouldEqual, api.PodQOSBestEffort)
-		})
-
-		Convey("with CPU/Memory limit and requests euqal, expect Guaranteed", func() {
-			config.CPURequest = 100
-			config.CPULimit = 100
-			config.MemoryRequest = 1000
-			config.MemoryLimit = 1000
-			podExecutor := &k8s{config, nil}
-			pod, err := podExecutor.newPod("hp")
-			So(err, ShouldBeNil)
-			So(v1ToAPI(pod).Status.QOSClass, ShouldEqual, api.PodQOSGuaranteed)
-		})
-
-		Convey("with CPU/Memory limit and requests but not equal, expect Burstable", func() {
-			config.CPURequest = 10
-			config.CPULimit = 100
-			config.MemoryRequest = 10
-			config.MemoryLimit = 1000
-			podExecutor := &k8s{config, nil}
-			pod, err := podExecutor.newPod("burstable")
-			So(err, ShouldBeNil)
-			So(v1ToAPI(pod).Status.QOSClass, ShouldEqual, api.PodQOSBurstable)
-		})
-
-		Convey("with no CPU limit and request, expect Burstable", func() {
-			config.CPURequest = 1
-			config.CPULimit = 0
-			podExecutor := &k8s{config, nil}
-			pod, err := podExecutor.newPod("burst")
-			So(err, ShouldBeNil)
-			So(v1ToAPI(pod).Status.QOSClass, ShouldEqual, api.PodQOSBurstable)
-		})
-
-	})
-
 	Convey("Kubernetes pod executor pod names", t, func() {
 
 		Convey("have desired name", func() {
