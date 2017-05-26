@@ -69,8 +69,6 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				// kubectl get nodes should return this:
 				// NAME            STATUS    AGE
 				// <hostname>      Ready     <x>h
-
-				fmt.Println(string(output))
 				re, err := regexp.Compile(fmt.Sprintf("%s.*?Ready", host))
 				So(err, ShouldBeNil)
 
