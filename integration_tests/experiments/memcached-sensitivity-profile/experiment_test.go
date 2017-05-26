@@ -157,9 +157,9 @@ func TestExperiment(t *testing.T) {
 			experimentID, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", sensitivity.NoneAggressorID)
 
 			Convey("Experiment should return with no errors and there should be 9 metrics in Cassandra", func() {
+				So(err, ShouldBeNil)
 				_, _, _, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldEqual, 9)
-				So(err, ShouldBeNil)
 			})
 		})
 
