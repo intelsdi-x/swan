@@ -68,8 +68,8 @@ func TestKubernetesLauncher(t *testing.T) {
 		handle := getMockedTaskHandle(outputFile)
 
 		// Prepare Kubernetes Launcher
-		var k8sLauncher k8s
-		k8sLauncher = New(master, minion, config).(k8s)
+		var k8sLauncher *k8s
+		k8sLauncher = New(master, minion, config).(*k8s)
 
 		Convey("When configuration is passed to Kubernetes Launcher", func() {
 			handle := &mocks.TaskHandle{}
@@ -128,6 +128,13 @@ func TestKubernetesLauncher(t *testing.T) {
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			k8sLauncher.isListening = getIsListeningFunc(true)
 			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
+
+			mockAPI := &mockK8sPodAPI{}
+
+			mockAPI.On("getPodsFromNode", mock.AnythingOfType("string")).Return(nil, nil)
+			mockAPI.On("killPods", mock.AnythingOfType("[]v1.Pod")).Return(nil)
+
+			k8sLauncher.k8sPodAPI = mockAPI
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)

@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
-	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
@@ -41,8 +40,7 @@ import (
 )
 
 var (
-	includeBaselinePhaseFlag = conf.NewBoolFlag("experiment_baseline", "Run Baseline (a phase without a Best Effort workload)", true)
-	appName                  = os.Args[0]
+	appName = os.Args[0]
 )
 
 func main() {
@@ -57,16 +55,10 @@ func main() {
 	logger.Initialize(appName, uid)
 
 	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
-	if err != nil {
-		logrus.Errorf("Cannot connect to Cassandra Metadata Database %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
+
 	// Save experiment runtime environment (configuration, environmental variables, etc).
 	err = metadata.RecordRuntimeEnv(experimentStart)
-	if err != nil {
-		logrus.Errorf("Cannot save runtime environment %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
 	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Validate preconditions.
@@ -77,10 +69,7 @@ func main() {
 
 	// Create executors with cleanup function.
 	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
-	if err != nil {
-		logrus.Errorf("Cannot create executors: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "cannot prepare executors")
 	defer func() {
 		if cleanup != nil {
 			err := cleanup()
@@ -92,14 +81,7 @@ func main() {
 
 	// Create BE workloads.
 	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
-	if err != nil {
-		logrus.Errorf("Cannot create Best Effort tasks: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
-	// Zero-value sensitivity.LauncherSessionPair represents baselining.
-	if includeBaselinePhaseFlag.Value() {
-		beLaunchers = append([]sensitivity.LauncherSessionPair{sensitivity.LauncherSessionPair{}}, beLaunchers...)
-	}
+	errutil.CheckWithContext(err, "cannot prepare aggressors")
 
 	// Create HP workload.
 	memcachedConfig := memcached.DefaultMemcachedConfig()
@@ -107,25 +89,17 @@ func main() {
 
 	// Load generator.
 	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
-	if err != nil {
-		logrus.Errorf("Cannot create Load Generator: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "cannot prepare load generator")
 
 	snapSession, err := mutilatesession.NewSessionLauncherDefault()
-	if err != nil {
-		logrus.Errorf("Cannot create Snap session: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "cannot create mutilate snap session")
 
 	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
-	if sensitivity.PeakLoadFlag.Value() == sensitivity.RunTuningPhase {
+	if load == sensitivity.RunTuningPhase {
+		logrus.Info("Tuning phase...")
 		load, err = experiment.GetPeakLoad(hpLauncher, loadGenerator, sensitivity.SLOFlag.Value())
-		if err != nil {
-			logrus.Errorf("Cannot retrieve peak load (using tuning): %q", err.Error())
-			os.Exit(experiment.ExSoftware)
-		}
+		errutil.CheckWithContext(err, "cannot retrieve peak load during tuning")
 		logrus.Infof("Ran tuning and achieved load of %d", load)
 	} else {
 		logrus.Infof("Skipping tuning phase, using peakload %d", load)
@@ -148,17 +122,14 @@ func main() {
 	}
 
 	err = metadata.RecordMap(records)
-	if err != nil {
-		logrus.Errorf("Cannot save metadata: %q", err.Error())
-		os.Exit(experiment.ExSoftware)
-	}
+	errutil.CheckWithContext(err, "cannot save metadata")
 
 	for _, beLauncher := range beLaunchers {
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
 			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-			aggressorName := "None"
+			aggressorName := sensitivity.NoneAggressorID
 			if beLauncher.Launcher != nil {
 				aggressorName = beLauncher.Launcher.Name()
 			}

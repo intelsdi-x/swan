@@ -26,6 +26,7 @@ import pickle
 from functools import partial
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 
 
 # -------------------------------
@@ -110,125 +111,68 @@ def _get_or_create_cassandra_session(nodes, port, ssl_options=None):
 # ----------------------------------------
 
 
-def _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace='snap'):
-    """ Load data from cassandra database as rows.
+@DataFrameToCSVCache()
+def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
+                                           aggfuncs=None, default_aggfunc=np.average,
+                                           keyspace='snap'):
+    """ Load data from cassandra database as rows, processes them and returns dataframe with multiindex build on tags.
 
     It only loads doubleval, ns and tags values ignoring other kinds of metrics.
 
     :param experiment_id: identifier of experiment to load metrics for,
+    :param tag_keys: Names of columns used to aggregate by and build Dataframe multiindex from.
+    :param ns2agg: Mapping from processes "ns" to aggregation function for one phase.
     :param cassandra_session: Cassandra session object to be used to execute query,
     :param keyspace: Snap keyspace to be used to load metrics from,
 
     :returns: Data as cassandra rows (each row being dict like).
     """
+    cassandra_session = _get_or_create_cassandra_session(**cassandra_options)
 
-    from cassandra.query import SimpleStatement
+    # helper to drop prefix from ns (removing host depedency).
+    pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
+    drop_prefix = partial(pattern.sub, '')
 
-    query = """SELECT ns, doubleval, tags
-               FROM %s.metrics
-               WHERE tags['swan_experiment']=?
-               ALLOW FILTERING""" % keyspace
-
+    query = "SELECT ns, doubleval, tags FROM %s.metrics WHERE tags['swan_experiment']=? ALLOW FILTERING" % keyspace
     statement = cassandra_session.prepare(query)
 
-    print("loading data from database...")
+    rows = cassandra_session.execute(statement, [experiment_id])
+
+    # temporary mutli hierarchy index for storing loaded data
+    # first level is a namespace and second level is tuple of values from selected tags
+    # value is is a list of values
+    records = defaultdict(lambda: defaultdict(list))
     started = datetime.datetime.now()
+    print('loading data...')
+    for idx, row in enumerate(rows):
+        tags = row['tags']
+        # namespace, value and tags
+        ns = drop_prefix(row['ns'])
+        val = row['doubleval']
+        tagidx = tuple(tags[tk] for tk in tag_keys)
+        # store in temporary index
+        records[ns][tagidx].append(val)
+        if idx and idx % 50000 == 0:
+            print("%d loaded" % idx)
+    print('%d rows loaded in %.0fs' % (idx, (datetime.datetime.now() - started).seconds))
 
-    rows = list(cassandra_session.execute(statement, [experiment_id]))
-    if len(rows) == 0:
-        print("no metrics found!")
-        return []
-    print("loaded %d rows in %0.fs" % (len(rows), (datetime.datetime.now() - started).seconds))
+    started = datetime.datetime.now()
+    print('building a dataframe...')
+    df = pd.DataFrame()
+    for ns, d in records.iteritems():
+        tuples = []  # values used to build an index for given series.
+        data = []  # data for Series
+        # Use aggfunc provided by ns_aggfunctions or fallback to defaggfunc.
+        aggfunc = aggfuncs.get(ns, default_aggfunc) if aggfuncs else default_aggfunc
+        for tags, values in sorted(d.iteritems()):
+            tuples.append(tags)
+            data.append(aggfunc(values))
+        index = pd.MultiIndex.from_tuples(tuples, names=tag_keys)
+        df[ns] = pd.Series(data, index)
 
-    return rows
-
-
-def strip_prefix(column):
-    """ Drop "/intel/swan/PLUGIN/HOST/" prefix from 'ns' column.
-
-    E.g.
-    /intel/swan/caffe/inference/host-123.asdfdf/batches -> batches
-    /intel/swan/mutilate/ovh3-2342.123/percentile/99th -> percentile/99th
-    /intel/swan/mutilate/ovh3-2342.123/std -> std
-
-    Thanks to this user is not required to specify host name to gather metrics using unique experiment id.
-
-    :param column: dataframe column("series") to apply replace/striping function on,
-    :returns: new column with string values with prefix stripped
-
-    """
-    pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
-    return column.apply(
-        partial(pattern.sub, '')
-    )
-
-
-def _convert_rows_to_dataframe(rows):
-    """ Convert rows (dicts) representing snap.metrics to pandas.DataFrame.
-
-    E.g. transform raw row (dict like) data:
-
-    rows = [ {
-                 'ns':'/intel/swan/$PLUGIN/%HOST/percentile/99th',
-                 'doubleval': 124,
-                 'tags':{'tag1':'v1', 'tag2':'v2'}
-             },,,    ]
-
-
-    into dataframe:
-
-    | ns                                        | doubleval | tag1 | tag2 |
-    -----------------------------------------------------------------------
-    | /intel/swan/$PLUGIN/$HOST/percentile/99th | 124       | v1   | v2   |
-
-    :param rows: dict like objects representing metrics loaded from Cassandra and stored by
-                 snap-plugin-cassandra-publisher
-
-    :returns: dataframe and common tag keys which were found on every metric (intersection)
-    """
-
-    tag_keys = None
-
-    # flat & map tags into new columns and find common tags in all rows
-    for row in rows:
-        tags = row.pop('tags')
-
-        if tag_keys is None:
-            tag_keys = set(tags.keys())  # Initially fill with first found tags.
-        else:
-            tag_keys = tag_keys.intersection(tags.keys())
-
-        row.update(tags)
-
-    return pd.DataFrame.from_records(rows), tag_keys
-
-
-def _transform_ns_to_columns(df, tag_keys, aggfunc=np.mean):
-    """ Transform (reshape) ns + doubleval columns into "ns" separate columns.
-
-    For example, with input dataframe like this:
-
-    | ns                                        | doubleval | tag1 | tag2 |
-    -----------------------------------------------------------------------
-    | /intel/swan/$PLUGIN/$HOST/percentile/99th | 124       | v1   | v2   |
-    | /intel/swan/$PLUGIN/$HOST/std             | 515       | v1   | v2   |
-    | /intel/swan/$PLUGIN/$HOST/qps             | 20000     | v1   | v2   |
-
-    returns:
-
-    | percentile/99th | std | qps   | tag1 | tag2 |
-    -----------------------------------------------
-    | 124             | 515 | 20000 | v1   | v2   |
-
-    :param df: Input "raw" unprocessed dataframe with "ns" column and doubleval.
-    :param tag_keys: Names of columns used to aggregate by.
-    :param aggfunc: Function to aggregate the same values for the same tag_keys.
-
-    :returns: flat dataframe with "metrics" from ns columns as new columns,
-    """
-
-    # Drop prefix from 'ns' column (make independent from 'host' component).
-    df['ns'] = strip_prefix(df['ns'])
+    # Cannot recreate index after file is stored without additional info about number of index columns.
+    # Additionally furhter transformation are based on values available in columns (not in index).
+    df.reset_index(inplace=True)
 
     # Convert all series to numeric if possible.
     for column in df.columns:
@@ -237,49 +181,8 @@ def _transform_ns_to_columns(df, tag_keys, aggfunc=np.mean):
         except ValueError:
             continue
 
-    # Reshape - to have have all tags + "ns" column as index.
-    # First step: tags and ns column is converted to index with group by.
-    groupby_columns = list(tag_keys)+['ns']
-    grouper = df.groupby(groupby_columns)
-    # and then just take a value from 'doubleval' column.
-    value_grouper = grouper['doubleval']
-    # Get a mean value of 'doubleval' column values grouped by tags and ns.
-    # df = value_grouper.mean()  # TODO: consider making this an option (cpu vs batches issue).
-    df = value_grouper.aggregate(aggfunc)
-    # Then use 'ns' categorical column values will become new columns.
-    df = df.unstack(['ns'])
-    # Reset index to transform "tag_keys" columns used by group by to become ordinary columns.
-    df = df.reset_index()
-    # Reset names for columns (drop misleading 'ns').
-    df.columns.name = ''
+    print('dataframe with shape=%s build in %.0fs' % (df.shape, (datetime.datetime.now() - started).seconds))
     return df
-
-
-def _load_raw_data(experiment_id, cassandra_options, aggfunc=np.mean, keyspace='snap'):
-    """ Helper extacted function to load & flat data from cassandra - check load_dataframe_from_cassandra for description.
-
-    :returns: unprocessed data as dataframe and found common tag keys,
-    """
-    cassandra_session = _get_or_create_cassandra_session(**(cassandra_options or DEFAULT_CASSANDRA_OPTIONS))
-    rows = _load_rows_from_cassandra(experiment_id, cassandra_session, keyspace=keyspace)
-    df, tag_keys = _convert_rows_to_dataframe(rows)
-    return df, tag_keys
-
-
-@DataFrameToCSVCache()
-def load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=np.mean, keyspace='snap'):
-    """ Basic generic function to load experiment data from cassandra with rows grouped by given tags.
-
-    Return dateframe is cached by DataFrameToCSVCache decorator (can be disabled by providing cache=False).
-
-    :param aggfunc: what function used to aggregate values with the same tags,
-    :param keyspace: keyspace to load snap metrics from (defaults to "snap").
-    :returns: pandas.Dataframe with all tags and ns categorical values as columns (check convert_rows_to_dataframe
-              for details).
-    """
-    df, tag_keys = _load_raw_data(experiment_id, cassandra_options, aggfunc, keyspace)
-    return _transform_ns_to_columns(df, tag_keys, aggfunc=aggfunc)
-
 
 # Constants for columns names used.
 # New column names.
@@ -295,6 +198,7 @@ PERCENTILE99TH_LABEL = 'percentile/99th'
 QPS_LABEL = 'qps'  # Absolute achieved QPS.
 SWAN_LOAD_POINT_QPS_LABEL = 'swan_loadpoint_qps'  # Target QPS.
 SWAN_AGGRESSOR_NAME_LABEL = 'swan_aggressor_name'
+SWAN_REPETITION_LABEL = 'swan_repetition'
 
 
 # ----------------------------------------------------
@@ -386,7 +290,7 @@ def composite_latency_formatter(composite_values, normalized=False):
 
     if normalized:
         if achieved_latency > LATENCY_CRIT_THRESHOLD:
-            return '> 300%'
+            return '>300%'
         else:
             return '{:.0%}'.format(achieved_latency)
     else:
@@ -480,25 +384,32 @@ def _pivot_ui(df, totals=True, **options):
         print("Error: cannot import pivottablejs, please install 'pip install pivottablejs'!")
         return
     iframe = pivot_ui(df, **options)
-    with open(iframe.src) as f:
-        replacedHtml = f.read().replace('</style>', '.pvtTotal, .pvtTotalLabel, .pvtGrandTotal {display: none}</style>')
-    with open(iframe.src, "w") as f:
-        f.write(replacedHtml)
+    if not totals:
+        with open(iframe.src) as f:
+            replacedHtml = f.read().replace(
+                '</style>',
+                '.pvtTotal, .pvtTotalLabel, .pvtGrandTotal {display: none}</style>'
+            )
+        with open(iframe.src, "w") as f:
+            f.write(replacedHtml)
     return iframe
 
 
 class Experiment:
     """ Base class for loading & storing data for swan experiments.
 
-    Extra normalized columns are then stored in one composite column for further processing.
-
-    Additionally provides a helper function to rename existing dataframe columns to new names and
-    function that allows to refere to new names using original names (_renamed).
+    During loading from cassandra data metrics are index and grouped by tag_keys (a.k.a. dimensions).
+    Additionall parameter ns_aggfunctions is used to define how specific namespaces (ns) should be initially aggregated
+    (by default it is 'mean' for whole phase).
     """
 
-    def __init__(self, experiment_id, cassandra_options=None, aggfunc=np.mean, cache=True):
-        self.df = load_dataframe_from_cassandra(experiment_id, cassandra_options, aggfunc=aggfunc, cache=cache)
+    def __init__(self, experiment_id, tag_keys, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
+                 aggfuncs=None, default_aggfunc=np.mean, cache=True):
         self.experiment_id = experiment_id
+        self.df = load_dataframe_from_cassandra_streamed(
+            experiment_id, tag_keys, cassandra_options,
+            aggfuncs=aggfuncs, default_aggfunc=default_aggfunc, cache=cache
+        )
         self.df.columns.name = 'Experiment %s' % self.experiment_id
 
     def _repr_html_(self):
@@ -520,8 +431,15 @@ class SensitivityProfile:
         "load" dimensions.
     """
 
-    def __init__(self, experiment, slo):
-        self.experiment = experiment
+    tag_keys = (
+        SWAN_AGGRESSOR_NAME_LABEL,
+        SWAN_LOAD_POINT_QPS_LABEL,
+        SWAN_REPETITION_LABEL,
+    )
+
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
+        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options,
+                                     aggfuncs=dict(batches=np.max), cache=cache)
         self.slo = slo
 
         # Pre-process data specifically for this experiment.
@@ -602,7 +520,7 @@ class SensitivityProfile:
 # --------------------------------------------------------------
 
 
-NUMBER_OF_CORES_LABEL = 'number_of_cores'  # HP cores.
+NUMBER_OF_CORES_LABEL = 'number_of_cores'  # HP cores. (TODO: replace with number_of_threads)
 SNAP_USE_COMPUTE_SATURATION_LABEL = '/intel/use/compute/saturation'
 
 
@@ -610,9 +528,14 @@ class OptimalCoreAllocation:
     """ Visualization for "optimal core allocation" experiments that
         presents latency/QPS and cpu utilization in "number of cores" and "load" dimensions.
     """
+    tag_keys = (
+        SWAN_AGGRESSOR_NAME_LABEL,
+        NUMBER_OF_CORES_LABEL,
+        SWAN_LOAD_POINT_QPS_LABEL,
+    )
 
-    def __init__(self, experiment, slo):
-        self.experiment = experiment
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
+        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options, cache=cache)
         self.slo = slo
 
         # Pre-process data specifically for this experiment.
@@ -736,9 +659,17 @@ class CAT:
     """ Visualization for "optimal core allocation" experiments that
         presents latency/QPS and cpu utilization in "number of cores" and "load" dimensions.
     """
+    tag_keys = ('be_cores_range',
+                'hp_cores_range',
+                BE_L3_CACHE_WAYS_LABEL,
+                BE_NUMBER_OF_CORES_LABEL,
+                SWAN_AGGRESSOR_NAME_LABEL,
+                SWAN_LOAD_POINT_QPS_LABEL)
 
-    def __init__(self, experiment, slo):
-        self.experiment = experiment
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
+
+        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options,
+                                     aggfuncs=dict(batches=np.max), cache=cache)
         self.slo = slo
 
         df = self.experiment.df.copy()
@@ -795,8 +726,6 @@ class CAT:
              ACHIEVED_LATENCY_LABEL,
              QPS_LABEL,
              ACHIEVED_QPS_LABEL,
-
-
         ]
 
         # Check if RDT collector data is available.
@@ -812,19 +741,21 @@ class CAT:
     def filtered_df_table(self):
         """ Returns an simple formated dataframe """
 
-        return self.filtered_df(
-        ).style.format('{:.0%}', [
-                LLC_BE_PERC_LABEL,
-                LLC_HP_PERC_LABEL
-             ]
-        ).format('{:.0%}', [
+        df = self.filtered_df()
+
+        styler = df.style.format('{:.0%}', [
                 ACHIEVED_QPS_LABEL,
                 ACHIEVED_LATENCY_LABEL,
              ]
         )
 
-    def pivot_ui(self, **options):
-        return _pivot_ui(self.simple_df(), **options)
+        # format optionall values optionally.
+        if LLC_HP_LABEL in self.df:
+            styler = styler.format('{:.0%}', [
+                LLC_BE_PERC_LABEL,
+                LLC_HP_PERC_LABEL
+             ])
+        return styler
 
     def latency(self, normalized=True, aggressor=None, qps=None):
 
@@ -858,3 +789,18 @@ class CAT:
             ).set_caption(
                 self._get_caption('latency[us]', normalized)
             )
+
+    def filtered_df_pivot_ui(self,
+                             rows=(SWAN_AGGRESSOR_NAME_LABEL, 'be_l3_cache_ways'),
+                             cols=(SWAN_LOAD_POINT_QPS_LABEL, 'be_number_of_cores'),
+                             aggregatorName='First', vals=('percentile/99th',), rendererName='Heatmap', **options):
+        return _pivot_ui(
+            self.filtered_df(),
+            totals=False,
+            rows=rows,
+            cols=cols,
+            vals=vals,
+            aggregatorName=aggregatorName,
+            rendererName=rendererName,
+            **options
+        )

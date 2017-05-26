@@ -45,6 +45,8 @@ var (
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
+
+	kubeCleanLeftPods = conf.NewBoolFlag("kubernetes_cluster_clean_left_pods_on_startup", "Delete all pods which are detected during cluster startup. Usefull after dirty shutdown when some pods may not be properly deleted.", false)
 )
 
 type kubeCommand struct {
@@ -69,6 +71,9 @@ type Config struct {
 	// Address range to use for services.
 	ServiceAddresses string
 
+	// Optional configuration option for cleaning
+	KubeletHost string
+
 	// Custom args to apiserver and kubelet.
 	KubeAPIArgs        string
 	KubeControllerArgs string
@@ -84,7 +89,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		EtcdServers:        kubeEtcdServersFlag.Value(),
-		EtcdPrefix:         "/registry",
+		EtcdPrefix:         "/swan",
 		LogLevel:           0,
 		AllowPrivileged:    true,
 		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
@@ -127,50 +132,55 @@ func UniqueConfig() Config {
 type getReadyNodesFunc func(k8sAPIAddress string) ([]v1.Node, error)
 
 type k8s struct {
-	master        executor.Executor
-	minion        executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
-	config        Config
+	master executor.Executor
+	minion executor.Executor // Current single minion is strictly connected with getReadyNodes() function and expectedKubeletNodesCount const.
+	config Config
+
+	k8sPodAPI // Private interface
+
 	isListening   netutil.IsListeningFunction // For mocking purposes.
 	getReadyNodes getReadyNodesFunc           // For mocking purposes.
+
+	kubeletHost string // Filled by Kubelet TaskHandle
 }
 
 // New returns a new Kubernetes launcher instance consists of one master and one minion.
 // In case of the same executor they will be on the same host (high risk of interferences).
 // NOTE: Currently we support only single-kubelet (single-minion) kubernetes.
 func New(master executor.Executor, minion executor.Executor, config Config) executor.Launcher {
-	return k8s{
+
+	return &k8s{
 		master:        master,
 		minion:        minion,
 		config:        config,
+		k8sPodAPI:     newK8sPodAPI(config),
 		isListening:   netutil.IsListening,
 		getReadyNodes: getReadyNodes,
 	}
 }
 
 // Name returns human readable name for job.
-func (m k8s) Name() string {
+func (m *k8s) Name() string {
 	return "Kubernetes [single-kubelet]"
 }
 
 // Launch starts the kubernetes cluster. It returns a cluster
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a cluster.
-func (m k8s) Launch() (handle executor.TaskHandle, err error) {
+func (m *k8s) Launch() (handle executor.TaskHandle, err error) {
 	for retry := uint64(0); retry <= m.config.RetryCount; retry++ {
 		handle, err = m.tryLaunchCluster()
 		if err != nil {
 			log.Warningf("could not launch Kubernetes cluster: %q. Retry number: %d", err.Error(), retry)
 			continue
 		}
-
 		return handle, nil
 	}
-
 	log.Errorf("Could not launch Kubernetes cluster: %q", err.Error())
 	return nil, err
 }
 
-func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
+func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 	handle, err := m.launchCluster()
 	if err != nil {
 		return nil, err
@@ -185,10 +195,34 @@ func (m k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 		}
 		return nil, err
 	}
+	// Optional removal of the unwanted pods in swan's namespace
+	pods, err := m.getPodsFromNode(m.kubeletHost)
+	if err != nil {
+		log.Warningf("Could not retreive list of pods from host %s. Error: %s", m.kubeletHost, err)
+		// if getPodsFromNode returns error it means cluster is not useable. Delete it.
+		stopErr := handle.Stop()
+		if stopErr != nil {
+			log.Warningf("Errors while stopping k8s cluster: %v", stopErr)
+		}
+		return nil, err
+	}
+	if len(pods) != 0 {
+		if kubeCleanLeftPods.Value() {
+			log.Infof("Kubelet on node %q has %d dangling pods. Attempt to clean them", m.kubeletHost, len(pods))
+			err = m.cleanNode(m.kubeletHost, pods)
+			if err != nil {
+				log.Errorf("Could not clean dangling pods: %s", err)
+			} else {
+				log.Infof("Dangling pods on node %q has been deleted", m.kubeletHost)
+			}
+		} else {
+			log.Warnf("Kubelet on node %q has %d dangling pods. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
+		}
+	}
 	return handle, nil
 }
 
-func (m k8s) launchCluster() (executor.TaskHandle, error) {
+func (m *k8s) launchCluster() (executor.TaskHandle, error) {
 	// Launch apiserver using master executor.
 	kubeAPIServer := m.getKubeAPIServerCommand()
 	apiHandle, err := m.launchService(kubeAPIServer)
@@ -241,12 +275,13 @@ func (m k8s) launchCluster() (executor.TaskHandle, error) {
 		return nil, errors.Wrap(errCol.GetErrIfAny(), "cannot launch kubelet using minion executor")
 	}
 	clusterTaskHandle.AddAgent(kubeletHandle)
+	m.kubeletHost = kubeletHandle.Address()
 
 	return clusterTaskHandle, err
 }
 
 // launchService executes service and check if it is listening on it's endpoint.
-func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
+func (m *k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 	handle, err := command.exec.Execute(command.raw)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command.raw, command.exec.Name())
@@ -266,7 +301,7 @@ func (m k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 }
 
 // getKubeAPIServerCommand returns command for apiserver.
-func (m k8s) getKubeAPIServerCommand() kubeCommand {
+func (m *k8s) getKubeAPIServerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
 			fmt.Sprintf("hyperkube apiserver"),
@@ -276,6 +311,7 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 			fmt.Sprintf(" --etcd-prefix=%s", m.config.EtcdPrefix),
 			fmt.Sprintf(" --insecure-bind-address=%s", m.config.KubeAPIAddr),
 			fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
+			fmt.Sprintf(" --secure-port 0"),
 			fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
 			fmt.Sprintf(" --service-cluster-ip-range=%s", m.config.ServiceAddresses),
 			fmt.Sprintf(" --advertise-address=%s", m.config.KubeAPIAddr),
@@ -285,7 +321,7 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 }
 
 // getKubeControllerCommand returns command for controller-manager.
-func (m k8s) getKubeControllerCommand() kubeCommand {
+func (m *k8s) getKubeControllerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
 			fmt.Sprintf("hyperkube controller-manager"),
@@ -297,7 +333,7 @@ func (m k8s) getKubeControllerCommand() kubeCommand {
 }
 
 // getKubeSchedulerCommand returns command for scheduler.
-func (m k8s) getKubeSchedulerCommand() kubeCommand {
+func (m *k8s) getKubeSchedulerCommand() kubeCommand {
 	return kubeCommand{m.master,
 		fmt.Sprint(
 			fmt.Sprintf("hyperkube scheduler"),
@@ -309,7 +345,7 @@ func (m k8s) getKubeSchedulerCommand() kubeCommand {
 }
 
 // getKubeletCommand returns command for kubelet.
-func (m k8s) getKubeletCommand() kubeCommand {
+func (m *k8s) getKubeletCommand() kubeCommand {
 	return kubeCommand{m.minion,
 		fmt.Sprint(
 			fmt.Sprintf("hyperkube kubelet"),
@@ -323,7 +359,7 @@ func (m k8s) getKubeletCommand() kubeCommand {
 }
 
 // getKubeProxyCommand returns command for proxy.
-func (m k8s) getKubeProxyCommand() kubeCommand {
+func (m *k8s) getKubeProxyCommand() kubeCommand {
 	return kubeCommand{m.minion,
 		fmt.Sprint(
 			fmt.Sprintf("hyperkube proxy"),
@@ -334,7 +370,7 @@ func (m k8s) getKubeProxyCommand() kubeCommand {
 		), m.config.KubeProxyPort}
 }
 
-func (m k8s) waitForReadyNode(apiServerAddress string) error {
+func (m *k8s) waitForReadyNode(apiServerAddress string) error {
 	for idx := 0; idx < nodeCheckRetryCount; idx++ {
 		nodes, err := m.getReadyNodes(apiServerAddress)
 		if err != nil {

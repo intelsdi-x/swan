@@ -43,14 +43,11 @@ After filling the variables, navigate to the green box using the keyboard arrows
 ```python
 # An experiment can now be loaded from the database by its ID.
 from swan import Experiment, SensitivityProfile
-exp1 = Experiment(EXPERIMENT_ID)
-profile1 = SensitivityProfile(exp1, slo=500)
+profile1 = SensitivityProfile(EXPERIMENT_ID, slo=500)
 ```
-It may take a while since it will retrieve data from Cassandra and store it in the variable `exp1` which represents itself as a table:
+It may take a while since it will retrieve data from Cassandra and store it in the variable `profile1`.
 
-![sample exp1 table](/images/jupyter-exp1-table.png)
-
-The last two steps are to render the sensitivity profile from the loaded samples and draw sensitivity chart. The former will be generated after evaluating:
+The next step is to render the sensitivity profile from the loaded samples and draw sensitivity chart. The former will be generated after evaluating:
 
 ```python
 profile1.latency()

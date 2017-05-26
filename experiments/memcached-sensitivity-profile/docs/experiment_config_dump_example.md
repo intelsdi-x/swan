@@ -336,9 +336,4 @@ EXPERIMENT_BE_WORKLOAD_L3_CPU_RANGE=
 
 # BE cpuset range (e.g: 0-2) for workloads that are targeted as L1-interfering workloads. All three 'range' flags must be set to use this policy.
 EXPERIMENT_BE_WORKLOAD_L1_CPU_RANGE=
-
-# Run Baseline (a phase without a Best Effort workload)
-# Default: true
-EXPERIMENT_BASELINE=true
-
 ```
