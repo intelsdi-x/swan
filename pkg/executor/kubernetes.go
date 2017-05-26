@@ -342,6 +342,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		started:         taskHandle.started,
 		stopped:         taskHandle.stopped,
 		failed:          make(chan struct{}),
+		deleted:         make(chan struct{}),
 		requestDelete:   taskHandle.requestDelete,
 		exitCodeChannel: taskHandle.exitCodeChannel,
 	}
@@ -363,17 +364,17 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	// Best effort potential way to check if binary is started properly.
 	select {
 	case <-taskWatcher.failed:
-		log.Error("Task %q failed", taskHandle.command)
+		log.Errorf("K8s executor: task %q on pod %s failed", taskHandle.command, taskHandle.podName)
+		break
+	case <-taskWatcher.deleted:
+		log.Errorf("K8s executor: pod %s deleted deleted immediately after being started", taskHandle.podName)
 		break
 	case <-time.After(100 * time.Millisecond):
 		return taskHandle, nil
 		break
 
 	}
-	/*taskHandle.Wait(5 * time.Second)
-	podFromAPI, _ := podsAPI.Get(pod.Name, v1.GetOptions{ResourceVersion: "1"})
-	fmt.Printf("\n===============================\n%#v\n===============================\n", podFromAPI.Status.Phase)*/
-
+	// It has been determined that task failed, waiting for Kubernetes to officially acknowledge it.
 	taskHandle.Wait(0)
 	err = checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
 	if err != nil {
@@ -387,7 +388,6 @@ type k8sTaskHandle struct {
 	podsAPI       corev1.PodInterface
 	stopped       chan struct{}
 	started       chan struct{}
-	failed        chan struct{}
 	requestDelete chan struct{}
 
 	stdoutFilePath string
@@ -474,7 +474,14 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 // false if the pod didn't terminate before the provided timeout.
 func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if th.isTerminated() {
-		return true, nil
+		select {
+		case <-th.started:
+			return true, nil
+			break
+		case <-time.After(100 * time.Millisecond):
+			return true, errors.Errorf("K8s task handle: pod %s has not been started", th.podName)
+			break
+		}
 	}
 
 	var timeoutChannel <-chan time.Time
@@ -529,6 +536,7 @@ type k8sWatcher struct {
 	started          chan struct{}
 	stopped          chan struct{}
 	failed           chan struct{}
+	deleted          chan struct{}
 	logsCopyFinished chan struct{}
 	requestDelete    chan struct{}
 	exitCodeChannel  chan int
@@ -658,6 +666,7 @@ func (kw *k8sWatcher) whenPodReady() {
 func (kw *k8sWatcher) whenPodFinished(pod *clientv1.Pod) {
 	kw.oncePodFinished.Do(func() {
 		close(kw.failed)
+		log.Debug("K8s task watcher: failed channel closed")
 		kw.whenPodReady()
 		kw.setExitCode(pod)
 		log.Debug("K8s task watcher: pod finished")
@@ -706,6 +715,7 @@ func (kw *k8sWatcher) setExitCode(pod *clientv1.Pod) {
 // that pod is "stopped" and optionally setup the logs.
 func (kw *k8sWatcher) whenPodDeleted() {
 	kw.oncePodDeleted.Do(func() {
+		close(kw.deleted)
 		kw.setupLogs()
 		log.Debug("K8s task watcher: pod stopped [stopped]")
 		// wait for logs to finish copying before announcing pod termination.
