@@ -16,12 +16,14 @@ package snap
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -70,8 +72,9 @@ func TestSnap(t *testing.T) {
 					So(publisher, ShouldNotBeNil)
 
 					tmpFile, err := ioutil.TempFile("", "session_test")
-					tmpFile.Close()
 					So(err, ShouldBeNil)
+					tmpFile.Close()
+					defer os.Remove(tmpFile)
 
 					metricsFile = tmpFile.Name()
 
@@ -89,25 +92,27 @@ func TestSnap(t *testing.T) {
 
 						tags := make(map[string]interface{})
 						tags["foo"] = "bar"
-						err := s.Start(tags)
+						handle, err := s.Launch(tags)
 
 						So(err, ShouldBeNil)
 
 						defer func() {
-							if s.IsRunning() {
-								err := s.Stop()
-								So(err, ShouldBeNil)
-							}
+							err := handle.Stop()
+							So(err, ShouldBeNil)
 						}()
 						Convey("Contacting snap to get the task status", func() {
-							So(s.IsRunning(), ShouldBeTrue)
+							So(handle.Status(), ShouldEqual, executor.RUNNING)
 
-							err = s.Wait()
+							terminated, err := handle.Wait(0)
 							So(err, ShouldBeNil)
+							So(terminated, ShouldBeTrue)
 
-							err = s.Stop()
+							err = handle.Stop()
 							So(err, ShouldBeNil)
-							So(s.IsRunning(), ShouldBeFalse)
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+							exitCode, err := handle.ExitCode()
+							So(err, ShouldBeNil)
+							So(exitCode, ShouldEqual, 0)
 						})
 					})
 				})

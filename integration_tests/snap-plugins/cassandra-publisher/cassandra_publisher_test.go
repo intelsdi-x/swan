@@ -15,7 +15,6 @@
 package cassandra
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -114,16 +113,20 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	tags[experiment.PhaseKey] = "example-phase"
 	tags[experiment.RepetitionKey] = 42
 	tags["FloatTag"] = 42.123123
-	err = snapSession.Start(tags)
+	handle, err := snapSession.Launch(tags)
 	if err != nil {
-		return fmt.Errorf("snap session start failed: %s", err.Error())
+		return errors.Errorf("snap session start failed: %s", err.Error())
 	}
 
-	snapSession.Wait()
-	err = snapSession.Stop()
+	_, err = handle.Wait(0)
 	if err != nil {
-		return fmt.Errorf("snap session stop failed: %s", err.Error())
+		return errors.Errorf("snap session wait failed: %s", err.Error())
 	}
 
-	return err
+	err = handle.Stop()
+	if err != nil {
+		return errors.Errorf("snap session stop failed: %s", err.Error())
+	}
+
+	return nil
 }

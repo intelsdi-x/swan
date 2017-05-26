@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
-	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -54,16 +54,13 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, tags)
 					So(err, ShouldBeNil)
 
-					snapSession, ok := handle.(*snap.Session)
-					So(ok, ShouldBeTrue)
-
 					defer func() {
 						err := handle.Stop()
 						So(err, ShouldBeNil)
 					}()
 
 					Convey("Later we checked if task is running", func() {
-						So(handle.IsRunning(), ShouldBeTrue)
+						So(handle.Status(), ShouldEqual, executor.RUNNING)
 
 						// These are results from test output file
 						// in "src/github.com/intelsdi-x/swan/plugins/
@@ -81,7 +78,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 
 						Convey("In order to read and test published data", func() {
 
-							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics, snapSession)
+							dataValid := testhelpers.ReadAndTestPublisherData(publisherDataFilePath, expectedMetrics)
 							So(dataValid, ShouldBeTrue)
 						})
 					})

@@ -85,10 +85,13 @@ func TestSnapDockerSession(t *testing.T) {
 				tags,
 			)
 			So(err, ShouldBeNil)
-			So(dockerHandle.IsRunning(), ShouldBeTrue)
-			dockerHandle.Wait()
-			time.Sleep(5 * time.Second) // One hit does not always yield results.
-			dockerHandle.Stop()
+			defer dockerHandle.Stop()
+
+			So(dockerHandle.Status(), ShouldEqual, executor.RUNNING)
+			time.Sleep(10 * time.Second)
+
+			err = dockerHandle.Stop()
+			So(err, ShouldBeNil)
 
 			// one measurement should contains more then one metric.
 			oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(resultsFileName)

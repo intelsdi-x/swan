@@ -90,9 +90,8 @@ func NewSession(
 	}
 }
 
-// Start an experiment session.
-//func (s *Session) Launch(formattedTags map[string]interface{}) (executor.TaskHandle, error) {
-func (s *Session) Launch(tags map[string]interface{}) (Handle, error) {
+// Launch starts Snap task.
+func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, error) {
 	task := taskInfo{
 		Name:     s.TaskName,
 		Version:  1,
@@ -132,19 +131,20 @@ func (s *Session) Launch(tags map[string]interface{}) (Handle, error) {
 		10,
 	)
 	if r.Err != nil {
-		return nil, errors.Wrapf(r.Err, "could not create taskInfo %q", task.Name)
+		return nil, errors.Wrapf(r.Err, "could not create snap task %q", task.Name)
 	}
 
 	// Save a copy of the taskInfo so we can stop it again.
 	task.ID = r.ID
 	task.State = r.State
 
-	return Handle{
+	return &Handle{
 		task:    task,
 		pClient: s.pClient,
 	}, nil
 }
 
+// Handle is handle for Snap task.
 type Handle struct {
 	// Active taskInfo.
 	task taskInfo
@@ -152,32 +152,23 @@ type Handle struct {
 	// Client to Snapteld.
 	pClient *client.Client
 
+	// lastFailureMessage must only be set by getSnapTask().
 	lastFailureMessage string
-	// These
-	//statusMutex sync.Mutex
-	//executorTaskStatus executor.TaskState // Swan taskInfo status (running, terminated)
-	//snapTaskState      core.TaskState     // Snap taskInfo status (running, successful, failed)
-
-	// Metrics to tag in session.
-	//metrics []string
-
-	// CollectNodeConfigItems represent ConfigItems for CollectNode.
-	//CollectNodeConfigItems []CollectNodeConfigItem
-
-	// Publisher for tagged metrics.
-	//Publisher *wmap.PublishWorkflowMapNode
-
 }
 
+// Name returns name of snap task.
 func (s *Handle) Name() string {
 	return fmt.Sprintf("Snap Task %q running on node %q",
 		s.task.Name, s.pClient.URL)
 }
 
+// Address returns snapteld address.
 func (s *Handle) Address() string {
 	return s.pClient.URL
 }
 
+// ExitCode returns -1 when snap task is disabled because of errors or not terminated.
+// Returns '0' when task is ended.
 func (s *Handle) ExitCode() (int, error) {
 	task, err := s.getSnapTask()
 	if err != nil {
