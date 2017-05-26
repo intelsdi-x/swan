@@ -276,6 +276,8 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	// https://github.com/kubernetes/kubernetes/pull/31446
 	wrappedCommand := "echo;" + command
 
+	log.Debugf("Starting job '%s' in pod", wrappedCommand)
+
 	// See http://kubernetes.io/docs/api-reference/v1/definitions/ for definition of the pod manifest.
 	podManifest, err := k8s.newPod(wrappedCommand)
 	if err != nil {
