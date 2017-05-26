@@ -17,12 +17,11 @@ package testhelpers
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
-	v1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -51,46 +50,6 @@ func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, err
 	}, nil
 }
 
-// WaitForCluster is waiting for at least one node in K8s cluster is ready.
-func (k *KubeClient) WaitForCluster(timeout time.Duration) error {
-	readyNodesFilterFunc := func() bool {
-		nodes, err := k.getReadyNodes()
-		if err != nil {
-			return false
-		}
-		return len(nodes) > 0
-	}
-	return k.kubectlWait(readyNodesFilterFunc, timeout)
-}
-
-// WaitForPod is waiting for all pods are up and running.
-func (k *KubeClient) WaitForPod(timeout time.Duration) error {
-	runningPodsFilterFunc := func() bool {
-		runningPods, notRunningPods, err := k.GetPods()
-		if err != nil {
-			return false
-		}
-		return len(notRunningPods) == 0 && len(runningPods) > 0
-	}
-	return k.kubectlWait(runningPodsFilterFunc, timeout)
-}
-
-// KubectlWait run K8s request and check results for expected string in a loop every second, unless it expected substring is found or timeout expires.
-func (k *KubeClient) kubectlWait(filterFunction func() bool, timeout time.Duration) error {
-	requstedTimeout := time.After(timeout)
-	for {
-		if filterFunction() {
-			return nil
-		}
-		select {
-		case <-requstedTimeout:
-			return fmt.Errorf("timeout(%s) on K8s call", timeout.String())
-		default:
-		}
-		time.Sleep(1 * time.Second)
-	}
-}
-
 // GetPods gathers running and not running pods from K8s cluster.
 func (k *KubeClient) GetPods() ([]*v1.Pod, []*v1.Pod, error) {
 	pods, err := k.Clientset.Pods(k.namespace).List(v1.ListOptions{})
@@ -114,24 +73,6 @@ func (k *KubeClient) GetPods() ([]*v1.Pod, []*v1.Pod, error) {
 	}
 
 	return runningPods, notRunningPods, nil
-}
-
-func (k *KubeClient) getReadyNodes() ([]*v1.Node, error) {
-	nodes, err := k.Clientset.Nodes().List(v1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var readyNodes []*v1.Node
-	for _, node := range nodes.Items {
-		for _, condition := range node.Status.Conditions {
-			if condition.Type == "Ready" && condition.Status != "True" {
-				readyNodes = append(readyNodes, &node)
-			}
-		}
-	}
-
-	return readyNodes, nil
 }
 
 // DeletePod with given podName.
