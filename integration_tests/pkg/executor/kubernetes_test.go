@@ -35,7 +35,8 @@ const (
 func TestKubernetesExecutor(t *testing.T) {
 	// Readable, simple, easy to debug, reproducible and reliable testing environment.
 	log.SetLevel(log.ErrorLevel)
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, DisableTimestamp: false})
+	// Using timestamps with nanoseconds makes debugging easier.
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, DisableTimestamp: false, TimestampFormat: time.RFC3339Nano})
 
 	config := kubernetes.DefaultConfig()
 	config.RetryCount = 10
