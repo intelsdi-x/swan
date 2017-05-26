@@ -202,7 +202,7 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 		// if getPodsFromNode returns error it means cluster is not useable. Delete it.
 		stopErr := handle.Stop()
 		if stopErr != nil {
-			log.Warningf("Errors while stopping k8s cluster: %v", stopErr)
+			log.Errorf("Errors while stopping k8s cluster: %v", stopErr)
 		}
 		return nil, err
 	}
@@ -216,7 +216,11 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 				log.Infof("Dangling pods on node %q has been deleted", m.kubeletHost)
 			}
 		} else {
-			log.Warnf("Kubelet on node %q has %d dangling pods. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
+			stopErr := handle.Stop()
+			if stopErr != nil {
+				log.Errorf("Errors while stopping k8s cluster: %v", stopErr)
+			}
+			return nil, errors.Errorf("Kubelet on node %q has %d dangling pods. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
 		}
 	}
 	return handle, nil
