@@ -37,7 +37,6 @@ const (
 	// waitForReadyNode configuration
 	waitForReadyNodeBackOffPeriod = 1 * time.Second
 	nodeCheckRetryCount           = 20
-	nodeCheckSleepTime            = 1 * time.Second
 	expectedKubeletNodesCount     = 1
 )
 
@@ -359,8 +358,6 @@ func (m *k8s) getKubeletCommand() kubeCommand {
 			fmt.Sprintf(" --port=%d", m.config.KubeletPort),
 			fmt.Sprintf(" --read-only-port=0"),
 			fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
-			" --loglevel=0",
-			//" --cgroup-driver=systemd",
 			fmt.Sprintf(" %s", m.config.KubeletArgs),
 		), m.config.KubeletPort}
 }
@@ -389,8 +386,8 @@ func (m *k8s) waitForReadyNode(apiServerAddress string) error {
 			return nil
 		}
 		log.Debugf("Number of ready nodes equals %d while expected number was %d when querying apiserver at %s (attempt %d of %d)", len(nodes), expectedKubeletNodesCount, apiServerAddress, idx+1, nodeCheckRetryCount)
-		log.Debugf("Sleeping for %s", nodeCheckSleepTime)
-		time.Sleep(nodeCheckSleepTime)
+		log.Debugf("Sleeping for %s", waitForReadyNodeBackOffPeriod)
+		time.Sleep(waitForReadyNodeBackOffPeriod)
 
 	}
 	log.Debugf("Cannot register kubelet at %s", apiServerAddress)

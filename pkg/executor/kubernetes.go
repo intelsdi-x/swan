@@ -759,13 +759,13 @@ func (kw *k8sWatcher) setupLogs() {
 			defer close(kw.logsCopyFinished)
 
 			stdoutFile, err := os.OpenFile(kw.stdoutFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
-			log.Debug("stdout openened")
+			log.Debugf("K8s copier: stdout destination file opened: %q", kw.stdoutFilePath)
 			if err != nil {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
 			}
 			stderrFile, err := os.OpenFile(kw.stderrFilePath, os.O_WRONLY|os.O_SYNC, outputFilePrivileges)
-			log.Debug("stderr openened")
+			log.Debugf("K8s task copier: stderr destination file opened: %q", kw.stderrFilePath)
 			if err != nil {
 				log.Errorf("K8s copier: cannot open file to copy logs: %s", err.Error())
 				return
@@ -773,9 +773,9 @@ func (kw *k8sWatcher) setupLogs() {
 			defer syncAndClose(stdoutFile)
 			defer syncAndClose(stderrFile)
 
-			log.Debug("copying started")
+			log.Debug("K8s copier: starting copying pod output")
 			_, err = io.Copy(io.MultiWriter(stdoutFile, stderrFile), logStream)
-			log.Debug("copying finished")
+			log.Debug("K8s copier: finished copying pod output")
 			if err != nil {
 				log.Errorf("K8s copier: failed to copy container log stream to task output: %s", err.Error())
 				return

@@ -97,6 +97,7 @@ func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags ma
 var memcachedSensitivityProfileBin = path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
 
 func TestExperimentConfiguration(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	const confFilename = "temp_new_config"
 
 	Convey("generated config should contain some flags", t, func() {
