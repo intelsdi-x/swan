@@ -15,7 +15,6 @@
 package executor
 
 import (
-	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -30,7 +29,6 @@ const killWaitTimeout = 1 * time.Second
 //
 // Commands usually fail because wrong parameters or binary that should be executed is not installed properly.
 func checkIfProcessFailedToExecute(command string, executorName string, handle TaskHandle) error {
-	fmt.Printf("\n===============================\n%+v\n===============================\n", handle.Status())
 	if handle.Status() == TERMINATED {
 		exitCode, err := handle.ExitCode()
 		if err != nil {
