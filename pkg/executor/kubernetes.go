@@ -287,7 +287,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 	log.Debugf("Starting '%s' pod=%s node=%s QoSclass=%s on kubernetes", command, podManifest.ObjectMeta.Name, podManifest.Spec.NodeName, apiPod.Status.QOSClass)
 
-	var zero int64 = 0
+	var zero int64
 	podManifest.Spec.TerminationGracePeriodSeconds = &zero
 	podManifest.DeletionGracePeriodSeconds = &zero
 	pod, err := podsAPI.Create(podManifest)
@@ -371,7 +371,6 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 		break
 	case <-time.After(100 * time.Millisecond):
 		return taskHandle, nil
-		break
 
 	}
 	// It has been determined that task failed, waiting for Kubernetes to officially acknowledge it.
@@ -477,10 +476,8 @@ func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 		select {
 		case <-th.started:
 			return true, nil
-			break
 		case <-time.After(100 * time.Millisecond):
 			return true, errors.Errorf("K8s task handle: pod %s has not been started", th.podName)
-			break
 		}
 	}
 
