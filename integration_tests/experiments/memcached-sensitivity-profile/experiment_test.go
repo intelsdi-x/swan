@@ -140,6 +140,8 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_AGENT_CONNECTIONS":          "1",
 		"SWAN_MUTILATE_AGENT_AFFINITY":             "false",
 		"SWAN_MUTILATE_MASTER_AFFINITY":            "false",
+		"SWAN_EXPERIMENT_STOP_ON_ERROR":            "true",
+		"SWAN_KUBERNETES_HP_MEMORY_RESOURCE":       "1000000000",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {
@@ -152,9 +154,11 @@ func TestExperiment(t *testing.T) {
 		defer session.Close()
 
 		Convey("With proper configuration and without aggressor phases", func() {
-			_, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", sensitivity.NoneAggressorID)
+			experimentID, err := runExp(memcachedSensitivityProfileBin, true, "-experiment_be_workloads", sensitivity.NoneAggressorID)
 
-			Convey("Experiment should return with no errors", func() {
+			Convey("Experiment should return with no errors and there should be 9 metrics in Cassandra", func() {
+				_, _, _, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldEqual, 9)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -243,16 +247,18 @@ func TestExperiment(t *testing.T) {
 			})
 		})
 
-		Convey("With proper kubernetes configuration and without phases", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads=None", "-kubernetes_hp_memory_resource=1000000000"}
-			_, err := runExp(memcachedSensitivityProfileBin, true, args...)
-			Convey("Experiment should return with no errors", func() {
+		Convey("With proper kubernetes configuration and without aggressor phases", func() {
+			args := []string{"-kubernetes", "-experiment_be_workloads=None"}
+			experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
+			Convey("Experiment should return with no errors and there should be 9 metrics in Cassandra", func() {
 				So(err, ShouldBeNil)
+				_, _, _, _, metricsCount := loadDataFromCassandra(session, experimentID)
+				So(metricsCount, ShouldEqual, 9)
 			})
 		})
 
 		Convey("With proper kubernetes configuration and with l1d aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-cache-l1"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -265,7 +271,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes configuration and with stress-ng-stream aggressor", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "stress-ng-stream"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
@@ -278,7 +284,7 @@ func TestExperiment(t *testing.T) {
 		})
 
 		Convey("With proper kubernetes and caffe", func() {
-			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe", "-kubernetes_hp_memory_resource", "1000000000"}
+			args := []string{"-kubernetes", "-experiment_be_workloads", "caffe"}
 			Convey("Experiment should run with no errors and results should be stored in a Cassandra DB", func() {
 				experimentID, err := runExp(memcachedSensitivityProfileBin, true, args...)
 				So(err, ShouldBeNil)
