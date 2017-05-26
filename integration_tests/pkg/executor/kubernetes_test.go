@@ -119,7 +119,7 @@ func TestKubernetesExecutor(t *testing.T) {
 		})
 
 		Convey("Running a command with an unsuccessful exit status should leave one pod running", func() {
-			taskHandle, err := k8sexecutor.Execute("sleep 13 && exit 5")
+			taskHandle, err := k8sexecutor.Execute("sleep 3 && exit 5")
 			So(err, ShouldBeNil)
 			defer executor.StopAndEraseOutput(taskHandle)
 
@@ -164,11 +164,11 @@ func TestKubernetesExecutor(t *testing.T) {
 			stdout, err := taskHandle.StdoutFile()
 			So(err, ShouldBeNil)
 			defer stdout.Close()
-			buffer := make([]byte, 50)
+			buffer := make([]byte, 31)
 			n, err := stdout.Read(buffer)
 
 			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 50)
+			So(n, ShouldEqual, 31)
 			output := strings.Split(string(buffer), "\n")
 			So(output, ShouldHaveLength, 3)
 			So(output, ShouldContain, "This is Sparta")
@@ -178,11 +178,11 @@ func TestKubernetesExecutor(t *testing.T) {
 			stderr, err := taskHandle.StderrFile()
 			So(err, ShouldBeNil)
 			defer stderr.Close()
-			buffer = make([]byte, 50)
+			buffer = make([]byte, 31)
 			n, err = stderr.Read(buffer)
 
 			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 50)
+			So(n, ShouldEqual, 31)
 			output = strings.Split(string(buffer), "\n")
 			So(output, ShouldHaveLength, 3)
 			So(output, ShouldContain, "This is Sparta")
