@@ -276,6 +276,7 @@ func (m k8s) getKubeAPIServerCommand() kubeCommand {
 			fmt.Sprintf(" --etcd-prefix=%s", m.config.EtcdPrefix),
 			fmt.Sprintf(" --insecure-bind-address=%s", m.config.KubeAPIAddr),
 			fmt.Sprintf(" --insecure-port=%d", m.config.KubeAPIPort),
+			fmt.Sprintf(" --secure-port 0"),
 			fmt.Sprintf(" --kubelet-timeout=%s", serviceListenTimeout),
 			fmt.Sprintf(" --service-cluster-ip-range=%s", m.config.ServiceAddresses),
 			fmt.Sprintf(" --advertise-address=%s", m.config.KubeAPIAddr),
