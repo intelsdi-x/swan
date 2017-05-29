@@ -96,7 +96,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer StopAndEraseOutput(taskHandle)
 
 		Convey("Name should return string with executed command", func() {
-			taskName := taskHandle.Name()
+			taskName := taskHandle.String()
 			So(taskName, ShouldContainSubstring, command)
 		})
 

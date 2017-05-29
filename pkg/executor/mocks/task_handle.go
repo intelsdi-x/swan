@@ -27,8 +27,8 @@ type TaskHandle struct {
 	mock.Mock
 }
 
-// Name provides a mock function with given fields:
-func (_m *TaskHandle) Name() string {
+// String provides a mock function with given fields:
+func (_m *TaskHandle) String() string {
 	ret := _m.Called()
 
 	var r0 string

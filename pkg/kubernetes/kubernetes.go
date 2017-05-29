@@ -162,8 +162,8 @@ func New(master executor.Executor, minion executor.Executor, config Config) exec
 	}
 }
 
-// Name returns human readable name for job.
-func (m *k8s) Name() string {
+// String returns human readable name for job.
+func (m *k8s) String() string {
 	return "Kubernetes [single-kubelet]"
 }
 
@@ -287,7 +287,7 @@ func (m *k8s) launchCluster() (executor.TaskHandle, error) {
 func (m *k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 	handle, err := command.exec.Execute(command.raw)
 	if err != nil {
-		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command.raw, command.exec.Name())
+		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command.raw, command.exec.String())
 	}
 
 	address := fmt.Sprintf("%s:%d", handle.Address(), command.healthCheckPort)
@@ -297,7 +297,7 @@ func (m *k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 
 		return nil, errors.Errorf(
 			"failed to connect to service %q on %q: timeout on connection to %q; task status is %v and exit code is %d",
-			command.raw, command.exec.Name(), address, handle.Status(), ec)
+			command.raw, command.exec.String(), address, handle.Status(), ec)
 	}
 
 	return handle, nil

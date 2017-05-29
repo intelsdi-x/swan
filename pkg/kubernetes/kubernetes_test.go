@@ -60,9 +60,9 @@ func TestKubernetesLauncher(t *testing.T) {
 
 		// Prepare Executor Mocks
 		master := new(mocks.Executor)
-		master.On("Name").Return("Master Executor")
+		master.On("String").Return("Master Executor")
 		minion := new(mocks.Executor)
-		minion.On("Name").Return("Minion Executor")
+		minion.On("String").Return("Minion Executor")
 
 		config := DefaultConfig()
 		handle := getMockedTaskHandle(outputFile)
@@ -87,11 +87,11 @@ func TestKubernetesLauncher(t *testing.T) {
 
 				So(kubeAPICommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 				So(kubeAPICommand.healthCheckPort, ShouldEqual, 8080)
-				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+				So(kubeAPICommand.exec.String(), ShouldEqual, "Master Executor")
 
 				So(kubeletCommand.raw, ShouldContainSubstring, "--allow-privileged=true")
 				So(kubeletCommand.healthCheckPort, ShouldEqual, 1234)
-				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+				So(kubeAPICommand.exec.String(), ShouldEqual, "Master Executor")
 
 				Convey("But they can be disallowed through configuration", func() {
 					k8sLauncher.config.AllowPrivileged = false
@@ -106,13 +106,13 @@ func TestKubernetesLauncher(t *testing.T) {
 			Convey("Default etcd server address points to http://127.0.0.1:2379", func() {
 				kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 				So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers=http://127.0.0.1:2379")
-				So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+				So(kubeAPICommand.exec.String(), ShouldEqual, "Master Executor")
 
 				Convey("But etcd server location can be changed to arbitrary one", func() {
 					k8sLauncher.config.EtcdServers = "http://1.1.1.1:1111,https://2.2.2.2:2222"
 					kubeAPICommand := k8sLauncher.getKubeAPIServerCommand()
 					So(kubeAPICommand.raw, ShouldContainSubstring, "--etcd-servers="+k8sLauncher.config.EtcdServers)
-					So(kubeAPICommand.exec.Name(), ShouldEqual, "Master Executor")
+					So(kubeAPICommand.exec.String(), ShouldEqual, "Master Executor")
 				})
 			})
 			Convey("Any parameters passed to KubeAPI Server are escaped correctly", func() {

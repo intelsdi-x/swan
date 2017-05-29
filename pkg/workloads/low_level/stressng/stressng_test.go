@@ -65,7 +65,7 @@ func TestStressng(t *testing.T) {
 
 			Convey("for new stream based aggressor", func() {
 				launcher := NewStream(mockedExecutor)
-				So(launcher.Name(), ShouldEqual, "stress-ng-stream")
+				So(launcher.String(), ShouldEqual, "stress-ng-stream")
 				mockedExecutor.On("Execute", "stress-ng --stream=1").Return(mockedTask, nil).Once()
 				_, err := launcher.Launch()
 				So(err, ShouldBeNil)
@@ -75,7 +75,7 @@ func TestStressng(t *testing.T) {
 
 			Convey("for new l1 intensive aggressor", func() {
 				launcher := NewCacheL1(mockedExecutor)
-				So(launcher.Name(), ShouldEqual, "stress-ng-cache-l1")
+				So(launcher.String(), ShouldEqual, "stress-ng-cache-l1")
 				mockedExecutor.On("Execute", "stress-ng --cache=1 --cache-level=1").Return(mockedTask, nil).Once()
 				_, err := launcher.Launch()
 				So(err, ShouldBeNil)
@@ -85,7 +85,7 @@ func TestStressng(t *testing.T) {
 
 			Convey("for new l3 intensive aggressor", func() {
 				launcher := NewCacheL3(mockedExecutor)
-				So(launcher.Name(), ShouldEqual, "stress-ng-cache-l3")
+				So(launcher.String(), ShouldEqual, "stress-ng-cache-l3")
 				mockedExecutor.On("Execute", "stress-ng --cache=1 --cache-level=3").Return(mockedTask, nil).Once()
 				_, err := launcher.Launch()
 				So(err, ShouldBeNil)
@@ -95,7 +95,7 @@ func TestStressng(t *testing.T) {
 
 			Convey("for new memcpy aggressor", func() {
 				launcher := NewMemCpy(mockedExecutor)
-				So(launcher.Name(), ShouldEqual, "stress-ng-memcpy")
+				So(launcher.String(), ShouldEqual, "stress-ng-memcpy")
 				mockedExecutor.On("Execute", "stress-ng --memcpy=1").Return(mockedTask, nil).Once()
 				_, err := launcher.Launch()
 				So(err, ShouldBeNil)
@@ -105,7 +105,7 @@ func TestStressng(t *testing.T) {
 
 			Convey("for new custom aggressor", func() {
 				launcher := NewCustom(mockedExecutor)
-				So(launcher.Name(), ShouldEqual, "stress-ng-custom ")
+				So(launcher.String(), ShouldEqual, "stress-ng-custom ")
 				mockedExecutor.On("Execute", "stress-ng ").Return(mockedTask, nil).Once()
 				_, err := launcher.Launch()
 				So(err, ShouldBeNil)
