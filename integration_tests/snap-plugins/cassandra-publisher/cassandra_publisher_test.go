@@ -30,7 +30,7 @@ import (
 
 func TestCassandraPublisher(t *testing.T) {
 
-	Convey("description", t, func() {
+	Convey("TestCassandraPublisher", t, func() {
 
 		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
 		defer cleanup()
@@ -53,7 +53,7 @@ func TestCassandraPublisher(t *testing.T) {
 			Convey("Stored value in Cassandra should be greater then 0", func() {
 				So(value, ShouldBeGreaterThan, 0)
 			})
-			Convey("Tags should be approprierate", func() {
+			Convey("Tags should be appropriate", func() {
 				So(tags["swan_experiment"], ShouldEqual, "example-experiment")
 				So(tags["swan_phase"], ShouldEqual, "example-phase")
 				So(tags["swan_repetition"], ShouldEqual, "42")

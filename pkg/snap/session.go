@@ -98,7 +98,7 @@ func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, erro
 	wf := wmap.NewWorkflowMap()
 
 	formattedTags := make(map[string]string)
-	for key, value := range formattedTags {
+	for key, value := range tags {
 		formattedTags[key] = fmt.Sprintf("%v", value)
 	}
 	wf.CollectNode.Tags = map[string]map[string]string{"": formattedTags}

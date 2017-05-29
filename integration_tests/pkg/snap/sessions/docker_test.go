@@ -97,6 +97,7 @@ func TestSnapDockerSession(t *testing.T) {
 			oneMeasurement, err := testhelpers.GetOneMeasurementFromFile(resultsFileName)
 			So(err, ShouldBeNil)
 			So(len(oneMeasurement), ShouldBeGreaterThan, 0)
+			So(oneMeasurement[0].Tags["foo"], ShouldEqual, "bar")
 		})
 	})
 }
