@@ -1,5 +1,5 @@
-hash: bfe882322efbf7fad8f359d0a92397286ccee84fc4662e57b9fa03cdcd8c800d
-updated: 2017-05-26T15:18:56.20700599+02:00
+hash: 0bd9cf705b95b320fdd8f0b80870dbd4f0c38b1acbe33ac3023e2780a12552de
+updated: 2017-05-29T12:01:55.207258493+02:00
 imports:
 - name: github.com/appc/spec
   version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e

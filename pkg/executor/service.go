@@ -93,7 +93,7 @@ func (s *serviceHandle) checkErrorCondition() error {
 	if !s.taskHasBeenTerminatedByUser {
 		s.taskHasBeenTerminatedByUser = true
 		if s.TaskHandle.Status() == TERMINATED {
-			s.err = errors.Errorf("ServiceHandle with command %q has terminated prematurely", s.TaskHandle.String())
+			s.err = errors.Errorf("ServiceHandle with command %q has terminated prematurely", s.TaskHandle)
 			logrus.Errorf(s.err.Error())
 			logOutput(s.TaskHandle)
 			return s.err

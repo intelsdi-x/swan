@@ -268,7 +268,7 @@ func main() {
 						if beLauncher.Launcher != nil {
 							beHandle, err = beLauncher.Launcher.Launch()
 							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher.String(), phaseName)
+								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher, phaseName)
 							}
 							processes = append(processes, beHandle)
 						}
