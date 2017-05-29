@@ -565,12 +565,11 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 			case event, ok := <-watcher.ResultChan():
 				if !ok {
 					// In some cases sender may close watcher channel. Usually it is safe to recreate it.
-					log.Warnf("Pod %s: watcher event channel was unexpectly closed!", kw.pod.Name)
+					log.Debugf("Pod %s: watcher event channel was unexpectedly closed. Recreating.", kw.pod.Name)
 					var err error
-					log.Debugf("Pod %s: recreating watcher stream", kw.pod.Name)
 					watcher, err = kw.podsAPI.Watch(metav1.ListOptions{LabelSelector: selectorRaw})
 					if err != nil {
-						// We do not know what to do when error occurs.
+						// We cannot recover from here.
 						log.Panicf("Pod %s: cannot recreate watcher stream - %q", kw.pod.Name, err)
 					}
 					continue
@@ -633,7 +632,7 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 				if kw.hasBeenRunning {
 					continue
 				}
-				log.Warnf("K8s task watcher: timeout occured afrer %f seconds. Pod %s has not been created.", timeout.Seconds(), kw.pod.Name)
+				log.Errorf("Kubernetes Executor: pod %s has not been created: timeout after %f seconds.", kw.pod.Name, timeout.Seconds())
 				kw.deletePod()
 			}
 		}
