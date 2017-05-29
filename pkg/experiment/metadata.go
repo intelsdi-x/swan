@@ -51,31 +51,9 @@ type MetadataConfig struct {
 	CassandraUsername          string
 }
 
-// DefaultMetadataConfig returns a setup which use a Cassandra cluster running on localhost
-// without any authentication or encryption.
-func DefaultMetadataConfig() MetadataConfig {
-	return MetadataConfig{
-		CassandraAddress:           "127.0.0.1",
-		CassandraConnectionTimeout: 0,
-		CassandraCreateKeyspace:    true,
-		CassandraIgnorePeerAddr:    false,
-		CassandraInitialHostLookup: true,
-		CassandraKeyspaceName:      "swan",
-		CassandraPassword:          "",
-		CassandraPort:              9042,
-		CassandraSslCAPath:         "",
-		CassandraSslCertPath:       "",
-		CassandraSslEnabled:        false,
-		CassandraSslHostValidation: false,
-		CassandraSslKeyPath:        "",
-		CassandraTimeout:           0,
-		CassandraUsername:          "",
-	}
-}
-
-// MetadataConfigFromFlags applies the Cassandra settings from the command line flags and
+// DefaultMetadataConfig applies the Cassandra settings from the command line flags and
 // environment variables.
-func MetadataConfigFromFlags() MetadataConfig {
+func DefaultMetadataConfig() MetadataConfig {
 	return MetadataConfig{
 		CassandraAddress:           conf.CassandraAddress.Value(),
 		CassandraConnectionTimeout: time.Duration(conf.CassandraConnectionTimeout.Value()) * time.Second,
@@ -112,7 +90,7 @@ func NewMetadata(experimentID string, config MetadataConfig) (*Metadata, error) 
 		experimentID: experimentID,
 		config:       config,
 	}
-	err := metadata.Connect()
+	err := metadata.connect()
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +118,8 @@ func sslOptions(config MetadataConfig) *gocql.SslOptions {
 	return sslOptions
 }
 
-// connect creates a session to the Cassandra cluster. This function should only be called once.
-func (m *Metadata) connect() *gocql.ClusterConfig {
+// getClusterConfig prepares configuration to Cassandra cluster.
+func (m *Metadata) getClusterConfig() *gocql.ClusterConfig {
 	cluster := gocql.NewCluster(m.config.CassandraAddress)
 
 	// TODO(niklas): make consistency configurable.
@@ -157,13 +135,12 @@ func (m *Metadata) connect() *gocql.ClusterConfig {
 	return cluster
 }
 
-func (m *Metadata) createKeyspace() error {
-	connectionConfiguration := m.connect()
-	session, err := connectionConfiguration.CreateSession()
-	defer session.Close()
+func (m *Metadata) createKeyspace(clusterConfig *gocql.ClusterConfig) error {
+	session, err := clusterConfig.CreateSession()
 	if err != nil {
 		return errors.Wrap(err, "cannot create session for creating keyspace")
 	}
+	defer session.Close()
 
 	query := fmt.Sprintf("CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};", m.config.CassandraKeyspaceName)
 
@@ -171,9 +148,9 @@ func (m *Metadata) createKeyspace() error {
 
 }
 
-// Connect creates a session to the Cassandra cluster. This function should only be called once.
-func (m *Metadata) Connect() error {
-	cluster := m.connect()
+// connect creates a session to the Cassandra cluster. This function should only be called once.
+func (m *Metadata) connect() error {
+	cluster := m.getClusterConfig()
 	cluster.Keyspace = m.config.CassandraKeyspaceName
 
 	if m.config.CassandraUsername != "" && m.config.CassandraPassword != "" {
@@ -195,7 +172,7 @@ func (m *Metadata) Connect() error {
 	m.session = session
 
 	if m.config.CassandraCreateKeyspace {
-		if err = m.createKeyspace(); err != nil {
+		if err = m.createKeyspace(cluster); err != nil {
 			return err
 		}
 	}
