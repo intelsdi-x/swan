@@ -153,8 +153,8 @@ type Handle struct {
 	lastFailureMessage string
 }
 
-// Name returns name of snap task.
-func (s *Handle) Name() string {
+// String returns name of snap task.
+func (s *Handle) String() string {
 	return fmt.Sprintf("Snap Task %q running on node %q",
 		s.task.Name, s.pClient.URL)
 }
