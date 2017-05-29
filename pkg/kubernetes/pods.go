@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
@@ -70,7 +71,7 @@ func (m *k8sPodAPIImplementation) getPodsFromNode(nodeName string) (result []v1.
 		}
 		nodeName = hostname
 	}
-	pods, err := m.client.Pods(v1.NamespaceDefault).List(v1.ListOptions{})
+	pods, err := m.client.Pods(v1.NamespaceDefault).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot retrieve pods running on cluster")
 	}
@@ -87,7 +88,7 @@ func (m *k8sPodAPIImplementation) killPods(pods []v1.Pod) error {
 
 	for _, pod := range pods {
 		var gracePeriod int64 = 1
-		err := podsAPI.Delete(pod.Name, &v1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+		err := podsAPI.Delete(pod.Name, &metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
 		if err != nil {
 			return errors.Wrapf(err, "cannot delete pod")
 		}

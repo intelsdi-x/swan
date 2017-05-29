@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -52,7 +54,7 @@ func NewKubeClient(kubernetesConfig executor.KubernetesConfig) (*KubeClient, err
 
 // GetPods gathers running and not running pods from K8s cluster.
 func (k *KubeClient) GetPods() ([]*v1.Pod, []*v1.Pod, error) {
-	pods, err := k.Clientset.Pods(k.namespace).List(v1.ListOptions{})
+	pods, err := k.Clientset.Pods(k.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,12 +80,12 @@ func (k *KubeClient) GetPods() ([]*v1.Pod, []*v1.Pod, error) {
 // DeletePod with given podName.
 func (k *KubeClient) DeletePod(podName string) error {
 	var oneSecond int64 = 1
-	return k.Clientset.Pods(k.namespace).Delete(podName, &v1.DeleteOptions{GracePeriodSeconds: &oneSecond})
+	return k.Clientset.Pods(k.namespace).Delete(podName, &metav1.DeleteOptions{GracePeriodSeconds: &oneSecond})
 }
 
 // Node assume just one node a return it. Note panics if unavailable (this is just test helper!).
 func (k *KubeClient) node() *v1.Node {
-	nodes, err := k.Clientset.Nodes().List(v1.ListOptions{})
+	nodes, err := k.Clientset.Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -114,7 +116,7 @@ func (k *KubeClient) updateTaints(node *v1.Node, taints []byte) {
 	if err != nil {
 		panic(err)
 	}
-	_, err = k.Clientset.Nodes().Patch(node.Name, api.MergePatchType, patchSetInJSON)
+	_, err = k.Clientset.Nodes().Patch(node.Name, types.MergePatchType, patchSetInJSON)
 	if err != nil {
 		panic(err)
 	}

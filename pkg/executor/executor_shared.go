@@ -15,9 +15,10 @@
 package executor
 
 import (
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const killWaitTimeout = 1 * time.Second

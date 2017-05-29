@@ -16,6 +16,7 @@ package kubernetes
 
 import (
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
@@ -33,7 +34,7 @@ func getReadyNodes(k8sAPIAddress string) ([]v1.Node, error) {
 		return nil, errors.Wrapf(err, "could not create new Kubernetes client on %q", k8sAPIAddress)
 	}
 
-	nodes, err := k8sClientset.Nodes().List(v1.ListOptions{})
+	nodes, err := k8sClientset.Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain Kubernetes node list on %q", k8sAPIAddress)
 	}

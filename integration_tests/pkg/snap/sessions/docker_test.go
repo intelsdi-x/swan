@@ -32,7 +32,6 @@ import (
 
 func TestSnapDockerSession(t *testing.T) {
 	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
-
 		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
 		defer cleanup()
 
@@ -53,6 +52,7 @@ func TestSnapDockerSession(t *testing.T) {
 		// Run Kubernetes
 		exec := executor.NewLocal()
 		config := kubernetes.UniqueConfig()
+		config.RetryCount = 10
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)

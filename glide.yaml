@@ -25,16 +25,19 @@ import:
 - package: golang.org/x/crypto
   subpackages:
   - ssh
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/api/resource
+  - pkg/apis/meta/v1
+  - pkg/runtime
+  - pkg/types
+  - pkg/watch
 - package: k8s.io/client-go
-  version: ~2.0.0
+  version: ~3.0.0-beta.0
   subpackages:
   - kubernetes
   - kubernetes/typed/core/v1
   - pkg/api
-  - pkg/api/resource
-  - pkg/api/unversioned
   - pkg/api/v1
-  - pkg/kubelet/qos
-  - pkg/watch
   - rest
   - tools/clientcmd
