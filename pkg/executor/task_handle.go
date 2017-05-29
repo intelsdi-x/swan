@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -39,8 +40,7 @@ type TaskHandle interface {
 
 // TaskInfo represents task's address, status and output information.
 type TaskInfo interface {
-	// Name returns information about command and executor that lives under this TaskHandle.
-	Name() string
+	fmt.Stringer
 	// Location returns address where task was located.
 	Address() string
 	// ExitCode returns an exit code of finished task.

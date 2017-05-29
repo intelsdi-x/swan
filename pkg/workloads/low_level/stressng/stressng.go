@@ -95,7 +95,7 @@ func (s stressng) Launch() (executor.TaskHandle, error) {
 	return s.executor.Execute(fmt.Sprintf("stress-ng %s", s.arguments))
 }
 
-// Name returns readable name.
-func (s stressng) Name() string {
+// String returns readable name.
+func (s stressng) String() string {
 	return s.name
 }

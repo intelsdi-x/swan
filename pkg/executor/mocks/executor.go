@@ -45,8 +45,8 @@ func (_m *Executor) Execute(command string) (executor.TaskHandle, error) {
 	return r0, r1
 }
 
-// Name provides a mock function with given fields:
-func (_m *Executor) Name() string {
+// String provides a mock function with given fields:
+func (_m *Executor) String() string {
 	ret := _m.Called()
 
 	var r0 string

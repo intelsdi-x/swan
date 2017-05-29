@@ -209,8 +209,8 @@ func (k8s *k8s) containerResources() v1.ResourceRequirements {
 	}
 }
 
-// Name returns user-friendly name of executor.
-func (k8s *k8s) Name() string {
+// String returns user-friendly name of executor.
+func (k8s *k8s) String() string {
 	return "Kubernetes Executor"
 }
 
@@ -376,7 +376,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	}
 	// It has been determined that task failed, waiting for Kubernetes to officially acknowledge it.
 	taskHandle.Wait(0)
-	err = checkIfProcessFailedToExecute(command, k8s.Name(), taskHandle)
+	err = checkIfProcessFailedToExecute(command, k8s.String(), taskHandle)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +497,7 @@ func (th *k8sTaskHandle) EraseOutput() error {
 	return removeDirectory(outputDir)
 }
 
-func (th *k8sTaskHandle) Name() string {
+func (th *k8sTaskHandle) String() string {
 	return fmt.Sprintf("Kubernetes pod named %q with command %q on %q", th.podName, th.command, th.Address())
 }
 

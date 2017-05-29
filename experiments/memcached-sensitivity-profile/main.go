@@ -131,7 +131,7 @@ func main() {
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 			aggressorName := sensitivity.NoneAggressorID
 			if beLauncher.Launcher != nil {
-				aggressorName = beLauncher.Launcher.Name()
+				aggressorName = beLauncher.Launcher.String()
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
 			for repetition := 0; repetition < repetitions; repetition++ {
@@ -170,7 +170,7 @@ func main() {
 					if beLauncher.Launcher != nil {
 						beHandle, err := beLauncher.Launcher.Launch()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.String(), phaseName, repetition)
 						}
 						processes = append(processes, beHandle)
 

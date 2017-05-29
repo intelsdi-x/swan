@@ -140,7 +140,7 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 	return task, nil
 }
 
-// Name returns human readable name for job.
-func (m Memcached) Name() string {
+// String returns human readable name for job.
+func (m Memcached) String() string {
 	return name
 }

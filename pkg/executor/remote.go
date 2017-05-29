@@ -117,8 +117,8 @@ func getAuthMethod(keyPath string) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(key), nil
 }
 
-// Name returns User-friendly name of executor.
-func (remote Remote) Name() string {
+// String returns User-friendly name of executor.
+func (remote Remote) String() string {
 	return fmt.Sprintf("Remote executor pointing at %s@%s", remote.config.User, remote.targetHost)
 }
 
@@ -226,7 +226,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	err = checkIfProcessFailedToExecute(command, remote.Name(), &taskHandle)
+	err = checkIfProcessFailedToExecute(command, remote.String(), &taskHandle)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	}
 }
 
-func (taskHandle *remoteTaskHandle) Name() string {
+func (taskHandle *remoteTaskHandle) String() string {
 	return fmt.Sprintf("Remote command %q running on %s@%s", taskHandle.command, taskHandle.connection.User(), taskHandle.Address())
 }
 
