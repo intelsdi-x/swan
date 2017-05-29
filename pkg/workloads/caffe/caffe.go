@@ -97,7 +97,7 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	return
 }
 
-// Name returns human readable name for job.
-func (c Caffe) Name() string {
+// String returns human readable name for job.
+func (c Caffe) String() string {
 	return c.conf.Name
 }

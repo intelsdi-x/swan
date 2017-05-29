@@ -53,7 +53,7 @@ func (th stoppedTaskHandle) StdoutFile() (*os.File, error) {
 	return th.output, nil
 }
 
-func (th stoppedTaskHandle) Name() string {
+func (th stoppedTaskHandle) String() string {
 	return "command"
 }
 
@@ -76,7 +76,7 @@ func (th runningTaskHandle) Wait(duration time.Duration) (bool, error) {
 	return true, nil
 }
 
-func (th runningTaskHandle) Name() string {
+func (th runningTaskHandle) String() string {
 	return "command"
 }
 
@@ -94,7 +94,7 @@ func (th erroneousTaskHandle) Status() TaskState {
 	return RUNNING
 }
 
-func (th erroneousTaskHandle) Name() string {
+func (th erroneousTaskHandle) String() string {
 	return "command"
 }
 
@@ -111,12 +111,12 @@ func TestServiceTaskHandle(t *testing.T) {
 
 		err = s.Stop()
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, s.Name())
+		So(err.Error(), ShouldContainSubstring, s.String())
 
 		Convey("Another Stop() should return the same error", func() {
 			err = s.Stop()
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, s.Name())
+			So(err.Error(), ShouldContainSubstring, s.String())
 		})
 	})
 
@@ -132,11 +132,11 @@ func TestServiceTaskHandle(t *testing.T) {
 		terminated, err := s.Wait(0)
 		So(terminated, ShouldBeTrue)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, s.Name())
+		So(err.Error(), ShouldContainSubstring, s.String())
 
 		err = s.Stop()
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, s.Name())
+		So(err.Error(), ShouldContainSubstring, s.String())
 	})
 
 	Convey("Calling Stop() on running task should succeed", t, func() {
@@ -182,8 +182,8 @@ func (sl successfulLauncher) Launch() (TaskHandle, error) {
 	return runningTaskHandle{}, nil
 }
 
-// Name implements Launcher interface.
-func (sl successfulLauncher) Name() string {
+// String implements Launcher interface.
+func (sl successfulLauncher) String() string {
 	return "Underlying name"
 }
 
@@ -216,7 +216,7 @@ func TestServiceLauncher(t *testing.T) {
 	Convey("Launcher name should contain of embedded Launcher name so that it is transparent", t, func() {
 		l := ServiceLauncher{successfulLauncher{}}
 
-		name := l.Name()
+		name := l.String()
 		So(name, ShouldEqual, "Underlying name")
 	})
 }

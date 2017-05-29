@@ -133,9 +133,9 @@ func (m *ClusterTaskHandle) EraseOutput() (err error) {
 	return errCollection.GetErrIfAny()
 }
 
-// Name returns name of underlying task.
-func (m *ClusterTaskHandle) Name() string {
-	return fmt.Sprintf("Cluster TaskHandle containg master: %s", m.master.Name())
+// String returns name of underlying task.
+func (m *ClusterTaskHandle) String() string {
+	return fmt.Sprintf("Cluster TaskHandle containg master: %s", m.master.String())
 }
 
 // Address returns address of master task.

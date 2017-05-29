@@ -75,7 +75,7 @@ func CheckCPUPowerGovernor() {
 // The name NOFILE is based on "limits.conf" and definition from setrlimit.
 func checkNOFILE(executor executor.Executor, nofile, minimum int) {
 	if nofile <= minimum {
-		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d) on (%s). You can change this value eg. ulimit -n 10000 or modifying /etc/security/limits.conf.", nofile, minimum, executor.Name())
+		logrus.Warnf("Maximum number of open file descriptors (%d) is lower than required (%d) on (%s). You can change this value eg. ulimit -n 10000 or modifying /etc/security/limits.conf.", nofile, minimum, executor.String())
 	}
 
 }

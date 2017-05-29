@@ -74,7 +74,7 @@ func (l stream) Launch() (executor.TaskHandle, error) {
 	return l.exec.Execute(l.buildCommand())
 }
 
-// Name returns human readable name for job.
-func (l stream) Name() string {
+// String returns human readable name for job.
+func (l stream) String() string {
 	return name
 }

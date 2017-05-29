@@ -73,7 +73,7 @@ func main() {
 	logger.Initialize(appName, uid)
 
 	// Connect to metadata database
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
@@ -224,7 +224,7 @@ func main() {
 					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 					aggressorName := fmt.Sprintf("Baseline")
 					if beLauncher.Launcher != nil {
-						aggressorName = beLauncher.Launcher.Name()
+						aggressorName = beLauncher.Launcher.String()
 					}
 
 					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
@@ -268,7 +268,7 @@ func main() {
 						if beLauncher.Launcher != nil {
 							beHandle, err = beLauncher.Launcher.Launch()
 							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher.Name(), phaseName)
+								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher, phaseName)
 							}
 							processes = append(processes, beHandle)
 						}

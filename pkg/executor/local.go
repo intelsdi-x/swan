@@ -44,8 +44,8 @@ func NewLocalIsolated(decorator isolation.Decorator) Local {
 	return Local{commandDecorators: decorator}
 }
 
-// Name returns user-friendly name of executor.
-func (l Local) Name() string {
+// String returns user-friendly name of executor.
+func (l Local) String() string {
 	return "Local Executor"
 }
 
@@ -121,11 +121,14 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		if err != nil {
 			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
 		}
+
+		exitCode := taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+		log.Debugf("Remote Executor: task %q exited with code %d", command, exitCode)
 	}()
 
 	// Best effort potential way to check if binary is started properly.
 	taskHandle.Wait(100 * time.Millisecond)
-	err = checkIfProcessFailedToExecute(command, l.Name(), &taskHandle)
+	err = checkIfProcessFailedToExecute(command, l.String(), &taskHandle)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +250,7 @@ func (taskHandle *localTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	}
 }
 
-func (taskHandle *localTaskHandle) Name() string {
+func (taskHandle *localTaskHandle) String() string {
 	return fmt.Sprintf("Local %q", taskHandle.command)
 }
 
