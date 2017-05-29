@@ -283,7 +283,7 @@ func main() {
 							defer aggressorSnapHandle.Stop()
 						}
 
-						var rdtSessionHandle snap.SessionHandle
+						var rdtSessionHandle executor.TaskHandle
 						if useRDTCollector {
 							rdtSessionHandle, err = rdtSession.LaunchSession(nil, snapTags)
 							errutil.PanicWithContext(err, "Cannot launch Snap RDT Collection session")
@@ -312,7 +312,9 @@ func main() {
 
 						if useRDTCollector {
 							err = rdtSessionHandle.Stop()
-							errutil.PanicWithContext(err, "cannot stop RDT Snap session")
+							if err != nil {
+								return errors.Wrapf(err, "errors while stopping RDT session in phase %s", phaseName)
+							}
 						}
 
 						if beHandle != nil {

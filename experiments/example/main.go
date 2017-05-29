@@ -139,11 +139,11 @@ func main() {
 					experiment.ExperimentKey: uid,
 				}
 				// Launching Mutilate Snap session in order to gather metrics on Memcached performance.
-				snap, err := mutilateSnapSession.LaunchSession(mutilateTask, tags)
+				snapTask, err := mutilateSnapSession.LaunchSession(mutilateTask, tags)
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot gather Memcached performance metrics with %d threads, %d QPS and load duration of %s", threadCount, qps, loadDuration))
-				defer snap.Stop()
+				defer snapTask.Stop()
 				// Wait for Snap session to finish.
-				err = snap.Wait()
+				_, err = snapTask.Wait(0)
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot finish gathering Memcached performance metrics with %d threads, %d QPS and load duration of %s", threadCount, qps, loadDuration))
 			}()
 		}
