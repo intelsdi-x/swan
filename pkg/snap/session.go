@@ -47,7 +47,7 @@ type CollectNodeConfigItem struct {
 // Session provides construct for tagging metrics for a specified time span
 // defined by Start() and Stop().
 type Session struct {
-	// TaskName is name of taskInfo in Snap.
+	// TaskName is name of task in Snap.
 	TaskName string
 
 	// Metrics to tag in session.
@@ -131,7 +131,6 @@ func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, erro
 		return nil, errors.Wrapf(r.Err, "could not create snap task %q", task.Name)
 	}
 
-	// Save a copy of the taskInfo so we can stop it again.
 	task.ID = r.ID
 	task.State = r.State
 
@@ -184,7 +183,7 @@ func (s *Handle) ExitCode() (int, error) {
 	return 0, nil
 }
 
-// Status checks if Snap taskInfo is running.
+// Status checks if Snap task is running.
 func (s *Handle) Status() executor.TaskState {
 	taskState, _, _ := s.getStatus()
 	return taskState
@@ -211,7 +210,7 @@ func (s *Handle) getStatus() (executor.TaskState, core.TaskState, error) {
 	return executor.TERMINATED, core.TaskStopped, nil
 }
 
-// getSnapTaskStatus connects to snap to obtain current state of the taskInfo.
+// getSnapTaskStatus connects to snap to obtain current state of the task.
 func (s *Handle) getSnapTask() (*rbody.ScheduledTaskReturned, error) {
 	task := s.pClient.GetTask(s.task.ID)
 	if task.Err != nil {
@@ -252,7 +251,7 @@ func (s *Handle) Stop() error {
 	return nil
 }
 
-// Wait blocks until the taskInfo is executed at least once
+// Wait blocks until the Snap task is executed at least once
 // (including hits that happened in the past).
 func (s *Handle) Wait(timeout time.Duration) (bool, error) {
 	executorStatus, coreStatus, err := s.getStatus()
@@ -281,10 +280,10 @@ func (s *Handle) Wait(timeout time.Duration) (bool, error) {
 
 	select {
 	case err := <-taskCompletionInfo:
-		// If waitEndChannel is closed then taskInfo is terminated.
+		// If waitEndChannel is closed then task is terminated.
 		return true, err
 	case <-timeoutChannel:
-		// If timeout time exceeded return then taskInfo did not terminate yet.
+		// If timeout time exceeded return then task did not terminate yet.
 		stopper <- struct{}{}
 		return false, nil
 	}
@@ -305,7 +304,7 @@ func (s *Handle) EraseOutput() error {
 	return nil
 }
 
-func (s *Handle) waitForTaskCompletion(stopper <-chan struct{}) <-chan error {
+func (s *Handle) waitForTaskCompletion(stopWaiting <-chan struct{}) (result <-chan error) {
 	errorChan := make(chan error)
 	go func() {
 		for {
@@ -337,7 +336,7 @@ func (s *Handle) waitForTaskCompletion(stopper <-chan struct{}) <-chan error {
 
 			timeoutChannel := time.After(500 * time.Millisecond)
 			select {
-			case <-stopper:
+			case <-stopWaiting:
 				return
 			case <-timeoutChannel:
 				break
@@ -354,7 +353,7 @@ func (s *Handle) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if t.Err != nil {
-			return errors.Wrapf(t.Err, "could not get taskInfo %q", s.task.ID)
+			return errors.Wrapf(t.Err, "could not get task %q", s.task.ID)
 		}
 
 		if t.State == "Stopped" {
@@ -362,7 +361,7 @@ func (s *Handle) waitForStop() error {
 		}
 
 		if t.State == "Disabled" {
-			return errors.Errorf("snap task %q has been disabled becaouse of errors: %q", t.Name, t.LastFailureMessage)
+			return errors.Errorf("snap task %q has been disabled because of errors: %q", t.Name, t.LastFailureMessage)
 		}
 
 		time.Sleep(100 * time.Millisecond)

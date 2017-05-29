@@ -116,7 +116,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	tags["FloatTag"] = 42.123123
 	handle, err := snapSession.Launch(tags)
 	if err != nil {
-		return errors.Errorf("snap session start failed: %s", err.Error())
+		return errors.Errorf("snap session failed to start: %s", err.Error())
 	}
 
 	_, err = handle.Wait(0)
