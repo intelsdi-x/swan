@@ -189,7 +189,8 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 		return nil, err
 	}
 
-	apiServerAddress := fmt.Sprintf("%s:%d", handle.Address(), m.config.KubeAPIPort)
+	apiServerAddress := fmt.Sprintf("http://%s:%d", handle.Address(), m.config.KubeAPIPort)
+
 	err = m.waitForReadyNode(apiServerAddress)
 	if err != nil {
 		stopErr := handle.Stop()
@@ -294,7 +295,7 @@ func (m *k8s) launchService(command kubeCommand) (executor.TaskHandle, error) {
 		return nil, errors.Wrapf(err, "execution of command %q on %q failed", command.raw, command.exec)
 	}
 
-	address := fmt.Sprintf("%s:%d", handle.Address(), command.healthCheckPort)
+	address := fmt.Sprintf("http://%s:%d", handle.Address(), command.healthCheckPort)
 	if !m.isListening(address, serviceListenTimeout) {
 		defer handle.Stop()
 		ec, _ := handle.ExitCode()

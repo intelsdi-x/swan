@@ -40,7 +40,7 @@ func TestCPUSet(t *testing.T) {
 		uuid3 := uuidgen(t)
 
 		path := pth.Join("/", uuid1, uuid2, uuid3)
-		cpus := isolation.NewIntSet(1)
+		cpus := isolation.NewIntSet(0)
 		mems := isolation.NewIntSet(0)
 
 		// Setting these to true assumes too much about the environment...
