@@ -74,7 +74,7 @@ func TestSnap(t *testing.T) {
 					tmpFile, err := ioutil.TempFile("", "session_test")
 					So(err, ShouldBeNil)
 					tmpFile.Close()
-					defer os.Remove(tmpFile)
+					defer os.Remove(tmpFile.Name())
 
 					metricsFile = tmpFile.Name()
 
