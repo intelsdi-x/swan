@@ -56,9 +56,6 @@ type Session struct {
 	// CollectNodeConfigItems represent ConfigItems for CollectNode.
 	CollectNodeConfigItems []CollectNodeConfigItem
 
-	// Active taskInfo.
-	//taskInfo *taskInfo
-
 	// Publisher for tagged metrics.
 	Publisher *wmap.PublishWorkflowMapNode
 
