@@ -56,7 +56,7 @@ func Configure() bool {
 	if *dumpConfig {
 		previousExperimentID := *dumpConfigExperimentID
 		if previousExperimentID != "" {
-			metadata, err := NewMetadata(previousExperimentID, MetadataConfigFromFlags())
+			metadata, err := NewMetadata(previousExperimentID, DefaultMetadataConfig())
 			errutil.Check(err)
 			flags, err := metadata.GetGroup("flags")
 			errutil.Check(err)

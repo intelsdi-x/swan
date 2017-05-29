@@ -56,7 +56,7 @@ func main() {
 	uid := uuid.New() // Initialize logger.
 	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	errutil.Check(err)
 
 	err = metadata.RecordRuntimeEnv(experimentStart)
