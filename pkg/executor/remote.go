@@ -222,6 +222,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		if err != nil {
 			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
 		}
+
+		log.Debugf("Remote Executor: task %q exited with code %d", command, exitCode)
 	}()
 
 	// Best effort potential way to check if binary is started properly.
