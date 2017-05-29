@@ -78,6 +78,7 @@ DEFAULT_CASSANDRA_OPTIONS = dict(
     port=9042,
     ssl_options=None
 )
+DEFAULT_KEYSPACE='swan'
 
 
 def _get_or_create_cassandra_session(nodes, port, ssl_options=None):
@@ -114,7 +115,7 @@ def _get_or_create_cassandra_session(nodes, port, ssl_options=None):
 @DataFrameToCSVCache()
 def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
                                            aggfuncs=None, default_aggfunc=np.average,
-                                           keyspace='snap'):
+                                           keyspace=DEFAULT_KEYSPACE):
     """ Load data from cassandra database as rows, processes them and returns dataframe with multiindex build on tags.
 
     It only loads doubleval, ns and tags values ignoring other kinds of metrics.
@@ -144,6 +145,7 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_op
     records = defaultdict(lambda: defaultdict(list))
     started = datetime.datetime.now()
     print('loading data...')
+    idx = 0
     for idx, row in enumerate(rows):
         tags = row['tags']
         # namespace, value and tags
@@ -404,11 +406,11 @@ class Experiment:
     """
 
     def __init__(self, experiment_id, tag_keys, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
-                 aggfuncs=None, default_aggfunc=np.mean, cache=True):
+                 aggfuncs=None, default_aggfunc=np.mean, cache=True, keyspace=DEFAULT_KEYSPACE):
         self.experiment_id = experiment_id
         self.df = load_dataframe_from_cassandra_streamed(
             experiment_id, tag_keys, cassandra_options,
-            aggfuncs=aggfuncs, default_aggfunc=default_aggfunc, cache=cache
+            aggfuncs=aggfuncs, default_aggfunc=default_aggfunc, cache=cache, keyspace=keyspace,
         )
         self.df.columns.name = 'Experiment %s' % self.experiment_id
 
@@ -437,9 +439,9 @@ class SensitivityProfile:
         SWAN_REPETITION_LABEL,
     )
 
-    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True, keyspace=DEFAULT_KEYSPACE):
         self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options,
-                                     aggfuncs=dict(batches=np.max), cache=cache)
+                                     aggfuncs=dict(batches=np.max), cache=cache, keyspace=keyspace)
         self.slo = slo
 
         # Pre-process data specifically for this experiment.
@@ -534,8 +536,8 @@ class OptimalCoreAllocation:
         SWAN_LOAD_POINT_QPS_LABEL,
     )
 
-    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
-        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options, cache=cache)
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True, keyspace=DEFAULT_KEYSPACE):
+        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options, cache=cache, keyspace=keyspace)
         self.slo = slo
 
         # Pre-process data specifically for this experiment.
@@ -666,10 +668,10 @@ class CAT:
                 SWAN_AGGRESSOR_NAME_LABEL,
                 SWAN_LOAD_POINT_QPS_LABEL)
 
-    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True):
+    def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, cache=True, keyspace=DEFAULT_KEYSPACE):
 
         self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options,
-                                     aggfuncs=dict(batches=np.max), cache=cache)
+                                     aggfuncs=dict(batches=np.max), cache=cache, keyspace=keyspace)
         self.slo = slo
 
         df = self.experiment.df.copy()
