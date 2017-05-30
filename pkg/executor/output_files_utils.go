@@ -72,13 +72,13 @@ func createOutputDirectory(command string, prefix string) (createdDirectoryPath 
 
 func createExecutorOutputFiles(outputDir string) (stdoutFile, stderrFile *os.File, err error) {
 	stdoutFileName := path.Join(outputDir, "stdout")
-	stdoutFile, err = os.OpenFile(stdoutFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
+	stdoutFile, err = os.OpenFile(stdoutFileName, os.O_WRONLY|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "creating %q failed", stdoutFileName)
 	}
 
 	stderrFileName := path.Join(outputDir, "stderr")
-	stderrFile, err = os.OpenFile(stderrFileName, os.O_WRONLY|os.O_SYNC|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
+	stderrFile, err = os.OpenFile(stderrFileName, os.O_WRONLY|os.O_EXCL|os.O_CREATE, outputFilePrivileges)
 	if err != nil {
 		// Clean created stdout.
 		stdoutFile.Close()

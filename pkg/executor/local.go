@@ -52,7 +52,7 @@ func (l Local) String() string {
 // Execute runs the command given as input.
 // Returned Task is able to stop & monitor the provisioned process.
 func (l Local) Execute(command string) (TaskHandle, error) {
-	log.Debug("Starting '", l.commandDecorators.Decorate(command), "' locally ")
+	log.Debug("Local Executor: Starting '", l.commandDecorators.Decorate(command), "' locally ")
 
 	cmd := exec.Command("sh", "-c", l.commandDecorators.Decorate(command))
 
@@ -69,7 +69,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "createExecutorOutputFiles for command %q failed", command)
 	}
 
-	log.Debug("Created temporary files ",
+	log.Debug("Local Executor: Created temporary files ",
 		"stdout path:  ", stdoutFile.Name(), ", stderr path:  ", stderrFile.Name())
 
 	cmd.Stdout = stdoutFile
@@ -81,7 +81,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		return nil, errors.Wrapf(err, "command %q start failed", command)
 	}
 
-	log.Debug("Started with pid ", cmd.Process.Pid)
+	log.Debug("Local Executor: Started with pid ", cmd.Process.Pid)
 
 	// hasProcessExited channel is closed when launched process exits.
 	hasProcessExited := make(chan struct{})
@@ -123,7 +123,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 		}
 
 		exitCode := taskHandle.cmdHandler.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-		log.Debugf("Remote Executor: task %q exited with code %d", command, exitCode)
+		log.Debugf("Local Executor: task %q exited with code %d", command, exitCode)
 	}()
 
 	// Best effort potential way to check if binary is started properly.
@@ -132,6 +132,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Local Executor: pid %d started succesfully", cmd.Process.Pid)
 	return &taskHandle, nil
 }
 
