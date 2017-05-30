@@ -23,11 +23,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	testAppName       = "testAppName"
-	testIPDefaultName = "127.0.0.1"
-)
-
 func TestConf(t *testing.T) {
 	Convey("While using Conf pkg", t, func() {
 
