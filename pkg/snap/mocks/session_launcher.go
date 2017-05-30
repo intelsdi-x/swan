@@ -14,10 +14,10 @@
 
 package mocks
 
-import "github.com/intelsdi-x/swan/pkg/snap"
-import "github.com/stretchr/testify/mock"
-
-import "github.com/intelsdi-x/swan/pkg/executor"
+import (
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/stretchr/testify/mock"
+)
 
 // SessionLauncher ...
 type SessionLauncher struct {
@@ -25,14 +25,14 @@ type SessionLauncher struct {
 }
 
 // LaunchSession provides a mock function with given fields: _a0, _a1
-func (_m *SessionLauncher) LaunchSession(_a0 executor.TaskInfo, _a1 map[string]string) (snap.SessionHandle, error) {
+func (_m *SessionLauncher) LaunchSession(_a0 executor.TaskInfo, _a1 map[string]string) (executor.TaskHandle, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 snap.SessionHandle
-	if rf, ok := ret.Get(0).(func(executor.TaskInfo, map[string]string) snap.SessionHandle); ok {
+	var r0 executor.TaskHandle
+	if rf, ok := ret.Get(0).(func(executor.TaskInfo, map[string]string) executor.TaskHandle); ok {
 		r0 = rf(_a0, _a1)
 	} else {
-		r0 = ret.Get(0).(snap.SessionHandle)
+		r0 = ret.Get(0).(executor.TaskHandle)
 	}
 
 	var r1 error

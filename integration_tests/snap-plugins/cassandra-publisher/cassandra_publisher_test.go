@@ -15,7 +15,6 @@
 package cassandra
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ import (
 
 func TestCassandraPublisher(t *testing.T) {
 
-	Convey("description", t, func() {
+	Convey("TestCassandraPublisher", t, func() {
 
 		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
 		defer cleanup()
@@ -54,7 +53,7 @@ func TestCassandraPublisher(t *testing.T) {
 			Convey("Stored value in Cassandra should be greater then 0", func() {
 				So(value, ShouldBeGreaterThan, 0)
 			})
-			Convey("Tags should be approprierate", func() {
+			Convey("Tags should be appropriate", func() {
 				So(tags["swan_experiment"], ShouldEqual, "example-experiment")
 				So(tags["swan_phase"], ShouldEqual, "example-phase")
 				So(tags["swan_repetition"], ShouldEqual, "42")
@@ -115,16 +114,20 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	tags[experiment.PhaseKey] = "example-phase"
 	tags[experiment.RepetitionKey] = 42
 	tags["FloatTag"] = 42.123123
-	err = snapSession.Start(tags)
+	handle, err := snapSession.Launch(tags)
 	if err != nil {
-		return fmt.Errorf("snap session start failed: %s", err.Error())
+		return errors.Errorf("snap session failed to start: %s", err.Error())
 	}
 
-	snapSession.Wait()
-	err = snapSession.Stop()
+	_, err = handle.Wait(0)
 	if err != nil {
-		return fmt.Errorf("snap session stop failed: %s", err.Error())
+		return errors.Errorf("snap session wait failed: %s", err.Error())
 	}
 
-	return err
+	err = handle.Stop()
+	if err != nil {
+		return errors.Errorf("snap session stop failed: %s", err.Error())
+	}
+
+	return nil
 }
