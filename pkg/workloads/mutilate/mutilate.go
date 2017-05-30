@@ -167,11 +167,17 @@ func New(exec executor.Executor, config Config) executor.LoadGenerator {
 // https://github.com/leverich/mutilate
 func NewCluster(
 	master executor.Executor, agents []executor.Executor, config Config) executor.LoadGenerator {
-	return mutilate{
+	m := mutilate{
 		master: master,
 		agents: agents,
 		config: config,
 	}
+
+	_, err := m.runRemoteAgents()
+	if err != nil {
+		panic(err)
+	}
+	return m
 }
 
 func stopAgents(agentHandles []executor.TaskHandle) {
@@ -328,19 +334,14 @@ func (m mutilate) Tune(slo int) (qps int, achievedSLI int, err error) {
 // Load starts a load on the specific workload with the defined loadPoint (number of QPS).
 // The task will do the load for specified amount of time.
 func (m mutilate) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
-	agentHandles, err := m.runRemoteAgents()
-	if err != nil {
-		return nil, err
-	}
 
-	loadCommand := getLoadCommand(m.config, qps, duration, agentHandles)
+	loadCommand := getLoadCommand(m.config, qps, duration, nil)
 	masterHandle, err := m.master.Execute(loadCommand)
 	if err != nil {
-		stopAgents(agentHandles)
 		return nil, errors.Wrapf(err,
 			"execution of Mutilate Master Load failed. command: %q",
 			loadCommand)
 	}
 
-	return executor.NewClusterTaskHandle(masterHandle, agentHandles), nil
+	return executor.NewClusterTaskHandle(masterHandle, nil), nil
 }
