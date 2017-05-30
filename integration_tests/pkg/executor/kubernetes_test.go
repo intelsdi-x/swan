@@ -158,6 +158,7 @@ func TestKubernetesExecutor(t *testing.T) {
 			So(terminated, ShouldBeTrue)
 
 			exitCode, err := taskHandle.ExitCode()
+			So(err, ShouldBeNil)
 			So(exitCode, ShouldEqual, 0)
 
 			// Stdout

@@ -16,13 +16,11 @@ package memcached
 
 import (
 	"errors"
-	"syscall"
 	"testing"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor/mocks"
-	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -45,13 +43,9 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		expectedCommand = "test -p 11211 -u root -t 4 -m 4096 -c 2048 -T"
 		expectedHost    = "127.0.0.1"
 	)
-	Convey("When I create PID namespace isolation", t, func() {
+	Convey("Having executor and task handle mocked", t, func() {
 		mockedExecutor := new(mocks.Executor)
 		mockedTaskHandle := new(mocks.TaskHandle)
-		var decorators []isolation.Decorator
-		unshare, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
-		So(err, ShouldBeNil)
-		decorators = append(decorators, unshare)
 
 		Convey("While using Memcached launcher", func() {
 			config := DefaultMemcachedConfig()

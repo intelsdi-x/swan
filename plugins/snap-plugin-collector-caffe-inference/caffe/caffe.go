@@ -93,7 +93,7 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 		const namespaceHostnameIndex = 4
 		const swanNamespacePrefix = 5
 
-		hostname := ""
+		var hostname string
 		if requestedMetric.Namespace.Element(namespaceHostnameIndex).Value == "*" {
 			hostname, err = os.Hostname()
 			if err != nil {

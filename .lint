@@ -5,5 +5,5 @@
   "enable-gc": true,
   "concurrency": 1,
   "DisableAll": true,
-  "Enable": ["golint", "vet", "gofmt"]
+  "Enable": ["golint", "vet", "gofmt", "ineffassign"]
 }

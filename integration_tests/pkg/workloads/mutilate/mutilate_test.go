@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/env"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -144,8 +143,9 @@ func TestMutilateWithExecutor(t *testing.T) {
 			})
 			mutilateHandle.Wait(0)
 			out, err := mutilateHandle.StdoutFile()
-			log.Println(out.Name())
+			So(err, ShouldBeNil)
 			rawMetrics, err := parse.File(out.Name())
+			So(err, ShouldBeNil)
 
 			SoNonZeroMetricExists := func(name string) {
 				v, ok := rawMetrics.Raw[name]

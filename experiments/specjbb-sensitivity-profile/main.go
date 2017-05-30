@@ -221,6 +221,9 @@ func main() {
 					}()
 
 					exitCode, err := loadGeneratorHandle.ExitCode()
+					if err != nil {
+						return errors.Errorf("Cannit retrieve exit code: %q", err)
+					}
 					if exitCode != 0 {
 						return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
 					}
