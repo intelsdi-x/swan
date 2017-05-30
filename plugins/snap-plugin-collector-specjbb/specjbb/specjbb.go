@@ -51,14 +51,14 @@ func (specjbb *collector) GetMetricTypes(configType plugin.Config) ([]plugin.Met
 	metrics := []plugin.Metric{}
 
 	metricNames := [][]string{
-		[]string{"min"},
-		[]string{"max"},
-		[]string{"percentile", "50th"},
-		[]string{"percentile", "90th"},
-		[]string{"percentile", "95th"},
-		[]string{"percentile", "99th"},
-		[]string{"qps"},
-		[]string{"issued_requests"}}
+		{"min"},
+		{"max"},
+		{"percentile", "50th"},
+		{"percentile", "90th"},
+		{"percentile", "95th"},
+		{"percentile", "99th"},
+		{"qps"},
+		{"issued_requests"}}
 
 	for _, metricName := range metricNames {
 		metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace(metricName...), Unit: UNIT, Version: VERSION})

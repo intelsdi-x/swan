@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type metric struct {
@@ -95,7 +95,6 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 				So(err, ShouldEqual, ErrConf)
 			})
 		})
-
 
 	})
 }

@@ -127,7 +127,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{{}}, nil)
 
 			mockAPI := &mockK8sPodAPI{}
 
@@ -145,7 +145,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
@@ -158,7 +158,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			k8sLauncher.isListening = getIsListeningFunc(true)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)
@@ -171,7 +171,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			handle.On("Status").Return(executor.TERMINATED)
 			k8sLauncher.isListening = getIsListeningFunc(false)
-			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{v1.Node{}}, nil)
+			k8sLauncher.getReadyNodes = getNodeListFunc([]v1.Node{{}}, nil)
 
 			resultHandle, err := k8sLauncher.Launch()
 			So(err, ShouldNotBeNil)

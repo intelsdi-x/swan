@@ -15,13 +15,13 @@
 package kubernetes
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
 	"testing"
 	"time"
-	"flag"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
