@@ -201,18 +201,14 @@ func main() {
 						}
 
 						if beLauncher.SnapSessionLauncher != nil {
-							logrus.Debugf("starting snap session linked with %q ", beLauncher.Launcher.Name())
+							logrus.Debugf("starting snap session linked with %q ", beLauncher.Launcher)
 							beSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
 							if err != nil {
 								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
 							}
-							err = beSnapHandle.Wait()
+							_, err = beSnapHandle.Wait(0)
 							if err != nil {
-								return errors.Wrapf(err, "could not gather metrics for workload %q during phase %s, repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
-							}
-							err = beSnapHandle.Stop()
-							if err != nil {
-								return errors.Wrapf(err, "could not stop snap session for workload%q during phase %s, repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
+								return errors.Wrapf(err, "could not gather metrics for workload %q during phase %s, repetition %d", beSnapHandle, phaseName, repetition)
 							}
 						}
 					}
