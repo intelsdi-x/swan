@@ -50,7 +50,7 @@ var (
 	minCacheWaysToAssignFlag = conf.NewIntFlag("cat_min_cache_ways", "Mask representing minumim number of cache ways to assing to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 1)
 	cacheParitioningFlag     = conf.NewBoolFlag("cat_cache_paritioning", "Enables dedicated sets of cache ways for HP and BE workloads (if disabled then HP workload uses all cache ways all the time).", false)
 	minNumberOfBECPUsFlag    = conf.NewIntFlag("cat_min_be_cpus", "Minimum number of CPUs available to BE job.", 1)
-	maxNumberOfBECPUsFlag    = conf.NewIntFlag("cat_max_be_cpus", "Maximum number of CPUs available to BE job. If set to zero then all availabe cores will be used (taking isolation defined into consideration).", 0)
+	maxNumberOfBECPUsFlag    = conf.NewIntFlag("cat_max_be_cpus", "Maximum number of CPUs available to BE job. If set to zero then all available cores will be used (taking isolation defined into consideration).", 0)
 	useRDTCollectorFlag      = conf.NewBoolFlag("use_rdt_collector", "Collects Intel RDT metrics.", false)
 	appName                  = os.Args[0]
 )
@@ -168,10 +168,10 @@ func main() {
 				logrus.Debugf("starting cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
 				// Chose CPUs to be used
 				cores, err := beCores.Take(BECPUsCount)
-				errutil.CheckWithContext(err, fmt.Sprintf("unable to substract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
+				errutil.CheckWithContext(err, fmt.Sprintf("unable to subtract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
 				beCoresRange := cores.AsRangeString()
 				hpCoresRange := hpCores.AsRangeString()
-				logrus.Debugf("Substracted %d cores and got: %v", BECPUsCount, beCoresRange)
+				logrus.Debugf("Subtracted %d cores and got: %v", BECPUsCount, beCoresRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks

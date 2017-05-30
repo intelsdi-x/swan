@@ -132,7 +132,7 @@ func (l Local) Execute(command string) (TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Local Executor: pid %d started succesfully", cmd.Process.Pid)
+	log.Debugf("Local Executor: pid %d started successfully", cmd.Process.Pid)
 	return &taskHandle, nil
 }
 

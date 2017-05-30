@@ -224,7 +224,7 @@ func (s *MutilateTestSuite) TestMutilateTuningExecutorError() {
 	s.mExecutor.On("Execute", mock.AnythingOfType("string")).
 		Return(nil, errors.New(errorMsg))
 
-	Convey("When tuning, and an executor retuns an error", s.T(), func() {
+	Convey("When tuning, and an executor returns an error", s.T(), func() {
 		_, _, err := mutilate.Tune(s.defaultSlo)
 		Convey("Error should not be nil", func() {
 			So(err, ShouldNotBeNil)

@@ -95,7 +95,7 @@ func TestKubernetesExecutor(t *testing.T) {
 				// Pod should end after three seconds, but propagation of
 				// status information can take longer time. To reduce number
 				// of false-positive assertion fails, Wait() timeout is much
-				// longer then time withing pod should shutdown.
+				// longer then time that pod needs to shutdown.
 				terminated, err := taskHandle.Wait(podFinishedTimeout)
 				So(err, ShouldBeNil)
 				So(terminated, ShouldBeTrue)
