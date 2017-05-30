@@ -79,7 +79,7 @@ func (l l3) Launch() (executor.TaskHandle, error) {
 	return l.exec.Execute(l.buildCommand())
 }
 
-// Name returns human readable name for job.
-func (l l3) Name() string {
+// String returns human readable name for job.
+func (l l3) String() string {
 	return name
 }

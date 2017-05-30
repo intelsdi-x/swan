@@ -42,7 +42,7 @@ type defaultTopology struct {
 	SiblingThreadsToHpThreads topo.ThreadSet
 }
 
-// NewIsolations returns HP anb factory of aggressors with applied isolation for BE tasks.
+// NewIsolations returns isolations to be used with HP & set of aggressors depending on kind of stressed resource.
 // TODO: needs update for different isolation per cpu
 func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
 	if isManualPolicy() {

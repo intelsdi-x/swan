@@ -96,7 +96,7 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer StopAndEraseOutput(taskHandle)
 
 		Convey("Name should return string with executed command", func() {
-			taskName := taskHandle.Name()
+			taskName := taskHandle.String()
 			So(taskName, ShouldContainSubstring, command)
 		})
 
@@ -219,10 +219,11 @@ func testExecutor(t *testing.T, executor Executor) {
 		defer StopAndEraseOutput(taskHandle)
 
 		// Wait for the command to execute.
-		// TODO(bplotka): Remove the Sleep/Wait, since this is prone to errors on different environments.
-		taskHandle.Wait(1 * time.Second)
+		terminated, err := taskHandle.Wait(60 * time.Second)
+		So(terminated, ShouldBeTrue)
+		So(err, ShouldBeNil)
 
-		Convey("When we get Status with Wait for max 1 second", func() {
+		Convey("It should be possible to retrieve task status", func() {
 			taskState := taskHandle.Status()
 
 			Convey("And the task should stated that it terminated", func() {

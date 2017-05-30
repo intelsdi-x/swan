@@ -26,6 +26,7 @@ const (
 	// ID is used for specifying which aggressors should be used via parameters.
 	ID = "caffe"
 
+	defaultName         = "Caffe"
 	defaultCaffeWrapper = "caffe.sh"
 	defaultModel        = "examples/cifar10/cifar10_quick_train_test.prototxt" // relative to caffe binary
 	defaultWeights      = "examples/cifar10/cifar10_quick_iter_5000.caffemodel.h5"
@@ -40,6 +41,7 @@ var (
 
 // Config is a config for the Caffe.
 type Config struct {
+	Name             string
 	BinaryPath       string
 	LibPath          string
 	ModelPath        string
@@ -51,6 +53,7 @@ type Config struct {
 // DefaultConfig is a constructor for caffe.Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
+		Name:             defaultName,
 		BinaryPath:       defaultCaffeWrapper,
 		ModelPath:        caffeModel.Value(),
 		WeightsPath:      caffeWeights.Value(),
@@ -94,7 +97,7 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	return
 }
 
-// Name returns human readable name for job.
-func (c Caffe) Name() string {
-	return "Caffe"
+// String returns human readable name for job.
+func (c Caffe) String() string {
+	return c.conf.Name
 }

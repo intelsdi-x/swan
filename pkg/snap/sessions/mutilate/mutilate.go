@@ -100,7 +100,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 // LaunchSession starts Snap Collection session and returns handle to that session.
 func (s *SessionLauncher) LaunchSession(
 	task executor.TaskInfo,
-	tags map[string]interface{}) (snap.SessionHandle, error) {
+	tags map[string]interface{}) (executor.TaskHandle, error) {
 
 	// Obtain Mutilate output file.
 	stdoutFile, err := task.StdoutFile()
@@ -118,10 +118,10 @@ func (s *SessionLauncher) LaunchSession(
 	}
 
 	// Start session.
-	err = s.session.Start(tags)
+	handle, err := s.session.Launch(tags)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.session, nil
+	return handle, nil
 }

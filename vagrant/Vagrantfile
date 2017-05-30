@@ -99,7 +99,7 @@ Vagrant.configure(2) do |config|
     # non-cached ami: ami-6d1c2007
     ### USE BASE/CACHED IMAGE
     #aws.ami = "ami-6d1c2007" # base image
-    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-b284fba4") # Thu Apr  6 16:45:16 UTC 2017
+    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-683d7f7e") # Thu, 25 May 2017 20:29:44 +0200
     if build_cached_image
       override.vm.provision "shell", path: "provision.sh", env: {
         'VAGRANT_USER' => vagrant_user,

@@ -21,9 +21,11 @@ import (
 	"regexp"
 	"testing"
 	"time"
+	"flag"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,6 +43,7 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 
 		Convey("We are able to launch kubernetes cluster on one node", func() {
 			config := kubernetes.DefaultConfig()
+			config.RetryCount = 10
 
 			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
 
@@ -66,7 +69,6 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 				// kubectl get nodes should return this:
 				// NAME            STATUS    AGE
 				// <hostname>      Ready     <x>h
-
 				re, err := regexp.Compile(fmt.Sprintf("%s.*?Ready", host))
 				So(err, ShouldBeNil)
 
@@ -110,6 +112,97 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(string(output), ShouldNotContainSubstring, containerName)
 
+				})
+			})
+		})
+	})
+}
+
+// Please see `pkg/kubernetes/README.md` for prerequisites for this test.
+func TestLocalKubernetesPodBrokenExecution(t *testing.T) {
+
+	flag.Set("kubernetes_cluster_clean_left_pods_on_startup", "true")
+
+	conf.ParseFlags()
+
+	podName := "swan-testpod"
+	hyperkubeBinPath := testhelpers.AssertFileExists("hyperkube")
+
+	logrus.SetLevel(logrus.ErrorLevel)
+	Convey("While having local executor", t, func() {
+
+		local := executor.NewLocal()
+
+		Convey("We are able to launch kubernetes cluster on one node", func() {
+			config := kubernetes.DefaultConfig()
+
+			kubernetesAddress := fmt.Sprintf("http://127.0.0.1:%d", config.KubeAPIPort)
+
+			k8sLauncher := kubernetes.New(local, local, config)
+			So(k8sLauncher, ShouldNotBeNil)
+
+			k8sHandle, err := k8sLauncher.Launch()
+			So(err, ShouldBeNil)
+
+			defer executor.StopAndEraseOutput(k8sHandle)
+
+			Convey("And kubectl shows that local host is in Ready state", func() {
+				terminated, err := k8sHandle.Wait(100 * time.Millisecond)
+				So(err, ShouldBeNil)
+				So(terminated, ShouldBeFalse)
+
+				output, err := exec.Command(hyperkubeBinPath, "kubectl", "-s", kubernetesAddress, "get", "nodes").Output()
+				So(err, ShouldBeNil)
+
+				host, err := os.Hostname()
+				So(err, ShouldBeNil)
+
+				re, err := regexp.Compile(fmt.Sprintf("%s.*?Ready", host))
+				So(err, ShouldBeNil)
+
+				match := re.Find(output)
+				So(match, ShouldNotBeNil)
+
+				Convey("And we are able to create pod", func() {
+					output, err := exec.Command(hyperkubeBinPath, "kubectl", "-s", kubernetesAddress, "run", podName, "--image=intelsdi/swan", "--restart=Never", "--", "sleep", "inf").Output()
+					So(err, ShouldBeNil)
+
+					re, err := regexp.Compile("created")
+					So(err, ShouldBeNil)
+					match := re.Find(output)
+					So(match, ShouldNotBeNil)
+
+					time.Sleep(10 * time.Second)
+
+					Convey("If kubernetes is stopped pod shall be alive", func() {
+						_ = executor.StopAndEraseOutput(k8sHandle)
+
+						output, err := exec.Command("sudo", "docker", "ps").Output()
+						So(err, ShouldBeNil)
+						So(string(output), ShouldContainSubstring, podName)
+
+						Convey("After starting again kubernetes old pod shall be removed", func() {
+							k8sHandle, err = k8sLauncher.Launch()
+							So(err, ShouldBeNil)
+
+							output, err := exec.Command("sudo", "docker", "ps").Output()
+							So(err, ShouldBeNil)
+							So(string(output), ShouldNotContainSubstring, podName)
+
+							Convey("kubernetes launcher shall start pod without error", func() {
+								config := executor.DefaultKubernetesConfig()
+								config.Address = kubernetesAddress
+								config.ContainerImage = "intelsdi/swan"
+								config.PodName = podName
+								k8sExecutor, err := executor.NewKubernetes(config)
+								So(err, ShouldBeNil)
+
+								podHandle1, err := k8sExecutor.Execute("sleep inf")
+								So(err, ShouldBeNil)
+								defer executor.StopAndEraseOutput(podHandle1)
+							})
+						})
+					})
 				})
 			})
 		})

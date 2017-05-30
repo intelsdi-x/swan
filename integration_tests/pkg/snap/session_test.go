@@ -16,12 +16,14 @@ package snap
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -70,8 +72,9 @@ func TestSnap(t *testing.T) {
 					So(publisher, ShouldNotBeNil)
 
 					tmpFile, err := ioutil.TempFile("", "session_test")
-					tmpFile.Close()
 					So(err, ShouldBeNil)
+					tmpFile.Close()
+					defer os.Remove(tmpFile.Name())
 
 					metricsFile = tmpFile.Name()
 
@@ -89,25 +92,74 @@ func TestSnap(t *testing.T) {
 
 						tags := make(map[string]interface{})
 						tags["foo"] = "bar"
-						err := s.Start(tags)
+						handle, err := s.Launch(tags)
 
 						So(err, ShouldBeNil)
 
 						defer func() {
-							if s.IsRunning() {
-								err := s.Stop()
-								So(err, ShouldBeNil)
-							}
+							err := handle.Stop()
+							So(err, ShouldBeNil)
 						}()
-						Convey("Contacting snap to get the task status", func() {
-							So(s.IsRunning(), ShouldBeTrue)
+						Convey("Wait for task completion should be successful", func() {
+							So(handle.Status(), ShouldEqual, executor.RUNNING)
 
-							err = s.Wait()
+							terminated, err := handle.Wait(0)
 							So(err, ShouldBeNil)
+							So(terminated, ShouldBeTrue)
 
-							err = s.Stop()
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+
+							exitCode, err := handle.ExitCode()
 							So(err, ShouldBeNil)
-							So(s.IsRunning(), ShouldBeFalse)
+							So(exitCode, ShouldEqual, 0)
+						})
+
+						Convey("Address and stdour/stderr functions are properly implemented", func() {
+							address := handle.Address()
+							So(address, ShouldEqual, snapteldAddr)
+
+							stdout, err := handle.StdoutFile()
+							So(stdout, ShouldBeNil)
+							So(err, ShouldNotBeNil)
+
+							stderr, err := handle.StderrFile()
+							So(stderr, ShouldBeNil)
+							So(err, ShouldNotBeNil)
+						})
+
+						Convey("Multiple stops should not yield error", func() {
+							err := handle.Stop()
+							So(err, ShouldBeNil)
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+
+							err = handle.Stop()
+							So(err, ShouldBeNil)
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+
+							Convey("Wait after Stop should not yield error", func() {
+								terminated, err := handle.Wait(0)
+								So(err, ShouldBeNil)
+								So(terminated, ShouldBeTrue)
+								So(handle.Status(), ShouldEqual, executor.TERMINATED)
+							})
+						})
+
+						Convey("Multiple Waits should not yield error", func() {
+							terminated, err := handle.Wait(0)
+							So(err, ShouldBeNil)
+							So(terminated, ShouldBeTrue)
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+
+							terminated, err = handle.Wait(0)
+							So(err, ShouldBeNil)
+							So(terminated, ShouldBeTrue)
+							So(handle.Status(), ShouldEqual, executor.TERMINATED)
+
+							Convey("Stop after Wait should not yield error", func() {
+								err := handle.Stop()
+								So(err, ShouldBeNil)
+								So(handle.Status(), ShouldEqual, executor.TERMINATED)
+							})
 						})
 					})
 				})

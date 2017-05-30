@@ -21,6 +21,7 @@ import (
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,7 +74,7 @@ func TestSnapRDTSession(t *testing.T) {
 
 					time.Sleep(5 * time.Second)
 					Convey("Later we checked if task is running", func() {
-						So(handle.IsRunning(), ShouldBeTrue)
+						So(handle.Status(), ShouldEqual, executor.RUNNING)
 
 						Convey("In order to read published data", func() {
 							content, err := ioutil.ReadFile(publisherMetricsFile)

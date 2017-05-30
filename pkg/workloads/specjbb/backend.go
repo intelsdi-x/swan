@@ -79,7 +79,7 @@ func (b Backend) Launch() (executor.TaskHandle, error) {
 	return task, nil
 }
 
-// Name returns human readable name for job.
-func (b Backend) Name() string {
+// String returns human readable name for job.
+func (b Backend) String() string {
 	return name
 }

@@ -31,6 +31,13 @@ import (
 )
 
 const (
+
+	// NoneAggressorID is constant to represent "pseudo" aggressor for baselining experiment (running HP workload without aggressor at all).
+	NoneAggressorID = "None"
+
+	// CaffeAggressorWithIsolation to run caffe with them same isolation as LLC intesive workloads.
+	CaffeAggressorWithIsolation = "caffe-isolated"
+
 	l1dDefaultProcessNumber   = 1
 	l1iDefaultProcessNumber   = 1
 	l3DefaultProcessNumber    = 1
@@ -43,7 +50,7 @@ var (
 		"experiment_be_workloads", "Best Effort workloads that will be run sequentially in colocation with High Priority workload. \n"+
 			"# When experiment is run on machine with HyperThreads, user can also add 'stress-ng-cache-l1' to this list. \n"+
 			"# When iBench and Stream is available, user can also add 'l1d,l1i,l3,stream' to this list.",
-		[]string{"stress-ng-cache-l3", "stress-ng-memcpy", "stress-ng-stream", "caffe"},
+		[]string{NoneAggressorID, stressng.IDCacheL3, stressng.IDMemCpy, stressng.IDStream, caffe.ID},
 	)
 
 	theatAggressorsAsService = conf.NewBoolFlag(
@@ -76,13 +83,6 @@ var (
 		"experiment_be_membw_processes_number",
 		"Number of membw best effort processes to be run",
 		membwDefaultProcessNumber,
-	)
-
-	// RunCaffeWithLLCIsolationFlag decides which isolations should be used for Caffe aggressor.
-	RunCaffeWithLLCIsolationFlag = conf.NewBoolFlag(
-		"experiment_run_caffe_with_l3_cache_isolation",
-		"If set, the Caffe Best Effort workload will use the same isolation settings as for L3 Best Efforts, otherwise swan won't apply any performance isolation. User can use this flag to compare running task on separate cores and using OS scheduler.",
-		false,
 	)
 )
 
@@ -121,6 +121,12 @@ type ExecutorFactoryFunc func(isolation.Decorators) (executor.Executor, error)
 
 // Create returns aggressor of chosen type using provided executorFactor to create executor.
 func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFunc) (executor.Launcher, error) {
+
+	// Zero-value sensitivity.LauncherSessionPair represents baselining.
+	if name == NoneAggressorID {
+		return nil, nil
+	}
+
 	var aggressor executor.Launcher
 
 	decorators := f.getDecorators(name)
@@ -137,6 +143,10 @@ func (f AggressorFactory) Create(name string, executorFactory ExecutorFactoryFun
 		aggressor = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffe.ID:
 		aggressor = caffe.New(exec, caffe.DefaultConfig())
+	case CaffeAggressorWithIsolation:
+		config := caffe.DefaultConfig()
+		config.Name = "Caffe isolated"
+		aggressor = caffe.New(exec, config)
 	case l3.ID:
 		aggressor = l3.New(exec, l3.DefaultL3Config())
 	case stream.ID:
@@ -194,10 +204,9 @@ func (f AggressorFactory) getDecorators(name string) isolation.Decorators {
 		decorators := isolation.Decorators{f.l1AggressorIsolation}
 		return decorators
 	case caffe.ID:
-		if RunCaffeWithLLCIsolationFlag.Value() {
-			return isolation.Decorators{f.otherAggressorIsolation}
-		}
 		return isolation.Decorators{}
+	case CaffeAggressorWithIsolation:
+		return isolation.Decorators{f.otherAggressorIsolation}
 	default:
 		return isolation.Decorators{f.otherAggressorIsolation}
 	}
@@ -218,7 +227,11 @@ func PrepareAggressors(l1Isolation, llcIsolation isolation.Decorator, beExecutor
 		var launcherSessionPair LauncherSessionPair
 
 		switch aggressorName {
-		case caffe.ID:
+
+		case NoneAggressorID:
+			launcherSessionPair = LauncherSessionPair{}
+
+		case caffe.ID, CaffeAggressorWithIsolation:
 			caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 			if err != nil {
 				return nil, err

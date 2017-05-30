@@ -16,14 +16,18 @@ package snap
 
 import (
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
+	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
 )
 
-type task struct {
+type taskInfo struct {
 	Version  int
 	Schedule *client.Schedule
 	Workflow *wmap.WorkflowMap
@@ -46,23 +50,19 @@ type Session struct {
 	// TaskName is name of task in Snap.
 	TaskName string
 
-	// Schedule defines the schedule type and interval for the listed metrics.
-	Schedule *client.Schedule
-
 	// Metrics to tag in session.
 	Metrics []string
 
 	// CollectNodeConfigItems represent ConfigItems for CollectNode.
 	CollectNodeConfigItems []CollectNodeConfigItem
 
-	// Active task.
-	task *task
-
 	// Publisher for tagged metrics.
 	Publisher *wmap.PublishWorkflowMapNode
 
 	// Client to Snapteld.
 	pClient *client.Client
+
+	schedule *client.Schedule
 }
 
 // NewSession generates a session with a name and a list of metrics to tag.
@@ -74,44 +74,37 @@ func NewSession(
 	pClient *client.Client,
 	publisher *wmap.PublishWorkflowMapNode) *Session {
 
-	// Convert from duration to "Xs" string.
-	secondString := fmt.Sprintf("%ds", int(interval.Seconds()))
-
 	return &Session{
 		TaskName: taskName,
-		Schedule: &client.Schedule{
+		schedule: &client.Schedule{
 			Type:     "simple",
-			Interval: secondString,
+			Interval: interval.String(),
 		},
 		Metrics:                metrics,
 		pClient:                pClient,
-		Publisher:              publisher, // TODO(niklas): Replace with cassandra publisher.
+		Publisher:              publisher,
 		CollectNodeConfigItems: []CollectNodeConfigItem{},
 	}
 }
 
-// Start an experiment session.
-func (s *Session) Start(tags map[string]interface{}) error {
-	if s.task != nil {
-		return errors.New("task already running")
-	}
-
-	t := &task{
+// Launch starts Snap task.
+func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, error) {
+	task := taskInfo{
 		Name:     s.TaskName,
 		Version:  1,
-		Schedule: s.Schedule,
+		Schedule: s.schedule,
 	}
 
 	wf := wmap.NewWorkflowMap()
 
-	snapTags := make(map[string]string)
+	formattedTags := make(map[string]string)
 	for key, value := range tags {
-		snapTags[key] = fmt.Sprintf("%v", value)
+		formattedTags[key] = fmt.Sprintf("%v", value)
 	}
-	wf.CollectNode.Tags = map[string]map[string]string{"": snapTags}
+	wf.CollectNode.Tags = map[string]map[string]string{"": formattedTags}
 
 	for _, metric := range s.Metrics {
-		wf.CollectNode.AddMetric(metric, -1)
+		wf.CollectNode.AddMetric(metric, PluginAnyVersion)
 	}
 
 	for _, configItem := range s.CollectNodeConfigItems {
@@ -124,112 +117,252 @@ func (s *Session) Start(tags map[string]interface{}) error {
 	// Add specified publisher to workflow as well.
 	wf.CollectNode.Add(s.Publisher)
 
-	t.Workflow = wf
+	task.Workflow = wf
 
-	r := s.pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, true, 10)
+	r := s.pClient.CreateTask(
+		task.Schedule,
+		task.Workflow,
+		task.Name,
+		task.Deadline,
+		true,
+		10,
+	)
 	if r.Err != nil {
-		return errors.Wrapf(r.Err, "could not create task %q", t.Name)
+		return nil, errors.Wrapf(r.Err, "could not create snap task %q", task.Name)
 	}
 
-	// Save a copy of the task so we can stop it again.
-	t.ID = r.ID
-	t.State = r.State
-	s.task = t
+	task.ID = r.ID
+	task.State = r.State
 
-	return nil
+	return &Handle{
+		task:    task,
+		pClient: s.pClient,
+	}, nil
 }
 
-// GetTags get common tags for all metrics.
-func (s *Session) GetTags() map[string]string {
-	return s.task.Workflow.CollectNode.Tags[""]
+// Handle is handle for Snap task.
+type Handle struct {
+	// Active taskInfo.
+	task taskInfo
+
+	// Client to Snapteld.
+	pClient *client.Client
+
+	// lastFailureMessage must only be set by getSnapTask().
+	lastFailureMessage string
 }
 
-// IsRunning checks if Snap task is running.
-func (s *Session) IsRunning() bool {
-	status, err := s.status()
+// String returns name of snap task.
+func (s *Handle) String() string {
+	return fmt.Sprintf("Snap Task %q running on node %q",
+		s.task.Name, s.pClient.URL)
+}
+
+// Address returns snapteld address.
+func (s *Handle) Address() string {
+	return s.pClient.URL
+}
+
+// ExitCode returns -1 when snap task is disabled because of errors or not terminated.
+// Returns '0' when task is ended.
+func (s *Handle) ExitCode() (int, error) {
+	task, err := s.getSnapTask()
 	if err != nil {
-		return false
+		return -1, err
 	}
-	return status == "Running"
+
+	if s.Status() != executor.TERMINATED {
+		return -1, errors.Errorf("snap task %q is not finished yet", s.task.Name)
+	}
+
+	if task.State == "Disabled" {
+		return -1, nil
+	}
+
+	// Stopped or Ended statuses are OK.
+	return 0, nil
 }
 
-// Status connects to snap to verify the current state of the task.
-func (s *Session) status() (string, error) {
-	if s.task == nil {
-		return "", errors.New("snap task is not running or not found")
+// Status checks if Snap task is running.
+func (s *Handle) Status() executor.TaskState {
+	taskState, _, _ := s.getStatus()
+	return taskState
+}
+
+func (s *Handle) getStatus() (executor.TaskState, core.TaskState, error) {
+	task, err := s.getSnapTask()
+	if err != nil {
+		return executor.TERMINATED, core.TaskDisabled, err
 	}
 
+	if task.State == core.TaskDisabled.String() {
+		s.lastFailureMessage = task.LastFailureMessage
+		return executor.TERMINATED, core.TaskDisabled, nil
+	}
+
+	if task.State == core.TaskSpinning.String() ||
+		task.State == core.TaskFiring.String() ||
+		task.State == core.TaskStopping.String() {
+		return executor.RUNNING, core.TaskSpinning, nil
+	}
+
+	// Task Ended or Stopped.
+	return executor.TERMINATED, core.TaskStopped, nil
+}
+
+// getSnapTaskStatus connects to snap to obtain current state of the task.
+func (s *Handle) getSnapTask() (*rbody.ScheduledTaskReturned, error) {
 	task := s.pClient.GetTask(s.task.ID)
 	if task.Err != nil {
-		return "", errors.Wrapf(task.Err, "could not get task name:%q, ID:%q",
+		return nil, errors.Wrapf(task.Err, "could not get information about snap task %q with id %q: "+
+			"it could be removed or never existed",
 			s.task.Name, s.task.ID)
 	}
 
-	return task.State, nil
+	return task.ScheduledTaskReturned, nil
 }
 
-// Stop terminates an experiment session and removes Snap task.
-// This function blocks until task is stopped.
-func (s *Session) Stop() error {
-	if s.task == nil {
-		return errors.New("snap task not running or not found")
+// Stop blocks and stops Snap task.
+// When task is already stopped or ended, then it will immediately return.
+func (s *Handle) Stop() error {
+	executorStatus, coreStatus, err := s.getStatus()
+	if err != nil {
+		return err
+	}
+
+	if coreStatus == core.TaskDisabled {
+		return errors.Errorf("snap task %q has been disabled because of errors: %q", s.task.Name, s.lastFailureMessage)
+	}
+
+	if executorStatus == executor.TERMINATED {
+		return nil
 	}
 
 	rs := s.pClient.StopTask(s.task.ID)
 	if rs.Err != nil {
-		return errors.Wrapf(rs.Err, "could not send stop signal to task %q", s.task.ID)
+		return errors.Wrapf(rs.Err, "could not stop snap task %q: %v", s.task.ID)
 	}
 
-	err := s.waitForStop()
+	err = s.waitForStop()
 	if err != nil {
-		return errors.Wrapf(err, "could not stop task %q", s.task.ID)
+		return errors.Wrapf(err, "could not stop snap task %q", s.task.ID)
 	}
-
-	rr := s.pClient.RemoveTask(s.task.ID)
-	if rr.Err != nil {
-		return errors.Wrapf(rr.Err, "could not remove task %q", s.task.ID)
-	}
-
-	s.task = nil
 
 	return nil
 }
 
-// Wait blocks until the task is executed at least once
+// Wait blocks until the Snap task is executed at least once
 // (including hits that happened in the past).
-func (s *Session) Wait() error {
-	for {
-		t := s.pClient.GetTask(s.task.ID)
-		if t.Err != nil {
-			return errors.Wrapf(t.Err, "getting task %q failed", s.task.ID)
-		}
+func (s *Handle) Wait(timeout time.Duration) (bool, error) {
+	executorStatus, coreStatus, err := s.getStatus()
+	if err != nil {
+		return true, err
+	}
 
-		if t.State == "Stopped" || t.State == "Disabled" {
-			return errors.Errorf("failed to wait for task: task %q is in state %q (last failure: %q)",
-				s.task.ID,
-				t.State,
-				t.LastFailureMessage)
+	if coreStatus == core.TaskDisabled {
+		return true, errors.Errorf("snap task %q has been disabled because of errors: %q", s.task.Name, s.lastFailureMessage)
+	}
 
-		}
+	if executorStatus == executor.TERMINATED {
+		return true, nil
+	}
 
-		if (t.HitCount - (t.FailedCount + t.MissCount)) > 0 {
-			return nil
-		}
+	// Task has not finished yet.
 
-		// Make sure that data is published.
-		time.Sleep(100 * time.Millisecond)
+	stopper := make(chan struct{})
+	taskCompletionInfo := s.waitForTaskCompletion(stopper)
+
+	var timeoutChannel <-chan time.Time
+	if timeout != 0 {
+		// In case of wait with timeout set the timeout channel.
+		timeoutChannel = time.After(timeout)
+	}
+
+	select {
+	case err := <-taskCompletionInfo:
+		// If waitEndChannel is closed then task is terminated.
+		return true, err
+	case <-timeoutChannel:
+		// If timeout time exceeded return then task did not terminate yet.
+		stopper <- struct{}{}
+		return false, nil
 	}
 }
 
-func (s *Session) waitForStop() error {
+// StdoutFile returns error for snap handles.
+func (s *Handle) StdoutFile() (*os.File, error) {
+	return nil, errors.New("snap tasks don't support stdout file")
+}
+
+// StderrFile returns error for snap handles.
+func (s *Handle) StderrFile() (*os.File, error) {
+	return nil, errors.New("snap tasks don't support stderr file")
+}
+
+// EraseOutput does nothing for snap tasks.
+func (s *Handle) EraseOutput() error {
+	return nil
+}
+
+func (s *Handle) waitForTaskCompletion(stopWaiting <-chan struct{}) (result <-chan error) {
+	errorChan := make(chan error)
+	go func() {
+		for {
+			task, err := s.getSnapTask()
+			if err != nil {
+				err := errors.Wrapf(err, "cannot get snap task %q information", s.task.ID)
+				errorChan <- err
+				return
+			}
+
+			if task.State == core.TaskStopped.String() {
+				errorChan <- nil
+				return
+			}
+
+			if task.State == core.TaskDisabled.String() {
+				err := errors.Errorf("snap task %q has been disabled because of errors: %q",
+					s.task.Name, task.LastFailureMessage)
+				errorChan <- err
+				return
+
+			}
+
+			// TODO(skonefal): Refactor this when Snap 1.3 with 'count' support is released.
+			if (task.HitCount - (task.FailedCount + task.MissCount)) > 0 {
+				stopErr := s.Stop()
+				errorChan <- stopErr
+				return
+			}
+
+			timeoutChannel := time.After(500 * time.Millisecond)
+			select {
+			case <-stopWaiting:
+				return
+			case <-timeoutChannel:
+				break
+			}
+
+		}
+
+	}()
+
+	return errorChan
+}
+
+func (s *Handle) waitForStop() error {
 	for {
 		t := s.pClient.GetTask(s.task.ID)
 		if t.Err != nil {
 			return errors.Wrapf(t.Err, "could not get task %q", s.task.ID)
 		}
 
-		if t.State == "Stopped" || t.State == "Disabled" {
+		if t.State == "Stopped" {
 			return nil
+		}
+
+		if t.State == "Disabled" {
+			return errors.Errorf("snap task %q has been disabled because of errors: %q", t.Name, t.LastFailureMessage)
 		}
 
 		time.Sleep(100 * time.Millisecond)

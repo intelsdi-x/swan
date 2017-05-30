@@ -48,9 +48,9 @@ var (
 	qpsFlag                  = conf.NewStringFlag("cat_qps", "Comma-separated list of QpS to iterate over", "375000")
 	maxCacheWaysToAssignFlag = conf.NewIntFlag("cat_max_cache_ways", "Mask representing maximum number of cache ways to assign to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 11)
 	minCacheWaysToAssignFlag = conf.NewIntFlag("cat_min_cache_ways", "Mask representing minumim number of cache ways to assing to a job. It is assumed that cat_max_cache_ways and cat_min_cache_ways sum to number of all cache ways available.", 1)
+	cacheParitioningFlag     = conf.NewBoolFlag("cat_cache_paritioning", "Enables dedicated sets of cache ways for HP and BE workloads (if disabled then HP workload uses all cache ways all the time).", false)
 	minNumberOfBECPUsFlag    = conf.NewIntFlag("cat_min_be_cpus", "Minimum number of CPUs available to BE job.", 1)
 	maxNumberOfBECPUsFlag    = conf.NewIntFlag("cat_max_be_cpus", "Maximum number of CPUs available to BE job. If set to zero then all availabe cores will be used (taking isolation defined into consideration).", 0)
-	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
 	useRDTCollectorFlag      = conf.NewBoolFlag("use_rdt_collector", "Collects Intel RDT metrics.", false)
 	appName                  = os.Args[0]
 )
@@ -73,7 +73,7 @@ func main() {
 	logger.Initialize(appName, uid)
 
 	// Connect to metadata database
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
@@ -100,8 +100,16 @@ func main() {
 	}
 
 	// Discover local CPU topology.
+	hpCores := topology.HpRangeFlag.Value()
 	beCores := topology.BeRangeFlag.Value()
-	logrus.Debugf("BE CPU range: %+v", beCores)
+
+	if len(beCores) == 0 || len(hpCores) == 0 {
+		logrus.Errorf("HP & BE workloads ranges required! (please specify -%s and -%s)", topology.HpRangeFlag.Name, topology.BeRangeFlag.Name)
+		os.Exit(experiment.ExUsage)
+	}
+	logrus.Debugf("HP CPU range: %s", hpCores.AsRangeString())
+	logrus.Debugf("BE CPU range: %s", beCores.AsRangeString())
+
 	// If maximum number of cores is not provided - use all.
 	if maxBECPUsCount == 0 {
 		maxBECPUsCount = len(beCores)
@@ -138,9 +146,6 @@ func main() {
 
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
-	if includeBaselinePhaseFlag.Value() {
-		aggressors = append([]string{""}, aggressors...)
-	}
 
 	useRDTCollector := useRDTCollectorFlag.Value()
 	var rdtSession snap.SessionLauncher
@@ -150,7 +155,9 @@ func main() {
 	}
 
 	// We need to calculate mask for all cache ways to be able to calculate non-overlapping cache partitions.
-	wholeCacheMask := 1<<(maxCacheWaysToAssign+minCacheWaysToAssign) - 1
+	numberOfAvailableCacheWays := uint64(maxCacheWaysToAssign + minCacheWaysToAssign)
+	wholeCacheMask := 1<<numberOfAvailableCacheWays - 1
+
 	for _, aggressorName := range aggressors {
 		logrus.Debugf("starting aggressor: %s", aggressorName)
 		for _, qps := range qpsList {
@@ -158,23 +165,35 @@ func main() {
 			// Initialize counters.
 			var beIteration, totalIteration int
 			for BECPUsCount := maxBECPUsCount; BECPUsCount >= minBECPUsCount; BECPUsCount-- {
-				logrus.Debugf("staring cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
+				logrus.Debugf("starting cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
 				// Chose CPUs to be used
 				cores, err := beCores.Take(BECPUsCount)
 				errutil.CheckWithContext(err, fmt.Sprintf("unable to substract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
 				beCoresRange := cores.AsRangeString()
-				hpCoresRange := topology.HpRangeFlag.Value().AsRangeString()
+				hpCoresRange := hpCores.AsRangeString()
 				logrus.Debugf("Substracted %d cores and got: %v", BECPUsCount, beCoresRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks
 					beCacheMask := 1<<beCacheWays - 1
-					hpCacheMask := wholeCacheMask &^ beCacheMask
+					var (
+						hpCacheMask int
+						hpCacheWays uint64
+					)
+					if cacheParitioningFlag.Value() {
+						hpCacheWays = numberOfAvailableCacheWays - beCacheWays
+						hpCacheMask = int(wholeCacheMask &^ beCacheMask)
+					} else {
+						hpCacheWays = numberOfAvailableCacheWays
+						hpCacheMask = int(wholeCacheMask)
 
-					logrus.Debugf("Current L3 HP mask: %d, %b", hpCacheMask, hpCacheMask)
-					logrus.Debugf("Current L3 BE mask: %d, %b", beCacheMask, beCacheMask)
-					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
+					}
+
+					logrus.Debugf("Current L3 HP mask: %d, %b (%d)", hpCacheMask, hpCacheMask, hpCacheWays)
+					logrus.Debugf("Current L3 BE mask: %d, %b (%d)", beCacheMask, beCacheMask, beCacheWays)
+
 					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: hpCoresRange}
+					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
 					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, beIsolation)
 
 					// Create executors with cleanup function.
@@ -188,10 +207,7 @@ func main() {
 					errutil.CheckWithContext(err, "pqos -R failed")
 
 					// Create BE workloads.
-					var beLauncher sensitivity.LauncherSessionPair
-					if aggressorName != "" {
-						beLauncher = createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
-					}
+					beLauncher := createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
 
 					// Create HP workload.
 					memcachedConfig := memcached.DefaultMemcachedConfig()
@@ -208,7 +224,7 @@ func main() {
 					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 					aggressorName := fmt.Sprintf("Baseline")
 					if beLauncher.Launcher != nil {
-						aggressorName = fmt.Sprintf("%s", beLauncher.Launcher.Name())
+						aggressorName = beLauncher.Launcher.String()
 					}
 
 					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
@@ -252,7 +268,7 @@ func main() {
 						if beLauncher.Launcher != nil {
 							beHandle, err = beLauncher.Launcher.Launch()
 							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher.Name(), phaseName)
+								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher, phaseName)
 							}
 							processes = append(processes, beHandle)
 						}
@@ -267,7 +283,7 @@ func main() {
 							defer aggressorSnapHandle.Stop()
 						}
 
-						var rdtSessionHandle snap.SessionHandle
+						var rdtSessionHandle executor.TaskHandle
 						if useRDTCollector {
 							rdtSessionHandle, err = rdtSession.LaunchSession(nil, snapTags)
 							errutil.PanicWithContext(err, "Cannot launch Snap RDT Collection session")
@@ -296,7 +312,9 @@ func main() {
 
 						if useRDTCollector {
 							err = rdtSessionHandle.Stop()
-							errutil.PanicWithContext(err, "cannot stop RDT Snap session")
+							if err != nil {
+								return errors.Wrapf(err, "errors while stopping RDT session in phase %s", phaseName)
+							}
 						}
 
 						if beHandle != nil {
@@ -352,16 +370,16 @@ func main() {
 
 func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (beLauncher sensitivity.LauncherSessionPair) {
 	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	aggressorPair, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
+	aggressor, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
 	errutil.CheckWithContext(err, "Cannot create aggressor pair")
 
 	switch aggressorName {
-	case caffe.ID:
+	case caffe.ID, sensitivity.CaffeAggressorWithIsolation:
 		caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
 		errutil.CheckWithContext(err, "Cannot create Caffee session launcher")
-		beLauncher = sensitivity.NewMonitoredLauncher(aggressorPair, caffeSession)
+		beLauncher = sensitivity.NewMonitoredLauncher(aggressor, caffeSession)
 	default:
-		beLauncher = sensitivity.NewLauncherWithoutSession(aggressorPair)
+		beLauncher = sensitivity.NewLauncherWithoutSession(aggressor)
 	}
 
 	return

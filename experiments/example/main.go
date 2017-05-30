@@ -58,7 +58,7 @@ func main() {
 
 	// Connect to metadata database (Cassandra is the only supported database).
 	// Besides experiment results and platform metrics (we use Snap to gather them) we save certain deta about experiment configuration and environment (metadata).
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	// errutil.CheckWithContext() is a helper function that will panic on error and provide some additional information about error origin.
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
@@ -139,11 +139,11 @@ func main() {
 					experiment.ExperimentKey: uid,
 				}
 				// Launching Mutilate Snap session in order to gather metrics on Memcached performance.
-				snap, err := mutilateSnapSession.LaunchSession(mutilateTask, tags)
+				mutilateSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateTask, tags)
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot gather Memcached performance metrics with %d threads, %d QPS and load duration of %s", threadCount, qps, loadDuration))
-				defer snap.Stop()
+				defer mutilateSessionHandle.Stop()
 				// Wait for Snap session to finish.
-				err = snap.Wait()
+				_, err = mutilateSessionHandle.Wait(0)
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot finish gathering Memcached performance metrics with %d threads, %d QPS and load duration of %s", threadCount, qps, loadDuration))
 			}()
 		}

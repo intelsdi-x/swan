@@ -40,9 +40,8 @@ import (
 )
 
 var (
-	includeBaselinePhaseFlag = conf.NewBoolFlag("baseline", "Run baseline phase (without aggressors)", true)
-	specjbbTxICountFlag      = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
-	specjbbWorkerCountFlag   = conf.NewIntFlag(
+	specjbbTxICountFlag    = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
+	specjbbWorkerCountFlag = conf.NewIntFlag(
 		"specjbb_worker_count",
 		"Number of fork join worker threads (defaults to number of logical threads)",
 		runtime.NumCPU())
@@ -57,7 +56,7 @@ func main() {
 	uid := uuid.New() // Initialize logger.
 	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	errutil.Check(err)
 
 	err = metadata.RecordRuntimeEnv(experimentStart)
@@ -86,11 +85,6 @@ func main() {
 	// Prepare session launchers (including Snap session if necessary) for aggressors.
 	aggressorSessionLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
 	errutil.Check(err)
-
-	// Zero-value sensitivity.LauncherSessionPair represents baselining.
-	if includeBaselinePhaseFlag.Value() {
-		aggressorSessionLaunchers = append([]sensitivity.LauncherSessionPair{{}}, aggressorSessionLaunchers...)
-	}
 
 	specjbbControllerAddress := specjbb.ControllerAddress.Value()
 	// Create launcher for high priority task (in case of SPECjbb it is a backend).
@@ -146,7 +140,7 @@ func main() {
 			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
 			aggressorName := "Baselining"
 			if beLauncher.Launcher != nil {
-				aggressorName = beLauncher.Launcher.Name()
+				aggressorName = beLauncher.Launcher.String()
 			}
 			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
 			// Repeat measurement to check if it is consistent
@@ -182,7 +176,7 @@ func main() {
 					if beLauncher.Launcher != nil {
 						beHandle, err = beLauncher.Launcher.Launch()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher.Name(), phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher, phaseName, repetition)
 						}
 						processes = append(processes, beHandle)
 

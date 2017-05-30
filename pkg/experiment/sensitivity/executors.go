@@ -43,6 +43,9 @@ var (
 	// HPKubernetesMemoryResourceFlag indicates amount of memory that HP task can use.
 	HPKubernetesMemoryResourceFlag = conf.NewIntFlag("kubernetes_hp_memory_resource", "Sets memory limit and request for HP workloads on Kubernetes in bytes (default 4GB).", 4000000000)
 
+	// HPKubernetesGuaranteedClassFlag indicates tha HP workload will run as guarateed class.
+	HPKubernetesGuaranteedClassFlag = conf.NewBoolFlag("kubernetes_hp_guaranteed_class", "Run HP workload on Kubernetes as Pod with \"QoS Guranteed resources class\" (by default runs as \"Burstable class\").", false)
+
 	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", RunOnExistingKubernetesFlag.Name), hostname)
 )
 
@@ -99,10 +102,15 @@ func CreateKubernetesHpExecutor(hpIsolation isolation.Decorator) (executor.Execu
 	k8sExecutorConfig.Decorators = isolation.Decorators{hpIsolation}
 	k8sExecutorConfig.HostNetwork = true
 	k8sExecutorConfig.Address = k8sConfig.GetKubeAPIAddress()
-	k8sExecutorConfig.CPULimit = int64(HPKubernetesCPUResourceFlag.Value())
-	k8sExecutorConfig.MemoryLimit = int64(HPKubernetesMemoryResourceFlag.Value())
-	k8sExecutorConfig.CPURequest = k8sExecutorConfig.CPULimit
-	k8sExecutorConfig.MemoryRequest = k8sExecutorConfig.MemoryLimit
+	k8sExecutorConfig.CPURequest = int64(HPKubernetesCPUResourceFlag.Value())
+	k8sExecutorConfig.MemoryRequest = int64(HPKubernetesMemoryResourceFlag.Value())
+
+	// if limits is equal to requests
+	if HPKubernetesGuaranteedClassFlag.Value() {
+		k8sExecutorConfig.CPULimit = int64(HPKubernetesCPUResourceFlag.Value())
+		k8sExecutorConfig.MemoryLimit = int64(HPKubernetesMemoryResourceFlag.Value())
+	}
+
 	k8sExecutorConfig.Privileged = true
 
 	return executor.NewKubernetes(k8sExecutorConfig)

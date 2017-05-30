@@ -61,7 +61,7 @@ func main() {
 	logger.Initialize(appName, uid)
 
 	// connect to metadata database
-	metadata, err := experiment.NewMetadata(uid, experiment.MetadataConfigFromFlags())
+	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
@@ -196,7 +196,7 @@ func main() {
 				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
 				snapTags["number_of_threads"] = numberOfThreads
 
-				var useSessionHandle snap.SessionHandle
+				var useSessionHandle executor.TaskHandle
 				// Start USE Collection.
 				if useUSECollector {
 					useSessionHandle, err = useSession.LaunchSession(nil, snapTags)
@@ -229,7 +229,9 @@ func main() {
 
 				if useUSECollector {
 					err = useSessionHandle.Stop()
-					errutil.PanicWithContext(err, "Cannot stop Snap USE Collector session")
+					if err != nil {
+						logrus.Errorf("Snap USE session failed: %s", err)
+					}
 				}
 
 				// Launch and stop Snap task to collect mutilate metrics.
@@ -241,7 +243,7 @@ func main() {
 						logrus.Errorf("Cannot stop mutilate session: %v", err)
 					}
 				}()
-				err = mutilateSnapSessionHandle.Wait()
+				_, err = mutilateSnapSessionHandle.Wait(0)
 				errutil.PanicWithContext(err, "Snap mutilate session has not collected metrics!")
 
 				// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
