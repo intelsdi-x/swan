@@ -308,7 +308,6 @@ func (s *Handle) waitForTaskCompletion(stopWaiting <-chan struct{}) (result <-ch
 	errorChan := make(chan error)
 	go func() {
 		for {
-			// TODO(skonefal): Refactor this core when Snap 1.3 with 'count' support is released.
 			task, err := s.getSnapTask()
 			if err != nil {
 				err := errors.Wrapf(err, "cannot get snap task %q information", s.task.ID)
@@ -329,8 +328,10 @@ func (s *Handle) waitForTaskCompletion(stopWaiting <-chan struct{}) (result <-ch
 
 			}
 
+			// TODO(skonefal): Refactor this when Snap 1.3 with 'count' support is released.
 			if (task.HitCount - (task.FailedCount + task.MissCount)) > 0 {
-				errorChan <- nil
+				stopErr := s.Stop()
+				errorChan <- stopErr
 				return
 			}
 
