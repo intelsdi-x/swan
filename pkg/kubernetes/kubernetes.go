@@ -43,6 +43,7 @@ const (
 var (
 	kubeEtcdServersFlag    = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 	kubeEtcdDataFormatFlag = conf.NewStringFlag("kubernetes_cluster_etcd_data_format", "Data format for etcd cluster (etvd3 or etcd2)", "etcd3")
+	kubeCgroupDriverFlag   = conf.NewStringFlag("kubernetes_kubelet_cgroup_driver", "Cgroup driver that kubelet should use (systemd or cgroupfs)", "cgroupfs")
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
@@ -77,11 +78,12 @@ type Config struct {
 	KubeletHost string
 
 	// Custom args to apiserver and kubelet.
-	KubeAPIArgs        string
-	KubeControllerArgs string
-	KubeSchedulerArgs  string
-	KubeletArgs        string
-	KubeProxyArgs      string
+	KubeAPIArgs         string
+	KubeControllerArgs  string
+	KubeSchedulerArgs   string
+	KubeletArgs         string
+	KubeletCgroupDriver string
+	KubeProxyArgs       string
 
 	// Launcher configuration
 	RetryCount uint64
@@ -90,19 +92,20 @@ type Config struct {
 // DefaultConfig is a constructor for Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		EtcdServers:        kubeEtcdServersFlag.Value(),
-		EtcdPrefix:         "/swan",
-		EtcdDataFormat:     kubeEtcdDataFormatFlag.Value(),
-		LogLevel:           0,
-		AllowPrivileged:    true,
-		KubeAPIAddr:        KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
-		KubeAPIPort:        8080,
-		KubeletPort:        10250,
-		KubeControllerPort: 10252,
-		KubeSchedulerPort:  10251,
-		KubeProxyPort:      10249,
-		ServiceAddresses:   "10.2.0.0/16",
-		RetryCount:         0,
+		EtcdServers:         kubeEtcdServersFlag.Value(),
+		EtcdPrefix:          "/swan",
+		EtcdDataFormat:      kubeEtcdDataFormatFlag.Value(),
+		LogLevel:            0,
+		AllowPrivileged:     true,
+		KubeAPIAddr:         KubernetesMasterFlag.Value(), // TODO(skonefal): This should not be part of config.
+		KubeAPIPort:         8080,
+		KubeletPort:         10250,
+		KubeControllerPort:  10252,
+		KubeSchedulerPort:   10251,
+		KubeProxyPort:       10249,
+		ServiceAddresses:    "10.2.0.0/16",
+		RetryCount:          0,
+		KubeletCgroupDriver: kubeCgroupDriverFlag.Value(),
 	}
 }
 
@@ -205,7 +208,7 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 		// if getPodsFromNode returns error it means cluster is not useable. Delete it.
 		stopErr := handle.Stop()
 		if stopErr != nil {
-			log.Errorf("Errors while stopping k8s cluster: %v", stopErr)
+			log.Warningf("Errors while stopping k8s cluster: %v", stopErr)
 		}
 		return nil, err
 	}
@@ -219,11 +222,7 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 				log.Infof("Dangling pods on node %q has been deleted", m.kubeletHost)
 			}
 		} else {
-			stopErr := handle.Stop()
-			if stopErr != nil {
-				log.Errorf("Errors while stopping k8s cluster: %v", stopErr)
-			}
-			return nil, errors.Errorf("Kubelet on node %q has %d dangling pods. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
+			log.Warnf("Kubelet on node %q has %d dangling pods. Use `kubectl` to delete them or set %q flag to let Swan remove them", m.kubeletHost, len(pods), kubeCleanLeftPods.Name)
 		}
 	}
 	return handle, nil
@@ -362,6 +361,7 @@ func (m *k8s) getKubeletCommand() kubeCommand {
 			fmt.Sprintf(" --port=%d", m.config.KubeletPort),
 			fmt.Sprintf(" --read-only-port=0"),
 			fmt.Sprintf(" --api-servers=%s", m.config.GetKubeAPIAddress()),
+			fmt.Sprintf(" --cgroup-driver=%s", m.config.KubeletCgroupDriver),
 			fmt.Sprintf(" %s", m.config.KubeletArgs),
 		), m.config.KubeletPort}
 }
