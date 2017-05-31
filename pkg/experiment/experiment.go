@@ -34,7 +34,7 @@ const (
 	// AggressorNameKey defines the key for Snap tag.
 	AggressorNameKey = "swan_aggressor_name"
 
-	// See /usr/include/sysexits.h for refference regarding constants below
+	// See /usr/include/sysexits.h for reference regarding constants below
 
 	// ExUsage represents command line user error exit code
 	ExUsage = 64

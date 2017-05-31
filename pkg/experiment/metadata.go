@@ -295,7 +295,7 @@ func (m *Metadata) GetGroup(kind string) (MetadataMap, error) {
 		return nil, err
 	}
 
-	// Make sure that only one map withing experiment exists.
+	// Make sure that only one map per experiment exists.
 	if len(maps) != 1 {
 		return nil, fmt.Errorf("Cannot retrieve metadata for experiment ID  %q and %q kind", m.experimentID, kind)
 	}

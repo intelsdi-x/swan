@@ -31,7 +31,7 @@ import (
 )
 
 func TestSnapDockerSession(t *testing.T) {
-	Convey("Preparing Snap and Kubernetes enviroment", t, func() {
+	Convey("Preparing Snap and Kubernetes environment", t, func() {
 		cleanup, loader, snapteldAddr := testhelpers.RunAndTestSnaptel()
 		defer cleanup()
 

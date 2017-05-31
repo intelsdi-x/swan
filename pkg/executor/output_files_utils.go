@@ -94,7 +94,7 @@ func syncAndClose(file *os.File) error {
 	err := file.Sync()
 	if err != nil {
 		errCol.Add(err)
-		log.Errorf("Cannnot sync stdout file: %s", err.Error())
+		log.Errorf("Cannot sync stdout file: %s", err.Error())
 	}
 	err = file.Close()
 	if err != nil {

@@ -57,7 +57,7 @@ func TestExecutables(t *testing.T) {
 		"hyperkube",
 	}
 
-	Convey("Make sure all depedencies are there", t, func() {
+	Convey("Make sure all dependencies are there", t, func() {
 		for _, executable := range requiredExecutables {
 			path := testhelpers.AssertFileExists(executable)
 			Println()
