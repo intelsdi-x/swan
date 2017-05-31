@@ -6,6 +6,8 @@
 * [Thank You](#thank-you)
 
 ## Contributing Code
+**_IMPORTANT_**: Whenever you contribute to the project by creating pull request, sending patches or doing other activities that will change code or documentation in repository you agree to publish your work on Apache 2.0 license.
+
 **_IMPORTANT_**: We encourage contributions to the project from the community. We ask that you keep the following guidelines in mind when planning your contribution.
 
 * Whether your contribution is for a bug fix or a feature request, **create an [Issue](https://github.com/intelsdi-x/swan/issues)** and let us know what you are thinking.
