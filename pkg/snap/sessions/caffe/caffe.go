@@ -94,7 +94,7 @@ func (s *SessionLauncher) LaunchSession(
 
 	// Configuring Caffe collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
-		snap.CollectNodeConfigItem{
+		{
 			Ns:    "/intel/swan/caffe/inference",
 			Key:   "stdout_file",
 			Value: stdoutFile.Name(),
