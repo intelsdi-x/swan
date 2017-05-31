@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -70,12 +69,12 @@ type MutilateTestSuite struct {
 	defaultMutilateCommand string
 	defaultSlo             int
 
-	mExecutor          *mocks.Executor
-	mExecutorForAgent1 *mocks.Executor
-	mExecutorForAgent2 *mocks.Executor
-	mMasterHandle      *mocks.TaskHandle
-	mAgentHandle1      *mocks.TaskHandle
-	mAgentHandle2      *mocks.TaskHandle
+	mExecutor          *executor.MockExecutor
+	mExecutorForAgent1 *executor.MockExecutor
+	mExecutorForAgent2 *executor.MockExecutor
+	mMasterHandle      *executor.MockTaskHandle
+	mAgentHandle1      *executor.MockTaskHandle
+	mAgentHandle2      *executor.MockTaskHandle
 }
 
 func (s *MutilateTestSuite) SetupTest() {
@@ -99,13 +98,13 @@ func (s *MutilateTestSuite) SetupTest() {
 	s.config.InterArrivalDist = intearrivaldist
 	s.mutilate.config = s.config
 
-	s.mAgentHandle1 = new(mocks.TaskHandle)
-	s.mAgentHandle2 = new(mocks.TaskHandle)
+	s.mAgentHandle1 = new(executor.MockTaskHandle)
+	s.mAgentHandle2 = new(executor.MockTaskHandle)
 
-	s.mMasterHandle = new(mocks.TaskHandle)
-	s.mExecutor = new(mocks.Executor)
-	s.mExecutorForAgent1 = new(mocks.Executor)
-	s.mExecutorForAgent2 = new(mocks.Executor)
+	s.mMasterHandle = new(executor.MockTaskHandle)
+	s.mExecutor = new(executor.MockExecutor)
+	s.mExecutorForAgent1 = new(executor.MockExecutor)
+	s.mExecutorForAgent2 = new(executor.MockExecutor)
 
 	// Don't want to have not erased output after tests.
 	s.config.EraseTuneOutput = true

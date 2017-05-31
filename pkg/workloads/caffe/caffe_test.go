@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
@@ -28,8 +28,8 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("When I create Caffe with mocked executor and default configuration", t, func() {
-		mExecutor := new(mocks.Executor)
-		mHandle := new(mocks.TaskHandle)
+		mExecutor := new(executor.MockExecutor)
+		mHandle := new(executor.MockTaskHandle)
 
 		c := New(mExecutor, DefaultConfig())
 		Convey("When I launch the workload with success", func() {

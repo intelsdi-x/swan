@@ -21,23 +21,11 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/pkg/api/v1"
 )
-
-func getMockedTaskHandle(outputFile *os.File) *mocks.TaskHandle {
-	handle := new(mocks.TaskHandle)
-	handle.On("StderrFile").Return(outputFile, nil)
-	handle.On("StdoutFile").Return(outputFile, nil)
-	handle.On("Address").Return("127.0.0.1")
-	handle.On("Stop").Return(nil)
-	handle.On("ExitCode").Return(0, nil)
-
-	return handle
-}
 
 func getNodeListFunc(resultNodes []v1.Node, resultError error) getReadyNodesFunc {
 	return func(k8sAPIAddress string) ([]v1.Node, error) {
@@ -56,23 +44,30 @@ func TestKubernetesLauncher(t *testing.T) {
 		// Prepare mocked output file for TaskHandles
 		outputFile, err := ioutil.TempFile(os.TempDir(), "k8s-ut")
 		So(err, ShouldBeNil)
-		defer outputFile.Close()
+		outputFileName := outputFile.Name()
+		outputFile.Close()
+		defer os.Remove(outputFileName)
 
 		// Prepare Executor Mocks
-		master := new(mocks.Executor)
+		master := new(executor.MockExecutor)
 		master.On("String").Return("Master Executor")
-		minion := new(mocks.Executor)
+		minion := new(executor.MockExecutor)
 		minion.On("String").Return("Minion Executor")
 
 		config := DefaultConfig()
-		handle := getMockedTaskHandle(outputFile)
+		handle := new(executor.MockTaskHandle)
+		handle.On("StderrFile").Return(os.Open(outputFileName))
+		handle.On("StdoutFile").Return(os.Open(outputFileName))
+		handle.On("Address").Return("127.0.0.1")
+		handle.On("Stop").Return(nil)
+		handle.On("ExitCode").Return(0, nil)
 
 		// Prepare Kubernetes Launcher
 		var k8sLauncher *k8s
 		k8sLauncher = New(master, minion, config).(*k8s)
 
 		Convey("When configuration is passed to Kubernetes Launcher", func() {
-			handle := &mocks.TaskHandle{}
+			handle := new(executor.MockTaskHandle)
 			handle.On("Address").Return("127.0.0.1")
 
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
@@ -140,7 +135,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resultHandle, ShouldNotBeNil)
 		})
-		Convey("When Minion executor fails to execte, we should receive nil task handle and an error", func() {
+		Convey("When Minion executor fails to execute, we should receive nil task handle and an error", func() {
 			err := errors.New("mocked-error")
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
@@ -153,7 +148,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(err.Error(), ShouldContainSubstring, err.Error())
 		})
 
-		Convey("When Master executor fails to execte, we should receive nil task handle and an error", func() {
+		Convey("When Master executor fails to execute, we should receive nil task handle and an error", func() {
 			err := errors.New("mocked-error")
 			minion.On("Execute", mock.AnythingOfType("string")).Return(handle, nil)
 			master.On("Execute", mock.AnythingOfType("string")).Return(handle, err)
@@ -177,7 +172,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(resultHandle, ShouldBeNil)
 
-			Convey("Assert that task hadle is properly stopped, before returning", func() {
+			Convey("Assert that task handle is properly stopped, before returning", func() {
 				handle.AssertCalled(t, "Stop")
 			})
 		})
@@ -194,7 +189,7 @@ func TestKubernetesLauncher(t *testing.T) {
 			So(resultHandle, ShouldBeNil)
 			So(err.Error(), ShouldContainSubstring, err.Error())
 
-			Convey("Assert that task hadle is properly stopped", func() {
+			Convey("Assert that task handle is properly stopped", func() {
 				handle.AssertCalled(t, "Stop")
 			})
 		})

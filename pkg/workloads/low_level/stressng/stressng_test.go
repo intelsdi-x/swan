@@ -18,14 +18,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStressng(t *testing.T) {
 
-	mockedExecutor := new(mocks.Executor)
-	mockedTask := new(mocks.TaskHandle)
+	mockedExecutor := new(executor.MockExecutor)
+	mockedTask := new(executor.MockTaskHandle)
 
 	Convey("While using stress-ng aggressor launcher", t, func() {
 

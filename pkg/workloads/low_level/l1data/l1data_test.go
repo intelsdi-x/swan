@@ -20,15 +20,15 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestL1dAggressor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
-	mockedExecutor := new(mocks.Executor)
-	mockedTask := new(mocks.TaskHandle)
+	mockedExecutor := new(executor.MockExecutor)
+	mockedTask := new(executor.MockTaskHandle)
 
 	Convey("While using l1d aggressor launcher", t, func() {
 		const (

@@ -15,13 +15,14 @@
 package specjbb
 
 import (
-	"path"
+	"os"
 	"testing"
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
+	"path"
 )
 
 func TestSnapSpecJbbSession(t *testing.T) {
@@ -45,9 +46,9 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
-					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout"))
-					defer cleanupMockedFile()
+					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout")
+					mockedTaskInfo := new(executor.MockTaskInfo)
+					mockedTaskInfo.On("StdoutFile").Return(os.Open(fixturePath))
 
 					tags := make(map[string]interface{})
 					tags["foo"] = "bar"

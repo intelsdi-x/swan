@@ -18,15 +18,15 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStreamAggressor(t *testing.T) {
 	// log.SetLevel(log.ErrorLevel)
 
-	mockedExecutor := new(mocks.Executor)
-	mockedTask := new(mocks.TaskHandle)
+	mockedExecutor := new(executor.MockExecutor)
+	mockedTask := new(executor.MockTaskHandle)
 
 	Convey("While using stream aggressor launcher", t, func() {
 
