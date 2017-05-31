@@ -109,7 +109,7 @@ func (s *SessionLauncher) LaunchSession(
 
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
-		snap.CollectNodeConfigItem{
+		{
 			Ns:    "/intel/swan/specjbb",
 			Key:   "stdout_file",
 			Value: stdoutFile.Name(),

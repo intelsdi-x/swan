@@ -21,8 +21,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"regexp"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"

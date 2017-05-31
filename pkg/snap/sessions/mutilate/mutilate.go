@@ -110,7 +110,7 @@ func (s *SessionLauncher) LaunchSession(
 
 	// Configuring Mutilate collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
-		snap.CollectNodeConfigItem{
+		{
 			Ns:    "/intel/swan/mutilate",
 			Key:   "stdout_file",
 			Value: stdoutFile.Name(),

@@ -22,8 +22,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const ()
-
 func TestExecutables(t *testing.T) {
 
 	requiredExecutables := []string{
