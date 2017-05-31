@@ -41,14 +41,14 @@ const (
 )
 
 var (
-	kubeEtcdServersFlag    = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma seperated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
+	kubeEtcdServersFlag    = conf.NewStringFlag("kubernetes_cluster_etcd_servers", "Comma separated list of etcd servers (full URI: http://ip:port)", "http://127.0.0.1:2379")
 	kubeEtcdDataFormatFlag = conf.NewStringFlag("kubernetes_cluster_etcd_data_format", "Data format for etcd cluster (etvd3 or etcd2)", "etcd3")
 	kubeCgroupDriverFlag   = conf.NewStringFlag("kubernetes_kubelet_cgroup_driver", "Cgroup driver that kubelet should use (systemd or cgroupfs)", "cgroupfs")
 
 	//KubernetesMasterFlag indicates where Kubernetes control plane will be launched.
 	KubernetesMasterFlag = conf.NewStringFlag("kubernetes_cluster_run_control_plane_on_host", "Address of a host where Kubernetes control plane will be run (when using -kubernetes and not connecting to existing cluster).", "127.0.0.1")
 
-	kubeCleanLeftPods = conf.NewBoolFlag("kubernetes_cluster_clean_left_pods_on_startup", "Delete all pods which are detected during cluster startup. Usefull after dirty shutdown when some pods may not be properly deleted.", false)
+	kubeCleanLeftPods = conf.NewBoolFlag("kubernetes_cluster_clean_left_pods_on_startup", "Delete all pods which are detected during cluster startup. Useful after dirty shutdown when some pods may not be properly deleted.", false)
 )
 
 type kubeCommand struct {
@@ -204,7 +204,7 @@ func (m *k8s) tryLaunchCluster() (executor.TaskHandle, error) {
 	// Optional removal of the unwanted pods in swan's namespace
 	pods, err := m.getPodsFromNode(m.kubeletHost)
 	if err != nil {
-		log.Warningf("Could not retreive list of pods from host %s. Error: %s", m.kubeletHost, err)
+		log.Warningf("Could not retrieve list of pods from host %s. Error: %s", m.kubeletHost, err)
 		// if getPodsFromNode returns error it means cluster is not useable. Delete it.
 		stopErr := handle.Stop()
 		if stopErr != nil {

@@ -273,7 +273,7 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 	command = k8s.config.Decorators.Decorate(command)
 
 	// This is a workaround for kubernetes #31446
-	// Make sure that at least one line of text is outputed from pod, to unblock .GetLogs() on apiserver call
+	// Make sure that at least one line of text is outputted from pod, to unblock .GetLogs() on apiserver call
 	// with streamed response (when follow=true). Check kubernetes #31446 issue for more details.
 	// https://github.com/kubernetes/kubernetes/pull/31446
 	wrappedCommand := "echo;" + command
@@ -473,7 +473,7 @@ func (th *k8sTaskHandle) ExitCode() (int, error) {
 	return *th.exitCode, nil
 }
 
-// Wait blocks until the pod terminates _or_ if timeout is provided, will exit ealier with
+// Wait blocks until the pod terminates _or_ if timeout is provided, will exit earlier with
 // false if the pod didn't terminate before the provided timeout.
 func (th *k8sTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	if th.isTerminated() {
@@ -734,7 +734,7 @@ func (kw *k8sWatcher) deletePod() {
 			GracePeriodSeconds: &gracePeriodSeconds,
 		})
 		if err != nil {
-			log.Warnf("unsucessfull attemp to delete pod %q", kw.pod.Name)
+			log.Warnf("unsuccessful attempt to delete pod %q", kw.pod.Name)
 		}
 		log.Debugf("K8s task watcher: delete pod %q", kw.pod.Name)
 	})
