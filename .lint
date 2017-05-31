@@ -5,5 +5,6 @@
   "enable-gc": true,
   "concurrency": 1,
   "DisableAll": true,
+  "deadline": "10m",
   "Enable": ["golint", "vet", "gofmt", "misspell", "varcheck", "structcheck"]
 }
