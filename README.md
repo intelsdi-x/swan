@@ -85,6 +85,7 @@ Memcached sensitivity experiment is described in detail in [memcached sensitivit
    1. [Memcached Optimal Core Allocation](/experiments/optimal-core-allocation/README.md)
    1. [Memcached & Cache Allocation Technology](/experiments/memcached-cat/README.md)
 1. Read [Architecture Guide](/docs/architecture.md) and [Development Guide](/docs/development.md) and start to build your own experiments!
+1. Read [Known Issues](/docs/known_issues.md) to learn about problems that you may encounter while using Swan.
 
 ## Contributing
 
