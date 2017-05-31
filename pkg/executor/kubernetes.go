@@ -172,6 +172,9 @@ func NewKubernetes(config KubernetesConfig) (Executor, error) {
 	} else {
 		var kubeconfig *rest.Config
 		kubeconfig, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "can't build Kubernetes configuration for host '%s'", config.Address)
+		}
 		k8s.clientset, err = kubernetes.NewForConfig(kubeconfig)
 	}
 

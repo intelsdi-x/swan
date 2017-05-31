@@ -82,6 +82,7 @@ func TestCPUSet(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			err = cpuSet.Cgroup().SetAndCheck(cgroup.CPUSetCPUExclusive, "1")
+			So(err, ShouldBeNil)
 			So(actual, ShouldEqual, "0")
 
 			actual, err = cpuSet.Cgroup().Get(cgroup.CPUSetMemExclusive)
