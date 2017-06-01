@@ -68,7 +68,7 @@ type TaskControl interface {
 	EraseOutput() error
 }
 
-// StopAndEraseOutput run stop and eraseOutput on taskHandle and add errors to errorCollection
+// StopAndEraseOutput run Stop and EraseOutput on TaskHandle and add errors to errorCollection
 func StopAndEraseOutput(handle TaskHandle) (errorCollection errcollection.ErrorCollection) {
 	if handle != nil {
 		errorCollection.Add(handle.Stop())
@@ -76,4 +76,14 @@ func StopAndEraseOutput(handle TaskHandle) (errorCollection errcollection.ErrorC
 	}
 
 	return
+}
+
+func GetWaitChannel(handle TaskControl) <-chan error {
+	result := make(chan error)
+	go func() {
+		_, err := handle.Wait(0)
+		result <- err
+		return
+	}()
+	return result
 }
