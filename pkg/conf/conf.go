@@ -113,7 +113,11 @@ func DumpConfigMap(flagMap map[string]string) string {
 
 	for _, fd := range getFlagsDefinition() {
 
-		fmt.Fprintf(buffer, "\n# %s\n", fd.Usage)
+		fmt.Fprintf(buffer, "\n")
+		for _, line := range strings.Split(fd.Usage, "\n") {
+			fmt.Fprintf(buffer, "# %s\n", line)
+		}
+
 		if fd.DefValue != "" {
 			fmt.Fprintf(buffer, "# Default: %s\n", fd.DefValue)
 		}
