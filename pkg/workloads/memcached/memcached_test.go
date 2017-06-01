@@ -21,7 +21,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,8 +46,8 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		expectedHost    = "127.0.0.1"
 	)
 	Convey("When I create PID namespace isolation", t, func() {
-		mockedExecutor := new(mocks.Executor)
-		mockedTaskHandle := new(mocks.TaskHandle)
+		mockedExecutor := new(executor.MockExecutor)
+		mockedTaskHandle := new(executor.MockTaskHandle)
 		var decorators []isolation.Decorator
 		unshare, err := isolation.NewNamespace(syscall.CLONE_NEWPID)
 		So(err, ShouldBeNil)

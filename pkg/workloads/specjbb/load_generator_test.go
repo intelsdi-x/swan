@@ -20,7 +20,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,8 +33,8 @@ func TestSPECjbbLoadGenerator(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("When creating load generator", t, func() {
-		controller := new(mocks.Executor)
-		transactionInjector := new(mocks.Executor)
+		controller := new(executor.MockExecutor)
+		transactionInjector := new(executor.MockExecutor)
 		config := DefaultLoadGeneratorConfig()
 		config.PathToBinary = "test"
 
@@ -44,9 +43,9 @@ func TestSPECjbbLoadGenerator(t *testing.T) {
 		}, config)
 
 		Convey("And generating load", func() {
-			controller.On("Execute", mock.AnythingOfType("string")).Return(new(mocks.TaskHandle), nil)
+			controller.On("Execute", mock.AnythingOfType("string")).Return(new(executor.MockTaskHandle), nil)
 
-			transactionInjector.On("Execute", mock.AnythingOfType("string")).Return(new(mocks.TaskHandle), nil)
+			transactionInjector.On("Execute", mock.AnythingOfType("string")).Return(new(executor.MockTaskHandle), nil)
 
 			loadGeneratorTaskHandle, err := loadGenerator.Load(testLoad, testDuration)
 

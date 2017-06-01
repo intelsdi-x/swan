@@ -15,6 +15,7 @@
 package mutilate
 
 import (
+	"os"
 	"path"
 	"testing"
 
@@ -45,9 +46,9 @@ func TestSnapMutilateSession(t *testing.T) {
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
 					So(err, ShouldBeNil)
 
-					cleanupMockedFile, mockedTaskInfo := testhelpers.PrepareMockedTaskInfo(path.Join(
-						testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout"))
-					defer cleanupMockedFile()
+					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
+					mockedTaskInfo := new(executor.MockTaskInfo)
+					mockedTaskInfo.On("StdoutFile").Return(os.Open(fixturePath))
 
 					tags := make(map[string]interface{})
 					tags["foo"] = "bar"

@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/pkg/errors"
 	"github.com/smartystreets/goconvey/convey"
@@ -77,21 +76,6 @@ func PreparePublisher(loader *snap.PluginLoader) (cleanup func(), publisher *wma
 	cleanup = func() {
 		os.RemoveAll(publisherMetricsFile)
 	}
-	return
-}
-
-// PrepareMockedTaskInfo based on provided path, creates mock task info that is used to
-// configure collector
-func PrepareMockedTaskInfo(outFilePath string) (cleanup func(), mockedTaskInfo *mocks.TaskInfo) {
-	mockedTaskInfo = new(mocks.TaskInfo)
-	file, err := os.Open(outFilePath)
-	convey.So(err, convey.ShouldBeNil)
-	mockedTaskInfo.On("StdoutFile").Return(file, nil)
-
-	cleanup = func() {
-		file.Close()
-	}
-
 	return
 }
 

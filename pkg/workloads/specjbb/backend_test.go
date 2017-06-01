@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/intelsdi-x/swan/pkg/executor/mocks"
+	"github.com/intelsdi-x/swan/pkg/executor"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -30,8 +30,8 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 		expectedCommand := "java -server -Xms2g -Xmx2g -XX:NativeMemoryTracking=summary -XX:+UseParallelOldGC  -XX:ParallelGCThreads=2 -XX:ConcGCThreads=1 -XX:InitiatingHeapOccupancyPercent=80 -XX:MaxGCPauseMillis=100 -XX:+AlwaysPreTouch  -Djava.library.path=/opt/swan/share/specjbb/lib -Dspecjbb.controller.host=127.0.0.1 -Dspecjbb.forkjoin.workers=1 -jar test -m backend -G GRP1 -J specjbbbackend1 -p /opt/swan/share/specjbb/config/specjbb2015.props"
 		expectedHost := "127.0.0.1"
 
-		mockedExecutor := new(mocks.Executor)
-		mockedTaskHandle := new(mocks.TaskHandle)
+		mockedExecutor := new(executor.MockExecutor)
+		mockedTaskHandle := new(executor.MockTaskHandle)
 		config := DefaultSPECjbbBackendConfig()
 		config.PathToBinary = "test"
 		backendLauncher := NewBackend(mockedExecutor, config)
