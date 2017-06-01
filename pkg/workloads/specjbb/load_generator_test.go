@@ -28,7 +28,6 @@ import (
 const (
 	testLoad     = 60
 	testDuration = 10 * time.Millisecond
-	testSlo      = 0 // Tune in specjbb does not accept any slo, we can set it to 0.
 )
 
 func TestSPECjbbLoadGenerator(t *testing.T) {

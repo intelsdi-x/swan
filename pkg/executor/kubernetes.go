@@ -385,7 +385,6 @@ func (k8s *k8s) Execute(command string) (TaskHandle, error) {
 
 // k8sTaskHandle implements the TaskHandle interface
 type k8sTaskHandle struct {
-	podsAPI       corev1.PodInterface
 	stopped       chan struct{}
 	started       chan struct{}
 	requestDelete chan struct{}
