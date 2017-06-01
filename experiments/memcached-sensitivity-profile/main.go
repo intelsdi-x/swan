@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
@@ -32,10 +33,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/pkg/errors"
 )
 
@@ -173,19 +172,6 @@ func main() {
 							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher, phaseName, repetition)
 						}
 						processes = append(processes, beHandle)
-
-						// Majority of LauncherSessionPairs do not use Snap.
-						if beLauncher.SnapSessionLauncher != nil {
-							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
-							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
-							}
-							defer func() {
-								aggressorSnapHandle.Stop()
-							}()
-						}
-
 					}
 
 					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
@@ -212,6 +198,18 @@ func main() {
 						err = beHandle.Stop()
 						if err != nil {
 							return errors.Wrapf(err, "best effort task has failed in phase %s, repetition %d", phaseName, repetition)
+						}
+
+						if beLauncher.SnapSessionLauncher != nil {
+							logrus.Debugf("starting snap session linked with %q ", beLauncher.Launcher)
+							beSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
+							if err != nil {
+								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
+							}
+							_, err = beSnapHandle.Wait(0)
+							if err != nil {
+								return errors.Wrapf(err, "could not gather metrics for workload %q during phase %s, repetition %d", beSnapHandle, phaseName, repetition)
+							}
 						}
 					}
 
