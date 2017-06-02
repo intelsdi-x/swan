@@ -5,7 +5,7 @@ op_q        1.0     0.0     1.0     1.0     1.0     1.1     1.1     1.1
 
 Total QPS = 4993.1 (149793 / 30.0s)
 
-Misses = 0 (0.0%)
+Misses = 5678 (0.0%)
 Skipped TXs = 0 (0.0%)
 
 RX   37058871 bytes :    1.2 MB/s

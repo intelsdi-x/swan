@@ -55,6 +55,7 @@ func (mutilate collector) GetMetricTypes(configType plugin.Config) ([]plugin.Met
 	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "95th"), Unit: UNIT, Version: VERSION})
 	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("percentile", "99th"), Unit: UNIT, Version: VERSION})
 	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("qps"), Unit: UNIT, Version: VERSION})
+	metrics = append(metrics, plugin.Metric{Namespace: createNewMetricNamespace("misses"), Unit: UNIT, Version: VERSION})
 
 	return metrics, nil
 }

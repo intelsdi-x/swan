@@ -33,13 +33,13 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Opening readable and correct file should provide meaningful results", t, func() {
-		path, err := getCurrentDirFilePath("/mutilate.stdout")
+		path, err := getCurrentDirFilePath("mutilate.stdout")
 		So(err, ShouldBeNil)
 
 		data, err := File(path)
 
 		So(err, ShouldBeNil)
-		So(data.Raw, ShouldHaveLength, 9)
+		So(data.Raw, ShouldHaveLength, 10)
 		So(data.Raw[MutilateAvg], ShouldResemble, 20.8)
 		So(data.Raw[MutilateStd], ShouldResemble, 23.1)
 		So(data.Raw[MutilateMin], ShouldResemble, 11.9)
@@ -49,10 +49,11 @@ func TestStdoutParser(t *testing.T) {
 		So(data.Raw[MutilatePercentile95th], ShouldResemble, 43.1)
 		So(data.Raw[MutilatePercentile99th], ShouldResemble, 59.5)
 		So(data.Raw[MutilateQPS], ShouldResemble, 4993.1)
+		So(data.Raw[MutilateMisses], ShouldEqual, 1234)
 	})
 
 	Convey("Attempting to read file with wrong number of read columns should return an error and no metrics", t, func() {
-		path, err := getCurrentDirFilePath("/mutilate_incorrect_count_of_columns.stdout")
+		path, err := getCurrentDirFilePath("mutilate_incorrect_count_of_columns.stdout")
 		So(err, ShouldBeNil)
 
 		data, err := File(path)
@@ -63,14 +64,14 @@ func TestStdoutParser(t *testing.T) {
 	})
 
 	Convey("Attempting to read a file with no read row at all should return no metrics", t, func() {
-		path, err := getCurrentDirFilePath("/mutilate_missing_read_row.stdout")
+		path, err := getCurrentDirFilePath("mutilate_missing_read_row.stdout")
 		So(err, ShouldBeNil)
 
 		data, err := File(path)
 		So(err, ShouldBeNil)
 
-		// QPS is still available, thus 1.
-		So(data.Raw, ShouldHaveLength, 1)
+		// QPS and Misses are stil available, thus 2.
+		So(data.Raw, ShouldHaveLength, 2)
 
 		So(data.Raw, ShouldNotContainKey, MutilateAvg)
 		So(data.Raw, ShouldNotContainKey, MutilateStd)
@@ -92,20 +93,20 @@ func TestStdoutParser(t *testing.T) {
 		So(err.Error(), ShouldStartWith, "'thisIsNotANumber' latency value must be a float")
 	})
 
-	SkipConvey("Trying to reorder columns and parsing should pass", t, func() {
-		in := bytes.NewReader([]byte("#type min 1st\nread 5 10"))
+	Convey("Trying to reorder columns and parsing should pass", t, func() {
+		in := bytes.NewReader([]byte("#type min 5th\nread 5 10\n"))
 		data, err := Parse(in)
 		So(err, ShouldBeNil)
 		So(data.Raw, ShouldHaveLength, 2)
 		So(data.Raw[MutilateMin], ShouldResemble, 5.0)
 
-		in = bytes.NewReader([]byte("#type 1st min\nread 10 5"))
+		in = bytes.NewReader([]byte("#type 5th min\nread 10 5"))
 		data, err = Parse(in)
 		So(err, ShouldBeNil)
 		So(data.Raw, ShouldHaveLength, 2)
 		So(data.Raw[MutilateMin], ShouldResemble, 5.0)
 
-		in = bytes.NewReader([]byte("#type 99th 5th 1st\nread 90 50 4.5"))
+		in = bytes.NewReader([]byte("#type 99th 5th min\nread 90 50 4.5"))
 		data, err = Parse(in)
 		So(err, ShouldBeNil)
 		So(data.Raw, ShouldHaveLength, 3)
