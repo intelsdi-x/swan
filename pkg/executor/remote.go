@@ -175,12 +175,8 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 	hasProcessExited := make(chan struct{})
 
 	// TODO(bplotka): Move exit code constants to global executor scope.
-	const successExitCode = int(0)
-	const errorExitCode = int(-1)
-
-	exitCodeInt := errorExitCode
-	var exitCode *int
-	exitCode = &exitCodeInt
+	const successExitCode int = 0
+	const errorExitCode int = -1
 
 	taskHandle := remoteTaskHandle{
 		session:          session,
@@ -189,7 +185,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 		stdoutFilePath:   stdoutFile.Name(),
 		stderrFilePath:   stderrFile.Name(),
 		host:             remote.targetHost,
-		exitCode:         exitCode,
+		exitCode:         errorExitCode,
 		hasProcessExited: hasProcessExited,
 	}
 
@@ -199,7 +195,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			session.Close()
 			connection.Close()
 		}()
-		*exitCode = successExitCode
+		taskHandle.exitCode = successExitCode
 		// Wait for task completion.
 		err := session.Wait()
 		if err != nil {
@@ -209,7 +205,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 				err = errors.Wrap(err, "wait returned with NON exit error")
 				log.Panicf("Waiting for remote task failed %+v", err)
 			} else {
-				*exitCode = exitError.Waitmsg.ExitStatus()
+				taskHandle.exitCode = exitError.Waitmsg.ExitStatus()
 			}
 		}
 		close(hasProcessExited)
@@ -223,7 +219,7 @@ func (remote Remote) Execute(command string) (TaskHandle, error) {
 			log.Errorf("Cannot syncAndClose stderrFile file: %s", err.Error())
 		}
 
-		log.Debugf("Remote Executor: task %q exited with code %d", command, exitCode)
+		log.Debugf("Remote Executor: task %q exited with code %d", command, taskHandle.exitCode)
 	}()
 
 	// Best effort potential way to check if binary is started properly.
@@ -242,7 +238,7 @@ type remoteTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string
 	host           string
-	exitCode       *int
+	exitCode       int
 
 	// Command requested by User. This is how this TaskHandle presents.
 	command string
@@ -297,7 +293,7 @@ func (taskHandle *remoteTaskHandle) ExitCode() (int, error) {
 		return -1, errors.New("task is not terminated")
 	}
 
-	return *taskHandle.exitCode, nil
+	return taskHandle.exitCode, nil
 }
 
 // StdoutFile returns a file handle for file to the task's stdout file.
