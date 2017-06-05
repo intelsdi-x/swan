@@ -42,6 +42,8 @@ const (
 	MutilatePercentile99th = "percentile/99th"
 	// MutilateQPS represent qps.
 	MutilateQPS = "qps"
+	// MutilateMisses represents misses
+	MutilateMisses = "misses"
 )
 
 // Results contains map of parsed mutilate results indexed by a name.
@@ -72,6 +74,11 @@ func File(path string) (Results, error) {
 // Parse retrieves latency metrics from mutilate output. Following format is expected:
 // #type       avg     std     min     5th    10th    90th    95th    99th
 // read      109.6   231.8    17.4    49.4    55.9   137.2   216.1   916.0
+// ...
+// Total QPS = 4993.1 (149793 / 30.0s)
+//
+// Misses = 0 (0.0%)
+// ...
 func Parse(reader io.Reader) (Results, error) {
 	metrics := newResults()
 	scanner := bufio.NewScanner(reader)
@@ -90,8 +97,9 @@ func Parse(reader io.Reader) (Results, error) {
 			}
 
 			columnToMetric = m
-
-		} else if strings.HasPrefix(line, "read") {
+			continue
+		}
+		if strings.HasPrefix(line, "read") {
 			latencies, err := parseLatencies(line, columnToMetric)
 			if err != nil {
 				return newResults(), err
@@ -102,14 +110,25 @@ func Parse(reader io.Reader) (Results, error) {
 			// parsed, the below should be a 'add to output map' rather than
 			// overwriting.
 			metrics.Raw = latencies
-
-		} else if strings.HasPrefix(line, "Total QPS") {
+			continue
+		}
+		if strings.HasPrefix(line, "Total QPS") {
 			qps, err := parseQPS(line)
 			if err != nil {
 				return newResults(), err
 			}
 
 			metrics.Raw[MutilateQPS] = qps
+			continue
+		}
+		if strings.HasPrefix(line, "Misses") {
+			misses, err := parseMisses(line)
+			if err != nil {
+				return newResults(), err
+			}
+
+			metrics.Raw[MutilateMisses] = float64(misses)
+			continue
 		}
 	}
 
@@ -135,7 +154,6 @@ func parseHeader(line string) (map[int]string, error) {
 		"90th": MutilatePercentile90th,
 		"95th": MutilatePercentile95th,
 		"99th": MutilatePercentile99th,
-		"qps":  MutilateQPS,
 	}
 
 	for index, label := range labels {
@@ -207,4 +225,23 @@ func parseQPS(line string) (float64, error) {
 	}
 
 	return qps, nil
+}
+
+// Parse number of misses during the measurement period. Get only integer part.
+// Example: Misses = 7142299 (95.5%)
+// Returns: 7142299
+func parseMisses(line string) (int64, error) {
+	var (
+		misses int64
+		stub   float64
+	)
+
+	n, err := fmt.Sscanf(line, "Misses = %d (%f%%)", &misses, &stub)
+	if err != nil {
+		return 0, err
+	}
+	if n != 2 {
+		return 0, fmt.Errorf("Incorrect number of fields: expected 2 but got %d", n)
+	}
+	return misses, nil
 }
