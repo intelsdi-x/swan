@@ -161,12 +161,12 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_op
     started = datetime.datetime.now()
     print('building a dataframe...')
     df = pd.DataFrame()
-    for ns, d in records.iteritems():
+    for ns, d in records.items():
         tuples = []  # values used to build an index for given series.
         data = []  # data for Series
         # Use aggfunc provided by ns_aggfunctions or fallback to defaggfunc.
         aggfunc = aggfuncs.get(ns, default_aggfunc) if aggfuncs else default_aggfunc
-        for tags, values in sorted(d.iteritems()):
+        for tags, values in sorted(d.items()):
             tuples.append(tags)
             data.append(aggfunc(values))
         index = pd.MultiIndex.from_tuples(tuples, names=tag_keys)
