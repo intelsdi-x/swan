@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"sync"
 	"time"
 )
 
@@ -13,23 +14,23 @@ type ChainedTaskHandle struct {
 
 	chainFinished chan struct{}
 	stopChain     chan struct{}
+	stopOnce      sync.Once
 }
 
 func NewChainedTaskHandle(handle TaskHandle, launcher Launcher) TaskHandle {
-	var result ChainedTaskHandle
+	chained := ChainedTaskHandle{
+		TaskHandle:      handle,
+		chainedLauncher: launcher,
+		chainFinished:   make(chan struct{}),
+		stopChain:       make(chan struct{}, 1),
+	}
 
-	result.TaskHandle = handle
-	result.chainedLauncher = launcher
-	result.chainFinished = make(chan struct{})
-	result.stopChain = make(chan struct{})
+	go chained.watcher()
 
-	go result.watcher()
-
-	return result
+	return &chained
 }
 
 func (cth *ChainedTaskHandle) watcher() {
-	// Wait for initial TaskHandle to finish.
 	waitChan := GetWaitChannel(cth.TaskHandle)
 	select {
 	case err := <-waitChan:
@@ -52,6 +53,7 @@ func (cth *ChainedTaskHandle) watcher() {
 		close(cth.chainFinished)
 		return
 	}
+
 	waitChan = GetWaitChannel(chainedHandle)
 	select {
 	case err := <-waitChan:
@@ -73,11 +75,9 @@ func (cth *ChainedTaskHandle) watcher() {
 }
 
 func (cth *ChainedTaskHandle) Stop() error {
-	// Try to stop the chain.
-	select {
-	case cth.stopChain <- struct{}{}:
-	default:
-	}
+	cth.stopOnce.Do(func() {
+		cth.stopChain <- struct{}{}
+	})
 
 	// Wait for chain to stop.
 	_, err := cth.Wait(0)
@@ -85,10 +85,21 @@ func (cth *ChainedTaskHandle) Stop() error {
 }
 
 func (cth *ChainedTaskHandle) Wait(timeout time.Duration) (bool, error) {
+	timeoutChannel := getWaitTimeoutChan(timeout)
+
 	select {
-	case <-time.After(timeout):
+	case <-timeoutChannel:
 		return false, nil
 	case <-cth.chainFinished:
 		return true, cth.encounteredError
+	}
+}
+
+func (cth *ChainedTaskHandle) Status() TaskState {
+	select {
+	case <-cth.chainFinished:
+		return TERMINATED
+	default:
+		return RUNNING
 	}
 }
