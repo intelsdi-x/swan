@@ -39,8 +39,11 @@ class DataFrameToCSVCache:
 
     CACHE_DIR = '.experiments_csv_cache'
 
+    def __init__(self, suffix=''):
+        self.suffix = suffix
+
     def _filename(self, experiment_id):
-        return os.path.join(self.CACHE_DIR, '%s.csv.bz2' % experiment_id)
+        return os.path.join(self.CACHE_DIR, '%s%s.csv.bz2' % (experiment_id, self.suffix))
 
     def __contains__(self, experiment_id):
         return os.path.exists(self._filename(experiment_id))
@@ -464,8 +467,13 @@ class SensitivityProfile:
         """ When presented in jupyter just return representation of dataframe. """
         return self.df._repr_html_()
 
-    def _composite_pivot_table(self):
-        return self.df.pivot_table(
+    def _composite_pivot_table(self, aggressors=None, qpses=None):
+        df = self.df
+        if aggressors is not None:
+            df = df[df[self.renamer(SWAN_AGGRESSOR_NAME_LABEL)].isin(aggressors)]
+        if qpses is not None:
+            df = df[df[self.renamer(SWAN_LOAD_POINT_QPS_LABEL)].isin(qpses)]
+        return df.pivot_table(
                 values=COMPOSITE_VALUES_LABEL,
                 index=self.renamer(SWAN_AGGRESSOR_NAME_LABEL),
                 columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
@@ -479,9 +487,11 @@ class SensitivityProfile:
             self.experiment.experiment_id
         )
 
-    def latency(self, normalized=True):
+    def latency(self, normalized=True, aggressors=None, qpses=None):
         """ Generate table with information about tail latency."""
         return self._composite_pivot_table(
+                aggressors,
+                qpses
             ).style.applymap(
                 partial(composite_latency_colors, slo=self.slo),
             ).format(
@@ -490,9 +500,11 @@ class SensitivityProfile:
                 self._get_caption('latency[us]', normalized)
             )
 
-    def qps(self, normalized=True):
+    def qps(self, normalized=True, aggressors=None, qpses=None):
         """ Generate table with information about achieved QPS."""
         return self._composite_pivot_table(
+                aggressors,
+                qpses
             ).style.applymap(
                 partial(composite_qps_colors),
             ).format(
@@ -548,6 +560,7 @@ class OptimalCoreAllocation:
 
         # Rename columns.
         self.renamer = Renamer({
+            SWAN_AGGRESSOR_NAME_LABEL: 'Aggressor',
             NUMBER_OF_CORES_LABEL: 'Number of cores',
             SWAN_LOAD_POINT_QPS_LABEL: 'Target QPS',
         })
@@ -557,8 +570,13 @@ class OptimalCoreAllocation:
     def _repr_html_(self):
         return self.df._repr_html_()
 
-    def _composite_pivot_table(self):
-        return self.df.pivot_table(
+    def _composite_pivot_table(self, aggressors=None, qpses=None):
+        df = self.df
+        if aggressors is not None:
+            df = df[df[self.renamer(SWAN_AGGRESSOR_NAME_LABEL)].isin(aggressors)]
+        if qpses is not None:
+            df = df[df[self.renamer(SWAN_LOAD_POINT_QPS_LABEL)].isin(qpses)]
+        return df.pivot_table(
                 values=COMPOSITE_VALUES_LABEL,
                 index=self.renamer(NUMBER_OF_CORES_LABEL),
                 columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
@@ -572,8 +590,10 @@ class OptimalCoreAllocation:
             self.experiment.experiment_id
         )
 
-    def latency(self, normalized=True):
+    def latency(self, normalized=True, aggressors=None, qpses=None):
         return self._composite_pivot_table(
+                aggressors,
+                qpses
             ).style.applymap(
                 partial(composite_latency_colors, slo=self.slo),
             ).format(
@@ -582,8 +602,10 @@ class OptimalCoreAllocation:
                 self._get_caption('latency[us]', normalized)
             )
 
-    def qps(self, normalized=True):
+    def qps(self, normalized=True, aggressors=None, qpses=None):
         return self._composite_pivot_table(
+                aggressors,
+                qpses
             ).style.applymap(
                 partial(composite_qps_colors),
             ).format(
@@ -762,16 +784,16 @@ class CAT:
              ])
         return styler
 
-    def latency(self, normalized=True, aggressor=None, qps=None):
+    def latency(self, normalized=True, aggressors=None, qpses=None):
 
         # Create local reference of data and modify it according provided paramters.
         df = self.df
 
-        if aggressor is not None:
-            df = df[df[SWAN_AGGRESSOR_NAME_LABEL] == aggressor]
+        if aggressors is not None:
+            df = df[df[SWAN_AGGRESSOR_NAME_LABEL].isin(aggressors)]
 
-        if qps is not None:
-            df = df[df[SWAN_LOAD_POINT_QPS_LABEL] == qps]
+        if qpses is not None:
+            df = df[df[SWAN_LOAD_POINT_QPS_LABEL].isin(qpses)]
 
         # Rename columns.
         renamer = Renamer({
