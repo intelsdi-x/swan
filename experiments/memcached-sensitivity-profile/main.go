@@ -73,7 +73,7 @@ func main() {
 	defer func() {
 		if cleanup != nil {
 			err := cleanup()
-			if err == nil {
+			if err != nil {
 				logrus.Errorf("Cannot clean the environment: %q", err)
 			}
 		}

@@ -24,7 +24,7 @@ import (
 )
 
 func TestMutilatePlugin(t *testing.T) {
-	const expectedMetricsCount = 9
+	const expectedMetricsCount = 10
 
 	Convey("When I create mutilate collector object", t, func() {
 		now := time.Now()
@@ -43,6 +43,8 @@ func TestMutilatePlugin(t *testing.T) {
 			soValidMetricType(metricTypes[6], "/intel/swan/mutilate/*/percentile/95th", "ns")
 			soValidMetricType(metricTypes[7], "/intel/swan/mutilate/*/percentile/99th", "ns")
 			soValidMetricType(metricTypes[8], "/intel/swan/mutilate/*/qps", "ns")
+			soValidMetricType(metricTypes[9], "/intel/swan/mutilate/*/misses", "ns")
+
 		})
 
 		Convey("I should receive valid metrics when I try to collect them", func() {
@@ -74,6 +76,7 @@ func TestMutilatePlugin(t *testing.T) {
 				{"/percentile/95th", 43.1, now},
 				{"/percentile/99th", 59.5, now},
 				{"/qps", 4993.1, now},
+				{"/misses", 5678, now},
 			}
 
 			var namespace string

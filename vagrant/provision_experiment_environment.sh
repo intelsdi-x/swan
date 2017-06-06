@@ -37,10 +37,10 @@ SNAP_VERSION="1.2.0"
 ETCD_VERSION="3.1.0"
 DOCKER_VERSION="17.03.0.ce-1.el7.centos"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
-SNAP_PLUGIN_PROCESSOR_TAG_VERSION=3
+SNAP_PLUGIN_COLLECTOR_RDT_VERSION=1
+SNAP_PLUGIN_COLLECTOR_USE_VERSION=1
 SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=6
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
-SNAP_PLUGIN_COLLECTOR_USE_VERSION=1
 
 echo "------------------------ Install OS Packages (`date`)"
 yum makecache fast -y -q
@@ -140,10 +140,12 @@ daemonStatus snap-telemetry
 
 echo "----------------------------- Install external Snap plugins (`date`)"
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-docker/releases/download/${SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION}/snap-plugin-collector-docker_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-docker
-wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
-wget --no-verbose https://github.com/intelsdi-x/snap-plugin-processor-tag/releases/download/${SNAP_PLUGIN_PROCESSOR_TAG_VERSION}/snap-plugin-processor-tag_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-processor-tag
-wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-rdt/releases/download/${SNAP_PLUGIN_COLLECTOR_RDT_VERSION}/snap-plugin-collector-rdt.tar.gz -O ${SWAN_BIN}/snap-plugin-collector-rdt.tar.gz
+tar -xzf ${SWAN_BIN}/snap-plugin-collector-rdt.tar.gz -C ${SWAN_BIN}
 wget --no-verbose https://github.com/intelsdi-x/snap-plugin-collector-use/releases/download/${SNAP_PLUGIN_COLLECTOR_USE_VERSION}/snap-plugin-collector-use_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-collector-use
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-cassandra/releases/download/${SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION}/snap-plugin-publisher-cassandra_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-cassandra
+wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/releases/download/${SNAP_PLUGIN_PUBLISHER_FILE_VERSION}/snap-plugin-publisher-file_linux_x86_64 -O ${SWAN_BIN}/snap-plugin-publisher-file
+
 
 
 echo "---------------------------- Post install (`date`)"

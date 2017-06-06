@@ -47,65 +47,66 @@ const (
 	IRQAffinityKey = "irq_affinity"
 	// EtcdVersionKey defines a key in the platform metrics map
 	EtcdVersionKey = "etcd_version"
+	unknown        = "UNKNOWN"
 )
 
 // GetPlatformMetrics returns map of strings with platform metrics.
 // If metric could not be retrieved value for the key is empty string.
 func GetPlatformMetrics() (platformMetrics map[string]string) {
 	platformMetrics = make(map[string]string)
-	item, err := CPUModelName()
+	var err error
+	platformMetrics[CPUModelNameKey], err = CPUModelName()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CPUModelNameKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CPUModelNameKey, err)
+		platformMetrics[CPUModelNameKey] = unknown
 	}
-	platformMetrics[CPUModelNameKey] = item
 
-	item, err = KernelVersion()
+	platformMetrics[KernelVersionKey], err = KernelVersion()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", KernelVersionKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", KernelVersionKey, err)
+		platformMetrics[KernelVersionKey] = unknown
 	}
-	platformMetrics[KernelVersionKey] = item
 
-	item, err = CentOSVersion()
+	platformMetrics[CentOSVersionKey], err = CentOSVersion()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CentOSVersionKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CentOSVersionKey, err)
+		platformMetrics[CentOSVersionKey] = unknown
 	}
-	platformMetrics[CentOSVersionKey] = item
 
-	item, err = CPUTopology()
+	platformMetrics[CPUTopologyKey], err = CPUTopology()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CPUTopologyKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", CPUTopologyKey, err)
+		platformMetrics[CPUTopologyKey] = unknown
 	}
-	platformMetrics[CPUTopologyKey] = item
 
-	item, err = DockerVersion()
+	platformMetrics[DockerVersionKey], err = DockerVersion()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", DockerVersionKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", DockerVersionKey, err)
+		platformMetrics[DockerVersionKey] = unknown
 	}
-	platformMetrics[DockerVersionKey] = item
 
-	item, err = SnapteldVersion()
+	platformMetrics[SnapteldVersionKey], err = SnapteldVersion()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", SnapteldVersionKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", SnapteldVersionKey, err)
+		platformMetrics[SnapteldVersionKey] = unknown
 	}
-	platformMetrics[SnapteldVersionKey] = item
 
-	item, err = PowerGovernor()
+	platformMetrics[PowerGovernorKey], err = PowerGovernor()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", PowerGovernorKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", PowerGovernorKey, err)
 	}
-	platformMetrics[PowerGovernorKey] = item
 
-	item, err = IRQAffinity()
+	platformMetrics[IRQAffinityKey], err = IRQAffinity()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", IRQAffinityKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", IRQAffinityKey, err)
+		platformMetrics[IRQAffinityKey] = unknown
 	}
-	platformMetrics[IRQAffinityKey] = item
 
-	item, err = EtcdVersion()
+	platformMetrics[EtcdVersionKey], err = EtcdVersion()
 	if err != nil {
-		logrus.Warn(fmt.Sprintf("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", EtcdVersionKey, err.Error()))
+		logrus.Infof("GetPlatformMetrics: Failed to get %s metric. Skipping. Error: %s", EtcdVersionKey, err)
+		platformMetrics[EtcdVersionKey] = unknown
 	}
-	platformMetrics[EtcdVersionKey] = item
 
 	return platformMetrics
 }

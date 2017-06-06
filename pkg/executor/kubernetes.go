@@ -654,7 +654,10 @@ func (kw *k8sWatcher) whenPodFinished(pod *v1.Pod) {
 	kw.oncePodFinished.Do(func() {
 		if pod.Status.Phase == v1.PodFailed {
 			close(kw.failed)
-			log.Debug("K8s task watcher: 'failed' channel closed")
+
+			if pod.Status.Message != "" {
+				log.Debugf("K8s task watcher: fail status message: %q", pod.Status.Message)
+			}
 		}
 		kw.whenPodReady()
 		kw.setExitCode(pod)
