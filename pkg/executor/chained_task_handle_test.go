@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -81,6 +82,110 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 			Convey("Subsequent stop should yield no error", func() {
 				err := taskHandle.Stop()
 				So(err, ShouldBeNil)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			})
+		})
+	})
+}
+
+func TestFailureChainedTaskHandle(t *testing.T) {
+	const fixedError = "initial error"
+	Convey("When having ChainedTaskHandle with successful execution", t, func() {
+		initialTaskHandle := new(MockTaskHandle)
+		chainedTaskHandle := new(MockTaskHandle)
+		chainedLauncher := new(MockLauncher)
+
+		Convey("When initial TaskHandle is running and returns error", func() {
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, errors.New(fixedError))
+			initialTaskHandle.On("Stop").Return(errors.New(fixedError))
+
+			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
+			Convey("It should be returned on Wait()", func() {
+				isTerminated, err := taskHandle.Wait(waitTimeout)
+				So(isTerminated, ShouldBeTrue)
+				So(err.Error(), ShouldContainSubstring, fixedError)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+
+				Convey("Subsequent Wait() should return the same error", func() {
+					isTerminated, err := taskHandle.Wait(waitTimeout)
+					So(isTerminated, ShouldBeTrue)
+					So(err.Error(), ShouldContainSubstring, fixedError)
+					So(taskHandle.Status(), ShouldEqual, TERMINATED)
+				})
+
+				Convey("Subsequent Stop() should return the same error", func() {
+					err := taskHandle.Stop()
+					So(err.Error(), ShouldContainSubstring, fixedError)
+					So(taskHandle.Status(), ShouldEqual, TERMINATED)
+				})
+			})
+
+			Convey("It should be returned on Stop()", func() {
+				err := taskHandle.Stop()
+				So(err.Error(), ShouldContainSubstring, fixedError)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+
+				Convey("Subsequent Wait() should return the same error", func() {
+					isTerminated, err := taskHandle.Wait(waitTimeout)
+					So(isTerminated, ShouldBeTrue)
+					So(err.Error(), ShouldContainSubstring, fixedError)
+					So(taskHandle.Status(), ShouldEqual, TERMINATED)
+				})
+
+				Convey("Subsequent Stop() should return the same error", func() {
+					err := taskHandle.Stop()
+					So(err.Error(), ShouldContainSubstring, fixedError)
+					So(taskHandle.Status(), ShouldEqual, TERMINATED)
+				})
+			})
+		})
+
+		Convey("When Chained Launcher returns an error", func() {
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
+			chainedLauncher.On("Launch").Return(nil, errors.New(fixedError))
+
+			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
+			isTerminated, err := taskHandle.Wait(waitTimeout)
+			So(isTerminated, ShouldBeTrue)
+			So(err.Error(), ShouldContainSubstring, fixedError)
+			So(taskHandle.Status(), ShouldEqual, TERMINATED)
+
+			Convey("Subsequent Wait() should return the same error", func() {
+				isTerminated, err := taskHandle.Wait(waitTimeout)
+				So(isTerminated, ShouldBeTrue)
+				So(err.Error(), ShouldContainSubstring, fixedError)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			})
+
+			Convey("Subsequent Stop() should return the same error", func() {
+				err := taskHandle.Stop()
+				So(err.Error(), ShouldContainSubstring, fixedError)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			})
+		})
+
+		Convey("When Chained TaskHandle returns an error", func() {
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
+			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
+			chainedTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, errors.New(fixedError))
+			chainedTaskHandle.On("Stop").Return(errors.New(fixedError))
+
+			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
+			isTerminated, err := taskHandle.Wait(waitTimeout)
+			So(isTerminated, ShouldBeTrue)
+			So(err.Error(), ShouldContainSubstring, fixedError)
+			So(taskHandle.Status(), ShouldEqual, TERMINATED)
+
+			Convey("Subsequent Wait() should return the same error", func() {
+				isTerminated, err := taskHandle.Wait(waitTimeout)
+				So(isTerminated, ShouldBeTrue)
+				So(err.Error(), ShouldContainSubstring, fixedError)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			})
+
+			Convey("Subsequent Stop() should return the same error", func() {
+				err := taskHandle.Stop()
+				So(err.Error(), ShouldContainSubstring, fixedError)
 				So(taskHandle.Status(), ShouldEqual, TERMINATED)
 			})
 		})
