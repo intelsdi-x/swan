@@ -38,7 +38,6 @@ class DataFrameToCSVCache:
     """
 
     CACHE_DIR = '.experiments_csv_cache'
-
     def __init__(self, suffix=''):
         self.suffix = suffix
 
@@ -680,6 +679,58 @@ MEMBW_HP_LABEL = 'membw/hp/gigabytes'
 BE_NUMBER_OF_CORES_LABEL = 'be_number_of_cores'
 BE_L3_CACHE_WAYS_LABEL = 'be_l3_cache_ways'
 
+def add_extra_rdt_columns(df):
+    # aggregate BE columns
+    df[LLC_BE_LABEL] = new_aggregated_index_based_column(
+        df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
+    df[MEMBW_BE_LABEL] = new_aggregated_index_based_column(
+        df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
+
+    df[LLC_HP_LABEL] = new_aggregated_index_based_column(
+        df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
+    df[MEMBW_HP_LABEL] = new_aggregated_index_based_column(
+        df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
+
+    df[LLC_BE_PERC_LABEL] = new_aggregated_index_based_column(
+        df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+    df[LLC_HP_PERC_LABEL] = new_aggregated_index_based_column(
+        df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+
+def cat_filtered_df(df):
+    """ Returns dataframe that exposes only meaningful columns."""
+
+    # RDT collected data.
+    rdt_columns = [
+        LLC_HP_LABEL,
+        LLC_HP_PERC_LABEL,
+
+        LLC_BE_LABEL,
+        LLC_BE_PERC_LABEL,
+
+        MEMBW_HP_LABEL,
+        MEMBW_BE_LABEL,
+    ]
+
+    columns = [
+        SWAN_LOAD_POINT_QPS_LABEL,
+        SWAN_AGGRESSOR_NAME_LABEL,
+        BE_NUMBER_OF_CORES_LABEL,
+        BE_L3_CACHE_WAYS_LABEL,
+        PERCENTILE99TH_LABEL,
+        ACHIEVED_LATENCY_LABEL,
+        QPS_LABEL,
+        ACHIEVED_QPS_LABEL,
+    ]
+
+    # Check if RDT collector data is available.
+    if LLC_HP_LABEL in df:
+        columns += rdt_columns
+        df = df[columns]
+
+    # Drop title of dataframe.
+    df.columns.name = ''
+    return df
+
 
 class CAT:
     """ Visualization for "optimal core allocation" experiments that
@@ -703,22 +754,7 @@ class CAT:
         df = add_extra_and_composite_columns(df, slo)
 
         if '/intel/rdt/llc_occupancy/0/bytes' in df.columns:
-
-            # aggregate BE columns
-            df[LLC_BE_LABEL] = new_aggregated_index_based_column(
-                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
-            df[MEMBW_BE_LABEL] = new_aggregated_index_based_column(
-                df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
-
-            df[LLC_HP_LABEL] = new_aggregated_index_based_column(
-                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
-            df[MEMBW_HP_LABEL] = new_aggregated_index_based_column(
-                df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
-
-            df[LLC_BE_PERC_LABEL] = new_aggregated_index_based_column(
-                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
-            df[LLC_HP_PERC_LABEL] = new_aggregated_index_based_column(
-                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
+            add_extra_rdt_columns(df)
 
         self.df = df
 
@@ -730,40 +766,7 @@ class CAT:
         )
 
     def filtered_df(self):
-        """ Returns dataframe that exposes only meaningful columns."""
-
-        # RDT collected data.
-        rdt_columns = [
-             LLC_HP_LABEL,
-             LLC_HP_PERC_LABEL,
-
-             LLC_BE_LABEL,
-             LLC_BE_PERC_LABEL,
-
-             MEMBW_HP_LABEL,
-             MEMBW_BE_LABEL,
-        ]
-
-        columns = [
-             SWAN_LOAD_POINT_QPS_LABEL,
-             SWAN_AGGRESSOR_NAME_LABEL,
-             BE_NUMBER_OF_CORES_LABEL,
-             BE_L3_CACHE_WAYS_LABEL,
-             PERCENTILE99TH_LABEL,
-             ACHIEVED_LATENCY_LABEL,
-             QPS_LABEL,
-             ACHIEVED_QPS_LABEL,
-        ]
-
-        # Check if RDT collector data is available.
-        if LLC_HP_LABEL in self.df:
-            columns += rdt_columns
-
-        df = self.df[columns]
-
-        # Drop title of dataframe.
-        df.columns.name = ''
-        return df
+        return cat_filtered_df(self.df)
 
     def filtered_df_table(self):
         """ Returns an simple formated dataframe """
@@ -831,3 +834,87 @@ class CAT:
             rendererName=rendererName,
             **options
         )
+
+
+
+#################################### TEST LOAD ALL
+
+@DataFrameToCSVCache(suffix='-all')
+def _load_cat_all(experiment_id, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, keyspace=DEFAULT_KEYSPACE):
+    tag_keys = CAT.tag_keys
+
+    cassandra_session = _get_or_create_cassandra_session(**cassandra_options)
+
+    # helper to drop prefix from ns (removing host depedency).
+    pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
+    drop_prefix = partial(pattern.sub, '')
+
+    query = "SELECT time, ns, doubleval, tags FROM %s.metrics WHERE tags['swan_experiment']=? ALLOW FILTERING" % keyspace
+    statement = cassandra_session.prepare(query)
+
+    rows = cassandra_session.execute(statement, [experiment_id])
+
+    # temporary mutli hierarchy index for storing loaded data
+    # first level is a namespace and second level is tuple of values from selected tags
+    # value is is a list of values
+    records = defaultdict(list)
+    started = datetime.datetime.now()
+    print('loading data...')
+    idx = 0
+    for idx, row in enumerate(rows):
+        tags = row['tags']
+        # namespace, value and tags
+        ns = drop_prefix(row['ns'])
+        val = row['doubleval']
+        tagidx = tuple(pd.to_numeric(tags[tk], errors='ignore') for tk in tag_keys)
+        # store in temporary index
+        records[ns].append((tagidx, row['time'], pd.to_numeric(val)))
+        if idx and idx % 50000 == 0:
+            print("%d loaded" % idx)
+    print('%d rows loaded in %.0fs' % (idx, (datetime.datetime.now() - started).seconds))
+
+    started = datetime.datetime.now()
+    print('building dataframes')
+    dfs = {}
+    for ns, pairs in records.iteritems():
+        dicts = []
+        for tagvalues, ts, value in pairs:
+            d = dict(zip(tag_keys, tagvalues))
+            d[ns] = value
+            d['time'] = ts
+            dicts.append(d)
+        dfs[ns] = pd.DataFrame.from_records(dicts)
+
+    print('dataframes %d build in %.0fs' % (len(dfs), (datetime.datetime.now() - started).seconds))
+
+    started = datetime.datetime.now()
+    print('building dataframe')
+    rdt_dfs = []
+    mutilate_dfs = []
+    be_progress_dfs = []
+    for ns, df in dfs.iteritems():
+        if '/intel/rdt/' in ns:
+            rdt_dfs.append(df)
+        elif 'batches' in ns:
+            be_progress_dfs.append(df)
+        else:
+            mutilate_dfs.append(df)
+
+    rdt = reduce(pd.merge, rdt_dfs)
+    mutilate = reduce(pd.merge, mutilate_dfs)
+    df = pd.merge(mutilate, rdt, on=tag_keys)
+
+    print('dataframe %s build in %.0fs' % (df.shape, (datetime.datetime.now() - started).seconds))
+
+    return df
+
+@DataFrameToCSVCache(suffix='-simple')
+def load_cat_all_simple_data(experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS, keyspace=DEFAULT_KEYSPACE):
+    df = _load_cat_all(experiment_id, cassandra_options=cassandra_options, keyspace=keyspace)
+    # fix broken to numeric conversion
+    df['be_cores_range'] = df['be_cores_range'].astype(str)
+    df['hp_cores_range'] = df['hp_cores_range'].astype(str)
+    add_extra_and_composite_columns(df, slo=slo)
+    add_extra_rdt_columns(df)
+    simpledf = cat_filtered_df(df)
+    return simpledf
