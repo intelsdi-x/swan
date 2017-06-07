@@ -78,6 +78,8 @@ func StopAndEraseOutput(handle TaskHandle) (errorCollection errcollection.ErrorC
 	return
 }
 
+// GetWaitChannel returns channel that will return result (any encountered error) of
+// Wait() method in provided handle.
 func GetWaitChannel(handle TaskControl) <-chan error {
 	result := make(chan error)
 	go func() {

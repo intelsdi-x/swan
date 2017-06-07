@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// ChainedTaskHandle is an links Launchers in a way that
+// one will be launched after another.
 type ChainedTaskHandle struct {
 	TaskHandle
 
@@ -17,6 +19,8 @@ type ChainedTaskHandle struct {
 	stopOnce      sync.Once
 }
 
+// NewChainedTaskHandle returns TaskHandle that executes current handle, and will
+// launch Launcher when handle will finish it's execution.
 func NewChainedTaskHandle(handle TaskHandle, launcher Launcher) TaskHandle {
 	chained := ChainedTaskHandle{
 		TaskHandle:      handle,
@@ -74,6 +78,7 @@ func (cth *ChainedTaskHandle) watcher() {
 	return
 }
 
+// Stop stops all execution of ChainedTaskHandle.
 func (cth *ChainedTaskHandle) Stop() error {
 	cth.stopOnce.Do(func() {
 		cth.stopChain <- struct{}{}
@@ -84,6 +89,7 @@ func (cth *ChainedTaskHandle) Stop() error {
 	return err
 }
 
+// Wait waits for all tasks in ChainedTaskHandle to finish.
 func (cth *ChainedTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	timeoutChannel := getWaitTimeoutChan(timeout)
 
@@ -95,6 +101,7 @@ func (cth *ChainedTaskHandle) Wait(timeout time.Duration) (bool, error) {
 	}
 }
 
+// Status returns current TaskState.
 func (cth *ChainedTaskHandle) Status() TaskState {
 	select {
 	case <-cth.chainFinished:
