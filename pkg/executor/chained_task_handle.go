@@ -98,7 +98,7 @@ func (cth *ChainedTaskHandle) Stop() error {
 
 // Wait waits for all tasks in ChainedTaskHandle to finish.
 func (cth *ChainedTaskHandle) Wait(timeout time.Duration) (bool, error) {
-	timeoutChannel := getWaitTimeoutChan(timeout)
+	timeoutChannel := getTimeoutChan(timeout)
 
 	select {
 	case <-timeoutChannel:

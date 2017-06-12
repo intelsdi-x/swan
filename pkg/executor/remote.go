@@ -319,7 +319,7 @@ func (taskHandle *remoteTaskHandle) Wait(timeout time.Duration) (bool, error) {
 		return true, nil
 	}
 
-	timeoutChannel := getWaitTimeoutChan(timeout)
+	timeoutChannel := getTimeoutChan(timeout)
 
 	select {
 	case <-taskHandle.hasProcessExited:
