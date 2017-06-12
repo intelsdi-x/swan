@@ -10,7 +10,7 @@ import (
 type ChainedTaskHandle struct {
 	TaskHandle
 
-	chainedLauncher Launcher
+	chainedLaunchers []Launcher
 
 	encounteredError error
 
@@ -21,21 +21,26 @@ type ChainedTaskHandle struct {
 
 // NewChainedTaskHandle returns TaskHandle that executes current handle, and will
 // launch Launcher when handle will finish it's execution.
-func NewChainedTaskHandle(handle TaskHandle, launcher Launcher) TaskHandle {
-	chained := ChainedTaskHandle{
-		TaskHandle:      handle,
-		chainedLauncher: launcher,
-		chainFinished:   make(chan struct{}),
-		stopChain:       make(chan struct{}, 1),
+func NewChainedTaskHandle(handle TaskHandle, launcher ...Launcher) TaskHandle {
+	launchers := make([]Launcher, 0)
+	for _, l := range launcher {
+		launchers = append(launchers, l)
 	}
 
-	go chained.watcher()
+	chained := ChainedTaskHandle{
+		TaskHandle:       handle,
+		chainedLaunchers: launchers,
+		chainFinished:    make(chan struct{}),
+		stopChain:        make(chan struct{}, 1),
+	}
+
+	go chained.watch()
 
 	return &chained
 }
 
-func (cth *ChainedTaskHandle) watcher() {
-	waitChan := GetWaitChannel(cth.TaskHandle)
+func (cth *ChainedTaskHandle) watch() {
+	waitChan := getWaitChannel(cth.TaskHandle)
 	select {
 	case err := <-waitChan:
 		if err != nil {
@@ -51,27 +56,29 @@ func (cth *ChainedTaskHandle) watcher() {
 	}
 
 	// Run all chained Launchers.
-	chainedHandle, err := cth.chainedLauncher.Launch()
-	if err != nil {
-		cth.encounteredError = err
-		close(cth.chainFinished)
-		return
-	}
-
-	waitChan = GetWaitChannel(chainedHandle)
-	select {
-	case err := <-waitChan:
-		cth.encounteredError = err
+	for _, launcher := range cth.chainedLaunchers {
+		chainedHandle, err := launcher.Launch()
 		if err != nil {
 			cth.encounteredError = err
 			close(cth.chainFinished)
 			return
 		}
-	case <-cth.stopChain:
-		err := chainedHandle.Stop()
-		cth.encounteredError = err
-		close(cth.chainFinished)
-		return
+
+		waitChan = getWaitChannel(chainedHandle)
+		select {
+		case err := <-waitChan:
+			cth.encounteredError = err
+			if err != nil {
+				cth.encounteredError = err
+				close(cth.chainFinished)
+				return
+			}
+		case <-cth.stopChain:
+			err := chainedHandle.Stop()
+			cth.encounteredError = err
+			close(cth.chainFinished)
+			return
+		}
 	}
 
 	close(cth.chainFinished)

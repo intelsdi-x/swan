@@ -62,3 +62,15 @@ func getWaitTimeoutChan(timeout time.Duration) <-chan time.Time {
 
 	return make(<-chan time.Time)
 }
+
+// getWaitChannel returns channel that will return result (any encountered error) of
+// Wait() method in provided handle.
+func getWaitChannel(handle TaskControl) <-chan error {
+	result := make(chan error)
+	go func() {
+		_, err := handle.Wait(0)
+		result <- err
+		return
+	}()
+	return result
+}
