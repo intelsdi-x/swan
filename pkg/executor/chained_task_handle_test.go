@@ -14,23 +14,21 @@ const waitTimeout = 60 * time.Second
 func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 	Convey("When having ChainedTaskHandle with successful execution", t, func() {
 		initialTaskHandle := new(MockTaskHandle)
-		initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
-		initialTaskHandle.On("Stop").Return(nil)
-
 		chainedTaskHandle := new(MockTaskHandle)
-		chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
-		chainedTaskHandle.On("Stop").Return(nil)
-
 		chainedLauncher := new(MockLauncher)
-		chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
 
 		Convey("Successful run should yield no error", func() {
-			startTime := time.Now()
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
+			chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
+			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
+
+			//initialTaskHandle.On("Stop").Return(nil)
+			//chainedTaskHandle.On("Stop").Return(nil)
+
 			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
 			So(taskHandle.Status(), ShouldEqual, RUNNING)
 
 			isTerminated, err := taskHandle.Wait(waitTimeout)
-			So(time.Since(startTime), ShouldBeGreaterThanOrEqualTo, taskExecutionTime)
 			So(err, ShouldBeNil)
 			So(isTerminated, ShouldBeTrue)
 			So(taskHandle.Status(), ShouldEqual, TERMINATED)
@@ -46,6 +44,7 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 				So(isTerminated, ShouldBeTrue)
 				So(taskHandle.Status(), ShouldEqual, TERMINATED)
 			})
+
 			Convey("Subsequent Stops should yield no error", func() {
 				err := taskHandle.Stop()
 				So(err, ShouldBeNil)
@@ -55,10 +54,50 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(taskHandle.Status(), ShouldEqual, TERMINATED)
 			})
+
+			Convey("Flow is correct", func() {
+				So(initialTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
+			})
 		})
 
 		Convey("Immediate stop of ChainedTaskHandle should yield no error", func() {
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
+			initialTaskHandle.On("Stop").Return(nil)
+
 			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
+			isTerminated, err := taskHandle.Wait(taskExecutionTime / 4)
+			So(err, ShouldBeNil)
+			So(isTerminated, ShouldBeFalse)
+			So(taskHandle.Status(), ShouldEqual, RUNNING)
+
+			err = taskHandle.Stop()
+			So(err, ShouldBeNil)
+			So(taskHandle.Status(), ShouldEqual, TERMINATED)
+
+			Convey("Subsequent stop should yield no error", func() {
+				err := taskHandle.Stop()
+				So(err, ShouldBeNil)
+				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			})
+
+			Convey("Flow is correct", func() {
+				// Chained launchers should be invoked.
+				So(initialTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
+			})
+		})
+
+		Convey("Stop during execution of chained task should yield no error", func() {
+			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
+			chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
+			chainedTaskHandle.On("Stop").Return(nil)
+			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
+
+			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
+			taskHandle.Wait(taskExecutionTime + taskExecutionTime/4) // Wait for second task to start.
 			err := taskHandle.Stop()
 			So(err, ShouldBeNil)
 			So(taskHandle.Status(), ShouldEqual, TERMINATED)
@@ -68,28 +107,18 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(taskHandle.Status(), ShouldEqual, TERMINATED)
 			})
-		})
 
-		Convey("Stop during execution of chained task should yield no error", func() {
-			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
-			taskHandle.Wait(taskExecutionTime + taskExecutionTime/4) // Wait for second task to start.
-			startTime := time.Now()
-			err := taskHandle.Stop()
-			So(err, ShouldBeNil)
-			So(time.Since(startTime), ShouldBeLessThan, taskExecutionTime)
-			So(taskHandle.Status(), ShouldEqual, TERMINATED)
-
-			Convey("Subsequent stop should yield no error", func() {
-				err := taskHandle.Stop()
-				So(err, ShouldBeNil)
-				So(taskHandle.Status(), ShouldEqual, TERMINATED)
+			Convey("Flow is correct", func() {
+				So(initialTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
+				So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
 			})
 		})
 	})
 }
 
 func TestFailureChainedTaskHandle(t *testing.T) {
-	const fixedError = "initial error"
+	const fixedError = "error in low layer"
 	Convey("When having ChainedTaskHandle with successful execution", t, func() {
 		initialTaskHandle := new(MockTaskHandle)
 		chainedTaskHandle := new(MockTaskHandle)
@@ -118,6 +147,12 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, fixedError)
 					So(taskHandle.Status(), ShouldEqual, TERMINATED)
 				})
+
+				Convey("Flow is correct", func() {
+					// Chained launchers should be not be invoked.
+					So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
+					So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
+				})
 			})
 
 			Convey("It should be returned on Stop()", func() {
@@ -137,7 +172,14 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, fixedError)
 					So(taskHandle.Status(), ShouldEqual, TERMINATED)
 				})
+
+				Convey("Flow is correct", func() {
+					// Chained launchers should be not be invoked.
+					So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
+					So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
+				})
 			})
+
 		})
 
 		Convey("When Chained Launcher returns an error", func() {
