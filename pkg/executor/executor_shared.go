@@ -51,3 +51,26 @@ func checkIfProcessFailedToExecute(command string, executorName string, handle T
 
 	return nil
 }
+
+// getTimeoutChan returns channel for timeout in Wait(timeout) function in TaskHandles.
+// When timeout is 0, then timeout will never occur.
+func getTimeoutChan(timeout time.Duration) <-chan time.Time {
+	if timeout != 0 {
+		// In case of wait with timeout set the timeout channel.
+		return time.After(timeout)
+	}
+
+	return make(<-chan time.Time)
+}
+
+// getWaitChannel returns channel that will return result (any encountered error) of
+// Wait() method in provided handle.
+func getWaitChannel(handle TaskControl) <-chan error {
+	result := make(chan error)
+	go func() {
+		_, err := handle.Wait(0)
+		result <- err
+		return
+	}()
+	return result
+}
