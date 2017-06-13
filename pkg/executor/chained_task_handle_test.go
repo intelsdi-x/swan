@@ -22,9 +22,6 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 			chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
 			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
 
-			//initialTaskHandle.On("Stop").Return(nil)
-			//chainedTaskHandle.On("Stop").Return(nil)
-
 			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
 			So(taskHandle.Status(), ShouldEqual, RUNNING)
 
