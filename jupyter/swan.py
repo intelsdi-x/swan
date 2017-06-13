@@ -137,7 +137,7 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_op
     pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
     drop_prefix = partial(pattern.sub, '')
 
-    query = "SELECT ns, doubleval, tags FROM %s.metrics WHERE tags['swan_experiment']=? ALLOW FILTERING" % keyspace
+    query = "SELECT ns, doubleval, tags FROM %s.tags WHERE key = 'swan_experiment' AND val=?" % keyspace
     statement = cassandra_session.prepare(query)
 
     rows = cassandra_session.execute(statement, [experiment_id])

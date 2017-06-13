@@ -18,7 +18,22 @@ Environment="CREATE_TABLE=CREATE TABLE IF NOT EXISTS swan.metrics (\
     tags map<text,text>, \
     PRIMARY KEY ((ns, ver, host), time) \
 ) WITH CLUSTERING ORDER BY (time DESC); \
-DESCRIBE swan.metrics;"
+DESCRIBE swan.metrics; \
+CREATE TABLE IF NOT EXISTS swan.tags ( \
+   key text, \
+   val text, \
+   time timestamp, \
+   ns  text, \
+   ver int, \
+   host text, \
+   valType text, \
+   doubleVal double, \
+   strVal text, \
+   boolVal boolean, \
+   tags map<text,text>, \
+   PRIMARY KEY ((key, val), time, ns, ver, host) \
+) WITH CLUSTERING ORDER BY (time DESC); \
+DESCRIBE swan.tags"
 TimeoutStartSec=0
 Restart=always
 ExecStartPre=-/usr/bin/docker rm -f cassandra-swan
