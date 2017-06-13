@@ -51,14 +51,14 @@ func TestCassandraPublisher(t *testing.T) {
 		// ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
 		//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
 		// /intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
-		valueFromMetrics, tagsFromMetrics, err := getMetricFromMetricsTable(`SELECT doubleval, tags FROM swan.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`)
+		valueFromMetrics, tagsFromMetrics, err := getMetric(`SELECT doubleval, tags FROM swan.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`)
 		So(err, ShouldBeNil)
 
 		//cqlsh> select * from snap.tags where key = 'swan_experiment' and val = 'example-experiment' ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;
 		// key                          | val                          | ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
 		// -----------------------------+------------------------------+----------------+------------+-----+------------+---------------------------------+---------+------------+--------+-------------------------------------------------------------------------------------------------------------------------------------+-----------
 		// swan_experiment              | example-experiment           | /intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
-		valueFromTags, tagsFromTags, err := getMetricFromMetricsTable(`SELECT doubleval, tags FROM swan.tags WHERE key = 'swan_experiment' AND val = 'example-experiment' LIMIT 1 ALLOW FILTERING`)
+		valueFromTags, tagsFromTags, err := getMetric(`SELECT doubleval, tags FROM swan.tags WHERE key = 'swan_experiment' AND val = 'example-experiment' LIMIT 1 ALLOW FILTERING`)
 		So(err, ShouldBeNil)
 		Convey("When getting values from Cassandra", func() {
 			Convey("Values stored in Cassandra should be greater then 0", func() {
@@ -80,7 +80,7 @@ func TestCassandraPublisher(t *testing.T) {
 
 }
 
-func getMetricFromMetricsTable(cql string) (value float64, tags map[string]string, err error) {
+func getMetric(cql string) (value float64, tags map[string]string, err error) {
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = "swan"
