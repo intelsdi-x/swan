@@ -34,6 +34,7 @@ func ApplyCassandraConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 	publisher.AddConfigItem("ignorePeerAddrRuleKey", conf.CassandraIgnorePeerAddr.Value())
 	publisher.AddConfigItem("createKeyspace", conf.CassandraCreateKeyspace.Value())
 	publisher.AddConfigItem("keyspaceName", conf.CassandraKeyspaceName.Value())
+	publisher.AddConfigItem("tagIndex", conf.CassandraTagIndex.Value())
 
 	if conf.CassandraSslEnabled.Value() {
 		publisher.AddConfigItem("serverCertVerification", conf.CassandraSslHostValidation.Value())
