@@ -18,6 +18,7 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 		chainedLauncher := new(MockLauncher)
 
 		Convey("Successful run should yield no error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
 			chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
 			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
@@ -60,6 +61,7 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 		})
 
 		Convey("Immediate stop of ChainedTaskHandle should yield no error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
 			initialTaskHandle.On("Stop").Return(nil)
 
@@ -88,6 +90,7 @@ func TestSuccsessfulChainedTaskHandle(t *testing.T) {
 		})
 
 		Convey("Stop during execution of chained task should yield no error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
 			chainedTaskHandle.On("Wait", 0*time.Second).After(2*taskExecutionTime).Return(true, nil)
 			chainedTaskHandle.On("Stop").Return(nil)
@@ -122,11 +125,14 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 		chainedLauncher := new(MockLauncher)
 
 		Convey("When initial TaskHandle is running and returns error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, errors.New(fixedError))
 			initialTaskHandle.On("Stop").Return(errors.New(fixedError))
 
 			taskHandle := NewChainedTaskHandle(initialTaskHandle, chainedLauncher)
 			Convey("It should be returned on Wait()", func() {
+				// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
+				initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, errors.New(fixedError))
 				isTerminated, err := taskHandle.Wait(waitTimeout)
 				So(isTerminated, ShouldBeTrue)
 				So(err.Error(), ShouldContainSubstring, fixedError)
@@ -140,15 +146,10 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 				})
 
 				Convey("Subsequent Stop() should return the same error", func() {
+					initialTaskHandle.On("Stop").Return(errors.New(fixedError))
 					err := taskHandle.Stop()
 					So(err.Error(), ShouldContainSubstring, fixedError)
 					So(taskHandle.Status(), ShouldEqual, TERMINATED)
-				})
-
-				Convey("Flow is correct", func() {
-					// Chained launchers should be not be invoked.
-					So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
-					So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
 				})
 			})
 
@@ -169,17 +170,12 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, fixedError)
 					So(taskHandle.Status(), ShouldEqual, TERMINATED)
 				})
-
-				Convey("Flow is correct", func() {
-					// Chained launchers should be not be invoked.
-					So(chainedTaskHandle.AssertExpectations(t), ShouldBeTrue)
-					So(chainedLauncher.AssertExpectations(t), ShouldBeTrue)
-				})
 			})
 
 		})
 
 		Convey("When Chained Launcher returns an error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
 			chainedLauncher.On("Launch").Return(nil, errors.New(fixedError))
 
@@ -204,6 +200,7 @@ func TestFailureChainedTaskHandle(t *testing.T) {
 		})
 
 		Convey("When Chained TaskHandle returns an error", func() {
+			// NOTE(skonefal): In testify mock, timer in 'After' method starts when mock is defined.
 			initialTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, nil)
 			chainedLauncher.On("Launch").Return(chainedTaskHandle, nil)
 			chainedTaskHandle.On("Wait", 0*time.Second).After(taskExecutionTime).Return(true, errors.New(fixedError))

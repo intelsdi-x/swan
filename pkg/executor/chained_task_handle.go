@@ -21,13 +21,8 @@ type ChainedTaskHandle struct {
 
 // NewChainedTaskHandle returns TaskHandle that executes current handle, and will
 // launch Launcher when handle will finish it's execution.
-func NewChainedTaskHandle(handle TaskHandle, launcher ...Launcher) TaskHandle {
-	launchers := make([]Launcher, 0)
-	for _, l := range launcher {
-		launchers = append(launchers, l)
-	}
-
-	chained := ChainedTaskHandle{
+func NewChainedTaskHandle(handle TaskHandle, launchers ...Launcher) TaskHandle {
+	chained := &ChainedTaskHandle{
 		TaskHandle:       handle,
 		chainedLaunchers: launchers,
 		chainFinished:    make(chan struct{}),
@@ -36,7 +31,7 @@ func NewChainedTaskHandle(handle TaskHandle, launcher ...Launcher) TaskHandle {
 
 	go chained.watch()
 
-	return &chained
+	return chained
 }
 
 func (cth *ChainedTaskHandle) watch() {
