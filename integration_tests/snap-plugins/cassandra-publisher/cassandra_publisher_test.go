@@ -61,7 +61,7 @@ func TestCassandraPublisher(t *testing.T) {
 		valueFromTags, tagsFromTags, err := getMetricFromMetricsTable(`SELECT doubleval, tags FROM swan.tags WHERE key = 'swan_experiment' AND val = 'example-experiment' LIMIT 1 ALLOW FILTERING`)
 		So(err, ShouldBeNil)
 		Convey("When getting values from Cassandra", func() {
-			Convey("Stored valueFromMetrics in Cassandra should be greater then 0", func() {
+			Convey("Values stored in Cassandra should be greater then 0", func() {
 				So(valueFromMetrics, ShouldBeGreaterThan, 0)
 				So(valueFromTags, ShouldBeGreaterThan, 0)
 			})
