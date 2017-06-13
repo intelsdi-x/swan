@@ -47,24 +47,40 @@ func TestCassandraPublisher(t *testing.T) {
 		// Given enough time before checking data was stored - replace with onetime tasks in snap when available.
 		time.Sleep(5 * time.Second)
 
-		value, tags, err := getValueAndTagsFromCassandra()
+		//cqlsh> select * from snap.metrics where ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;
+		// ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
+		//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
+		// /intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
+		valueFromMetrics, tagsFromMetrics, err := getMetric(`SELECT doubleval, tags FROM swan.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`)
+		So(err, ShouldBeNil)
+
+		//cqlsh> select * from snap.tags where key = 'swan_experiment' and val = 'example-experiment' ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;
+		// key                          | val                          | ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
+		// -----------------------------+------------------------------+----------------+------------+-----+------------+---------------------------------+---------+------------+--------+-------------------------------------------------------------------------------------------------------------------------------------+-----------
+		// swan_experiment              | example-experiment           | /intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
+		valueFromTags, tagsFromTags, err := getMetric(`SELECT doubleval, tags FROM swan.tags WHERE key = 'swan_experiment' AND val = 'example-experiment' LIMIT 1 ALLOW FILTERING`)
+		So(err, ShouldBeNil)
 		Convey("When getting values from Cassandra", func() {
-			So(err, ShouldBeNil)
-			Convey("Stored value in Cassandra should be greater then 0", func() {
-				So(value, ShouldBeGreaterThan, 0)
+			Convey("Values stored in Cassandra should be greater then 0", func() {
+				So(valueFromMetrics, ShouldBeGreaterThan, 0)
+				So(valueFromTags, ShouldBeGreaterThan, 0)
 			})
 			Convey("Tags should be appropriate", func() {
-				So(tags["swan_experiment"], ShouldEqual, "example-experiment")
-				So(tags["swan_phase"], ShouldEqual, "example-phase")
-				So(tags["swan_repetition"], ShouldEqual, "42")
-				So(tags["FloatTag"], ShouldEqual, "42.123123")
+				So(tagsFromMetrics["swan_experiment"], ShouldEqual, "example-experiment")
+				So(tagsFromTags["swan_experiment"], ShouldEqual, "example-experiment")
+				So(tagsFromMetrics["swan_phase"], ShouldEqual, "example-phase")
+				So(tagsFromTags["swan_phase"], ShouldEqual, "example-phase")
+				So(tagsFromMetrics["swan_repetition"], ShouldEqual, "42")
+				So(tagsFromTags["swan_repetition"], ShouldEqual, "42")
+				So(tagsFromMetrics["FloatTag"], ShouldEqual, "42.123123")
+				So(tagsFromTags["FloatTag"], ShouldEqual, "42.123123")
 			})
 		})
 	})
 
 }
 
-func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err error) {
+func getMetric(cql string) (value float64, tags map[string]string, err error) {
 	cluster := gocql.NewCluster("127.0.0.1")
 	cluster.ProtoVersion = 4
 	cluster.Keyspace = "swan"
@@ -76,20 +92,14 @@ func getValueAndTagsFromCassandra() (value float64, tags map[string]string, err 
 
 	defer session.Close()
 
-	//cqlsh> select * from snap.metrics where ns='/intel/swan/session/metric1' AND ver=-1 AND host='fedorowicz' ORDER BY time ASC limit 1;
-	//ns                          | ver | host       | time                            | boolval | doubleval | strval | tags                                                                                                                                 | valtype
-	//-----------------------------+-----+------------+---------------------------------+---------+-----------+--------+--------------------------------------------------------------------------------------------------------------------------------------+-----------
-	///intel/swan/session/metric1 |  -1 | fedorowicz | 2016-05-20 11:07:02.890000+0000 |    null |         1 |   null | {'plugin_running_on': 'fedorowicz', 'swan_experiment': 'example-experiment', 'swan_phase': 'example-phase', 'swan_repetition': '42'} | doubleval
-
 	// Try 5 times before giving up.
 	for i := 0; i < 5; i++ {
-		err = session.Query(`SELECT doubleval, tags FROM swan.metrics WHERE tags CONTAINS 'example-experiment' LIMIT 1 ALLOW FILTERING`).Consistency(gocql.One).Scan(&value, &tags)
+		err = session.Query(cql).Consistency(gocql.One).Scan(&value, &tags)
 		if err == nil || err != gocql.ErrNotFound {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
-
 	return value, tags, err
 }
 
@@ -101,6 +111,7 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	cassandraPublisher := wmap.NewPublishNode(cassandraName, snap.PluginAnyVersion)
 	cassandraPublisher.AddConfigItem("server", "127.0.0.1")
 	cassandraPublisher.AddConfigItem("keyspaceName", "swan")
+	cassandraPublisher.AddConfigItem("tagIndex", "swan_experiment")
 
 	snapSession := snap.NewSession(
 		"swan-test-cassandra-publisher-session",
