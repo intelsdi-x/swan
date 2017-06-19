@@ -32,3 +32,8 @@ make all WHAT="cmd/hyperkube" KUBE_BUILD_PLATFORMS="linux/amd64"
 Compiled binary can be found at `_output/bin/hyperkube`. You should distribute it to all the Kubernetes nodes used for experimentation.
 
 The issue will be fixed in Kubernetes 1.7.
+
+## Using Swan on OpenStack
+
+By default OpenStack flavors places CPUs on separate sockets. Sensitivity Profile Experiment is designed to measure workload interference on single socket and requires at least two cores on a single socket.
+To change CPU topology to contain all vCPUs on single socket please refer to [this](https://docs.openstack.org/admin-guide/compute-cpu-topologies.html#customizing-instance-cpu-topologies).
