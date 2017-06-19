@@ -89,6 +89,14 @@ func main() {
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
+	// Save information about tags that experiments is going to generate, to automatically build a visualization of results.
+	err = metadata.RecordTags([]string{
+		experiment.LoadPointQPSKey,
+		experiment.AggressorNameKey,
+		"number_of_threads",
+	})
+	errutil.CheckWithContext(err, "Cannot tags metadata in Cassandra Metadata Database")
+
 	// Validate preconditions.
 	validate.OS()
 

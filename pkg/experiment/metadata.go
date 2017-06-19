@@ -30,6 +30,7 @@ const (
 	metadataKindFlags    = "flags"
 	metadataKindEnviron  = "environ"
 	metadataKindPlatform = "platform"
+	metadataKindTags     = "tags"
 )
 
 // MetadataConfig encodes the settings for connecting to the database.
@@ -200,6 +201,16 @@ func (m *Metadata) Record(key string, value string) error {
 // RecordMap stores a key and value map and associates with the experiment id.
 func (m *Metadata) RecordMap(metadata MetadataMap) error {
 	return m.storeMap(metadata, metadataKindEmpty)
+}
+
+// RecordTags saves information about tags that experiments is going to generate,
+// that one can automatically build a visualization of results.
+func (m *Metadata) RecordTags(tags []string) error {
+	metadata := MetadataMap{}
+	for _, tag := range tags {
+		metadata[tag] = tag
+	}
+	return m.storeMap(metadata, metadataKindTags)
 }
 
 //RecordRuntimeEnv store experiment environment information in Cassandra.
