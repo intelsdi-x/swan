@@ -52,7 +52,7 @@ Inside guest OS, the Mutilate load generator needs to be build. To do so, please
 git clone https://github.com/leverich/mutilate
 cd mutilate
 scons
-sudo ln -sf `pwd`/mutilate /bin/
+sudo ln -sf `pwd`/mutilate /usr/bin/
 ```
 To run experiment, invoke:
 
