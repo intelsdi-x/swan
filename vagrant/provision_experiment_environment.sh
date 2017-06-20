@@ -136,6 +136,8 @@ yum install -y -q snap-telemetry-${SNAP_VERSION}
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
 daemonStatus snap-telemetry
+ln -sf /opt/snap/bin/* /usr/bin/
+ln -sf /opt/snap/sbin/* /usr/sbin/
 
 
 echo "----------------------------- Install external Snap plugins (`date`)"
