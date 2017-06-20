@@ -58,6 +58,6 @@ ln -svf $HOME_DIR/go/src/github.com/intelsdi-x/swan $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
 chmod -R +x /opt/swan/bin/*
-ln -svf /opt/swan/bin/* /bin/
+ln -svf /opt/swan/bin/* /usr/bin/
 
 echo "--------------------------- Provisioning development environment done (`date`)"

@@ -153,6 +153,6 @@ chmod +x -R /opt/swan/bin
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
 chmod -R +x /opt/swan/bin/*
-ln -svf ${SWAN_BIN}/* /bin/
+ln -svf ${SWAN_BIN}/* /usr/bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"
