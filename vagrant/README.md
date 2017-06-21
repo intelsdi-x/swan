@@ -27,7 +27,6 @@ git clone git@github.com:intelsdi-x/swan.git
 cd swan/vagrant
 export SWAN_DEVELOPMENT_ENVIRONMENT=true
 vagrant plugin install vagrant-vbguest  # automatic guest additions
-vagrant box update
 vagrant up
 vagrant ssh
 ```
