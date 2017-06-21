@@ -31,7 +31,9 @@ func TestCaffeWithMockedExecutor(t *testing.T) {
 		mExecutor := new(executor.MockExecutor)
 		mHandle := new(executor.MockTaskHandle)
 
-		c := New(mExecutor, DefaultConfig())
+		config := DefaultConfig()
+		config.CollectAPM = false
+		c := New(mExecutor, config)
 		Convey("When I launch the workload with success", func() {
 			mExecutor.On("Execute", mock.AnythingOfType("string")).Return(mHandle, nil).Once()
 			handle, err := c.Launch()
