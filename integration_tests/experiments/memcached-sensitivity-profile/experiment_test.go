@@ -30,7 +30,6 @@ import (
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/workloads/low_level/stressng"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
