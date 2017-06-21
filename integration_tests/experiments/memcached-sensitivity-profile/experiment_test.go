@@ -183,7 +183,7 @@ func TestExperiment(t *testing.T) {
 
 				_, _, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
-				So(stressng.IDCacheL1, ShouldBeIn, swanAggressorsNames)
+				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 
 				// Check metadata was saved.
 				var (
@@ -214,7 +214,7 @@ func TestExperiment(t *testing.T) {
 				_, swanRepetitions, swanAggressorsNames, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
 
-				So(stressng.IDCacheL1, ShouldBeIn, swanAggressorsNames)
+				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 
 				So("0", ShouldBeIn, swanRepetitions)

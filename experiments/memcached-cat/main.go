@@ -28,19 +28,15 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/caffe"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
-	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/pkg/errors"
 )
 
@@ -59,12 +55,6 @@ func main() {
 	// Preparing application - setting name, help, parsing flags etc.
 	experimentStart := time.Now()
 	experiment.Configure()
-
-	// This very experiment needs to be run on K8s
-	if !sensitivity.RunOnKubernetesFlag.Value() {
-		logrus.Errorf("The experiment HAS to be run on Kubernetes!")
-		os.Exit(experiment.ExUsage)
-	}
 
 	// Generate an experiment ID and start the metadata session.
 	uid := uuid.New()
@@ -99,21 +89,7 @@ func main() {
 		qpsList = append(qpsList, vInt)
 	}
 
-	// Discover local CPU topology.
-	hpCores := topology.HpRangeFlag.Value()
-	beCores := topology.BeRangeFlag.Value()
-
-	if len(beCores) == 0 || len(hpCores) == 0 {
-		logrus.Errorf("HP & BE workloads ranges required! (please specify -%s and -%s)", topology.HpRangeFlag.Name, topology.BeRangeFlag.Name)
-		os.Exit(experiment.ExUsage)
-	}
-	logrus.Debugf("HP CPU range: %s", hpCores.AsRangeString())
-	logrus.Debugf("BE CPU range: %s", beCores.AsRangeString())
-
-	// If maximum number of cores is not provided - use all.
-	if maxBECPUsCount == 0 {
-		maxBECPUsCount = len(beCores)
-	}
+	hpThreads, _, beThreads := sensitivity.GetWorkloadCPUThreads()
 
 	// Record metadata.
 	records := map[string]string{
@@ -130,19 +106,7 @@ func main() {
 	}
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
-	logrus.Debugf("IntSet with all BE cores: %v", beCores)
-
-	//We do not need to start Kubernetes on each repetition.
-	cleanup, err := sensitivity.LaunchKubernetesCluster()
-	errutil.CheckWithContext(err, "Cannot launch Kubernetes cluster")
-	defer func() {
-		if cleanup != nil {
-			err := cleanup()
-			if err != nil {
-				logrus.Errorf("Kubernetes cleanup failed: %q", err)
-			}
-		}
-	}()
+	logrus.Debugf("IntSet with all BE cores: %v", beThreads)
 
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
@@ -158,6 +122,12 @@ func main() {
 	numberOfAvailableCacheWays := uint64(maxCacheWaysToAssign + minCacheWaysToAssign)
 	wholeCacheMask := 1<<numberOfAvailableCacheWays - 1
 
+	if sensitivity.ShouldLaunchKubernetesCluster() {
+		handle, err := sensitivity.LaunchKubernetesCluster()
+		errutil.CheckWithContext(err, "Could not launch Kubernetes cluster")
+		defer handle.Stop()
+	}
+
 	for _, aggressorName := range aggressors {
 		logrus.Debugf("starting aggressor: %s", aggressorName)
 		for _, qps := range qpsList {
@@ -167,10 +137,10 @@ func main() {
 			for BECPUsCount := maxBECPUsCount; BECPUsCount >= minBECPUsCount; BECPUsCount-- {
 				logrus.Debugf("starting cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
 				// Chose CPUs to be used
-				cores, err := beCores.Take(BECPUsCount)
+				cores, err := beThreads.Take(BECPUsCount)
 				errutil.CheckWithContext(err, fmt.Sprintf("unable to subtract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
 				beCoresRange := cores.AsRangeString()
-				hpCoresRange := hpCores.AsRangeString()
+				hpCoresRange := hpThreads.AsRangeString()
 				logrus.Debugf("Subtracted %d cores and got: %v", BECPUsCount, beCoresRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
@@ -196,55 +166,53 @@ func main() {
 					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
 					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, beIsolation)
 
-					// Create executors with cleanup function.
-					hpExecutor, err := sensitivity.CreateKubernetesHpExecutor(hpIsolation)
-					errutil.CheckWithContext(err, "Cannot create executors")
-					beExecutorFactory := sensitivity.DefaultKubernetesBEExecutorFactory
+					workloadFactory := sensitivity.NewWorkloadFactoryWithIsolation(
+						sensitivity.NewExecutorFactory(),
+						hpIsolation,
+						beIsolation,
+						beIsolation,
+					)
+
+					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
+
+					// Building snap workload tags.
+					snapTags := make(map[string]interface{})
+					snapTags[experiment.ExperimentKey] = uid
+					snapTags[experiment.PhaseKey] = phaseName
+					snapTags[experiment.AggressorNameKey] = aggressorName
+					snapTags[experiment.LoadPointQPSKey] = qps
+					snapTags["be_l3_cache_ways"] = beCacheWays
+					snapTags["be_number_of_cores"] = BECPUsCount
+					snapTags["be_cores_range"] = beCoresRange
+					snapTags["hp_cores_range"] = hpCoresRange
+
+					// Create HP workload.
+					hpLauncher, err := workloadFactory.BuildDefaultHighPriorityLauncher(sensitivity.Memcached, snapTags)
+					errutil.CheckWithContext(err, "Cannot create Memcached")
+
+					// Create BE workloads.
+					beLauncher, err := workloadFactory.BuildDefaultBestEffortLauncher(aggressorName, snapTags)
+					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create best effort workload %q", aggressorName))
 
 					// Clean any RDT assignments from previous phases.
 					pqosOutput, err := isolation.CleanRDTAssingments()
 					logrus.Debugf("pqos -R has been run and produced following output: %q", pqosOutput)
-					errutil.CheckWithContext(err, "pqos -R failed")
-
-					// Create BE workloads.
-					beLauncher := createLauncherSessionPair(aggressorName, beIsolation, beIsolation, beExecutorFactory)
-
-					// Create HP workload.
-					memcachedConfig := memcached.DefaultMemcachedConfig()
-					hpLauncher := executor.ServiceLauncher{Launcher: memcached.New(hpExecutor, memcachedConfig)}
+					errutil.CheckWithContext(err, "cleaning rdt assigments failed (pqos -R)")
 
 					// Create load generator.
-					loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
+					loadGenerator, err := common.PrepareDefaultMutilateGenerator()
 					errutil.CheckWithContext(err, "Cannot create Mutilate load generator")
 
 					// Create snap session launcher
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
 					errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
-					// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-					aggressorName := fmt.Sprintf("Baseline")
-					if beLauncher.Launcher != nil {
-						aggressorName = beLauncher.Launcher.String()
-					}
-
-					phaseName := fmt.Sprintf("Aggressor %s (at %d QPS) - BE LLC %b", aggressorName, qps, beCacheMask)
 					// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 					var processes []executor.TaskHandle
 
 					// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 					// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 					executeRepetition := func() error {
-						// Building snap workload tags.
-						snapTags := make(map[string]interface{})
-						snapTags[experiment.ExperimentKey] = uid
-						snapTags[experiment.PhaseKey] = phaseName
-						snapTags[experiment.AggressorNameKey] = aggressorName
-						snapTags[experiment.LoadPointQPSKey] = qps
-						snapTags["be_l3_cache_ways"] = beCacheWays
-						snapTags["be_number_of_cores"] = BECPUsCount
-						snapTags["be_cores_range"] = beCoresRange
-						snapTags["hp_cores_range"] = hpCoresRange
-
 						logrus.Infof("Starting %s", phaseName)
 
 						err = experiment.CreateRepetitionDir(appName, uid, phaseName, 0)
@@ -265,22 +233,12 @@ func main() {
 
 						var beHandle executor.TaskHandle
 						// Start BE job (and its session if it exists)
-						if beLauncher.Launcher != nil {
-							beHandle, err = beLauncher.Launcher.Launch()
+						if beLauncher != nil {
+							beHandle, err = beLauncher.Launch()
 							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher.Launcher, phaseName)
+								return errors.Wrapf(err, "cannot launch aggressor %s in %s", beLauncher, phaseName)
 							}
 							processes = append(processes, beHandle)
-						}
-
-						// Majority of LauncherSessionPairs do not use Snap.
-						if beLauncher.SnapSessionLauncher != nil {
-							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
-							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor snap session for %s", phaseName)
-							}
-							defer aggressorSnapHandle.Stop()
 						}
 
 						var rdtSessionHandle executor.TaskHandle
@@ -366,21 +324,4 @@ func main() {
 		}
 	}
 	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid, time.Since(experimentStart).String())
-}
-
-func createLauncherSessionPair(aggressorName string, l1Isolation, llcIsolation isolation.Decorator, beExecutorFactory sensitivity.ExecutorFactoryFunc) (beLauncher sensitivity.LauncherSessionPair) {
-	aggressorFactory := sensitivity.NewMultiIsolationAggressorFactory(l1Isolation, llcIsolation)
-	aggressor, err := aggressorFactory.Create(aggressorName, beExecutorFactory)
-	errutil.CheckWithContext(err, "Cannot create aggressor pair")
-
-	switch aggressorName {
-	case caffe.ID, sensitivity.CaffeAggressorWithIsolation:
-		caffeSession, err := caffeinferencesession.NewSessionLauncher(caffeinferencesession.DefaultConfig())
-		errutil.CheckWithContext(err, "Cannot create Caffee session launcher")
-		beLauncher = sensitivity.NewMonitoredLauncher(aggressor, caffeSession)
-	default:
-		beLauncher = sensitivity.NewLauncherWithoutSession(aggressor)
-	}
-
-	return
 }

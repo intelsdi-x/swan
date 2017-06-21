@@ -16,11 +16,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
@@ -104,12 +103,11 @@ func main() {
 		maxThreads = len(physicalCores)
 	}
 
-	// Launch Kubernetes cluster if necessary.
-	var cleanup func() error
-	if sensitivity.RunOnKubernetesFlag.Value() && !sensitivity.RunOnExistingKubernetesFlag.Value() {
-		cleanup, err = sensitivity.LaunchKubernetesCluster()
-		errutil.CheckWithContext(err, "Cannot launch Kubernetes cluster")
-		defer cleanup()
+	// Launch Kubernetes cluster.
+	if sensitivity.ShouldLaunchKubernetesCluster() {
+		handle, err := sensitivity.LaunchKubernetesCluster()
+		errutil.CheckWithContext(err, "Could not launch Kubernetes cluster")
+		defer handle.Stop()
 	}
 
 	// Create mutilate snap session launcher.
@@ -158,14 +156,9 @@ func main() {
 				err := experiment.CreateRepetitionDir(appName, uid, phaseName, 0)
 				errutil.PanicWithContext(err, "Cannot create repetition directory")
 
-				// Create memcached executor.
-				var memcachedExecutor executor.Executor
-				if sensitivity.RunOnKubernetesFlag.Value() {
-					memcachedExecutor, err = sensitivity.CreateKubernetesHpExecutor(isolators)
-					errutil.PanicWithContext(err, "Cannot create Kubernetes executor")
-				} else {
-					memcachedExecutor = executor.NewLocalIsolated(isolators)
-				}
+				executorFactory := sensitivity.NewExecutorFactory()
+				memcachedExecutor, err := executorFactory.BuildHighPriorityExecutor(isolators)
+				errutil.PanicWithContext(err, "cannot prepare Memcached executor")
 
 				// Create memcached launcher and start memcached
 				memcachedConfiguration := memcached.DefaultMemcachedConfig()

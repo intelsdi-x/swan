@@ -21,20 +21,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
-	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
-
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 )
@@ -64,31 +61,24 @@ func main() {
 	// Validate preconditions.
 	validate.OS()
 
-	// Create isolations.
-	hpIsolation, l1Isolation, llcIsolation := topology.NewIsolations()
+	// Launch Kubernetes cluster.
+	if sensitivity.ShouldLaunchKubernetesCluster() {
+		handle, err := sensitivity.LaunchKubernetesCluster()
+		errutil.CheckWithContext(err, "Could not launch Kubernetes cluster")
+		defer handle.Stop()
+	}
 
-	// Create executors with cleanup function.
-	hpExecutor, beExecutorFactory, cleanup, err := sensitivity.PrepareExecutors(hpIsolation)
-	errutil.CheckWithContext(err, "cannot prepare executors")
-	defer func() {
-		if cleanup != nil {
-			err := cleanup()
-			if err != nil {
-				logrus.Errorf("Cannot clean the environment: %q", err)
-			}
-		}
-	}()
+	tuningTags := make(map[string]interface{})
+	tuningTags[experiment.ExperimentKey] = uid
+	tuningTags[experiment.PhaseKey] = "tuning"
 
-	// Create BE workloads.
-	beLaunchers, err := sensitivity.PrepareAggressors(l1Isolation, llcIsolation, beExecutorFactory)
-	errutil.CheckWithContext(err, "cannot prepare aggressors")
+	factory := sensitivity.NewDefaultWorkloadFactory()
 
-	// Create HP workload.
-	memcachedConfig := memcached.DefaultMemcachedConfig()
-	hpLauncher := executor.ServiceLauncher{Launcher: memcached.New(hpExecutor, memcachedConfig)}
+	hpLauncher, err := factory.BuildDefaultHighPriorityLauncher(sensitivity.Memcached, tuningTags)
+	errutil.CheckWithContext(err, "cannot prepare memcached")
 
 	// Load generator.
-	loadGenerator, err := common.PrepareMutilateGenerator(memcachedConfig.IP, memcachedConfig.Port)
+	loadGenerator, err := common.PrepareDefaultMutilateGenerator()
 	errutil.CheckWithContext(err, "cannot prepare load generator")
 
 	snapSession, err := mutilatesession.NewSessionLauncherDefault()
@@ -124,17 +114,14 @@ func main() {
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "cannot save metadata")
 
-	for _, beLauncher := range beLaunchers {
+	bestEfforts := sensitivity.AggressorsFlag.Value()
+	for _, bestEffortWorkloadName := range bestEfforts {
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {
 			// Calculate number of QPS in phase.
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
-			// Generate name of the phase (taking zero-value LauncherSessionPair aka baseline into consideration).
-			aggressorName := sensitivity.NoneAggressorID
-			if beLauncher.Launcher != nil {
-				aggressorName = beLauncher.Launcher.String()
-			}
-			phaseName := fmt.Sprintf("Aggressor %s; load point %d;", aggressorName, loadPoint)
+
 			for repetition := 0; repetition < repetitions; repetition++ {
+				phaseName := fmt.Sprintf("Aggressor %s; load point %d; repetitiion %d", bestEffortWorkloadName, loadPoint, repetition)
 				// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 				var processes []executor.TaskHandle
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
@@ -142,11 +129,20 @@ func main() {
 				executeRepetition := func() error {
 					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
 
+					snapTags := make(map[string]interface{})
+					snapTags[experiment.ExperimentKey] = uid
+					snapTags[experiment.PhaseKey] = phaseName
+					snapTags[experiment.RepetitionKey] = repetition
+					snapTags[experiment.LoadPointQPSKey] = phaseQPS
+					snapTags[experiment.AggressorNameKey] = bestEffortWorkloadName
+
 					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
 						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
 					}
 
+					hpLauncher, err := factory.BuildDefaultHighPriorityLauncher(sensitivity.Memcached, snapTags)
+					errutil.CheckWithContext(err, "cannot prepare memcached")
 					hpHandle, err := hpLauncher.Launch()
 					if err != nil {
 						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
@@ -158,34 +154,16 @@ func main() {
 						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
 					}
 
-					snapTags := make(map[string]interface{})
-					snapTags[experiment.ExperimentKey] = uid
-					snapTags[experiment.PhaseKey] = phaseName
-					snapTags[experiment.RepetitionKey] = repetition
-					snapTags[experiment.LoadPointQPSKey] = phaseQPS
-					snapTags[experiment.AggressorNameKey] = aggressorName
-
+					beLauncher, err := factory.BuildDefaultBestEffortLauncher(bestEffortWorkloadName, snapTags)
+					errutil.CheckWithContext(err, fmt.Sprintf("cannot prepare best effort workload %q", bestEffortWorkloadName))
 					// Launch BE tasks when we are not in baseline.
 					var beHandle executor.TaskHandle
-					if beLauncher.Launcher != nil {
-						beHandle, err := beLauncher.Launcher.Launch()
+					if beLauncher != nil {
+						beHandle, err := beLauncher.Launch()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher.Launcher, phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher, phaseName, repetition)
 						}
 						processes = append(processes, beHandle)
-
-						// Majority of LauncherSessionPairs do not use Snap.
-						if beLauncher.SnapSessionLauncher != nil {
-							logrus.Debugf("starting snap session: ")
-							aggressorSnapHandle, err := beLauncher.SnapSessionLauncher.LaunchSession(beHandle, snapTags)
-							if err != nil {
-								return errors.Wrapf(err, "cannot launch aggressor snap session for %s, repetition %d", phaseName, repetition)
-							}
-							defer func() {
-								aggressorSnapHandle.Stop()
-							}()
-						}
-
 					}
 
 					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
@@ -245,7 +223,7 @@ func main() {
 				// If any error was found then we should log details and terminate the experiment if stopOnError is set.
 				err = errColl.GetErrIfAny()
 				if err != nil {
-					logrus.Errorf("Experiment failed (%s, repetition %d): %q", phaseName, repetition, err.Error())
+					logrus.Errorf("Experiment failed (%s): %q", phaseName, err.Error())
 					if stopOnError {
 						os.Exit(experiment.ExSoftware)
 					}
@@ -253,5 +231,5 @@ func main() {
 			}
 		}
 	}
-	logrus.Infof("Ended experiment %s with uid %s in %s", appName, uid, time.Since(experimentStart).String())
+	logrus.Infof("Experiment %s with uid %s has ended in %s", appName, uid, time.Since(experimentStart).String())
 }
