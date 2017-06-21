@@ -19,36 +19,25 @@ import (
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 )
 
-// PrepareSpecjbbLoadGenerator creates new LoadGenerator based on specjbb.
+// PrepareSpecjbbLoadGenerator creates new LoadGenerator for SPECjbb workload.
 func PrepareSpecjbbLoadGenerator(controllerAddress string, transactionInjectorsCount int) (executor.LoadGenerator, error) {
-	var loadGeneratorExecutor executor.Executor
-	var transactionInjectors []executor.Executor
-	if controllerAddress != "127.0.0.1" {
-		var err error
-		loadGeneratorExecutor, err = executor.NewRemoteFromIP(controllerAddress)
+	transactionInjectors := make([]executor.Executor, 0)
+	loadGeneratorExecutor, err := executor.NewShell(controllerAddress)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < transactionInjectorsCount; i++ {
+		transactionInjector, err := executor.NewShell(controllerAddress)
 		if err != nil {
 			return nil, err
 		}
-		for i := 0; i < transactionInjectorsCount; i++ {
-			transactionInjector, err := executor.NewRemoteFromIP(controllerAddress)
-			if err != nil {
-				return nil, err
-			}
-			transactionInjectors = append(transactionInjectors, transactionInjector)
-		}
-	} else {
-		loadGeneratorExecutor = executor.NewLocal()
-		for i := 0; i < transactionInjectorsCount; i++ {
-			transactionInjector := executor.NewLocal()
-			transactionInjectors = append(transactionInjectors, transactionInjector)
-		}
+		transactionInjectors = append(transactionInjectors, transactionInjector)
 	}
 
-	specjbbLoadGeneratorConfig := specjbb.DefaultLoadGeneratorConfig()
-	specjbbLoadGeneratorConfig.ControllerAddress = controllerAddress
-
-	loadGeneratorLauncher := specjbb.NewLoadGenerator(loadGeneratorExecutor,
-		transactionInjectors, specjbbLoadGeneratorConfig)
+	loadGeneratorLauncher := specjbb.NewLoadGenerator(
+		loadGeneratorExecutor,
+		transactionInjectors,
+		specjbb.DefaultLoadGeneratorConfig())
 
 	return loadGeneratorLauncher, nil
 }

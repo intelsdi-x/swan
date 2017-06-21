@@ -16,6 +16,7 @@ package specjbb
 
 import (
 	"path"
+	"runtime"
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -28,10 +29,15 @@ const (
 )
 
 var (
-	// PathToSPECjbb specifies path to a SPECjbb2015 jar file for hp job.
-	PathToSPECjbb = conf.NewStringFlag("specjbb_path",
+	// pathToSPECjbb specifies path to a SPECjbb2015 jar file for hp job.
+	pathToSPECjbb = conf.NewStringFlag("specjbb_path",
 		"Path to SPECjbb",
 		"/opt/swan/share/specjbb")
+
+	workerCountFlag = conf.NewIntFlag(
+		"specjbb_worker_count",
+		"Number of fork join worker threads (defaults to number of logical threads)",
+		runtime.NumCPU())
 )
 
 // BackendConfig is a config for a SPECjbb2015 Backend,
@@ -47,10 +53,10 @@ type BackendConfig struct {
 func DefaultSPECjbbBackendConfig() BackendConfig {
 	return BackendConfig{
 		JVMOptions:        DefaultJVMOptions(),
-		PathToBinary:      path.Join(PathToSPECjbb.Value(), "specjbb2015.jar"),
+		PathToBinary:      path.Join(pathToSPECjbb.Value(), "specjbb2015.jar"),
 		ControllerAddress: ControllerAddress.Value(),
 		JvmID:             backendJvmID,
-		WorkerCount:       1,
+		WorkerCount:       workerCountFlag.Value(),
 	}
 }
 

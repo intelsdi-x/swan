@@ -64,12 +64,12 @@ func DefaultLoadGeneratorConfig() LoadGeneratorConfig {
 	return LoadGeneratorConfig{
 		JVMOptions:           DefaultJVMOptions(),
 		ControllerAddress:    ControllerAddress.Value(),
-		PathToBinary:         path.Join(PathToSPECjbb.Value(), "specjbb2015.jar"),
-		PathToProps:          path.Join(PathToSPECjbb.Value(), "config/specjbb2015.props"),
+		PathToBinary:         path.Join(pathToSPECjbb.Value(), "specjbb2015.jar"),
+		PathToProps:          path.Join(pathToSPECjbb.Value(), "config/specjbb2015.props"),
 		CustomerNumber:       CustomerNumberFlag.Value(),
 		ProductNumber:        ProductNumberFlag.Value(),
 		BinaryDataOutputDir:  BinaryDataOutputDirFlag.Value(),
-		PathToOutputTemplate: path.Join(PathToSPECjbb.Value(), "config/template-D.raw"),
+		PathToOutputTemplate: path.Join(pathToSPECjbb.Value(), "config/template-D.raw"),
 		HandshakeTimeoutMs:   600000,
 		EraseTuningOutput:    true,
 	}

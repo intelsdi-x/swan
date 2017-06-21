@@ -27,7 +27,7 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("When using Backend launcher", t, func() {
-		expectedCommand := "java -server -Xms2g -Xmx2g -XX:NativeMemoryTracking=summary -XX:+UseParallelOldGC  -XX:ParallelGCThreads=2 -XX:ConcGCThreads=1 -XX:InitiatingHeapOccupancyPercent=80 -XX:MaxGCPauseMillis=100 -XX:+AlwaysPreTouch  -Djava.library.path=/opt/swan/share/specjbb/lib -Dspecjbb.controller.host=127.0.0.1 -Dspecjbb.forkjoin.workers=1 -jar test -m backend -G GRP1 -J specjbbbackend1 -p /opt/swan/share/specjbb/config/specjbb2015.props"
+		expectedCommand := "java -server -Xms8g -Xmx8g -XX:NativeMemoryTracking=summary -XX:+UseParallelOldGC  -XX:ParallelGCThreads=4 -XX:ConcGCThreads=2 -XX:InitiatingHeapOccupancyPercent=80 -XX:MaxGCPauseMillis=100 -XX:+AlwaysPreTouch  -Djava.library.path=/opt/swan/share/specjbb/lib -Dspecjbb.controller.host=127.0.0.1 -Dspecjbb.forkjoin.workers=8 -jar test -m backend -G GRP1 -J specjbbbackend1 -p /opt/swan/share/specjbb/config/specjbb2015.props"
 		expectedHost := "127.0.0.1"
 
 		mockedExecutor := new(executor.MockExecutor)

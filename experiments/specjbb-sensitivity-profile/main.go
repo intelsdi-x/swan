@@ -29,7 +29,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
-	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/topology"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -40,11 +39,8 @@ import (
 )
 
 var (
-	specjbbTxICountFlag    = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
-	specjbbWorkerCountFlag = conf.NewIntFlag(
-		"specjbb_worker_count",
-		"Number of fork join worker threads (defaults to number of logical threads)",
-		runtime.NumCPU())
+	specjbbTxICountFlag = conf.NewIntFlag("specjbb_transaction_injectors_count", "Number of Transaction injectors run in one group", 1)
+
 	appName = os.Args[0]
 )
 
