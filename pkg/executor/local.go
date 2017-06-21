@@ -41,6 +41,9 @@ func NewLocal() Local {
 
 // NewLocalIsolated returns a Local instance with some isolators set.
 func NewLocalIsolated(decorator ...isolation.Decorator) Local {
+	if decorator == nil {
+		return Local{commandDecorators: isolation.Decorators{}}
+	}
 	return Local{commandDecorators: decorator}
 }
 

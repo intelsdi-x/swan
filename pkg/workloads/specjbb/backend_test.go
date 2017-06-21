@@ -27,8 +27,7 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("When using Backend launcher", t, func() {
-		expectedCommand := "java -server -Xms8g -Xmx8g -XX:NativeMemoryTracking=summary -XX:+UseParallelOldGC  -XX:ParallelGCThreads=4 -XX:ConcGCThreads=2 -XX:InitiatingHeapOccupancyPercent=80 -XX:MaxGCPauseMillis=100 -XX:+AlwaysPreTouch  -Djava.library.path=/opt/swan/share/specjbb/lib -Dspecjbb.controller.host=127.0.0.1 -Dspecjbb.forkjoin.workers=8 -jar test -m backend -G GRP1 -J specjbbbackend1 -p /opt/swan/share/specjbb/config/specjbb2015.props"
-		expectedHost := "127.0.0.1"
+		const expectedHost = "127.0.0.1"
 
 		mockedExecutor := new(executor.MockExecutor)
 		mockedTaskHandle := new(executor.MockTaskHandle)
@@ -37,24 +36,21 @@ func TestBackendWithMockedExecutor(t *testing.T) {
 		backendLauncher := NewBackend(mockedExecutor, config)
 
 		Convey("While simulating proper execution", func() {
+			const expectedHost = "127.0.0.1"
+			expectedCommand := getBackendCommand(config)
 			mockedExecutor.On("Execute", expectedCommand).Return(mockedTaskHandle, nil).Once()
 			mockedTaskHandle.On("Address").Return(expectedHost)
 
-			Convey("Build command should create proper command", func() {
-				command := getBackendCommand(config)
-				So(command, ShouldEqual, expectedCommand)
+			Convey("Arguments passed to Executor should be a proper command", func() {
+				task, err := backendLauncher.Launch()
+				So(err, ShouldBeNil)
 
-				Convey("Arguments passed to Executor should be a proper command", func() {
-					task, err := backendLauncher.Launch()
-					So(err, ShouldBeNil)
+				So(task, ShouldNotBeNil)
+				So(task, ShouldEqual, mockedTaskHandle)
 
-					So(task, ShouldNotBeNil)
-					So(task, ShouldEqual, mockedTaskHandle)
-
-					Convey("Location of the returned task shall be 127.0.0.1", func() {
-						address := task.Address()
-						So(address, ShouldEqual, expectedHost)
-					})
+				Convey("Location of the returned task shall be 127.0.0.1", func() {
+					address := task.Address()
+					So(address, ShouldEqual, expectedHost)
 				})
 			})
 		})
