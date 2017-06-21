@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	// ID is used for specifying which aggressors should be used via parameters.
-	ID   = "l1i"
 	name = "L1 Instruction"
 
 	// {min,max}Intensity are hardcoded values in l1i binary
