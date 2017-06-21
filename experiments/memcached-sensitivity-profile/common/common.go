@@ -19,6 +19,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/pkg/workloads/mutilate"
 )
 
@@ -39,6 +40,13 @@ var (
 		[]string{},
 	)
 )
+
+// PrepareDefaultMutilateGenerator returns Mutilate load generator targeted at Memcached on default IP (from IPFlag).
+func PrepareDefaultMutilateGenerator() (executor.LoadGenerator, error) {
+	memcachedIP := memcached.IPFlag.Value()
+	memcachedPort := memcached.PortFlag.Value()
+	return PrepareMutilateGenerator(memcachedIP, memcachedPort)
+}
 
 // PrepareMutilateGenerator creates new LoadGenerator based on mutilate.
 func PrepareMutilateGenerator(memcachedIP string, memcachedPort int) (executor.LoadGenerator, error) {

@@ -36,6 +36,11 @@ type ServiceLauncher struct {
 	Launcher
 }
 
+// NewServiceLauncher is constructor for ServiceLauncher.
+func NewServiceLauncher(launcher Launcher) ServiceLauncher {
+	return ServiceLauncher{Launcher: launcher}
+}
+
 // Launch implements Launcher interface.
 func (sl ServiceLauncher) Launch() (TaskHandle, error) {
 	th, err := sl.Launcher.Launch()
