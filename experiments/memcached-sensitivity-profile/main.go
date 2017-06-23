@@ -121,13 +121,13 @@ func main() {
 			phaseQPS := int(int(load) / sensitivity.LoadPointsCountFlag.Value() * (loadPoint + 1))
 
 			for repetition := 0; repetition < repetitions; repetition++ {
-				phaseName := fmt.Sprintf("Aggressor %s; load point %d; repetitiion %d", bestEffortWorkloadName, loadPoint, repetition)
+				phaseName := fmt.Sprintf("Aggressor %s; load point %d; repetition %d", bestEffortWorkloadName, loadPoint, repetition)
 				// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 				var processes []executor.TaskHandle
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
-					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
+					logrus.Infof("Starting phase: %s", phaseName)
 
 					snapTags := make(map[string]interface{})
 					snapTags[experiment.ExperimentKey] = uid
@@ -138,20 +138,20 @@ func main() {
 
 					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
-						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot create repetition log directory in phase %q", phaseName)
 					}
 
 					hpLauncher, err := factory.BuildDefaultHighPriorityLauncher(sensitivity.Memcached, snapTags)
 					errutil.CheckWithContext(err, "cannot prepare memcached")
 					hpHandle, err := hpLauncher.Launch()
 					if err != nil {
-						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot launch memcached in %s", phaseName)
 					}
 					processes = append(processes, hpHandle)
 
 					err = loadGenerator.Populate()
 					if err != nil {
-						return errors.Wrapf(err, "cannot populate memcached in %s, repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot populate memcached in %s", phaseName)
 					}
 
 					beLauncher, err := factory.BuildDefaultBestEffortLauncher(bestEffortWorkloadName, snapTags)
@@ -161,7 +161,7 @@ func main() {
 					if beLauncher != nil {
 						beHandle, err := beLauncher.Launch()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher, phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in phase %q", beLauncher, phaseName)
 						}
 						processes = append(processes, beHandle)
 					}
@@ -169,7 +169,7 @@ func main() {
 					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
 					loadGeneratorHandle, err := loadGenerator.Load(phaseQPS, loadDuration)
 					if err != nil {
-						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
+						return errors.Wrapf(err, "Unable to start load generation in phase %q", phaseName)
 					}
 
 					mutilateTerminated, err := loadGeneratorHandle.Wait(sensitivity.LoadGeneratorWaitTimeoutFlag.Value())
@@ -189,13 +189,13 @@ func main() {
 					if beHandle != nil {
 						err = beHandle.Stop()
 						if err != nil {
-							return errors.Wrapf(err, "best effort task has failed in phase %s, repetition %d", phaseName, repetition)
+							return errors.Wrapf(err, "best effort task has failed in phase %q", phaseName)
 						}
 					}
 
 					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
 					if err != nil {
-						return errors.Wrapf(err, "cannot launch mutilate Snap session in %s, repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %q", phaseName)
 					}
 					defer func() {
 						// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
@@ -205,7 +205,7 @@ func main() {
 
 					exitCode, err := loadGeneratorHandle.ExitCode()
 					if exitCode != 0 {
-						return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
+						return errors.Errorf("executing Load Generator returned with exit code %d in phase %q", exitCode, phaseName)
 					}
 
 					return nil

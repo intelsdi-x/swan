@@ -78,17 +78,18 @@ func NewKubernetesExecutorFactory() ExecutorFactory {
 
 // BuildHighPriorityExecutor returns Kubernetes Executor with Guaranteed or Burstable QoS class (depending on hpKubernetesGuaranteedClassFlag).
 func (factory KubernetesExecutorFactory) BuildHighPriorityExecutor(decorators ...isolation.Decorator) (executor.Executor, error) {
+	clusterConfig := kubernetes.DefaultConfig()
 	k8sExecutorConfig := executor.DefaultKubernetesConfig()
 
 	k8sExecutorConfig.PodNamePrefix = "swan-hp"
 	k8sExecutorConfig.NodeName = kubernetesNodeName.Value()
 	k8sExecutorConfig.Decorators = decorators
 	k8sExecutorConfig.HostNetwork = true
-	k8sExecutorConfig.Address = kubernetes.KubernetesMasterFlag.Value()
+	k8sExecutorConfig.Address = clusterConfig.GetKubeAPIAddress()
 	k8sExecutorConfig.CPURequest = int64(hpKubernetesCPUResourceFlag.Value())
 	k8sExecutorConfig.MemoryRequest = int64(hpKubernetesMemoryResourceFlag.Value())
 
-	// if limits is equal to requests
+	// Create guaranteed (resource requests == limits) pod.
 	if hpKubernetesGuaranteedClassFlag.Value() {
 		k8sExecutorConfig.CPULimit = int64(hpKubernetesCPUResourceFlag.Value())
 		k8sExecutorConfig.MemoryLimit = int64(hpKubernetesMemoryResourceFlag.Value())
@@ -101,12 +102,13 @@ func (factory KubernetesExecutorFactory) BuildHighPriorityExecutor(decorators ..
 
 // BuildBestEffortExecutor returns executor with Best Effort QoS class.
 func (factory KubernetesExecutorFactory) BuildBestEffortExecutor(decorators ...isolation.Decorator) (executor.Executor, error) {
-	k8sConfig := kubernetes.DefaultConfig()
+	clusterConfig := kubernetes.DefaultConfig()
+
 	config := executor.DefaultKubernetesConfig()
+	config.Address = clusterConfig.GetKubeAPIAddress()
 	config.PodNamePrefix = "swan-be"
 	config.NodeName = kubernetesNodeName.Value()
 	config.Decorators = decorators
 	config.Privileged = true // Best Effort workloads use unshare, which requires sudo.
-	config.Address = k8sConfig.GetKubeAPIAddress()
 	return executor.NewKubernetes(config)
 }

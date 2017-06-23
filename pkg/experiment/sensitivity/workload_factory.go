@@ -1,6 +1,7 @@
 package sensitivity
 
 import (
+	"fmt"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -110,7 +111,6 @@ func NewDefaultWorkloadFactory() WorkloadFactory {
 // NewWorkloadFactory creates new instance of WorkloadFactory.
 func NewWorkloadFactory(executorFactory ExecutorFactory) WorkloadFactory {
 	hpIsolation, l1Isolation, l3Isolation := GetWorkloadsIsolations()
-
 	return NewWorkloadFactoryWithIsolation(executorFactory, hpIsolation, l1Isolation, l3Isolation)
 }
 
@@ -162,7 +162,7 @@ func (factory *WorkloadFactory) createHighPriorityWorkload(
 	isolation isolation.Decorator,
 	tags snap.Tags) (executor.Launcher, error) {
 
-	exec, err := factory.executorFactory.BuildBestEffortExecutor(isolation, isolation)
+	exec, err := factory.executorFactory.BuildHighPriorityExecutor(isolation)
 	if err != nil {
 		return nil, err
 	}
@@ -268,9 +268,7 @@ func (factory *WorkloadFactory) getBestEffortAdditionalDecorators(workloadName s
 		if MembwProcessNumber.Value() != 1 {
 			return executor.NewParallel(MembwProcessNumber.Value())
 		}
-	default:
-		return nil
 	}
 
-	return nil
+	return isolation.Decorators{}
 }

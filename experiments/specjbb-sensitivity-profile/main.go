@@ -130,17 +130,17 @@ func main() {
 				// Using a closure allows us to defer cleanup functions. Otherwise handling cleanup might get much more complicated.
 				// This is the easiest and most golangish way. Deferring cleanup in case of errors to main() termination could cause panics.
 				executeRepetition := func() error {
-					logrus.Infof("Starting %s repetition %d", phaseName, repetition)
+					logrus.Infof("Starting %s", phaseName)
 
 					err := experiment.CreateRepetitionDir(appName, uid, phaseName, repetition)
 					if err != nil {
-						return errors.Wrapf(err, "cannot create repetition log directory in %s, repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot create repetition log directory in %s", phaseName)
 					}
 
 					// Launch specjbb backend (high priority job)
 					hpHandle, err := specjbbBackendLauncher.Launch()
 					if err != nil {
-						return errors.Wrapf(err, "cannot launch memcached in %s repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot launch memcached in %s", phaseName)
 					}
 					processes = append(processes, hpHandle)
 
@@ -149,7 +149,7 @@ func main() {
 					if beLauncher != nil {
 						beHandle, err = beLauncher.Launch()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch aggressor %q, in %s repetition %d", beLauncher, phaseName, repetition)
+							return errors.Wrapf(err, "cannot launch aggressor %q, in %s", beLauncher, phaseName)
 						}
 						processes = append(processes, beHandle)
 					}
@@ -158,7 +158,7 @@ func main() {
 					logrus.Debugf("Launching Load Generator with load point %d", loadPoint)
 					loadGeneratorHandle, err := specjbbLoadGenerator.Load(phaseQPS, loadDuration)
 					if err != nil {
-						return errors.Wrapf(err, "Unable to start load generation in %s, repetition %d.", phaseName, repetition)
+						return errors.Wrapf(err, "Unable to start load generation in %s.", phaseName)
 					}
 					loadGeneratorHandle.Wait(0)
 
@@ -172,7 +172,7 @@ func main() {
 					// Grap results from Load Generator
 					snapHandle, err := specjbbSnapSession.LaunchSession(loadGeneratorHandle, snapTags)
 					if err != nil {
-						return errors.Wrapf(err, "cannot launch specjbb load generator Snap session in %s, repetition %d", phaseName, repetition)
+						return errors.Wrapf(err, "cannot launch specjbb load generator Snap session in %s", phaseName)
 					}
 					defer func() {
 						// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.
@@ -182,7 +182,7 @@ func main() {
 
 					exitCode, err := loadGeneratorHandle.ExitCode()
 					if exitCode != 0 {
-						return errors.Errorf("executing Load Generator returned with exit code %d in %s, repetition %d", exitCode, phaseName, repetition)
+						return errors.Errorf("executing Load Generator returned with exit code %d in %s", exitCode, phaseName)
 					}
 
 					return nil

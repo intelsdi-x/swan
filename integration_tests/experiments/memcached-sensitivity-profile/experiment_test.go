@@ -170,7 +170,7 @@ func TestExperiment(t *testing.T) {
 
 				_, _, swanAggressorsNames, _, _ := loadDataFromCassandra(session, experimentID)
 				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
-				So("Caffe", ShouldBeIn, swanAggressorsNames)
+				So("caffe", ShouldBeIn, swanAggressorsNames)
 			})
 		})
 
@@ -241,7 +241,8 @@ func TestExperiment(t *testing.T) {
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 
-				So("Aggressor stress-ng-cache-l1; load point 0;", ShouldBeIn, swanPhases)
+				So("Aggressor stress-ng-cache-l1; load point 0; repetitiion 0", ShouldBeIn, swanPhases)
+				So("Aggressor stress-ng-cache-l1; load point 1; repetitiion 0", ShouldBeIn, swanPhases)
 
 			})
 		})
@@ -290,7 +291,7 @@ func TestExperiment(t *testing.T) {
 
 				tags, _, _, _, metricsCount := loadDataFromCassandra(session, experimentID)
 				So(metricsCount, ShouldBeGreaterThan, 0)
-				So(tags["swan_aggressor_name"], ShouldEqual, "Caffe")
+				So(tags["swan_aggressor_name"], ShouldEqual, "caffe")
 			})
 		})
 
