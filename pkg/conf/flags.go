@@ -14,6 +14,8 @@
 
 package conf
 
+import "fmt"
+
 // CassandraAddress represents cassandra address flag.
 var CassandraAddress = NewStringFlag("cassandra_address", "Address of Cassandra DB endpoint for Metadata and Snap Publishers.", "127.0.0.1")
 
@@ -59,3 +61,6 @@ var CassandraKeyspaceName = NewStringFlag("cassandra_keyspace_name", "Keyspace u
 
 // CassandraCreateKeyspace sets that publisher will attempt to create keyspace
 var CassandraCreateKeyspace = NewBoolFlag("cassandra_create_keyspace", "Attempt to create keyspace.", false)
+
+// CassandraTagIndex allows to pass comma-separated list of tags that will be used to insert metrics into tags table to improve SELECT performance.
+var CassandraTagIndex = NewStringFlag("cassandra_tag_index", fmt.Sprintf("Allows to pass comma-separated list of tags that will be used to insert metrics into %s.tags table to improve SELECT performance", CassandraKeyspaceName.Value()), "swan_experiment")

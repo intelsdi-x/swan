@@ -39,7 +39,7 @@ DOCKER_VERSION="17.03.0.ce-1.el7.centos"
 SNAP_PLUGIN_COLLECTOR_DOCKER_VERSION=5
 SNAP_PLUGIN_COLLECTOR_RDT_VERSION=1
 SNAP_PLUGIN_COLLECTOR_USE_VERSION=1
-SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=6
+SNAP_PLUGIN_PUBLISHER_CASSANDRA_VERSION=7
 SNAP_PLUGIN_PUBLISHER_FILE_VERSION=2
 
 echo "------------------------ Install OS Packages (`date`)"
@@ -136,6 +136,8 @@ yum install -y -q snap-telemetry-${SNAP_VERSION}
 systemctl enable snap-telemetry
 systemctl start snap-telemetry
 daemonStatus snap-telemetry
+ln -sf /opt/snap/bin/* /usr/bin/
+ln -sf /opt/snap/sbin/* /usr/sbin/
 
 
 echo "----------------------------- Install external Snap plugins (`date`)"
@@ -153,6 +155,6 @@ chmod +x -R /opt/swan/bin
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
 chmod -R +x /opt/swan/bin/*
-ln -svf ${SWAN_BIN}/* /bin/
+ln -svf ${SWAN_BIN}/* /usr/bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"

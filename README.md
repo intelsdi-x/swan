@@ -52,12 +52,12 @@ Inside guest OS, the Mutilate load generator needs to be build. To do so, please
 git clone https://github.com/leverich/mutilate
 cd mutilate
 scons
-sudo ln -sf `pwd`/mutilate /bin/
+sudo ln -sf `pwd`/mutilate /usr/bin/
 ```
 To run experiment, invoke:
 
 ```
-sudo memcached-sensitivity-profile -experiment_be_workloads=caffe -experiment_load_duration=5s -experiment_peak_load=10000 -experiment_repetitions=1 > uuid.txt
+sudo -E memcached-sensitivity-profile -experiment_be_workloads=caffe -experiment_load_duration=5s -experiment_peak_load=10000 -experiment_repetitions=1 > uuid.txt
 ```
 
 When experiment is running, please see how to [explore experiment data](/jupyter/README.md) to see results. Note that Experiment UUID that is necessary for obtaining experiment results will be available in `uuid.txt` file.
