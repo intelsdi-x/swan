@@ -136,12 +136,12 @@ func main() {
 			var beIteration, totalIteration int
 			for BECPUsCount := maxBECPUsCount; BECPUsCount >= minBECPUsCount; BECPUsCount-- {
 				logrus.Debugf("starting cores: %d with limit of %d", BECPUsCount, minBECPUsCount)
-				// Chose CPUs to be used
-				cores, err := beThreads.Take(BECPUsCount)
+				// Chose CPUs to be used.
+				beThreads, err := beThreads.Take(BECPUsCount)
 				errutil.CheckWithContext(err, fmt.Sprintf("unable to subtract cores for aggressor %q, number of cores %d, QpS %d", aggressorName, BECPUsCount, qps))
-				beCoresRange := cores.AsRangeString()
-				hpCoresRange := hpThreads.AsRangeString()
-				logrus.Debugf("Subtracted %d cores and got: %v", BECPUsCount, beCoresRange)
+				beThreadsRange := beThreads.AsRangeString()
+				hpThreadsRange := hpThreads.AsRangeString()
+				logrus.Debugf("Subtracted %d cores and got: %v", BECPUsCount, beThreadsRange)
 
 				for beCacheWays := maxCacheWaysToAssign; beCacheWays >= minCacheWaysToAssign; beCacheWays-- {
 					// Calculate BE and HP cache masks
@@ -156,14 +156,13 @@ func main() {
 					} else {
 						hpCacheWays = numberOfAvailableCacheWays
 						hpCacheMask = int(wholeCacheMask)
-
 					}
 
 					logrus.Debugf("Current L3 HP mask: %d, %b (%d)", hpCacheMask, hpCacheMask, hpCacheWays)
 					logrus.Debugf("Current L3 BE mask: %d, %b (%d)", beCacheMask, beCacheMask, beCacheWays)
 
-					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: hpCoresRange}
-					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beCoresRange}
+					hpIsolation := isolation.Rdtset{Mask: hpCacheMask, CPURange: hpThreadsRange}
+					beIsolation := isolation.Rdtset{Mask: beCacheMask, CPURange: beThreadsRange}
 					logrus.Debugf("HP isolation: %+v, BE isolation: %+v", hpIsolation, beIsolation)
 
 					workloadFactory := sensitivity.NewWorkloadFactoryWithIsolation(
@@ -183,12 +182,12 @@ func main() {
 					snapTags[experiment.LoadPointQPSKey] = qps
 					snapTags["be_l3_cache_ways"] = beCacheWays
 					snapTags["be_number_of_cores"] = BECPUsCount
-					snapTags["be_cores_range"] = beCoresRange
-					snapTags["hp_cores_range"] = hpCoresRange
+					snapTags["be_cores_range"] = beThreadsRange
+					snapTags["hp_cores_range"] = hpThreadsRange
 
 					// Create HP workload.
 					hpLauncher, err := workloadFactory.BuildDefaultHighPriorityLauncher(sensitivity.Memcached, snapTags)
-					errutil.CheckWithContext(err, "Cannot create Memcached")
+					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Memcached Launcher during phase %q", phaseName))
 
 					// Create BE workloads.
 					beLauncher, err := workloadFactory.BuildDefaultBestEffortLauncher(aggressorName, snapTags)
@@ -197,15 +196,15 @@ func main() {
 					// Clean any RDT assignments from previous phases.
 					pqosOutput, err := isolation.CleanRDTAssingments()
 					logrus.Debugf("pqos -R has been run and produced following output: %q", pqosOutput)
-					errutil.CheckWithContext(err, "cleaning rdt assigments failed (pqos -R)")
+					errutil.CheckWithContext(err, fmt.Sprintf("cleaning rdt assigments failed (pqos -R) during phase %q", phaseName))
 
 					// Create load generator.
 					loadGenerator, err := common.PrepareDefaultMutilateGenerator()
-					errutil.CheckWithContext(err, "Cannot create Mutilate load generator")
+					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate load generator during phase %q", phaseName))
 
 					// Create snap session launcher
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
-					errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
+					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
 
 					// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 					var processes []executor.TaskHandle

@@ -72,8 +72,8 @@ var (
 		[]string{NoneAggressorID, strssngL3, stressngMemcpy, stressngStream, caffeWorkload},
 	)
 
-	theatAggressorsAsService = conf.NewBoolFlag(
-		"debug_treat_be_as_service", "Debug only: Best Effort workloads are wrapped in Service flags so that the experiment can track their lifectcle. Default `true` should not be changed without explicit reason.",
+	treatAggressorsAsService = conf.NewBoolFlag(
+		"debug_treat_be_as_service", "Debug only: Best Effort workloads are wrapped in Service flags so that the experiment can track their lifecycle. Default `true` should not be changed without explicit reason.",
 		true)
 
 	// L1dProcessNumber represents number of L1 data cache aggressor processes to be run
@@ -194,14 +194,14 @@ func (factory *WorkloadFactory) createBestEffortWorkload(
 	name string,
 	isolation isolation.Decorator,
 	tags snap.Tags) (executor.Launcher, error) {
-	// Zero-value sensitivity.LauncherSessionPair represents baseline.
+
 	if name == NoneAggressorID {
 		return nil, nil
 	}
 
 	var workload executor.Launcher
 	additionalDecorators := factory.getBestEffortAdditionalDecorators(name)
-	exec, err := factory.executorFactory.BuildBestEffortExecutor(isolation.Decorators{isolation, additionalDecorators}, isolation.Decorators{isolation, additionalDecorators})
+	exec, err := factory.executorFactory.BuildBestEffortExecutor(isolation, additionalDecorators)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (factory *WorkloadFactory) createBestEffortWorkload(
 		return nil, errors.Errorf("unknown best effort task %q", name)
 	}
 
-	if theatAggressorsAsService.Value() {
+	if treatAggressorsAsService.Value() {
 		workload = executor.ServiceLauncher{Launcher: workload}
 	}
 
