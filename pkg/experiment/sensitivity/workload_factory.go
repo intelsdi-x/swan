@@ -1,7 +1,20 @@
+// Copyright (c) 2017 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package sensitivity
 
 import (
-	"fmt"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
@@ -188,7 +201,7 @@ func (factory *WorkloadFactory) createBestEffortWorkload(
 
 	var workload executor.Launcher
 	additionalDecorators := factory.getBestEffortAdditionalDecorators(name)
-	exec, err := factory.executorFactory.BuildBestEffortExecutor(isolation, additionalDecorators)
+	exec, err := factory.executorFactory.BuildBestEffortExecutor(isolation.Decorators{isolation, additionalDecorators}, isolation.Decorators{isolation, additionalDecorators})
 	if err != nil {
 		return nil, err
 	}

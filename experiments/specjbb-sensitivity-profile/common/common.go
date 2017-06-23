@@ -22,7 +22,7 @@ import (
 // PrepareSpecjbbLoadGenerator creates new LoadGenerator for SPECjbb workload.
 func PrepareSpecjbbLoadGenerator(controllerAddress string, transactionInjectorsCount int) (executor.LoadGenerator, error) {
 	transactionInjectors := make([]executor.Executor, 0)
-	loadGeneratorExecutor, err := executor.NewShell(controllerAddress)
+	controller, err := executor.NewShell(controllerAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func PrepareSpecjbbLoadGenerator(controllerAddress string, transactionInjectorsC
 	}
 
 	loadGeneratorLauncher := specjbb.NewLoadGenerator(
-		loadGeneratorExecutor,
+		controller,
 		transactionInjectors,
 		specjbb.DefaultLoadGeneratorConfig())
 
