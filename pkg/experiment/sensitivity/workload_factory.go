@@ -144,7 +144,7 @@ func NewWorkloadFactoryWithIsolation(
 // BuildDefaultHighPriorityLauncher builds High Priority workload launcher with predefined isolation.
 func (factory *WorkloadFactory) BuildDefaultHighPriorityLauncher(
 	workloadName string, tags snap.Tags) (launcher executor.Launcher, err error) {
-	return factory.BuildHighPriorityLauncherWithIsolation(workloadName, factory.hpIsolation, tags)
+	return factory.createHighPriorityWorkload(workloadName, factory.hpIsolation, tags)
 }
 
 // BuildHighPriorityLauncherWithIsolation builds High Priority launcher with provided isolation.
@@ -159,7 +159,7 @@ func (factory *WorkloadFactory) BuildHighPriorityLauncherWithIsolation(
 func (factory *WorkloadFactory) BuildDefaultBestEffortLauncher(
 	workloadName string,
 	tags snap.Tags) (launcher executor.Launcher, err error) {
-	return factory.BuildBestEffortLauncherWithIsolation(workloadName, factory.getDefaultBestEffortIsolation(workloadName), tags)
+	return factory.createBestEffortWorkload(workloadName, factory.getDefaultBestEffortIsolation(workloadName), tags)
 }
 
 // BuildBestEffortLauncherWithIsolation builds Best Effort launcher with provided isolation.
