@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sensitivity
+package experiment
 
 import (
 	"github.com/intelsdi-x/swan/pkg/conf"
@@ -21,16 +21,16 @@ import (
 )
 
 var (
-	// runOnKubernetesFlag indicates that experiment is to be run on K8s cluster.
-	runOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch Kubernetes cluster and run workloads on Kubernetes. This flag is required to use other kubernetes flags. (caveat: cluster won't be started if `-kubernetes_run_on_existing` flag is set).  ", false)
-	// runOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
-	runOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It has to be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
+	// RunOnKubernetesFlag indicates that experiment is to be run on K8s cluster.
+	RunOnKubernetesFlag = conf.NewBoolFlag("kubernetes", "Launch Kubernetes cluster and run workloads on Kubernetes. This flag is required to use other kubernetes flags. (caveat: cluster won't be started if `-kubernetes_run_on_existing` flag is set).  ", false)
+	// RunOnExistingKubernetesFlag indicates that experiment should not set up a Kubernetes cluster but use an existing one.
+	RunOnExistingKubernetesFlag = conf.NewBoolFlag("kubernetes_run_on_existing", "Launch HP and BE tasks on existing Kubernetes cluster. (It has to be used with --kubernetes flag). User should provide 'kubernetes_kubeconfig' flag to kubeconfig to point proper API server.", false)
 )
 
-// ShouldLaunchKubernetesCluster checks runOnKubernetesFlag and runOnExistingKubernetesFlag
+// ShouldLaunchKubernetesCluster checks RunOnKubernetesFlag and RunOnExistingKubernetesFlag
 // and returns information if Kubernetes cluster should be launched.
 func ShouldLaunchKubernetesCluster() bool {
-	return runOnKubernetesFlag.Value() == true && runOnExistingKubernetesFlag.Value() == false
+	return RunOnKubernetesFlag.Value() == true && RunOnExistingKubernetesFlag.Value() == false
 }
 
 //LaunchKubernetesCluster starts new Kubernetes cluster using configuration provided with flags.

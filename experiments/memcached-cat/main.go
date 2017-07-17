@@ -122,8 +122,8 @@ func main() {
 	numberOfAvailableCacheWays := uint64(maxCacheWaysToAssign + minCacheWaysToAssign)
 	wholeCacheMask := 1<<numberOfAvailableCacheWays - 1
 
-	if sensitivity.ShouldLaunchKubernetesCluster() {
-		handle, err := sensitivity.LaunchKubernetesCluster()
+	if experiment.ShouldLaunchKubernetesCluster() {
+		handle, err := experiment.LaunchKubernetesCluster()
 		errutil.CheckWithContext(err, "Could not launch Kubernetes cluster")
 		defer handle.Stop()
 	}

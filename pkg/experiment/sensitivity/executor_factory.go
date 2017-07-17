@@ -21,6 +21,7 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 )
@@ -42,7 +43,7 @@ var (
 	// hpKubernetesGuaranteedClassFlag indicates tha HP workload will run as guarateed class.
 	hpKubernetesGuaranteedClassFlag = conf.NewBoolFlag("kubernetes_hp_guaranteed_class", "Run HP workload on Kubernetes as Pod with \"QoS Guaranteed resources class\" (by default runs as \"Burstable class\").", false)
 
-	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", runOnExistingKubernetesFlag.Name), hostname)
+	kubernetesNodeName = conf.NewStringFlag("kubernetes_target_node_name", fmt.Sprintf("Experiment's Kubernetes pods will be run on this node. Helpful when used with %q flag. Default is `$HOSTNAME`", experiment.RunOnExistingKubernetesFlag.Name), hostname)
 )
 
 // ExecutorFactory is prepares executor for High Priority and Best Effort workloads.
@@ -55,7 +56,7 @@ type ExecutorFactory interface {
 
 // NewExecutorFactory returns Local or Kubernetes executor factory, depending on flags.
 func NewExecutorFactory() ExecutorFactory {
-	if runOnKubernetesFlag.Value() {
+	if experiment.RunOnKubernetesFlag.Value() {
 		return NewKubernetesExecutorFactory()
 	}
 
