@@ -135,7 +135,11 @@ func (m *ClusterTaskHandle) EraseOutput() (err error) {
 
 // String returns name of underlying task.
 func (m *ClusterTaskHandle) String() string {
-	return fmt.Sprintf("Cluster TaskHandle containing master: %s", m.master.String())
+	var agents string
+	for _, agent := range m.agents {
+		agents += agent.String() + ","
+	}
+	return fmt.Sprintf("Cluster TaskHandle containing master: %s, and agents: %s", m.master.String(), agents)
 }
 
 // Address returns address of master task.

@@ -74,13 +74,17 @@ func DefaultConfig() Config {
 type Caffe struct {
 	exec executor.Executor
 	conf Config
+
+	// sessionConstructor is function pointer for UT purposes.
+	sessionConstructor func(caffeinferencesession.Config) (snap.SessionLauncher, error)
 }
 
 // New is a constructor for Caffe.
 func New(exec executor.Executor, config Config) executor.Launcher {
 	return Caffe{
-		exec: exec,
-		conf: config,
+		exec:               exec,
+		conf:               config,
+		sessionConstructor: caffeinferencesession.NewSessionLauncher,
 	}
 
 }
@@ -104,7 +108,7 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 
 	// TODO(skonefal): Actually, Snap Caffe Collection should launch Caffe Launcher.
 	if c.conf.CollectAPM {
-		snapLauncher, err := caffeinferencesession.NewSessionLauncher(c.conf.SnapConfig)
+		snapLauncher, err := c.sessionConstructor(c.conf.SnapConfig)
 		if err != nil {
 			task.Stop()
 			return nil, err

@@ -51,7 +51,7 @@ type SessionLauncher struct {
 }
 
 // NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
-func NewSessionLauncher(config Config) (*SessionLauncher, error) {
+func NewSessionLauncher(config Config) (snap.SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
