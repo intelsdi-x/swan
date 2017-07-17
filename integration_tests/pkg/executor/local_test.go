@@ -44,12 +44,6 @@ func TestLocal(t *testing.T) {
 		})
 
 		Convey("Should run properly when no single decoration is used", func() {
-			l := NewLocalIsolated(nil)
-			_, err := l.Execute("echo NewLocalIsolated")
-			So(err, ShouldBeNil)
-		})
-
-		Convey("Should run properly when no single decoration is used", func() {
 			taskSet := isolation.Taskset{CPUList: isolation.NewIntSet(1, 2)}
 			l := NewLocalIsolated(taskSet)
 			_, err := l.Execute("echo NewLocalIsolated")
