@@ -96,7 +96,7 @@ func loadDataFromCassandra(session *gocql.Session, experimentID string) (tags ma
 var memcachedSensitivityProfileBin = path.Join(testhelpers.SwanPath, "build/experiments/memcached/memcached-sensitivity-profile")
 
 func TestExperimentConfiguration(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.ErrorLevel)
 	const confFilename = "temp_new_config"
 
 	Convey("generated config should contain some flags", t, func() {
@@ -117,9 +117,7 @@ func TestExperimentConfiguration(t *testing.T) {
 
 			Reset(func() { os.Remove(confFilename) })
 		})
-
 	})
-
 }
 
 func TestExperiment(t *testing.T) {
@@ -241,8 +239,8 @@ func TestExperiment(t *testing.T) {
 				So("stress-ng-cache-l1", ShouldBeIn, swanAggressorsNames)
 				So(sensitivity.NoneAggressorID, ShouldNotBeIn, swanAggressorsNames)
 
-				So("Aggressor stress-ng-cache-l1; load point 0; repetitiion 0", ShouldBeIn, swanPhases)
-				So("Aggressor stress-ng-cache-l1; load point 1; repetitiion 0", ShouldBeIn, swanPhases)
+				So("Aggressor stress-ng-cache-l1; load point 0; repetition 0", ShouldBeIn, swanPhases)
+				So("Aggressor stress-ng-cache-l1; load point 1; repetition 0", ShouldBeIn, swanPhases)
 
 			})
 		})
