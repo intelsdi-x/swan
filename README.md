@@ -41,7 +41,6 @@ Run Vagrant image supplied by Swan:
 git clone https://github.com/intelsdi-x/swan
 cd swan/vagrant
 vagrant plugin install vagrant-vbguest
-vagrant box update
 vagrant up
 vagrant ssh
 ```
