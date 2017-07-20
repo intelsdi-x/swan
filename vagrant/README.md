@@ -21,7 +21,7 @@
 First - install: [Vagrant](https://www.vagrantup.com/docs/installation/), [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git). Then you just need to execute the following commands (they should work on any flavour of Linux):
 
 To run Vagrant development environment, the `$SWAN_DEVELOPMENT_ENVIRONMENT` variable must be set.
-
+If you want to use your local Glide cache in the Vagrant development environment the `$SHARE_GLIDE_CACHE` variable must be set.
 ```sh
 git clone git@github.com:intelsdi-x/swan.git
 cd swan/vagrant
