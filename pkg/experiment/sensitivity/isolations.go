@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package topology
+package sensitivity
 
 import (
 	log "github.com/Sirupsen/logrus"
@@ -42,13 +42,23 @@ type defaultTopology struct {
 	SiblingThreadsToHpThreads topo.ThreadSet
 }
 
-// NewIsolations returns isolations to be used with HP & set of aggressors depending on kind of stressed resource.
-// TODO: needs update for different isolation per cpu
-func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator) {
+// GetWorkloadsIsolations returns isolations to be used with HP & set of aggressors depending on kind of stressed resource.
+func GetWorkloadsIsolations() (hpIsolation, beL1Isolation, beLLCIsolation isolation.Decorator) {
+	hpThreads, beL1Threads, beLLCThreads := GetWorkloadCPUThreads()
+
+	hpIsolation = isolation.Taskset{CPUList: hpThreads}
+	beL1Isolation = isolation.Taskset{CPUList: beL1Threads}
+	beLLCIsolation = isolation.Taskset{CPUList: beLLCThreads}
+
+	return hpIsolation, beL1Isolation, beLLCIsolation
+}
+
+// GetWorkloadCPUThreads returns set of Thread IDs for High Priority and Best Effort workloads from flags.
+func GetWorkloadCPUThreads() (hpThreads, beL1Threads, beLLCThreads isolation.IntSet) {
 	if isManualPolicy() {
-		llcIsolation = isolation.Taskset{CPUList: BeRangeFlag.Value()}
-		l1Isolation = isolation.Taskset{CPUList: BeL1RangeFlag.Value()}
-		hpIsolation = isolation.Taskset{CPUList: HpRangeFlag.Value()}
+		beLLCThreads = BeRangeFlag.Value()
+		beL1Threads = BeL1RangeFlag.Value()
+		hpThreads = HpRangeFlag.Value()
 
 		log.Info("Using Manual Core Placement for workload isolation")
 		log.Debugf("HP CPU Threads from flag %q: %s", HpRangeFlag.Name, HpRangeFlag.Value().AsRangeString())
@@ -64,10 +74,6 @@ func NewIsolations() (hpIsolation, l1Isolation, llcIsolation isolation.Decorator
 			log.Warn("Machine does not support HyperThreads. L1-Cache Best Effort workloads will use LLC threads")
 			bel1Threads = bellcThreads
 		}
-
-		l1Isolation = isolation.Taskset{CPUList: bel1Threads}
-		llcIsolation = isolation.Taskset{CPUList: bellcThreads}
-		hpIsolation = isolation.Taskset{CPUList: hpThreads}
 
 		log.Info("Using Automatic Core Placement for workload isolation")
 		log.Debugf("HP CPU Threads from flag %q: %v", hpCPUCountFlag.Name, hpThreads)
@@ -88,7 +94,7 @@ func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
 	var topology defaultTopology
 	var err error
 
-	threadSet := sharedCacheThreads()
+	threadSet := topo.SharedCacheThreads()
 	topology.HpThreadIDs, err = threadSet.AvailableThreads().Take(hpCPUCount)
 	if err != nil {
 		return topology, errors.Wrapf(err, "there is not enough cpus to run HP task (%d required)", hpCPUCount)
@@ -99,7 +105,7 @@ func newDefaultTopology(hpCPUCount, beCPUCount int) (defaultTopology, error) {
 	if err != nil {
 		return topology, errors.Wrapf(err, "cannot allocate threads for HP task (threads IDs=%v)", topology.HpThreadIDs)
 	}
-	topology.SiblingThreadsToHpThreads = getSiblingThreadsOfThreadSet(threadSetOfHpThreads)
+	topology.SiblingThreadsToHpThreads = topo.GetSiblingThreadsOfThreadSet(threadSetOfHpThreads)
 
 	// Allocate BE threads from the remaining threads on the same socket as the
 	// HP workload.

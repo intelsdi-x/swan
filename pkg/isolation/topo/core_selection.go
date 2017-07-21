@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package topology
+package topo
 
 import (
-	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 )
 
-// sharedCacheThreads returns threads from one socket that share a last-level
+// SharedCacheThreads returns threads from one socket that share a last-level
 // cache. To avoid placing workloads on both hyperthreads for any physical
 // core, only one thread from each is included in the result.
-func sharedCacheThreads() topo.ThreadSet {
-	allThreads, err := topo.Discover()
+func SharedCacheThreads() ThreadSet {
+	allThreads, err := Discover()
 	errutil.Check(err)
 
 	// Retain only threads for one socket.
@@ -34,17 +33,18 @@ func sharedCacheThreads() topo.ThreadSet {
 	// NB: The following filter prediccate closes over this int set.
 	temp := socket.AvailableCores()
 
-	return socket.Filter(func(t topo.Thread) bool {
+	return socket.Filter(func(t Thread) bool {
 		retain := temp.Contains(t.Core())
 		temp.Remove(t.Core())
 		return retain
 	})
 }
 
-func getSiblingThreadsOfThread(reservedThread topo.Thread) topo.ThreadSet {
+// GetSiblingThreadsOfThread returns sibling HyperThread for supplied Thread.
+func GetSiblingThreadsOfThread(reservedThread Thread) ThreadSet {
 	requestedCore := reservedThread.Core()
 
-	allThreads, err := topo.Discover()
+	allThreads, err := Discover()
 	errutil.Check(err)
 
 	threadsFromCore, err := allThreads.FromCores(requestedCore)
@@ -53,9 +53,10 @@ func getSiblingThreadsOfThread(reservedThread topo.Thread) topo.ThreadSet {
 	return threadsFromCore.Remove(reservedThread)
 }
 
-func getSiblingThreadsOfThreadSet(threads topo.ThreadSet) (results topo.ThreadSet) {
+// GetSiblingThreadsOfThreadSet returns sibling HyperThreads for supplied ThreadSet.
+func GetSiblingThreadsOfThreadSet(threads ThreadSet) (results ThreadSet) {
 	for _, thread := range threads {
-		siblings := getSiblingThreadsOfThread(thread)
+		siblings := GetSiblingThreadsOfThread(thread)
 		for _, sibling := range siblings {
 			// Omit the reserved threads; if at least one pair from threads were
 			// siblings of each other, they would both otherwise wrongly end up in

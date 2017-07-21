@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	// ID is used for specifying which aggressors should be used via parameters.
-	ID              = "membw"
 	name            = "memBW"
 	defaultDuration = 86400 * time.Second
 )

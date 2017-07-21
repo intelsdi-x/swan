@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package topology
+package topo
 
 import (
 	"testing"
 
 	"github.com/intelsdi-x/swan/pkg/isolation"
-	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetSiblingThread(t *testing.T) {
-	allThreads, err := topo.Discover()
+	allThreads, err := Discover()
 	errutil.Check(err)
 
 	socket, err := allThreads.Sockets(1)
@@ -45,7 +44,7 @@ func TestGetSiblingThread(t *testing.T) {
 	errutil.Check(err)
 
 	Convey("When obtaining siblings of hyperthread", t, func() {
-		siblings := getSiblingThreadsOfThreadSet(hpThreads)
+		siblings := GetSiblingThreadsOfThreadSet(hpThreads)
 
 		Convey("Result siblings should be same size as entry threads and both should be nonempty", func() {
 			So(hpThreads, ShouldNotBeEmpty)

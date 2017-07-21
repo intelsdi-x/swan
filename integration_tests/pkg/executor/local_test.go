@@ -15,7 +15,6 @@
 package executor
 
 import (
-	"fmt"
 	"os/exec"
 	"os/user"
 	"testing"
@@ -31,10 +30,31 @@ func TestLocal(t *testing.T) {
 	Convey("While using Local Shell", t, func() {
 
 		l := NewLocal()
-		fmt.Printf("\n%q\n", l)
 
 		Convey("The generic Executor test should pass", func() {
 			testExecutor(t, l)
+		})
+	})
+
+	Convey("Local Executor with decorations", t, func() {
+		Convey("Should run properly when no decorations are used", func() {
+			l := NewLocalIsolated()
+			_, err := l.Execute("echo NewLocalIsolated")
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Should run properly when no single decoration is used", func() {
+			taskSet := isolation.Taskset{CPUList: isolation.NewIntSet(1, 2)}
+			l := NewLocalIsolated(taskSet)
+			_, err := l.Execute("echo NewLocalIsolated")
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Should run properly when multiple decorations are used", func() {
+			taskSet := isolation.Taskset{CPUList: isolation.NewIntSet(1, 2)}
+			l := NewLocalIsolated(taskSet, taskSet)
+			_, err := l.Execute("echo NewLocalIsolated")
+			So(err, ShouldBeNil)
 		})
 	})
 

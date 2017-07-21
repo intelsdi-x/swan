@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	// ID is used for specifying which aggressors should be used via parameters.
-	ID   = "stream"
 	name = "Stream 100M"
 )
 

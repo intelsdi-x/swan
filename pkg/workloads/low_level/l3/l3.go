@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	// ID is used for specifying which aggressors should be used via parameters.
-	ID              = "l3"
 	name            = "L3 Cache Aggressor"
 	defaultDuration = 86400 * time.Second
 )

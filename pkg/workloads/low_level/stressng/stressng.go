@@ -21,19 +21,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 )
 
-const (
-	// IDCustom is used for specifying which aggressors should be used via parameters.
-	IDCustom = "stress-ng-custom"
-	// IDStream is used for specifying which aggressors should be used via parameters.
-	IDStream = "stress-ng-stream"
-	// IDCacheL1 is used for specifying which aggressors should be used via parameters.
-	IDCacheL1 = "stress-ng-cache-l1"
-	// IDCacheL3 is used for specifying which aggressors should be used via parameters.
-	IDCacheL3 = "stress-ng-cache-l3"
-	// IDMemCpy is used for specifying which aggressors should be used via parameters.
-	IDMemCpy = "stress-ng-memcpy"
-)
-
 // StressngCustomArguments custom argument to run stress-ng with.
 var StressngCustomArguments = conf.NewStringFlag("stressng_custom_arguments", "Custom arguments to stress-ng", "")
 

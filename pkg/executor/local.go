@@ -31,7 +31,7 @@ import (
 // on local machine via exec.Command.
 // It runs command as current user.
 type Local struct {
-	commandDecorators isolation.Decorator
+	commandDecorators isolation.Decorators
 }
 
 // NewLocal returns instance of local executors without any isolators.
@@ -40,8 +40,8 @@ func NewLocal() Local {
 }
 
 // NewLocalIsolated returns a Local instance with some isolators set.
-func NewLocalIsolated(decorator isolation.Decorator) Local {
-	return Local{commandDecorators: decorator}
+func NewLocalIsolated(deco ...isolation.Decorator) Local {
+	return Local{commandDecorators: deco}
 }
 
 // String returns user-friendly name of executor.

@@ -23,9 +23,19 @@ import (
 	"github.com/intelsdi-x/snap/mgmt/rest/client"
 	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/pkg/errors"
 )
+
+// UseSnapSessionForWorkloads is flag enabling APM collection in workloads.
+var UseSnapSessionForWorkloads = conf.NewBoolFlag(
+	"use_snap_with_workloads",
+	"Collect Application Performance Metrics for workloads.",
+	true)
+
+// Tags is a structure containing tags for metrics gathering.
+type Tags map[string]interface{}
 
 type taskInfo struct {
 	Version  int

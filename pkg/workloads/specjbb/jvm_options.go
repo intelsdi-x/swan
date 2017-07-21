@@ -23,9 +23,9 @@ import (
 
 var (
 	// JVMHeapMemoryGBs specifies amount of heap memory available to JVM.
-	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 2)
+	JVMHeapMemoryGBs = conf.NewIntFlag("specjbb_jvm_heap_size", "Size of JVM heap memory in gigabytes", 8)
 	// ParallelGCThreads specifies number of thread for Garbage Collector
-	ParallelGCThreads = conf.NewIntFlag("specjbb_jvm_gc_threads", "Number of parallel GC threads", 2)
+	ParallelGCThreads = conf.NewIntFlag("specjbb_jvm_gc_threads", "Number of parallel GC threads", 4)
 )
 
 // JVMOptions is group of options used to configure JVM for SPECjbb.
@@ -54,6 +54,6 @@ func (j JVMOptions) GetJVMOptions() string {
 		" -XX:InitiatingHeapOccupancyPercent=80",                                // Using more memory then default 45% before GC kicks in
 		" -XX:MaxGCPauseMillis=100",                                             // Maximum garbage collection pause.
 		" -XX:+AlwaysPreTouch ",                                                 // Touch & zero whole heap memory on initialization.
-		fmt.Sprintf(" -Djava.library.path=%s", path.Join(PathToSPECjbb.Value(), "lib")),
+		fmt.Sprintf(" -Djava.library.path=%s", path.Join(pathToSPECjbb.Value(), "lib")),
 	)
 }
