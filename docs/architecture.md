@@ -69,7 +69,7 @@ As an illustration for the abstractions above [l1data](../pkg/workloads/low_leve
 
 ## Results
 
-_Snap_ gathers experiment results using collector plugins for mutilate and caffe (in inference mode) and publish then using [Cassandra publisher](https://github.com/intelsdi-x/snap-plugin-collector-cassandra) (see [here](../misc) for more details).
+_Snap_ gathers experiment results using collector plugins for mutilate and caffe (in inference mode) and publish then using [Cassandra publisher](https://github.com/intelsdi-x/snap-plugin-collector-cassandra) (see [here](../plugins) for more details).
 
 
 ## Experiment
