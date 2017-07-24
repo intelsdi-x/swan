@@ -25,8 +25,13 @@ Swan uses *Jupyter Notebook* to filter, process and visualize results from exper
 You need to have Docker installed to run Jupyter notebooks easily. We have provided a Docker image that will make running notebooks as easy as possible. You just need to run:
 
 ```sh
-docker run --network="container:cassandra-swan" intelsdi/swan-jupyter
+docker run -p 127.0.0.1:8888:8888 intelsdi/swan-jupyter
 ```
+If you're running Cassandra using the `cassandra.service` file provided in this repository, please use the following command to run Jupyter, so that it will have direct access to Cassandra:
+```sh
+docker run --network="container:cassandra-swan" intelsdi/swan-jupyter 
+``` 
+Additionally Cassandra's container already exposes the necessary port for Jupyter (8888), so there is no need to expose it manually.
 
 ## Explore the Example Jupyter Notebook
 
