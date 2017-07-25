@@ -155,6 +155,7 @@ func main() {
 					for k, v := range results.Raw {
 						data = append(data, fmt.Sprintf("%s=%f", strings.Replace(k, "/", "_", -1), v))
 					}
+					data = append(data, fmt.Sprintf("%s=%d", "target_qps", qps))
 					influxData := fmt.Sprintf("mutilate,aggressor=\"%s\",repetition=%d %s", aggressorName, repetition, strings.Join(data, ","))
 					log.Debug("influx data:", influxData)
 					postInflux(influxData)
