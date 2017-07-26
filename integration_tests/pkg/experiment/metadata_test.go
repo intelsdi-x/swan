@@ -17,10 +17,11 @@ package experiment
 import (
 	"testing"
 
-	"github.com/intelsdi-x/swan/pkg/experiment"
-	. "github.com/smartystreets/goconvey/convey"
 	"os"
 	"time"
+
+	"github.com/intelsdi-x/swan/pkg/experiment"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMetadata(t *testing.T) {
@@ -64,6 +65,22 @@ func TestMetadata(t *testing.T) {
 				So(metadataCollection, ShouldHaveLength, 1)
 				So(metadataCollection[0], ShouldContainKey, "foo")
 				So(metadataCollection[0]["foo"], ShouldEqual, "bar")
+				metadata.Clear()
+			})
+		})
+
+		Convey("Recoding tags", func() {
+			err := metadata.RecordTags([]string{"foo", "bar"})
+			So(err, ShouldBeNil)
+
+			Convey("Should be able get tags from Cassandra", func() {
+				metadataCollection, err := metadata.Get()
+				So(err, ShouldBeNil)
+				So(metadataCollection, ShouldHaveLength, 1)
+				So(metadataCollection[0], ShouldContainKey, "foo")
+				So(metadataCollection[0]["foo"], ShouldEqual, "foo")
+				So(metadataCollection[0], ShouldContainKey, "bar")
+				So(metadataCollection[0]["bar"], ShouldEqual, "bar")
 				metadata.Clear()
 			})
 		})

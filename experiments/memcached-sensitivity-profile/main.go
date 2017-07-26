@@ -114,6 +114,15 @@ func main() {
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "cannot save metadata")
 
+	// Save information about tags that experiments is going to generate, to automatically build a visualization of results.
+	err = metadata.RecordTags([]string{
+		experiment.AggressorNameKey,
+		experiment.LoadPointQPSKey,
+		experiment.RepetitionKey,
+	})
+	errutil.CheckWithContext(err, "Cannot tags metadata in Cassandra Metadata Database")
+
+	for _, beLauncher := range beLaunchers {
 	bestEfforts := sensitivity.AggressorsFlag.Value()
 	for _, bestEffortWorkloadName := range bestEfforts {
 		for loadPoint := 0; loadPoint < loadPoints; loadPoint++ {

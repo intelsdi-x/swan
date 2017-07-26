@@ -97,6 +97,10 @@ func main() {
 	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
 	errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
+	// Save information about tags that experiments is going to generate, to automatically build a visualization of results.
+	err = metadata.RecordTags([]string{"thread_count", "load_point", "qps"})
+	errutil.CheckWithContext(err, "Cannot tags metadata in Cassandra Metadata Database")
+
 	// Instansce of executor.Executor that allows to launch processes locally.
 	executor := executor.NewLocal()
 

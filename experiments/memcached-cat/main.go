@@ -106,7 +106,30 @@ func main() {
 	}
 	err = metadata.RecordMap(records)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
-	logrus.Debugf("IntSet with all BE cores: %v", beThreads)
+	logrus.Debugf("IntSet with all BE cores: %v", beCores)
+
+	// Save information about tags that experiments is going to generate, to automatically build a visualization of results.
+	err = metadata.RecordTags([]string{
+		experiment.AggressorNameKey,
+		experiment.LoadPointQPSKey,
+		"be_l3_cache_ways",
+		"be_number_of_cores",
+		"be_cores_range",
+		"hp_cores_range",
+	})
+	errutil.CheckWithContext(err, "Cannot tags metadata in Cassandra Metadata Database")
+
+	//We do not need to start Kubernetes on each repetition.
+	cleanup, err := sensitivity.LaunchKubernetesCluster()
+	errutil.CheckWithContext(err, "Cannot launch Kubernetes cluster")
+	defer func() {
+		if cleanup != nil {
+			err := cleanup()
+			if err != nil {
+				logrus.Errorf("Kubernetes cleanup failed: %q", err)
+			}
+		}
+	}()
 
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
