@@ -27,6 +27,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/metadata"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	// This import is used to launch new PID namespace to make sure that all the processes will be terminated when experiment ends.
@@ -58,12 +59,12 @@ func main() {
 
 	// Connect to metadata database (Cassandra is the only supported database).
 	// Besides experiment results and platform metrics (we use Snap to gather them) we save certain deta about experiment configuration and environment (metadata).
-	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
+	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
 	// errutil.CheckWithContext() is a helper function that will panic on error and provide some additional information about error origin.
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
-	err = metadata.RecordRuntimeEnv(experimentStart)
+	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
 	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// We should validate OS configuration to make sure that it is ready to execute the experiment binary.
@@ -90,7 +91,7 @@ func main() {
 	experimentConfiguration["command_arguments"] = strings.Join(os.Args[1:], " ")
 	experimentConfiguration["experiment_name"] = os.Args[0]
 	// Finally - sava configuration to Cassandra.
-	err = metadata.RecordMap(experimentConfiguration)
+	err = metaData.RecordMap(experimentConfiguration, metadata.TypeEmpty)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
 	// Create Mutilate Snap session launcher - it will be used to gather metrics about Memcached performance.

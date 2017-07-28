@@ -131,6 +131,15 @@ echo "Restart Cassandra"
 systemctl restart cassandra
 daemonStatus cassandra
 
+echo "----------------------------- Install InfluxDB (`date`)"
+cp /vagrant/influxdb/influxdb.service /etc/systemd/system
+mkdir -p /var/lib/influxdb
+chcon -Rt svirt_sandbox_file_t /var/lib/influxdb # SELinux policy
+systemctl enable influxdb
+echo "Restart InfluxDB"
+systemctl restart influxdb
+daemonStatus influxdb
+
 
 echo "----------------------------- Install Snap telemetry (`date`)"
 curl -s https://packagecloud.io/install/repositories/intelsdi-x/snap/script.rpm.sh | bash

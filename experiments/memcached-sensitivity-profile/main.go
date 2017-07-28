@@ -28,6 +28,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/metadata"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -51,11 +52,11 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
-	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
+	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
-	err = metadata.RecordRuntimeEnv(experimentStart)
+	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
 	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Validate preconditions.
@@ -111,7 +112,7 @@ func main() {
 		"load_duration":     loadDuration.String(),
 	}
 
-	err = metadata.RecordMap(records)
+	err = metaData.RecordMap(records, metadata.TypeEmpty)
 	errutil.CheckWithContext(err, "cannot save metadata")
 
 	bestEfforts := sensitivity.AggressorsFlag.Value()
