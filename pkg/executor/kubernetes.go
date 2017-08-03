@@ -66,6 +66,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/intelsdi-x/swan/pkg/k8sports"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -577,8 +578,6 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 				}
 				log.Debugf("K8s task watcher: event type=%v phase=%v", event.Type, pod.Status.Phase)
 
-				scheme := NewRuntimeScheme()
-
 				switch event.Type {
 				case watch.Added, watch.Modified:
 					switch pod.Status.Phase {
@@ -587,9 +586,7 @@ func (kw *k8sWatcher) watch(timeout time.Duration) error {
 						continue
 
 					case v1.PodRunning:
-						apiPod := &api.Pod{}
-						scheme.Convert(pod, apiPod, nil)
-						if api.IsPodReady(apiPod) {
+						if k8sports.IsPodReady(pod) {
 							kw.whenPodReady()
 						} else {
 							log.Debug("K8s task watcher: Running but not ready")

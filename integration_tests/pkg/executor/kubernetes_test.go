@@ -208,7 +208,8 @@ func TestKubernetesExecutor(t *testing.T) {
 			// Exit code expected about killed.
 			exitCode, err := th.ExitCode()
 			So(err, ShouldBeNil)
-			So(exitCode, ShouldEqual, 137)
+			//Exit code has changed as SIGTERM works now. I believe that it is related to https://github.com/moby/moby/commit/cfdf84d5d04c8ee656e5c4ad3db993c258e52674#diff-82e7841a00fe4fb7daaa56f43cd60555L179
+			So(exitCode, ShouldEqual, 143)
 		})
 
 		Convey("Timeout occurs when image is not found", func() {

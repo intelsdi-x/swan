@@ -30,12 +30,12 @@ fi
 
 
 SWAN_BIN=/opt/swan/bin
-SWAN_VERSION="v0.13"
+SWAN_VERSION="v0.15"
 
-K8S_VERSION="v1.6.4"
+K8S_VERSION="v1.7.2"
 SNAP_VERSION="1.2.0"
 ETCD_VERSION="3.1.0"
-DOCKER_VERSION="17.03.0.ce-1.el7.centos"
+DOCKER_VERSION="17.06.0.ce-1.el7.centos"
 # The offical Docker repository is not very, stable apparently.
 # See https://github.com/moby/moby/issues/33930#issuecomment-312782998 for explanation.
 DOCKER_INSTALL_OPTS="-y -q --setopt=obsoletes=0"
