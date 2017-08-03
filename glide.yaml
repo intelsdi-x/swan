@@ -1,16 +1,17 @@
 package: github.com/intelsdi-x/swan
 import:
 - package: github.com/Sirupsen/logrus
-  version: ~0.11.5
+  version: ~1.0.2
 - package: github.com/gocql/gocql
-  version: master
 - package: github.com/intelsdi-x/snap-plugin-lib-go
   subpackages:
   - v1/plugin
 - package: github.com/intelsdi-x/snap
   version: ~1.2.0
   subpackages:
+  - core
   - mgmt/rest/client
+  - mgmt/rest/v1/rbody
   - scheduler/wmap
 - package: github.com/pkg/errors
   version: ~0.8.0
@@ -33,7 +34,7 @@ import:
   - pkg/types
   - pkg/watch
 - package: k8s.io/client-go
-  version: ~3.0.0-beta.0
+  version: ~4.0.0-beta.0
   subpackages:
   - kubernetes
   - kubernetes/typed/core/v1
