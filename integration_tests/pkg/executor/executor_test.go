@@ -25,6 +25,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	// Docker since https://github.com/moby/moby/commit/cfdf84d5d04c8ee656e5c4ad3db993c258e52674#diff-82e7841a00fe4fb7daaa56f43cd60555L179
+	// will responds to SIGTERM in time.
+	sigtermExitCode         = 143
+	oneExitCode             = 129
+	unexpectedErrorExitCode = -1
+)
+
 // testExecutor tests the execution of process for given executor.
 // This test can be used inside any Executor implementation test.
 func testExecutor(t *testing.T, executor Executor) {
@@ -78,12 +86,9 @@ func testExecutor(t *testing.T, executor Executor) {
 				"indicate that task was killed", func() {
 				taskState := taskHandle.Status()
 				So(taskState, ShouldEqual, TERMINATED)
-				exitcode, err := taskHandle.ExitCode()
+				exitCode, err := taskHandle.ExitCode()
 				So(err, ShouldBeNil)
-				// -1 for Local executor.
-				// 137 for Remote executor (process killed).
-				// TODO: Unify exit code constants in next PR.
-				So(exitcode, ShouldBeIn, -1, 137, 129)
+				So(exitCode, ShouldBeIn, unexpectedErrorExitCode, oneExitCode, sigtermExitCode)
 			})
 		})
 	})
