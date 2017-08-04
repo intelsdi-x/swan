@@ -178,7 +178,6 @@ func parseOutputFile(path string) (uint64, error) {
 		return 0, ErrParse
 	}
 
-	foundBatch := false
 	result := uint64(0)
 	for scanner.Scan() {
 		regexpResult := re.FindAllStringSubmatch(scanner.Text(), -1)
@@ -186,14 +185,9 @@ func parseOutputFile(path string) (uint64, error) {
 			batchNum, err := strconv.ParseUint(regexpResult[0][1], 10, 64)
 			if err == nil {
 				result = batchNum
-				foundBatch = true
 			}
 		}
 	}
 
-	if foundBatch != true {
-		log.Errorf("failed to parse: %s, did not find valid batch number", path)
-		err = ErrParse
-	}
 	return result, err
 }
