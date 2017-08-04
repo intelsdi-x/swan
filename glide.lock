@@ -1,5 +1,5 @@
-hash: b102ca8837fa53e6e36d86a0ad3b6664c522b2b5e420e775f519b7607084d34a
-updated: 2017-08-03T12:48:34.068389086+02:00
+hash: 6d5d097c01db66c66c9d5b2d15677cfabf9387baec0d7a182b131c9845099236
+updated: 2017-08-04T12:06:06.498945815+02:00
 imports:
 - name: github.com/appc/spec
   version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
@@ -88,7 +88,7 @@ imports:
 - name: github.com/intelsdi-x/gomit
   version: 4f098da2bbb51d787be003e4abfbc25d01837564
 - name: github.com/intelsdi-x/snap
-  version: 0b2c0313ff98ef3feccf78ff56a51bb44ccbe5bc
+  version: 78797b2dc0ca39e6e2bb39c56ccfea5033f3f6a4
   subpackages:
   - control
   - control/plugin
@@ -105,7 +105,9 @@ imports:
   - core/serror
   - grpc/common
   - grpc/controlproxy/rpc
+  - mgmt/rest/api
   - mgmt/rest/client
+  - mgmt/rest/v1
   - mgmt/rest/v1/rbody
   - mgmt/tribe/agreement
   - pkg/aci
