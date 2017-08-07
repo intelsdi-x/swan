@@ -81,9 +81,6 @@ func main() {
 	loadGenerator, err := common.PrepareDefaultMutilateGenerator()
 	errutil.CheckWithContext(err, "cannot prepare load generator")
 
-	snapSession, err := mutilatesession.NewSessionLauncherDefault()
-	errutil.CheckWithContext(err, "cannot create mutilate snap session")
-
 	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
 	if load == sensitivity.RunTuningPhase {
@@ -193,9 +190,20 @@ func main() {
 						}
 					}
 
-					snapHandle, err := snapSession.LaunchSession(loadGeneratorHandle, snapTags)
+					mutilateOutput, err := loadGeneratorHandle.StdoutFile()
 					if err != nil {
-						return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %q", phaseName)
+						return errors.Wrapf(err, "cannot get mutilate stdout file")
+					}
+					defer mutilateOutput.Close()
+
+					// Create snap session launcher
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
+						mutilateOutput.Name(), snapTags)
+					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+
+					snapHandle, err := mutilateSnapSession.Launch()
+					if err != nil {
+						return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %s", phaseName)
 					}
 					defer func() {
 						// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.

@@ -48,16 +48,24 @@ type Config struct {
 type SessionLauncher struct {
 	session    *snap.Session
 	snapClient *client.Client
+
+	specjbbOutputFilePath string
 }
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*SessionLauncher, error) {
-	return NewSessionLauncher(DefaultConfig())
+func NewSessionLauncherDefault(
+	specjbbOutputFilePath string,
+	tags map[string]interface{}) (*SessionLauncher, error) {
+	return NewSessionLauncher(specjbbOutputFilePath, tags, DefaultConfig())
 }
 
 // NewSessionLauncher constructs SPECjbbSnapSessionLauncher.
-func NewSessionLauncher(config Config) (*SessionLauncher, error) {
+func NewSessionLauncher(
+	specjbbOutputFilePath string,
+	tags map[string]interface{},
+	config Config) (*SessionLauncher, error) {
+
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
@@ -91,36 +99,28 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 			config.Interval,
 			snapClient,
 			config.Publisher,
+			tags,
 		),
-		snapClient: snapClient,
+		snapClient:            snapClient,
+		specjbbOutputFilePath: specjbbOutputFilePath,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
-
-	// Obtain SPECjbb output file.
-	stdoutFile, err := task.StdoutFile()
-	if err != nil {
-		return nil, err
-	}
-
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
 			Ns:    "/intel/swan/specjbb",
 			Key:   "stdout_file",
-			Value: stdoutFile.Name(),
+			Value: s.specjbbOutputFilePath,
 		},
 	}
 
-	// Start session.
-	handle, err := s.session.Launch(tags)
-	if err != nil {
-		return nil, err
-	}
+	return s.session.Launch()
+}
 
-	return handle, nil
+// String returns human readable name for job.
+func (s *SessionLauncher) String() string {
+	return "Snap specJBB Collection"
 }

@@ -93,8 +93,6 @@ func main() {
 	err = metadata.RecordMap(experimentConfiguration)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
-	// Create Mutilate Snap session launcher - it will be used to gather metrics about Memcached performance.
-	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
 	errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
 
 	// Instansce of executor.Executor that allows to launch processes locally.
@@ -138,8 +136,15 @@ func main() {
 					"qps":          qps,
 					experiment.ExperimentKey: uid,
 				}
+
+				output, err := mutilateTask.StdoutFile()
+				errutil.CheckWithContext(err, fmt.Sprintf("Cannot get Mutilate output file"))
+
+				// Create Mutilate Snap session launcher - it will be used to gather metrics about Memcached performance.
+				mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(output.Name(), tags)
+
 				// Launching Mutilate Snap session in order to gather metrics on Memcached performance.
-				mutilateSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateTask, tags)
+				mutilateSessionHandle, err := mutilateSnapSession.Launch()
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot gather Memcached performance metrics with %d threads, %d QPS and load duration of %s", threadCount, qps, loadDuration))
 				defer mutilateSessionHandle.Stop()
 				// Wait for Snap session to finish.

@@ -52,12 +52,12 @@ type SessionLauncher struct {
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*SessionLauncher, error) {
-	return NewSessionLauncher(DefaultConfig())
+func NewSessionLauncherDefault(tags map[string]interface{}) (*SessionLauncher, error) {
+	return NewSessionLauncher(tags, DefaultConfig())
 }
 
 // NewSessionLauncher constructs USE Session Launcher.
-func NewSessionLauncher(config Config) (*SessionLauncher, error) {
+func NewSessionLauncher(tags map[string]interface{}, config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
@@ -85,21 +85,18 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 			config.Interval,
 			snapClient,
 			config.Publisher,
+			tags,
 		),
 		snapClient: snapClient,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+	return s.session.Launch()
+}
 
-	// Start session.
-	handle, err := s.session.Launch(tags)
-	if err != nil {
-		return nil, err
-	}
-
-	return handle, nil
+// String returns human readable name for job.
+func (s *SessionLauncher) String() string {
+	return "Snap USE Collection"
 }

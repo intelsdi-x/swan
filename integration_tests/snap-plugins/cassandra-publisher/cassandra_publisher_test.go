@@ -108,6 +108,13 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 	if err != nil {
 		return err
 	}
+
+	tags := make(map[string]interface{})
+	tags[experiment.ExperimentKey] = "example-experiment"
+	tags[experiment.PhaseKey] = "example-phase"
+	tags[experiment.RepetitionKey] = 42
+	tags["FloatTag"] = 42.123123
+
 	cassandraPublisher := wmap.NewPublishNode(cassandraName, snap.PluginAnyVersion)
 	cassandraPublisher.AddConfigItem("server", "127.0.0.1")
 	cassandraPublisher.AddConfigItem("keyspaceName", "swan")
@@ -118,14 +125,10 @@ func runCassandraPublisherWorkflow(snapClient *client.Client) (err error) {
 		[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
 		1*time.Second,
 		snapClient,
-		cassandraPublisher)
+		cassandraPublisher,
+		tags)
 
-	tags := make(map[string]interface{})
-	tags[experiment.ExperimentKey] = "example-experiment"
-	tags[experiment.PhaseKey] = "example-phase"
-	tags[experiment.RepetitionKey] = 42
-	tags["FloatTag"] = 42.123123
-	handle, err := snapSession.Launch(tags)
+	handle, err := snapSession.Launch()
 	if err != nil {
 		return errors.Errorf("snap session failed to start: %s", err.Error())
 	}
