@@ -7,7 +7,7 @@ import:
   subpackages:
   - v1/plugin
 - package: github.com/intelsdi-x/snap
-  version: ~1.2.0
+  version: ~1.3.0
   subpackages:
   - core
   - mgmt/rest/client
