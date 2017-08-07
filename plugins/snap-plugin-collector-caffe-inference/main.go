@@ -15,12 +15,19 @@
 package main
 
 import (
+	"os"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-caffe-inference/caffe"
 )
 
 func main() {
+	log, err := os.Create("/tmp/" + caffe.NAME + ".log")
+	if err != nil {
+		panic(err)
+	}
+	logrus.SetOutput(log)
 	plugin.StartCollector(caffe.InferenceCollector{}, caffe.NAME, caffe.VERSION, plugin.CacheTTL(1*time.Second))
 }

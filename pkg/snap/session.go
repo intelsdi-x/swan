@@ -111,21 +111,21 @@ func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, erro
 	for key, value := range tags {
 		formattedTags[key] = fmt.Sprintf("%v", value)
 	}
-	wf.CollectNode.Tags = map[string]map[string]string{"": formattedTags}
+	wf.Collect.Tags = map[string]map[string]string{"": formattedTags}
 
 	for _, metric := range s.Metrics {
-		wf.CollectNode.AddMetric(metric, PluginAnyVersion)
+		wf.Collect.AddMetric(metric, PluginAnyVersion)
 	}
 
 	for _, configItem := range s.CollectNodeConfigItems {
-		wf.CollectNode.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
+		wf.Collect.AddConfigItem(configItem.Ns, configItem.Key, configItem.Value)
 	}
 
 	loaderConfig := DefaultPluginLoaderConfig()
 	loaderConfig.SnapteldAddress = s.pClient.URL
 
 	// Add specified publisher to workflow as well.
-	wf.CollectNode.Add(s.Publisher)
+	wf.Collect.Publish = append(wf.Collect.Publish, *s.Publisher)
 
 	task.Workflow = wf
 

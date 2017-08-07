@@ -54,7 +54,7 @@ func TestSnap(t *testing.T) {
 					m := c.GetMetricCatalog()
 					So(m.Err, ShouldBeNil)
 					for _, metric := range m.Catalog {
-						if metric.Namespace == "/intel/docker/*/stats/cgroups/cpu_stats/cpu_usage/total_usage" {
+						if metric.Namespace == "/intel/docker/*/stats/cgroups/cpu_stats/cpu_usage/total" {
 							found = true
 							break
 						}
@@ -83,7 +83,7 @@ func TestSnap(t *testing.T) {
 					Convey("While starting a Snap experiment session", func() {
 						s = snap.NewSession(
 							"swan-test-dummy",
-							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total_usage"},
+							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total"},
 							1*time.Second,
 							c,
 							publisher,
