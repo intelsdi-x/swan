@@ -55,16 +55,16 @@ func TestSnapRDTSession(t *testing.T) {
 				publisher.AddConfigItem("file", publisherMetricsFile)
 
 				Convey("Then we prepared and launch RDT collection session", func() {
+					tags := make(map[string]interface{})
+					tags["foo"] = "bar"
 
 					sessionConfig := rdt.DefaultConfig()
 					sessionConfig.SnapteldAddress = snapteldAddress
 					sessionConfig.Publisher = publisher
-					session, err := rdt.NewSessionLauncher(sessionConfig)
+					session, err := rdt.NewSessionLauncher(tags, sessionConfig)
 					So(err, ShouldBeNil)
 
-					tags := make(map[string]interface{})
-					tags["foo"] = "bar"
-					handle, err := session.LaunchSession(nil, tags)
+					handle, err := session.Launch()
 					So(err, ShouldBeNil)
 
 					defer func() {

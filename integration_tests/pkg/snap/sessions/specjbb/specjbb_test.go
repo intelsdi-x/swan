@@ -15,7 +15,6 @@
 package specjbb
 
 import (
-	"os"
 	"testing"
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
@@ -39,20 +38,21 @@ func TestSnapSpecJbbSession(t *testing.T) {
 				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch specjbb session", func() {
+					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout")
+
+					tags := make(map[string]interface{})
+					tags["foo"] = "bar"
 
 					specjbbSessionConfig := specjbbsession.DefaultConfig()
 					specjbbSessionConfig.SnapteldAddress = snapteldAddress
 					specjbbSessionConfig.Publisher = publisher
-					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(specjbbSessionConfig)
+					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(
+						fixturePath,
+						tags,
+						specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
-					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-specjbb/specjbb/specjbb.stdout")
-					mockedTaskInfo := new(executor.MockTaskInfo)
-					mockedTaskInfo.On("StdoutFile").Return(os.Open(fixturePath))
-
-					tags := make(map[string]interface{})
-					tags["foo"] = "bar"
-					handle, err := specjbbSnaptelSession.LaunchSession(mockedTaskInfo, tags)
+					handle, err := specjbbSnaptelSession.Launch()
 					So(err, ShouldBeNil)
 
 					defer func() {

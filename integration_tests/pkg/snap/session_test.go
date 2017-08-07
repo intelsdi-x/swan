@@ -81,18 +81,21 @@ func TestSnap(t *testing.T) {
 					publisher.AddConfigItem("file", metricsFile)
 
 					Convey("While starting a Snap experiment session", func() {
+
+						tags := make(map[string]interface{})
+						tags["foo"] = "bar"
+
 						s = snap.NewSession(
 							"swan-test-dummy",
 							[]string{"/intel/docker/root/stats/cgroups/cpu_stats/cpu_usage/total"},
 							1*time.Second,
 							c,
 							publisher,
+							tags,
 						)
 						So(s, ShouldNotBeNil)
 
-						tags := make(map[string]interface{})
-						tags["foo"] = "bar"
-						handle, err := s.Launch(tags)
+						handle, err := s.Launch()
 
 						So(err, ShouldBeNil)
 

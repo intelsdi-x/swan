@@ -46,18 +46,24 @@ type Config struct {
 // SessionLauncher configures & launches snap workflow for gathering
 // SLIs from Mutilate.
 type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
+	session                *snap.Session
+	snapClient             *client.Client
+	mutilateOutputFilePath string
 }
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*SessionLauncher, error) {
-	return NewSessionLauncher(DefaultConfig())
+func NewSessionLauncherDefault(
+	mutilateOutputFilePath string,
+	tags map[string]interface{}) (*SessionLauncher, error) {
+	return NewSessionLauncher(mutilateOutputFilePath, tags, DefaultConfig())
 }
 
 // NewSessionLauncher constructs MutilateSnapSessionLauncher.
-func NewSessionLauncher(config Config) (*SessionLauncher, error) {
+func NewSessionLauncher(
+	mutilateOutputFilePath string,
+	tags map[string]interface{},
+	config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
@@ -92,36 +98,28 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 			config.Interval,
 			snapClient,
 			config.Publisher,
+			tags,
 		),
-		snapClient: snapClient,
+		snapClient:             snapClient,
+		mutilateOutputFilePath: mutilateOutputFilePath,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
-
-	// Obtain Mutilate output file.
-	stdoutFile, err := task.StdoutFile()
-	if err != nil {
-		return nil, err
-	}
-
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
 	// Configuring Mutilate collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
 			Ns:    "/intel/swan/mutilate",
 			Key:   "stdout_file",
-			Value: stdoutFile.Name(),
+			Value: s.mutilateOutputFilePath,
 		},
 	}
 
-	// Start session.
-	handle, err := s.session.Launch(tags)
-	if err != nil {
-		return nil, err
-	}
+	return s.session.Launch()
+}
 
-	return handle, nil
+// String returns human readable name for job.
+func (s *SessionLauncher) String() string {
+	return "Snap Mutilate Collection"
 }

@@ -63,6 +63,9 @@ type Session struct {
 	// Metrics to tag in session.
 	Metrics []string
 
+	// Tags to be applied to metrics.
+	Tags map[string]interface{}
+
 	// CollectNodeConfigItems represent ConfigItems for CollectNode.
 	CollectNodeConfigItems []CollectNodeConfigItem
 
@@ -82,7 +85,8 @@ func NewSession(
 	metrics []string,
 	interval time.Duration,
 	pClient *client.Client,
-	publisher *wmap.PublishWorkflowMapNode) *Session {
+	publisher *wmap.PublishWorkflowMapNode,
+	tags map[string]interface{}) *Session {
 
 	return &Session{
 		TaskName: taskName,
@@ -94,11 +98,12 @@ func NewSession(
 		pClient:                pClient,
 		Publisher:              publisher,
 		CollectNodeConfigItems: []CollectNodeConfigItem{},
+		Tags: tags,
 	}
 }
 
 // Launch starts Snap task.
-func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, error) {
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	task := taskInfo{
 		Name:     s.TaskName,
 		Version:  1,
@@ -108,7 +113,7 @@ func (s *Session) Launch(tags map[string]interface{}) (executor.TaskHandle, erro
 	wf := wmap.NewWorkflowMap()
 
 	formattedTags := make(map[string]string)
-	for key, value := range tags {
+	for key, value := range s.Tags {
 		formattedTags[key] = fmt.Sprintf("%v", value)
 	}
 	wf.Collect.Tags = map[string]map[string]string{"": formattedTags}

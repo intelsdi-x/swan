@@ -15,7 +15,6 @@
 package mutilate
 
 import (
-	"os"
 	"path"
 	"testing"
 
@@ -39,20 +38,20 @@ func TestSnapMutilateSession(t *testing.T) {
 				defer cleanupMerticsFile()
 
 				Convey("Then we prepared and launch mutilate session", func() {
+					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
+					tags := make(map[string]interface{})
+					tags["foo"] = "bar"
 
 					mutilateSessionConfig := mutilatesession.DefaultConfig()
 					mutilateSessionConfig.SnapteldAddress = snapteldAddress
 					mutilateSessionConfig.Publisher = publisher
-					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(mutilateSessionConfig)
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(
+						fixturePath,
+						tags,
+						mutilateSessionConfig)
 					So(err, ShouldBeNil)
 
-					fixturePath := path.Join(testhelpers.SwanPath, "plugins/snap-plugin-collector-mutilate/mutilate/mutilate.stdout")
-					mockedTaskInfo := new(executor.MockTaskInfo)
-					mockedTaskInfo.On("StdoutFile").Return(os.Open(fixturePath))
-
-					tags := make(map[string]interface{})
-					tags["foo"] = "bar"
-					handle, err := mutilateSnapSession.LaunchSession(mockedTaskInfo, tags)
+					handle, err := mutilateSnapSession.Launch()
 					So(err, ShouldBeNil)
 
 					defer func() {

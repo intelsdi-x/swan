@@ -31,7 +31,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -111,13 +110,6 @@ func main() {
 
 	// Include baseline phase if necessary.
 	aggressors := sensitivity.AggressorsFlag.Value()
-
-	useRDTCollector := useRDTCollectorFlag.Value()
-	var rdtSession snap.SessionLauncher
-	if useRDTCollector {
-		rdtSession, err = rdt.NewSessionLauncherDefault()
-		errutil.CheckWithContext(err, "Cannot create rdt snap session")
-	}
 
 	// We need to calculate mask for all cache ways to be able to calculate non-overlapping cache partitions.
 	numberOfAvailableCacheWays := uint64(maxCacheWaysToAssign + minCacheWaysToAssign)
@@ -203,9 +195,12 @@ func main() {
 					loadGenerator, err := common.PrepareDefaultMutilateGenerator()
 					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate load generator during phase %q", phaseName))
 
-					// Create snap session launcher
-					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
-					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+					useRDTCollector := useRDTCollectorFlag.Value()
+					var rdtSession executor.Launcher
+					if useRDTCollector {
+						rdtSession, err = rdt.NewSessionLauncherDefault(snapTags)
+						errutil.CheckWithContext(err, "Cannot create rdt snap session")
+					}
 
 					// We need to collect all the TaskHandles created in order to cleanup after repetition finishes.
 					var processes []executor.TaskHandle
@@ -243,7 +238,7 @@ func main() {
 
 						var rdtSessionHandle executor.TaskHandle
 						if useRDTCollector {
-							rdtSessionHandle, err = rdtSession.LaunchSession(nil, snapTags)
+							rdtSessionHandle, err = rdtSession.Launch()
 							errutil.PanicWithContext(err, "Cannot launch Snap RDT Collection session")
 							defer rdtSessionHandle.Stop()
 						}
@@ -282,9 +277,20 @@ func main() {
 							}
 						}
 
-						snapHandle, err := mutilateSnapSession.LaunchSession(loadGeneratorHandle, snapTags)
+						mutilateOutput, err := loadGeneratorHandle.StdoutFile()
 						if err != nil {
-							return errors.Wrapf(err, "cannot launch mutilate Snap session in %s", phaseName)
+							return errors.Wrapf(err, "cannot get mutilate stdout file")
+						}
+						defer mutilateOutput.Close()
+
+						// Create snap session launcher
+						mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
+							mutilateOutput.Name(), snapTags)
+						errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+
+						snapHandle, err := mutilateSnapSession.Launch()
+						if err != nil {
+							return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %s", phaseName)
 						}
 						defer func() {
 							// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.

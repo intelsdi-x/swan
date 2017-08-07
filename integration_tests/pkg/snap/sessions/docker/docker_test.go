@@ -73,18 +73,16 @@ func TestSnapDockerSession(t *testing.T) {
 		defer podHandle.Stop()
 
 		Convey("Launching Docker Session", func() {
+			tags := make(map[string]interface{})
+			tags["foo"] = "bar"
+
 			dockerConfig := docker.DefaultConfig()
 			dockerConfig.SnapteldAddress = snapteldAddr
 			dockerConfig.Publisher = publisher
-			dockerLauncher, err := docker.NewSessionLauncher(dockerConfig)
+			dockerLauncher, err := docker.NewSessionLauncher(tags, dockerConfig)
 			So(err, ShouldBeNil)
 
-			tags := make(map[string]interface{})
-			tags["foo"] = "bar"
-			dockerHandle, err := dockerLauncher.LaunchSession(
-				nil,
-				tags,
-			)
+			dockerHandle, err := dockerLauncher.Launch()
 			So(err, ShouldBeNil)
 			defer podHandle.EraseOutput()
 			defer dockerHandle.Stop()

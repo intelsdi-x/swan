@@ -32,7 +32,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/use"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -111,18 +110,6 @@ func main() {
 		defer handle.Stop()
 	}
 
-	// Create mutilate snap session launcher.
-	mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault()
-	errutil.CheckWithContext(err, "Cannot create Mutilate snap session")
-
-	// Create USE Collector session launcher.
-	useUSECollector := useUSECollectorFlag.Value()
-	var useSession snap.SessionLauncher
-	if useUSECollector {
-		useSession, err = use.NewSessionLauncherDefault()
-		errutil.CheckWithContext(err, "Cannot create USE snap session")
-	}
-
 	// Calculate value to increase QPS by on every iteration.
 	qpsDelta := int(peakLoad / loadPoints)
 	logrus.Debugf("Increasing QPS by %d every iteration up to peak load %d to achieve %d load points", qpsDelta, peakLoad, loadPoints)
@@ -190,10 +177,12 @@ func main() {
 				snapTags["number_of_cores"] = numberOfThreads // For backward compatibility.
 				snapTags["number_of_threads"] = numberOfThreads
 
+				// Run USE Collector
 				var useSessionHandle executor.TaskHandle
-				// Start USE Collection.
-				if useUSECollector {
-					useSessionHandle, err = useSession.LaunchSession(nil, snapTags)
+				if useUSECollectorFlag.Value() {
+					useSession, err := use.NewSessionLauncherDefault(snapTags)
+					errutil.CheckWithContext(err, "Cannot create USE snap session")
+					useSessionHandle, err = useSession.Launch()
 					errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
 					defer useSessionHandle.Stop()
 				}
@@ -221,23 +210,36 @@ func main() {
 					logrus.Panicf("Mutilate cluster has not stopped properly. Exit status: %d.", exitCode)
 				}
 
-				if useUSECollector {
+				if useUSECollectorFlag.Value() {
 					err = useSessionHandle.Stop()
 					if err != nil {
 						logrus.Errorf("Snap USE session failed: %s", err)
 					}
 				}
 
-				// Launch and stop Snap task to collect mutilate metrics.
-				mutilateSnapSessionHandle, err := mutilateSnapSession.LaunchSession(mutilateHandle, snapTags)
-				errutil.PanicWithContext(err, "Snap mutilate session has not been started successfully")
+				mutilateOutput, err := mutilateHandle.StdoutFile()
+				if err != nil {
+					errutil.CheckWithContext(err, "cannot get mutilate stdout file")
+				}
+				defer mutilateOutput.Close()
+
+				// Create snap session launcher
+				mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
+					mutilateOutput.Name(), snapTags)
+				errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+
+				snapHandle, err := mutilateSnapSession.Launch()
+				if err != nil {
+					errutil.CheckWithContext(err, fmt.Sprintf("cannot launch mutilate Snap session in phase %s", phaseName))
+				}
+
 				defer func() {
-					err = mutilateSnapSessionHandle.Stop()
+					err = snapHandle.Stop()
 					if err != nil {
 						logrus.Errorf("Cannot stop mutilate session: %v", err)
 					}
 				}()
-				_, err = mutilateSnapSessionHandle.Wait(0)
+				_, err = snapHandle.Wait(0)
 				errutil.PanicWithContext(err, "Snap mutilate session has not collected metrics!")
 
 				// It is ugly but there is no other way to make sure that data is written to Cassandra as of now.

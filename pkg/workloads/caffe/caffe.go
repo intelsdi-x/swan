@@ -19,8 +19,6 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/caffe"
 	"github.com/pkg/errors"
 )
 
@@ -47,11 +45,6 @@ type Config struct {
 	WeightsPath      string
 	IterationsNumber int
 	SigintEffect     string
-
-	// Snap APM Collection.
-	CollectAPM bool
-	SnapConfig caffeinferencesession.Config
-	SnapTags   map[string]interface{}
 }
 
 // DefaultConfig is a constructor for caffe.Config with default parameters.
@@ -63,9 +56,6 @@ func DefaultConfig() Config {
 		WeightsPath:      caffeWeights.Value(),
 		IterationsNumber: defaultIterations,
 		SigintEffect:     defaultSigintEffect,
-		CollectAPM:       snap.UseSnapSessionForWorkloads.Value(),
-		SnapConfig:       caffeinferencesession.DefaultConfig(),
-		SnapTags:         make(map[string]interface{}),
 	}
 }
 
@@ -74,17 +64,13 @@ func DefaultConfig() Config {
 type Caffe struct {
 	exec executor.Executor
 	conf Config
-
-	// sessionConstructor is function pointer for UT purposes.
-	sessionConstructor func(caffeinferencesession.Config) (snap.SessionLauncher, error)
 }
 
 // New is a constructor for Caffe.
 func New(exec executor.Executor, config Config) executor.Launcher {
 	return Caffe{
-		exec:               exec,
-		conf:               config,
-		sessionConstructor: caffeinferencesession.NewSessionLauncher,
+		exec: exec,
+		conf: config,
 	}
 
 }
@@ -104,23 +90,6 @@ func (c Caffe) Launch() (task executor.TaskHandle, err error) {
 	task, err = c.exec.Execute(command)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot launch caffe with command %q", command)
-	}
-
-	// TODO(skonefal): Actually, Snap Caffe Collection should launch Caffe Launcher.
-	if c.conf.CollectAPM {
-		snapLauncher, err := c.sessionConstructor(c.conf.SnapConfig)
-		if err != nil {
-			task.Stop()
-			return nil, err
-		}
-
-		snapHandle, err := snapLauncher.LaunchSession(task, c.conf.SnapTags)
-		if err != nil {
-			task.Stop()
-			return nil, err
-		}
-
-		return executor.NewClusterTaskHandle(task, []executor.TaskHandle{snapHandle}), nil
 	}
 
 	return task, nil
