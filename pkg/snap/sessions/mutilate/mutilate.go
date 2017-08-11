@@ -27,7 +27,19 @@ import (
 // DefaultConfig returns default configuration for Mutilate Collector session.
 func DefaultConfig() Config {
 	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+	sessions.ApplyInfluxDBConfiguration(publisher)
+
+	return Config{
+		SnapteldAddress: snap.SnapteldAddress.Value(),
+		Interval:        1 * time.Second,
+		Publisher:       publisher,
+	}
+}
+
+// DefaultConfig returns default configuration for Mutilate Collector session.
+func DefaultInfluxDBConfig() Config {
+	publisher := wmap.NewPublishNode("influxdb", snap.PluginAnyVersion)
+	sessions.ApplyInfluxDBConfiguration(publisher)
 
 	return Config{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
@@ -53,7 +65,7 @@ type SessionLauncher struct {
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
 func NewSessionLauncherDefault() (*SessionLauncher, error) {
-	return NewSessionLauncher(DefaultConfig())
+	return NewSessionLauncher(DefaultInfluxDBConfig())
 }
 
 // NewSessionLauncher constructs MutilateSnapSessionLauncher.
@@ -69,8 +81,7 @@ func NewSessionLauncher(config Config) (*SessionLauncher, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	err = loader.Load(snap.MutilateCollector, snap.CassandraPublisher)
+	err = loader.Load(snap.MutilateCollector, snap.InfluxDBPublisher)
 	if err != nil {
 		return nil, err
 	}

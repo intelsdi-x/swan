@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
@@ -46,7 +47,7 @@ type InfluxDB struct {
 // environment variables.
 func DefaultInfluxDBConfig() InfluxDBConfig {
 	return InfluxDBConfig{
-		dbName: conf.InfluxDBName.Value(),
+		dbName: conf.InfluxDBMetaName.Value(),
 		httpConfig: client.HTTPConfig{
 			Addr:               fmt.Sprintf("http://%s:%d", conf.InfluxDBAddress.Value(), conf.InfluxDBPort.Value()),
 			Password:           conf.InfluxDBPassword.Value(),
@@ -59,7 +60,6 @@ func DefaultInfluxDBConfig() InfluxDBConfig {
 // NewInfluxDB returns the Metadata helper from an experiment id and configuration.
 func NewInfluxDB(experimentID string, config InfluxDBConfig) (Metadata, error) {
 	var err error
-
 	metadata := &InfluxDB{
 		experimentID: experimentID,
 		config:       config,
@@ -90,8 +90,10 @@ func NewInfluxDB(experimentID string, config InfluxDBConfig) (Metadata, error) {
 // influxDBStoreMap writes metadata to the database with tags attached to it.
 // It writes values (metadata) one by one/row by row. No aggregation is being done.
 func influxDBStoreMap(m *InfluxDB, metadata map[string]string, kind string) error {
-
-	//err := m.session.Query(`INSERT INTO metadata (experiment_id, kind, time, timeuuid, metadata) VALUES (?, ?, ?, ?, ?)`, m.experimentID, kind, time.Now(), gocql.TimeUUID(), metadata).Exec()
+	if len(metadata) == 0 {
+		logrus.Warn("Empty metadata to the InfluxDB! Skipping")
+		return nil
+	}
 
 	batchPoints, err := client.NewBatchPoints(client.BatchPointsConfig{Database: m.config.dbName})
 	if err != nil {

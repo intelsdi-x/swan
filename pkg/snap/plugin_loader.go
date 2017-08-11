@@ -39,6 +39,10 @@ const (
 
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
+
+	// InfluxDBPublisher is name of snap plugin binary.
+	InfluxDBPublisher = "snap-plugin-publisher-influxdb"
+
 	// FilePublisher is Snap testing file publisher
 	FilePublisher = "snap-plugin-publisher-file"
 	// SessionPublisher is name of snap plugin binary.

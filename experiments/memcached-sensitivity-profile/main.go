@@ -52,7 +52,9 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
-	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
+	//metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
+	metaData, err := metadata.NewInfluxDB(uid, metadata.DefaultInfluxDBConfig())
+
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
