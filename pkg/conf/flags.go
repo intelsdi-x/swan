@@ -83,5 +83,8 @@ var InfluxDBCreateDatabase = NewBoolFlag("influxdb_create_database", "Attempt to
 // InfluxDBInsecureSkipVerify controls the certificate verification step
 var InfluxDBInsecureSkipVerify = NewBoolFlag("influxdb_insecure_skip_verify", "If set skip certificate validation", true)
 
-// InfluxDBName sets database name used by driver.
-var InfluxDBName = NewStringFlag("influxdb_db_name", "Database's name used to store metadata.", "swan_metadata")
+// InfluxDBMetaName sets database name used by driver.
+var InfluxDBMetaName = NewStringFlag("influxdb_metadata_db_name", "Database's name used to store metadata.", "swan_metadata")
+
+// InfluxDBMetricsName sets database name used by driver.
+var InfluxDBMetricsName = NewStringFlag("influxdb_metrics_db_name", "Database's name used to store metrics.", "swan_metrics")
