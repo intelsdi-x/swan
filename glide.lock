@@ -1,5 +1,5 @@
-hash: 6d5d097c01db66c66c9d5b2d15677cfabf9387baec0d7a182b131c9845099236
-updated: 2017-08-04T12:06:06.498945815+02:00
+hash: aa54e88ed2f620699ac79a55150c0b84a94bb6f367a1f54a13829ce71d597771
+updated: 2017-08-07T16:54:29.898737144+02:00
 imports:
 - name: github.com/appc/spec
   version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
@@ -29,7 +29,7 @@ imports:
   - digest
   - reference
 - name: github.com/emicklei/go-restful
-  version: ff4f55a206334ef123e4f79bbf348980da81ca46
+  version: 09691a3b6378b740595c1002f40c34dd5f218a22
   subpackages:
   - log
 - name: github.com/emicklei/go-restful-swagger12
@@ -49,13 +49,13 @@ imports:
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/gocql/gocql
-  version: db941d937da2750f2b9392ccafd3384a25c42cd5
+  version: 00a4bbccd77eaa1e28dd06bbc527b4b4a0c53728
   subpackages:
   - internal/lru
   - internal/murmur
   - internal/streams
 - name: github.com/gogo/protobuf
-  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
+  version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:
   - proto
   - sortkeys
@@ -85,6 +85,12 @@ imports:
   version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
+- name: github.com/influxdata/influxdb
+  version: 742b9cb3d74ff1be4aff45d69ee7c9ba66c02565
+  subpackages:
+  - client/v2
+  - models
+  - pkg/escape
 - name: github.com/intelsdi-x/gomit
   version: 4f098da2bbb51d787be003e4abfbc25d01837564
 - name: github.com/intelsdi-x/snap

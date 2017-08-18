@@ -29,6 +29,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/metadata"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -51,10 +52,10 @@ func main() {
 	uid := uuid.New() // Initialize logger.
 	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
-	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
+	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
 	errutil.Check(err)
 
-	err = metadata.RecordRuntimeEnv(experimentStart)
+	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
 	errutil.CheckWithContext(err, "Cannot save runtime environment details to Cassandra metadata database.")
 
 	// Validate preconditions: for SPECjbb we only check if CPU governor is set to performance.
@@ -99,7 +100,7 @@ func main() {
 		"repetitions":       strconv.Itoa(repetitions),
 		"load_duration":     loadDuration.String(),
 	}
-	errutil.Check(metadata.RecordMap(records))
+	errutil.Check(metaData.RecordMap(records, metadata.TypeEmpty))
 
 	// Iterate over aggressors
 	bestEfforts := sensitivity.AggressorsFlag.Value()
