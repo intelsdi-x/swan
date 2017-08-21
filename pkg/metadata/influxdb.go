@@ -148,20 +148,22 @@ func (m *InfluxDB) GetByKind(kind string) (map[string]string, error) {
 	response, err := m.session.Query(query)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", experimentID)
+		return nil, errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", m.experimentID)
 	}
 
 	if response.Error() != nil {
-		return nil, errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", experimentID)
+		return nil, errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", m.experimentID)
 	}
 
-	for resIdx := range response.Results {
-		for sIdx, row := range response.Results[resIdx].Series {
-			for vIdx := range response.Results[resIdx].Series[sIdx].Values {
-				for vIdx2, val := range response.Results[resIdx].Series[sIdx].Values[vIdx] {
-					// InfluxDB at index 0 returns timestamp and timestamp is not needed in metadata. Skip it.
-					if val != nil && vIdx2 != 0 {
-						metadata[strings.Replace(row.Columns[vIdx2], "last_", "", 1)] = response.Results[resIdx].Series[sIdx].Values[vIdx][vIdx2].(string)
+	for _, result := range response.Results {
+		for _, row := range result.Series {
+			for _, value := range row.Values {
+				for idx, cell := range value {
+					// InfluxDB at index 0 returns timestamp and timestamp is not needed in the metadata. Skip it.
+					// Also the results may be sparse thus skip empty cells.
+					if cell != nil && idx != 0 {
+						column := strings.Replace(row.Columns[idx], "last_", "", 1)
+						metadata[column] = cell.(string)
 					}
 				}
 			}
@@ -184,11 +186,11 @@ func (m *InfluxDB) Clear() error {
 	response, err := m.session.Query(query)
 
 	if err != nil {
-		return errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", experimentID)
+		return errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", m.experimentID)
 	}
 
 	if response.Error() != nil {
-		return errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", experimentID)
+		return errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", m.experimentID)
 	}
 	return nil
 }
