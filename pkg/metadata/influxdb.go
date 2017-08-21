@@ -148,11 +148,11 @@ func (m *InfluxDB) GetByKind(kind string) (map[string]string, error) {
 	response, err := m.session.Query(query)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", experimentID)
 	}
 
 	if response.Error() != nil {
-		return nil, response.Error()
+		return nil, errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", experimentID)
 	}
 
 	for resIdx := range response.Results {
@@ -184,11 +184,11 @@ func (m *InfluxDB) Clear() error {
 	response, err := m.session.Query(query)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Failed to contsturct query for influxdb for experiment %s", experimentID)
 	}
 
 	if response.Error() != nil {
-		return response.Error()
+		return errors.Wrapf(response.Error(), "Response from influxdb contained error for experiment %s", experimentID)
 	}
 	return nil
 }
