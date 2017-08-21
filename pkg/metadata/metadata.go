@@ -34,7 +34,7 @@ type Metadata interface {
 	Record(key string, value string, kind string) error
 	// RecordMap stores a key and value map and associates with the experiment id.
 	RecordMap(metadata map[string]string, kind string) error
-	// GetGroup retrive signle kind from the database.
+	// GetByKind retrives single metadata type from the database.
 	// Returns error if no kind or too many groups found.
 	GetByKind(kind string) (map[string]string, error)
 	// Clear deletes all metadata entries associated with the current experiment id.
