@@ -17,8 +17,13 @@ package testhelpers
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"os/exec"
 
 	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/smartystreets/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -130,4 +135,35 @@ func (k *KubeClient) UntaintNode() {
 	}
 	node := k.node()
 	k.updateTaints(node, taintsInJSON)
+}
+
+func WipeTestClusterFromSurfaceOfTheEarth(handle executor.TaskHandle) {
+	errs := executor.StopAndEraseOutput(handle)
+	So(errs.GetErrIfAny(), ShouldBeNil)
+	cmd := exec.Command("bash", "-c", "ETCDCTL_API=3 etcdctl del --prefix /")
+	err := cmd.Run()
+	So(err, ShouldBeNil)
+	cmd = exec.Command("bash", "-c", "rm -fr /var/lib/kubelet/*")
+	err = cmd.Run()
+	So(err, ShouldBeNil)
+}
+
+func IsPodRunning(podName string, numberOfAttempts int, sleepBetweenAttempts time.Duration) bool {
+	found := false
+	attempt := 0
+	for !found {
+		output, err := exec.Command("bash", "-c", fmt.Sprintf("hyperkube kubectl get pods | grep %q | awk '{ print $3 }'", podName)).Output()
+		So(err, ShouldBeNil)
+		if assertions.ShouldContainSubstring(string(output), "Running") == "" {
+			found = true
+		} else {
+			attempt++
+			if attempt > numberOfAttempts {
+				break
+			}
+			time.Sleep(sleepBetweenAttempts)
+		}
+	}
+
+	return found
 }
