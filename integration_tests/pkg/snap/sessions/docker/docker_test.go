@@ -51,7 +51,7 @@ func TestSnapDockerSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		config := kubernetes.UniqueConfig()
+		config := kubernetes.DefaultConfig()
 		config.RetryCount = 10
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
