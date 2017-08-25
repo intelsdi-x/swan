@@ -88,3 +88,6 @@ var InfluxDBMetaName = NewStringFlag("influxdb_metadata_db_name", "Database's na
 
 // InfluxDBMetricsName sets database name used by driver.
 var InfluxDBMetricsName = NewStringFlag("influxdb_metrics_db_name", "Database's name used to store metrics.", "swan_metrics")
+
+// DefaultSnapPublisher  sets default publisher used by swan
+var DefaultSnapPublisher = NewStringFlag("default_snap_publisher", "Publisher to use. Name shall be used from snap-plugin-publisher-<name>", "cassandra")

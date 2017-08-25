@@ -17,81 +17,51 @@ package use
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for USE Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.USECollector,
+			pub.PluginName},
+		TaskName: "swan-use-session",
+		Metrics: []string{
+			"/intel/use/compute/*",
+			"/intel/use/memory/*",
+		},
 	}
 }
 
-// Config contains configuration for USE Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// USESession configures & launches snap workflow for gathering
 // metrics from USE.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
+type USESession struct {
+	session *snap.Session
 }
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*SessionLauncher, error) {
-	return NewSessionLauncher(DefaultConfig())
-}
+func NewSessionLauncherDefault() (*USESession, error) {
+	session, err := snap.NewSessionLauncher(DefaultConfig())
 
-// NewSessionLauncher constructs USE Session Launcher.
-func NewSessionLauncher(config Config) (*SessionLauncher, error) {
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.USECollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-use-session",
-			[]string{
-				"/intel/use/compute/*",
-				"/intel/use/memory/*",
-			},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-		),
-		snapClient: snapClient,
+	return &USESession{
+		session: session,
 	}, nil
 }
 
 // LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) LaunchSession(
+func (s *USESession) LaunchSession(
 	task executor.TaskInfo,
 	tags map[string]interface{}) (executor.TaskHandle, error) {
 

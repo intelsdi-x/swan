@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sessions
+package publishers
 
 import (
 	"fmt"
 
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 // ApplyCassandraConfiguration is a helper which applies the Cassandra related settings from
@@ -31,4 +32,12 @@ func ApplyInfluxDBConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 	publisher.AddConfigItem("database", conf.InfluxDBMetricsName.Value())
 	publisher.AddConfigItem("port", conf.InfluxDBPort.Value())
 	publisher.AddConfigItem("skip-verify", conf.InfluxDBInsecureSkipVerify.Value())
+}
+
+func NewDefaultInfluxDBPublisher() (pub Publisher) {
+	pub.Publisher = wmap.NewPublishNode("influxdb", snap.PluginAnyVersion)
+	ApplyInfluxDBConfiguration(pub.Publisher)
+
+	pub.PluginName = snap.InfluxDBPublisher
+	return
 }

@@ -50,7 +50,7 @@ type Config struct {
 
 	// Snap APM Collection.
 	CollectAPM bool
-	SnapConfig caffeinferencesession.Config
+	SnapConfig snap.SessionConfig
 	SnapTags   map[string]interface{}
 }
 
@@ -76,7 +76,7 @@ type Caffe struct {
 	conf Config
 
 	// sessionConstructor is function pointer for UT purposes.
-	sessionConstructor func(caffeinferencesession.Config) (snap.SessionLauncher, error)
+	sessionConstructor func(snap.SessionConfig) (snap.SessionLauncher, error)
 }
 
 // New is a constructor for Caffe.
