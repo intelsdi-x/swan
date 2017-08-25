@@ -17,97 +17,66 @@ package specjbbsession
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for SPECjbb Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.SPECjbbCollector,
+			pub.PluginName},
+		TaskName: "swan-specjbb-session",
+		Metrics: []string{
+			"/intel/swan/specjbb/*/min",
+			"/intel/swan/specjbb/*/percentile/50th",
+			"/intel/swan/specjbb/*/percentile/90th",
+			"/intel/swan/specjbb/*/percentile/95th",
+			"/intel/swan/specjbb/*/percentile/99th",
+			"/intel/swan/specjbb/*/max",
+			"/intel/swan/specjbb/*/qps",
+			"/intel/swan/specjbb/*/issued_requests",
+		},
 	}
 }
 
-// Config contains configuration for SPECjbb Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// SPECjbbSession configures & launches snap workflow for gathering
 // metrics from SPECjbb.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
-
-	specjbbOutputFilePath string
+type SPECjbbSession struct {
+	session *snap.Session
 }
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault(
-	specjbbOutputFilePath string,
-	tags map[string]interface{}) (*SessionLauncher, error) {
-	return NewSessionLauncher(specjbbOutputFilePath, tags, DefaultConfig())
-}
+func NewSessionLauncherDefault() (*SPECjbbSession, error) {
+	session, err := snap.NewSessionLauncher(DefaultConfig())
 
-// NewSessionLauncher constructs SPECjbbSnapSessionLauncher.
-func NewSessionLauncher(
-	specjbbOutputFilePath string,
-	tags map[string]interface{},
-	config Config) (*SessionLauncher, error) {
-
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.SPECjbbCollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-specjbb-session",
-			[]string{
-				"/intel/swan/specjbb/*/min",
-				"/intel/swan/specjbb/*/percentile/50th",
-				"/intel/swan/specjbb/*/percentile/90th",
-				"/intel/swan/specjbb/*/percentile/95th",
-				"/intel/swan/specjbb/*/percentile/99th",
-				"/intel/swan/specjbb/*/max",
-				"/intel/swan/specjbb/*/qps",
-				"/intel/swan/specjbb/*/issued_requests",
-			},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient:            snapClient,
-		specjbbOutputFilePath: specjbbOutputFilePath,
+	return &SPECjbbSession{
+		session: session,
 	}, nil
 }
 
-// Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+// LaunchSession starts Snap Collection session and returns handle to that session.
+func (s *SPECjbbSession) LaunchSession(
+	task executor.TaskInfo,
+	tags map[string]interface{}) (executor.TaskHandle, error) {
+
+	// Obtain SPECjbb output file.
+	stdoutFile, err := task.StdoutFile()
+	if err != nil {
+		return nil, err
+	}
+
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{

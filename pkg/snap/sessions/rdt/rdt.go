@@ -17,81 +17,58 @@ package rdt
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for RDT Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.RDTCollector,
+			pub.PluginName},
+		TaskName: "swan-rdt-session",
+		Metrics: []string{
+			"/intel/rdt/*",
+		},
 	}
 }
 
-// Config contains configuration for RDT Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// RDTSession configures & launches snap workflow for gathering
 // metrics from RDT.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
+type RDTSession struct {
+	session *snap.Session
 }
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault(tags map[string]interface{}) (executor.Launcher, error) {
-	return NewSessionLauncher(tags, DefaultConfig())
-}
+func NewSessionLauncherDefault() (*RDTSession, error) {
+	session, err := snap.NewSessionLauncher(DefaultConfig())
 
-// NewSessionLauncher constructs RDT Session Launcher.
-func NewSessionLauncher(tags map[string]interface{}, config Config) (executor.Launcher, error) {
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.RDTCollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-rdt-session",
-			[]string{"/intel/rdt/*"},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient: snapClient,
+	return &RDTSession{
+		session: session,
 	}, nil
 }
 
-// Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
-	return s.session.Launch()
-}
+// LaunchSession starts Snap Collection session and returns handle to that session.
+func (s *RDTSession) LaunchSession(
+	task executor.TaskInfo,
+	tags map[string]interface{}) (executor.TaskHandle, error) {
+
+	// Start session.
+	handle, err := s.session.Launch(tags)
+	if err != nil {
+		return nil, err
+	}
 
 // String returns human readable name for job.
 func (s *SessionLauncher) String() string {

@@ -17,107 +17,57 @@ package mutilatesession
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for Mutilate Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyInfluxDBConfiguration(publisher)
-
-	return Config{
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.MutilateCollector,
+			pub.PluginName},
+		TaskName: "swan-mutilate-session",
+		Metrics: []string{
+			"/intel/swan/mutilate/*/avg",
+			"/intel/swan/mutilate/*/std",
+			"/intel/swan/mutilate/*/min",
+			"/intel/swan/mutilate/*/percentile/5th",
+			"/intel/swan/mutilate/*/percentile/10th",
+			"/intel/swan/mutilate/*/percentile/90th",
+			"/intel/swan/mutilate/*/percentile/95th",
+			"/intel/swan/mutilate/*/percentile/99th",
+			"/intel/swan/mutilate/*/qps",
+		},
 	}
 }
 
-// DefaultConfig returns default configuration for Mutilate Collector session.
-func DefaultInfluxDBConfig() Config {
-	publisher := wmap.NewPublishNode("influxdb", snap.PluginAnyVersion)
-	sessions.ApplyInfluxDBConfiguration(publisher)
-
-	return Config{
-		SnapteldAddress: snap.SnapteldAddress.Value(),
-		Interval:        1 * time.Second,
-		Publisher:       publisher,
-	}
-}
-
-// Config contains configuration for Mutilate Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// MutilateSessionLauncher configures & launches snap workflow for gathering
 // SLIs from Mutilate.
-type SessionLauncher struct {
-	session                *snap.Session
-	snapClient             *client.Client
-	mutilateOutputFilePath string
-}
-
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
-func NewSessionLauncherDefault(
-	mutilateOutputFilePath string,
-	tags map[string]interface{}) (*SessionLauncher, error) {
-	return NewSessionLauncher(mutilateOutputFilePath, tags, DefaultConfig())
+type MutilateSession struct {
+	session *snap.Session
 }
 
 // NewSessionLauncher constructs MutilateSnapSessionLauncher.
 func NewSessionLauncher(
 	mutilateOutputFilePath string,
-	tags map[string]interface{},
-	config Config) (*SessionLauncher, error) {
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
+	config Config) (*MutilateSession, error) {
+	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-	err = loader.Load(snap.MutilateCollector, snap.InfluxDBPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-mutilate-session",
-			[]string{
-				"/intel/swan/mutilate/*/avg",
-				"/intel/swan/mutilate/*/std",
-				"/intel/swan/mutilate/*/min",
-				"/intel/swan/mutilate/*/percentile/5th",
-				"/intel/swan/mutilate/*/percentile/10th",
-				"/intel/swan/mutilate/*/percentile/90th",
-				"/intel/swan/mutilate/*/percentile/95th",
-				"/intel/swan/mutilate/*/percentile/99th",
-				"/intel/swan/mutilate/*/qps",
-			},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient:             snapClient,
-		mutilateOutputFilePath: mutilateOutputFilePath,
+	return &MutilateSession{
+		session: session,
 	}, nil
 }
 
 // Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+func (s *MutilateSession) Launch() (executor.TaskHandle, error) {
 	// Configuring Mutilate collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{

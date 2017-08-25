@@ -93,6 +93,15 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 	}, nil
 }
 
+// LoadPlugins loads plugins given as input parameter.
+func LoadPlugins(plugins ...string) error {
+	pluginLoader, err := NewDefaultPluginLoader()
+	if err != nil {
+		return err
+	}
+	return pluginLoader.Load(plugins...)
+}
+
 // Load loads supplied plugin names from plugin path and returns slice of
 // encountered errors.
 func (l PluginLoader) Load(plugins ...string) error {
