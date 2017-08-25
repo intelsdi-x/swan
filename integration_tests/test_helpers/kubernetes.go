@@ -23,7 +23,7 @@ import (
 
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/smartystreets/assertions"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -140,13 +140,13 @@ func (k *KubeClient) UntaintNode() {
 // WipeTestClusterFromSurfaceOfTheEarth does a lot to make sure that Kubernetes cluster is stopped and there are not artifacts in etcd or /var/lib/kubelet.
 func WipeTestClusterFromSurfaceOfTheEarth(handle executor.TaskHandle) {
 	errs := executor.StopAndEraseOutput(handle)
-	So(errs.GetErrIfAny(), ShouldBeNil)
+	convey.So(errs.GetErrIfAny(), convey.ShouldBeNil)
 	cmd := exec.Command("bash", "-c", "ETCDCTL_API=3 etcdctl del --prefix /")
 	err := cmd.Run()
-	So(err, ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 	cmd = exec.Command("bash", "-c", "rm -fr /var/lib/kubelet/*")
 	err = cmd.Run()
-	So(err, ShouldBeNil)
+	convey.So(err, convey.ShouldBeNil)
 }
 
 // IsPodRunning checks if pod is in Running state.
@@ -155,7 +155,7 @@ func IsPodRunning(podName string, numberOfAttempts int, sleepBetweenAttempts tim
 	attempt := 0
 	for !found {
 		output, err := exec.Command("bash", "-c", fmt.Sprintf("hyperkube kubectl get pods | grep %q | awk '{ print $3 }'", podName)).Output()
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 		if assertions.ShouldContainSubstring(string(output), "Running") == "" {
 			found = true
 		} else {
