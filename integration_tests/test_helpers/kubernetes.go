@@ -137,6 +137,7 @@ func (k *KubeClient) UntaintNode() {
 	k.updateTaints(node, taintsInJSON)
 }
 
+// WipeTestClusterFromSurfaceOfTheEarth does a lot to make sure that Kubernetes cluster is stopped and there are not artifacts in etcd or /var/lib/kubelet.
 func WipeTestClusterFromSurfaceOfTheEarth(handle executor.TaskHandle) {
 	errs := executor.StopAndEraseOutput(handle)
 	So(errs.GetErrIfAny(), ShouldBeNil)
@@ -148,6 +149,7 @@ func WipeTestClusterFromSurfaceOfTheEarth(handle executor.TaskHandle) {
 	So(err, ShouldBeNil)
 }
 
+// IsPodRunning checks if pod is in Running state.
 func IsPodRunning(podName string, numberOfAttempts int, sleepBetweenAttempts time.Duration) bool {
 	found := false
 	attempt := 0
