@@ -51,14 +51,15 @@ func TestSnapDockerSession(t *testing.T) {
 
 		// Run Kubernetes
 		exec := executor.NewLocal()
-		config := kubernetes.UniqueConfig()
+		config := kubernetes.DefaultConfig()
 		config.RetryCount = 10
 		kubernetesLauncher := kubernetes.New(exec, exec, config)
 		kubernetesHandle, err := kubernetesLauncher.Launch()
 		So(err, ShouldBeNil)
 		So(kubernetesHandle, ShouldNotBeNil)
-		defer kubernetesHandle.EraseOutput()
-		defer kubernetesHandle.Stop()
+		Reset(func() {
+			testhelpers.WipeTestClusterFromSurfaceOfTheEarth(kubernetesHandle)
+		})
 
 		// Waiting for Kubernetes Executor.
 		kubernetesConfig := executor.DefaultKubernetesConfig()
@@ -85,6 +86,7 @@ func TestSnapDockerSession(t *testing.T) {
 				tags,
 			)
 			So(err, ShouldBeNil)
+			defer podHandle.EraseOutput()
 			defer dockerHandle.Stop()
 
 			So(dockerHandle.Status(), ShouldEqual, executor.RUNNING)

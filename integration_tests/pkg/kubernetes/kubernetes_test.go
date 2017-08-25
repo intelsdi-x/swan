@@ -53,7 +53,9 @@ func TestLocalKubernetesPodExecution(t *testing.T) {
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
-			defer executor.StopAndEraseOutput(k8sHandle)
+			Reset(func() {
+				testhelpers.WipeTestClusterFromSurfaceOfTheEarth(k8sHandle)
+			})
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				terminated, err := k8sHandle.Wait(100 * time.Millisecond)
@@ -144,7 +146,9 @@ func TestLocalKubernetesPodBrokenExecution(t *testing.T) {
 			k8sHandle, err := k8sLauncher.Launch()
 			So(err, ShouldBeNil)
 
-			defer executor.StopAndEraseOutput(k8sHandle)
+			Reset(func() {
+				testhelpers.WipeTestClusterFromSurfaceOfTheEarth(k8sHandle)
+			})
 
 			Convey("And kubectl shows that local host is in Ready state", func() {
 				terminated, err := k8sHandle.Wait(100 * time.Millisecond)
@@ -172,7 +176,8 @@ func TestLocalKubernetesPodBrokenExecution(t *testing.T) {
 					match := re.Find(output)
 					So(match, ShouldNotBeNil)
 
-					time.Sleep(10 * time.Second)
+					running := testhelpers.IsPodRunning("swan-testpod", 50, 500*time.Millisecond)
+					So(running, ShouldBeTrue)
 
 					Convey("If kubernetes is stopped pod shall be alive", func() {
 						_ = executor.StopAndEraseOutput(k8sHandle)
@@ -184,6 +189,9 @@ func TestLocalKubernetesPodBrokenExecution(t *testing.T) {
 						Convey("After starting again kubernetes old pod shall be removed", func() {
 							k8sHandle, err = k8sLauncher.Launch()
 							So(err, ShouldBeNil)
+							Reset(func() {
+								testhelpers.WipeTestClusterFromSurfaceOfTheEarth(k8sHandle)
+							})
 
 							output, err := exec.Command("sudo", "docker", "ps").Output()
 							So(err, ShouldBeNil)
