@@ -141,8 +141,8 @@ func (InferenceCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 func parseOutputFile(path string) (uint64, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
-		log.Errorf("cannot stat file %s: %s", path, err.Error())
-		return 0, ErrParse
+		log.Infof("cannot stat file %s: %s", path, err.Error())
+		return 0, nil
 	}
 
 	file, err := os.Open(path)
