@@ -139,6 +139,7 @@ func TestExperiment(t *testing.T) {
 		"SWAN_MUTILATE_MASTER_AFFINITY":            "false",
 		"SWAN_EXPERIMENT_STOP_ON_ERROR":            "true",
 		"SWAN_KUBERNETES_HP_MEMORY_RESOURCE":       "1000000000",
+		"SWAN_KUBERNETES_POD_LAUNCH_TIMEOUT":       "1m",
 	}
 
 	Convey("With environment prepared for experiment", t, func() {
