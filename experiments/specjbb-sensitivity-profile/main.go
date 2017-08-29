@@ -176,7 +176,7 @@ func main() {
 					specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault(
 						specjbbOutput.Name(),
 						snapTags)
-					errutil.Check(err)
+					errutil.CheckWithContext(err, "cannot create specjbb telemetry collection")
 
 					// Grap results from Load Generator
 					snapHandle, err := specjbbSnapSession.Launch()

@@ -200,7 +200,9 @@ func main() {
 					// Create snap session launcher
 					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
 						mutilateOutput.Name(), snapTags)
-					errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+					if err != nil {
+						return errors.Wrapf(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+					}
 
 					snapHandle, err := mutilateSnapSession.Launch()
 					if err != nil {

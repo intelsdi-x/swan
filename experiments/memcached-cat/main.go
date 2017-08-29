@@ -31,7 +31,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
@@ -287,8 +286,9 @@ func main() {
 						// Create snap session launcher
 						mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
 							mutilateOutput.Name(), snapTags)
-						errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
-
+						if err != nil {
+							return errors.Wrapf(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
+						}
 						snapHandle, err := mutilateSnapSession.Launch()
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %s", phaseName)

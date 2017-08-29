@@ -143,6 +143,7 @@ func main() {
 
 				// Create Mutilate Snap session launcher - it will be used to gather metrics about Memcached performance.
 				mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(output.Name(), tags)
+				errutil.CheckWithContext(err, fmt.Sprintf("Mutilate telemetry collection failed"))
 
 				// Launching Mutilate Snap session in order to gather metrics on Memcached performance.
 				mutilateSessionHandle, err := mutilateSnapSession.Launch()
