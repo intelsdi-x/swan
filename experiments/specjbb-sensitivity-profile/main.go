@@ -74,9 +74,6 @@ func main() {
 	specjbbLoadGenerator, err := common.PrepareSpecjbbLoadGenerator(specjbb.ControllerAddress.Value(), specjbbTxICountFlag.Value())
 	errutil.Check(err)
 
-	specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault()
-	errutil.Check(err)
-
 	// Retrieve peak load from flags and overwrite it when required.
 	load := sensitivity.PeakLoadFlag.Value()
 	if load == sensitivity.RunTuningPhase {
@@ -170,8 +167,19 @@ func main() {
 						}
 					}
 
+					specjbbOutput, err := hpHandle.StdoutFile()
+					if err != nil {
+						errutil.CheckWithContext(err, "cannot get specjbb stdout file")
+					}
+					defer specjbbOutput.Close()
+
+					specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault(
+						specjbbOutput.Name(),
+						snapTags)
+					errutil.CheckWithContext(err, "cannot create specjbb telemetry collection")
+
 					// Grap results from Load Generator
-					snapHandle, err := specjbbSnapSession.LaunchSession(loadGeneratorHandle, snapTags)
+					snapHandle, err := specjbbSnapSession.Launch()
 					if err != nil {
 						return errors.Wrapf(err, "cannot launch specjbb load generator Snap session in %s", phaseName)
 					}

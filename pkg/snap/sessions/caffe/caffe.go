@@ -22,6 +22,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/pkg/errors"
 )
 
 // DefaultConfig returns default configuration for Caffe Inference Collector session.
@@ -48,10 +49,20 @@ type Config struct {
 type SessionLauncher struct {
 	session    *snap.Session
 	snapClient *client.Client
+
+	caffe executor.Launcher
+}
+
+//NewDefaultSessionLauncher constructs CaffeInferenceSnapSessionLauncher with default config.
+func NewDefaultSessionLauncher(caffe executor.Launcher, tags map[string]interface{}) (*SessionLauncher, error) {
+	return NewSessionLauncher(caffe, tags, DefaultConfig())
 }
 
 // NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
-func NewSessionLauncher(config Config) (snap.SessionLauncher, error) {
+func NewSessionLauncher(
+	caffe executor.Launcher,
+	tags map[string]interface{},
+	config Config) (*SessionLauncher, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
@@ -76,36 +87,47 @@ func NewSessionLauncher(config Config) (snap.SessionLauncher, error) {
 			config.Interval,
 			snapClient,
 			config.Publisher,
+			tags,
 		),
 		snapClient: snapClient,
+		caffe:      caffe,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
-
-	// Obtain Caffe Inference output file.
-	stdoutFile, err := task.StderrFile()
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+	caffeHandle, err := s.caffe.Launch()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "cannot launch Caffe workload")
 	}
+
+	stdout, err := caffeHandle.StdoutFile()
+	if err != nil {
+		caffeHandle.Stop()
+		return nil, errors.Wrapf(err, "cannot get Caffe stdout file for metrics collection")
+	}
+	defer stdout.Close()
 
 	// Configuring Caffe collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
 			Ns:    "/intel/swan/caffe/inference",
 			Key:   "stdout_file",
-			Value: stdoutFile.Name(),
+			Value: stdout.Name(),
 		},
 	}
 
-	// Start session.
-	handle, err := s.session.Launch(tags)
+	// Start metrics collection.
+	collectionHandle, err := s.session.Launch()
 	if err != nil {
-		return nil, err
+		caffeHandle.Stop()
+		return nil, errors.Wrapf(err, "cannot launch Caffe snap metrics collection")
 	}
 
-	return handle, nil
+	return executor.NewClusterTaskHandle(caffeHandle, []executor.TaskHandle{collectionHandle}), nil
+}
+
+// String returns human readable name for job.
+func (s *SessionLauncher) String() string {
+	return "Snap Caffe Collection"
 }
