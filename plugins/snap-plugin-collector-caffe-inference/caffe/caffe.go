@@ -16,11 +16,14 @@ package caffe
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
@@ -85,8 +88,7 @@ func (InferenceCollector) CollectMetrics(metricTypes []plugin.Metric) ([]plugin.
 
 		batches, err := parseOutputFile(sourceFileName)
 		if err != nil {
-			log.Errorf("parsing caffe output (%s) for namespace %s failed: %s", sourceFileName, requestedMetricNamespace, err.Error())
-			return metrics, ErrParse
+			return metrics, fmt.Errorf("parsing caffe output (%s) for namespace %s failed: %s", sourceFileName, requestedMetricNamespace, err.Error())
 		}
 
 		// [...]string{"intel", "swan", "caffe", "inference", "hostname", "img"}
@@ -147,8 +149,7 @@ func parseOutputFile(path string) (uint64, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Errorf("cannot open file %s: %s", path, err.Error())
-		return 0, ErrParse
+		return 0, fmt.Errorf("cannot open file %s: %s", path, err.Error())
 	}
 	defer file.Close()
 
@@ -164,7 +165,10 @@ func parseOutputFile(path string) (uint64, error) {
 	}
 	n, err := file.ReadAt(buf, readat)
 	if err != nil {
-		log.Errorf("cannot read file %s at %v: %s", path, stat.Size()-int64(len(buf)), err.Error())
+		if err == io.EOF {
+			return 0, nil
+		}
+		log.Errorf("cannot read file %s at %d: %s", path, readat, err.Error())
 		return 0, ErrParse
 	}
 
@@ -174,8 +178,7 @@ func parseOutputFile(path string) (uint64, error) {
 
 	re := regexp.MustCompile("Batch ([0-9]+)")
 	if re == nil {
-		log.Errorf("failed to parse: %s, plugin internal error", path)
-		return 0, ErrParse
+		return 0, fmt.Errorf("failed to parse: %s, plugin internal error", path)
 	}
 
 	result := uint64(0)
