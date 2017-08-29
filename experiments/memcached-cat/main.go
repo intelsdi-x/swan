@@ -289,6 +289,7 @@ func main() {
 						if err != nil {
 							return errors.Wrapf(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
 						}
+
 						snapHandle, err := mutilateSnapSession.Launch()
 						if err != nil {
 							return errors.Wrapf(err, "cannot launch mutilate Snap session in phase %s", phaseName)
