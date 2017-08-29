@@ -104,8 +104,15 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 				So(metrics, ShouldHaveLength, 0)
 				So(err, ShouldEqual, ErrConf)
 			})
+			Convey("I should receive metric with value 0 and no error when caffe output file exists but it's empty", func() {
+				configuration := makeDefaultConfiguration("log-empty.txt")
+				metricTypes[0].Config = configuration
+				collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
+				So(err, ShouldBeNil)
+				So(collectedMetrics, ShouldHaveLength, 1)
+				So(collectedMetrics[0].Data, ShouldEqual, uint64(0))
+			})
 		})
-
 	})
 }
 
