@@ -3,6 +3,10 @@ import:
 - package: github.com/Sirupsen/logrus
   version: ~1.0.2
 - package: github.com/gocql/gocql
+- package: github.com/influxdata/influxdb
+  version: ~1.3.2
+  subpackages:
+  - client/v2
 - package: github.com/intelsdi-x/snap-plugin-lib-go
   subpackages:
   - v1/plugin

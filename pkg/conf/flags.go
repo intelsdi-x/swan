@@ -64,3 +64,24 @@ var CassandraCreateKeyspace = NewBoolFlag("cassandra_create_keyspace", "Attempt 
 
 // CassandraTagIndex allows to pass comma-separated list of tags that will be used to insert metrics into tags table to improve SELECT performance.
 var CassandraTagIndex = NewStringFlag("cassandra_tag_index", fmt.Sprintf("Allows to pass comma-separated list of tags that will be used to insert metrics into %s.tags table to improve SELECT performance", CassandraKeyspaceName.Value()), "swan_experiment")
+
+// InfluxDBAddress represents influxdb address flag.
+var InfluxDBAddress = NewStringFlag("influxdb_address", "Address of InfluxDB DB endpoint for Metadata and Snap Publishers.", "127.0.0.1")
+
+// InfluxDBUsername holds the user name which will be presented when connecting to the cluster at InfluxDBAddress.
+var InfluxDBUsername = NewStringFlag("influxdb_username", "The user name which will be presented when connecting to the cluster at 'influxdb_address'.", "swan")
+
+// InfluxDBPassword holds the password which will be presented when connecting to the cluster at InfluxDBAddress.
+var InfluxDBPassword = NewStringFlag("influxdb_password", "The password which will be presented when connecting to the cluster at 'influxdb_address'.", "swan")
+
+// InfluxDBPort sets port of InfluxDB DB endpoint.
+var InfluxDBPort = NewIntFlag("influxdb_port", "Port of InfluxDB DB endpoint.", 8086)
+
+// InfluxDBCreateDatabase controls whether driver shall try to create database in influx
+var InfluxDBCreateDatabase = NewBoolFlag("influxdb_create_database", "Attempt to create database (if it does not exist)", true)
+
+// InfluxDBInsecureSkipVerify controls the certificate verification step
+var InfluxDBInsecureSkipVerify = NewBoolFlag("influxdb_insecure_skip_verify", "If set skip certificate validation", true)
+
+// InfluxDBName sets database name used by driver.
+var InfluxDBName = NewStringFlag("influxdb_db_name", "Database's name used to store metadata.", "swan_metadata")

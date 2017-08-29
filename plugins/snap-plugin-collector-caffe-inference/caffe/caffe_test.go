@@ -61,6 +61,14 @@ func TestCaffeInferenceCollectorPlugin(t *testing.T) {
 				So(collectedMetrics, ShouldHaveLength, 1)
 				So(collectedMetrics[0].Data, ShouldEqual, uint64(0))
 			})
+			Convey("I should receive metric with value 0 and no error when output file does not exist", func() {
+				configuration := makeDefaultConfiguration("log-nonexisting.txt")
+				metricTypes[0].Config = configuration
+				collectedMetrics, err := caffePlugin.CollectMetrics(metricTypes)
+				So(err, ShouldBeNil)
+				So(collectedMetrics, ShouldHaveLength, 1)
+				So(collectedMetrics[0].Data, ShouldEqual, uint64(0))
+			})
 			Convey("I should receive metric with value 0 and no error when caffe ended prematurely and there is single work 'Batch' in log without number", func() {
 				configuration := makeDefaultConfiguration("log-interrupted2.txt")
 				metricTypes[0].Config = configuration

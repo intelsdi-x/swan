@@ -16,7 +16,6 @@ package kubernetes
 
 import (
 	"fmt"
-	"path"
 	"time"
 
 	"k8s.io/client-go/pkg/api/v1"
@@ -26,8 +25,6 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
-	"github.com/intelsdi-x/swan/pkg/utils/random"
-	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -112,26 +109,6 @@ func DefaultConfig() Config {
 // GetKubeAPIAddress returns kube api server in HTTP format.
 func (c *Config) GetKubeAPIAddress() string {
 	return fmt.Sprintf("http://%s:%d", c.KubeAPIAddr, c.KubeAPIPort)
-}
-
-// UniqueConfig is a constructor for Config with default parameters and random ports and random etcd prefix.
-func UniqueConfig() Config {
-	config := DefaultConfig()
-	// Create unique etcd prefix to avoid interference with any parallel tests which use same
-	// etcd cluster.
-	config.EtcdPrefix = path.Join("/swan/", uuid.New())
-
-	// NOTE: To reduce the likelihood of port conflict between test kubernetes clusters, we randomly
-	// assign a collection of ports to the services. Eventhough previous kubernetes processes
-	// have been shut down, ports may be in CLOSE_WAIT state.
-	ports := random.Ports(5)
-	config.KubeAPIPort = ports[0]
-	config.KubeletPort = ports[1]
-	config.KubeControllerPort = ports[2]
-	config.KubeSchedulerPort = ports[3]
-	config.KubeProxyPort = ports[4]
-
-	return config
 }
 
 // Type used for UT mocking purposes.

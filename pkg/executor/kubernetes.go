@@ -656,7 +656,7 @@ func (kw *k8sWatcher) whenPodFinished(pod *v1.Pod) {
 				log.Debugf("K8s task watcher: fail status message: %q", pod.Status.Message)
 			}
 		}
-		kw.whenPodReady()
+		kw.setupLogs()
 		kw.setExitCode(pod)
 		log.Debug("K8s task watcher: pod finished")
 	})

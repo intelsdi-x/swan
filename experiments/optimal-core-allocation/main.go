@@ -31,6 +31,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
+	"github.com/intelsdi-x/swan/pkg/metadata"
+	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/use"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -59,11 +61,11 @@ func main() {
 	logger.Initialize(appName, uid)
 
 	// connect to metadata database
-	metadata, err := experiment.NewMetadata(uid, experiment.DefaultMetadataConfig())
+	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
-	err = metadata.RecordRuntimeEnv(experimentStart)
+	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
 	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
 
 	// Read configuration.
@@ -85,7 +87,7 @@ func main() {
 		"use_core_pinning":  strconv.FormatBool(useCorePinning),
 		"peak_load":         strconv.Itoa(peakLoad),
 	}
-	err = metadata.RecordMap(records)
+	err = metaData.RecordMap(records, metadata.TypeEmpty)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
 	// Validate preconditions.
