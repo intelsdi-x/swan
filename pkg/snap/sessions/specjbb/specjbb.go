@@ -50,33 +50,26 @@ func DefaultConfig() snap.SessionConfig {
 // SPECjbbSession configures & launches snap workflow for gathering
 // metrics from SPECjbb.
 type SPECjbbSession struct {
-	session *snap.Session
+	session               *snap.Session
+	specjbbOutputFilePath string
 }
 
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
-func NewSessionLauncherDefault() (*SPECjbbSession, error) {
-	session, err := snap.NewSessionLauncher(DefaultConfig())
+// NewSessionLauncher creates SessionLauncher based on config
+func NewSessionLauncher(specjbbOutputFilePath string,
+	config snap.SessionConfig) (*SPECjbbSession, error) {
 
+	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
 	return &SPECjbbSession{
-		session: session,
+		session:               session,
+		specjbbOutputFilePath: specjbbOutputFilePath,
 	}, nil
 }
 
 // LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SPECjbbSession) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
-
-	// Obtain SPECjbb output file.
-	stdoutFile, err := task.StdoutFile()
-	if err != nil {
-		return nil, err
-	}
-
+func (s *SPECjbbSession) Launch() (executor.TaskHandle, error) {
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{

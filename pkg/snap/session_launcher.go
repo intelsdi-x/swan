@@ -28,6 +28,7 @@ type SessionConfig struct {
 	Plugins         []string
 	TaskName        string
 	Metrics         []string
+	Tags            map[string]interface{}
 }
 
 func NewSessionLauncher(config SessionConfig) (*Session, error) {
@@ -47,5 +48,6 @@ func NewSessionLauncher(config SessionConfig) (*Session, error) {
 		config.Interval,
 		snapClient,
 		config.Publisher,
+		config.Tags,
 	), nil
 }

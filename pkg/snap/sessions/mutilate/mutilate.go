@@ -50,19 +50,22 @@ func DefaultConfig() snap.SessionConfig {
 // MutilateSessionLauncher configures & launches snap workflow for gathering
 // SLIs from Mutilate.
 type MutilateSession struct {
-	session *snap.Session
+	session                *snap.Session
+	mutilateOutputFilePath string
 }
 
-// NewSessionLauncher constructs MutilateSnapSessionLauncher.
-func NewSessionLauncher(
-	mutilateOutputFilePath string,
-	config Config) (*MutilateSession, error) {
+// NewSessionLauncherDefault creates SessionLauncher based on values
+// returned by DefaultConfig().
+func NewSessionLauncher(mutilateOutputFilePath string,
+	config snap.SessionConfig) (*MutilateSession, error) {
+
 	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
 	return &MutilateSession{
-		session: session,
+		session:                session,
+		mutilateOutputFilePath: mutilateOutputFilePath,
 	}, nil
 }
 
@@ -78,6 +81,11 @@ func (s *MutilateSession) Launch() (executor.TaskHandle, error) {
 	}
 
 	return s.session.Launch()
+}
+
+// String returns human readable name for job.
+func (s *SessionLauncher) String() string {
+	return "Snap Mutilate Collection"
 }
 
 // String returns human readable name for job.

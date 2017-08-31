@@ -38,6 +38,7 @@ func DefaultConfig() snap.SessionConfig {
 		Metrics: []string{
 			"/intel/swan/caffe/inference/*/batches",
 		},
+		Tags: nil,
 	}
 }
 
@@ -45,10 +46,12 @@ func DefaultConfig() snap.SessionConfig {
 // SLIs from Caffe Inference.
 type CaffeSession struct {
 	session *snap.Session
+	caffe   executor.Launcher
 }
 
 // NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
-func NewSessionLauncher(config snap.SessionConfig) (*CaffeSession, error) {
+func NewSessionLauncher(caffe executor.Launcher,
+	config snap.SessionConfig) (*CaffeSession, error) {
 	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
@@ -56,28 +59,17 @@ func NewSessionLauncher(config snap.SessionConfig) (*CaffeSession, error) {
 	}
 	return &CaffeSession{
 		session: session,
+		caffe:   caffe,
 	}, nil
 }
 
-// NewSessionLauncherDefault constructs CaffeSession.
-func NewSessionLauncherDefault() (*CaffeSession, error) {
-	session, err := snap.NewSessionLauncher(DefaultConfig())
-
-	if err != nil {
-		return nil, err
-	}
-	return &CaffeSession{
-		session: session,
-	}, nil
-}
-
-// Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+// LaunchSession starts Snap Collection session and returns handle to that session.
+func (s *CaffeSession) Launch() (executor.TaskHandle, error) {
 	caffeHandle, err := s.caffe.Launch()
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot launch Caffe workload")
 	}
-
+	// Obtain Caffe Inference output file.
 	stdout, err := caffeHandle.StdoutFile()
 	if err != nil {
 		caffeHandle.Stop()

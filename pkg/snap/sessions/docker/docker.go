@@ -46,8 +46,8 @@ type DockerSession struct {
 }
 
 // NewSessionLauncher constructs Docker Session Launcher.
-func NewSessionLauncherDefault() (*DockerSession, error) {
-	session, err := snap.NewSessionLauncher(DefaultConfig())
+func NewSessionLauncher(config snap.SessionConfig) (*DockerSession, error) {
+	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
@@ -57,8 +57,9 @@ func NewSessionLauncherDefault() (*DockerSession, error) {
 	}, nil
 }
 
-// Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+// LaunchSession starts Snap Collection session and returns handle to that session.
+func (s *DockerSession) Launch() (executor.TaskHandle, error) {
+	// Start session.
 	return s.session.Launch()
 }
 

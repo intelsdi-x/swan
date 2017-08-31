@@ -48,8 +48,8 @@ type RDTSession struct {
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*RDTSession, error) {
-	session, err := snap.NewSessionLauncher(DefaultConfig())
+func NewSessionLauncher(config snap.SessionConfig) (*RDTSession, error) {
+	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
@@ -60,10 +60,7 @@ func NewSessionLauncherDefault() (*RDTSession, error) {
 }
 
 // LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *RDTSession) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
-
+func (s *RDTSession) Launch() (executor.TaskHandle, error) {
 	// Start session.
 	handle, err := s.session.Launch(tags)
 	if err != nil {

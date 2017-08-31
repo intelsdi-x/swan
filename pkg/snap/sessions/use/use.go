@@ -49,8 +49,8 @@ type USESession struct {
 
 // NewSessionLauncherDefault creates SessionLauncher based on values
 // returned by DefaultConfig().
-func NewSessionLauncherDefault() (*USESession, error) {
-	session, err := snap.NewSessionLauncher(DefaultConfig())
+func NewSessionLauncherDefault(config snap.SessionConfig) (*USESession, error) {
+	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
@@ -61,15 +61,11 @@ func NewSessionLauncherDefault() (*USESession, error) {
 }
 
 // LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *USESession) LaunchSession(
-	task executor.TaskInfo,
-	tags map[string]interface{}) (executor.TaskHandle, error) {
+func (s *USESession) Launch() (executor.TaskHandle, error) {
 
 	// Start session.
-	handle, err := s.session.Launch(tags)
-	if err != nil {
-		return nil, err
-	}
+	return s.session.Launch(tags)
+}
 
 // String returns human readable name for job.
 func (s *SessionLauncher) String() string {
