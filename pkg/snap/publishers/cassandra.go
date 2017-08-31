@@ -44,9 +44,11 @@ func ApplyCassandraConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 		publisher.AddConfigItem("keyPath", conf.CassandraSslKeyPath.Value())
 	}
 }
+
+// NewDefaultCassandraPublisher constructs new cassandra snap publisher.
 func NewDefaultCassandraPublisher() (pub Publisher) {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	ApplyCassandraConfiguration(publisher)
+	pub.Publisher = wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
+	ApplyCassandraConfiguration(pub.Publisher)
 
 	pub.PluginName = snap.CassandraPublisher
 	return

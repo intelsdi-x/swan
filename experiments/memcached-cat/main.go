@@ -31,7 +31,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	mutilatesession "github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
@@ -198,7 +198,9 @@ func main() {
 					useRDTCollector := useRDTCollectorFlag.Value()
 					var rdtSession executor.Launcher
 					if useRDTCollector {
-						rdtSession, err = rdt.NewSessionLauncherDefault(snapTags)
+						rdtConfig := rdt.DefaultConfig()
+						rdtConfig.Tags = snapTags
+						rdtSession, err = rdt.NewSessionLauncher(rdtConfig)
 						errutil.CheckWithContext(err, "Cannot create rdt snap session")
 					}
 
@@ -284,8 +286,10 @@ func main() {
 						defer mutilateOutput.Close()
 
 						// Create snap session launcher
-						mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
-							mutilateOutput.Name(), snapTags)
+						mutilateConfig := mutilatesession.DefaultConfig()
+						mutilateConfig.Tags = snapTags
+						mutilateSnapSession, err := mutilatesession.NewSessionLauncher(
+							mutilateOutput.Name(), mutilateConfig)
 						if err != nil {
 							return errors.Wrapf(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
 						}

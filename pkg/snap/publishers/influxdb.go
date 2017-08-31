@@ -22,7 +22,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
-// ApplyCassandraConfiguration is a helper which applies the Cassandra related settings from
+// ApplyInfluxDBConfiguration is a helper which applies the InfluxDB related settings from
 // the command line flags and applies them to a snap workflow.
 func ApplyInfluxDBConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 	fmt.Println("ApplyInfluxDBConfiguration called")
@@ -34,6 +34,7 @@ func ApplyInfluxDBConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 	publisher.AddConfigItem("skip-verify", conf.InfluxDBInsecureSkipVerify.Value())
 }
 
+// NewDefaultInfluxDBPublisher constructs new snap influxdb publisher.
 func NewDefaultInfluxDBPublisher() (pub Publisher) {
 	pub.Publisher = wmap.NewPublishNode("influxdb", snap.PluginAnyVersion)
 	ApplyInfluxDBConfiguration(pub.Publisher)

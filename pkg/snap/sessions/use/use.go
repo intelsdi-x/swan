@@ -41,33 +41,32 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// USESession configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // metrics from USE.
-type USESession struct {
+type Session struct {
 	session *snap.Session
 }
 
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
-func NewSessionLauncherDefault(config snap.SessionConfig) (*USESession, error) {
+// NewSessionLauncher creates SessionLauncher based on config
+func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
 	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
 	}
-	return &USESession{
+	return &Session{
 		session: session,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *USESession) Launch() (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *Session) Launch() (executor.TaskHandle, error) {
 
 	// Start session.
-	return s.session.Launch(tags)
+	return s.session.Launch()
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap USE Collection"
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package caffeinferencesession
+package caffe
 
 import (
 	"time"
@@ -42,29 +42,29 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// CaffeSession configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // SLIs from Caffe Inference.
-type CaffeSession struct {
+type Session struct {
 	session *snap.Session
 	caffe   executor.Launcher
 }
 
-// NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
+// NewSessionLauncher constructs Session
 func NewSessionLauncher(caffe executor.Launcher,
-	config snap.SessionConfig) (*CaffeSession, error) {
+	config snap.SessionConfig) (*Session, error) {
 	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
 	}
-	return &CaffeSession{
+	return &Session{
 		session: session,
 		caffe:   caffe,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *CaffeSession) Launch() (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	caffeHandle, err := s.caffe.Launch()
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot launch Caffe workload")
@@ -97,6 +97,6 @@ func (s *CaffeSession) Launch() (executor.TaskHandle, error) {
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap Caffe Collection"
 }

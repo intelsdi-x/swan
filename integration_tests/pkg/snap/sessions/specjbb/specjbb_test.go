@@ -17,11 +17,12 @@ package specjbb
 import (
 	"testing"
 
+	"path"
+
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
+	specjbbsession "github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	. "github.com/smartystreets/goconvey/convey"
-	"path"
 )
 
 func TestSnapSpecJbbSession(t *testing.T) {
@@ -46,10 +47,7 @@ func TestSnapSpecJbbSession(t *testing.T) {
 					specjbbSessionConfig := specjbbsession.DefaultConfig()
 					specjbbSessionConfig.SnapteldAddress = snapteldAddress
 					specjbbSessionConfig.Publisher = publisher
-					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(
-						fixturePath,
-						tags,
-						specjbbSessionConfig)
+					specjbbSnaptelSession, err := specjbbsession.NewSessionLauncher(fixturePath, specjbbSessionConfig)
 					So(err, ShouldBeNil)
 
 					handle, err := specjbbSnaptelSession.Launch()

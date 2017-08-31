@@ -19,19 +19,19 @@ import (
 	"github.com/intelsdi-x/swan/pkg/conf"
 )
 
+// Publisher stores default publisher object
 type Publisher struct {
 	PluginName string
 	Publisher  *wmap.PublishWorkflowMapNode
 }
 
-func NewDefaultPublisher() (pub Publisher) {
+// NewDefaultPublisher construct new snap publisher object
+// based on default flag in configuration.
+func NewDefaultPublisher() Publisher {
 
 	if conf.DefaultSnapPublisher.Value() == "influxdb" {
 		return NewDefaultInfluxDBPublisher()
 	}
-
-	if conf.DefaultSnapPublisher.Value() == "cassandra" {
-		return NewDefaultCassandraPublisher()
-	}
-	return
+	// Default is cassandra
+	return NewDefaultCassandraPublisher()
 }

@@ -30,7 +30,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
+	specjbbsession "github.com/intelsdi-x/swan/pkg/snap/sessions/specjbb"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
@@ -173,9 +173,11 @@ func main() {
 					}
 					defer specjbbOutput.Close()
 
-					specjbbSnapSession, err := specjbbsession.NewSessionLauncherDefault(
+					specjbbConfig := specjbbsession.DefaultConfig()
+					specjbbConfig.Tags = snapTags
+					specjbbSnapSession, err := specjbbsession.NewSessionLauncher(
 						specjbbOutput.Name(),
-						snapTags)
+						specjbbConfig)
 					errutil.CheckWithContext(err, "cannot create specjbb telemetry collection")
 
 					// Grap results from Load Generator

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package specjbbsession
+package specjbb
 
 import (
 	"time"
@@ -47,29 +47,29 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// SPECjbbSession configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // metrics from SPECjbb.
-type SPECjbbSession struct {
+type Session struct {
 	session               *snap.Session
 	specjbbOutputFilePath string
 }
 
-// NewSessionLauncher creates SessionLauncher based on config
+// NewSessionLauncher creates SPECjbbSession based on config
 func NewSessionLauncher(specjbbOutputFilePath string,
-	config snap.SessionConfig) (*SPECjbbSession, error) {
+	config snap.SessionConfig) (*Session, error) {
 
 	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
-	return &SPECjbbSession{
+	return &Session{
 		session:               session,
 		specjbbOutputFilePath: specjbbOutputFilePath,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *SPECjbbSession) Launch() (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
@@ -83,6 +83,6 @@ func (s *SPECjbbSession) Launch() (executor.TaskHandle, error) {
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap specJBB Collection"
 }

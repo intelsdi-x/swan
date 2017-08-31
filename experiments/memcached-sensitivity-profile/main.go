@@ -29,7 +29,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	mutilatesession "github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/err_collection"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
@@ -52,8 +52,8 @@ func main() {
 	// Initialize logger.
 	logger.Initialize(appName, uid)
 
-	//metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
-	metaData, err := metadata.NewInfluxDB(uid, metadata.DefaultInfluxDBConfig())
+	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
+	//metaData, err := metadata.NewInfluxDB(uid, metadata.DefaultInfluxDBConfig())
 
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 
@@ -200,8 +200,10 @@ func main() {
 					defer mutilateOutput.Close()
 
 					// Create snap session launcher
-					mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
-						mutilateOutput.Name(), snapTags)
+					mutilateConfig := mutilatesession.DefaultConfig()
+					mutilateConfig.Tags = snapTags
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(
+						mutilateOutput.Name(), mutilateConfig)
 					if err != nil {
 						return errors.Wrapf(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
 					}

@@ -40,34 +40,30 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// RDTSession configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // metrics from RDT.
-type RDTSession struct {
+type Session struct {
 	session *snap.Session
 }
 
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
-func NewSessionLauncher(config snap.SessionConfig) (*RDTSession, error) {
+// NewSessionLauncher creates RDTSession based on config
+func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
 	session, err := snap.NewSessionLauncher(config)
-
 	if err != nil {
 		return nil, err
 	}
-	return &RDTSession{
+	return &Session{
 		session: session,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *RDTSession) Launch() (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	// Start session.
-	handle, err := s.session.Launch(tags)
-	if err != nil {
-		return nil, err
-	}
+	return s.session.Launch()
+}
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap RDT Collection"
 }

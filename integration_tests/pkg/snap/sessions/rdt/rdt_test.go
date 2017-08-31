@@ -19,13 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"os"
+
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/rdt"
 	. "github.com/smartystreets/goconvey/convey"
-	"os"
 )
 
 func TestSnapRDTSession(t *testing.T) {
@@ -61,7 +62,7 @@ func TestSnapRDTSession(t *testing.T) {
 					sessionConfig := rdt.DefaultConfig()
 					sessionConfig.SnapteldAddress = snapteldAddress
 					sessionConfig.Publisher = publisher
-					session, err := rdt.NewSessionLauncher(tags, sessionConfig)
+					session, err := rdt.NewSessionLauncher(sessionConfig)
 					So(err, ShouldBeNil)
 
 					handle, err := session.Launch()

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mutilatesession
+package mutilate
 
 import (
 	"time"
@@ -47,30 +47,29 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// MutilateSessionLauncher configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // SLIs from Mutilate.
-type MutilateSession struct {
+type Session struct {
 	session                *snap.Session
 	mutilateOutputFilePath string
 }
 
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
+// NewSessionLauncher creates MutilateSession based on input values
 func NewSessionLauncher(mutilateOutputFilePath string,
-	config snap.SessionConfig) (*MutilateSession, error) {
+	config snap.SessionConfig) (*Session, error) {
 
 	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
-	return &MutilateSession{
+	return &Session{
 		session:                session,
 		mutilateOutputFilePath: mutilateOutputFilePath,
 	}, nil
 }
 
 // Launch starts Snap Collection session and returns handle to that session.
-func (s *MutilateSession) Launch() (executor.TaskHandle, error) {
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	// Configuring Mutilate collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
@@ -84,11 +83,6 @@ func (s *MutilateSession) Launch() (executor.TaskHandle, error) {
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
-	return "Snap Mutilate Collection"
-}
-
-// String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap Mutilate Collection"
 }

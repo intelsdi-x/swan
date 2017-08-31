@@ -21,6 +21,7 @@ import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 )
 
+// SessionConfig holds configuration for snap session
 type SessionConfig struct {
 	SnapteldAddress string
 	Publisher       *wmap.PublishWorkflowMapNode
@@ -31,6 +32,9 @@ type SessionConfig struct {
 	Tags            map[string]interface{}
 }
 
+// NewSessionLauncher construct snap.Session based on provied config
+// It also try load plugins mentioned in config.Plugins and can fails
+// if plugins are unavailable.
 func NewSessionLauncher(config SessionConfig) (*Session, error) {
 	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {

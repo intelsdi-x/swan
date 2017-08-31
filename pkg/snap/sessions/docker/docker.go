@@ -40,30 +40,30 @@ func DefaultConfig() snap.SessionConfig {
 	}
 }
 
-// TODO
-type DockerSession struct {
+// Session configures and launches snap workflow for docker
+type Session struct {
 	session *snap.Session
 }
 
 // NewSessionLauncher constructs Docker Session Launcher.
-func NewSessionLauncher(config snap.SessionConfig) (*DockerSession, error) {
+func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
 	session, err := snap.NewSessionLauncher(config)
 
 	if err != nil {
 		return nil, err
 	}
-	return &DockerSession{
+	return &Session{
 		session: session,
 	}, nil
 }
 
-// LaunchSession starts Snap Collection session and returns handle to that session.
-func (s *DockerSession) Launch() (executor.TaskHandle, error) {
+// Launch starts Snap Collection session and returns handle to that session.
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	// Start session.
 	return s.session.Launch()
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap Docker Collection"
 }
