@@ -22,7 +22,7 @@
 
 Swan uses *Jupyter Notebook* to filter, process and visualize results from experiments.
 
-You need to have Docker installed to run Jupyter notebooks easily. We have provided a Docker image that will make running notebooks as easy as possible. You just need to run:
+You need to have Docker installed to run Jupyter notebooks easily. We have provided a Docker image that will make running notebooks as easy as possible. You just need to run on your vagrant instance:
 
 ```sh
 docker run -p 127.0.0.1:8888:8888 intelsdi/swan-jupyter
@@ -35,7 +35,8 @@ Additionally Cassandra's container already exposes the necessary port for Jupyte
 
 ## Explore the Example Jupyter Notebook
 
-From within the Jupyter web interface, open a template notebook by clicking on `example.ipynb`.
+To access Jupyter notebook on your host machine simply replace `localhost` with `10.141.141.10` in the web address returned by Jupyter.
+Then, from within the Jupyter web interface, open a template notebook by clicking on `example.ipynb`.
 
 ![notebook tree](/images/jupter-tree.png)
 
