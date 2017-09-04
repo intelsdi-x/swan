@@ -39,6 +39,10 @@ const (
 
 	// CassandraPublisher is name of snap plugin binary.
 	CassandraPublisher = "snap-plugin-publisher-cassandra"
+
+	// InfluxDBPublisher is name of snap plugin binary.
+	InfluxDBPublisher = "snap-plugin-publisher-influxdb"
+
 	// FilePublisher is Snap testing file publisher
 	FilePublisher = "snap-plugin-publisher-file"
 	// SessionPublisher is name of snap plugin binary.
@@ -87,6 +91,15 @@ func NewPluginLoader(config PluginLoaderConfig) (*PluginLoader, error) {
 		pluginsClient: plugins,
 		config:        config,
 	}, nil
+}
+
+// LoadPlugins loads plugins given as input parameter.
+func LoadPlugins(plugins ...string) error {
+	pluginLoader, err := NewDefaultPluginLoader()
+	if err != nil {
+		return err
+	}
+	return pluginLoader.Load(plugins...)
 }
 
 // Load loads supplied plugin names from plugin path and returns slice of

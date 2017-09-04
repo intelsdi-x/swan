@@ -17,78 +17,53 @@ package docker
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for Docker Session Launcher.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.DockerCollector,
+			pub.PluginName},
+		TaskName: "swan-docker-session",
+		Metrics: []string{
+			"/intel/docker/*/stats/cgroups/*",
+		},
 	}
 }
 
-// Config contains configuration for Docker Session Launcher.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering Kubernetes Docker containers metrics.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
+// Session configures and launches snap workflow for docker
+type Session struct {
+	session *snap.Session
 }
 
 // NewSessionLauncher constructs Docker Session Launcher.
-func NewSessionLauncher(
-	tags map[string]interface{},
-	config Config) (*SessionLauncher, error) {
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
+func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
+	session, err := snap.NewSessionLauncher(config)
+
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.DockerCollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-docker-session",
-			[]string{"/intel/docker/*/stats/cgroups/*"},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient: snapClient,
+	return &Session{
+		session: session,
 	}, nil
 }
 
 // Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+func (s *Session) Launch() (executor.TaskHandle, error) {
+	// Start session.
 	return s.session.Launch()
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap Docker Collection"
 }

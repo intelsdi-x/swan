@@ -28,7 +28,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	mutilatesession "github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	// This import is used to launch new PID namespace to make sure that all the processes will be terminated when experiment ends.
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
@@ -141,8 +141,11 @@ func main() {
 				output, err := mutilateTask.StdoutFile()
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot get Mutilate output file"))
 
+				mutilateConfig := mutilatesession.DefaultConfig()
+				mutilateConfig.Tags = tags
+
 				// Create Mutilate Snap session launcher - it will be used to gather metrics about Memcached performance.
-				mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(output.Name(), tags)
+				mutilateSnapSession, err := mutilatesession.NewSessionLauncher(output.Name(), mutilateConfig)
 				errutil.CheckWithContext(err, fmt.Sprintf("Mutilate telemetry collection failed"))
 
 				// Launching Mutilate Snap session in order to gather metrics on Memcached performance.

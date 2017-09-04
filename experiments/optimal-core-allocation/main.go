@@ -32,7 +32,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/isolation/topo"
 	"github.com/intelsdi-x/swan/pkg/metadata"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	mutilatesession "github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	"github.com/intelsdi-x/swan/pkg/snap/sessions/use"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
@@ -180,7 +180,9 @@ func main() {
 				// Run USE Collector
 				var useSessionHandle executor.TaskHandle
 				if useUSECollectorFlag.Value() {
-					useSession, err := use.NewSessionLauncherDefault(snapTags)
+					useConfig := use.DefaultConfig()
+					useConfig.Tags = snapTags
+					useSession, err := use.NewSessionLauncher(useConfig)
 					errutil.CheckWithContext(err, "Cannot create USE snap session")
 					useSessionHandle, err = useSession.Launch()
 					errutil.PanicWithContext(err, "Cannot launch Snap USE Collection session")
@@ -224,8 +226,10 @@ func main() {
 				defer mutilateOutput.Close()
 
 				// Create snap session launcher
-				mutilateSnapSession, err := mutilatesession.NewSessionLauncherDefault(
-					mutilateOutput.Name(), snapTags)
+				mutilateConfig := mutilatesession.DefaultConfig()
+				mutilateConfig.Tags = snapTags
+				mutilateSnapSession, err := mutilatesession.NewSessionLauncher(
+					mutilateOutput.Name(), mutilateConfig)
 				errutil.CheckWithContext(err, fmt.Sprintf("Cannot create Mutilate snap session during phase %q", phaseName))
 
 				snapHandle, err := mutilateSnapSession.Launch()

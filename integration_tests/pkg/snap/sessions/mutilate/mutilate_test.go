@@ -20,7 +20,7 @@ import (
 
 	"github.com/intelsdi-x/swan/integration_tests/test_helpers"
 	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
+	mutilatesession "github.com/intelsdi-x/swan/pkg/snap/sessions/mutilate"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -45,10 +45,7 @@ func TestSnapMutilateSession(t *testing.T) {
 					mutilateSessionConfig := mutilatesession.DefaultConfig()
 					mutilateSessionConfig.SnapteldAddress = snapteldAddress
 					mutilateSessionConfig.Publisher = publisher
-					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(
-						fixturePath,
-						tags,
-						mutilateSessionConfig)
+					mutilateSnapSession, err := mutilatesession.NewSessionLauncher(fixturePath, mutilateSessionConfig)
 					So(err, ShouldBeNil)
 
 					handle, err := mutilateSnapSession.Launch()

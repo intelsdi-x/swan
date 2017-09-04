@@ -26,7 +26,7 @@ func TestInfluxDB(t *testing.T) {
 	Convey("While using metadata package", t, func() {
 		influxDefConf := DefaultInfluxDBConfig()
 		Convey("InfluxDB default config shall have default settings", func() {
-			So(influxDefConf.dbName, ShouldEqual, conf.InfluxDBName.Value())
+			So(influxDefConf.dbName, ShouldEqual, conf.InfluxDBMetaName.Value())
 			So(influxDefConf.httpConfig.Addr, ShouldEqual, fmt.Sprintf("http://%s:%d", conf.InfluxDBAddress.Value(), conf.InfluxDBPort.Value()))
 			So(influxDefConf.httpConfig.Username, ShouldEqual, conf.InfluxDBUsername.Value())
 			So(influxDefConf.httpConfig.Password, ShouldEqual, conf.InfluxDBPassword.Value())

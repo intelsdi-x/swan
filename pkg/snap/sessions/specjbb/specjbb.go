@@ -12,102 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package specjbbsession
+package specjbb
 
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 )
 
 // DefaultConfig returns default configuration for SPECjbb Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.SPECjbbCollector,
+			pub.PluginName},
+		TaskName: "swan-specjbb-session",
+		Metrics: []string{
+			"/intel/swan/specjbb/*/min",
+			"/intel/swan/specjbb/*/percentile/50th",
+			"/intel/swan/specjbb/*/percentile/90th",
+			"/intel/swan/specjbb/*/percentile/95th",
+			"/intel/swan/specjbb/*/percentile/99th",
+			"/intel/swan/specjbb/*/max",
+			"/intel/swan/specjbb/*/qps",
+			"/intel/swan/specjbb/*/issued_requests",
+		},
 	}
 }
 
-// Config contains configuration for SPECjbb Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // metrics from SPECjbb.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
-
+type Session struct {
+	session               *snap.Session
 	specjbbOutputFilePath string
 }
 
-// NewSessionLauncherDefault creates SessionLauncher based on values
-// returned by DefaultConfig().
-func NewSessionLauncherDefault(
-	specjbbOutputFilePath string,
-	tags map[string]interface{}) (*SessionLauncher, error) {
-	return NewSessionLauncher(specjbbOutputFilePath, tags, DefaultConfig())
-}
+// NewSessionLauncher creates SPECjbbSession based on config
+func NewSessionLauncher(specjbbOutputFilePath string,
+	config snap.SessionConfig) (*Session, error) {
 
-// NewSessionLauncher constructs SPECjbbSnapSessionLauncher.
-func NewSessionLauncher(
-	specjbbOutputFilePath string,
-	tags map[string]interface{},
-	config Config) (*SessionLauncher, error) {
-
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
+	session, err := snap.NewSessionLauncher(config)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.SPECjbbCollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-specjbb-session",
-			[]string{
-				"/intel/swan/specjbb/*/min",
-				"/intel/swan/specjbb/*/percentile/50th",
-				"/intel/swan/specjbb/*/percentile/90th",
-				"/intel/swan/specjbb/*/percentile/95th",
-				"/intel/swan/specjbb/*/percentile/99th",
-				"/intel/swan/specjbb/*/max",
-				"/intel/swan/specjbb/*/qps",
-				"/intel/swan/specjbb/*/issued_requests",
-			},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient:            snapClient,
+	return &Session{
+		session:               session,
 		specjbbOutputFilePath: specjbbOutputFilePath,
 	}, nil
 }
 
 // Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	// Configuring SPECjbb collector.
 	s.session.CollectNodeConfigItems = []snap.CollectNodeConfigItem{
 		{
@@ -121,6 +83,6 @@ func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap specJBB Collection"
 }

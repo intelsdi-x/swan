@@ -19,7 +19,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions/caffe"
+	caffeinferencesession "github.com/intelsdi-x/swan/pkg/snap/sessions/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/caffe"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1data"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/l1instruction"
@@ -216,15 +216,15 @@ func (factory *WorkloadFactory) createBestEffortWorkload(
 	case membw:
 		workload = memoryBandwidth.New(exec, memoryBandwidth.DefaultMemBwConfig())
 	case caffeWorkload:
-		workload, err = caffeinferencesession.NewDefaultSessionLauncher(
+		workload, err = caffeinferencesession.NewSessionLauncher(
 			caffe.New(exec, caffe.DefaultConfig()),
-			tags)
+			caffeinferencesession.DefaultConfig())
 	case caffeWorkloadWithIsolation:
 		config := caffe.DefaultConfig()
 		config.Name = "Caffe isolated"
-		workload, err = caffeinferencesession.NewDefaultSessionLauncher(
+		workload, err = caffeinferencesession.NewSessionLauncher(
 			caffe.New(exec, config),
-			tags)
+			caffeinferencesession.DefaultConfig())
 	case llc:
 		workload = l3.New(exec, l3.DefaultL3Config())
 	case streambw:

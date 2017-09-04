@@ -12,95 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package caffeinferencesession
+package caffe
 
 import (
 	"time"
 
-	"github.com/intelsdi-x/snap/mgmt/rest/client"
-	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/snap"
-	"github.com/intelsdi-x/swan/pkg/snap/sessions"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 	"github.com/pkg/errors"
 )
 
 // DefaultConfig returns default configuration for Caffe Inference Collector session.
-func DefaultConfig() Config {
-	publisher := wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
-	sessions.ApplyCassandraConfiguration(publisher)
+func DefaultConfig() snap.SessionConfig {
+	pub := publishers.NewDefaultPublisher()
 
-	return Config{
+	return snap.SessionConfig{
 		SnapteldAddress: snap.SnapteldAddress.Value(),
 		Interval:        1 * time.Second,
-		Publisher:       publisher,
+		Publisher:       pub.Publisher,
+		Plugins: []string{
+			snap.CaffeInferenceCollector,
+			pub.PluginName},
+		TaskName: "swan-caffe-inference-session",
+		Metrics: []string{
+			"/intel/swan/caffe/inference/*/batches",
+		},
+		Tags: nil,
 	}
 }
 
-// Config contains configuration for Caffe Inference Collector session.
-type Config struct {
-	SnapteldAddress string
-	Publisher       *wmap.PublishWorkflowMapNode
-	Interval        time.Duration
-}
-
-// SessionLauncher configures & launches snap workflow for gathering
+// Session configures & launches snap workflow for gathering
 // SLIs from Caffe Inference.
-type SessionLauncher struct {
-	session    *snap.Session
-	snapClient *client.Client
-
-	caffe executor.Launcher
+type Session struct {
+	session *snap.Session
+	caffe   executor.Launcher
 }
 
-//NewDefaultSessionLauncher constructs CaffeInferenceSnapSessionLauncher with default config.
-func NewDefaultSessionLauncher(caffe executor.Launcher, tags map[string]interface{}) (*SessionLauncher, error) {
-	return NewSessionLauncher(caffe, tags, DefaultConfig())
-}
+// NewSessionLauncher constructs Session
+func NewSessionLauncher(caffe executor.Launcher,
+	config snap.SessionConfig) (*Session, error) {
+	session, err := snap.NewSessionLauncher(config)
 
-// NewSessionLauncher constructs CaffeInferenceSnapSessionLauncher.
-func NewSessionLauncher(
-	caffe executor.Launcher,
-	tags map[string]interface{},
-	config Config) (*SessionLauncher, error) {
-	snapClient, err := client.New(config.SnapteldAddress, "v1", true)
 	if err != nil {
 		return nil, err
 	}
-
-	loaderConfig := snap.DefaultPluginLoaderConfig()
-	loaderConfig.SnapteldAddress = config.SnapteldAddress
-	loader, err := snap.NewPluginLoader(loaderConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	err = loader.Load(snap.CaffeInferenceCollector, snap.CassandraPublisher)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SessionLauncher{
-		session: snap.NewSession(
-			"swan-caffe-inference-session",
-			[]string{"/intel/swan/caffe/inference/*/batches"},
-			config.Interval,
-			snapClient,
-			config.Publisher,
-			tags,
-		),
-		snapClient: snapClient,
-		caffe:      caffe,
+	return &Session{
+		session: session,
+		caffe:   caffe,
 	}, nil
 }
 
 // Launch starts Snap Collection session and returns handle to that session.
-func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
+func (s *Session) Launch() (executor.TaskHandle, error) {
 	caffeHandle, err := s.caffe.Launch()
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot launch Caffe workload")
 	}
-
+	// Obtain Caffe Inference output file.
 	stdout, err := caffeHandle.StdoutFile()
 	if err != nil {
 		caffeHandle.Stop()
@@ -128,6 +97,6 @@ func (s *SessionLauncher) Launch() (executor.TaskHandle, error) {
 }
 
 // String returns human readable name for job.
-func (s *SessionLauncher) String() string {
+func (s *Session) String() string {
 	return "Snap Caffe Collection"
 }

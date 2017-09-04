@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sessions
+package publishers
 
 import (
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/snap"
 )
 
 // ApplyCassandraConfiguration is a helper which applies the Cassandra related settings from
@@ -42,4 +43,13 @@ func ApplyCassandraConfiguration(publisher *wmap.PublishWorkflowMapNode) {
 		publisher.AddConfigItem("certPath", conf.CassandraSslCertPath.Value())
 		publisher.AddConfigItem("keyPath", conf.CassandraSslKeyPath.Value())
 	}
+}
+
+// NewDefaultCassandraPublisher constructs new cassandra snap publisher.
+func NewDefaultCassandraPublisher() (pub Publisher) {
+	pub.Publisher = wmap.NewPublishNode("cassandra", snap.PluginAnyVersion)
+	ApplyCassandraConfiguration(pub.Publisher)
+
+	pub.PluginName = snap.CassandraPublisher
+	return
 }

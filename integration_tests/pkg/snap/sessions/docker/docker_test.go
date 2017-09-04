@@ -79,7 +79,8 @@ func TestSnapDockerSession(t *testing.T) {
 			dockerConfig := docker.DefaultConfig()
 			dockerConfig.SnapteldAddress = snapteldAddr
 			dockerConfig.Publisher = publisher
-			dockerLauncher, err := docker.NewSessionLauncher(tags, dockerConfig)
+			dockerConfig.Tags = tags
+			dockerLauncher, err := docker.NewSessionLauncher(dockerConfig)
 			So(err, ShouldBeNil)
 
 			dockerHandle, err := dockerLauncher.Launch()
