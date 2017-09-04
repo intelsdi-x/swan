@@ -1,0 +1,25 @@
+---
+- hosts: swan-test
+  remote_user: centos
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Create /opt/swan
+      file:
+        path: /opt/swan
+        state: directory
+    - name: Copy Swan binaries
+      copy:
+        src: ~/go/src/github.com/intelsdi-x/swan/build/
+        dest: /opt/swan
+    - name: Copy Swan services
+      copy:
+        src: ~/go/src/github.com/intelsdi-x/swan/vagrant/
+        dest: /swan_services
+    - name: Experiment environment provisioning script run
+      environment:
+        SWAN_USER: centos
+        HOME_DIR: /home/centos/
+      script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_exp_env_centos.sh
+    - name: Install Mutilate and configure system
+      script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_mutilate_and_config.sh
