@@ -35,7 +35,23 @@ Additionally Cassandra's container already exposes the necessary port for Jupyte
 
 ## Explore the Example Jupyter Notebook
 
-To access Jupyter notebook on your host machine simply replace `localhost` with `10.141.141.10` in the web address returned by Jupyter.
+To access Jupyter notebook on your host machine easily add following lines to your `~/.ssh.config` file:
+```sh
+Host local-vagrant
+  HostName 127.0.0.1
+  User vagrant
+  Port 2222
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /path/to/swan/vagrant/.vagrant/machines/default/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+  ForwardAgent yes
+  ForwardX11 yes
+  LocalForward 8888 127.0.0.1:8888
+```
+Now, by entering `ssh local-vagrant` you are forwarding jupyter notebook web interface port to your localhost while connecting to your remote machine.
 Then, from within the Jupyter web interface, open a template notebook by clicking on `example.ipynb`.
 
 ![notebook tree](/images/jupter-tree.png)
