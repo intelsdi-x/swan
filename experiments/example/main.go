@@ -57,9 +57,9 @@ func main() {
 	// Initialize logger (and log some basic information: experiment name, UUID generated above etc).
 	logger.Initialize(appName, uid)
 
-	// Connect to metadata database (Cassandra is the only supported database).
+	// Connect to metadata database (Cassandra is the default database).
 	// Besides experiment results and platform metrics (we use Snap to gather them) we save certain deta about experiment configuration and environment (metadata).
-	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
+	metaData, err := metadata.NewDefault(uid)
 	// errutil.CheckWithContext() is a helper function that will panic on error and provide some additional information about error origin.
 	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
 

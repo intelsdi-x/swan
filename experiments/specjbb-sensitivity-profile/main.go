@@ -52,7 +52,7 @@ func main() {
 	uid := uuid.New() // Initialize logger.
 	logger.Initialize(appName, uid)
 	// Create metadata associated with experiment
-	metaData, err := metadata.NewCassandra(uid, metadata.DefaultCassandraConfig())
+	metaData, err := metadata.NewDefault(uid)
 	errutil.Check(err)
 
 	err = metadata.RecordRuntimeEnv(metaData, experimentStart)

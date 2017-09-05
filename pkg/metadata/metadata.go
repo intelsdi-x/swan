@@ -14,6 +14,12 @@
 
 package metadata
 
+import (
+	"fmt"
+
+	"github.com/intelsdi-x/swan/pkg/conf"
+)
+
 // Predefined types of metadata.
 // This selector allows to group metadata by their common characteristics.
 // For instancje metadataKindFlags can be added to parameters passed to swan,
@@ -39,4 +45,17 @@ type Metadata interface {
 	GetByKind(kind string) (map[string]string, error)
 	// Clear deletes all metadata entries associated with the current experiment id.
 	Clear() error
+}
+
+// NewDefault initialize metadata object which is configured via env. variable.
+func NewDefault(experimentID string) (Metadata, error) {
+	if conf.DefaultMetadataDB.Value() == "cassandra" {
+		return NewCassandra(experimentID, DefaultCassandraConfig())
+	}
+
+	if conf.DefaultMetadataDB.Value() == "influxdb" {
+		return NewInfluxDB(experimentID, DefaultInfluxDBConfig())
+	}
+
+	return nil, fmt.Errorf("Unsupported database for metadata: %s", conf.DefaultMetadataDB.Value())
 }

@@ -90,4 +90,7 @@ var InfluxDBMetaName = NewStringFlag("influxdb_metadata_db_name", "Database's na
 var InfluxDBMetricsName = NewStringFlag("influxdb_metrics_db_name", "Database's name used to store metrics.", "swan_metrics")
 
 // DefaultSnapPublisher  sets default publisher used by swan
-var DefaultSnapPublisher = NewStringFlag("default_snap_publisher", "Publisher to use. Name shall be used from snap-plugin-publisher-<name>", "cassandra")
+var DefaultSnapPublisher = NewStringFlag("default_snap_publisher", "Publisher to use. Name shall be used from snap-plugin-publisher-<name>. Supported: cassandra, influxdb", "cassandra")
+
+// DefaultMetadataDB sets default database for metadata
+var DefaultMetadataDB = NewStringFlag("default_metadata_db", "Database to which metadata will be stored. Suported: cassandra, influxdb", "cassandra")
