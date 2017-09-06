@@ -1,0 +1,5 @@
+---
+# Swan test variables
+swan_user: centos
+home_dir: /home/centos
+
