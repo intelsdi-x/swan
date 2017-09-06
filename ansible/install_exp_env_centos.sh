@@ -169,6 +169,4 @@ chown -R $SWAN_USER:$SWAN_USER /opt/swan
 chmod -R +x /opt/swan/bin/*
 ln -svf ${SWAN_BIN}/* /usr/bin/
 
-echo "---------------------------- Post install configs (`date`)"
-
 echo "---------------------------- Provisioning experiment environment done (`date`)"

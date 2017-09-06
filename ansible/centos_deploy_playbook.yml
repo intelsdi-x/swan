@@ -18,8 +18,8 @@
         dest: /swan_services
     - name: Experiment environment provisioning script run
       environment:
-        SWAN_USER: centos
-        HOME_DIR: /home/centos/
+        SWAN_USER: "{{ swan_user }}"
+        HOME_DIR: "{{ home_dir }}"
       script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_exp_env_centos.sh
-    - name: Install Mutilate and configure system
-      script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_mutilate_and_config.sh
+    - name: Install Mutilate
+      script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_mutilate.sh
