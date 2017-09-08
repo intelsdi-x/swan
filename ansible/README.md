@@ -24,9 +24,7 @@ First, to prepare your own machine for development and build Swan locally run fo
 ```bash
 wget https://raw.githubusercontent.com/intelsdi-x/swan/master/ansible/README.md
 sudo ./prepare_host_env.sh
-source ~/.bashrc # Make $GOROOT variable active
-cd ../../
-rm -rf swan
+source ~/.bashrc # Make $GOPATH and $GOROOT variables active
 ```
 After the script has successfully installed all dependencies and built Swan binaries add all addresses of machines on which you wish to run Swan experiments to `inventory/cluster` file. Then run:
 ```bash
