@@ -133,7 +133,6 @@ systemctl restart cassandra
 daemonStatus cassandra
 
 echo "----------------------------- Install InfluxDB (`date`)"
-#cp /vagrant/influxdb/influxdb.service /etc/systemd/system
 cp ${SWAN_SERVICES_DIR}/influxdb/influxdb.service /etc/systemd/system
 mkdir -p /var/lib/influxdb
 chcon -Rt svirt_sandbox_file_t /var/lib/influxdb # SELinux policy
