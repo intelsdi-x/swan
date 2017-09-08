@@ -17,7 +17,7 @@
 # Ansible swan deployment playbook
 
 ## Introduction
-To deploy your own swan experiments to remote nodes we provide a environment preparation scripts both for your host and remote machines. Note that currently host preparation script uses `apt` package manager so `Debian` or `Ubuntu` would be a great choice. Remote installation scripts(ansible) on the other hand, are written for `CentOS7`. 
+To deploy your own Swan experiments to remote nodes we provide a environment preparation scripts both for your host and remote machines. Note that currently host preparation script uses `apt` package manager so `Debian` or `Ubuntu` would be a great choice. Remote installation scripts(ansible) on the other hand, are written for `CentOS7`. 
 
 ## Usage
 First, to prepare your own machine for development and build Swan locally run following:
@@ -25,7 +25,9 @@ First, to prepare your own machine for development and build Swan locally run fo
 git clone https://github.com/intelsdi-x/swan.git
 cd swan/ansible
 sudo ./prepare_host_env.sh
-source ~/.bashrc # Make $GOPATH and $GOROOT variables active
+source ~/.bashrc # Make $GOROOT variable active
+cd ../../
+rm -rf swan
 ```
 After the script has successfully installed all dependencies and built Swan binaries add all addresses of machines on which you wish to run Swan experiments to `inventory/cluster` file. Then run:
 ```bash

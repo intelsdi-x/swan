@@ -2,4 +2,4 @@
 # Swan test variables
 swan_user: centos
 home_dir: /home/centos
-
+swan_services_dir: /swan_services
