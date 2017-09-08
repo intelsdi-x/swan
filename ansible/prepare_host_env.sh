@@ -13,7 +13,6 @@ echo "Installing required packages..."
 apt install git -y
 
 # golang
-#set -e
 
 VERSION="1.9"
 PACKAGE="go$VERSION.linux-amd64.tar.gz"
@@ -36,25 +35,19 @@ touch "$HOME/.bashrc"
 {
 	echo 'export GOROOT=$HOME/.go'
 	echo 'export PATH=$PATH:$GOROOT/bin'
-	echo 'export GOPATH=$HOME/go'
-	echo 'export PATH=$PATH:$GOPATH/bin'
 } >> "$HOME/.bashrc"
 
 export GOROOT=$HOME/.go
 export PATH=$PATH:$GOROOT/bin
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
 
 mkdir -p $HOME/go/{src,pkg,bin}
 echo -e "\nGo $VERSION was installed.\n"
 rm -f /tmp/go.tar.gz
 
 ### Get latest Swan repository
-git clone https://github.com/intelsdi-x/swan.git
+go get github.com/intelsdi-x/swan
 
 ### Build Swan
-mkdir -p $GOPATH/src/github.com/intelsdi-x/swan
-mv swan $GOPATH/src/github.com/intelsdi-x/
-cd $GOPATH/src/github.com/intelsdi-x/swan/
+cd ~/go/src/github.com/intelsdi-x/swan/
 make build_and_test_unit
 cd -

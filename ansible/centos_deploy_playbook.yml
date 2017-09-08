@@ -20,6 +20,8 @@
       environment:
         SWAN_USER: "{{ swan_user }}"
         HOME_DIR: "{{ home_dir }}"
-      script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_exp_env_centos.sh
+        SWAN_SERVICES_DIR: "{{ swan_services_dir }}"
+      script: ~/go/src/github.com/intelsdi-x/swan/vagrant/provision_experiment_environment.sh
     - name: Install Mutilate
       script: ~/go/src/github.com/intelsdi-x/swan/ansible/install_mutilate.sh
+
