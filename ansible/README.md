@@ -22,7 +22,7 @@ To deploy your own Swan experiments to remote nodes we provide a environment pre
 ## Usage
 First, to prepare your own machine for development and build Swan locally run following:
 ```bash
-wget https://raw.githubusercontent.com/intelsdi-x/swan/master/ansible/README.md
+wget https://raw.githubusercontent.com/intelsdi-x/swan/master/ansible/prepare_host_env.sh
 sudo ./prepare_host_env.sh
 source ~/.bashrc # Make $GOPATH and $GOROOT variables active
 ```
