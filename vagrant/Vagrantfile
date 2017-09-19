@@ -22,95 +22,116 @@
 # you're doing.
 Vagrant.configure(2) do |config|
 
-  aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
-  vagrant_user = ENV['VAGRANT_USER'] || 'vagrant'
+  # Variables
+  #aws_data_file      = "#{ENV['HOME']}/.vagrant/aws-creds"
+  vagrant_user       = ENV['VAGRANT_USER'] || 'vagrant'
+  home_dir           = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
   build_cached_image = ENV["BUILD_CACHED_IMAGE"] == 'true' ? true : false
+  share_glide_cache  = ENV["SHARE_GLIDE_CACHE"] || false
+
   provision_development_environment = ENV["SWAN_DEVELOPMENT_ENVIRONMENT"] == 'true' ? true : false
-  share_glide_cache = ENV["SHARE_GLIDE_CACHE"] || false
+
+  # Vagrant Box configs
+  config.vm.box_check_update = false
 
   # SSH agent forwarding (for host private keys)
   config.ssh.forward_agent = true
-  config.ssh.keys_only = false
-  config.ssh.insert_key = false
   config.ssh.forward_x11 = true
-  config.vm.box = "centos/7"
-  config.vm.box_check_update = false
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  config.vm.network "private_network", ip: "10.141.141.10"
+  #config.ssh.keys_only = false
+  #config.ssh.insert_key = false
 
   # Share an additional folder to the guest VM. The first argument is
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  home_dir = vagrant_user == 'root' ? '/root/' : "/home/#{vagrant_user}"
-  config.vm.synced_folder "..", "#{home_dir}/go/src/github.com/intelsdi-x/swan", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
-  if File.directory?(File.expand_path("#{ENV['HOME']}/swan_s3_creds"))
-       config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds", "#{home_dir}/swan_s3_creds", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
-  end
+  config.vm.synced_folder ".." ,
+                          "#{home_dir}/go/src/github.com/intelsdi-x/swan",
+                          mount_options: ["umask=0022,dmask=0022,fmask=0022"],
+                          type: "rsync"
 
+#  if File.directory?(File.expand_path("#{ENV['HOME']}/swan_s3_creds"))
+#       config.vm.synced_folder "#{ENV['HOME']}/swan_s3_creds",
+#                               "#{home_dir}/swan_s3_creds",
+#                               :mount_options => ["umask=0022,dmask=0022,fmask=0022"],
+#                               type: "rsync"
+#  end
+
+  # VirtualBox provider
   config.vm.provider "virtualbox" do |vb, override|
-    vb.gui = false
+
+    # Vagrant Box config
+    override.vm.box = "centos/7"
+
+    # SSH config
+    #override.ssh.insert_key = true
+    #override.ssh.keys_only = true
+
+    # Create a private network, which allows host-only access to the machine
+    # using a specific IP.
+    override.vm.network "private_network", ip: "10.141.141.10"
+
     vb.name = "swan"
+    vb.gui  = false
 
-    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 2)       # NOTE: integration tests fail with less than 2
-    vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
+    # NOTE: integration tests fail with less than 2 vCPUs
+    #       integration tests tend to crash with less than 4GB RAM (gcc)
+    vb.cpus   = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 2)
+    vb.memory = (ENV['VBOX_MEM']  != '' && ENV['VBOX_MEM']  || 4096)
 
-    override.ssh.insert_key = true
-    override.ssh.keys_only = true
-    override.vm.provision "shell", path: "provision.sh", env: {
-        'VAGRANT_USER' => vagrant_user,
-        'HOME_DIR' => home_dir,
-        'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment}
-    
+    # Share glide cache with guest box
     if share_glide_cache
-      override.vm.synced_folder "#{ENV['HOME']}/.glide", "#{home_dir}/.glide", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+      override.vm.synced_folder "#{ENV['HOME']}/.glide",
+                                "#{home_dir}/.glide",
+                                :mount_options => ["umask=0022,dmask=0022,fmask=0022"],
+                                type: "rsync"
     end
-  end
 
-  config.vm.provider :aws do |aws, override|
-    require 'yaml'
-    # load a file at this location that can be used to set aws specific
-    # information. This allows you to set your own credentials, but also
-    # custom what ami the job runs on.
-    if File.exists?(aws_data_file)
-      data = YAML.load_file(aws_data_file)
-    else
-      data = {}
-    end
-    override.nfs.functional = false
-    aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
-    aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
-    aws.region = ENV['AWS_DEFAULT_REGION']
-    aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
-                                 'Ebs.Iops' => 1000,
-                                 'Ebs.VolumeSize' => 40,
-                                 'Ebs.VolumeType' => 'io1',
-                                 'Ebs.DeleteOnTermination' => true }]
-
-    override.vm.box = "aws"
-    # requiretty cannot be set in sudoers for vagrant to work
-    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
-
-    aws.instance_package_timeout = 60000
-    aws.instance_type = "m4.large"
-    aws.keypair_name = "snapbot-private"
-    override.ssh.username = data['ssh_username'] || "centos"
-
-    # centos7 for us-east
-    # COPY AMI ID HERE
-    # non-cached ami: ami-6d1c2007
-    ### USE BASE/CACHED IMAGE
-    #aws.ami = "ami-6d1c2007" # base image
-    aws.ami = (ENV['SWAN_AMI'] != '' && ENV['SWAN_AMI'] || "ami-5d939e26") # Fri, Aug  4 10:32:57 2017 +0100
-    if build_cached_image
-      override.vm.provision "shell", path: "provision.sh", env: {
+    override.vm.provision "shell", path: "provision.sh", env:
+      {
         'VAGRANT_USER' => vagrant_user,
         'HOME_DIR' => home_dir,
-        'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment}
-    end
-
+        'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment
+      }
   end
-  
+  # Env VirtualBox provider
+
+  # OpenStack provider
+  config.vm.provider :openstack do |os, override|
+
+    # SSH config
+    override.ssh.username = "centos"
+    #override.ssh.insert_key = true
+
+    # Auth config
+    os.identity_api_version = "3"
+    os.openstack_auth_url   = ENV['OS_AUTH_URL']
+    os.tenant_name          = ENV['OS_TENANT_NAME']
+    os.project_name         = ENV['OS_PROJECT_NAME']
+    os.domain_name          = ENV['OS_USER_DOMAIN_NAME']
+    os.username             = ENV['OS_USERNAME']
+    os.password             = ENV['OS_PASSWORD']
+    os.region               = ENV['OS_REGION_NAME']
+
+    # VM config
+    os.image            = ENV['OS_IMAGE_ID']
+    os.flavor           = ENV['OS_FLAVOR_ID']
+    os.floating_ip_pool = ENV['OS_FLOATING_POOL']
+    os.security_groups  = [ "default" ]
+
+    # User data
+    # requiretty cannot be set in sudoers for vagrant to work
+    os.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+
+    # Provisioning
+    if build_cached_image
+      override.vm.provision "shell", path: "provision.sh", env:
+        {
+          'VAGRANT_USER' => vagrant_user,
+          'HOME_DIR' => home_dir,
+          'SWAN_DEVELOPMENT_ENVIRONMENT' => provision_development_environment
+        }
+    end
+  end
+  # End Openstack provider
+
 end
