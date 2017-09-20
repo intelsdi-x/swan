@@ -113,6 +113,7 @@ Vagrant.configure(2) do |config|
     os.region               = ENV['OS_REGION_NAME']
 
     # VM config
+    os.server_name      = "swan-ci"
     os.image            = ENV['OS_IMAGE_ID']
     os.flavor           = ENV['OS_FLAVOR_ID']
     os.floating_ip_pool = ENV['OS_FLOATING_POOL'] || "external"
