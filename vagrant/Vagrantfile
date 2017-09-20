@@ -116,6 +116,7 @@ Vagrant.configure(2) do |config|
     os.image            = ENV['OS_IMAGE_ID']
     os.flavor           = ENV['OS_FLAVOR_ID']
     os.floating_ip_pool = ENV['OS_FLOATING_POOL'] || "external"
+    os.networks         = ENV['OS_NETWORK_ID']
     os.security_groups  = [ "default" ]
 
     # User data
