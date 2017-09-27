@@ -127,6 +127,7 @@ install:
 	sudo ln -svf /opt/swan/bin/* /usr/bin/
 
 docker:
+	docker build -t centos_with_deps -f workloads/Dockerfile.centos_with_deps workloads
 	docker build -t intelsdi/swan:latest workloads
 
 extract_binaries:
