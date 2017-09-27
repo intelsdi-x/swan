@@ -30,7 +30,7 @@
 			},
 			{
 				"type": "file",
-				"source": "../../swan/",
+				"source": "../",
 				"destination": "~/go/src/github.com/intelsdi-x/swan"
 			},
 			{

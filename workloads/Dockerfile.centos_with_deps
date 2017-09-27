@@ -8,7 +8,6 @@ RUN yum makecache fast \
                    gcc \
                    gflags-devel \
                    git \
-                   git \
                    glog-devel \
                    hdf5-devel \
                    leveldb-devel \
