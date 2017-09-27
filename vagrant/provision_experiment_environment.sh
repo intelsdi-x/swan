@@ -31,6 +31,7 @@ fi
 
 SWAN_BIN=/opt/swan/bin
 SWAN_VERSION="v0.15"
+SWAN_SERVICES_DIR=${SWAN_SERVICES_DIR:-"/vagrant"}
 
 K8S_VERSION="v1.7.4"
 SNAP_VERSION="1.3.0"
@@ -123,7 +124,7 @@ daemonStatus etcd
 
 
 echo "----------------------------- Install Cassandra (`date`)"
-cp /vagrant/cassandra/cassandra.service /etc/systemd/system
+cp ${SWAN_SERVICES_DIR}/cassandra/cassandra.service /etc/systemd/system
 mkdir -p /var/data/cassandra
 chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
 systemctl enable cassandra
@@ -132,7 +133,7 @@ systemctl restart cassandra
 daemonStatus cassandra
 
 echo "----------------------------- Install InfluxDB (`date`)"
-cp /vagrant/influxdb/influxdb.service /etc/systemd/system
+cp ${SWAN_SERVICES_DIR}/influxdb/influxdb.service /etc/systemd/system
 mkdir -p /var/lib/influxdb
 chcon -Rt svirt_sandbox_file_t /var/lib/influxdb # SELinux policy
 systemctl enable influxdb
