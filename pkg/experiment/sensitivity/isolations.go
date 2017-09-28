@@ -67,18 +67,18 @@ func GetWorkloadCPUThreads() (hpThreads, beL1Threads, beLLCThreads isolation.Int
 	} else {
 		defaultTopology, err := newDefaultTopology(hpCPUCountFlag.Value(), beCPUCountFlag.Value())
 		errutil.Check(err)
-		hpThreads := defaultTopology.HpThreadIDs
-		bellcThreads := defaultTopology.SharingLLCButNotL1Threads
-		bel1Threads := defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()
-		if bel1Threads.Empty() {
+		hpThreads = defaultTopology.HpThreadIDs
+		beLLCThreads = defaultTopology.SharingLLCButNotL1Threads
+		beL1Threads = defaultTopology.SiblingThreadsToHpThreads.AvailableThreads()
+		if beL1Threads.Empty() {
 			log.Warn("Machine does not support HyperThreads. L1-Cache Best Effort workloads will use LLC threads")
-			bel1Threads = bellcThreads
+			beL1Threads = beLLCThreads
 		}
 
 		log.Info("Using Automatic Core Placement for workload isolation")
 		log.Debugf("HP CPU Threads from flag %q: %v", hpCPUCountFlag.Name, hpThreads)
-		log.Debugf("BE-LLC CPU Threads from flag %q: %v", beCPUCountFlag.Name, bellcThreads)
-		log.Debugf("BE-L1  CPU Threads from flag %q: %v", beCPUCountFlag.Name, bel1Threads)
+		log.Debugf("BE-LLC CPU Threads from flag %q: %v", beCPUCountFlag.Name, beLLCThreads)
+		log.Debugf("BE-L1  CPU Threads from flag %q: %v", beCPUCountFlag.Name, beL1Threads)
 	}
 
 	return
