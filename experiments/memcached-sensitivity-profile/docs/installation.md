@@ -62,7 +62,7 @@ Please install Docker in version 17.03.
 sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo yum makecache fast -y -q
-sudo yum install -y -q docker-ce-17.03.0.ce-1.el7.centos
+sudo yum install -y -q docker-ce-17.06.2.ce-1.el7.centos
 sudo echo "Restart docker"
 sudo systemctl enable docker
 sudo systemctl start docker
@@ -73,8 +73,6 @@ After installation, please pull Swan image.
 ```bash
 sudo docker pull intelsdi/swan
 ```
-
-Please note, that if user would like to build image from source, then Docker 17.05 is required.
 
 **Experiment Binaries**
 
