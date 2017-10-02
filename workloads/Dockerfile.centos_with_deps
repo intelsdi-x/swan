@@ -1,0 +1,21 @@
+FROM centos:7
+
+RUN yum makecache fast \
+    && yum install -y epel-release \
+    && yum groupinstall -y "Development tools" \
+    && yum install -y \
+                   boost-devel \
+                   gcc \
+                   gflags-devel \
+                   git \
+                   glog-devel \
+                   hdf5-devel \
+                   leveldb-devel \
+                   libevent-devel \
+                   lmdb-devel \
+                   make \
+                   opencv-devel \
+                   protobuf-devel \
+                   snappy-devel \
+                   tar \
+                   wget

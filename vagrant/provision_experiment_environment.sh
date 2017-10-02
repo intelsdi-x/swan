@@ -103,8 +103,10 @@ wget --no-verbose https://github.com/intelsdi-x/swan/releases/download/${SWAN_VE
 tar -xzf /tmp/swan.tar.gz -C ${SWAN_BIN}
 
 
-echo "----------------------------- Pulling docker image (`date`)"
-docker pull intelsdi/swan
+echo "----------------------------- Build docker image (`date`)"
+pushd ..
+make docker
+popd
 
 
 echo "----------------------------- Retrieve binares from Docker container (`date`)"
@@ -123,7 +125,7 @@ daemonStatus etcd
 
 
 echo "----------------------------- Install Cassandra (`date`)"
-cp /vagrant/cassandra/cassandra.service /etc/systemd/system
+cp ./cassandra/cassandra.service /etc/systemd/system
 mkdir -p /var/data/cassandra
 chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
 systemctl enable cassandra
@@ -132,7 +134,7 @@ systemctl restart cassandra
 daemonStatus cassandra
 
 echo "----------------------------- Install InfluxDB (`date`)"
-cp /vagrant/influxdb/influxdb.service /etc/systemd/system
+cp ./influxdb/influxdb.service /etc/systemd/system
 mkdir -p /var/lib/influxdb
 chcon -Rt svirt_sandbox_file_t /var/lib/influxdb # SELinux policy
 systemctl enable influxdb

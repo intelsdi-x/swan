@@ -1,0 +1,63 @@
+{
+	"variables":
+	{
+		"image_id" : "{{ env `OS_IMAGE_ID` }}",
+		"flavor_id" : "{{ env `OS_FLAVOR_ID` }}",
+		"network_id" : "{{ env `OS_NETWORK_ID` }}",
+		"floating_ip_pool" : "{{ env `OS_FLOATING_IP_POOL` }}",
+		"gitcommit_id": "{{ env `SWAN_GITCOMMIT_ID` }}"
+	},
+	"builders":
+	[
+		{
+			"type": "openstack",
+			"image_name": "swan-ci-image-{{ user `gitcommit_id` }}-{{ isotime \"2006-01-02-150405\" }}",
+			"source_image": "{{ user `image_id` }}",
+			"flavor": "{{ user `flavor_id` }}",
+			"networks": "{{ user `network_id` }}",
+			"floating_ip_pool": "{{ user `floating_ip_pool` }}",
+			"ssh_username": "centos",
+			"ssh_pty": "true"
+		}
+	],
+		"provisioners":
+		[
+			{
+				"type": "shell",
+				"inline": [
+					"mkdir -p ~/go/src/github.com/intelsdi-x/swan"
+				]
+			},
+			{
+				"type": "file",
+				"source": "../",
+				"destination": "~/go/src/github.com/intelsdi-x/swan"
+			},
+			{
+				"type": "shell",
+				"inline": [
+				   "sudo yum clean all && sudo rm -rf /var/cache/yum",
+				   "sudo yum makecache"
+				]
+			},
+			{
+				"type": "shell",
+				"inline": [
+					"cd ~/go/src/github.com/intelsdi-x/swan/vagrant && sudo -E ./provision.sh"
+				],
+				"environment_vars": [
+					"VAGRANT_USER=centos",
+					"HOME_DIR=/home/centos",
+					"SWAN_DEVELOPMENT_ENVIRONMENT=true"
+				]
+			},
+			{
+				"type": "shell",
+				"inline": [
+					"ssh-keyscan github.com >> ~/.ssh/known_hosts",
+					"git clone --depth 1 git@github.com:intelsdi-x/sno-ops.git /tmp/sno-ops",
+					"cat /tmp/sno-ops/public_keys/* >> ~/.ssh/authorized_keys"
+				]
+			}
+		]
+}
