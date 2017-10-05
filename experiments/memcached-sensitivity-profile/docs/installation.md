@@ -51,6 +51,11 @@ SUT Node requires following application installed.
 ### The Installation details are as follow:
 
 `wget` must be installed on node.
+Please also note that in CentOS some packages are available only in the [EPEL repository](https://fedoraproject.org/wiki/EPEL) thus it must be enabled by installing `epel-release` package:
+
+```bash
+sudo yum -y install epel-release
+```
 
 **Docker**
 
@@ -61,9 +66,8 @@ Please install Docker in version 17.03.
 # https://docs.docker.com/engine/installation/linux/centos/#install-using-the-repository
 sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-sudo yum makecache fast -y -q
-sudo yum install -y -q docker-ce-17.06.2.ce-1.el7.centos
-sudo echo "Restart docker"
+sudo yum makecache fast -y
+sudo yum install -y docker-ce-17.06.2.ce-1.el7.centos
 sudo systemctl enable docker
 sudo systemctl start docker
 ```
@@ -84,11 +88,20 @@ All snap plugins from release package must be in included in `$PATH`.
 Workloads are deployed from Swan docker image and installed in /opt/swan.
 
 ```bash
-sudo yum install -y -q glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl-libs libevent zeromq 
+sudo yum install -y glog protobuf boost hdf5 leveldb lmdb opencv libgomp numactl-libs libevent zeromq
+# Create /opt/swan/bin
 sudo docker run -v /opt:/output intelsdi/swan cp -R /opt/swan /output
+# Download Swan v0.15 release
+wget https://github.com/intelsdi-x/swan/releases/download/v0.15/swan.tar.gz
+#Extract Swan v0.15 release binaries into /opt/swan/bin 
+sudo tar zxf ~/swan.tar.gz -C /opt/swan/bin
 ```
 
 Path `/opt/swan/bin` must be included in `$PATH`.
+
+```bash
+export PATH=/opt/swan/bin:$PATH
+```
 
 
 Following workloads are installed this way:
@@ -149,6 +162,11 @@ Full list of CentOS dependencies are below. Library `cppzmq-devel` is required f
 sudo yum install zeromq cppzmq-devel gengetopt libevent-devel scons gcc-c++
 # Please clone the https://github.com/leverich/mutilate repository and build it by using `scons`.
 # Make sure that cppzmq-devel is installed on all load generator hosts.
+git clone https://github.com/leverich/mutilate
+cd mutilate
+scons
+sudo cp mutilate /opt/swan/bin
+cd -
 ```
 
 **Cassandra**
@@ -160,7 +178,7 @@ The service file is available [here](https://github.com/intelsdi-x/swan/blob/mas
 
 ```bash
 # Downloads Cassandra service file from Swan repository, adds it to systemd and mounts persistent volume. 
-wget https://github.com/intelsdi-x/swan/blob/master/vagrant/cassandra/cassandra.service
+wget https://raw.githubusercontent.com/intelsdi-x/swan/master/vagrant/cassandra/cassandra.service
 sudo mv cassandra.service /etc/systemd/system
 sudo mkdir -p /var/data/cassandra
 sudo chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
@@ -175,7 +193,7 @@ For production deployments, please refer to [Datastax Documentation](http://docs
 **Etcd**
 
 ```bash
-sudo yum install etcd-3.1.0
+sudo yum install etcd
 ```
 
 ### Additional Workloads (optional)
@@ -188,7 +206,7 @@ Some workloads supported by Swan are not part of default Swan image and their in
 
 **Stream**
 
-[Stream](https://www.cs.virginia.edu/stream/) is a simple synthetic benchmark program that measures sustainable memory bandwidth (in MB/s) and the corresponding computation rate for simple vector kernels. It can be used to stress memory interconnection.  
+[Stream](https://www.cs.virginia.edu/stream/) is a simple synthetic benchmark program that measures sustainable memory bandwidth (in MB/s) and the corresponding computation rate for simple vector kernels. It can be used to stress memory interconnection.
 
 ## Next
 Please move to [Run the Experiment](run_experiment.md) page.
