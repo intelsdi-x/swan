@@ -31,6 +31,7 @@ fi
 
 SWAN_BIN=/opt/swan/bin
 SWAN_VERSION="v0.15"
+SWAN_SERVICES_DIR=${SWAN_SERVICES_DIR:-"/vagrant"}
 
 K8S_VERSION="v1.7.4"
 SNAP_VERSION="1.3.0"
@@ -122,7 +123,7 @@ daemonStatus etcd
 
 
 echo "----------------------------- Install Cassandra (`date`)"
-cp /vagrant/cassandra/cassandra.service /etc/systemd/system
+cp ${SWAN_SERVICES_DIR}/cassandra/cassandra.service /etc/systemd/system
 mkdir -p /var/data/cassandra
 chcon -Rt svirt_sandbox_file_t /var/data/cassandra # SELinux policy
 systemctl enable cassandra
@@ -131,7 +132,7 @@ systemctl restart cassandra
 daemonStatus cassandra
 
 echo "----------------------------- Install InfluxDB (`date`)"
-cp /vagrant/influxdb/influxdb.service /etc/systemd/system
+cp ${SWAN_SERVICES_DIR}/influxdb/influxdb.service /etc/systemd/system
 mkdir -p /var/lib/influxdb
 chcon -Rt svirt_sandbox_file_t /var/lib/influxdb # SELinux policy
 systemctl enable influxdb
@@ -162,10 +163,10 @@ wget --no-verbose https://github.com/intelsdi-x/snap-plugin-publisher-file/relea
 
 
 echo "---------------------------- Post install (`date`)"
-chmod +x -R /opt/swan/bin
+chmod +x -R ${SWAN_BIN}
 chown -R $SWAN_USER:$SWAN_USER $HOME_DIR
 chown -R $SWAN_USER:$SWAN_USER /opt/swan
-chmod -R +x /opt/swan/bin/*
+chmod -R +x ${SWAN_BIN}/*
 ln -svf ${SWAN_BIN}/* /usr/bin/
 
 echo "---------------------------- Provisioning experiment environment done (`date`)"
