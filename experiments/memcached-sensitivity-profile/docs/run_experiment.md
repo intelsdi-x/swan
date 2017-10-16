@@ -30,8 +30,8 @@ When the experiment is run, an [UUID](https://en.wikipedia.org/wiki/Universally_
 Swan exposes a multitude of configuration flags for fine grained experiment control. To list all flags, plese run `memcached-sensitivity-profile -config-dump`. Dumped config can be later used to run experiment.
 
 ```bash
-sudo ./memcached-sensitivity-profile -config-dump > config.ini 
-sudo ./memcached-sensitivity-profile -config config.ini # Config supplied to experiment.
+sudo memcached-sensitivity-profile -config-dump > config.ini 
+sudo memcached-sensitivity-profile -config config.ini # Config supplied to experiment.
 ```
 
 ## Quick Start Configuration
@@ -136,7 +136,7 @@ Before running `memcached-sensitivity-profile` please ensure that
 If everything is ready then simply launch:
 
 ```
-sudo ./memcached-sensitivity-profile -config config.ini
+sudo memcached-sensitivity-profile -config config.ini
 ```
 
 Note the UUID that is printed on stdout and wait for experiment to finish.
