@@ -35,7 +35,6 @@ SWAN_SERVICES_DIR=${SWAN_SERVICES_DIR:-"/vagrant"}
 
 K8S_VERSION="v1.7.4"
 SNAP_VERSION="1.3.0"
-ETCD_VERSION="3.1.9"
 DOCKER_VERSION="17.06.1.ce-1.el7.centos"
 # The offical Docker repository is not very, stable apparently.
 # See https://github.com/moby/moby/issues/33930#issuecomment-312782998 for explanation.
@@ -53,7 +52,7 @@ yum install -y -q epel-release  # Enables EPEL repo
 
 yum install -y -q \
     wget \
-    etcd-${ETCD_VERSION} \
+    etcd \
     python-pip \
     python-devel \
     libcgroup-tools \
