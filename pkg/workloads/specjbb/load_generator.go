@@ -18,11 +18,11 @@ import (
 	"path"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb/parser"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (

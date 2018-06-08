@@ -19,10 +19,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (

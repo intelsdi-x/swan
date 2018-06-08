@@ -18,9 +18,9 @@ import (
 	"os/exec"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/low_level/memoryBandwidth"
+	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

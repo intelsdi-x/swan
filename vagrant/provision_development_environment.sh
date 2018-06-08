@@ -31,7 +31,7 @@ fi
 
 echo "---------------------- Start provisioning (`date`)"
 
-GO_VERSION="1.9"
+GO_VERSION="1.10"
 
 echo "-------------------------- Setup up environment (`date`)"
 function addEnv() {

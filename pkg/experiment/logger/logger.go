@@ -5,9 +5,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/sirupsen/logrus"
 )
 
 //Initialize creates experiment logs directory and configures logrus for an experiment.

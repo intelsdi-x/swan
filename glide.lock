@@ -1,8 +1,8 @@
-hash: aa54e88ed2f620699ac79a55150c0b84a94bb6f367a1f54a13829ce71d597771
-updated: 2017-08-07T16:54:29.898737144+02:00
+hash: b4394391792439e948be737e10ba2f7db39e17b4cad39a6d003d7433a44f91a9
+updated: 2018-06-11T09:58:37.507742918+02:00
 imports:
 - name: github.com/appc/spec
-  version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
+  version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
   subpackages:
   - aci
   - pkg/device
@@ -12,7 +12,7 @@ imports:
   - schema/types
   - schema/types/resource
 - name: github.com/armon/go-metrics
-  version: 06b60999766278efd6d2b5d8418a58c3d5b99e87
+  version: 783273d703149aaeb9897cf58613d5af48861c25
 - name: github.com/asaskevich/govalidator
   version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
 - name: github.com/coreos/go-semver
@@ -20,7 +20,7 @@ imports:
   subpackages:
   - semver
 - name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
   - spew
 - name: github.com/docker/distribution
@@ -29,7 +29,7 @@ imports:
   - digest
   - reference
 - name: github.com/emicklei/go-restful
-  version: 09691a3b6378b740595c1002f40c34dd5f218a22
+  version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
   - log
 - name: github.com/emicklei/go-restful-swagger12
@@ -49,36 +49,43 @@ imports:
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/gocql/gocql
-  version: 00a4bbccd77eaa1e28dd06bbc527b4b4a0c53728
+  version: a440a5bda81b65dc1235fba4a00ef5a6563f9f43
   subpackages:
   - internal/lru
   - internal/murmur
   - internal/streams
 - name: github.com/gogo/protobuf
-  version: e18d7aa8f8c624c915db340349aad4c49b10d173
+  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
   - proto
   - sortkeys
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 888eb0692c857ec880338addf316bd662d5e630e
+  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
   - proto
+  - ptypes/any
 - name: github.com/golang/snappy
-  version: 723cc1e459b8eea2dea4583200fd60757d40097a
+  version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/gopherjs/gopherjs
-  version: 4b53e1bddba0e2f734514aeb6c02db652f4c6fe8
+  version: 8dffc02ea1cb8398bb73f30424697c60fcf8d4c5
   subpackages:
   - js
 - name: github.com/hailocab/go-hostpool
   version: e80d13ce29ede4452c43dea11e79b9bc8a15b478
+- name: github.com/hashicorp/go-immutable-radix
+  version: 7f3cd4390caab3250a57f30efdb2a65dd7649ecf
 - name: github.com/hashicorp/go-msgpack
   version: fa3f63826f7c23912c15263591e65d54d080b458
   subpackages:
   - codec
+- name: github.com/hashicorp/golang-lru
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
+  subpackages:
+  - simplelru
 - name: github.com/hashicorp/memberlist
   version: a93fbd426dd831f5a66db3adc6a5ffa6f44cc60a
 - name: github.com/howeyc/gopass
@@ -86,15 +93,15 @@ imports:
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/influxdata/influxdb
-  version: 742b9cb3d74ff1be4aff45d69ee7c9ba66c02565
+  version: 89e084a80fb1e0bf5e7d38038e3367f821fdf3d7
   subpackages:
   - client/v2
   - models
   - pkg/escape
 - name: github.com/intelsdi-x/gomit
-  version: 4f098da2bbb51d787be003e4abfbc25d01837564
+  version: 286c3ad6599724faed681cd18a9ff595b00d9f3f
 - name: github.com/intelsdi-x/snap
-  version: 78797b2dc0ca39e6e2bb39c56ccfea5033f3f6a4
+  version: dd1596e6eb7412f26080a3be57116c62c63d55d6
   subpackages:
   - control
   - control/plugin
@@ -126,12 +133,12 @@ imports:
   - pkg/stringutils
   - scheduler/wmap
 - name: github.com/intelsdi-x/snap-plugin-lib-go
-  version: 8ae21e8f72cb1740171073d496a6b7f2cec5ca73
+  version: 7f5ff08547fc6c3876f729a2e24f22b407efb491
   subpackages:
   - v1/plugin
   - v1/plugin/rpc
 - name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+  version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/julienschmidt/httprouter
@@ -154,25 +161,25 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/robfig/cron
   version: 32d9c273155a0506d27cf73dd1246e86a470997e
-- name: github.com/Sirupsen/logrus
-  version: a3f95b5c423586578a4e099b11a46c2479628cac
+- name: github.com/sirupsen/logrus
+  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/smartystreets/assertions
-  version: 443d812296a84445c202c085f19e18fc238f8250
+  version: 7678a5452ebea5b7090a6b163f844c133f523da2
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  version: 9e8dc3f972df6c8fcc0375ef492c24d0bb204857
   subpackages:
   - convey
   - convey/gotest
   - convey/reporting
 - name: github.com/spf13/pflag
-  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
+  version: 583c0c0531f06d5278b7d917446061adc344b5cd
 - name: github.com/stretchr/objx
-  version: cbeaeb16a013161a98496fad62933b1d21786672
+  version: 0ab728f62c7f6fcd754334f7931c2dd659dce1d1
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert
   - mock
@@ -183,7 +190,7 @@ imports:
   subpackages:
   - codec
 - name: github.com/urfave/cli
-  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+  version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: github.com/urfave/negroni
   version: c7477ad8e330bef55bf1ebe300cf8aa67c492d1b
 - name: github.com/vrischmann/jsonutil
@@ -193,20 +200,24 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: aedad9a179ec1ea11b7064c57cbc6dc30d7724ec
+  version: 8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9
   subpackages:
   - cast5
   - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
+  - internal/chacha20
   - openpgp
   - openpgp/armor
   - openpgp/elgamal
   - openpgp/errors
   - openpgp/packet
   - openpgp/s2k
+  - poly1305
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 04557861f124410b768b1ba5bb3a91b705afbfc6
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
   - http2
@@ -216,13 +227,15 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sys
-  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
+  version: 24c297a8f384267b6160f8f2736f12e8f6b85204
   subpackages:
   - unix
+  - windows
 - name: golang.org/x/text
-  version: 2910a502d2bf9e43193af9d68ca516529614eed3
+  version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
   - cases
+  - internal
   - internal/tag
   - language
   - runes
@@ -232,23 +245,33 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: google.golang.org/genproto
+  version: 32ee49c4dd805befd833990acba36cb75042378c
+  subpackages:
+  - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 0032a855ba5c8a3c8e0d71c2deef354b70af1584
+  version: b3ddf786825de56a4178401b7e174ee332173b66
   subpackages:
   - codes
+  - connectivity
   - credentials
+  - grpclb/grpc_lb_v1
   - grpclog
   - internal
+  - keepalive
   - metadata
   - naming
   - peer
+  - stats
+  - status
+  - tap
   - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
   version: c1cd2254a6dd314c9d73c338c12688c9325d85c6
 - name: k8s.io/apimachinery
-  version: abe34e4f5b4413c282a83011892cbeea5b32223b
+  version: 1fd2e63a9a370677308a42f24fd40c86438afddf
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -294,7 +317,7 @@ imports:
   - pkg/watch
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: df46f7f13b3da19b90b8b4f0d18b8adc6fbf28dc
+  version: d92e8497f71b7b4e0494e5bd204b48d34bd6f254
   subpackages:
   - discovery
   - kubernetes

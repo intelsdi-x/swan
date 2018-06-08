@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/memcached-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
@@ -35,6 +34,7 @@ import (
 	_ "github.com/intelsdi-x/swan/pkg/utils/unshare"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var (

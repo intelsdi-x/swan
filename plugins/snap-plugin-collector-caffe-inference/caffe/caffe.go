@@ -25,9 +25,9 @@ import (
 
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Constants representing plugin name, version, type and unit of measurement used.

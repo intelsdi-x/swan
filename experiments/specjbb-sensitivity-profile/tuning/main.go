@@ -26,8 +26,8 @@ import (
 	"github.com/intelsdi-x/swan/pkg/kubernetes"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 var (

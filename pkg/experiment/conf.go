@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/sirupsen/logrus"
 )
 
 var (

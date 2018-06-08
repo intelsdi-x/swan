@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-mutilate/mutilate/parse"
+	log "github.com/sirupsen/logrus"
 )
 
 // Constants representing collector name, version, type and unit of measurement used.
