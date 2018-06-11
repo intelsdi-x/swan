@@ -1,6 +1,6 @@
 FROM jupyter/minimal-notebook:df7a34bebed0
 
-RUN conda install -q -y nomkl cassandra-driver pandas pep8 pylint \
+RUN conda install -q -y nomkl cassandra-driver pandas pycodestyle pylint \
     && conda clean -y -a -v
 RUN pip install pivottablejs
 
