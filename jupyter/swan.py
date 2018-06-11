@@ -276,7 +276,8 @@ def bytes_formatter(b):
 
 
 def composite_latency_formatter(composite_values, normalized=False):
-    """ Formatter responsible for showing either absolute or normalized value of latency depending of normalized argument.
+    """ Formatter responsible for showing either absolute or normalized
+    value of latency depending of normalized argument.
     Additionally if achieved normalized QPS was below 90% marks column as "FAIL".
     """
 

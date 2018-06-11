@@ -71,7 +71,7 @@ test_lint:
 	GOMAXPROCS=2 gometalinter --config=.lint ./integration_tests/...
 
 test_jupyter_lint: jupyter_image
-	docker run --rm intelsdi/swan-jupyter pep8 --max-line-length=120 .
+	docker run --rm intelsdi/swan-jupyter pycodestyle --max-line-length=120 .
 
 test_jupyter_unit: jupyter_image
 	docker run --rm intelsdi/swan-jupyter python test_swan.py
