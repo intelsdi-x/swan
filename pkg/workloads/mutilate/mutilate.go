@@ -20,12 +20,12 @@ import (
 
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/workloads/memcached"
 	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-mutilate/mutilate/parse"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (

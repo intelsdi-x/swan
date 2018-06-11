@@ -15,7 +15,7 @@
 package errutil
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Check the supplied error, log and exit if non-nil.

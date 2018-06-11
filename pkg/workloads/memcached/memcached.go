@@ -20,10 +20,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/utils/netutil"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

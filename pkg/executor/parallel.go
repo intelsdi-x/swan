@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/isolation"
+	"github.com/sirupsen/logrus"
 )
 
 // Parallel allows to run same command using same executor multiple times.

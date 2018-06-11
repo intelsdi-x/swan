@@ -15,8 +15,8 @@
 package topo
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Thread represents a hyperthread, typically presented by the operating

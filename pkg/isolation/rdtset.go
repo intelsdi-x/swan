@@ -20,8 +20,8 @@ import (
 
 	"bytes"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Rdtset is an instance of Decorator that used rdtset command for isolation. It allows to set CPU affinity and allocate cache available to those CPUs.

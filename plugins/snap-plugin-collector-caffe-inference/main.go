@@ -18,9 +18,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"github.com/intelsdi-x/swan/plugins/snap-plugin-collector-caffe-inference/caffe"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {

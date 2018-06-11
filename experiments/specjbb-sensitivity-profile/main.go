@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/experiments/specjbb-sensitivity-profile/common"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
@@ -36,6 +35,7 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/intelsdi-x/swan/pkg/workloads/specjbb"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var (

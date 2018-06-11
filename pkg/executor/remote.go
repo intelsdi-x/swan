@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/isolation"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -92,6 +92,7 @@ func NewRemoteIsolated(address string, config RemoteConfig, decorators isolation
 		Auth: []ssh.AuthMethod{
 			authMethod,
 		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	return Remote{
