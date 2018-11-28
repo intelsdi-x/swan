@@ -1,0 +1,4 @@
+package workload
+
+func ScienceWorkload(){
+}
