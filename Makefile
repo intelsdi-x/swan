@@ -34,9 +34,7 @@ restart_snap:
 	sudo systemctl restart snap-telemetry
 
 glide:
-	# Workaround for https://github.com/Masterminds/glide/issues/784
-	mkdir -p ${GOPATH}/bin
-	wget -q https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-386.tar.gz -O - | tar xzv --strip-components 1 -C ${GOPATH}/bin linux-386/glide
+	curl https://glide.sh/get | sh
 	rm -fr vendor
 	glide -q install
 
