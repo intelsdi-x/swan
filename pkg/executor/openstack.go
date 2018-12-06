@@ -32,7 +32,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedserverattributes"
@@ -53,6 +52,7 @@ const (
 	executorLogPrefix   = executorName + ":"
 	taskHandleName      = "Openstack task handle"
 	taskHandleLogPrefix = taskHandleName + ":"
+	directoryPrefix 	= "openstack"
 )
 
 var (
@@ -142,20 +142,17 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	flavorID, err := os.ensureFlavor()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't ensure flavor", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	if err = os.ensureKeypair(); err != nil {
-		err = errors.Wrapf(err, "%s Couldn't ensure keypair", executorLogPrefix)
+	if err = os.ensureKeypair(); err != nil{
 		log.Error(err.Error())
 		return nil, err
 	}
 
 	floatingIP, err := os.findFloatingIP()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't find floating IP", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
 	}
@@ -176,7 +173,6 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 	}
 
 	instance, err := servers.Create(os.client, serverOptsExt).Extract()
-
 	if err != nil {
 		err = errors.Wrapf(err, "%s Unable to create instance", executorLogPrefix)
 		log.Error(err.Error())
@@ -185,9 +181,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	log.Infof("%s Scheduled instance %s creation", executorLogPrefix, instance.ID)
 
-	err = servers.WaitForStatus(os.client, instance.ID, "ACTIVE", 60)
-
-	if err != nil {
+	if err = servers.WaitForStatus(os.client, instance.ID, "ACTIVE", 60); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't launch instance", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
@@ -199,8 +193,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 		FloatingIP: floatingIP,
 	}
 
-	err = floatingips.AssociateInstance(os.client, instance.ID, associateOpts).ExtractErr()
-	if err != nil {
+	if err = floatingips.AssociateInstance(os.client, instance.ID, associateOpts).ExtractErr(); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't associate %q floating ip to instance %s", executorLogPrefix, floatingIP, instanceName)
 		log.Error(err.Error())
 		return nil, err
@@ -236,8 +229,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	remote, err := NewRemote(floatingIP, remoteConfig)
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't create remote executor for %s instance with %s ip", executorLogPrefix, instanceName, floatingIP)
-		log.Error(err)
+		log.Errorf("%s Couldn't create remote executor for %s instance with %s ip", executorLogPrefix, instanceName, floatingIP)
 		return nil, err
 	}
 
@@ -245,29 +237,28 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	remoteHandler, err := remote.Execute(command)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't execute %q on %s (%s)", executorLogPrefix, command, instanceName, floatingIP)
-		log.Error(err)
+		log.Errorf("%s Couldn't execute %q on %s (%s)", executorLogPrefix, command, instanceName, floatingIP)
 		return nil, err
 	}
 
 	exitCode, err := remoteHandler.ExitCode()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't obtain exit code from executed command", executorLogPrefix)
+		log.Errorf("%s Couldn't obtain exit code from executed command", executorLogPrefix)
+		return nil, err
 	}
 
 	log.Infof("%s Executed %q on %s (%s) with exit code: %d", executorLogPrefix, command, instanceName, floatingIP, exitCode)
 
-	outputDirectory, err := createOutputDirectory(command, "openstack")
+	outputDirectory, err := createOutputDirectory(command, directoryPrefix)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("%s Couldn't create output directory %q: %s", executorLogPrefix, directoryPrefix, err)
 		return nil, err
 	}
 
 	stdoutFile, stderrFile, err := createExecutorOutputFiles(outputDirectory)
 	if err != nil {
 		removeDirectory(outputDirectory)
-		err = errors.Wrapf(err, "%s Cannot create output files for command: %q", executorLogPrefix, command)
-		log.Error(err.Error())
+		log.Errorf("%s Cannot create output files for command %q : %s", executorLogPrefix, command, err.Error())
 		return nil, err
 	}
 
@@ -315,13 +306,13 @@ func (os Openstack) ensureFlavor() (string, error) {
 
 	allPages, err := flavors.ListDetail(os.client, listOpts).AllPages()
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't get flavors list to check %s within it", os.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, os.config.FlavorName)
 		return "", err
 	}
 
 	allFlavors, err := flavors.ExtractFlavors(allPages)
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't extract flavors list to check %s within it", os.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, os.config.FlavorName)
 		return "", err
 	}
 
@@ -356,13 +347,13 @@ func (os Openstack) ensureFlavor() (string, error) {
 func (os Openstack) ensureKeypair() error {
 	allPages, err := keypairs.List(os.client).AllPages()
 	if err != nil {
-		err = errors.Wrap(err, "Couldn't read keypairs list")
+		err = errors.Wrapf(err, "%s Couldn't read keypairs list", executorLogPrefix)
 		return err
 	}
 
 	allKeyPairs, err := keypairs.ExtractKeyPairs(allPages)
 	if err != nil {
-		err = errors.Wrap(err, "Couldn't extract keypairs list")
+		err = errors.Wrapf(err, "%s Couldn't extract keypairs list", executorLogPrefix)
 		return err
 	}
 
@@ -378,7 +369,7 @@ func (os Openstack) ensureKeypair() error {
 	publicKeyPath := os.config.SSHKeyPath + ".pub"
 	publicKey, err := ioutil.ReadFile(publicKeyPath)
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't read public key %q", publicKeyPath)
+		err = errors.Wrapf(err, "%s Couldn't read public key %q", executorLogPrefix, publicKeyPath)
 		return err
 	}
 
@@ -389,7 +380,7 @@ func (os Openstack) ensureKeypair() error {
 
 	_, err = keypairs.Create(os.client, keypairOpts).Extract()
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't create keypair %q", keypairName.Value())
+		err = errors.Wrapf(err, "%s Couldn't create keypair %q", executorLogPrefix, keypairName.Value())
 		return err
 	}
 
@@ -401,13 +392,13 @@ func (os Openstack) ensureKeypair() error {
 func (os Openstack) findFloatingIP() (string, error) {
 	allPages, err := floatingips.List(os.client).AllPages()
 	if err != nil {
-		err = errors.Wrap(err, "Couldn't read floating IPs list")
+		err = errors.Wrapf(err, "%s Couldn't read floating IPs list", executorLogPrefix)
 		return "", err
 	}
 
 	allFloatingIPs, err := floatingips.ExtractFloatingIPs(allPages)
 	if err != nil {
-		err = errors.Wrap(err, "Couldn't extract floating IPs list")
+		err = errors.Wrapf(err, "%s Couldn't extract floating IPs list", executorLogPrefix)
 		return "", err
 	}
 
@@ -421,7 +412,7 @@ func (os Openstack) findFloatingIP() (string, error) {
 	}
 
 	if floatingIP == nil {
-		err = errors.New("Couldn't find free floating ip")
+		err = errors.Errorf("%s Couldn't find free floating ip", executorLogPrefix)
 		return "", err
 	}
 
