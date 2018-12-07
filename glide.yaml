@@ -9,7 +9,7 @@ import:
   subpackages:
   - v1/plugin
 - package: github.com/intelsdi-x/snap
-  version: dd1596e6eb7412f26080a3be57116c62c63d55d6 # change back to version range after >2.0.0 release is made
+  version: dd1596e6eb7412f26080a3be57116c62c63d55d6
   subpackages:
   - core
   - mgmt/rest/client
@@ -32,6 +32,10 @@ import:
   version: master
   subpackages:
   - ssh
+- package: golang.org/x/net
+  version: master
+- package: golang.org/x/text
+  version: master
 - package: k8s.io/apimachinery
   subpackages:
   - pkg/api/resource
@@ -58,3 +62,4 @@ import:
   version: ~1.2.1
   subpackages:
   - mock
+- package: github.com/gophercloud/gophercloud
