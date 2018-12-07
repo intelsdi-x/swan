@@ -36,6 +36,7 @@ const (
 	defaultNumConnections  = 2048
 	defaultListenIP        = "127.0.0.1"
 	defaultThreadsAffinity = false
+	defaultDaemon          = false
 )
 
 var (
@@ -48,6 +49,7 @@ var (
 	threadsAffinityFlag = conf.NewBoolFlag("memcached_threads_affinity", "Threads affinity (-T) (requires memcached patch)", defaultThreadsAffinity)
 	maxConnectionsFlag  = conf.NewIntFlag("memcached_connections", "Max simultaneous connections. (-c)", defaultNumConnections)
 	maxMemoryMBFlag     = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items in megabytes. (-m)", defaultMaxMemoryMB)
+	daemonFlag          = conf.NewBoolFlag("memcached_daemon", "Run memcached as a daemon. (-d)", defaultDaemon)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -70,6 +72,7 @@ type Config struct {
 	MaxMemoryMB     int
 	NumConnections  int
 	IP              string
+	Daemon          bool
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
@@ -83,6 +86,7 @@ func DefaultMemcachedConfig() Config {
 		MaxMemoryMB:     maxMemoryMBFlag.Value(),
 		NumConnections:  maxConnectionsFlag.Value(),
 		IP:              IPFlag.Value(),
+		Daemon:          daemonFlag.Value(),
 	}
 }
 
@@ -115,6 +119,9 @@ func (m Memcached) buildCommand() string {
 		" -c ", m.conf.NumConnections)
 	if m.conf.ThreadsAffinity {
 		cmd += " -T"
+	}
+	if m.conf.Daemon {
+		cmd += " -d"
 	}
 	return cmd
 }

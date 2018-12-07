@@ -42,7 +42,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	const (
-		expectedCommand = "test -p 11211 -u root -t 4 -m 4096 -c 2048 -T"
+		expectedCommand = "test -p 11211 -u root -t 4 -m 4096 -c 2048 -T -d"
 		expectedHost    = "127.0.0.1"
 	)
 	Convey("When I create PID namespace isolation", t, func() {
@@ -56,6 +56,7 @@ func TestMemcachedWithMockedExecutor(t *testing.T) {
 		Convey("While using Memcached launcher", func() {
 			config := DefaultMemcachedConfig()
 			config.ThreadsAffinity = true
+			config.Daemon = true
 
 			config.PathToBinary = "test"
 			memcachedLauncher := New(
