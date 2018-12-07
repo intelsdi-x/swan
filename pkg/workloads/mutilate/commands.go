@@ -66,6 +66,7 @@ func getBaseMasterCommand(config Config, agentHandles []executor.TaskHandle) str
 		fmt.Sprintf(" -T %d", config.MasterThreads),
 		fmt.Sprintf(" -d %d -c %d", config.AgentConnectionsDepth, config.AgentConnections),
 		fmt.Sprintf(" -r %d", config.Records),
+		fmt.Sprintf(" -u %s", config.Update),
 	)
 
 	if config.MasterAffinity {
