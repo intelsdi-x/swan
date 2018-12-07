@@ -120,44 +120,44 @@ func NewOpenstack(config *OpenstackConfig) Executor {
 }
 
 // String returns user-friendly name of executor.
-func (os Openstack) String() string {
-	return fmt.Sprintf("%s at %s", executorName, os.config.Auth.IdentityEndpoint)
+func (stack Openstack) String() string {
+	return fmt.Sprintf("%s at %s", executorName, stack.config.Auth.IdentityEndpoint)
 }
 
 // Execute runs provided command on OpenStack cluster.
-func (os Openstack) Execute(command string) (TaskHandle, error) {
-	provider, err := openstack.AuthenticatedClient(os.config.Auth)
+func (stack Openstack) Execute(command string) (TaskHandle, error) {
+	provider, err := openstack.AuthenticatedClient(stack.config.Auth)
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't get provider", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	os.client, err = openstack.NewComputeV2(provider, gophercloud.EndpointOpts{Region: "RegionOne"})
+	stack.client, err = openstack.NewComputeV2(provider, gophercloud.EndpointOpts{Region: "RegionOne"})
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't get compute client", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	flavorID, err := os.ensureFlavor()
+	flavorID, err := stack.ensureFlavor()
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	if err = os.ensureKeypair(); err != nil {
+	if err = stack.ensureKeypair(); err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	floatingIP, err := os.findFloatingIP()
+	floatingIP, err := stack.findFloatingIP()
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	image, err := images.IDFromName(os.client, os.config.Image)
+	image, err := images.IDFromName(stack.client, stack.config.Image)
 
 	instanceName := fmt.Sprintf("krico.%s", uuid.New())
 
@@ -172,7 +172,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 		KeyName:           keypairName.Value(),
 	}
 
-	instance, err := servers.Create(os.client, serverOptsExt).Extract()
+	instance, err := servers.Create(stack.client, serverOptsExt).Extract()
 	if err != nil {
 		err = errors.Wrapf(err, "%s Unable to create instance", executorLogPrefix)
 		log.Error(err.Error())
@@ -181,7 +181,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	log.Infof("%s Scheduled instance %s creation", executorLogPrefix, instance.ID)
 
-	if err = servers.WaitForStatus(os.client, instance.ID, "ACTIVE", 60); err != nil {
+	if err = servers.WaitForStatus(stack.client, instance.ID, "ACTIVE", 60); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't launch instance", executorLogPrefix)
 		log.Error(err.Error())
 		return nil, err
@@ -193,7 +193,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 		FloatingIP: floatingIP,
 	}
 
-	if err = floatingips.AssociateInstance(os.client, instance.ID, associateOpts).ExtractErr(); err != nil {
+	if err = floatingips.AssociateInstance(stack.client, instance.ID, associateOpts).ExtractErr(); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't associate %q floating ip to instance %s", executorLogPrefix, floatingIP, instanceName)
 		log.Error(err.Error())
 		return nil, err
@@ -202,8 +202,8 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 	log.Infof("%s Associated %q floating ip", executorLogPrefix, floatingIP)
 
 	remoteConfig := RemoteConfig{
-		User:    os.config.User,
-		KeyPath: os.config.SSHKeyPath,
+		User:    stack.config.User,
+		KeyPath: stack.config.SSHKeyPath,
 		Port:    22,
 	}
 
@@ -218,14 +218,14 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	var extendedAttributes serverAttributesExt
 
-	err = servers.Get(os.client, instance.ID).ExtractInto(&extendedAttributes)
+	err = servers.Get(stack.client, instance.ID).ExtractInto(&extendedAttributes)
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceName)
 		log.Error(err)
 		return nil, err
 	}
 
-	os.config.HypervisorInstanceName = extendedAttributes.InstanceName
+	stack.config.HypervisorInstanceName = extendedAttributes.InstanceName
 
 	remote, err := NewRemote(floatingIP, remoteConfig)
 	if err != nil {
@@ -273,7 +273,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 		stdoutFilePath: stdoutFileName,
 		stderrFilePath: stderrFileName,
 		instance:       instance.ID,
-		os:             &os,
+		os:             &stack,
 		running:        true,
 		exitCode:       exitCode,
 		requestStop:    make(chan struct{}),
@@ -284,7 +284,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 
 	taskWatcher := &openstackWatcher{
 		instance:      instance.ID,
-		client:        os.client,
+		client:        stack.client,
 		running:       &taskHandle.running,
 		requestStop:   taskHandle.requestStop,
 		requestDelete: taskHandle.requestDelete,
@@ -297,29 +297,29 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 	return taskHandle, nil
 }
 
-func (os Openstack) ensureFlavor() (string, error) {
-	os.config.FlavorName = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", os.config.Flavor.VCPUs, os.config.Flavor.RAM, os.config.Flavor.Disk)
+func (stack Openstack) ensureFlavor() (string, error) {
+	stack.config.FlavorName = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", stack.config.Flavor.VCPUs, stack.config.Flavor.RAM, stack.config.Flavor.Disk)
 
 	listOpts := flavors.ListOpts{
 		AccessType: flavors.AllAccess,
 	}
 
-	allPages, err := flavors.ListDetail(os.client, listOpts).AllPages()
+	allPages, err := flavors.ListDetail(stack.client, listOpts).AllPages()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, os.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
 		return "", err
 	}
 
 	allFlavors, err := flavors.ExtractFlavors(allPages)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, os.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
 		return "", err
 	}
 
 	// check if flavor already exists
 	for _, flavor := range allFlavors {
-		if flavor.Name == os.config.FlavorName {
-			log.Infof("%s Using existing flavor %q", executorLogPrefix, os.config.FlavorName)
+		if flavor.Name == stack.config.FlavorName {
+			log.Infof("%s Using existing flavor %q", executorLogPrefix, stack.config.FlavorName)
 			return flavor.ID, nil
 		}
 	}
@@ -328,24 +328,24 @@ func (os Openstack) ensureFlavor() (string, error) {
 	flavorID := uuid.New()
 	flavorOpts := flavors.CreateOpts{
 		ID:    flavorID,
-		Name:  os.config.FlavorName,
-		Disk:  &os.config.Flavor.Disk,
-		RAM:   os.config.Flavor.RAM,
-		VCPUs: os.config.Flavor.VCPUs,
+		Name:  stack.config.FlavorName,
+		Disk:  &stack.config.Flavor.Disk,
+		RAM:   stack.config.Flavor.RAM,
+		VCPUs: stack.config.Flavor.VCPUs,
 	}
-	_, err = flavors.Create(os.client, flavorOpts).Extract()
+	_, err = flavors.Create(stack.client, flavorOpts).Extract()
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to create flavor %q", os.config.FlavorName)
+		err = errors.Wrapf(err, "Unable to create flavor %q", stack.config.FlavorName)
 		return flavorID, err
 	}
 
-	log.Infof("%s Created flavor %q", executorLogPrefix, os.config.FlavorName)
+	log.Infof("%s Created flavor %q", executorLogPrefix, stack.config.FlavorName)
 
 	return flavorID, nil
 }
 
-func (os Openstack) ensureKeypair() error {
-	allPages, err := keypairs.List(os.client).AllPages()
+func (stack Openstack) ensureKeypair() error {
+	allPages, err := keypairs.List(stack.client).AllPages()
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't read keypairs list", executorLogPrefix)
 		return err
@@ -366,7 +366,7 @@ func (os Openstack) ensureKeypair() error {
 	}
 
 	// create keypair
-	publicKeyPath := os.config.SSHKeyPath + ".pub"
+	publicKeyPath := stack.config.SSHKeyPath + ".pub"
 	publicKey, err := ioutil.ReadFile(publicKeyPath)
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't read public key %q", executorLogPrefix, publicKeyPath)
@@ -378,7 +378,7 @@ func (os Openstack) ensureKeypair() error {
 		PublicKey: string(publicKey),
 	}
 
-	_, err = keypairs.Create(os.client, keypairOpts).Extract()
+	_, err = keypairs.Create(stack.client, keypairOpts).Extract()
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't create keypair %q", executorLogPrefix, keypairName.Value())
 		return err
@@ -389,8 +389,8 @@ func (os Openstack) ensureKeypair() error {
 	return nil
 }
 
-func (os Openstack) findFloatingIP() (string, error) {
-	allPages, err := floatingips.List(os.client).AllPages()
+func (stack Openstack) findFloatingIP() (string, error) {
+	allPages, err := floatingips.List(stack.client).AllPages()
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't read floating IPs list", executorLogPrefix)
 		return "", err
