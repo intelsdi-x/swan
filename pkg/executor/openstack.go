@@ -28,10 +28,6 @@ package executor
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"time"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedserverattributes"
@@ -45,6 +41,10 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 const (
@@ -52,7 +52,7 @@ const (
 	executorLogPrefix   = executorName + ":"
 	taskHandleName      = "Openstack task handle"
 	taskHandleLogPrefix = taskHandleName + ":"
-	directoryPrefix 	= "openstack"
+	directoryPrefix     = "openstack"
 )
 
 var (
@@ -146,7 +146,7 @@ func (os Openstack) Execute(command string) (TaskHandle, error) {
 		return nil, err
 	}
 
-	if err = os.ensureKeypair(); err != nil{
+	if err = os.ensureKeypair(); err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
