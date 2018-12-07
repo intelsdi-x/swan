@@ -32,6 +32,7 @@ const (
 	defaultPercentile             = "99"
 	defaultTuningTime             = 10 * time.Second // [s]
 	defaultRecords                = 5000000
+	defaultUpdate                 = "0.0"
 	defaultWarmupTime             = 0 * time.Second // [s] Note: with high load in distribute mode can warmup phase can deadlock.
 	defaultAgentThreads           = 8
 	defaultAgentPort              = 5556
@@ -54,6 +55,7 @@ var (
 	tuningTimeFlag             = conf.NewDurationFlag("mutilate_tuning_time", "Mutilate tuning time [s].", defaultTuningTime)
 	warmupTimeFlag             = conf.NewDurationFlag("mutilate_warmup_time", "Mutilate warmup time [s] (--warmup).", defaultWarmupTime)
 	recordsFlag                = conf.NewIntFlag("mutilate_records", "Number of memcached records to use (-r).", defaultRecords)
+	updateFlag                 = conf.NewStringFlag("mutilate_update", "Ratio of set:get commands [default=`0.0'] (--update -u).", defaultUpdate)
 	agentThreadsFlag           = conf.NewIntFlag("mutilate_agent_threads", "Mutilate agent threads (-T). Should not exceed number of physical cores on machine.", defaultAgentThreads)
 	agentAgentPortFlag         = conf.NewIntFlag("mutilate_agent_port", "Mutilate agent port (-P).", defaultAgentPort)
 	agentConnectionsFlag       = conf.NewIntFlag("mutilate_agent_connections", "Mutilate agent connections (-c).", defaultAgentConnections)
@@ -84,6 +86,7 @@ type Config struct {
 	TuningTime        time.Duration
 	LatencyPercentile string
 	Records           int
+	Update            string
 
 	AgentConnections      int    // -c
 	AgentConnectionsDepth int    // Max length of request pipeline. -d
@@ -125,6 +128,7 @@ func DefaultMutilateConfig() Config {
 		TuningTime:        tuningTimeFlag.Value(),
 		LatencyPercentile: defaultPercentile,
 		Records:           recordsFlag.Value(),
+		Update:            updateFlag.Value(),
 
 		AgentThreads:           agentThreadsFlag.Value(),
 		AgentConnections:       agentConnectionsFlag.Value(),
