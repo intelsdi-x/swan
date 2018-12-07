@@ -1,9 +1,9 @@
 package executor
 
 import (
-	"testing"
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/gophercloud/gophercloud"
+	. "github.com/smartystreets/goconvey/convey"
+	"testing"
 )
 
 func TestDefaultOpenstackConfig(t *testing.T) {
