@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+service Api {
+    rpc Classify (ClassifyRequest) returns (ClassifyResponse) {}
+    rpc Predict (PredictRequest) returns (PredictResponse) {}
+    rpc RefreshClassifier (RefreshClassifierRequest) returns (RefreshClassifierResponse) {}
+    rpc RefreshPredictor (RefreshPredictorRequest) returns (RefreshPredictorResponse) {}
+    rpc RefreshInstances (RefreshInstancesRequest) returns (RefreshInstancesResponse) {}
+    rpc WorkloadsCategories (WorkloadsCategoriesRequest) returns (WorkloadsCategoriesResponse) {}
+    rpc LoadSwanExperiment (LoadSwanExperimentRequest) returns (LoadSwanExperimentResponse) {}
+}
+
+// CLASSIFY
+message ClassifyRequest {
+    string instance_id = 1;
+}
+
+message ClassifyResponse {
+    string classified_as = 1;
+}
+
+// PREDICT
+
+message PredictRequirements {
+    double cpu_threads = 1;
+    double disk_iops = 2;
+    double network_bandwidth = 3;
+    double ram_size = 4;
+}
+
+message PredictRequest {
+    string category = 1;
+    string image = 2;
+    repeated string parameters = 3;
+    string host_aggregate = 4;
+    string allocation = 5;
+}
+
+message PredictResponse {
+    repeated PredictRequirements requirements = 1;
+}
+
+// REFRESHERS
+
+message RefreshClassifierRequest {
+
+}
+
+message RefreshClassifierResponse {
+
+}
+
+message RefreshPredictorRequest {
+
+}
+
+message RefreshPredictorResponse {
+
+}
+
+message RefreshInstancesRequest {
+
+}
+
+message RefreshInstancesResponse {
+
+}
+
+// WORKLOADS
+message WorkloadCategory{
+    string name = 1;
+    repeated string parameters = 2;
+}
+
+message WorkloadsCategoriesRequest {
+}
+
+message WorkloadsCategoriesResponse {
+    repeated WorkloadCategory workloads_categories = 1;
+}
+
+// SWAN integration
+message LoadSwanExperimentRequest {
+    string experiment_id = 1;
+}
+
+message LoadSwanExperimentResponse {
+
+}
