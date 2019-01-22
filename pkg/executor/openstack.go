@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/aggregates"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedserverattributes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/floatingips"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -64,6 +65,7 @@ var (
 	sshKeyPathFlag  = conf.NewStringFlag("ssh_key", "SSH key path", "~/.ssh/id_rsa")
 	keypairName     = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
 	bootUpTimeOut   = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
+	hostAggregateIDFlag = conf.NewIntFlag("host_aggregate_id", "ID of host aggregate which VM must be running in", -1)
 )
 
 // DefaultOpenstackConfig creates default OpenStack config.
@@ -97,15 +99,42 @@ type OpenstackAuthConfig struct {
 	Endpoint   string
 }
 
+type hostAggregate struct {
+	Name    			string
+	ConfigurationID 	string
+	AvailabilityZone string
+	Disk				disk
+	Ram					ram
+	Cpu					cpu
+}
+
+type disk struct {
+	Iops	string
+	Size	string
+}
+
+type ram struct {
+	Bandwidth 	string
+	Size		string
+}
+
+type cpu struct {
+	Performance	string
+	Threads		string
+}
+
 // OpenstackConfig defines OpenStack instance configuration data.
 type OpenstackConfig struct {
-	Auth                   gophercloud.AuthOptions
-	Flavor                 OpenstackFlavor
-	FlavorName             string
-	Image                  string
-	User                   string
-	SSHKeyPath             string
-	HypervisorInstanceName string
+	Auth                   	gophercloud.AuthOptions
+	Flavor                 	OpenstackFlavor
+	FlavorName             	string
+	Image                  	string
+	User                   	string
+	SSHKeyPath             	string
+	Name				   	string
+	ID                     	string
+	HypervisorInstanceName 	string
+	HostAggregate			hostAggregate
 }
 
 // Openstack defines OpenStack server configuration and client.
@@ -161,10 +190,34 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 
 	instanceName := fmt.Sprintf("krico.%s", uuid.New())
 
+	stack.config.Name = instanceName
+
+	aggregate, err := aggregates.Get(stack.client, hostAggregateIDFlag.Value()).Extract()
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get host aggregate info", executorLogPrefix)
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	stack.config.HostAggregate.Name = aggregate.Name
+	stack.config.HostAggregate.AvailabilityZone = aggregate.AvailabilityZone
+
+	stack.config.HostAggregate.ConfigurationID = aggregate.Metadata["configuration_id"]
+
+	stack.config.HostAggregate.Disk.Iops = aggregate.Metadata["disk_iops"]
+	stack.config.HostAggregate.Disk.Size = aggregate.Metadata["disk_size"]
+
+	stack.config.HostAggregate.Cpu.Performance = aggregate.Metadata["cpu_performance"]
+	stack.config.HostAggregate.Cpu.Threads = aggregate.Metadata["cpu_threads"]
+
+	stack.config.HostAggregate.Ram.Size = aggregate.Metadata["ram_size"]
+	stack.config.HostAggregate.Ram.Bandwidth = aggregate.Metadata["ram_bandwidth"]
+
 	serverOpts := servers.CreateOpts{
 		Name:      instanceName,
 		FlavorRef: flavorID,
 		ImageRef:  image,
+		AvailabilityZone: stack.config.HostAggregate.AvailabilityZone,
 	}
 
 	serverOptsExt := keypairs.CreateOptsExt{
@@ -180,6 +233,8 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	}
 
 	log.Infof("%s Scheduled instance %s creation", executorLogPrefix, instance.ID)
+
+	stack.config.ID = instance.ID
 
 	if err = servers.WaitForStatus(stack.client, instance.ID, "ACTIVE", 60); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't launch instance", executorLogPrefix)
