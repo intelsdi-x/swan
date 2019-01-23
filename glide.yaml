@@ -63,3 +63,5 @@ import:
   subpackages:
   - mock
 - package: github.com/gophercloud/gophercloud
+- package: google.golang.org/grpc
+  version: ~1.17.0
