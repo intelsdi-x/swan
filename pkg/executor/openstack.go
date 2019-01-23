@@ -33,6 +33,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/aggregates"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedserverattributes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/floatingips"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/hypervisors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/startstop"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
@@ -57,14 +58,14 @@ const (
 )
 
 var (
-	flavorDiskFlag  = conf.NewIntFlag("flavor_disk", "Openstack flavor disk size [GB]", 10)
-	flavorRAMFlag   = conf.NewIntFlag("flavor_ram", "Openstack flavor RAM size [MB]", 1024)
-	flavorVCPUsFlag = conf.NewIntFlag("flavor_vcpus", "Openstack flavor VCPUs", 1)
-	imageFlag       = conf.NewStringFlag("image", "Name of image.", "cirros")
-	userFlag        = conf.NewStringFlag("username", "Username", "cirros")
-	sshKeyPathFlag  = conf.NewStringFlag("ssh_key", "SSH key path", "~/.ssh/id_rsa")
-	keypairName     = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
-	bootUpTimeOut   = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
+	flavorDiskFlag      = conf.NewIntFlag("flavor_disk", "Openstack flavor disk size [GB]", 10)
+	flavorRAMFlag       = conf.NewIntFlag("flavor_ram", "Openstack flavor RAM size [MB]", 1024)
+	flavorVCPUsFlag     = conf.NewIntFlag("flavor_vcpus", "Openstack flavor VCPUs", 1)
+	imageFlag           = conf.NewStringFlag("image", "Name of image.", "cirros")
+	userFlag            = conf.NewStringFlag("username", "Username", "cirros")
+	sshKeyPathFlag      = conf.NewStringFlag("ssh_key", "SSH key path", "~/.ssh/id_rsa")
+	keypairName         = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
+	bootUpTimeOut       = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
 	hostAggregateIDFlag = conf.NewIntFlag("host_aggregate_id", "ID of host aggregate which VM must be running in", -1)
 )
 
@@ -85,6 +86,7 @@ func DefaultOpenstackConfig(auth gophercloud.AuthOptions) OpenstackConfig {
 
 // OpenstackFlavor defines OpenStack flavor data.
 type OpenstackFlavor struct {
+	Name  string
 	Disk  int
 	RAM   int
 	VCPUs int
@@ -100,41 +102,45 @@ type OpenstackAuthConfig struct {
 }
 
 type hostAggregate struct {
-	Name    			string
-	ConfigurationID 	string
+	Name             string
+	ConfigurationID  string
 	AvailabilityZone string
-	Disk				disk
-	Ram					ram
-	Cpu					cpu
+	Disk             disk
+	Ram              ram
+	Cpu              cpu
+}
+
+type hypervisor struct {
+	InstanceName string
+	Address      string
 }
 
 type disk struct {
-	Iops	string
-	Size	string
+	Iops string
+	Size string
 }
 
 type ram struct {
-	Bandwidth 	string
-	Size		string
+	Bandwidth string
+	Size      string
 }
 
 type cpu struct {
-	Performance	string
-	Threads		string
+	Performance string
+	Threads     string
 }
 
 // OpenstackConfig defines OpenStack instance configuration data.
 type OpenstackConfig struct {
-	Auth                   	gophercloud.AuthOptions
-	Flavor                 	OpenstackFlavor
-	FlavorName             	string
-	Image                  	string
-	User                   	string
-	SSHKeyPath             	string
-	Name				   	string
-	ID                     	string
-	HypervisorInstanceName 	string
-	HostAggregate			hostAggregate
+	Auth          gophercloud.AuthOptions
+	Flavor        OpenstackFlavor
+	Image         string
+	User          string
+	SSHKeyPath    string
+	Name          string
+	ID            string
+	Hypervisor    hypervisor
+	HostAggregate hostAggregate
 }
 
 // Openstack defines OpenStack server configuration and client.
@@ -214,9 +220,9 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	stack.config.HostAggregate.Ram.Bandwidth = aggregate.Metadata["ram_bandwidth"]
 
 	serverOpts := servers.CreateOpts{
-		Name:      instanceName,
-		FlavorRef: flavorID,
-		ImageRef:  image,
+		Name:             instanceName,
+		FlavorRef:        flavorID,
+		ImageRef:         image,
 		AvailabilityZone: stack.config.HostAggregate.AvailabilityZone,
 	}
 
@@ -266,21 +272,17 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	log.Infof("%s Waiting for %s instance to boot up", executorLogPrefix, instanceName)
 	time.Sleep(bootUpTimeOut.Value())
 
-	type serverAttributesExt struct {
-		servers.Server
-		extendedserverattributes.ServerAttributesExt
-	}
-
-	var extendedAttributes serverAttributesExt
-
-	err = servers.Get(stack.client, instance.ID).ExtractInto(&extendedAttributes)
+	stack.config.Hypervisor.InstanceName, err = stack.obtainHypervisorInstanceName(instance.ID)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceName)
-		log.Error(err)
+		log.Errorf("%s Couldn't obtain hypervisor instance name for %s instance!", executorLogPrefix, instanceName)
 		return nil, err
 	}
 
-	stack.config.HypervisorInstanceName = extendedAttributes.InstanceName
+	stack.config.Hypervisor.Address, err = stack.obtainHypervisorAddress(instance.ID)
+	if err != nil {
+		log.Errorf("%s Couldn't obtain hypervisor address for %s instance!", executorLogPrefix, instanceName)
+		return nil, err
+	}
 
 	remote, err := NewRemote(floatingIP, remoteConfig)
 	if err != nil {
@@ -353,7 +355,7 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 }
 
 func (stack Openstack) ensureFlavor() (string, error) {
-	stack.config.FlavorName = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", stack.config.Flavor.VCPUs, stack.config.Flavor.RAM, stack.config.Flavor.Disk)
+	stack.config.Flavor.Name = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", stack.config.Flavor.VCPUs, stack.config.Flavor.RAM, stack.config.Flavor.Disk)
 
 	listOpts := flavors.ListOpts{
 		AccessType: flavors.AllAccess,
@@ -361,20 +363,20 @@ func (stack Openstack) ensureFlavor() (string, error) {
 
 	allPages, err := flavors.ListDetail(stack.client, listOpts).AllPages()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, stack.config.Flavor.Name)
 		return "", err
 	}
 
 	allFlavors, err := flavors.ExtractFlavors(allPages)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, stack.config.Flavor.Name)
 		return "", err
 	}
 
 	// check if flavor already exists
 	for _, flavor := range allFlavors {
-		if flavor.Name == stack.config.FlavorName {
-			log.Infof("%s Using existing flavor %q", executorLogPrefix, stack.config.FlavorName)
+		if flavor.Name == stack.config.Flavor.Name {
+			log.Infof("%s Using existing flavor %q", executorLogPrefix, stack.config.Flavor.Name)
 			return flavor.ID, nil
 		}
 	}
@@ -383,18 +385,18 @@ func (stack Openstack) ensureFlavor() (string, error) {
 	flavorID := uuid.New()
 	flavorOpts := flavors.CreateOpts{
 		ID:    flavorID,
-		Name:  stack.config.FlavorName,
+		Name:  stack.config.Flavor.Name,
 		Disk:  &stack.config.Flavor.Disk,
 		RAM:   stack.config.Flavor.RAM,
 		VCPUs: stack.config.Flavor.VCPUs,
 	}
 	_, err = flavors.Create(stack.client, flavorOpts).Extract()
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to create flavor %q", stack.config.FlavorName)
+		err = errors.Wrapf(err, "Unable to create flavor %q", stack.config.Flavor.Name)
 		return flavorID, err
 	}
 
-	log.Infof("%s Created flavor %q", executorLogPrefix, stack.config.FlavorName)
+	log.Infof("%s Created flavor %q", executorLogPrefix, stack.config.Flavor.Name)
 
 	return flavorID, nil
 }
@@ -472,6 +474,63 @@ func (stack Openstack) findFloatingIP() (string, error) {
 	}
 
 	return floatingIP.IP, nil
+}
+
+type serverAttributesExt struct {
+	servers.Server
+	extendedserverattributes.ServerAttributesExt
+}
+
+func (stack Openstack) obtainHypervisorInstanceName(instanceID string) (string, error) {
+
+	var extendedAttributes serverAttributesExt
+
+	err := servers.Get(stack.client, instanceID).ExtractInto(&extendedAttributes)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceID)
+		return "", err
+	}
+
+	return extendedAttributes.InstanceName, nil
+}
+
+func (stack Openstack) obtainHypervisorAddress(instanceID string) (string, error) {
+
+	var extendedAttributes serverAttributesExt
+
+	err := servers.Get(stack.client, instanceID).ExtractInto(&extendedAttributes)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceID)
+		return "", err
+	}
+
+	allPages, err := hypervisors.List(stack.client).AllPages()
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't read hypervisors list", executorLogPrefix)
+		return "", err
+	}
+
+	allHypervisors, err := hypervisors.ExtractHypervisors(allPages)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't extract hypervisors list", executorLogPrefix)
+		return "", err
+	}
+
+	var hypervisorAddress string
+
+	for _, hypervisor := range allHypervisors {
+		if hypervisor.HypervisorHostname == extendedAttributes.HypervisorHostname {
+			hypervisorAddress = hypervisor.HostIP
+			break
+		}
+	}
+
+	if hypervisorAddress == "" {
+		err = errors.Errorf("%s Couldn't find hypervisor address!", executorLogPrefix)
+		return "", err
+	}
+
+	return hypervisorAddress, err
 }
 
 // OpenstackTaskHandle represents an abstraction to control task lifecycle and status.
