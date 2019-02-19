@@ -194,6 +194,12 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 
 	image, err := images.IDFromName(stack.client, stack.config.Image)
 
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get image id from name: %s !", executorLogPrefix, image)
+		log.Error(err.Error())
+		return nil, err
+	}
+
 	instanceName := fmt.Sprintf("krico.%s", uuid.New())
 
 	stack.config.Name = instanceName
@@ -298,11 +304,7 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 		return nil, err
 	}
 
-	exitCode, err := remoteHandler.ExitCode()
-	if err != nil {
-		log.Errorf("%s Couldn't obtain exit code from executed command", executorLogPrefix)
-		return nil, err
-	}
+	exitCode, _ := remoteHandler.ExitCode()
 
 	log.Infof("%s Executed %q on %s (%s) with exit code: %d", executorLogPrefix, command, instanceName, floatingIP, exitCode)
 
