@@ -1,5 +1,5 @@
-hash: 0e54310d021ffc526f3f1a34365cb31cd652709f6caad9b2ba406dd94f76fbd6
-updated: 2018-09-07T15:35:48.286449627+02:00
+hash: ddfa3918e2d43068750237222828c68ac088c8354d27e72c4435b507a4ba9521
+updated: 2018-12-18T11:36:35.641428125+01:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -65,7 +65,10 @@ imports:
   version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
   - proto
+  - ptypes
   - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
 - name: github.com/golang/snappy
   version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
 - name: github.com/google/gofuzz
@@ -74,6 +77,7 @@ imports:
   version: 3a5f2b6741320bd44cff57dcfd03400d1ef905e7
   subpackages:
   - openstack
+  - openstack/compute/v2/extensions/extendedserverattributes
   - openstack/compute/v2/extensions/floatingips
   - openstack/compute/v2/extensions/keypairs
   - openstack/compute/v2/extensions/startstop
@@ -158,6 +162,8 @@ imports:
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/julienschmidt/httprouter
   version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
+- name: github.com/libvirt/libvirt-go
+  version: fcf300cf5543bbd7fb57e08b38ad519c910b59c4
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -215,7 +221,7 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: 0709b304e793a5edb4a2c0145f281ecdc20838a4
+  version: 505ab145d0a99da450461ae2c1a9f6cd10d1f447
   subpackages:
   - cast5
   - curve25519
@@ -233,7 +239,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 161cd47e91fd58ac17490ef4d742dc98bb4cf60e
+  version: e147a9138326bc0e9d4e179541ffd8af41cff8a9
   subpackages:
   - context
   - http/httpguts
@@ -243,12 +249,12 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 8cf3aee429924738c56c34bb819c4ea8273fc434
+  version: dcdaa6325bcb8d3c07805583fe12153f08a41e2b
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 4ae1256249243a4eb350a9a372e126557f2aa346
+  version: 17bcc049122f272a32787ba38073ee47433023e9
   subpackages:
   - cases
   - internal
@@ -268,22 +274,38 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: b3ddf786825de56a4178401b7e174ee332173b66
+  version: ""
   subpackages:
+  - balancer
+  - balancer/base
+  - balancer/roundrobin
+  - binarylog/grpc_binarylog_v1
   - codes
   - connectivity
   - credentials
-  - grpclb/grpc_lb_v1
+  - credentials/internal
+  - encoding
+  - encoding/proto
   - grpclog
   - internal
+  - internal/backoff
+  - internal/binarylog
+  - internal/channelz
+  - internal/envconfig
+  - internal/grpcrand
+  - internal/grpcsync
+  - internal/syscall
+  - internal/transport
   - keepalive
   - metadata
   - naming
   - peer
+  - resolver
+  - resolver/dns
+  - resolver/passthrough
   - stats
   - status
   - tap
-  - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
