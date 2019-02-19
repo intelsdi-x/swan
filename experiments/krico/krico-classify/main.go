@@ -1,0 +1,74 @@
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"github.com/intelsdi-x/swan/experiments/krico/workloads"
+	"github.com/intelsdi-x/swan/pkg/experiment"
+	"github.com/intelsdi-x/swan/pkg/experiment/logger"
+	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
+	"github.com/intelsdi-x/swan/pkg/metadata"
+	"github.com/intelsdi-x/swan/pkg/utils/errutil"
+	"github.com/intelsdi-x/swan/pkg/utils/uuid"
+	"os"
+	"strings"
+	"time"
+)
+
+var (
+	appName = os.Args[0]
+)
+
+func main() {
+
+	// Preparing application - setting name, help, parsing flags etc.
+	experimentStart := time.Now()
+	experiment.Configure()
+
+	// Generate an experiment ID and start the metadata session.
+	experimentID := uuid.New()
+
+	// Initialize logger.
+	logger.Initialize(appName, experimentID)
+
+	// Connect to metadata database.
+	metaData, err := metadata.NewDefault(experimentID)
+	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
+
+	// Save experiment runtime environment (configuration, environmental variables, etc).
+	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
+	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
+
+	// Validate preconditions.
+	validate.OS()
+
+	// Initialize workloads.
+	workload.Initialize(experimentID)
+
+	// Run workloads.
+	workload.RunWorkloadsClassification()
+
+	// Prepare metadata.
+	records := map[string]string{
+		experiment.ExperimentKey: experimentID,
+		"commands_arguments":     strings.Join(os.Args, ","),
+		"experiment_name":        appName,
+	}
+
+	// Save metadata.
+	err = metaData.RecordMap(records, metadata.TypeEmpty)
+	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
+
+}

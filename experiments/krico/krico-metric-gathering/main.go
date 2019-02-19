@@ -23,17 +23,12 @@ import (
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
 	"os"
 	"time"
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"google.golang.org/grpc"
-	kricoapi "github.com/intelsdi-x/swan/experiments/krico/api"
-	"context"
 	"github.com/intelsdi-x/swan/experiments/krico/workloads"
 	"strings"
 )
 
 var (
 	appName = os.Args[0]
-	kricoApiAddress = conf.NewStringFlag("krico_api_address", "Ip address of KRICO API service.", "localhost:5000")
 )
 
 func main() {
@@ -63,7 +58,7 @@ func main() {
 	workload.Initialize(experimentID)
 
 	// Run workloads.
-	workload.CachingWorkload()
+	workload.RunCollectingMetrics()
 
 	// Prepare metadata.
 	records := map[string]string{
@@ -76,17 +71,4 @@ func main() {
 	err = metaData.RecordMap(records, metadata.TypeEmpty)
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
-	// Connect to KRICO via gRPC to update metadata.
-	conn, err := grpc.Dial(kricoApiAddress.Value(), grpc.WithInsecure())
-	errutil.CheckWithContext(err, "Cannot connect to KRICO gRPC server")
-
-	api := kricoapi.NewApiClient(conn)
-
-	_, err = api.LoadSwanExperiment(context.Background(), &kricoapi.LoadSwanExperimentRequest{ExperimentId: experimentID})
-	errutil.CheckWithContext(err, "Couldn't connect to KRICO api via grpcs")
-
-	_, err = api.RefreshClassifier(context.Background(), &kricoapi.RefreshClassifierRequest{})
-	_, err = api.RefreshPredictor(context.Background(), &kricoapi.RefreshPredictorRequest{})
-
-	defer conn.Close()
 }
