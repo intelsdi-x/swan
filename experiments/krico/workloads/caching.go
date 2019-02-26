@@ -52,6 +52,18 @@ func CollectingMetricsForCachingWorkload() {
 	loadDuration := sensitivity.LoadDurationFlag.Value()
 	maxQPS := sensitivity.PeakLoadFlag.Value()
 
+	//	Prepare executor
+	aggressorExecutorConfig := executor.DefaultRemoteConfig()
+	aggressorExecutor, err := executor.NewRemote(aggressorAddress.Value(), aggressorExecutorConfig)
+	errutil.CheckWithContext(err, "Cannot prepare Mutilate executor!")
+
+	//	Prepare launcher
+	aggressorLauncher := mutilate.New(aggressorExecutor, aggressorConfig)
+
+	//	Populate workload.
+	err = aggressorLauncher.Populate()
+	errutil.CheckWithContext(err, "Cannot load the initial test data into Memcached!")
+
 	//
 	//	Metrics collector (Snap)
 	//
@@ -99,18 +111,6 @@ func CollectingMetricsForCachingWorkload() {
 	//
 	//	Aggressor
 	//
-
-	//	Prepare executor
-	aggressorExecutorConfig := executor.DefaultRemoteConfig()
-	aggressorExecutor, err := executor.NewRemote(aggressorAddress.Value(), aggressorExecutorConfig)
-	errutil.CheckWithContext(err, "Cannot prepare Mutilate executor!")
-
-	//	Prepare launcher
-	aggressorLauncher := mutilate.New(aggressorExecutor, aggressorConfig)
-
-	//	Populate workload.
-	err = aggressorLauncher.Populate()
-	errutil.CheckWithContext(err, "Cannot load the initial test data into Memcached!")
 
 	//	Start stressing workload
 	aggressorHandle, err := aggressorLauncher.Load(maxQPS, loadDuration)
