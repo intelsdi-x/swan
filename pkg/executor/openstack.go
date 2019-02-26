@@ -344,6 +344,7 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	taskWatcher := &openstackWatcher{
 		instance:      instance.ID,
 		client:        stack.client,
+		cmdHandler:    remoteHandler,
 		running:       &taskHandle.running,
 		requestStop:   taskHandle.requestStop,
 		requestDelete: taskHandle.requestDelete,
@@ -653,6 +654,7 @@ func (th *OpenstackTaskHandle) Instance() string {
 type openstackWatcher struct {
 	client        *gophercloud.ServiceClient
 	instance      string
+	cmdHandler    TaskHandle
 	running       *bool
 	requestStop   chan struct{}
 	requestDelete chan struct{}
@@ -697,6 +699,7 @@ func (watcher *openstackWatcher) watch() error {
 		for {
 			select {
 			case <-watcher.requestStop:
+				watcher.cmdHandler.Stop()
 				startstop.Stop(watcher.client, watcher.instance).ExtractErr()
 			case <-watcher.requestDelete:
 				servers.Delete(watcher.client, watcher.instance)
