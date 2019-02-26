@@ -21,7 +21,7 @@ const (
 
 var (
 	experimentID     string
-	snapStartCommand = "service snap-telemetry restart"
+	snapStartCommand = "systemctl restart snap-telemetry"
 	aggressorAddress = conf.NewStringFlag("aggressor_address", "IP address of aggressor node.", "127.0.0.0")
 )
 
