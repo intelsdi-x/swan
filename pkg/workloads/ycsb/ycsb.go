@@ -142,13 +142,6 @@ func (y ycsb) Tune(slo int) (qps int, achievedSLI int, err error) {
 
 func (y ycsb) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {
 
-	y.calculateWorkloadCommandParameters(qps, duration)
-
-	err := y.Populate()
-	if err != nil {
-		return nil, err
-	}
-
 	loadCommand := y.buildLoadCommand()
 
 	taskHandle, err := y.executor.Execute(loadCommand)
@@ -156,42 +149,7 @@ func (y ycsb) Load(qps int, duration time.Duration) (executor.TaskHandle, error)
 		return nil, errors.Wrapf(err, "Execution of Ycsb Master Load failed. Command: %q", loadCommand)
 	}
 
-	_, err = taskHandle.Wait(0)
-	if err != nil {
-		return nil, err
-	}
-
-	exitCode, err := taskHandle.ExitCode()
-	if err != nil {
-		return nil, err
-	}
-
-	if exitCode != 0 {
-		return nil, errors.Errorf("YCSB load exited with code: %d on command: %s", exitCode, loadCommand)
-	}
-
 	return taskHandle, nil
-}
-
-func (y *ycsb) calculateWorkloadCommandParameters(qps int, duration time.Duration) {
-
-	y.config.WorkloadOperationCount= int64(qps) * int64(duration.Seconds())
-
-	y.config.workloadCommand = fmt.Sprint(
-		fmt.Sprintf(" -p redis.host=%s", y.config.RedisHost),
-		fmt.Sprintf(" -p redis.port=%d", y.config.RedisPort),
-		fmt.Sprintf(" -p recordcount=%d", y.config.WorkloadRecordCount),
-		fmt.Sprintf(" -p operationcount=%d", y.config.WorkloadOperationCount),
-		fmt.Sprintf(" -p workload=%s", y.config.Workload),
-		fmt.Sprintf(" -p readallfields=%t", y.config.WorkloadReadAllFields),
-		fmt.Sprintf(" -p readproportion=%g", y.config.WorkloadReadProportion),
-		fmt.Sprintf(" -p updateproportion=%g", y.config.WorkloadUpdateProportion),
-		fmt.Sprintf(" -p scanproportion=%g", y.config.WorkloadScanProportion),
-		fmt.Sprintf(" -p insertproportion=%g", y.config.WorkloadInsertProportion),
-		fmt.Sprintf(" -p requestdistribution=%s", y.config.WorkloadRequestDistribution),
-		fmt.Sprintf(" -target %d", qps),
-	)
-
 }
 
 func (y ycsb) buildPopulateCommand() string {
