@@ -50,11 +50,12 @@ import (
 )
 
 const (
-	executorName        = "Openstack executor"
-	executorLogPrefix   = executorName + ":"
-	taskHandleName      = "Openstack task handle"
-	taskHandleLogPrefix = taskHandleName + ":"
-	directoryPrefix     = "openstack"
+	executorName        	= "Openstack executor"
+	executorLogPrefix   	= executorName + ":"
+	taskHandleName      	= "Openstack task handle"
+	taskHandleLogPrefix 	= taskHandleName + ":"
+	directoryPrefix     	= "openstack"
+	taskNotTerminatedCode 	= -1
 )
 
 var (
@@ -344,12 +345,15 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	taskWatcher := &openstackWatcher{
 		instance:      instance.ID,
 		client:        stack.client,
-		cmdHandler:    remoteHandler,
 		running:       &taskHandle.running,
 		requestStop:   taskHandle.requestStop,
 		requestDelete: taskHandle.requestDelete,
 		stopped:       taskHandle.stopped,
 		deleted:       taskHandle.deleted,
+	}
+
+	if exitCode == taskNotTerminatedCode {
+		taskWatcher.cmdHandler = remoteHandler
 	}
 
 	err = taskWatcher.watch()
@@ -699,7 +703,17 @@ func (watcher *openstackWatcher) watch() error {
 		for {
 			select {
 			case <-watcher.requestStop:
-				watcher.cmdHandler.Stop()
+
+				//	If cmdHandler is provided, task is still running. We must stop it before shutting down VM to avoid
+				//	panic errors.
+				if watcher.cmdHandler != nil {
+					err := watcher.cmdHandler.Stop()
+					if err != nil {
+						print(err.Error())
+						return
+					}
+				}
+
 				startstop.Stop(watcher.client, watcher.instance).ExtractErr()
 			case <-watcher.requestDelete:
 				servers.Delete(watcher.client, watcher.instance)
