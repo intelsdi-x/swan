@@ -111,7 +111,7 @@ func New(exec executor.Executor, config Config) Memcached {
 }
 
 // Build command to run mutilate
-func (m Memcached) BuildCommand() string {
+func (m Memcached) buildCommand() string {
 	cmd := fmt.Sprint(m.conf.PathToBinary,
 		" -p ", m.conf.Port,
 		" -u ", m.conf.User,
@@ -121,6 +121,7 @@ func (m Memcached) BuildCommand() string {
 	if m.conf.ThreadsAffinity {
 		cmd += " -T"
 	}
+
 	return cmd
 }
 
@@ -128,7 +129,7 @@ func (m Memcached) BuildCommand() string {
 // represented as a Task Handle instance.
 // Error is returned when Launcher is unable to start a job.
 func (m Memcached) Launch() (executor.TaskHandle, error) {
-	task, err := m.exec.Execute(m.BuildCommand())
+	task, err := m.exec.Execute(m.buildCommand())
 	if err != nil {
 		return nil, err
 	}
