@@ -2,7 +2,6 @@ package workload
 
 import (
 	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/intelsdi-x/backup/swan/experiments/krico/workloads"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity"
 	kricosnapsession "github.com/intelsdi-x/swan/pkg/snap/sessions/krico"
@@ -16,7 +15,7 @@ import (
 
 func CollectingMetricsForCachingWorkload() {
 
-	//	Load OpenStack authentication variables from environment
+	//	Load OpenStack authentication variables from environment.
 	auth, err := openstack.AuthOptionsFromEnv()
 	errutil.CheckWithContext(err, "Cannot read OpenStack environment variables!")
 
@@ -24,44 +23,44 @@ func CollectingMetricsForCachingWorkload() {
 	//	Workload
 	//
 
-	//	Prepare configuration
+	//	Prepare configuration.
 	workloadConfig := memcached.DefaultMemcachedConfig()
 
-	//	Prepare executor
+	//	Prepare executor.
 	workloadExecutorConfig := executor.DefaultOpenstackConfig(auth)
 	workloadExecutorConfig.Image = "krico_memcached"
 	workloadExecutor := executor.NewOpenstack(&workloadExecutorConfig)
 
-	//	Prepare launcher
+	//	Prepare launcher.
 	workloadLauncher := memcached.New(workloadExecutor, workloadConfig)
 
-	//	Run workload
+	//	Run workload.
 	workloadHandle, err := workloadLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot launch Memcached!")
 
-	//	Stop workload in the end of experiment
+	//	Stop workload in the end of experiment.
 	defer workloadHandle.Stop()
 
 	//
-	//	Aggressor
+	//	Load generator
 	//
 
-	//	Prepare configuration
-	aggressorConfig := mutilate.DefaultMutilateConfig()
-	aggressorConfig.MemcachedHost = workloadHandle.Address()
+	//	Prepare configuration.
+	loadGeneratorConfig := mutilate.DefaultMutilateConfig()
+	loadGeneratorConfig.MemcachedHost = workloadHandle.Address()
 	loadDuration := sensitivity.LoadDurationFlag.Value()
 	maxQPS := sensitivity.PeakLoadFlag.Value()
 
-	//	Prepare executor
-	aggressorExecutorConfig := executor.DefaultRemoteConfig()
-	aggressorExecutor, err := executor.NewRemote(aggressorAddress.Value(), aggressorExecutorConfig)
+	//	Prepare executor.
+	loadGeneratorExecutorConfig := executor.DefaultRemoteConfig()
+	loadGeneratorExecutor, err := executor.NewRemote(aggressorAddress.Value(), loadGeneratorExecutorConfig)
 	errutil.CheckWithContext(err, "Cannot prepare Mutilate executor!")
 
-	//	Prepare launcher
-	aggressorLauncher := mutilate.New(aggressorExecutor, aggressorConfig)
+	//	Prepare launcher.
+	loadGeneratorLauncher := mutilate.New(loadGeneratorExecutor, loadGeneratorConfig)
 
 	//	Populate workload.
-	err = aggressorLauncher.Populate()
+	err = loadGeneratorLauncher.Populate()
 	errutil.CheckWithContext(err, "Cannot load the initial test data into Memcached!")
 
 	//
@@ -71,7 +70,7 @@ func CollectingMetricsForCachingWorkload() {
 	//	Start Snap on OpenStack host.
 	StartSnapService(workloadExecutorConfig.Hypervisor.Address)
 
-	//	Obtain workload instance cgroup
+	//	Obtain workload instance cgroup.
 	cgroup, err := GetInstanceCgroup(workloadExecutorConfig.Hypervisor.InstanceName, workloadExecutorConfig.Hypervisor.Address)
 	errutil.CheckWithContext(err, "Cannot obtain instance cgroup!")
 
@@ -79,54 +78,53 @@ func CollectingMetricsForCachingWorkload() {
 	//	KRICO parameters
 	//
 
-	//	Calculate workload parameters
-	memory := float64(workloadConfig.MaxMemoryMB / 1024)         // total cache size [GiB]
-	ratio, err := strconv.ParseFloat(aggressorConfig.Update, 64) // estimated get vs set ratio [0.0 - 1.0]
+	//	Calculate workload parameters.
+	memory := float64(workloadConfig.MaxMemoryMB / 1024)             // total cache size [GiB]
+	ratio, err := strconv.ParseFloat(loadGeneratorConfig.Update, 64) // estimated get vs set ratio [0.0 - 1.0]
 	errutil.CheckWithContext(err, "Cannot parse mutilate update argument (ratio parameter)!")
-	clients := float64(aggressorConfig.MasterThreads * aggressorConfig.MasterConnections)
+	clients := float64(loadGeneratorConfig.MasterThreads * loadGeneratorConfig.MasterConnections)
 
 	//
 	//	Snap task
 	//
 
-	//	Configure task
+	//	Configure task.
 	snapTaskConfig := kricosnapsession.DefaultConfig(cgroup, workloadExecutorConfig.Hypervisor.InstanceName)
 	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig)
-	snapTaskConfig.Tags["category"] = workload.TypeCaching
+	snapTaskConfig.Tags["category"] = TypeCaching
 	snapTaskConfig.Tags["memory"] = strconv.FormatFloat(memory, 'f', -1, 64)
 	snapTaskConfig.Tags["ratio"] = strconv.FormatFloat(ratio, 'f', -1, 64)
 	snapTaskConfig.Tags["clients"] = strconv.FormatFloat(clients, 'f', -1, 64)
 
-	//	Prepare launcher
+	//	Prepare launcher.
 	snapTaskLauncher, err := kricosnapsession.NewSessionLauncher(snapTaskConfig)
 	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher !")
 
-	//	Run Snap task
+	//	Run Snap task.
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
-	//	Stop on the end
+	//	Stop on the end.
 	defer snapTaskHandle.Stop()
 
 	//
-	//	Aggressor
+	//	Load generator
 	//
 
-	//	Start stressing workload
-	aggressorHandle, err := aggressorLauncher.Load(maxQPS, loadDuration)
+	//	Start load on workload.
+	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
 	errutil.CheckWithContext(err, "Cannot start Mutilate task!")
 
-	//	Stop stressing workload on the end
-	defer aggressorHandle.Stop()
+	//	In the end stop load on workload.
+	defer loadGeneratorHandle.Stop()
 
-	//	Wait until load generating finishes
-	aggressorHandle.Wait(0)
-
+	//	Wait until load generating finishes.
+	loadGeneratorHandle.Wait(0)
 }
 
 func ClassifyCachingWorkload() {
 
-	//	Load OpenStack authentication variables from environment
+	//	Load OpenStack authentication variables from environment.
 	auth, err := openstack.AuthOptionsFromEnv()
 	errutil.CheckWithContext(err, "Cannot read OpenStack environment variables!")
 
@@ -134,33 +132,46 @@ func ClassifyCachingWorkload() {
 	//	Workload
 	//
 
-	//	Prepare configuration
-	workloadConfig := redis.DefaultRedisConfig()
+	//	Prepare configuration.
+	workloadConfig := redis.DefaultConfig()
 
-	//	Prepare executor
+	//	Prepare executor.
 	workloadExecutorConfig := executor.DefaultOpenstackConfig(auth)
 	workloadExecutorConfig.Image = "krico_redis"
 	workloadExecutor := executor.NewOpenstack(&workloadExecutorConfig)
 
-	//	Prepare launcher
+	//	Prepare launcher.
 	workloadLauncher := redis.New(workloadExecutor, workloadConfig)
 
-	//	Run workload
+	//	Run workload.
 	workloadHandle, err := workloadLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot launch Redis!")
 
-	//	Stop workload in the end of experiment
-	//defer workloadHandle.Stop()
+	//	Stop workload in the end of experiment.
+	defer workloadHandle.Stop()
 
 	//
-	//	Aggressor
+	//	Load generator
 	//
 
-	//	Prepare configuration
-	aggressorConfig := ycsb.DefaultYcsbConfig()
-	aggressorConfig.RedisHost = workloadHandle.Address()
+	//	Prepare configuration.
+	loadGeneratorConfig := ycsb.DefaultYcsbConfig()
+	loadGeneratorConfig.RedisHost = workloadHandle.Address()
 	loadDuration := sensitivity.LoadDurationFlag.Value()
 	maxQPS := sensitivity.PeakLoadFlag.Value()
+
+	//	Prepare executor.
+	loadGeneratorExecutorConfig := executor.DefaultRemoteConfig()
+	loadGeneratorExecutor, err := executor.NewRemote(aggressorAddress.Value(), loadGeneratorExecutorConfig)
+	errutil.CheckWithContext(err, "Cannot prepare YCSB Redis executor !")
+
+	//	Prepare launcher.
+	ycsb.CalculateWorkloadCommandParameters(maxQPS, loadDuration, &loadGeneratorConfig)
+	loadGeneratorLauncher := ycsb.New(loadGeneratorExecutor, loadGeneratorConfig)
+
+	//	Populate workload.
+	err = loadGeneratorLauncher.Populate()
+	errutil.CheckWithContext(err, "Cannot load the initial test data into Redis!")
 
 	//
 	//	Metrics collector (Snap)
@@ -169,43 +180,35 @@ func ClassifyCachingWorkload() {
 	//	Start Snap on OpenStack host.
 	StartSnapService(workloadExecutorConfig.Hypervisor.Address)
 
-	//	Obtain workload instance cgroup
+	//	Obtain workload instance cgroup.
 	cgroup, err := GetInstanceCgroup(workloadExecutorConfig.Hypervisor.InstanceName, workloadExecutorConfig.Hypervisor.Address)
 	errutil.CheckWithContext(err, "Cannot obtain workload instance cgroup !")
 
 	snapTaskConfig := kricosnapsession.DefaultConfig(cgroup, workloadExecutorConfig.Hypervisor.InstanceName)
 	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig)
 
-	//	Prepare launcher
+	//	Prepare launcher.
 	snapTaskLauncher, err := kricosnapsession.NewSessionLauncher(snapTaskConfig)
 	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher !")
 
-	//	Run Snap task
+	//	Run Snap task.
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics !")
 
-	//	Stop snap task on the end of experiment
+	//	Stop snap task on the end of experiment.
 	defer snapTaskHandle.Stop()
 
 	//
-	//	Aggressor
+	//	Load Generator
 	//
 
-	//	Prepare executor
-	aggressorExecutorConfig := executor.DefaultRemoteConfig()
-	aggressorExecutor, err := executor.NewRemote(aggressorAddress.Value(), aggressorExecutorConfig)
-	errutil.CheckWithContext(err, "Cannot prepare YCSB Redis executor !")
-
-	//	Prepare launcher
-	aggressorLauncher := ycsb.New(aggressorExecutor, aggressorConfig)
-
-	//	Start stressing workload
-	aggressorHandle, err := aggressorLauncher.Load(maxQPS, loadDuration)
+	//	Start load on workload.
+	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
 	errutil.CheckWithContext(err, "Cannot start YCSB Redis task !")
 
-	//	Stop stressing workload on the end of experiment
-	defer aggressorHandle.Stop()
+	//	In the end stop load on workload.
+	defer loadGeneratorHandle.Stop()
 
-	//	Wait until load generating finishes
-	aggressorHandle.Wait(0)
+	//	Wait until load generating finishes.
+	loadGeneratorHandle.Wait(0)
 }
