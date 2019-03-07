@@ -7,10 +7,10 @@ service Api {
     rpc RefreshPredictor (RefreshPredictorRequest) returns (RefreshPredictorResponse) {}
     rpc RefreshInstances (RefreshInstancesRequest) returns (RefreshInstancesResponse) {}
     rpc WorkloadsCategories (WorkloadsCategoriesRequest) returns (WorkloadsCategoriesResponse) {}
-    rpc LoadSwanExperiment (LoadSwanExperimentRequest) returns (LoadSwanExperimentResponse) {}
+    rpc ImportMetricsFromSwanExperiment (ImportMetricsFromSwanExperimentRequest) returns (ImportMetricsFromSwanExperimentResponse) {}
+    rpc ImportMonitorSamplesFromSwanExperiment (ImportMonitorSamplesFromSwanExperimentRequest) returns (ImportMonitorSamplesFromSwanExperimentResponse) {}
 }
 
-// CLASSIFY
 message ClassifyRequest {
     string instance_id = 1;
 }
@@ -18,8 +18,6 @@ message ClassifyRequest {
 message ClassifyResponse {
     string classified_as = 1;
 }
-
-// PREDICT
 
 message PredictRequirements {
     double cpu_threads = 1;
@@ -39,8 +37,6 @@ message PredictRequest {
 message PredictResponse {
     repeated PredictRequirements requirements = 1;
 }
-
-// REFRESHERS
 
 message RefreshClassifierRequest {
 
@@ -66,7 +62,6 @@ message RefreshInstancesResponse {
 
 }
 
-// WORKLOADS
 message WorkloadCategory{
     string name = 1;
     repeated string parameters = 2;
@@ -79,11 +74,18 @@ message WorkloadsCategoriesResponse {
     repeated WorkloadCategory workloads_categories = 1;
 }
 
-// SWAN integration
-message LoadSwanExperimentRequest {
-    string experiment_id = 1;
+message ImportMetricsFromSwanExperimentRequest {
+    string experiment_id=1;
 }
 
-message LoadSwanExperimentResponse {
+message ImportMetricsFromSwanExperimentResponse {
+
+}
+
+message ImportMonitorSamplesFromSwanExperimentRequest {
+    string experiment_id=1;
+}
+
+message ImportMonitorSamplesFromSwanExperimentResponse {
 
 }

@@ -122,7 +122,7 @@ func CollectingMetricsForCachingWorkload() {
 	loadGeneratorHandle.Wait(0)
 }
 
-func ClassifyCachingWorkload() {
+func ClassifyCachingWorkload() string {
 
 	//	Load OpenStack authentication variables from environment.
 	auth, err := openstack.AuthOptionsFromEnv()
@@ -211,4 +211,6 @@ func ClassifyCachingWorkload() {
 
 	//	Wait until load generating finishes.
 	loadGeneratorHandle.Wait(0)
+
+	return workloadExecutorConfig.ID
 }

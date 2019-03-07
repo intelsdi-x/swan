@@ -15,20 +15,26 @@
 package main
 
 import (
+	"github.com/intelsdi-x/swan/experiments/krico/workloads"
+	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/intelsdi-x/swan/pkg/experiment/logger"
 	"github.com/intelsdi-x/swan/pkg/experiment/sensitivity/validate"
 	"github.com/intelsdi-x/swan/pkg/metadata"
 	"github.com/intelsdi-x/swan/pkg/utils/errutil"
 	"github.com/intelsdi-x/swan/pkg/utils/uuid"
+	"google.golang.org/grpc"
 	"os"
-	"time"
-	"github.com/intelsdi-x/swan/experiments/krico/workloads"
 	"strings"
+	"time"
+
+	"context"
+	"github.com/intelsdi-x/swan/experiments/krico/api"
 )
 
 var (
-	appName = os.Args[0]
+	appName         = os.Args[0]
+	kricoApiAddress = conf.NewStringFlag("krico_api_address", "Ip address of KRICO API service.", "localhost:5000")
 )
 
 func main() {
@@ -45,11 +51,11 @@ func main() {
 
 	// Connect to metadata database.
 	metaData, err := metadata.NewDefault(experimentID)
-	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database")
+	errutil.CheckWithContext(err, "Cannot connect to Cassandra Metadata Database!")
 
 	// Save experiment runtime environment (configuration, environmental variables, etc).
 	err = metadata.RecordRuntimeEnv(metaData, experimentStart)
-	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database")
+	errutil.CheckWithContext(err, "Cannot save runtime environment in Cassandra Metadata Database!")
 
 	// Validate preconditions.
 	validate.OS()
@@ -62,13 +68,30 @@ func main() {
 
 	// Prepare metadata.
 	records := map[string]string{
-		experiment.ExperimentKey: 	experimentID,
-		"commands_arguments": 		strings.Join(os.Args, ","),
-		"experiment_name":    		appName,
+		experiment.ExperimentKey: experimentID,
+		"commands_arguments":     strings.Join(os.Args, ","),
+		"experiment_name":        appName,
 	}
 
 	// Save metadata.
 	err = metaData.RecordMap(records, metadata.TypeEmpty)
-	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
+	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database!")
+
+	// Connect to KRICO via gRPC to update metadata.
+	conn, err := grpc.Dial(kricoApiAddress.Value(), grpc.WithInsecure())
+	errutil.CheckWithContext(err, "Cannot connect to KRICO!")
+
+	krico := api.NewApiClient(conn)
+
+	_, err = krico.ImportMetricsFromSwanExperiment(context.Background(), &api.ImportMetricsFromSwanExperimentRequest{ExperimentId: experimentID})
+	errutil.CheckWithContext(err, "Cannot send request to KRICO for importing metrics!")
+
+	_, err = krico.RefreshClassifier(context.Background(), &api.RefreshClassifierRequest{})
+	errutil.CheckWithContext(err, "Cannot send request to KRICO for refreshing classifier!")
+
+	_, err = krico.RefreshPredictor(context.Background(), &api.RefreshPredictorRequest{})
+	errutil.CheckWithContext(err, "Cannot send request to KRICO for refreshing predictor!")
+
+	defer conn.Close()
 
 }

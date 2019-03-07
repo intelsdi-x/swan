@@ -33,8 +33,12 @@ func RunCollectingMetrics() {
 	CollectingMetricsForCachingWorkload()
 }
 
-func RunWorkloadsClassification() {
-	ClassifyCachingWorkload()
+func RunWorkloadsClassification() []string {
+	var instances []string
+
+	instances = append(instances, ClassifyCachingWorkload())
+
+	return instances
 }
 
 func StartSnapService(address string) error {
