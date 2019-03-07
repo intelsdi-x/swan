@@ -15,21 +15,20 @@
 package krico
 
 import (
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"github.com/intelsdi-x/swan/pkg/snap"
-	"time"
-	//"github.com/intelsdi-x/snap/scheduler/wmap"
-	//"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/snap/publishers"
 	"github.com/intelsdi-x/snap/scheduler/wmap"
 	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/snap"
+	"github.com/intelsdi-x/swan/pkg/snap/publishers"
+	"time"
 )
 
+// DefaultConfig returns default configuration for KRICO session.
 func DefaultConfig(cgroup string, domain string) snap.SessionConfig {
 
 	pub := publishers.Publisher{
 		PluginName: snap.CassandraPublisher,
-		Publisher: wmap.NewPublishNode("cassandra", snap.PluginAnyVersion),
+		Publisher:  wmap.NewPublishNode("cassandra", snap.PluginAnyVersion),
 	}
 	pub.Publisher.AddConfigItem("server", conf.CassandraAddress.Value())
 	pub.Publisher.AddConfigItem("keyspaceName", conf.CassandraKeyspaceName.Value())
@@ -45,26 +44,28 @@ func DefaultConfig(cgroup string, domain string) snap.SessionConfig {
 		},
 		TaskName: "swan-krico-session",
 		Metrics: []string{
-			"/intel/libvirt/"+domain+"/cpu/cputime", // cpu:time ( 1.0 == 1 logic CPU )
-			"/intel/libvirt/"+domain+"/memory/rss", // ram:used [GB]
-			"/intel/linux/perfevents/cgroup/cache-references/"+cgroup, // cpu:cache:references ( L3 memory [1/s] )
-			"/intel/linux/perfevents/cgroup/cache-misses/"+cgroup, // cpu:cache:misses ( L3 memory [1/s] )
-			"/intel/libvirt/"+domain+"/disk/*/wrbytes", // disk:bandwidth:read [MiB/s]
-			"/intel/libvirt/"+domain+"/disk/*/rdbytes", // disk:bandwidth:write [MiB/s]
-			"/intel/libvirt/"+domain+"/disk/*/wrreq", // disk:operations:read [1/s]
-			"/intel/libvirt/"+domain+"/disk/*/rdreq", // disk:operations:write [1/s]
-			"/intel/libvirt/"+domain+"/network/*/txbytes", // network:bandwidth:send [MiB/s]
-			"/intel/libvirt/"+domain+"/network/*/rxbytes", // network:bandwidth:receive [MiB/s]
-			"/intel/libvirt/"+domain+"/network/*/txpackets", // network:packets:send [1/s]
-			"/intel/libvirt/"+domain+"/network/*/rxpackets", // network:packets:receive [1/s]
+			"/intel/libvirt/" + domain + "/cpu/cputime",                 // cpu:time ( 1.0 == 1 logic CPU )
+			"/intel/libvirt/" + domain + "/memory/rss",                  // ram:used [GB]
+			"/intel/linux/perfevents/cgroup/cache-references/" + cgroup, // cpu:cache:references ( L3 memory [1/s] )
+			"/intel/linux/perfevents/cgroup/cache-misses/" + cgroup,     // cpu:cache:misses ( L3 memory [1/s] )
+			"/intel/libvirt/" + domain + "/disk/*/wrbytes",              // disk:bandwidth:read [MiB/s]
+			"/intel/libvirt/" + domain + "/disk/*/rdbytes",              // disk:bandwidth:write [MiB/s]
+			"/intel/libvirt/" + domain + "/disk/*/wrreq",                // disk:operations:read [1/s]
+			"/intel/libvirt/" + domain + "/disk/*/rdreq",                // disk:operations:write [1/s]
+			"/intel/libvirt/" + domain + "/network/*/txbytes",           // network:bandwidth:send [MiB/s]
+			"/intel/libvirt/" + domain + "/network/*/rxbytes",           // network:bandwidth:receive [MiB/s]
+			"/intel/libvirt/" + domain + "/network/*/txpackets",         // network:packets:send [1/s]
+			"/intel/libvirt/" + domain + "/network/*/rxpackets",         // network:packets:receive [1/s]
 		},
 	}
 }
 
+// Session configures & launches snap workflow for KRICO.
 type Session struct {
 	session *snap.Session
 }
 
+// NewSessionLauncher creates KRICO session.
 func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
 
 	session, err := snap.NewSessionLauncher(config)
@@ -78,10 +79,12 @@ func NewSessionLauncher(config snap.SessionConfig) (*Session, error) {
 	}, nil
 }
 
+// Launch starts Snap Collection session and returns handle to that session.
 func (s *Session) Launch() (executor.TaskHandle, error) {
 	return s.session.Launch()
 }
 
-func (s *Session) String() string  {
+// String returns human readable name for job.
+func (s *Session) String() string {
 	return "Snap KRICO Collection"
 }

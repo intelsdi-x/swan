@@ -50,12 +50,12 @@ import (
 )
 
 const (
-	executorName        	= "Openstack executor"
-	executorLogPrefix   	= executorName + ":"
-	taskHandleName      	= "Openstack task handle"
-	taskHandleLogPrefix 	= taskHandleName + ":"
-	directoryPrefix     	= "openstack"
-	taskNotTerminatedCode 	= -1
+	executorName          = "Openstack executor"
+	executorLogPrefix     = executorName + ":"
+	taskHandleName        = "Openstack task handle"
+	taskHandleLogPrefix   = taskHandleName + ":"
+	directoryPrefix       = "openstack"
+	taskNotTerminatedCode = -1
 )
 
 var (
@@ -107,8 +107,8 @@ type hostAggregate struct {
 	ConfigurationID  string
 	AvailabilityZone string
 	Disk             disk
-	Ram              ram
-	Cpu              cpu
+	RAM              ram
+	CPU              cpu
 }
 
 type hypervisor struct {
@@ -220,11 +220,11 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	stack.config.HostAggregate.Disk.Iops = aggregate.Metadata["disk_iops"]
 	stack.config.HostAggregate.Disk.Size = aggregate.Metadata["disk_size"]
 
-	stack.config.HostAggregate.Cpu.Performance = aggregate.Metadata["cpu_performance"]
-	stack.config.HostAggregate.Cpu.Threads = aggregate.Metadata["cpu_threads"]
+	stack.config.HostAggregate.CPU.Performance = aggregate.Metadata["cpu_performance"]
+	stack.config.HostAggregate.CPU.Threads = aggregate.Metadata["cpu_threads"]
 
-	stack.config.HostAggregate.Ram.Size = aggregate.Metadata["ram_size"]
-	stack.config.HostAggregate.Ram.Bandwidth = aggregate.Metadata["ram_bandwidth"]
+	stack.config.HostAggregate.RAM.Size = aggregate.Metadata["ram_size"]
+	stack.config.HostAggregate.RAM.Bandwidth = aggregate.Metadata["ram_bandwidth"]
 
 	serverOpts := servers.CreateOpts{
 		Name:             instanceName,

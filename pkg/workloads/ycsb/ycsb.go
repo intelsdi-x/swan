@@ -1,63 +1,64 @@
 package ycsb
 
 import (
-	"github.com/intelsdi-x/swan/pkg/executor"
-	"time"
-	"github.com/intelsdi-x/swan/pkg/conf"
-	"github.com/intelsdi-x/swan/pkg/workloads/redis"
 	"fmt"
+	"github.com/intelsdi-x/swan/pkg/conf"
+	"github.com/intelsdi-x/swan/pkg/executor"
+	"github.com/intelsdi-x/swan/pkg/workloads/redis"
 	"github.com/pkg/errors"
 	"strconv"
-	"github.com/cloudflare/cfssl/log"
+	"time"
 )
 
 const (
-	name = "YCSB"
-	defaultPathToBinary = "ycsb"
-	defaultWorkload = "com.yahoo.ycsb.workloads.CoreWorkload"
-	defaultWorkloadRecordCount = 100000
-	defaultWorkloadReadAllFields = true
-	defaultWorkloadReadProportion = "0.5"
-	defaultWorkloadUpdateProportion = "0.5"
-	defaultWorkloadScanProportion = "0.0"
-	defaultWorkloadInsertProportion = "0.0"
+	name                               = "YCSB"
+	defaultPathToBinary                = "ycsb"
+	defaultWorkload                    = "com.yahoo.ycsb.workloads.CoreWorkload"
+	defaultWorkloadRecordCount         = 100000
+	defaultWorkloadReadAllFields       = true
+	defaultWorkloadReadProportion      = "0.5"
+	defaultWorkloadUpdateProportion    = "0.5"
+	defaultWorkloadScanProportion      = "0.0"
+	defaultWorkloadInsertProportion    = "0.0"
 	defaultWorkloadRequestDistribution = "zipfian"
 )
 
 var (
-	PathFlag = conf.NewStringFlag("ycsb_path", "Path to YCSB binary file.", defaultPathToBinary)
-	WorkloadFlag = conf.NewStringFlag("ycsb_workload", "Name of YCSB workload", defaultWorkload)
-	WorkloadRecordCountFlag = conf.NewIntFlag("ycsb_workload_recordcount", "Workload record count.", defaultWorkloadRecordCount)
-	WorkloadReadAllFieldsFlag = conf.NewBoolFlag("ycsb_workload_readallfields", "Workload read all fields.", defaultWorkloadReadAllFields)
-	WorkloadReadProportionFlag = conf.NewStringFlag("ycsb_workload_readproportion", "Workload read proportion.", defaultWorkloadReadProportion)
-	WorkloadUpdateProportionFlag = conf.NewStringFlag("ycsb_workload_updateproportion", "Workload update proportion.", defaultWorkloadUpdateProportion)
-	WorkloadScanProportionFlag = conf.NewStringFlag("ycsb_workload_scanproportion", "Workload scan proportion.", defaultWorkloadScanProportion)
-	WorkloadInsertProportionFlag = conf.NewStringFlag("ycsb_workload_insertproportion", "Workload insert proportion.", defaultWorkloadInsertProportion)
+	PathFlag                        = conf.NewStringFlag("ycsb_path", "Path to YCSB binary file.", defaultPathToBinary)
+	WorkloadFlag                    = conf.NewStringFlag("ycsb_workload", "Name of YCSB workload", defaultWorkload)
+	WorkloadRecordCountFlag         = conf.NewIntFlag("ycsb_workload_recordcount", "Workload record count.", defaultWorkloadRecordCount)
+	WorkloadReadAllFieldsFlag       = conf.NewBoolFlag("ycsb_workload_readallfields", "Workload read all fields.", defaultWorkloadReadAllFields)
+	WorkloadReadProportionFlag      = conf.NewStringFlag("ycsb_workload_readproportion", "Workload read proportion.", defaultWorkloadReadProportion)
+	WorkloadUpdateProportionFlag    = conf.NewStringFlag("ycsb_workload_updateproportion", "Workload update proportion.", defaultWorkloadUpdateProportion)
+	WorkloadScanProportionFlag      = conf.NewStringFlag("ycsb_workload_scanproportion", "Workload scan proportion.", defaultWorkloadScanProportion)
+	WorkloadInsertProportionFlag    = conf.NewStringFlag("ycsb_workload_insertproportion", "Workload insert proportion.", defaultWorkloadInsertProportion)
 	WorkloadRequestDistributionFlag = conf.NewStringFlag("ycsb_workload_requestdistribution", "Workload request distribution.", defaultWorkloadRequestDistribution)
 )
 
 type ycsb struct {
 	executor executor.Executor
-	config Config
+	config   Config
 }
 
+// Config is a config for the YCSB.
 type Config struct {
-	PathToBinary 				string
-	RedisHost					string
-	RedisPort					int
-	RedisClusterMode			bool // Redis cluster mode.
-	Workload					string
-	WorkloadRecordCount			int
-	WorkloadOperationCount		int64
-	WorkloadReadAllFields		bool
-	WorkloadReadProportion		float64
-	WorkloadUpdateProportion	float64
-	WorkloadScanProportion		float64
-	WorkloadInsertProportion	float64
-	WorkloadRequestDistribution	string
-	workloadCommand				string
+	PathToBinary                string
+	RedisHost                   string
+	RedisPort                   int
+	RedisClusterMode            bool // Redis cluster mode.
+	Workload                    string
+	WorkloadRecordCount         int
+	WorkloadOperationCount      int64
+	WorkloadReadAllFields       bool
+	WorkloadReadProportion      float64
+	WorkloadUpdateProportion    float64
+	WorkloadScanProportion      float64
+	WorkloadInsertProportion    float64
+	WorkloadRequestDistribution string
+	workloadCommand             string
 }
 
+// DefaultYcsbConfig is a constructor for YcsbConfig with default parameters.
 func DefaultYcsbConfig() Config {
 
 	workloadReadProportion, err := strconv.ParseFloat(WorkloadReadProportionFlag.Value(), 64)
@@ -81,28 +82,27 @@ func DefaultYcsbConfig() Config {
 	}
 
 	return Config{
-		PathToBinary: 					PathFlag.Value(),
-		RedisHost:						redis.IPFlag.Value(),
-		RedisPort:						redis.PortFlag.Value(),
-		RedisClusterMode:				redis.ClusterFlag.Value(),
-		Workload:						WorkloadFlag.Value(),
-		WorkloadRecordCount: 			WorkloadRecordCountFlag.Value(),
-		WorkloadReadAllFields: 			WorkloadReadAllFieldsFlag.Value(),
-		WorkloadReadProportion:			workloadReadProportion,
-		WorkloadUpdateProportion:		workloadUpdateProportion,
-		WorkloadScanProportion:			workloadScanProportion,
-		WorkloadInsertProportion:		workloadInsertProportion,
-		WorkloadRequestDistribution:	WorkloadRequestDistributionFlag.Value(),
+		PathToBinary:                PathFlag.Value(),
+		RedisHost:                   redis.IPFlag.Value(),
+		RedisPort:                   redis.PortFlag.Value(),
+		RedisClusterMode:            redis.ClusterFlag.Value(),
+		Workload:                    WorkloadFlag.Value(),
+		WorkloadRecordCount:         WorkloadRecordCountFlag.Value(),
+		WorkloadReadAllFields:       WorkloadReadAllFieldsFlag.Value(),
+		WorkloadReadProportion:      workloadReadProportion,
+		WorkloadUpdateProportion:    workloadUpdateProportion,
+		WorkloadScanProportion:      workloadScanProportion,
+		WorkloadInsertProportion:    workloadInsertProportion,
+		WorkloadRequestDistribution: WorkloadRequestDistributionFlag.Value(),
 	}
 }
 
 func New(exec executor.Executor, config Config) executor.LoadGenerator {
 	return ycsb{
 		executor: exec,
-		config: config,
+		config:   config,
 	}
 }
-
 
 func (y ycsb) String() string {
 	return name
@@ -135,7 +135,7 @@ func (y ycsb) Populate() (err error) {
 
 // TODO: Implementation
 func (y ycsb) Tune(slo int) (qps int, achievedSLI int, err error) {
-	return 0,0,nil
+	return 0, 0, nil
 }
 
 func (y ycsb) Load(qps int, duration time.Duration) (executor.TaskHandle, error) {

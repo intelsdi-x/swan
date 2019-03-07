@@ -1,13 +1,14 @@
 package ycsb
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
+// CalculateWorkloadCommandParameters parses parameters from config and creates command.
 func CalculateWorkloadCommandParameters(qps int, duration time.Duration, config *Config) {
 
-	config.WorkloadOperationCount= int64(qps) * int64(duration.Seconds())
+	config.WorkloadOperationCount = int64(qps) * int64(duration.Seconds())
 
 	config.workloadCommand = fmt.Sprint(
 		fmt.Sprintf(" -p redis.host=%s", config.RedisHost),

@@ -27,7 +27,9 @@ const (
 )
 
 var (
+	// PortFlag return port which will be specified for workload services as endpoints.
 	PortFlag          = conf.NewIntFlag("redis_port", "Port of Redis to listen on. (--port)", defaultPort)
+	// PathFlag return path to Redis file.
 	PathFlag          = conf.NewStringFlag("redis_path", "Path to Redis binary file.", defaultPathToBinary)
 	IPFlag            = conf.NewStringFlag("redis_listening_address", "Ip address of interface that Redis will be listening on. It must be actual device address, not '0.0.0.0'.", defaultListenIP)
 	MaxMemoryFlag     = conf.NewStringFlag("redis_max_memory", "Maximum memory in Bytes to use for items in bytes. (--maxmemory)", defaultMaxMemory)
@@ -39,6 +41,7 @@ var (
 	IsolateFlag       = conf.NewBoolFlag("redis_isolate", "Run Redis server in new namespace pid", defaultIsolate)
 )
 
+// Config is a config for the Redis data caching application.
 type Config struct {
 	PathToBinary  string
 	Port          int
@@ -85,7 +88,7 @@ func New(exec executor.Executor, config Config) Redis {
 	}
 }
 
-// Launches Redis server.
+// Launch launches Redis server.
 func (r Redis) Launch() (executor.TaskHandle, error) {
 
 	command := r.buildCommand()
