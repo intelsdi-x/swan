@@ -130,8 +130,6 @@ func (y ycsb) Populate() (err error) {
 		return errors.Errorf("Redis population exited with code: %d on command: %s", exitCode, populateCmd)
 	}
 
-	log.Infof("Redis population exited with code: %d on command: %s", exitCode, populateCmd)
-
 	return nil
 }
 
