@@ -11,36 +11,34 @@ import (
 )
 
 const (
-	TypeBigdata    = "bigdata"
-	TypeCaching    = "caching"
-	TypeOltp       = "oltp"
-	TypeScience    = "science"
-	TypeStreaming  = "streaming"
-	TypeWebserving = "webserving"
+	typeBigdata    = "bigdata"
+	typeCaching    = "caching"
+	typeOltp       = "oltp"
+	typeScience    = "science"
+	typeStreaming  = "streaming"
+	typeWebserving = "webserving"
 )
 
 var (
-	experimentID     string
 	snapStartCommand = "systemctl restart snap-telemetry"
 	aggressorAddress = conf.NewStringFlag("aggressor_address", "IP address of aggressor node.", "127.0.0.0")
 )
 
-func Initialize(experimentId string) {
-	experimentID = experimentId
+// RunCollectingMetrics runs metric gathering experiment for each type of workload.
+func RunCollectingMetrics(experimentID string) {
+	CollectingMetricsForCachingWorkload(experimentID)
 }
 
-func RunCollectingMetrics() {
-	CollectingMetricsForCachingWorkload()
-}
-
-func RunWorkloadsClassification() []string {
+// RunWorkloadsClassification runs classification experiment for each type of workload. Return instances id.
+func RunWorkloadsClassification(experimentID string) []string {
 	var instances []string
 
-	instances = append(instances, ClassifyCachingWorkload())
+	instances = append(instances, ClassifyCachingWorkload(experimentID))
 
 	return instances
 }
 
+// StartSnapService starts Snap Telemetry Framework.
 func StartSnapService(address string) error {
 
 	startSnapExecutor, err := executor.NewRemoteFromIP(address)
@@ -65,6 +63,7 @@ func StartSnapService(address string) error {
 	return nil
 }
 
+// GetInstanceCgroup provides cgroup of libvirt instance.
 func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) (string, error) {
 
 	conn, err := libvirt.NewConnectReadOnly("qemu+ssh://root@" + hypervisorAddress + "/system")
@@ -78,19 +77,20 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 		return "", fmt.Errorf("couldn't get instance domain: %v", err)
 	}
 
-	instanceId, err := domain.GetID()
+	instanceID, err := domain.GetID()
 	if err != nil {
 		return "", fmt.Errorf("couldn't get instance domain id: %v", err)
 	}
 
 	instanceName := strings.Replace(hypervisorInstanceName, "-", `\x2d`, -1)
 
-	cgroup := "machine.slice:machine-qemu" + `\x2d` + fmt.Sprint(instanceId) + `\x2d` + instanceName + ".scope"
+	cgroup := "machine.slice:machine-qemu" + `\x2d` + fmt.Sprint(instanceID) + `\x2d` + instanceName + ".scope"
 
 	return cgroup, nil
 }
 
-func PrepareDefaultKricoTags(openStackConfig executor.OpenstackConfig) map[string]interface{} {
+// PrepareDefaultKricoTags returns struct with default tags needed in KRICO experiment.
+func PrepareDefaultKricoTags(openStackConfig executor.OpenstackConfig, experimentID string) map[string]interface{} {
 	return map[string]interface{}{
 		experiment.ExperimentKey: experimentID,
 		"name":                            openStackConfig.Name,
@@ -104,9 +104,9 @@ func PrepareDefaultKricoTags(openStackConfig executor.OpenstackConfig) map[strin
 		"host_aggregate_configuration_id": openStackConfig.HostAggregate.ConfigurationID,
 		"host_aggregate_disk_iops":        openStackConfig.HostAggregate.Disk.Iops,
 		"host_aggregate_disk_size":        openStackConfig.HostAggregate.Disk.Size,
-		"host_aggregate_ram_bandwidth":    openStackConfig.HostAggregate.Ram.Bandwidth,
-		"host_aggregate_ram_size":         openStackConfig.HostAggregate.Ram.Size,
-		"host_aggregate_cpu_performance":  openStackConfig.HostAggregate.Cpu.Performance,
-		"host_aggregate_cpu_threads":      openStackConfig.HostAggregate.Cpu.Threads,
+		"host_aggregate_ram_bandwidth":    openStackConfig.HostAggregate.RAM.Bandwidth,
+		"host_aggregate_ram_size":         openStackConfig.HostAggregate.RAM.Size,
+		"host_aggregate_cpu_performance":  openStackConfig.HostAggregate.CPU.Performance,
+		"host_aggregate_cpu_threads":      openStackConfig.HostAggregate.CPU.Threads,
 	}
 }

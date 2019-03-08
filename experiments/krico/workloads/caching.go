@@ -13,7 +13,8 @@ import (
 	"strconv"
 )
 
-func CollectingMetricsForCachingWorkload() {
+// CollectingMetricsForCachingWorkload runs metric gathering experiment for caching workload.
+func CollectingMetricsForCachingWorkload(experimentID string) {
 
 	//	Load OpenStack authentication variables from environment.
 	auth, err := openstack.AuthOptionsFromEnv()
@@ -90,8 +91,8 @@ func CollectingMetricsForCachingWorkload() {
 
 	//	Configure task.
 	snapTaskConfig := kricosnapsession.DefaultConfig(cgroup, workloadExecutorConfig.Hypervisor.InstanceName)
-	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig)
-	snapTaskConfig.Tags["category"] = TypeCaching
+	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig, experimentID)
+	snapTaskConfig.Tags["category"] = typeCaching
 	snapTaskConfig.Tags["memory"] = strconv.FormatFloat(memory, 'f', -1, 64)
 	snapTaskConfig.Tags["ratio"] = strconv.FormatFloat(ratio, 'f', -1, 64)
 	snapTaskConfig.Tags["clients"] = strconv.FormatFloat(clients, 'f', -1, 64)
@@ -122,7 +123,8 @@ func CollectingMetricsForCachingWorkload() {
 	loadGeneratorHandle.Wait(0)
 }
 
-func ClassifyCachingWorkload() string {
+// ClassifyCachingWorkload runs classify experiment for caching workload.
+func ClassifyCachingWorkload(experimentID string) string {
 
 	//	Load OpenStack authentication variables from environment.
 	auth, err := openstack.AuthOptionsFromEnv()
@@ -185,7 +187,7 @@ func ClassifyCachingWorkload() string {
 	errutil.CheckWithContext(err, "Cannot obtain workload instance cgroup !")
 
 	snapTaskConfig := kricosnapsession.DefaultConfig(cgroup, workloadExecutorConfig.Hypervisor.InstanceName)
-	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig)
+	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig, experimentID)
 
 	//	Prepare launcher.
 	snapTaskLauncher, err := kricosnapsession.NewSessionLauncher(snapTaskConfig)

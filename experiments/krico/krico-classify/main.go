@@ -35,7 +35,7 @@ import (
 
 var (
 	appName         = os.Args[0]
-	kricoApiAddress = conf.NewStringFlag("krico_api_address", "Ip address of KRICO API service.", "localhost:5000")
+	kricoAPIAddress = conf.NewStringFlag("krico_api_address", "Ip address of KRICO API service.", "localhost:5000")
 )
 
 func main() {
@@ -61,11 +61,8 @@ func main() {
 	// Validate preconditions.
 	validate.OS()
 
-	// Initialize workloads.
-	workload.Initialize(experimentID)
-
 	// Run workloads.
-	instances := workload.RunWorkloadsClassification()
+	instances := workload.RunWorkloadsClassification(experimentID)
 
 	// Prepare metadata.
 	records := map[string]string{
@@ -79,7 +76,7 @@ func main() {
 	errutil.CheckWithContext(err, "Cannot save metadata in Cassandra Metadata Database")
 
 	// Connect to KRICO via gRPC to update metadata.
-	conn, err := grpc.Dial(kricoApiAddress.Value(), grpc.WithInsecure())
+	conn, err := grpc.Dial(kricoAPIAddress.Value(), grpc.WithInsecure())
 	errutil.CheckWithContext(err, "Cannot connect to KRICO!")
 
 	krico := api.NewApiClient(conn)

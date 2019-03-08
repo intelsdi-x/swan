@@ -28,17 +28,18 @@ const (
 
 var (
 	// PortFlag return port which will be specified for workload services as endpoints.
-	PortFlag          = conf.NewIntFlag("redis_port", "Port of Redis to listen on. (--port)", defaultPort)
-	// PathFlag return path to Redis file.
-	PathFlag          = conf.NewStringFlag("redis_path", "Path to Redis binary file.", defaultPathToBinary)
-	IPFlag            = conf.NewStringFlag("redis_listening_address", "Ip address of interface that Redis will be listening on. It must be actual device address, not '0.0.0.0'.", defaultListenIP)
-	MaxMemoryFlag     = conf.NewStringFlag("redis_max_memory", "Maximum memory in Bytes to use for items in bytes. (--maxmemory)", defaultMaxMemory)
+	PortFlag = conf.NewIntFlag("redis_port", "Port of Redis to listen on. (--port)", defaultPort)
+	// IPFlag return ip address of interface thath Redis will be listening on.
+	IPFlag = conf.NewStringFlag("redis_listening_address", "Ip address of interface that Redis will be listening on.", defaultListenIP)
+	// ClusterFlag is set when cluster mode is enabled.
 	ClusterFlag       = conf.NewBoolFlag("redis_cluster_mode", "Cluster mode parameter.", defaultClusterMode)
-	ProtectedModeFlag = conf.NewBoolFlag("redis_protected_mode", "Prodected mode parameter.", defaultProtectedMode)
-	TimeoutFlag       = conf.NewIntFlag("redis_timeout", "Maximum wait time for start Redis in seconds.", defaultTimeout)
-	DaemonizeFlag     = conf.NewBoolFlag("redis_daemonize", "Daemonize Redis server", defaultDaemonize)
-	SudoFlag          = conf.NewBoolFlag("redis_sudo", "Run Redis server in sudo", defaultSudo)
-	IsolateFlag       = conf.NewBoolFlag("redis_isolate", "Run Redis server in new namespace pid", defaultIsolate)
+	pathFlag          = conf.NewStringFlag("redis_path", "Path to Redis binary file.", defaultPathToBinary)
+	maxMemoryFlag     = conf.NewStringFlag("redis_max_memory", "Maximum memory in Bytes to use for items in bytes. (--maxmemory)", defaultMaxMemory)
+	protectedModeFlag = conf.NewBoolFlag("redis_protected_mode", "Prodected mode parameter.", defaultProtectedMode)
+	timeoutFlag       = conf.NewIntFlag("redis_timeout", "Maximum wait time for start Redis in seconds.", defaultTimeout)
+	daemonizeFlag     = conf.NewBoolFlag("redis_daemonize", "Daemonize Redis server", defaultDaemonize)
+	sudoFlag          = conf.NewBoolFlag("redis_sudo", "Run Redis server in sudo", defaultSudo)
+	isolateFlag       = conf.NewBoolFlag("redis_isolate", "Run Redis server in new namespace pid", defaultIsolate)
 )
 
 // Config is a config for the Redis data caching application.
@@ -58,16 +59,16 @@ type Config struct {
 // DefaultConfig is a contructor for Config with default parameters.
 func DefaultConfig() Config {
 	return Config{
-		PathToBinary:  PathFlag.Value(),
+		PathToBinary:  pathFlag.Value(),
 		Port:          PortFlag.Value(),
 		IP:            IPFlag.Value(),
-		MaxMemory:     MaxMemoryFlag.Value(),
+		MaxMemory:     maxMemoryFlag.Value(),
 		ClusterMode:   ClusterFlag.Value(),
-		ProtectedMode: ProtectedModeFlag.Value(),
-		Timeout:       TimeoutFlag.Value(),
-		Daemonize:     DaemonizeFlag.Value(),
-		Sudo:          SudoFlag.Value(),
-		Isolate:       IsolateFlag.Value(),
+		ProtectedMode: protectedModeFlag.Value(),
+		Timeout:       timeoutFlag.Value(),
+		Daemonize:     daemonizeFlag.Value(),
+		Sudo:          sudoFlag.Value(),
+		Isolate:       isolateFlag.Value(),
 	}
 }
 
@@ -111,7 +112,7 @@ func (r Redis) Launch() (executor.TaskHandle, error) {
 	return task, nil
 }
 
-// Return name of workload.
+// String return name of workload.
 func (r Redis) String() string {
 	return name
 }
