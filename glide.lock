@@ -1,5 +1,5 @@
-hash: ddfa3918e2d43068750237222828c68ac088c8354d27e72c4435b507a4ba9521
-updated: 2018-12-18T11:36:35.641428125+01:00
+hash: 32afd5e8fb2fe662e168e801d87c25b5b42939a8c9491b8cc9e293e2667ab341
+updated: 2019-03-08T15:46:15.03686537+01:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -77,8 +77,10 @@ imports:
   version: 3a5f2b6741320bd44cff57dcfd03400d1ef905e7
   subpackages:
   - openstack
+  - openstack/compute/v2/extensions/aggregates
   - openstack/compute/v2/extensions/extendedserverattributes
   - openstack/compute/v2/extensions/floatingips
+  - openstack/compute/v2/extensions/hypervisors
   - openstack/compute/v2/extensions/keypairs
   - openstack/compute/v2/extensions/startstop
   - openstack/compute/v2/flavors
@@ -112,7 +114,7 @@ imports:
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/influxdata/influxdb
-  version: 4e4e00bc5ab85a3ff5e988c91020cf0399a87026
+  version: 30832fc132de11e395c1b59dc6bfeb764439b56c
   subpackages:
   - client/v2
   - models
@@ -163,7 +165,7 @@ imports:
 - name: github.com/julienschmidt/httprouter
   version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
 - name: github.com/libvirt/libvirt-go
-  version: fcf300cf5543bbd7fb57e08b38ad519c910b59c4
+  version: 990578ed5e26b53ee5bdfb6f2c5a099dc3eff4ad
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -171,7 +173,7 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+  version: ba968bfe8b2f7e042a574c888954fccecfa385b4
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
@@ -221,7 +223,7 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: 505ab145d0a99da450461ae2c1a9f6cd10d1f447
+  version: 8dd112bcdc25174059e45e07517d9fc663123347
   subpackages:
   - cast5
   - curve25519
@@ -239,7 +241,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: e147a9138326bc0e9d4e179541ffd8af41cff8a9
+  version: 16b79f2e4e95ea23b2bf9903c9809ff7b013ce85
   subpackages:
   - context
   - http/httpguts
@@ -249,12 +251,13 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: dcdaa6325bcb8d3c07805583fe12153f08a41e2b
+  version: 584f3b12f43e1e55248c90e84804777009eed0a4
   subpackages:
+  - cpu
   - unix
   - windows
 - name: golang.org/x/text
-  version: 17bcc049122f272a32787ba38073ee47433023e9
+  version: 5d731a35f4867878fc89f7744f7b6debb3beded6
   subpackages:
   - cases
   - internal
