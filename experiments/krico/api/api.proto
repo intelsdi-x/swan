@@ -8,7 +8,7 @@ service Api {
     rpc RefreshInstances (RefreshInstancesRequest) returns (RefreshInstancesResponse) {}
     rpc WorkloadsCategories (WorkloadsCategoriesRequest) returns (WorkloadsCategoriesResponse) {}
     rpc ImportMetricsFromSwanExperiment (ImportMetricsFromSwanExperimentRequest) returns (ImportMetricsFromSwanExperimentResponse) {}
-    rpc ImportMonitorSamplesFromSwanExperiment (ImportMonitorSamplesFromSwanExperimentRequest) returns (ImportMonitorSamplesFromSwanExperimentResponse) {}
+    rpc ImportSamplesFromSwanExperiment (ImportSamplesFromSwanExperimentRequest) returns (ImportSamplesFromSwanExperimentResponse) {}
 }
 
 message ClassifyRequest {
@@ -82,10 +82,10 @@ message ImportMetricsFromSwanExperimentResponse {
 
 }
 
-message ImportMonitorSamplesFromSwanExperimentRequest {
+message ImportSamplesFromSwanExperimentRequest {
     string experiment_id=1;
 }
 
-message ImportMonitorSamplesFromSwanExperimentResponse {
+message ImportSamplesFromSwanExperimentResponse {
 
 }

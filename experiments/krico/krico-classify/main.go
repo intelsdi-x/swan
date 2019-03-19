@@ -81,7 +81,7 @@ func main() {
 
 	krico := api.NewApiClient(conn)
 
-	_, err = krico.ImportMonitorSamplesFromSwanExperiment(context.Background(), &api.ImportMonitorSamplesFromSwanExperimentRequest{ExperimentId: experimentID})
+	_, err = krico.ImportSamplesFromSwanExperiment(context.Background(), &api.ImportSamplesFromSwanExperimentRequest{ExperimentId: experimentID})
 	errutil.CheckWithContext(err, "Cannot send request to KRICO for importing monitor samples!")
 	log.Infof("Monitor samples imported!")
 

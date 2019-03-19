@@ -64,6 +64,6 @@ import:
   - mock
 - package: github.com/gophercloud/gophercloud
 - package: google.golang.org/grpc
-  version: ~1.17.0
+  version: ~1.8.0
 - package: github.com/libvirt/libvirt-go
   version: v5.1.0

@@ -1,5 +1,5 @@
-hash: 32afd5e8fb2fe662e168e801d87c25b5b42939a8c9491b8cc9e293e2667ab341
-updated: 2019-03-08T15:46:15.03686537+01:00
+hash: 3210054eff1ee5439dcb2088bb8f19ebd6b6f8c6e3310e24c27f7111fbd0be9b
+updated: 2019-03-18T18:36:47.750655747+01:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -223,7 +223,7 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: 8dd112bcdc25174059e45e07517d9fc663123347
+  version: a1f597ede03a7bef967a422b5b3a5bd08805a01e
   subpackages:
   - cast5
   - curve25519
@@ -241,7 +241,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 16b79f2e4e95ea23b2bf9903c9809ff7b013ce85
+  version: 9f648a60d9775ef5c977e7669d1673a7a67bef33
   subpackages:
   - context
   - http/httpguts
@@ -251,7 +251,7 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 584f3b12f43e1e55248c90e84804777009eed0a4
+  version: a2f829d7f35f2ed1c3520c553a6226495455cae0
   subpackages:
   - cpu
   - unix
@@ -277,28 +277,17 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: ""
+  version: e687fa4e6424368ece6e4fe727cea2c806a0fcb4
   subpackages:
   - balancer
-  - balancer/base
   - balancer/roundrobin
-  - binarylog/grpc_binarylog_v1
   - codes
   - connectivity
   - credentials
-  - credentials/internal
   - encoding
-  - encoding/proto
+  - grpclb/grpc_lb_v1/messages
   - grpclog
   - internal
-  - internal/backoff
-  - internal/binarylog
-  - internal/channelz
-  - internal/envconfig
-  - internal/grpcrand
-  - internal/grpcsync
-  - internal/syscall
-  - internal/transport
   - keepalive
   - metadata
   - naming
@@ -309,6 +298,7 @@ imports:
   - stats
   - status
   - tap
+  - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2

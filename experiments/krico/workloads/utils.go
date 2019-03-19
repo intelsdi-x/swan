@@ -2,21 +2,17 @@ package workload
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/intelsdi-x/swan/pkg/conf"
 	"github.com/intelsdi-x/swan/pkg/executor"
 	"github.com/intelsdi-x/swan/pkg/experiment"
 	"github.com/libvirt/libvirt-go"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 const (
-	typeBigdata    = "bigdata"
-	typeCaching    = "caching"
-	typeOltp       = "oltp"
-	typeScience    = "science"
-	typeStreaming  = "streaming"
-	typeWebserving = "webserving"
+	typeCaching = "caching"
 )
 
 var (
