@@ -7,8 +7,8 @@ go:
 - "1.10.8"
 install:
 - PATH=/usr/lib/ccache:$PATH
-- sudo apt-get install bash gcc
-- make glide linter 
+- sudo apt-get install bash gcc libvirt-dev
+- make glide linter
 script: 
 - make test_lint
 - make test_unit 
