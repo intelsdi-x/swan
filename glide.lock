@@ -1,5 +1,5 @@
-hash: 3210054eff1ee5439dcb2088bb8f19ebd6b6f8c6e3310e24c27f7111fbd0be9b
-updated: 2019-03-18T18:36:47.750655747+01:00
+hash: 72f3bffec03e54ab0f476f7c7d8e25c8fb3a63c7b0c47db94451a78562ecfdbd
+updated: 2019-03-20T11:25:31.650354903+01:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -62,13 +62,10 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
+  version: b5d812f8a3706043e23a9cd5babf2e5423744d30
   subpackages:
   - proto
-  - ptypes
   - ptypes/any
-  - ptypes/duration
-  - ptypes/timestamp
 - name: github.com/golang/snappy
   version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
 - name: github.com/google/gofuzz
@@ -241,7 +238,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 9f648a60d9775ef5c977e7669d1673a7a67bef33
+  version: 1272bf9dcd53ea65c09668fb4c76e65deb740072
   subpackages:
   - context
   - http/httpguts
@@ -251,9 +248,10 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: a2f829d7f35f2ed1c3520c553a6226495455cae0
+  version: 6c81ef8f67ca3f42fc9cd71dfbd5f35b0c4b5771
   subpackages:
   - cpu
+  - uni
   - unix
   - windows
 - name: golang.org/x/text
@@ -277,24 +275,18 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: e687fa4e6424368ece6e4fe727cea2c806a0fcb4
+  version: b3ddf786825de56a4178401b7e174ee332173b66
   subpackages:
-  - balancer
-  - balancer/roundrobin
   - codes
   - connectivity
   - credentials
-  - encoding
-  - grpclb/grpc_lb_v1/messages
+  - grpclb/grpc_lb_v1
   - grpclog
   - internal
   - keepalive
   - metadata
   - naming
   - peer
-  - resolver
-  - resolver/dns
-  - resolver/passthrough
   - stats
   - status
   - tap

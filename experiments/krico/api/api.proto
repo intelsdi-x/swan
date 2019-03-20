@@ -29,7 +29,7 @@ message PredictRequirements {
 message PredictRequest {
     string category = 1;
     string image = 2;
-    repeated string parameters = 3;
+    map<string, double> parameters = 3;
     string host_aggregate = 4;
     string allocation = 5;
 }

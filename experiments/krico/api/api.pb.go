@@ -3,12 +3,13 @@
 
 package api
 
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+
 import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -23,7 +24,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ClassifyRequest struct {
-	InstanceId           string   `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	InstanceId           string   `protobuf:"bytes,1,opt,name=instance_id,json=instanceId" json:"instance_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -33,17 +34,16 @@ func (m *ClassifyRequest) Reset()         { *m = ClassifyRequest{} }
 func (m *ClassifyRequest) String() string { return proto.CompactTextString(m) }
 func (*ClassifyRequest) ProtoMessage()    {}
 func (*ClassifyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{0}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{0}
 }
-
 func (m *ClassifyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClassifyRequest.Unmarshal(m, b)
 }
 func (m *ClassifyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ClassifyRequest.Marshal(b, m, deterministic)
 }
-func (m *ClassifyRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyRequest.Merge(m, src)
+func (dst *ClassifyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyRequest.Merge(dst, src)
 }
 func (m *ClassifyRequest) XXX_Size() int {
 	return xxx_messageInfo_ClassifyRequest.Size(m)
@@ -62,7 +62,7 @@ func (m *ClassifyRequest) GetInstanceId() string {
 }
 
 type ClassifyResponse struct {
-	ClassifiedAs         string   `protobuf:"bytes,1,opt,name=classified_as,json=classifiedAs,proto3" json:"classified_as,omitempty"`
+	ClassifiedAs         string   `protobuf:"bytes,1,opt,name=classified_as,json=classifiedAs" json:"classified_as,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -72,17 +72,16 @@ func (m *ClassifyResponse) Reset()         { *m = ClassifyResponse{} }
 func (m *ClassifyResponse) String() string { return proto.CompactTextString(m) }
 func (*ClassifyResponse) ProtoMessage()    {}
 func (*ClassifyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{1}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{1}
 }
-
 func (m *ClassifyResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClassifyResponse.Unmarshal(m, b)
 }
 func (m *ClassifyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ClassifyResponse.Marshal(b, m, deterministic)
 }
-func (m *ClassifyResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyResponse.Merge(m, src)
+func (dst *ClassifyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyResponse.Merge(dst, src)
 }
 func (m *ClassifyResponse) XXX_Size() int {
 	return xxx_messageInfo_ClassifyResponse.Size(m)
@@ -101,10 +100,10 @@ func (m *ClassifyResponse) GetClassifiedAs() string {
 }
 
 type PredictRequirements struct {
-	CpuThreads           float64  `protobuf:"fixed64,1,opt,name=cpu_threads,json=cpuThreads,proto3" json:"cpu_threads,omitempty"`
-	DiskIops             float64  `protobuf:"fixed64,2,opt,name=disk_iops,json=diskIops,proto3" json:"disk_iops,omitempty"`
-	NetworkBandwidth     float64  `protobuf:"fixed64,3,opt,name=network_bandwidth,json=networkBandwidth,proto3" json:"network_bandwidth,omitempty"`
-	RamSize              float64  `protobuf:"fixed64,4,opt,name=ram_size,json=ramSize,proto3" json:"ram_size,omitempty"`
+	CpuThreads           float64  `protobuf:"fixed64,1,opt,name=cpu_threads,json=cpuThreads" json:"cpu_threads,omitempty"`
+	DiskIops             float64  `protobuf:"fixed64,2,opt,name=disk_iops,json=diskIops" json:"disk_iops,omitempty"`
+	NetworkBandwidth     float64  `protobuf:"fixed64,3,opt,name=network_bandwidth,json=networkBandwidth" json:"network_bandwidth,omitempty"`
+	RamSize              float64  `protobuf:"fixed64,4,opt,name=ram_size,json=ramSize" json:"ram_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -114,17 +113,16 @@ func (m *PredictRequirements) Reset()         { *m = PredictRequirements{} }
 func (m *PredictRequirements) String() string { return proto.CompactTextString(m) }
 func (*PredictRequirements) ProtoMessage()    {}
 func (*PredictRequirements) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{2}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{2}
 }
-
 func (m *PredictRequirements) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PredictRequirements.Unmarshal(m, b)
 }
 func (m *PredictRequirements) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PredictRequirements.Marshal(b, m, deterministic)
 }
-func (m *PredictRequirements) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PredictRequirements.Merge(m, src)
+func (dst *PredictRequirements) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PredictRequirements.Merge(dst, src)
 }
 func (m *PredictRequirements) XXX_Size() int {
 	return xxx_messageInfo_PredictRequirements.Size(m)
@@ -164,31 +162,30 @@ func (m *PredictRequirements) GetRamSize() float64 {
 }
 
 type PredictRequest struct {
-	Category             string   `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
-	Image                string   `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
-	Parameters           []string `protobuf:"bytes,3,rep,name=parameters,proto3" json:"parameters,omitempty"`
-	HostAggregate        string   `protobuf:"bytes,4,opt,name=host_aggregate,json=hostAggregate,proto3" json:"host_aggregate,omitempty"`
-	Allocation           string   `protobuf:"bytes,5,opt,name=allocation,proto3" json:"allocation,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Category             string             `protobuf:"bytes,1,opt,name=category" json:"category,omitempty"`
+	Image                string             `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
+	Parameters           map[string]float64 `protobuf:"bytes,3,rep,name=parameters" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
+	HostAggregate        string             `protobuf:"bytes,4,opt,name=host_aggregate,json=hostAggregate" json:"host_aggregate,omitempty"`
+	Allocation           string             `protobuf:"bytes,5,opt,name=allocation" json:"allocation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *PredictRequest) Reset()         { *m = PredictRequest{} }
 func (m *PredictRequest) String() string { return proto.CompactTextString(m) }
 func (*PredictRequest) ProtoMessage()    {}
 func (*PredictRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{3}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{3}
 }
-
 func (m *PredictRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PredictRequest.Unmarshal(m, b)
 }
 func (m *PredictRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PredictRequest.Marshal(b, m, deterministic)
 }
-func (m *PredictRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PredictRequest.Merge(m, src)
+func (dst *PredictRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PredictRequest.Merge(dst, src)
 }
 func (m *PredictRequest) XXX_Size() int {
 	return xxx_messageInfo_PredictRequest.Size(m)
@@ -213,7 +210,7 @@ func (m *PredictRequest) GetImage() string {
 	return ""
 }
 
-func (m *PredictRequest) GetParameters() []string {
+func (m *PredictRequest) GetParameters() map[string]float64 {
 	if m != nil {
 		return m.Parameters
 	}
@@ -235,7 +232,7 @@ func (m *PredictRequest) GetAllocation() string {
 }
 
 type PredictResponse struct {
-	Requirements         []*PredictRequirements `protobuf:"bytes,1,rep,name=requirements,proto3" json:"requirements,omitempty"`
+	Requirements         []*PredictRequirements `protobuf:"bytes,1,rep,name=requirements" json:"requirements,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -245,17 +242,16 @@ func (m *PredictResponse) Reset()         { *m = PredictResponse{} }
 func (m *PredictResponse) String() string { return proto.CompactTextString(m) }
 func (*PredictResponse) ProtoMessage()    {}
 func (*PredictResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{4}
 }
-
 func (m *PredictResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PredictResponse.Unmarshal(m, b)
 }
 func (m *PredictResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PredictResponse.Marshal(b, m, deterministic)
 }
-func (m *PredictResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PredictResponse.Merge(m, src)
+func (dst *PredictResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PredictResponse.Merge(dst, src)
 }
 func (m *PredictResponse) XXX_Size() int {
 	return xxx_messageInfo_PredictResponse.Size(m)
@@ -283,17 +279,16 @@ func (m *RefreshClassifierRequest) Reset()         { *m = RefreshClassifierReque
 func (m *RefreshClassifierRequest) String() string { return proto.CompactTextString(m) }
 func (*RefreshClassifierRequest) ProtoMessage()    {}
 func (*RefreshClassifierRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{5}
 }
-
 func (m *RefreshClassifierRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshClassifierRequest.Unmarshal(m, b)
 }
 func (m *RefreshClassifierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshClassifierRequest.Marshal(b, m, deterministic)
 }
-func (m *RefreshClassifierRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshClassifierRequest.Merge(m, src)
+func (dst *RefreshClassifierRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshClassifierRequest.Merge(dst, src)
 }
 func (m *RefreshClassifierRequest) XXX_Size() int {
 	return xxx_messageInfo_RefreshClassifierRequest.Size(m)
@@ -314,17 +309,16 @@ func (m *RefreshClassifierResponse) Reset()         { *m = RefreshClassifierResp
 func (m *RefreshClassifierResponse) String() string { return proto.CompactTextString(m) }
 func (*RefreshClassifierResponse) ProtoMessage()    {}
 func (*RefreshClassifierResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{6}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{6}
 }
-
 func (m *RefreshClassifierResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshClassifierResponse.Unmarshal(m, b)
 }
 func (m *RefreshClassifierResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshClassifierResponse.Marshal(b, m, deterministic)
 }
-func (m *RefreshClassifierResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshClassifierResponse.Merge(m, src)
+func (dst *RefreshClassifierResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshClassifierResponse.Merge(dst, src)
 }
 func (m *RefreshClassifierResponse) XXX_Size() int {
 	return xxx_messageInfo_RefreshClassifierResponse.Size(m)
@@ -345,17 +339,16 @@ func (m *RefreshPredictorRequest) Reset()         { *m = RefreshPredictorRequest
 func (m *RefreshPredictorRequest) String() string { return proto.CompactTextString(m) }
 func (*RefreshPredictorRequest) ProtoMessage()    {}
 func (*RefreshPredictorRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{7}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{7}
 }
-
 func (m *RefreshPredictorRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshPredictorRequest.Unmarshal(m, b)
 }
 func (m *RefreshPredictorRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshPredictorRequest.Marshal(b, m, deterministic)
 }
-func (m *RefreshPredictorRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshPredictorRequest.Merge(m, src)
+func (dst *RefreshPredictorRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshPredictorRequest.Merge(dst, src)
 }
 func (m *RefreshPredictorRequest) XXX_Size() int {
 	return xxx_messageInfo_RefreshPredictorRequest.Size(m)
@@ -376,17 +369,16 @@ func (m *RefreshPredictorResponse) Reset()         { *m = RefreshPredictorRespon
 func (m *RefreshPredictorResponse) String() string { return proto.CompactTextString(m) }
 func (*RefreshPredictorResponse) ProtoMessage()    {}
 func (*RefreshPredictorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{8}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{8}
 }
-
 func (m *RefreshPredictorResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshPredictorResponse.Unmarshal(m, b)
 }
 func (m *RefreshPredictorResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshPredictorResponse.Marshal(b, m, deterministic)
 }
-func (m *RefreshPredictorResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshPredictorResponse.Merge(m, src)
+func (dst *RefreshPredictorResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshPredictorResponse.Merge(dst, src)
 }
 func (m *RefreshPredictorResponse) XXX_Size() int {
 	return xxx_messageInfo_RefreshPredictorResponse.Size(m)
@@ -407,17 +399,16 @@ func (m *RefreshInstancesRequest) Reset()         { *m = RefreshInstancesRequest
 func (m *RefreshInstancesRequest) String() string { return proto.CompactTextString(m) }
 func (*RefreshInstancesRequest) ProtoMessage()    {}
 func (*RefreshInstancesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{9}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{9}
 }
-
 func (m *RefreshInstancesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshInstancesRequest.Unmarshal(m, b)
 }
 func (m *RefreshInstancesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshInstancesRequest.Marshal(b, m, deterministic)
 }
-func (m *RefreshInstancesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshInstancesRequest.Merge(m, src)
+func (dst *RefreshInstancesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshInstancesRequest.Merge(dst, src)
 }
 func (m *RefreshInstancesRequest) XXX_Size() int {
 	return xxx_messageInfo_RefreshInstancesRequest.Size(m)
@@ -438,17 +429,16 @@ func (m *RefreshInstancesResponse) Reset()         { *m = RefreshInstancesRespon
 func (m *RefreshInstancesResponse) String() string { return proto.CompactTextString(m) }
 func (*RefreshInstancesResponse) ProtoMessage()    {}
 func (*RefreshInstancesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{10}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{10}
 }
-
 func (m *RefreshInstancesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefreshInstancesResponse.Unmarshal(m, b)
 }
 func (m *RefreshInstancesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefreshInstancesResponse.Marshal(b, m, deterministic)
 }
-func (m *RefreshInstancesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefreshInstancesResponse.Merge(m, src)
+func (dst *RefreshInstancesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefreshInstancesResponse.Merge(dst, src)
 }
 func (m *RefreshInstancesResponse) XXX_Size() int {
 	return xxx_messageInfo_RefreshInstancesResponse.Size(m)
@@ -460,8 +450,8 @@ func (m *RefreshInstancesResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RefreshInstancesResponse proto.InternalMessageInfo
 
 type WorkloadCategory struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Parameters           []string `protobuf:"bytes,2,rep,name=parameters,proto3" json:"parameters,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Parameters           []string `protobuf:"bytes,2,rep,name=parameters" json:"parameters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -471,17 +461,16 @@ func (m *WorkloadCategory) Reset()         { *m = WorkloadCategory{} }
 func (m *WorkloadCategory) String() string { return proto.CompactTextString(m) }
 func (*WorkloadCategory) ProtoMessage()    {}
 func (*WorkloadCategory) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{11}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{11}
 }
-
 func (m *WorkloadCategory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkloadCategory.Unmarshal(m, b)
 }
 func (m *WorkloadCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorkloadCategory.Marshal(b, m, deterministic)
 }
-func (m *WorkloadCategory) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WorkloadCategory.Merge(m, src)
+func (dst *WorkloadCategory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WorkloadCategory.Merge(dst, src)
 }
 func (m *WorkloadCategory) XXX_Size() int {
 	return xxx_messageInfo_WorkloadCategory.Size(m)
@@ -516,17 +505,16 @@ func (m *WorkloadsCategoriesRequest) Reset()         { *m = WorkloadsCategoriesR
 func (m *WorkloadsCategoriesRequest) String() string { return proto.CompactTextString(m) }
 func (*WorkloadsCategoriesRequest) ProtoMessage()    {}
 func (*WorkloadsCategoriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{12}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{12}
 }
-
 func (m *WorkloadsCategoriesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkloadsCategoriesRequest.Unmarshal(m, b)
 }
 func (m *WorkloadsCategoriesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorkloadsCategoriesRequest.Marshal(b, m, deterministic)
 }
-func (m *WorkloadsCategoriesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WorkloadsCategoriesRequest.Merge(m, src)
+func (dst *WorkloadsCategoriesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WorkloadsCategoriesRequest.Merge(dst, src)
 }
 func (m *WorkloadsCategoriesRequest) XXX_Size() int {
 	return xxx_messageInfo_WorkloadsCategoriesRequest.Size(m)
@@ -538,7 +526,7 @@ func (m *WorkloadsCategoriesRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_WorkloadsCategoriesRequest proto.InternalMessageInfo
 
 type WorkloadsCategoriesResponse struct {
-	WorkloadsCategories  []*WorkloadCategory `protobuf:"bytes,1,rep,name=workloads_categories,json=workloadsCategories,proto3" json:"workloads_categories,omitempty"`
+	WorkloadsCategories  []*WorkloadCategory `protobuf:"bytes,1,rep,name=workloads_categories,json=workloadsCategories" json:"workloads_categories,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -548,17 +536,16 @@ func (m *WorkloadsCategoriesResponse) Reset()         { *m = WorkloadsCategories
 func (m *WorkloadsCategoriesResponse) String() string { return proto.CompactTextString(m) }
 func (*WorkloadsCategoriesResponse) ProtoMessage()    {}
 func (*WorkloadsCategoriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{13}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{13}
 }
-
 func (m *WorkloadsCategoriesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkloadsCategoriesResponse.Unmarshal(m, b)
 }
 func (m *WorkloadsCategoriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorkloadsCategoriesResponse.Marshal(b, m, deterministic)
 }
-func (m *WorkloadsCategoriesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WorkloadsCategoriesResponse.Merge(m, src)
+func (dst *WorkloadsCategoriesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WorkloadsCategoriesResponse.Merge(dst, src)
 }
 func (m *WorkloadsCategoriesResponse) XXX_Size() int {
 	return xxx_messageInfo_WorkloadsCategoriesResponse.Size(m)
@@ -577,7 +564,7 @@ func (m *WorkloadsCategoriesResponse) GetWorkloadsCategories() []*WorkloadCatego
 }
 
 type ImportMetricsFromSwanExperimentRequest struct {
-	ExperimentId         string   `protobuf:"bytes,1,opt,name=experiment_id,json=experimentId,proto3" json:"experiment_id,omitempty"`
+	ExperimentId         string   `protobuf:"bytes,1,opt,name=experiment_id,json=experimentId" json:"experiment_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -589,17 +576,16 @@ func (m *ImportMetricsFromSwanExperimentRequest) Reset() {
 func (m *ImportMetricsFromSwanExperimentRequest) String() string { return proto.CompactTextString(m) }
 func (*ImportMetricsFromSwanExperimentRequest) ProtoMessage()    {}
 func (*ImportMetricsFromSwanExperimentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{14}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{14}
 }
-
 func (m *ImportMetricsFromSwanExperimentRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentRequest.Unmarshal(m, b)
 }
 func (m *ImportMetricsFromSwanExperimentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentRequest.Marshal(b, m, deterministic)
 }
-func (m *ImportMetricsFromSwanExperimentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportMetricsFromSwanExperimentRequest.Merge(m, src)
+func (dst *ImportMetricsFromSwanExperimentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportMetricsFromSwanExperimentRequest.Merge(dst, src)
 }
 func (m *ImportMetricsFromSwanExperimentRequest) XXX_Size() int {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentRequest.Size(m)
@@ -629,17 +615,16 @@ func (m *ImportMetricsFromSwanExperimentResponse) Reset() {
 func (m *ImportMetricsFromSwanExperimentResponse) String() string { return proto.CompactTextString(m) }
 func (*ImportMetricsFromSwanExperimentResponse) ProtoMessage()    {}
 func (*ImportMetricsFromSwanExperimentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{15}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{15}
 }
-
 func (m *ImportMetricsFromSwanExperimentResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentResponse.Unmarshal(m, b)
 }
 func (m *ImportMetricsFromSwanExperimentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentResponse.Marshal(b, m, deterministic)
 }
-func (m *ImportMetricsFromSwanExperimentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportMetricsFromSwanExperimentResponse.Merge(m, src)
+func (dst *ImportMetricsFromSwanExperimentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportMetricsFromSwanExperimentResponse.Merge(dst, src)
 }
 func (m *ImportMetricsFromSwanExperimentResponse) XXX_Size() int {
 	return xxx_messageInfo_ImportMetricsFromSwanExperimentResponse.Size(m)
@@ -651,7 +636,7 @@ func (m *ImportMetricsFromSwanExperimentResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_ImportMetricsFromSwanExperimentResponse proto.InternalMessageInfo
 
 type ImportSamplesFromSwanExperimentRequest struct {
-	ExperimentId         string   `protobuf:"bytes,1,opt,name=experiment_id,json=experimentId,proto3" json:"experiment_id,omitempty"`
+	ExperimentId         string   `protobuf:"bytes,1,opt,name=experiment_id,json=experimentId" json:"experiment_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -663,17 +648,16 @@ func (m *ImportSamplesFromSwanExperimentRequest) Reset() {
 func (m *ImportSamplesFromSwanExperimentRequest) String() string { return proto.CompactTextString(m) }
 func (*ImportSamplesFromSwanExperimentRequest) ProtoMessage()    {}
 func (*ImportSamplesFromSwanExperimentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{16}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{16}
 }
-
 func (m *ImportSamplesFromSwanExperimentRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentRequest.Unmarshal(m, b)
 }
 func (m *ImportSamplesFromSwanExperimentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentRequest.Marshal(b, m, deterministic)
 }
-func (m *ImportSamplesFromSwanExperimentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportSamplesFromSwanExperimentRequest.Merge(m, src)
+func (dst *ImportSamplesFromSwanExperimentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportSamplesFromSwanExperimentRequest.Merge(dst, src)
 }
 func (m *ImportSamplesFromSwanExperimentRequest) XXX_Size() int {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentRequest.Size(m)
@@ -703,17 +687,16 @@ func (m *ImportSamplesFromSwanExperimentResponse) Reset() {
 func (m *ImportSamplesFromSwanExperimentResponse) String() string { return proto.CompactTextString(m) }
 func (*ImportSamplesFromSwanExperimentResponse) ProtoMessage()    {}
 func (*ImportSamplesFromSwanExperimentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00212fb1f9d3bf1c, []int{17}
+	return fileDescriptor_api_b2d8a27eff8c14c8, []int{17}
 }
-
 func (m *ImportSamplesFromSwanExperimentResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentResponse.Unmarshal(m, b)
 }
 func (m *ImportSamplesFromSwanExperimentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentResponse.Marshal(b, m, deterministic)
 }
-func (m *ImportSamplesFromSwanExperimentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportSamplesFromSwanExperimentResponse.Merge(m, src)
+func (dst *ImportSamplesFromSwanExperimentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportSamplesFromSwanExperimentResponse.Merge(dst, src)
 }
 func (m *ImportSamplesFromSwanExperimentResponse) XXX_Size() int {
 	return xxx_messageInfo_ImportSamplesFromSwanExperimentResponse.Size(m)
@@ -729,6 +712,7 @@ func init() {
 	proto.RegisterType((*ClassifyResponse)(nil), "ClassifyResponse")
 	proto.RegisterType((*PredictRequirements)(nil), "PredictRequirements")
 	proto.RegisterType((*PredictRequest)(nil), "PredictRequest")
+	proto.RegisterMapType((map[string]float64)(nil), "PredictRequest.ParametersEntry")
 	proto.RegisterType((*PredictResponse)(nil), "PredictResponse")
 	proto.RegisterType((*RefreshClassifierRequest)(nil), "RefreshClassifierRequest")
 	proto.RegisterType((*RefreshClassifierResponse)(nil), "RefreshClassifierResponse")
@@ -745,54 +729,6 @@ func init() {
 	proto.RegisterType((*ImportSamplesFromSwanExperimentResponse)(nil), "ImportSamplesFromSwanExperimentResponse")
 }
 
-func init() { proto.RegisterFile("api.proto", fileDescriptor_00212fb1f9d3bf1c) }
-
-var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 664 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x5f, 0x4f, 0xdb, 0x3e,
-	0x14, 0x6d, 0x29, 0xfc, 0x68, 0x2f, 0xff, 0x5a, 0x83, 0xf4, 0x4b, 0x53, 0x34, 0x90, 0xd1, 0x06,
-	0xd3, 0x24, 0x4b, 0x63, 0x0f, 0xdb, 0x2b, 0x63, 0x43, 0xaa, 0x36, 0xa4, 0x29, 0x4c, 0xda, 0x63,
-	0x64, 0x12, 0xd3, 0x5a, 0x34, 0xb1, 0x67, 0xbb, 0xeb, 0xe0, 0x53, 0xec, 0x7d, 0x9f, 0x60, 0xdf,
-	0x72, 0x4a, 0xe3, 0x24, 0x25, 0x6d, 0x28, 0x0f, 0x7b, 0xab, 0xcf, 0xf5, 0x3d, 0xe7, 0xf6, 0xde,
-	0x73, 0x1d, 0x68, 0x51, 0xc9, 0x89, 0x54, 0xc2, 0x08, 0x7c, 0x0a, 0x3b, 0xe7, 0x23, 0xaa, 0x35,
-	0xbf, 0xb9, 0xf3, 0xd8, 0xf7, 0x31, 0xd3, 0x06, 0x1d, 0xc0, 0x06, 0x8f, 0xb5, 0xa1, 0x71, 0xc0,
-	0x7c, 0x1e, 0x3a, 0xf5, 0xc3, 0xfa, 0x49, 0xcb, 0x83, 0x0c, 0xea, 0x87, 0xf8, 0x2d, 0xb4, 0x8b,
-	0x1c, 0x2d, 0x45, 0xac, 0x19, 0x3a, 0x82, 0xad, 0x20, 0xc5, 0x38, 0x0b, 0x7d, 0xaa, 0x6d, 0xda,
-	0x66, 0x01, 0x9e, 0x69, 0xfc, 0xbb, 0x0e, 0xbb, 0x5f, 0x14, 0x0b, 0x79, 0x60, 0x12, 0x31, 0xae,
-	0x58, 0xc4, 0x62, 0xa3, 0x13, 0xc5, 0x40, 0x8e, 0x7d, 0x33, 0x54, 0x8c, 0x86, 0x69, 0x6a, 0xdd,
-	0x83, 0x40, 0x8e, 0xbf, 0xa6, 0x08, 0xea, 0x41, 0x2b, 0xe4, 0xfa, 0xd6, 0xe7, 0x42, 0x6a, 0x67,
-	0x65, 0x1a, 0x6e, 0x26, 0x40, 0x5f, 0x48, 0x8d, 0x5e, 0x41, 0x27, 0x66, 0x66, 0x22, 0xd4, 0xad,
-	0x7f, 0x4d, 0xe3, 0x70, 0xc2, 0x43, 0x33, 0x74, 0x1a, 0xd3, 0x4b, 0x6d, 0x1b, 0x78, 0x9f, 0xe1,
-	0xa8, 0x0b, 0x4d, 0x45, 0x23, 0x5f, 0xf3, 0x7b, 0xe6, 0xac, 0x4e, 0xef, 0xac, 0x2b, 0x1a, 0x5d,
-	0xf1, 0x7b, 0x86, 0xff, 0xd4, 0x61, 0x7b, 0xa6, 0xba, 0xa4, 0x15, 0x2e, 0x34, 0x03, 0x6a, 0xd8,
-	0x40, 0xa8, 0x3b, 0xfb, 0x87, 0xf2, 0x33, 0xda, 0x83, 0x35, 0x1e, 0xd1, 0x01, 0x9b, 0xd6, 0xd3,
-	0xf2, 0xd2, 0x03, 0x7a, 0x06, 0x20, 0xa9, 0xa2, 0x11, 0x33, 0x4c, 0x69, 0xa7, 0x71, 0xd8, 0x48,
-	0x7a, 0x57, 0x20, 0xe8, 0x39, 0x6c, 0x0f, 0x85, 0x36, 0x3e, 0x1d, 0x0c, 0x14, 0x1b, 0x50, 0x93,
-	0x56, 0xd1, 0xf2, 0xb6, 0x12, 0xf4, 0x2c, 0x03, 0x13, 0x1a, 0x3a, 0x1a, 0x89, 0x80, 0x1a, 0x2e,
-	0x62, 0x67, 0x2d, 0x1d, 0x41, 0x81, 0xe0, 0x4f, 0xb0, 0x93, 0x97, 0x6a, 0x27, 0xf0, 0x0e, 0x36,
-	0xd5, 0x4c, 0x53, 0x9d, 0xfa, 0x61, 0xe3, 0x64, 0xe3, 0x74, 0x8f, 0x2c, 0x68, 0xb8, 0xf7, 0xe0,
-	0x26, 0x76, 0xc1, 0xf1, 0xd8, 0x8d, 0x62, 0x7a, 0x78, 0x9e, 0x4d, 0x4b, 0xd9, 0x0e, 0xe0, 0x1e,
-	0x74, 0x17, 0xc4, 0x52, 0x49, 0xdc, 0x85, 0xff, 0x6d, 0xd0, 0x8a, 0x88, 0x3c, 0xaf, 0xe0, 0x9c,
-	0x09, 0xcd, 0xa5, 0xf5, 0xad, 0xa9, 0xf4, 0x7c, 0xda, 0x4c, 0xc8, 0xa6, 0x5d, 0x40, 0xfb, 0x9b,
-	0x50, 0xb7, 0x23, 0x41, 0xc3, 0xf3, 0x6c, 0x08, 0x08, 0x56, 0x63, 0x1a, 0x31, 0x3b, 0x9c, 0xe9,
-	0xef, 0xd2, 0x08, 0x56, 0xca, 0x23, 0xc0, 0xfb, 0xe0, 0x66, 0x3c, 0xda, 0x12, 0xf1, 0xa2, 0x82,
-	0x00, 0x7a, 0x0b, 0xa3, 0xb6, 0xcb, 0x1f, 0x60, 0x6f, 0x92, 0x85, 0xfd, 0x20, 0x8f, 0xdb, 0x6e,
-	0x77, 0x48, 0xb9, 0x42, 0x6f, 0x77, 0x32, 0xcf, 0x86, 0x2f, 0xe1, 0x45, 0x3f, 0x92, 0x42, 0x99,
-	0x4b, 0x66, 0x14, 0x0f, 0xf4, 0x85, 0x12, 0xd1, 0xd5, 0x84, 0xc6, 0x1f, 0x7f, 0x4a, 0xa6, 0x78,
-	0x32, 0x95, 0xcc, 0x81, 0x47, 0xb0, 0xc5, 0x72, 0xb0, 0x58, 0xc7, 0xcd, 0x02, 0xec, 0x87, 0xf8,
-	0x25, 0x1c, 0x2f, 0xa5, 0xb3, 0x4d, 0xcc, 0x95, 0xaf, 0x68, 0x24, 0x47, 0xec, 0x9f, 0x29, 0x3f,
-	0x42, 0x97, 0x2a, 0x9f, 0xfe, 0x5a, 0x83, 0xc6, 0x99, 0xe4, 0xe8, 0x35, 0x34, 0xb3, 0xd7, 0x03,
-	0xb5, 0x49, 0xe9, 0xf1, 0x71, 0x3b, 0xa4, 0xfc, 0xb4, 0xe0, 0x1a, 0x22, 0xb0, 0x6e, 0x5d, 0x84,
-	0x76, 0xc8, 0xc3, 0x15, 0x75, 0xdb, 0xa4, 0xb4, 0x08, 0xb8, 0x86, 0x3e, 0x43, 0x67, 0xce, 0xb4,
-	0xa8, 0x4b, 0xaa, 0x4c, 0xee, 0xba, 0xa4, 0xda, 0xe3, 0x35, 0xd4, 0x87, 0x76, 0xd9, 0xca, 0xc8,
-	0x21, 0x15, 0xc6, 0x77, 0xbb, 0xa4, 0xd2, 0xf7, 0xb3, 0x54, 0xb9, 0xbd, 0x0b, 0xaa, 0xf2, 0x32,
-	0x14, 0x54, 0xf3, 0xbb, 0x50, 0x43, 0x1e, 0xec, 0x2e, 0xf0, 0x29, 0xea, 0x91, 0x6a, 0x6f, 0xbb,
-	0xfb, 0xe4, 0x11, 0x6b, 0xe3, 0x1a, 0xfa, 0x01, 0x07, 0x4b, 0x7c, 0x84, 0x8e, 0xc9, 0xd3, 0x8c,
-	0xeb, 0x9e, 0x90, 0xa7, 0x5a, 0x72, 0x46, 0xb7, 0xd2, 0x45, 0xb9, 0xee, 0x32, 0xdb, 0xe6, 0xba,
-	0x4b, 0x0d, 0x89, 0x6b, 0xd7, 0xff, 0x4d, 0xbf, 0x81, 0x6f, 0xfe, 0x06, 0x00, 0x00, 0xff, 0xff,
-	0xf1, 0xeb, 0x8a, 0x05, 0x10, 0x07, 0x00, 0x00,
-}
-
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
@@ -801,9 +737,8 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// ApiClient is the client API for Api service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+// Client API for Api service
+
 type ApiClient interface {
 	Classify(ctx context.Context, in *ClassifyRequest, opts ...grpc.CallOption) (*ClassifyResponse, error)
 	Predict(ctx context.Context, in *PredictRequest, opts ...grpc.CallOption) (*PredictResponse, error)
@@ -825,7 +760,7 @@ func NewApiClient(cc *grpc.ClientConn) ApiClient {
 
 func (c *apiClient) Classify(ctx context.Context, in *ClassifyRequest, opts ...grpc.CallOption) (*ClassifyResponse, error) {
 	out := new(ClassifyResponse)
-	err := c.cc.Invoke(ctx, "/Api/Classify", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/Classify", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -834,7 +769,7 @@ func (c *apiClient) Classify(ctx context.Context, in *ClassifyRequest, opts ...g
 
 func (c *apiClient) Predict(ctx context.Context, in *PredictRequest, opts ...grpc.CallOption) (*PredictResponse, error) {
 	out := new(PredictResponse)
-	err := c.cc.Invoke(ctx, "/Api/Predict", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/Predict", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -843,7 +778,7 @@ func (c *apiClient) Predict(ctx context.Context, in *PredictRequest, opts ...grp
 
 func (c *apiClient) RefreshClassifier(ctx context.Context, in *RefreshClassifierRequest, opts ...grpc.CallOption) (*RefreshClassifierResponse, error) {
 	out := new(RefreshClassifierResponse)
-	err := c.cc.Invoke(ctx, "/Api/RefreshClassifier", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/RefreshClassifier", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -852,7 +787,7 @@ func (c *apiClient) RefreshClassifier(ctx context.Context, in *RefreshClassifier
 
 func (c *apiClient) RefreshPredictor(ctx context.Context, in *RefreshPredictorRequest, opts ...grpc.CallOption) (*RefreshPredictorResponse, error) {
 	out := new(RefreshPredictorResponse)
-	err := c.cc.Invoke(ctx, "/Api/RefreshPredictor", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/RefreshPredictor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -861,7 +796,7 @@ func (c *apiClient) RefreshPredictor(ctx context.Context, in *RefreshPredictorRe
 
 func (c *apiClient) RefreshInstances(ctx context.Context, in *RefreshInstancesRequest, opts ...grpc.CallOption) (*RefreshInstancesResponse, error) {
 	out := new(RefreshInstancesResponse)
-	err := c.cc.Invoke(ctx, "/Api/RefreshInstances", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/RefreshInstances", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -870,7 +805,7 @@ func (c *apiClient) RefreshInstances(ctx context.Context, in *RefreshInstancesRe
 
 func (c *apiClient) WorkloadsCategories(ctx context.Context, in *WorkloadsCategoriesRequest, opts ...grpc.CallOption) (*WorkloadsCategoriesResponse, error) {
 	out := new(WorkloadsCategoriesResponse)
-	err := c.cc.Invoke(ctx, "/Api/WorkloadsCategories", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/WorkloadsCategories", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -879,7 +814,7 @@ func (c *apiClient) WorkloadsCategories(ctx context.Context, in *WorkloadsCatego
 
 func (c *apiClient) ImportMetricsFromSwanExperiment(ctx context.Context, in *ImportMetricsFromSwanExperimentRequest, opts ...grpc.CallOption) (*ImportMetricsFromSwanExperimentResponse, error) {
 	out := new(ImportMetricsFromSwanExperimentResponse)
-	err := c.cc.Invoke(ctx, "/Api/ImportMetricsFromSwanExperiment", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/ImportMetricsFromSwanExperiment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -888,14 +823,15 @@ func (c *apiClient) ImportMetricsFromSwanExperiment(ctx context.Context, in *Imp
 
 func (c *apiClient) ImportSamplesFromSwanExperiment(ctx context.Context, in *ImportSamplesFromSwanExperimentRequest, opts ...grpc.CallOption) (*ImportSamplesFromSwanExperimentResponse, error) {
 	out := new(ImportSamplesFromSwanExperimentResponse)
-	err := c.cc.Invoke(ctx, "/Api/ImportSamplesFromSwanExperiment", in, out, opts...)
+	err := grpc.Invoke(ctx, "/Api/ImportSamplesFromSwanExperiment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ApiServer is the server API for Api service.
+// Server API for Api service
+
 type ApiServer interface {
 	Classify(context.Context, *ClassifyRequest) (*ClassifyResponse, error)
 	Predict(context.Context, *PredictRequest) (*PredictResponse, error)
@@ -1094,4 +1030,55 @@ var _Api_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api.proto",
+}
+
+func init() { proto.RegisterFile("api.proto", fileDescriptor_api_b2d8a27eff8c14c8) }
+
+var fileDescriptor_api_b2d8a27eff8c14c8 = []byte{
+	// 712 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x5d, 0x4f, 0xe3, 0x38,
+	0x14, 0xed, 0x07, 0x2c, 0xed, 0xe5, 0xa3, 0xad, 0x41, 0xda, 0x34, 0x45, 0x0b, 0x32, 0xda, 0x85,
+	0xd5, 0x4a, 0x96, 0x96, 0x7d, 0x58, 0xb4, 0xd2, 0x6a, 0xc4, 0x30, 0x20, 0x55, 0x33, 0x48, 0x28,
+	0x8c, 0x34, 0x8f, 0x91, 0x49, 0x4c, 0x6b, 0xb5, 0x89, 0x33, 0xb6, 0x4b, 0x07, 0xfe, 0xc1, 0xbc,
+	0xcd, 0xfb, 0xfc, 0xd9, 0x51, 0x1a, 0xe7, 0x83, 0xb4, 0xa5, 0x3c, 0xcc, 0x5b, 0x7c, 0xae, 0xef,
+	0x39, 0xd7, 0xf7, 0x1e, 0x3b, 0xd0, 0xa4, 0x11, 0x27, 0x91, 0x14, 0x5a, 0xe0, 0x53, 0x68, 0x5d,
+	0x8c, 0xa9, 0x52, 0xfc, 0xfe, 0xd1, 0x61, 0x9f, 0x27, 0x4c, 0x69, 0x74, 0x00, 0x9b, 0x3c, 0x54,
+	0x9a, 0x86, 0x1e, 0x73, 0xb9, 0x6f, 0x55, 0x0f, 0xab, 0x27, 0x4d, 0x07, 0x52, 0xa8, 0xef, 0xe3,
+	0x7f, 0xa1, 0x9d, 0xe7, 0xa8, 0x48, 0x84, 0x8a, 0xa1, 0x23, 0xd8, 0xf6, 0x12, 0x8c, 0x33, 0xdf,
+	0xa5, 0xca, 0xa4, 0x6d, 0xe5, 0xe0, 0xb9, 0xc2, 0xdf, 0xab, 0xb0, 0x7b, 0x23, 0x99, 0xcf, 0x3d,
+	0x1d, 0x8b, 0x71, 0xc9, 0x02, 0x16, 0x6a, 0x15, 0x2b, 0x7a, 0xd1, 0xc4, 0xd5, 0x43, 0xc9, 0xa8,
+	0x9f, 0xa4, 0x56, 0x1d, 0xf0, 0xa2, 0xc9, 0xc7, 0x04, 0x41, 0x3d, 0x68, 0xfa, 0x5c, 0x8d, 0x5c,
+	0x2e, 0x22, 0x65, 0xd5, 0x66, 0xe1, 0x46, 0x0c, 0xf4, 0x45, 0xa4, 0xd0, 0x5f, 0xd0, 0x09, 0x99,
+	0x9e, 0x0a, 0x39, 0x72, 0xef, 0x68, 0xe8, 0x4f, 0xb9, 0xaf, 0x87, 0x56, 0x7d, 0xb6, 0xa9, 0x6d,
+	0x02, 0x6f, 0x53, 0x1c, 0x75, 0xa1, 0x21, 0x69, 0xe0, 0x2a, 0xfe, 0xc4, 0xac, 0xb5, 0xd9, 0x9e,
+	0x0d, 0x49, 0x83, 0x5b, 0xfe, 0xc4, 0xf0, 0xd7, 0x1a, 0xec, 0x14, 0xaa, 0x8b, 0x5b, 0x61, 0x43,
+	0xc3, 0xa3, 0x9a, 0x0d, 0x84, 0x7c, 0x34, 0x07, 0xca, 0xd6, 0x68, 0x0f, 0xd6, 0x79, 0x40, 0x07,
+	0x6c, 0x56, 0x4f, 0xd3, 0x49, 0x16, 0xe8, 0x0d, 0x40, 0x44, 0x25, 0x0d, 0x98, 0x66, 0x52, 0x59,
+	0xf5, 0xc3, 0xfa, 0xc9, 0xe6, 0xe9, 0x01, 0x79, 0x4e, 0x4b, 0x6e, 0xb2, 0x1d, 0x97, 0xa1, 0x96,
+	0x8f, 0x4e, 0x21, 0x05, 0xfd, 0x0e, 0x3b, 0x43, 0xa1, 0xb4, 0x4b, 0x07, 0x03, 0xc9, 0x06, 0x54,
+	0x27, 0x65, 0x36, 0x9d, 0xed, 0x18, 0x3d, 0x4f, 0x41, 0xf4, 0x1b, 0x00, 0x1d, 0x8f, 0x85, 0x47,
+	0x35, 0x17, 0xa1, 0xb5, 0x9e, 0xcc, 0x28, 0x47, 0xec, 0xff, 0xa1, 0x55, 0x52, 0x41, 0x6d, 0xa8,
+	0x8f, 0x58, 0x7a, 0x8e, 0xf8, 0x33, 0x3e, 0xc2, 0x03, 0x1d, 0x4f, 0x98, 0x69, 0x69, 0xb2, 0xf8,
+	0xaf, 0x76, 0x56, 0xc5, 0xef, 0xa1, 0x95, 0xd5, 0x6c, 0x26, 0x7c, 0x06, 0x5b, 0xb2, 0x30, 0x34,
+	0xab, 0x3a, 0x3b, 0xdb, 0x1e, 0x59, 0x30, 0x50, 0xe7, 0xd9, 0x4e, 0x6c, 0x83, 0xe5, 0xb0, 0x7b,
+	0xc9, 0xd4, 0xf0, 0x22, 0x75, 0x83, 0x34, 0xad, 0xc0, 0x3d, 0xe8, 0x2e, 0x88, 0x25, 0x92, 0xb8,
+	0x0b, 0xbf, 0x9a, 0xa0, 0x11, 0x11, 0x59, 0x5e, 0xce, 0x59, 0x08, 0xcd, 0xa5, 0xf5, 0x8d, 0x69,
+	0xd5, 0x7c, 0x5a, 0x21, 0x64, 0xd2, 0xae, 0xa0, 0xfd, 0x49, 0xc8, 0xd1, 0x58, 0x50, 0xff, 0x22,
+	0x1d, 0x32, 0x82, 0xb5, 0x90, 0x06, 0xcc, 0x34, 0x6d, 0xf6, 0x1d, 0xb7, 0xbe, 0x30, 0xe2, 0xda,
+	0x61, 0x3d, 0x6e, 0x7d, 0x8e, 0xe0, 0x7d, 0xb0, 0x53, 0x1e, 0x65, 0x88, 0x78, 0x5e, 0x81, 0x07,
+	0xbd, 0x85, 0x51, 0xd3, 0xe5, 0x77, 0xb0, 0x37, 0x4d, 0xc3, 0xae, 0x97, 0xc5, 0x4d, 0xb7, 0x3b,
+	0xa4, 0x5c, 0xa1, 0xb3, 0x3b, 0x9d, 0x67, 0xc3, 0xd7, 0xf0, 0x47, 0x3f, 0x88, 0x84, 0xd4, 0xd7,
+	0x4c, 0x4b, 0xee, 0xa9, 0x2b, 0x29, 0x82, 0xdb, 0x29, 0x0d, 0x2f, 0xbf, 0x44, 0x4c, 0xf2, 0x78,
+	0x2a, 0xa9, 0xc3, 0x8f, 0x60, 0x9b, 0x65, 0x60, 0x7e, 0xdd, 0xb7, 0x72, 0xb0, 0xef, 0xe3, 0x3f,
+	0xe1, 0x78, 0x25, 0x9d, 0x69, 0x62, 0xa6, 0x7c, 0x4b, 0x83, 0x68, 0xcc, 0x7e, 0x9a, 0xf2, 0x0b,
+	0x74, 0x89, 0xf2, 0xe9, 0xb7, 0x75, 0xa8, 0x9f, 0x47, 0x1c, 0xfd, 0x0d, 0x8d, 0xf4, 0x75, 0x42,
+	0x6d, 0x52, 0x7a, 0xdc, 0xec, 0x0e, 0x29, 0x3f, 0x5d, 0xb8, 0x82, 0x08, 0x6c, 0x18, 0x17, 0xa1,
+	0x56, 0xe9, 0xae, 0xda, 0x6d, 0x52, 0xba, 0x08, 0xb8, 0x82, 0x3e, 0x40, 0x67, 0xce, 0xb4, 0xa8,
+	0x4b, 0x96, 0x99, 0xdc, 0xb6, 0xc9, 0x72, 0x8f, 0x57, 0x50, 0x1f, 0xda, 0x65, 0x2b, 0x23, 0x8b,
+	0x2c, 0x31, 0xbe, 0xdd, 0x25, 0x4b, 0x7d, 0x5f, 0xa4, 0xca, 0xec, 0x9d, 0x53, 0x95, 0x2f, 0x43,
+	0x4e, 0x35, 0x7f, 0x17, 0x2a, 0xc8, 0x81, 0xdd, 0x05, 0x3e, 0x45, 0x3d, 0xb2, 0xdc, 0xdb, 0xf6,
+	0x3e, 0x79, 0xc1, 0xda, 0xb8, 0x82, 0x1e, 0xe0, 0x60, 0x85, 0x8f, 0xd0, 0x31, 0x79, 0x9d, 0x71,
+	0xed, 0x13, 0xf2, 0x5a, 0x4b, 0x16, 0x74, 0x97, 0xba, 0x28, 0xd3, 0x5d, 0x65, 0xdb, 0x4c, 0x77,
+	0xa5, 0x21, 0x71, 0xe5, 0xee, 0x97, 0xd9, 0x3f, 0xf6, 0x9f, 0x1f, 0x01, 0x00, 0x00, 0xff, 0xff,
+	0xca, 0xdb, 0x12, 0x31, 0x70, 0x07, 0x00, 0x00,
 }

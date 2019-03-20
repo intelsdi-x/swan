@@ -60,7 +60,7 @@ build_swan:
 	(cd build/experiments/optimal-core-allocation; go build ../../../experiments/optimal-core-allocation)
 	(cd build/experiments/memcached-cat; go build ../../../experiments/memcached-cat)
 	(cd build/experiments/example; go build ../../../experiments/example)
-	(cd build/experiments/krico; go build ../../../experiments/krico/krico-classify; go build ../../../experiments/krico/krico-metric-gathering)
+	(cd build/experiments/krico; go build ../../../experiments/krico/krico-classification; go build ../../../experiments/krico/krico-metric-gathering; go build ../../../experiments/krico/krico-prediction)
 
 # testing
 test_lint:
@@ -116,8 +116,9 @@ dist:
 	tar -C ./build/experiments/optimal-core-allocation -rvf swan.tar optimal-core-allocation
 	tar -C ./build/experiments/memcached-cat -rvf swan.tar memcached-cat
 	tar -C ./build/experiments/example -rvf swan.tar example
-	tar -C ./build/experiments/krico/krico-classify -rvf swan.tar krico-classify
+	tar -C ./build/experiments/krico/krico-classification -rvf swan.tar krico-classification
 	tar -C ./build/experiments/krico/krico-metric-gathering -rvf swan.tar krico-metric-gathering
+	tar -C ./build/experiments/krico/krico-prediction -rvf swan.tar krico-prediction
 	tar -C ./build/plugins -rvf swan.tar snap-plugin-collector-caffe-inference snap-plugin-collector-mutilate snap-plugin-collector-specjbb snap-plugin-publisher-session-test
 	tar --transform 's/-binary//' -rvf swan.tar NOTICE-binary
 	tar -rvf swan.tar LICENSE

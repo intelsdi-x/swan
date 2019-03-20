@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	typeCaching = "caching"
+	// TypeCaching is constant name of caching workload.
+	TypeCaching = "caching"
 )
 
 var (
