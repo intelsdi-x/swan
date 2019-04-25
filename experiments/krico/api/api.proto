@@ -26,16 +26,46 @@ message PredictRequirements {
     double ram_size = 4;
 }
 
+message PredictFlavor {
+    uint32 disk = 1;
+    uint32 ram = 2;
+    uint32 vcpus = 3;
+    string name = 4;
+}
+
+message PredictHostAggregateCPU {
+    uint32 performance = 1;
+    uint32 threads = 2;
+}
+
+message PredictHostAggregateDisk {
+    uint32 iops = 1;
+    uint32 size = 2;
+}
+
+message PredictHostAggregateRAM {
+    uint32 bandwidth = 1;
+    uint32 size = 2;
+}
+
+message PredictHostAggregate {
+    PredictHostAggregateCPU cpu = 1;
+    PredictHostAggregateDisk disk = 2;
+    PredictHostAggregateRAM ram = 3;
+}
+
 message PredictRequest {
     string category = 1;
     string image = 2;
     map<string, double> parameters = 3;
-    string host_aggregate = 4;
-    string allocation = 5;
+    string configuration_id = 4;
+    string allocation_mode = 5;
 }
 
 message PredictResponse {
     repeated PredictRequirements requirements = 1;
+    repeated PredictFlavor flavors = 2;
+    repeated PredictHostAggregate host_aggregates = 3;
 }
 
 message RefreshClassifierRequest {

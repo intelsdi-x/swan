@@ -99,7 +99,7 @@ func main() {
 
 	conn.Close()
 
-	log.Infof("Prediction for %v workload: %q", workloadCategory.Value(), prediction.Requirements)
+	log.Infof("Prediction for %v workload: \nRequirements: %q \nFlavor: %q \nHost aggregate: %q", workloadCategory.Value(), prediction.Requirements, prediction.Flavors, prediction.HostAggregates)
 }
 
 func getWorkloadParameters(category string) (map[string]float64, error) {
