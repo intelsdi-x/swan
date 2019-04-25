@@ -97,9 +97,10 @@ func main() {
 	})
 	errutil.CheckWithContext(err, fmt.Sprintf("Cannot make prediction for %q workload!", workloadCategory.Value()))
 
-	conn.Close()
-
 	log.Infof("Prediction for %v workload: \nRequirements: %q \nFlavor: %q \nHost aggregate: %q", workloadCategory.Value(), prediction.Requirements, prediction.Flavors, prediction.HostAggregates)
+
+	err = conn.Close()
+	errutil.CheckWithContext(err, "Cannot close connection to KRICO!")
 }
 
 func getWorkloadParameters(category string) (map[string]float64, error) {

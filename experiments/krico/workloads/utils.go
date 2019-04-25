@@ -65,18 +65,18 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 
 	conn, err := libvirt.NewConnectReadOnly("qemu+ssh://root@" + hypervisorAddress + "/system")
 	if err != nil {
-		return "", fmt.Errorf("couldn't connect to libvirt: %v", err)
+		return "", errors.Wrap(err, "Couldn't connect to Libvirt!")
 	}
 	defer conn.Close()
 
 	domain, err := conn.LookupDomainByName(hypervisorInstanceName)
 	if err != nil {
-		return "", fmt.Errorf("couldn't get instance domain: %v", err)
+		return "", errors.Wrap(err, "Couldn't get instance domain!")
 	}
 
 	instanceID, err := domain.GetID()
 	if err != nil {
-		return "", fmt.Errorf("couldn't get instance domain id: %v", err)
+		return "", errors.Wrap(err, "Couldn't get instance domain id!")
 	}
 
 	instanceName := strings.Replace(hypervisorInstanceName, "-", `\x2d`, -1)

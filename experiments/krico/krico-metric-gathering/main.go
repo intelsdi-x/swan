@@ -89,6 +89,6 @@ func main() {
 	_, err = krico.RefreshPredictor(context.Background(), &api.RefreshPredictorRequest{})
 	errutil.CheckWithContext(err, "Cannot send request to KRICO for refreshing predictor!")
 
-	defer conn.Close()
-
+	err = conn.Close()
+	errutil.CheckWithContext(err, "Cannot close connection to KRICO!")
 }

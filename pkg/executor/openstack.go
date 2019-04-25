@@ -68,6 +68,7 @@ var (
 	keypairName         = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
 	bootUpTimeOut       = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
 	hostAggregateIDFlag = conf.NewIntFlag("host_aggregate_id", "ID of host aggregate which VM must be running in", -1)
+	watcherIntervalFlag  = conf.NewDurationFlag("os_watcher_interval", "OpenStack watcher interval timeout", time.Second)
 )
 
 // DefaultOpenstackConfig creates default OpenStack config.
@@ -102,31 +103,36 @@ type OpenstackAuthConfig struct {
 	Endpoint   string
 }
 
-type hostAggregate struct {
+// HostAggregate defines OpenStack host aggregate data.
+type HostAggregate struct {
 	Name             string
 	ConfigurationID  string
 	AvailabilityZone string
-	Disk             disk
-	RAM              ram
-	CPU              cpu
+	Disk             Disk
+	RAM              Ram
+	CPU              Cpu
 }
 
-type hypervisor struct {
+// Hypervisor defines OpenStack hypervisor data.
+type Hypervisor struct {
 	InstanceName string
 	Address      string
 }
 
-type disk struct {
+// Disk defines disk data.
+type Disk struct {
 	Iops string
 	Size string
 }
 
-type ram struct {
+// Ram defines RAM data.
+type Ram struct {
 	Bandwidth string
 	Size      string
 }
 
-type cpu struct {
+// Cpu defines CPU data.
+type Cpu struct {
 	Performance string
 	Threads     string
 }
@@ -140,8 +146,8 @@ type OpenstackConfig struct {
 	SSHKeyPath    string
 	Name          string
 	ID            string
-	Hypervisor    hypervisor
-	HostAggregate hostAggregate
+	Hypervisor    Hypervisor
+	HostAggregate HostAggregate
 }
 
 // Openstack defines OpenStack server configuration and client.
@@ -194,7 +200,6 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	}
 
 	image, err := images.IDFromName(stack.client, stack.config.Image)
-
 	if err != nil {
 		err = errors.Wrapf(err, "%s Couldn't get image id from name: %s !", executorLogPrefix, image)
 		log.Error(err.Error())
@@ -214,15 +219,11 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 
 	stack.config.HostAggregate.Name = aggregate.Name
 	stack.config.HostAggregate.AvailabilityZone = aggregate.AvailabilityZone
-
 	stack.config.HostAggregate.ConfigurationID = aggregate.Metadata["configuration_id"]
-
 	stack.config.HostAggregate.Disk.Iops = aggregate.Metadata["disk_iops"]
 	stack.config.HostAggregate.Disk.Size = aggregate.Metadata["disk_size"]
-
 	stack.config.HostAggregate.CPU.Performance = aggregate.Metadata["cpu_performance"]
 	stack.config.HostAggregate.CPU.Threads = aggregate.Metadata["cpu_threads"]
-
 	stack.config.HostAggregate.RAM.Size = aggregate.Metadata["ram_size"]
 	stack.config.HostAggregate.RAM.Bandwidth = aggregate.Metadata["ram_bandwidth"]
 
@@ -333,7 +334,6 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 		stdoutFilePath: stdoutFileName,
 		stderrFilePath: stderrFileName,
 		instance:       instance.ID,
-		os:             &stack,
 		running:        true,
 		exitCode:       exitCode,
 		requestStop:    make(chan struct{}),
@@ -547,7 +547,6 @@ type OpenstackTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string
 	instance       string
-	os             *Openstack
 	running        bool
 	exitCode       int
 	requestStop    chan struct{}
@@ -695,7 +694,7 @@ func (watcher *openstackWatcher) watch() error {
 				*watcher.running = false
 				watcher.requestDelete <- struct{}{}
 			}
-			time.Sleep(time.Second)
+			time.Sleep(watcherIntervalFlag.Value())
 		}
 	}()
 

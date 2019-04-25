@@ -80,9 +80,8 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	//
 
 	//	Calculate workload parameters.
-	memory := float64(workloadConfig.MaxMemoryMB / 1024)             // total cache size [GiB]
-	ratio, err := strconv.ParseFloat(loadGeneratorConfig.Update, 64) // estimated get vs set ratio [0.0 - 1.0]
-	errutil.CheckWithContext(err, "Cannot parse mutilate update argument (ratio parameter)!")
+	memory := float64(workloadConfig.MaxMemoryMB / 1024) // total cache size [GiB]
+	ratio := loadGeneratorConfig.Update // estimated get vs set ratio [0.0 - 1.0]
 	clients := float64(loadGeneratorConfig.MasterThreads * loadGeneratorConfig.MasterConnections)
 
 	//

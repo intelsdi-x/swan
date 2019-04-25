@@ -1,5 +1,5 @@
-hash: 72f3bffec03e54ab0f476f7c7d8e25c8fb3a63c7b0c47db94451a78562ecfdbd
-updated: 2019-03-20T11:25:31.650354903+01:00
+hash: 57c145464c5c5c2fbf5bc31f724224e604bd6385e1e965ef71a8eafbb68b0d4e
+updated: 2019-04-25T13:37:00.837119847+02:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -255,12 +255,9 @@ imports:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 5d731a35f4867878fc89f7744f7b6debb3beded6
+  version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
   - cases
-  - internal
-  - internal/language
-  - internal/language/compact
   - internal/tag
   - language
   - runes

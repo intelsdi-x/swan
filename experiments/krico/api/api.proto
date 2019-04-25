@@ -19,6 +19,20 @@ message ClassifyResponse {
     string classified_as = 1;
 }
 
+message PredictRequest {
+    string category = 1;
+    string image = 2;
+    map<string, double> parameters = 3;
+    string configuration_id = 4;
+    string allocation_mode = 5;
+}
+
+message PredictResponse {
+    repeated PredictRequirements requirements = 1;
+    repeated PredictFlavor flavors = 2;
+    repeated PredictHostAggregate host_aggregates = 3;
+}
+
 message PredictRequirements {
     double cpu_threads = 1;
     double disk_iops = 2;
@@ -31,6 +45,12 @@ message PredictFlavor {
     uint32 ram = 2;
     uint32 vcpus = 3;
     string name = 4;
+}
+
+message PredictHostAggregate {
+    PredictHostAggregateCPU cpu = 1;
+    PredictHostAggregateDisk disk = 2;
+    PredictHostAggregateRAM ram = 3;
 }
 
 message PredictHostAggregateCPU {
@@ -46,26 +66,6 @@ message PredictHostAggregateDisk {
 message PredictHostAggregateRAM {
     uint32 bandwidth = 1;
     uint32 size = 2;
-}
-
-message PredictHostAggregate {
-    PredictHostAggregateCPU cpu = 1;
-    PredictHostAggregateDisk disk = 2;
-    PredictHostAggregateRAM ram = 3;
-}
-
-message PredictRequest {
-    string category = 1;
-    string image = 2;
-    map<string, double> parameters = 3;
-    string configuration_id = 4;
-    string allocation_mode = 5;
-}
-
-message PredictResponse {
-    repeated PredictRequirements requirements = 1;
-    repeated PredictFlavor flavors = 2;
-    repeated PredictHostAggregate host_aggregates = 3;
 }
 
 message RefreshClassifierRequest {
@@ -92,16 +92,16 @@ message RefreshInstancesResponse {
 
 }
 
-message WorkloadCategory{
-    string name = 1;
-    repeated string parameters = 2;
-}
-
 message WorkloadsCategoriesRequest {
 }
 
 message WorkloadsCategoriesResponse {
     repeated WorkloadCategory workloads_categories = 1;
+}
+
+message WorkloadCategory{
+    string name = 1;
+    repeated string parameters = 2;
 }
 
 message ImportMetricsFromSwanExperimentRequest {
@@ -119,3 +119,4 @@ message ImportSamplesFromSwanExperimentRequest {
 message ImportSamplesFromSwanExperimentResponse {
 
 }
+

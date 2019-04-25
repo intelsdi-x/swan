@@ -91,5 +91,6 @@ func main() {
 		log.Infof("Predicted category for %v instance: %q", instance, predictedCategory.ClassifiedAs)
 	}
 
-	defer conn.Close()
+	err = conn.Close()
+	errutil.CheckWithContext(err, "Cannot close connection to KRICO!")
 }
