@@ -34,6 +34,8 @@ import:
   - ssh
 - package: golang.org/x/net
   version: master
+- package: golang.org/x/text
+  version: master
 - package: k8s.io/apimachinery
   subpackages:
   - pkg/api/resource

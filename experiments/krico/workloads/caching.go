@@ -81,7 +81,6 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 
 	//	Calculate workload parameters.
 	memory := float64(workloadConfig.MaxMemoryMB / 1024) // total cache size [GiB]
-	ratio := loadGeneratorConfig.Update                  // estimated get vs set ratio [0.0 - 1.0]
 	clients := float64(loadGeneratorConfig.MasterThreads * loadGeneratorConfig.MasterConnections)
 
 	//
@@ -93,7 +92,7 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig, experimentID)
 	snapTaskConfig.Tags["category"] = TypeCaching
 	snapTaskConfig.Tags["memory"] = strconv.FormatFloat(memory, 'f', -1, 64)
-	snapTaskConfig.Tags["ratio"] = strconv.FormatFloat(ratio, 'f', -1, 64)
+	snapTaskConfig.Tags["ratio"] = loadGeneratorConfig.Update // estimated get vs set ratio [0.0 - 1.0]
 	snapTaskConfig.Tags["clients"] = strconv.FormatFloat(clients, 'f', -1, 64)
 
 	//	Prepare launcher.

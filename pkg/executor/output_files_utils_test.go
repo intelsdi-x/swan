@@ -43,7 +43,7 @@ func filesCleanup(stdout, stderr *os.File) {
 
 func TestBinaryNameFromCommand(t *testing.T) {
 	testData := map[string]string{
-		"/ust/bin/bash": "bash",
+		"/ust/bin/bash":                                           "bash",
 		"/ust/bin/bash -a dsf -b fsdf -c sdgfs -xx fwef":          "bash",
 		"/ust/bin/bash --fancy-option=sfsdfsdf":                   "bash",
 		"/ust/bin/bash --fancy-option2=http://123.123.45.34:3242": "bash",
