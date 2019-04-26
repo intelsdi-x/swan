@@ -98,7 +98,7 @@ func NewSession(
 		pClient:                pClient,
 		Publisher:              publisher,
 		CollectNodeConfigItems: []CollectNodeConfigItem{},
-		Tags: tags,
+		Tags:                   tags,
 	}
 }
 

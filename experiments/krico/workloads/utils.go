@@ -89,7 +89,7 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 // PrepareDefaultKricoTags returns struct with default tags needed in KRICO experiment.
 func PrepareDefaultKricoTags(openStackConfig executor.OpenstackConfig, experimentID string) map[string]interface{} {
 	return map[string]interface{}{
-		experiment.ExperimentKey: experimentID,
+		experiment.ExperimentKey:          experimentID,
 		"name":                            openStackConfig.Name,
 		"instance_id":                     openStackConfig.ID,
 		"image":                           openStackConfig.Image,

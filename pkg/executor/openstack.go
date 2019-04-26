@@ -68,7 +68,7 @@ var (
 	keypairName         = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
 	bootUpTimeOut       = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
 	hostAggregateIDFlag = conf.NewIntFlag("host_aggregate_id", "ID of host aggregate which VM must be running in", -1)
-	watcherIntervalFlag  = conf.NewDurationFlag("os_watcher_interval", "OpenStack watcher interval timeout", time.Second)
+	watcherIntervalFlag = conf.NewDurationFlag("os_watcher_interval", "OpenStack watcher interval timeout", time.Second)
 )
 
 // DefaultOpenstackConfig creates default OpenStack config.
@@ -109,8 +109,8 @@ type HostAggregate struct {
 	ConfigurationID  string
 	AvailabilityZone string
 	Disk             Disk
-	RAM              Ram
-	CPU              Cpu
+	RAM              RAM
+	CPU              CPU
 }
 
 // Hypervisor defines OpenStack hypervisor data.
@@ -125,14 +125,14 @@ type Disk struct {
 	Size string
 }
 
-// Ram defines RAM data.
-type Ram struct {
+// RAM defines RAM data.
+type RAM struct {
 	Bandwidth string
 	Size      string
 }
 
-// Cpu defines CPU data.
-type Cpu struct {
+// CPU defines CPU data.
+type CPU struct {
 	Performance string
 	Threads     string
 }

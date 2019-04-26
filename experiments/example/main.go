@@ -132,9 +132,9 @@ func main() {
 
 				// Preparing tags for Snap metrics (they will be used to identify unique phases).
 				tags := map[string]interface{}{
-					"thread_count": threadCount,
-					"load_point":   loadPoint,
-					"qps":          qps,
+					"thread_count":           threadCount,
+					"load_point":             loadPoint,
+					"qps":                    qps,
 					experiment.ExperimentKey: uid,
 				}
 

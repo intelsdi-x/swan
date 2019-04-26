@@ -81,7 +81,7 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 
 	//	Calculate workload parameters.
 	memory := float64(workloadConfig.MaxMemoryMB / 1024) // total cache size [GiB]
-	ratio := loadGeneratorConfig.Update // estimated get vs set ratio [0.0 - 1.0]
+	ratio := loadGeneratorConfig.Update                  // estimated get vs set ratio [0.0 - 1.0]
 	clients := float64(loadGeneratorConfig.MasterThreads * loadGeneratorConfig.MasterConnections)
 
 	//
