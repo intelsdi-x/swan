@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	snapStartCommand = "systemctl restart snap-telemetry"
-	aggressorAddress = conf.NewStringFlag("aggressor_address", "IP address of aggressor node.", "127.0.0.0")
+	snapStartCommand     = "systemctl restart snap-telemetry"
+	loadGeneratorAddress = conf.NewStringFlag("loadgenerator_address", "IP address of aggressor node.", "127.0.0.0")
 )
 
 // RunCollectingMetrics runs metric gathering experiment for each type of workload.

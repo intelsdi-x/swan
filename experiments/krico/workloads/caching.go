@@ -39,9 +39,6 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	workloadHandle, err := workloadLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot launch Memcached!")
 
-	//	Stop workload in the end of experiment.
-	defer workloadHandle.Stop()
-
 	//
 	//	Load generator
 	//
@@ -54,7 +51,7 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 
 	//	Prepare executor.
 	loadGeneratorExecutorConfig := executor.DefaultRemoteConfig()
-	loadGeneratorExecutor, err := executor.NewRemote(aggressorAddress.Value(), loadGeneratorExecutorConfig)
+	loadGeneratorExecutor, err := executor.NewRemote(loadGeneratorAddress.Value(), loadGeneratorExecutorConfig)
 	errutil.CheckWithContext(err, "Cannot prepare Mutilate executor!")
 
 	//	Prepare launcher.
@@ -97,7 +94,7 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 
 	//	Prepare launcher.
 	snapTaskLauncher, err := kricosnapsession.NewSessionLauncher(snapTaskConfig)
-	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher !")
+	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher!")
 
 	//	Run Snap task.
 	snapTaskHandle, err := snapTaskLauncher.Launch()
@@ -162,8 +159,8 @@ func ClassifyCachingWorkload(experimentID string) string {
 
 	//	Prepare executor.
 	loadGeneratorExecutorConfig := executor.DefaultRemoteConfig()
-	loadGeneratorExecutor, err := executor.NewRemote(aggressorAddress.Value(), loadGeneratorExecutorConfig)
-	errutil.CheckWithContext(err, "Cannot prepare YCSB Redis executor !")
+	loadGeneratorExecutor, err := executor.NewRemote(loadGeneratorAddress.Value(), loadGeneratorExecutorConfig)
+	errutil.CheckWithContext(err, "Cannot prepare YCSB Redis executor!")
 
 	//	Prepare launcher.
 	ycsb.CalculateWorkloadCommandParameters(maxQPS, loadDuration, &loadGeneratorConfig)
@@ -182,21 +179,19 @@ func ClassifyCachingWorkload(experimentID string) string {
 
 	//	Obtain workload instance cgroup.
 	cgroup, err := GetInstanceCgroup(workloadExecutorConfig.Hypervisor.InstanceName, workloadExecutorConfig.Hypervisor.Address)
-	errutil.CheckWithContext(err, "Cannot obtain workload instance cgroup !")
+	errutil.CheckWithContext(err, "Cannot obtain workload instance cgroup!")
 
 	snapTaskConfig := kricosnapsession.DefaultConfig(cgroup, workloadExecutorConfig.Hypervisor.InstanceName)
 	snapTaskConfig.Tags = PrepareDefaultKricoTags(workloadExecutorConfig, experimentID)
 
 	//	Prepare launcher.
 	snapTaskLauncher, err := kricosnapsession.NewSessionLauncher(snapTaskConfig)
-	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher !")
+	errutil.CheckWithContext(err, "Cannot obtain Snap Task Launcher!")
 
 	//	Run Snap task.
 	snapTaskHandle, err := snapTaskLauncher.Launch()
-	errutil.CheckWithContext(err, "Cannot gather performance metrics !")
+	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
-	//	Stop snap task on the end of experiment.
-	defer snapTaskHandle.Stop()
 
 	//
 	//	Load Generator
@@ -204,13 +199,21 @@ func ClassifyCachingWorkload(experimentID string) string {
 
 	//	Start load on workload.
 	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
-	errutil.CheckWithContext(err, "Cannot start YCSB Redis task !")
-
-	//	In the end stop load on workload.
-	defer loadGeneratorHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot start YCSB Redis task!")
 
 	//	Wait until load generating finishes.
 	loadGeneratorHandle.Wait(0)
 
+	//	Stop workload in the end of experiment.
+	err = workloadHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot stop Memcached!")
+
+	//	Stop snap task on the end of experiment.
+	err = snapTaskHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot stop Snap telemetry!")
+
+	//	In the end stop load on workload.
+	err = loadGeneratorHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot stop YCSB Redis task!")
 	return workloadExecutorConfig.ID
 }
