@@ -192,7 +192,6 @@ func ClassifyCachingWorkload(experimentID string) string {
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
-
 	//
 	//	Load Generator
 	//
