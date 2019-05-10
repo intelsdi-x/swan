@@ -14,6 +14,8 @@ import (
 const (
 	// TypeCaching is constant name of caching workload.
 	TypeCaching = "caching"
+	// MinusHex is constant string of minus character in bytes.
+	MinusHex = `\x2d`
 )
 
 var (
@@ -79,9 +81,9 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 		return "", errors.Wrap(err, "Couldn't get instance domain id!")
 	}
 
-	instanceName := strings.Replace(hypervisorInstanceName, "-", `\x2d`, -1)
+	instanceName := strings.Replace(hypervisorInstanceName, "-", MinusHex, -1)
 
-	cgroup := "machine.slice:machine-qemu" + `\x2d` + fmt.Sprint(instanceID) + `\x2d` + instanceName + ".scope"
+	cgroup := "machine.slice:machine-qemu" + MinuxHex + fmt.Sprint(instanceID) + MinusHex + instanceName + ".scope"
 
 	return cgroup, nil
 }

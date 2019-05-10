@@ -100,9 +100,6 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
-	//	Stop on the end.
-	defer snapTaskHandle.Stop()
-
 	//
 	//	Load generator
 	//
@@ -111,11 +108,15 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
 	errutil.CheckWithContext(err, "Cannot start Mutilate task!")
 
-	//	In the end stop load on workload.
-	defer loadGeneratorHandle.Stop()
-
 	//	Wait until load generating finishes.
 	loadGeneratorHandle.Wait(0)
+
+	//	In the end stop collector and workload.
+	err = snapTaskHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot stop snap-telemetry!")
+
+	err = loadGeneratorHandle.Stop()
+	errutil.CheckWithContext(err, "Cannot stop Mutilate task!")
 }
 
 // ClassifyCachingWorkload runs classify experiment for caching workload.
