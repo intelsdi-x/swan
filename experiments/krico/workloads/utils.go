@@ -14,8 +14,6 @@ import (
 const (
 	// TypeCaching is constant name of caching workload.
 	TypeCaching = "caching"
-	// MinusHex is constant string of minus character in bytes.
-	MinusHex = `\x2d`
 )
 
 var (
@@ -65,6 +63,9 @@ func StartSnapService(address string) error {
 // GetInstanceCgroup provides cgroup of libvirt instance.
 func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) (string, error) {
 
+	// minusHex is constant string of minus character in bytes.
+	minusHex := `\x2d`
+
 	conn, err := libvirt.NewConnectReadOnly("qemu+ssh://root@" + hypervisorAddress + "/system")
 	if err != nil {
 		return "", errors.Wrap(err, "Couldn't connect to Libvirt!")
@@ -81,9 +82,9 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 		return "", errors.Wrap(err, "Couldn't get instance domain id!")
 	}
 
-	instanceName := strings.Replace(hypervisorInstanceName, "-", MinusHex, -1)
+	instanceName := strings.Replace(hypervisorInstanceName, "-", minusHex, -1)
 
-	cgroup := "machine.slice:machine-qemu" + MinuxHex + fmt.Sprint(instanceID) + MinusHex + instanceName + ".scope"
+	cgroup := "machine.slice:machine-qemu" + minusHex + fmt.Sprint(instanceID) + minusHex + instanceName + ".scope"
 
 	return cgroup, nil
 }
