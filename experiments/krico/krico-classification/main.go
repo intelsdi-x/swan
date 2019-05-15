@@ -79,6 +79,8 @@ func main() {
 	conn, err := grpc.Dial(kricoAPIAddress.Value(), grpc.WithInsecure())
 	errutil.CheckWithContext(err, "Cannot connect to KRICO!")
 
+	defer conn.Close()
+
 	krico := api.NewApiClient(conn)
 
 	_, err = krico.ImportSamplesFromSwanExperiment(context.Background(), &api.ImportSamplesFromSwanExperimentRequest{ExperimentId: experimentID})
@@ -91,6 +93,4 @@ func main() {
 		log.Infof("Predicted category for %v instance: %q", instance, predictedCategory.ClassifiedAs)
 	}
 
-	err = conn.Close()
-	errutil.CheckWithContext(err, "Cannot close connection to KRICO!")
 }
