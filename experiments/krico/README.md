@@ -190,3 +190,5 @@ Parameters available:
 -krico_prediction_ratio string                                                               
         Ratio (default "0.0")                                                                  
 ```
+
+![IG LOGO](/images/ig-logo.png) Project co-financed from the resources of the European Regional Development Fulfillment as part of the Operational Program Innovative Economy for 2007-2013, Priority 1: "Research and development of modern technologies", Measure 1.5: System projects of the National Center for Research and Development. ![EU LOGO](/images/eu-logo.png) 
