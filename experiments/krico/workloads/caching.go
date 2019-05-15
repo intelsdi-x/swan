@@ -113,7 +113,7 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	defer loadGeneratorHandle.Stop()
 
 	//	Wait until load generating finishes.
-	err = loadGeneratorHandle.Wait(0)
+	_, err = loadGeneratorHandle.Wait(0)
 	errutil.CheckWithContext(err, "Cannot finish Mutilate task!")
 }
 
@@ -204,7 +204,7 @@ func ClassifyCachingWorkload(experimentID string) string {
 	defer loadGeneratorHandle.Stop()
 
 	//	Wait until load generating finishes.
-	err = loadGeneratorHandle.Wait(0)
+	_, err = loadGeneratorHandle.Wait(0)
 	errutil.CheckWithContext(err, "Cannot finish YCSB Redis task!")
 
 	return workloadExecutorConfig.ID
