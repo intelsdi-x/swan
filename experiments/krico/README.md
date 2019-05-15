@@ -38,36 +38,8 @@ To run the experiment you need following services:
 - [Cassandra Database](http://cassandra.apache.org/)
 - KRICO Service
 
-### KRICO installation
-##### Requirements:
-* Python 2.7
-* [Pipenv](https://github.com/pypa/pipenv)
-
-##### Installation and running
-Edit existing config file (```experiments/krico/config.yml```), put your information about database and api.
-
-```bash
-database:
-    host: your host
-    port: your port
-    keyspace: krico
-    replication_factor: 1
-
-api:
-    host: your ip
-    port: 5000
-```
-
-Go to experiment folder. Install virtual environment and run KRICO service.
-
-```bash
-cd experiments/krico/
-pipenv install
-pipenv run python main.py -c config.yml
-```
 ---
 ## Running the experiments
-
 
 ##### Metric gathering
 ```bash
