@@ -78,6 +78,8 @@ func main() {
 	conn, err := grpc.Dial(kricoAPIAddress.Value(), grpc.WithInsecure())
 	errutil.CheckWithContext(err, "Cannot connect to KRICO!")
 
+	defer conn.Close()
+
 	krico := api.NewApiClient(conn)
 
 	_, err = krico.ImportMetricsFromSwanExperiment(context.Background(), &api.ImportMetricsFromSwanExperimentRequest{ExperimentId: experimentID})
@@ -89,6 +91,4 @@ func main() {
 	_, err = krico.RefreshPredictor(context.Background(), &api.RefreshPredictorRequest{})
 	errutil.CheckWithContext(err, "Cannot send request to KRICO for refreshing predictor!")
 
-	err = conn.Close()
-	errutil.CheckWithContext(err, "Cannot close connection to KRICO!")
 }

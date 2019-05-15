@@ -48,8 +48,8 @@ krico-metric-gathering
 Parameters available:
 
 ```
--aggressor_address string                                
-        IP address of aggressor node. (default "127.0.0.0")
+-loadgenerator_address string                                
+        IP address of load generator node. (default "127.0.0.0")
 
 -ssh_key string                              
         SSH key path (default "~/.ssh/id_rsa")
@@ -104,8 +104,8 @@ krico-classification
 Parameters available:
 
 ```
--aggressor_address string                                
-        IP address of aggressor node. (default "127.0.0.0")
+-loadgenerator_address string                                
+        IP address of load generator node. (default "127.0.0.0")
 
 -ssh_key string                              
         SSH key path (default "~/.ssh/id_rsa")

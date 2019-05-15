@@ -100,6 +100,8 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
+	defer snapTaskHandle.Stop()
+
 	//
 	//	Load generator
 	//
@@ -108,15 +110,11 @@ func CollectingMetricsForCachingWorkload(experimentID string) {
 	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
 	errutil.CheckWithContext(err, "Cannot start Mutilate task!")
 
+	defer loadGeneratorHandle.Stop()
+
 	//	Wait until load generating finishes.
-	loadGeneratorHandle.Wait(0)
-
-	//	In the end stop collector and workload.
-	err = snapTaskHandle.Stop()
-	errutil.CheckWithContext(err, "Cannot stop snap-telemetry!")
-
-	err = loadGeneratorHandle.Stop()
-	errutil.CheckWithContext(err, "Cannot stop Mutilate task!")
+	err = loadGeneratorHandle.Wait(0)
+	errutil.CheckWithContext(err, "Cannot finish Mutilate task!")
 }
 
 // ClassifyCachingWorkload runs classify experiment for caching workload.
@@ -193,6 +191,8 @@ func ClassifyCachingWorkload(experimentID string) string {
 	snapTaskHandle, err := snapTaskLauncher.Launch()
 	errutil.CheckWithContext(err, "Cannot gather performance metrics!")
 
+	defer snapTaskHandle.Stop()
+
 	//
 	//	Load Generator
 	//
@@ -201,19 +201,11 @@ func ClassifyCachingWorkload(experimentID string) string {
 	loadGeneratorHandle, err := loadGeneratorLauncher.Load(maxQPS, loadDuration)
 	errutil.CheckWithContext(err, "Cannot start YCSB Redis task!")
 
+	defer loadGeneratorHandle.Stop()
+
 	//	Wait until load generating finishes.
-	loadGeneratorHandle.Wait(0)
+	err = loadGeneratorHandle.Wait(0)
+	errutil.CheckWithContext(err, "Cannot finish YCSB Redis task!")
 
-	//	Stop workload in the end of experiment.
-	err = workloadHandle.Stop()
-	errutil.CheckWithContext(err, "Cannot stop Memcached!")
-
-	//	Stop snap task on the end of experiment.
-	err = snapTaskHandle.Stop()
-	errutil.CheckWithContext(err, "Cannot stop Snap telemetry!")
-
-	//	In the end stop load on workload.
-	err = loadGeneratorHandle.Stop()
-	errutil.CheckWithContext(err, "Cannot stop YCSB Redis task!")
 	return workloadExecutorConfig.ID
 }

@@ -18,7 +18,7 @@ const (
 
 var (
 	snapStartCommand     = "systemctl restart snap-telemetry"
-	loadGeneratorAddress = conf.NewStringFlag("loadgenerator_address", "IP address of aggressor node.", "127.0.0.0")
+	loadGeneratorAddress = conf.NewStringFlag("loadgenerator_address", "IP address of load generator node.", "127.0.0.0")
 )
 
 // RunCollectingMetrics runs metric gathering experiment for each type of workload.
@@ -92,7 +92,7 @@ func GetInstanceCgroup(hypervisorInstanceName string, hypervisorAddress string) 
 // PrepareDefaultKricoTags returns struct with default tags needed in KRICO experiment.
 func PrepareDefaultKricoTags(openStackConfig executor.OpenstackConfig, experimentID string) map[string]interface{} {
 	return map[string]interface{}{
-		experiment.ExperimentKey: experimentID,
+		experiment.ExperimentKey:          experimentID,
 		"name":                            openStackConfig.Name,
 		"instance_id":                     openStackConfig.ID,
 		"image":                           openStackConfig.Image,
