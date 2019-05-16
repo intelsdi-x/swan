@@ -30,8 +30,10 @@ import (
 	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/aggregates"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedserverattributes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/floatingips"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/hypervisors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/startstop"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
@@ -48,22 +50,25 @@ import (
 )
 
 const (
-	executorName        = "Openstack executor"
-	executorLogPrefix   = executorName + ":"
-	taskHandleName      = "Openstack task handle"
-	taskHandleLogPrefix = taskHandleName + ":"
-	directoryPrefix     = "openstack"
+	executorName          = "Openstack executor"
+	executorLogPrefix     = executorName + ":"
+	taskHandleName        = "Openstack task handle"
+	taskHandleLogPrefix   = taskHandleName + ":"
+	directoryPrefix       = "openstack"
+	taskNotTerminatedCode = -1
 )
 
 var (
-	flavorDiskFlag  = conf.NewIntFlag("flavor_disk", "Openstack flavor disk size [GB]", 10)
-	flavorRAMFlag   = conf.NewIntFlag("flavor_ram", "Openstack flavor RAM size [MB]", 1024)
-	flavorVCPUsFlag = conf.NewIntFlag("flavor_vcpus", "Openstack flavor VCPUs", 1)
-	imageFlag       = conf.NewStringFlag("image", "Name of image.", "cirros")
-	userFlag        = conf.NewStringFlag("username", "Username", "cirros")
-	sshKeyPathFlag  = conf.NewStringFlag("ssh_key", "SSH key path", "~/.ssh/id_rsa")
-	keypairName     = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
-	bootUpTimeOut   = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
+	flavorDiskFlag      = conf.NewIntFlag("flavor_disk", "Openstack flavor disk size [GB]", 10)
+	flavorRAMFlag       = conf.NewIntFlag("flavor_ram", "Openstack flavor RAM size [MB]", 1024)
+	flavorVCPUsFlag     = conf.NewIntFlag("flavor_vcpus", "Openstack flavor VCPUs", 1)
+	imageFlag           = conf.NewStringFlag("image", "Name of image.", "cirros")
+	userFlag            = conf.NewStringFlag("username", "Username", "cirros")
+	sshKeyPathFlag      = conf.NewStringFlag("ssh_key", "SSH key path", "~/.ssh/id_rsa")
+	keypairName         = conf.NewStringFlag("os_keypair_name", "Openstack Keypair Name", "swan")
+	bootUpTimeOut       = conf.NewDurationFlag("vm_boot_up_timeout", "Virtual Machine boot up timeout", time.Second*30)
+	hostAggregateIDFlag = conf.NewIntFlag("host_aggregate_id", "ID of host aggregate which VM must be running in", -1)
+	watcherIntervalFlag = conf.NewDurationFlag("os_watcher_interval", "OpenStack watcher interval timeout", time.Second)
 )
 
 // DefaultOpenstackConfig creates default OpenStack config.
@@ -83,6 +88,7 @@ func DefaultOpenstackConfig(auth gophercloud.AuthOptions) OpenstackConfig {
 
 // OpenstackFlavor defines OpenStack flavor data.
 type OpenstackFlavor struct {
+	Name  string
 	Disk  int
 	RAM   int
 	VCPUs int
@@ -97,15 +103,51 @@ type OpenstackAuthConfig struct {
 	Endpoint   string
 }
 
+// HostAggregate defines OpenStack host aggregate data.
+type HostAggregate struct {
+	Name             string
+	ConfigurationID  string
+	AvailabilityZone string
+	Disk             Disk
+	RAM              RAM
+	CPU              CPU
+}
+
+// Hypervisor defines OpenStack hypervisor data.
+type Hypervisor struct {
+	InstanceName string
+	Address      string
+}
+
+// Disk defines disk data.
+type Disk struct {
+	Iops string
+	Size string
+}
+
+// RAM defines RAM data.
+type RAM struct {
+	Bandwidth string
+	Size      string
+}
+
+// CPU defines CPU data.
+type CPU struct {
+	Performance string
+	Threads     string
+}
+
 // OpenstackConfig defines OpenStack instance configuration data.
 type OpenstackConfig struct {
-	Auth                   gophercloud.AuthOptions
-	Flavor                 OpenstackFlavor
-	FlavorName             string
-	Image                  string
-	User                   string
-	SSHKeyPath             string
-	HypervisorInstanceName string
+	Auth          gophercloud.AuthOptions
+	Flavor        OpenstackFlavor
+	Image         string
+	User          string
+	SSHKeyPath    string
+	Name          string
+	ID            string
+	Hypervisor    Hypervisor
+	HostAggregate HostAggregate
 }
 
 // Openstack defines OpenStack server configuration and client.
@@ -158,13 +200,38 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	}
 
 	image, err := images.IDFromName(stack.client, stack.config.Image)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get image id from name: %s !", executorLogPrefix, image)
+		log.Error(err.Error())
+		return nil, err
+	}
 
 	instanceName := fmt.Sprintf("krico.%s", uuid.New())
 
+	stack.config.Name = instanceName
+
+	aggregate, err := aggregates.Get(stack.client, hostAggregateIDFlag.Value()).Extract()
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get host aggregate info", executorLogPrefix)
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	stack.config.HostAggregate.Name = aggregate.Name
+	stack.config.HostAggregate.AvailabilityZone = aggregate.AvailabilityZone
+	stack.config.HostAggregate.ConfigurationID = aggregate.Metadata["configuration_id"]
+	stack.config.HostAggregate.Disk.Iops = aggregate.Metadata["disk_iops"]
+	stack.config.HostAggregate.Disk.Size = aggregate.Metadata["disk_size"]
+	stack.config.HostAggregate.CPU.Performance = aggregate.Metadata["cpu_performance"]
+	stack.config.HostAggregate.CPU.Threads = aggregate.Metadata["cpu_threads"]
+	stack.config.HostAggregate.RAM.Size = aggregate.Metadata["ram_size"]
+	stack.config.HostAggregate.RAM.Bandwidth = aggregate.Metadata["ram_bandwidth"]
+
 	serverOpts := servers.CreateOpts{
-		Name:      instanceName,
-		FlavorRef: flavorID,
-		ImageRef:  image,
+		Name:             instanceName,
+		FlavorRef:        flavorID,
+		ImageRef:         image,
+		AvailabilityZone: stack.config.HostAggregate.AvailabilityZone,
 	}
 
 	serverOptsExt := keypairs.CreateOptsExt{
@@ -180,6 +247,8 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	}
 
 	log.Infof("%s Scheduled instance %s creation", executorLogPrefix, instance.ID)
+
+	stack.config.ID = instance.ID
 
 	if err = servers.WaitForStatus(stack.client, instance.ID, "ACTIVE", 60); err != nil {
 		err = errors.Wrapf(err, "%s Couldn't launch instance", executorLogPrefix)
@@ -211,21 +280,17 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 	log.Infof("%s Waiting for %s instance to boot up", executorLogPrefix, instanceName)
 	time.Sleep(bootUpTimeOut.Value())
 
-	type serverAttributesExt struct {
-		servers.Server
-		extendedserverattributes.ServerAttributesExt
-	}
-
-	var extendedAttributes serverAttributesExt
-
-	err = servers.Get(stack.client, instance.ID).ExtractInto(&extendedAttributes)
+	stack.config.Hypervisor.InstanceName, err = stack.obtainHypervisorInstanceName(instance.ID)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceName)
-		log.Error(err)
+		log.Errorf("%s Couldn't obtain hypervisor instance name for %s instance!", executorLogPrefix, instanceName)
 		return nil, err
 	}
 
-	stack.config.HypervisorInstanceName = extendedAttributes.InstanceName
+	stack.config.Hypervisor.Address, err = stack.obtainHypervisorAddress(instance.ID)
+	if err != nil {
+		log.Errorf("%s Couldn't obtain hypervisor address for %s instance!", executorLogPrefix, instanceName)
+		return nil, err
+	}
 
 	remote, err := NewRemote(floatingIP, remoteConfig)
 	if err != nil {
@@ -241,11 +306,7 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 		return nil, err
 	}
 
-	exitCode, err := remoteHandler.ExitCode()
-	if err != nil {
-		log.Errorf("%s Couldn't obtain exit code from executed command", executorLogPrefix)
-		return nil, err
-	}
+	exitCode, _ := remoteHandler.ExitCode()
 
 	log.Infof("%s Executed %q on %s (%s) with exit code: %d", executorLogPrefix, command, instanceName, floatingIP, exitCode)
 
@@ -273,7 +334,6 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 		stdoutFilePath: stdoutFileName,
 		stderrFilePath: stderrFileName,
 		instance:       instance.ID,
-		os:             &stack,
 		running:        true,
 		exitCode:       exitCode,
 		requestStop:    make(chan struct{}),
@@ -292,13 +352,17 @@ func (stack Openstack) Execute(command string) (TaskHandle, error) {
 		deleted:       taskHandle.deleted,
 	}
 
+	if exitCode == taskNotTerminatedCode {
+		taskWatcher.cmdHandler = remoteHandler
+	}
+
 	err = taskWatcher.watch()
 
 	return taskHandle, nil
 }
 
 func (stack Openstack) ensureFlavor() (string, error) {
-	stack.config.FlavorName = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", stack.config.Flavor.VCPUs, stack.config.Flavor.RAM, stack.config.Flavor.Disk)
+	stack.config.Flavor.Name = fmt.Sprintf("krico.cpu-%d.ram-%d.disk-%d", stack.config.Flavor.VCPUs, stack.config.Flavor.RAM, stack.config.Flavor.Disk)
 
 	listOpts := flavors.ListOpts{
 		AccessType: flavors.AllAccess,
@@ -306,20 +370,20 @@ func (stack Openstack) ensureFlavor() (string, error) {
 
 	allPages, err := flavors.ListDetail(stack.client, listOpts).AllPages()
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't get flavors list to check %s within it", executorLogPrefix, stack.config.Flavor.Name)
 		return "", err
 	}
 
 	allFlavors, err := flavors.ExtractFlavors(allPages)
 	if err != nil {
-		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, stack.config.FlavorName)
+		err = errors.Wrapf(err, "%s Couldn't extract flavors list to check %s within it", executorLogPrefix, stack.config.Flavor.Name)
 		return "", err
 	}
 
 	// check if flavor already exists
 	for _, flavor := range allFlavors {
-		if flavor.Name == stack.config.FlavorName {
-			log.Infof("%s Using existing flavor %q", executorLogPrefix, stack.config.FlavorName)
+		if flavor.Name == stack.config.Flavor.Name {
+			log.Infof("%s Using existing flavor %q", executorLogPrefix, stack.config.Flavor.Name)
 			return flavor.ID, nil
 		}
 	}
@@ -328,18 +392,18 @@ func (stack Openstack) ensureFlavor() (string, error) {
 	flavorID := uuid.New()
 	flavorOpts := flavors.CreateOpts{
 		ID:    flavorID,
-		Name:  stack.config.FlavorName,
+		Name:  stack.config.Flavor.Name,
 		Disk:  &stack.config.Flavor.Disk,
 		RAM:   stack.config.Flavor.RAM,
 		VCPUs: stack.config.Flavor.VCPUs,
 	}
 	_, err = flavors.Create(stack.client, flavorOpts).Extract()
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to create flavor %q", stack.config.FlavorName)
+		err = errors.Wrapf(err, "Unable to create flavor %q", stack.config.Flavor.Name)
 		return flavorID, err
 	}
 
-	log.Infof("%s Created flavor %q", executorLogPrefix, stack.config.FlavorName)
+	log.Infof("%s Created flavor %q", executorLogPrefix, stack.config.Flavor.Name)
 
 	return flavorID, nil
 }
@@ -419,6 +483,63 @@ func (stack Openstack) findFloatingIP() (string, error) {
 	return floatingIP.IP, nil
 }
 
+type serverAttributesExt struct {
+	servers.Server
+	extendedserverattributes.ServerAttributesExt
+}
+
+func (stack Openstack) obtainHypervisorInstanceName(instanceID string) (string, error) {
+
+	var extendedAttributes serverAttributesExt
+
+	err := servers.Get(stack.client, instanceID).ExtractInto(&extendedAttributes)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceID)
+		return "", err
+	}
+
+	return extendedAttributes.InstanceName, nil
+}
+
+func (stack Openstack) obtainHypervisorAddress(instanceID string) (string, error) {
+
+	var extendedAttributes serverAttributesExt
+
+	err := servers.Get(stack.client, instanceID).ExtractInto(&extendedAttributes)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't get %s instance extended attributes", executorLogPrefix, instanceID)
+		return "", err
+	}
+
+	allPages, err := hypervisors.List(stack.client).AllPages()
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't read hypervisors list", executorLogPrefix)
+		return "", err
+	}
+
+	allHypervisors, err := hypervisors.ExtractHypervisors(allPages)
+	if err != nil {
+		err = errors.Wrapf(err, "%s Couldn't extract hypervisors list", executorLogPrefix)
+		return "", err
+	}
+
+	var hypervisorAddress string
+
+	for _, hypervisor := range allHypervisors {
+		if hypervisor.HypervisorHostname == extendedAttributes.HypervisorHostname {
+			hypervisorAddress = hypervisor.HostIP
+			break
+		}
+	}
+
+	if hypervisorAddress == "" {
+		err = errors.Errorf("%s Couldn't find hypervisor address!", executorLogPrefix)
+		return "", err
+	}
+
+	return hypervisorAddress, err
+}
+
 // OpenstackTaskHandle represents an abstraction to control task lifecycle and status.
 type OpenstackTaskHandle struct {
 	command        string
@@ -426,7 +547,6 @@ type OpenstackTaskHandle struct {
 	stdoutFilePath string
 	stderrFilePath string
 	instance       string
-	os             *Openstack
 	running        bool
 	exitCode       int
 	requestStop    chan struct{}
@@ -537,6 +657,7 @@ func (th *OpenstackTaskHandle) Instance() string {
 type openstackWatcher struct {
 	client        *gophercloud.ServiceClient
 	instance      string
+	cmdHandler    TaskHandle
 	running       *bool
 	requestStop   chan struct{}
 	requestDelete chan struct{}
@@ -573,7 +694,7 @@ func (watcher *openstackWatcher) watch() error {
 				*watcher.running = false
 				watcher.requestDelete <- struct{}{}
 			}
-			time.Sleep(time.Second)
+			time.Sleep(watcherIntervalFlag.Value())
 		}
 	}()
 
@@ -581,6 +702,17 @@ func (watcher *openstackWatcher) watch() error {
 		for {
 			select {
 			case <-watcher.requestStop:
+
+				//	If cmdHandler is provided, task is still running. We must stop it before shutting down VM to avoid
+				//	panic errors.
+				if watcher.cmdHandler != nil {
+					err := watcher.cmdHandler.Stop()
+					if err != nil {
+						print(err.Error())
+						return
+					}
+				}
+
 				startstop.Stop(watcher.client, watcher.instance).ExtractErr()
 			case <-watcher.requestDelete:
 				servers.Delete(watcher.client, watcher.instance)

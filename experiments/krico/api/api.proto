@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+service Api {
+    rpc Classify (ClassifyRequest) returns (ClassifyResponse) {}
+    rpc Predict (PredictRequest) returns (PredictResponse) {}
+    rpc RefreshClassifier (RefreshClassifierRequest) returns (RefreshClassifierResponse) {}
+    rpc RefreshPredictor (RefreshPredictorRequest) returns (RefreshPredictorResponse) {}
+    rpc RefreshInstances (RefreshInstancesRequest) returns (RefreshInstancesResponse) {}
+    rpc WorkloadsCategories (WorkloadsCategoriesRequest) returns (WorkloadsCategoriesResponse) {}
+    rpc ImportMetricsFromSwanExperiment (ImportMetricsFromSwanExperimentRequest) returns (ImportMetricsFromSwanExperimentResponse) {}
+    rpc ImportSamplesFromSwanExperiment (ImportSamplesFromSwanExperimentRequest) returns (ImportSamplesFromSwanExperimentResponse) {}
+}
+
+message ClassifyRequest {
+    string instance_id = 1;
+}
+
+message ClassifyResponse {
+    string classified_as = 1;
+}
+
+message PredictRequest {
+    string category = 1;
+    string image = 2;
+    map<string, double> parameters = 3;
+    string configuration_id = 4;
+    string allocation_mode = 5;
+}
+
+message PredictResponse {
+    repeated PredictRequirements requirements = 1;
+    repeated PredictFlavor flavors = 2;
+    repeated PredictHostAggregate host_aggregates = 3;
+}
+
+message PredictRequirements {
+    double cpu_threads = 1;
+    double disk_iops = 2;
+    double network_bandwidth = 3;
+    double ram_size = 4;
+}
+
+message PredictFlavor {
+    uint32 disk = 1;
+    uint32 ram = 2;
+    uint32 vcpus = 3;
+    string name = 4;
+}
+
+message PredictHostAggregate {
+    PredictHostAggregateCPU cpu = 1;
+    PredictHostAggregateDisk disk = 2;
+    PredictHostAggregateRAM ram = 3;
+}
+
+message PredictHostAggregateCPU {
+    uint32 performance = 1;
+    uint32 threads = 2;
+}
+
+message PredictHostAggregateDisk {
+    uint32 iops = 1;
+    uint32 size = 2;
+}
+
+message PredictHostAggregateRAM {
+    uint32 bandwidth = 1;
+    uint32 size = 2;
+}
+
+message RefreshClassifierRequest {
+
+}
+
+message RefreshClassifierResponse {
+
+}
+
+message RefreshPredictorRequest {
+
+}
+
+message RefreshPredictorResponse {
+
+}
+
+message RefreshInstancesRequest {
+
+}
+
+message RefreshInstancesResponse {
+
+}
+
+message WorkloadsCategoriesRequest {
+}
+
+message WorkloadsCategoriesResponse {
+    repeated WorkloadCategory workloads_categories = 1;
+}
+
+message WorkloadCategory{
+    string name = 1;
+    repeated string parameters = 2;
+}
+
+message ImportMetricsFromSwanExperimentRequest {
+    string experiment_id=1;
+}
+
+message ImportMetricsFromSwanExperimentResponse {
+
+}
+
+message ImportSamplesFromSwanExperimentRequest {
+    string experiment_id=1;
+}
+
+message ImportSamplesFromSwanExperimentResponse {
+
+}
+

@@ -1,5 +1,5 @@
-hash: 0e54310d021ffc526f3f1a34365cb31cd652709f6caad9b2ba406dd94f76fbd6
-updated: 2018-09-07T15:35:48.286449627+02:00
+hash: 72f3bffec03e54ab0f476f7c7d8e25c8fb3a63c7b0c47db94451a78562ecfdbd
+updated: 2019-04-26T16:33:34.14025869+02:00
 imports:
 - name: github.com/appc/spec
   version: cbe99b7160b1397bf89f9c8bb1418f69c9424049
@@ -62,7 +62,7 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
+  version: b5d812f8a3706043e23a9cd5babf2e5423744d30
   subpackages:
   - proto
   - ptypes/any
@@ -74,7 +74,10 @@ imports:
   version: 3a5f2b6741320bd44cff57dcfd03400d1ef905e7
   subpackages:
   - openstack
+  - openstack/compute/v2/extensions/aggregates
+  - openstack/compute/v2/extensions/extendedserverattributes
   - openstack/compute/v2/extensions/floatingips
+  - openstack/compute/v2/extensions/hypervisors
   - openstack/compute/v2/extensions/keypairs
   - openstack/compute/v2/extensions/startstop
   - openstack/compute/v2/flavors
@@ -108,7 +111,7 @@ imports:
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/influxdata/influxdb
-  version: 4e4e00bc5ab85a3ff5e988c91020cf0399a87026
+  version: 30832fc132de11e395c1b59dc6bfeb764439b56c
   subpackages:
   - client/v2
   - models
@@ -158,6 +161,8 @@ imports:
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/julienschmidt/httprouter
   version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
+- name: github.com/libvirt/libvirt-go
+  version: 990578ed5e26b53ee5bdfb6f2c5a099dc3eff4ad
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -165,7 +170,7 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+  version: ba968bfe8b2f7e042a574c888954fccecfa385b4
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
@@ -215,7 +220,7 @@ imports:
   subpackages:
   - errorutil
 - name: golang.org/x/crypto
-  version: 0709b304e793a5edb4a2c0145f281ecdc20838a4
+  version: c05e17bb3b2dca130fc919668a96b4bec9eb9442
   subpackages:
   - cast5
   - curve25519
@@ -233,7 +238,7 @@ imports:
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
-  version: 161cd47e91fd58ac17490ef4d742dc98bb4cf60e
+  version: 4829fb13d2c62012c17688fa7f629f371014946d
   subpackages:
   - context
   - http/httpguts
@@ -243,12 +248,14 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 8cf3aee429924738c56c34bb819c4ea8273fc434
+  version: a129542de9ae0895210abff9c95d67a1f33cb93d
   subpackages:
+  - cpu
+  - uni
   - unix
   - windows
 - name: golang.org/x/text
-  version: 4ae1256249243a4eb350a9a372e126557f2aa346
+  version: 5d731a35f4867878fc89f7744f7b6debb3beded6
   subpackages:
   - cases
   - internal

@@ -36,6 +36,7 @@ const (
 	defaultNumConnections  = 2048
 	defaultListenIP        = "127.0.0.1"
 	defaultThreadsAffinity = false
+	defaultTimeout         = 5
 )
 
 var (
@@ -48,6 +49,7 @@ var (
 	threadsAffinityFlag = conf.NewBoolFlag("memcached_threads_affinity", "Threads affinity (-T) (requires memcached patch)", defaultThreadsAffinity)
 	maxConnectionsFlag  = conf.NewIntFlag("memcached_connections", "Max simultaneous connections. (-c)", defaultNumConnections)
 	maxMemoryMBFlag     = conf.NewIntFlag("memcached_max_memory", "Maximum memory in MB to use for items in megabytes. (-m)", defaultMaxMemoryMB)
+	timeoutFlag         = conf.NewIntFlag("memcached_timeout", "Maximum wait time for start Memcached in seconds.", defaultTimeout)
 )
 
 // Config is a config for the memcached data caching application v 1.4.25.
@@ -70,6 +72,7 @@ type Config struct {
 	MaxMemoryMB     int
 	NumConnections  int
 	IP              string
+	Timeout         int
 }
 
 // DefaultMemcachedConfig is a constructor for MemcachedConfig with default parameters.
@@ -83,6 +86,7 @@ func DefaultMemcachedConfig() Config {
 		MaxMemoryMB:     maxMemoryMBFlag.Value(),
 		NumConnections:  maxConnectionsFlag.Value(),
 		IP:              IPFlag.Value(),
+		Timeout:         timeoutFlag.Value(),
 	}
 }
 
@@ -106,6 +110,7 @@ func New(exec executor.Executor, config Config) Memcached {
 
 }
 
+// Build command to run mutilate
 func (m Memcached) buildCommand() string {
 	cmd := fmt.Sprint(m.conf.PathToBinary,
 		" -p ", m.conf.Port,
@@ -116,6 +121,7 @@ func (m Memcached) buildCommand() string {
 	if m.conf.ThreadsAffinity {
 		cmd += " -T"
 	}
+
 	return cmd
 }
 
@@ -127,9 +133,8 @@ func (m Memcached) Launch() (executor.TaskHandle, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	address := fmt.Sprintf("%s:%d", m.conf.IP, m.conf.Port)
-	if !m.isMemcachedUp(address, 5*time.Second) {
+	if !m.isMemcachedUp(address, time.Second*time.Duration(m.conf.Timeout)) {
 		if err := task.Stop(); err != nil {
 			log.Errorf("failed to stop memcached instance. Error: %q", err.Error())
 		}
