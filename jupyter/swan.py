@@ -18,14 +18,15 @@ This module contains the convince class to read experiment data and generate sen
 profiles. See profile.py for more information.
 """
 
-import datetime
-import os
+import sys
 import re
-from collections import defaultdict
+import os
+import datetime
+import pickle
 from functools import partial
-
-import numpy as np
 import pandas as pd
+import numpy as np
+from collections import defaultdict
 
 
 # -------------------------------
@@ -62,14 +63,12 @@ class DataFrameToCSVCache:
         """ Can be use as decorator for function that have experiment_id as first parameter and returns dataframe.
         Cache can be disabled by adding cache=False to kwargs in decorated function.
         """
-
         def decorator(experiment_id, *args, **kw):
             if kw.pop('cache', True) and experiment_id in self:
                 return self[experiment_id]
             df = func(experiment_id, *args, **kw)
             self[experiment_id] = df
             return df
-
         return decorator
 
 
@@ -117,8 +116,7 @@ def _get_or_create_cassandra_session(nodes, port, ssl_options=None):
 
 
 @DataFrameToCSVCache()
-def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys,
-                                           cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
+def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
                                            aggfuncs=None, default_aggfunc=np.average,
                                            keyspace=DEFAULT_KEYSPACE):
     """ Load data from cassandra database as rows, processes them and returns dataframe with multiindex build on tags.
@@ -134,14 +132,13 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys,
     :returns: Data as cassandra rows (each row being dict like).
     """
     cassandra_session = _get_or_create_cassandra_session(**cassandra_options)
-    cassandra_session.set_keyspace(keyspace)
 
     # helper to drop prefix from ns (removing host depedency).
     pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
     drop_prefix = partial(pattern.sub, '')
 
-    statement = cassandra_session.prepare("SELECT ns, doubleval, tags FROM tags WHERE "
-                                          "key = 'swan_experiment' AND val=?")
+    query = "SELECT ns, doubleval, tags FROM %s.tags WHERE key = 'swan_experiment' AND val=?" % keyspace
+    statement = cassandra_session.prepare(query)
 
     rows = cassandra_session.execute(statement, [experiment_id])
 
@@ -189,10 +186,8 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys,
         except ValueError:
             continue
 
-    print('dataframe with shape=%s build in %.0fs' % (
-    df.shape, (datetime.datetime.now() - started).seconds))
+    print('dataframe with shape=%s build in %.0fs' % (df.shape, (datetime.datetime.now() - started).seconds))
     return df
-
 
 # Constants for columns names used.
 # New column names.
@@ -210,6 +205,7 @@ SWAN_LOAD_POINT_QPS_LABEL = 'swan_loadpoint_qps'  # Target QPS.
 SWAN_AGGRESSOR_NAME_LABEL = 'swan_aggressor_name'
 SWAN_REPETITION_LABEL = 'swan_repetition'
 
+
 # ----------------------------------------------------
 # Style functions & constants for table cells styling
 # ----------------------------------------------------
@@ -220,6 +216,7 @@ WARN_STYLE = 'background:#ffeda0'
 OK_STYLE = 'background:#98cc70'
 NAN_STYLE = 'background-color: #c0c0c0'
 FAIL_STYLE = 'background-color: #b0c0b0'
+
 
 QPS_FAIL_THRESHOLD = 0.9
 QPS_OK_THRESHOLD = 0.95
@@ -256,7 +253,7 @@ def composite_qps_colors(composite_values):
         return NAN_STYLE
 
     achieved_qps = composite_values[ACHIEVED_QPS_LABEL]
-    if any(map(pd.isnull, (achieved_qps,))):
+    if any(map(pd.isnull, (achieved_qps, ))):
         return NAN_STYLE
 
     if pd.isnull(achieved_qps):
@@ -337,6 +334,7 @@ def composite_latency_colors(composite_values, slo):
 
 
 class Renamer:
+
     """ Helper class to facilitate columns renaming in dataframe before visualizing.
 
     Instance can be used as function to refere to new name.
@@ -376,8 +374,7 @@ def add_extra_and_composite_columns(df, slo):
     df[ACHIEVED_LATENCY_LABEL] = pd.Series(df[PERCENTILE99TH_LABEL] / slo)
 
     # Columns to store in one cell for father processing.
-    COMPOSITE_COLUMNS = [ACHIEVED_QPS_LABEL, PERCENTILE99TH_LABEL, ACHIEVED_LATENCY_LABEL,
-                         QPS_LABEL]
+    COMPOSITE_COLUMNS = [ACHIEVED_QPS_LABEL, PERCENTILE99TH_LABEL, ACHIEVED_LATENCY_LABEL, QPS_LABEL]
     # Composite value to store all values e.g. "achieved qps" and "latency" together in one cell as dict.
     # Used to display one of the values and format using other value.
     df[COMPOSITE_VALUES_LABEL] = df[COMPOSITE_COLUMNS].apply(dict, axis=1)
@@ -429,7 +426,6 @@ class Experiment:
         """ Interactive pivot table for data analysis. """
         return _pivot_ui(self.df)
 
-
 # --------------------------------------------------------------
 # "sensitivity profile" experiment
 # --------------------------------------------------------------
@@ -479,11 +475,11 @@ class SensitivityProfile:
         if qpses is not None:
             df = df[df[self.renamer(SWAN_LOAD_POINT_QPS_LABEL)].isin(qpses)]
         return df.pivot_table(
-            values=COMPOSITE_VALUES_LABEL,
-            index=self.renamer(SWAN_AGGRESSOR_NAME_LABEL),
-            columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
-            aggfunc='first',
-        )
+                values=COMPOSITE_VALUES_LABEL,
+                index=self.renamer(SWAN_AGGRESSOR_NAME_LABEL),
+                columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
+                aggfunc='first',
+            )
 
     def _get_caption(self, cell, normalized=False):
         return '%s%s of "sensitivity profile" experiment %s' % (
@@ -495,28 +491,28 @@ class SensitivityProfile:
     def latency(self, normalized=True, aggressors=None, qpses=None):
         """ Generate table with information about tail latency."""
         return self._composite_pivot_table(
-            aggressors,
-            qpses
-        ).style.applymap(
-            partial(composite_latency_colors, slo=self.slo),
-        ).format(
-            partial(composite_latency_formatter, normalized=normalized)
-        ).set_caption(
-            self._get_caption('latency[us]', normalized)
-        )
+                aggressors,
+                qpses
+            ).style.applymap(
+                partial(composite_latency_colors, slo=self.slo),
+            ).format(
+                partial(composite_latency_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('latency[us]', normalized)
+            )
 
     def qps(self, normalized=True, aggressors=None, qpses=None):
         """ Generate table with information about achieved QPS."""
         return self._composite_pivot_table(
-            aggressors,
-            qpses
-        ).style.applymap(
-            partial(composite_qps_colors),
-        ).format(
-            partial(composite_qps_formatter, normalized=normalized)
-        ).set_caption(
-            self._get_caption('queries per second', normalized)
-        )
+                aggressors,
+                qpses
+            ).style.applymap(
+                partial(composite_qps_colors),
+            ).format(
+                partial(composite_qps_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('queries per second', normalized)
+            )
 
     def caffe_batches(self):
         """ Generate table with information about Caffe aggressor
@@ -526,15 +522,14 @@ class SensitivityProfile:
         df = self.df[self.df[self.renamer(SWAN_AGGRESSOR_NAME_LABEL)] == 'Caffe']
 
         return df.pivot_table(
-            values="batches",
-            index=self.renamer(SWAN_AGGRESSOR_NAME_LABEL),
-            columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
-        ).style.format(
-            '{:.0f}'
-        ).set_caption(
-            self._get_caption('caffe image batches')
-        )
-
+                values="batches",
+                index=self.renamer(SWAN_AGGRESSOR_NAME_LABEL),
+                columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
+            ).style.format(
+                '{:.0f}'
+            ).set_caption(
+                self._get_caption('caffe image batches')
+            )
 
 # --------------------------------------------------------------
 # "optimal core allocation" experiment
@@ -557,8 +552,7 @@ class OptimalCoreAllocation:
 
     def __init__(self, experiment_id, slo, cassandra_options=DEFAULT_CASSANDRA_OPTIONS,
                  cache=True, keyspace=DEFAULT_KEYSPACE):
-        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options, cache=cache,
-                                     keyspace=keyspace)
+        self.experiment = Experiment(experiment_id, self.tag_keys, cassandra_options, cache=cache, keyspace=keyspace)
         self.slo = slo
 
         # Pre-process data specifically for this experiment.
@@ -584,11 +578,11 @@ class OptimalCoreAllocation:
         if qpses is not None:
             df = df[df[self.renamer(SWAN_LOAD_POINT_QPS_LABEL)].isin(qpses)]
         return df.pivot_table(
-            values=COMPOSITE_VALUES_LABEL,
-            index=self.renamer(NUMBER_OF_CORES_LABEL),
-            columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
-            aggfunc='first',
-        )
+                values=COMPOSITE_VALUES_LABEL,
+                index=self.renamer(NUMBER_OF_CORES_LABEL),
+                columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
+                aggfunc='first',
+            )
 
     def _get_caption(self, cell, normalized):
         return '%s%s of "optimal core allocation" experiment %s' % (
@@ -599,27 +593,27 @@ class OptimalCoreAllocation:
 
     def latency(self, normalized=True, aggressors=None, qpses=None):
         return self._composite_pivot_table(
-            aggressors,
-            qpses
-        ).style.applymap(
-            partial(composite_latency_colors, slo=self.slo),
-        ).format(
-            partial(composite_latency_formatter, normalized=normalized)
-        ).set_caption(
-            self._get_caption('latency[us]', normalized)
-        )
+                aggressors,
+                qpses
+            ).style.applymap(
+                partial(composite_latency_colors, slo=self.slo),
+            ).format(
+                partial(composite_latency_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('latency[us]', normalized)
+            )
 
     def qps(self, normalized=True, aggressors=None, qpses=None):
         return self._composite_pivot_table(
-            aggressors,
-            qpses
-        ).style.applymap(
-            partial(composite_qps_colors),
-        ).format(
-            partial(composite_qps_formatter, normalized=normalized)
-        ).set_caption(
-            self._get_caption('queries per second', normalized)
-        )
+                aggressors,
+                qpses
+            ).style.applymap(
+                partial(composite_qps_colors),
+            ).format(
+                partial(composite_qps_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('queries per second', normalized)
+            )
 
     def cpu(self):
         def cpu_colors(cpu):
@@ -627,18 +621,17 @@ class OptimalCoreAllocation:
             if pd.isnull(cpu):
                 return NAN_STYLE
             return "background: rgb(%d, %d, 0); color: white;" % (cpu * 255, 255 - cpu * 255)
-
         return self.df.pivot_table(
-            values=SNAP_USE_COMPUTE_SATURATION_LABEL,
-            index=self.renamer(NUMBER_OF_CORES_LABEL),
-            columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
-        ).style.applymap(
-            cpu_colors
-        ).format(
-            '{:.0%}'
-        ).set_caption(
-            self._get_caption('cpu utilization', False)
-        )
+                values=SNAP_USE_COMPUTE_SATURATION_LABEL,
+                index=self.renamer(NUMBER_OF_CORES_LABEL),
+                columns=self.renamer(SWAN_LOAD_POINT_QPS_LABEL),
+            ).style.applymap(
+                cpu_colors
+            ).format(
+                '{:.0%}'
+            ).set_caption(
+                self._get_caption('cpu utilization', False)
+            )
 
 
 # --------------------------------------------------------------
@@ -711,18 +704,17 @@ class CAT:
         df = add_extra_and_composite_columns(df, slo)
 
         if '/intel/rdt/llc_occupancy/0/bytes' in df.columns:
+
             # aggregate BE columns
             df[LLC_BE_LABEL] = new_aggregated_index_based_column(
-                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum) / (1024 * 1024)
+                df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
             df[MEMBW_BE_LABEL] = new_aggregated_index_based_column(
-                df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum) / (
-                                             1024 * 1024 * 1024)
+                df, 'be_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
 
             df[LLC_HP_LABEL] = new_aggregated_index_based_column(
-                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum) / (1024 * 1024)
+                df, 'hp_cores_range', '/intel/rdt/llc_occupancy/{}/bytes', sum)/(1024*1024)
             df[MEMBW_HP_LABEL] = new_aggregated_index_based_column(
-                df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum) / (
-                                             1024 * 1024 * 1024)
+                df, 'hp_cores_range', '/intel/rdt/memory_bandwidth/local/{}/bytes', sum)/(1024*1024*1024)
 
             df[LLC_BE_PERC_LABEL] = new_aggregated_index_based_column(
                 df, 'be_cores_range', '/intel/rdt/llc_occupancy/{}/percentage', sum) / 100
@@ -743,25 +735,25 @@ class CAT:
 
         # RDT collected data.
         rdt_columns = [
-            LLC_HP_LABEL,
-            LLC_HP_PERC_LABEL,
+             LLC_HP_LABEL,
+             LLC_HP_PERC_LABEL,
 
-            LLC_BE_LABEL,
-            LLC_BE_PERC_LABEL,
+             LLC_BE_LABEL,
+             LLC_BE_PERC_LABEL,
 
-            MEMBW_HP_LABEL,
-            MEMBW_BE_LABEL,
+             MEMBW_HP_LABEL,
+             MEMBW_BE_LABEL,
         ]
 
         columns = [
-            SWAN_LOAD_POINT_QPS_LABEL,
-            SWAN_AGGRESSOR_NAME_LABEL,
-            BE_NUMBER_OF_CORES_LABEL,
-            BE_L3_CACHE_WAYS_LABEL,
-            PERCENTILE99TH_LABEL,
-            ACHIEVED_LATENCY_LABEL,
-            QPS_LABEL,
-            ACHIEVED_QPS_LABEL,
+             SWAN_LOAD_POINT_QPS_LABEL,
+             SWAN_AGGRESSOR_NAME_LABEL,
+             BE_NUMBER_OF_CORES_LABEL,
+             BE_L3_CACHE_WAYS_LABEL,
+             PERCENTILE99TH_LABEL,
+             ACHIEVED_LATENCY_LABEL,
+             QPS_LABEL,
+             ACHIEVED_QPS_LABEL,
         ]
 
         # Check if RDT collector data is available.
@@ -780,17 +772,17 @@ class CAT:
         df = self.filtered_df()
 
         styler = df.style.format('{:.0%}', [
-            ACHIEVED_QPS_LABEL,
-            ACHIEVED_LATENCY_LABEL,
-        ]
-                                 )
+                ACHIEVED_QPS_LABEL,
+                ACHIEVED_LATENCY_LABEL,
+             ]
+        )
 
         # format optionall values optionally.
         if LLC_HP_LABEL in self.df:
             styler = styler.format('{:.0%}', [
                 LLC_BE_PERC_LABEL,
                 LLC_HP_PERC_LABEL
-            ])
+             ])
         return styler
 
     def latency(self, normalized=True, aggressors=None, qpses=None):
@@ -815,22 +807,21 @@ class CAT:
         df = renamer.rename(df)
 
         return df.pivot_table(
-            values=COMPOSITE_VALUES_LABEL, aggfunc='first',
-            index=[renamer(SWAN_AGGRESSOR_NAME_LABEL), renamer(BE_L3_CACHE_WAYS_LABEL)],
-            columns=[renamer(SWAN_LOAD_POINT_QPS_LABEL), renamer(BE_NUMBER_OF_CORES_LABEL)],
-        ).style.applymap(
-            partial(composite_latency_colors, slo=self.slo),
-        ).format(
-            partial(composite_latency_formatter, normalized=normalized)
-        ).set_caption(
-            self._get_caption('latency[us]', normalized)
-        )
+                values=COMPOSITE_VALUES_LABEL, aggfunc='first',
+                index=[renamer(SWAN_AGGRESSOR_NAME_LABEL), renamer(BE_L3_CACHE_WAYS_LABEL)],
+                columns=[renamer(SWAN_LOAD_POINT_QPS_LABEL), renamer(BE_NUMBER_OF_CORES_LABEL)],
+            ).style.applymap(
+                partial(composite_latency_colors, slo=self.slo),
+            ).format(
+                partial(composite_latency_formatter, normalized=normalized)
+            ).set_caption(
+                self._get_caption('latency[us]', normalized)
+            )
 
     def filtered_df_pivot_ui(self,
                              rows=(SWAN_AGGRESSOR_NAME_LABEL, 'be_l3_cache_ways'),
                              cols=(SWAN_LOAD_POINT_QPS_LABEL, 'be_number_of_cores'),
-                             aggregatorName='First', vals=('percentile/99th',),
-                             rendererName='Heatmap', **options):
+                             aggregatorName='First', vals=('percentile/99th',), rendererName='Heatmap', **options):
         return _pivot_ui(
             self.filtered_df(),
             totals=False,
