@@ -18,11 +18,9 @@ This module contains the convince class to read experiment data and generate sen
 profiles. See profile.py for more information.
 """
 
-import sys
 import re
 import os
 import datetime
-import pickle
 from functools import partial
 import pandas as pd
 import numpy as np
@@ -132,12 +130,13 @@ def load_dataframe_from_cassandra_streamed(experiment_id, tag_keys, cassandra_op
     :returns: Data as cassandra rows (each row being dict like).
     """
     cassandra_session = _get_or_create_cassandra_session(**cassandra_options)
+    cassandra_session.set_keyspace(keyspace)
 
     # helper to drop prefix from ns (removing host depedency).
     pattern = re.compile(r'(/intel/swan/(caffe/)?(\w+)/([.\w-]+)/).*?')
     drop_prefix = partial(pattern.sub, '')
 
-    query = "SELECT ns, doubleval, tags FROM %s.tags WHERE key = 'swan_experiment' AND val=?" % keyspace
+    query = "SELECT ns, doubleval, tags FROM %s.tags WHERE key = 'swan_experiment' AND val=?"
     statement = cassandra_session.prepare(query)
 
     rows = cassandra_session.execute(statement, [experiment_id])
