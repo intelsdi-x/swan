@@ -28,6 +28,8 @@ It consists of three sub experiments:
 
 More information about KRICO (in Polish) [krico.gda.pl](http://krico.gda.pl/)
 
+Link to repository: [projects.task.gda.pl/krico/framework/](http://projects.task.gda.pl/krico/framework/)
+
 ---
 ## Required software and services
 
